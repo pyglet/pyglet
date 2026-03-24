@@ -8,7 +8,9 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Literal, Sequence, Any, TYPE_CHECKING, Callable, Protocol
 
+
 if TYPE_CHECKING:
+    from pyglet.graphics.buffer import UniformBufferObject
     from pyglet.customtypes import DataTypes, CType
     from pyglet.graphics.vertexdomain import IndexedVertexList, VertexList, InstanceIndexedVertexList, InstanceVertexList
     from pyglet.graphics import Batch, Group
@@ -338,42 +340,6 @@ class GraphicsAttribute:
 
     def set_divisor(self) -> None:
         raise NotImplementedError
-
-
-class UniformBufferObject:
-    buffer: Any
-    view: ctypes.Structure
-    _view_ptr: Any
-    binding: int
-    __slots__ = '_view_ptr', 'binding', 'buffer', 'view'
-
-    def __init__(self, context: Any, view_class: type[ctypes.Structure], buffer_size: int, binding: int) -> None:
-        self.buffer = self._create_buffer(context, buffer_size)
-        self.view = view_class()
-        self._view_ptr = ctypes.pointer(self.view)
-        self.binding = binding
-
-    @property
-    def id(self) -> int:
-        """The buffer ID associated with this UBO."""
-        return self.buffer.id
-
-    def read(self) -> bytes:
-        """Read the byte contents of the buffer."""
-        return self.buffer.get_data()
-
-    def __enter__(self) -> ctypes.Structure:
-        return self.view
-
-    def __exit__(self, _exc_type, _exc_val, _exc_tb) -> None:  # noqa: ANN001
-        self.buffer.set_data(self._view_ptr)
-
-    @abstractmethod
-    def _create_buffer(self, context: Any, buffer_size: int) -> Any:
-        raise NotImplementedError
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(id={self.buffer.id}, binding={self.binding})"
 
 
 class UniformBlock:

@@ -43,7 +43,7 @@ from pyglet.graphics.api.webgl.gl import (
 )
 from pyglet.graphics.api.webgl.enums import geometry_map
 from pyglet.graphics.api.webgl.shader import GLAttribute
-from pyglet.graphics.api.webgl.buffer import AttributeBufferObject, IndexedBufferObject
+from pyglet.graphics.api.webgl.buffer import WebGLAttributeBufferObject, WebGLIndexedBufferObject
 from pyglet.graphics.instance import InstanceBucket, InstanceDomain, VertexInstance
 from pyglet.graphics.vertexdomain import (
     VertexArrayBinding,
@@ -109,7 +109,7 @@ def _make_attribute_property(name: str) -> property:
 
 class _GLVertexStreamMix(VertexStream):
     _ctx: OpenGLSurfaceContext
-    attrib_name_buffers: dict[str, AttributeBufferObject]
+    attrib_name_buffers: dict[str, WebGLAttributeBufferObject]
 
     def __init__(self, ctx: OpenGLSurfaceContext, initial_size: int, attrs: Sequence[Attribute], *, divisor: int = 0):
         super().__init__(ctx, initial_size, attrs, divisor=divisor)
@@ -117,8 +117,8 @@ class _GLVertexStreamMix(VertexStream):
     def get_graphics_attribute(self, attribute: Attribute, view: AttributeView) -> GLAttribute:
         return GLAttribute(attribute, view)
 
-    def get_buffer(self, size: int, attribute) -> AttributeBufferObject:
-        return AttributeBufferObject(self._ctx, size, attribute)
+    def get_buffer(self, size: int, attribute) -> WebGLAttributeBufferObject:
+        return WebGLAttributeBufferObject(self._ctx, size, attribute)
 
     def bind_into(self, vao) -> None:
         for attribute, buffer in zip(self.attribute_names.values(), self.buffers):
@@ -189,11 +189,11 @@ class GLIndexStream(IndexStream):  # noqa: D101
         self.index_element_size = ctypes.sizeof(self.index_c_type)
         super().__init__(ctx, data_type, initial_elems)
 
-    def _create_buffer(self) -> IndexedBufferObject:
-        return IndexedBufferObject(self.ctx, self.allocator.capacity * self.index_element_size,
-                                                self.index_c_type,
-                                                self.index_element_size,
-                                                1)
+    def _create_buffer(self) -> WebGLIndexedBufferObject:
+        return WebGLIndexedBufferObject(self.ctx, self.allocator.capacity * self.index_element_size,
+                                        self.index_c_type,
+                                        self.index_element_size,
+                                        1)
 
     def bind_into(self, vao: VertexArrayBinding) -> None:
         self.buffer.bind_to_index_buffer()

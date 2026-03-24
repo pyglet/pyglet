@@ -27,6 +27,7 @@ class GraphicsAPI:
     GL3 = ("opengl", "gles3")
     GL2 = ("gl2", "gles2")
     GLES = ("gles2", "gles3")
+    DESKTOP_GL = ("opengl",)
 
 
 def require_platform(platform: list[str]):

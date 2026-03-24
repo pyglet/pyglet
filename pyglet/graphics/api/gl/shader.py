@@ -30,6 +30,7 @@ from typing import TYPE_CHECKING, Any, Callable, Sequence, Type, Union
 import pyglet
 from pyglet.graphics.api.gl import GLException, gl, OpenGLSurfaceContext
 from pyglet.graphics.api.gl import (
+    GL_DYNAMIC_DRAW,
     GL_FALSE,
     GL_INFO_LOG_LENGTH,
     GL_LINK_STATUS,
@@ -45,11 +46,10 @@ from pyglet.graphics.shader import (
     ShaderProgram,
     ShaderSource,
     ShaderType,
-    UniformBufferObject,
 )
 from pyglet.graphics.shader import ShaderException
 
-from pyglet.graphics.api.gl.buffer import BufferObject
+from pyglet.graphics.api.gl.buffer import GLUniformBufferObject
 from pyglet.enums import GeometryMode
 
 if TYPE_CHECKING:
@@ -123,6 +123,41 @@ _attribute_types: dict[int, tuple[int, DataTypes]] = {
     gl.GL_DOUBLE_VEC2: (2, 'd'),
     gl.GL_DOUBLE_VEC3: (3, 'd'),
     gl.GL_DOUBLE_VEC4: (4, 'd'),
+}
+
+_matrix_type_lengths: dict[int, int] = {
+    gl.GL_FLOAT_MAT2: 4,
+    gl.GL_FLOAT_MAT2x3: 6,
+    gl.GL_FLOAT_MAT2x4: 8,
+    gl.GL_FLOAT_MAT3: 9,
+    gl.GL_FLOAT_MAT3x2: 6,
+    gl.GL_FLOAT_MAT3x4: 12,
+    gl.GL_FLOAT_MAT4: 16,
+    gl.GL_FLOAT_MAT4x2: 8,
+    gl.GL_FLOAT_MAT4x3: 12,
+}
+
+_vector_scalar_ctype: dict[int, tuple[type, int]] = {
+    gl.GL_BOOL: (c_int, 1),
+    gl.GL_BOOL_VEC2: (c_int, 2),
+    gl.GL_BOOL_VEC3: (c_int, 3),
+    gl.GL_BOOL_VEC4: (c_int, 4),
+    gl.GL_INT: (c_int, 1),
+    gl.GL_INT_VEC2: (c_int, 2),
+    gl.GL_INT_VEC3: (c_int, 3),
+    gl.GL_INT_VEC4: (c_int, 4),
+    gl.GL_UNSIGNED_INT: (c_uint, 1),
+    gl.GL_UNSIGNED_INT_VEC2: (c_uint, 2),
+    gl.GL_UNSIGNED_INT_VEC3: (c_uint, 3),
+    gl.GL_UNSIGNED_INT_VEC4: (c_uint, 4),
+    gl.GL_FLOAT: (c_float, 1),
+    gl.GL_FLOAT_VEC2: (c_float, 2),
+    gl.GL_FLOAT_VEC3: (c_float, 3),
+    gl.GL_FLOAT_VEC4: (c_float, 4),
+    gl.GL_DOUBLE: (c_double, 1),
+    gl.GL_DOUBLE_VEC2: (c_double, 2),
+    gl.GL_DOUBLE_VEC3: (c_double, 3),
+    gl.GL_DOUBLE_VEC4: (c_double, 4),
 }
 
 
@@ -663,12 +698,44 @@ class GLUniformBlock(BaseUniformBlock):
                 f"binding={self.binding})")
 
 
-class GLUniformBufferObject(UniformBufferObject):
-    buffer: BufferObject
-    __slots__ = ()
+class GLShaderStorageBlock:
+    """Shader Storage Block metadata and buffer factory."""
 
-    def _create_buffer(self, context: OpenGLSurfaceContext, buffer_size: int) -> BufferObject:
-        return BufferObject(context, buffer_size, target=GL_UNIFORM_BUFFER)
+    program: CallableProxyType[Callable[..., Any] | Any] | Any
+    name: str
+    index: int
+    size: int
+    binding: int
+    variables: dict[str, tuple[str, type, int, int | None]]
+    __slots__ = "_context", "binding", "index", "name", "program", "size", "variables"
+
+    def __init__(
+        self,
+        program: GLShaderProgram | GLComputeShaderProgram,
+        name: str,
+        index: int,
+        size: int,
+        binding: int,
+        variables: dict[str, tuple[str, type, int, int | None]],
+    ) -> None:
+        self._context = pyglet.graphics.api.core.current_context
+        self.program = weakref.proxy(program)
+        self.name = name
+        self.index = index
+        self.size = size
+        self.binding = binding
+        self.variables = variables
+
+    def set_binding(self, binding: int) -> None:
+        assert binding >= 0, "Binding index must be non-negative."
+        self.binding = binding
+        self._context.glShaderStorageBlockBinding(self.program.id, self.index, binding)
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}(program={self.program.id}, name={self.name}, "
+            f"index={self.index}, size={self.size}, binding={self.binding})"
+        )
 
 
 # Utility functions:
@@ -879,6 +946,166 @@ def _introspect_uniform_blocks(ctx, program: GLShaderProgram | GLComputeShaderPr
     return uniform_blocks
 
 
+def _supports_shader_storage_blocks() -> bool:
+    return pyglet.graphics.api.have_version(4, 3) or pyglet.graphics.api.have_extension(
+        "GL_ARB_shader_storage_buffer_object",
+    )
+
+
+def _get_program_resource_name(ctx, program_id: int, interface: int, index: int) -> str:
+    props = (gl.GLenum * 1)(gl.GL_NAME_LENGTH)
+    params = (gl.GLint * 1)()
+    ctx.glGetProgramResourceiv(program_id, interface, index, 1, props, 1, None, params)
+    name_buf = create_string_buffer(max(params[0], 1))
+    ctx.glGetProgramResourceName(program_id, interface, index, len(name_buf), None, name_buf)
+    return name_buf.value.decode()
+
+
+def _build_ssbo_view_name(raw_name: str, block_name: str, used_names: set[str]) -> str:
+    base_name = raw_name
+    if base_name.startswith(f"{block_name}."):
+        base_name = base_name[len(block_name) + 1:]
+    if "." in base_name:
+        base_name = base_name.rsplit(".", 1)[-1]
+    base_name = re.sub(r"\[\d+\]", "", base_name)
+    base_name = re.sub(r"\W", "_", base_name)
+    if not base_name:
+        base_name = "item"
+    if base_name[0].isdigit():
+        base_name = f"_{base_name}"
+
+    if base_name not in used_names:
+        return base_name
+
+    fallback = re.sub(r"\W", "_", raw_name)
+    if fallback and fallback[0].isdigit():
+        fallback = f"_{fallback}"
+    if not fallback:
+        fallback = "item"
+
+    candidate = fallback
+    suffix = 1
+    while candidate in used_names:
+        candidate = f"{fallback}_{suffix}"
+        suffix += 1
+    return candidate
+
+
+def _resolve_ssbo_element_type(gl_type: int) -> tuple[type, int]:
+    if gl_type in _vector_scalar_ctype:
+        return _vector_scalar_ctype[gl_type]
+    if gl_type in _matrix_type_lengths:
+        return c_float, _matrix_type_lengths[gl_type]
+    msg = f"Unsupported SSBO variable OpenGL type: {gl_type}."
+    raise ShaderException(msg)
+
+
+def _introspect_shader_storage_blocks(
+    ctx: OpenGLSurfaceContext,
+    program: GLShaderProgram | GLComputeShaderProgram,
+) -> dict[str, GLShaderStorageBlock]:
+    if not _supports_shader_storage_blocks():
+        return {}
+
+    storage_blocks: dict[str, GLShaderStorageBlock] = {}
+    program_id = program.id
+
+    active_resources = gl.GLint(0)
+    ctx.glGetProgramInterfaceiv(program_id, gl.GL_SHADER_STORAGE_BLOCK, gl.GL_ACTIVE_RESOURCES, byref(active_resources))
+
+    for index in range(active_resources.value):
+        block_name = _get_program_resource_name(ctx, program_id, gl.GL_SHADER_STORAGE_BLOCK, index)
+
+        block_props = (gl.GLenum * 3)(gl.GL_NUM_ACTIVE_VARIABLES, gl.GL_BUFFER_DATA_SIZE, gl.GL_BUFFER_BINDING)
+        block_params = (gl.GLint * 3)()
+        ctx.glGetProgramResourceiv(
+            program_id,
+            gl.GL_SHADER_STORAGE_BLOCK,
+            index,
+            3,
+            block_props,
+            3,
+            None,
+            block_params,
+        )
+        active_variable_count, block_data_size, binding = (int(value) for value in block_params)
+
+        variable_indices: list[int] = []
+        if active_variable_count > 0:
+            active_props = (gl.GLenum * 1)(gl.GL_ACTIVE_VARIABLES)
+            active_params = (gl.GLint * active_variable_count)()
+            ctx.glGetProgramResourceiv(
+                program_id,
+                gl.GL_SHADER_STORAGE_BLOCK,
+                index,
+                1,
+                active_props,
+                active_variable_count,
+                None,
+                active_params,
+            )
+            variable_indices = [int(active_params[i]) for i in range(active_variable_count)]
+
+        variables: dict[str, tuple[str, type, int, int | None]] = {}
+        used_names: set[str] = set()
+        for var_index in variable_indices:
+            variable_name = _get_program_resource_name(ctx, program_id, gl.GL_BUFFER_VARIABLE, var_index)
+
+            var_props = (gl.GLenum * 5)(
+                gl.GL_TYPE,
+                gl.GL_ARRAY_SIZE,
+                gl.GL_OFFSET,
+                gl.GL_TOP_LEVEL_ARRAY_SIZE,
+                gl.GL_TOP_LEVEL_ARRAY_STRIDE,
+            )
+            var_params = (gl.GLint * 5)()
+            ctx.glGetProgramResourceiv(
+                program_id,
+                gl.GL_BUFFER_VARIABLE,
+                var_index,
+                5,
+                var_props,
+                5,
+                None,
+                var_params,
+            )
+            var_type, array_size, offset, top_level_array_size, top_level_array_stride = (int(value) for value in var_params)
+            scalar_type, scalar_length = _resolve_ssbo_element_type(var_type)
+            element_type = scalar_type if scalar_length == 1 else scalar_type * scalar_length
+
+            declared_count = top_level_array_size if top_level_array_size > 0 else array_size
+            count: int | None = declared_count if declared_count > 0 else None
+            if count is not None and block_data_size < offset + sizeof(element_type) * count:
+                # Runtime arrays report size 0 in many drivers. Use owner-sized views in that case.
+                count = None
+
+            if count and count > 1 and top_level_array_stride > 0 and top_level_array_stride != sizeof(element_type):
+                msg = (
+                    f"SSBO variable '{variable_name}' uses an unsupported array stride ({top_level_array_stride} bytes). "
+                    f"Expected contiguous {sizeof(element_type)}-byte elements."
+                )
+                raise ShaderException(msg)
+
+            view_name = _build_ssbo_view_name(variable_name, block_name, used_names)
+            used_names.add(view_name)
+            variables[view_name] = (variable_name, element_type, offset, count)
+
+        storage_blocks[block_name] = GLShaderStorageBlock(
+            program,
+            block_name,
+            index,
+            block_data_size,
+            binding,
+            variables,
+        )
+
+        if _debug_api_shaders:
+            for block in storage_blocks.values():
+                print(f" Found shader storage block: {block}")
+
+    return storage_blocks
+
+
 # Shader & program classes:
 
 class GLShaderSource(ShaderSource):
@@ -1058,8 +1285,9 @@ class GLShaderProgram(ShaderProgram):
     _context: OpenGLSurfaceContext | None
     _uniforms: dict[str, _Uniform]
     _uniform_blocks: dict[str, GLUniformBlock]
+    _shader_storage_blocks: dict[str, GLShaderStorageBlock]
 
-    __slots__ = '_attributes', '_context', '_id', '_uniform_blocks', '_uniforms'
+    __slots__ = '_attributes', '_context', '_id', '_uniform_blocks', '_uniforms', '_shader_storage_blocks'
 
     def __init__(self, *shaders: GLShader) -> None:
         """Initialize the ShaderProgram using at least two Shader instances."""
@@ -1077,6 +1305,7 @@ class GLShaderProgram(ShaderProgram):
         self._attributes = _introspect_attributes(self._context, self._id)
         self._uniforms = _introspect_uniforms(self._context, self._id, have_dsa)
         self._uniform_blocks = self._get_uniform_blocks()
+        self._shader_storage_blocks = _introspect_shader_storage_blocks(self._context, self)
 
     def _get_uniform_blocks(self) -> dict[str, GLUniformBlock]:
         """Return Uniform Block information."""
@@ -1100,6 +1329,11 @@ class GLShaderProgram(ShaderProgram):
 
         """
         return {n: {'location': u.location, 'length': u.length, 'size': u.size} for n, u in self._uniforms.items()}
+
+    @property
+    def shader_storage_blocks(self) -> dict[str, GLShaderStorageBlock]:
+        """A dictionary of introspected Shader Storage Blocks."""
+        return self._shader_storage_blocks
 
     def use(self) -> None:
         self._context.glUseProgram(self._id)
@@ -1283,6 +1517,7 @@ class GLComputeShaderProgram:
     _shader: GLShader
     _uniforms: dict[str, Any]
     _uniform_blocks: dict[str, GLUniformBlock]
+    _shader_storage_blocks: dict[str, GLShaderStorageBlock]
     max_work_group_size: tuple[int, int, int]
     max_work_group_count: tuple[int, int, int]
     max_shared_memory_size: int
@@ -1309,6 +1544,7 @@ class GLComputeShaderProgram:
         have_dsa = pyglet.graphics.api.have_version(4, 1) or pyglet.graphics.api.have_extension("GL_ARB_separate_shader_objects")
         self._uniforms = _introspect_uniforms(self._context, self._id, have_dsa)
         self._uniform_blocks = _introspect_uniform_blocks(self._context, self)
+        self._shader_storage_blocks = _introspect_shader_storage_blocks(self._context, self)
 
         self.max_work_group_size = self._get_tuple(gl.GL_MAX_COMPUTE_WORK_GROUP_SIZE)  # x, y, z
         self.max_work_group_count = self._get_tuple(gl.GL_MAX_COMPUTE_WORK_GROUP_COUNT)  # x, y, z
@@ -1352,6 +1588,10 @@ class GLComputeShaderProgram:
     @property
     def uniform_blocks(self) -> dict[str, GLUniformBlock]:
         return self._uniform_blocks
+
+    @property
+    def shader_storage_blocks(self) -> dict[str, GLShaderStorageBlock]:
+        return self._shader_storage_blocks
 
     def use(self) -> None:
         self._context.glUseProgram(self._id)

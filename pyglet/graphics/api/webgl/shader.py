@@ -26,7 +26,7 @@ import pyglet
 
 from pyglet.enums import GeometryMode
 from pyglet.graphics.api.webgl import gl
-from pyglet.graphics.api.webgl.buffer import BufferObject
+from pyglet.graphics.api.webgl.buffer import WebGLUniformBufferObject
 from pyglet.graphics.api.webgl.gl import (
     GL_FALSE,
     GL_INFO_LOG_LENGTH,
@@ -42,7 +42,6 @@ from pyglet.graphics.shader import (
     ShaderProgram,
     ShaderSource,
     ShaderType,
-    UniformBufferObject,
     AttributeView,
     GraphicsAttribute,
 )
@@ -663,14 +662,6 @@ class WebGLUniformBlock(BaseUniformBlock):  # noqa: D101
             f"{self.__class__.__name__}(program={self.program.id}, location={self.index}, size={self.size}, "
             f"binding={self.binding})"
         )
-
-
-class WebGLUniformBufferObject(UniformBufferObject):
-    buffer: BufferObject
-    __slots__ = ()
-
-    def _create_buffer(self, context: OpenGLSurfaceContext, buffer_size: int) -> BufferObject:
-        return BufferObject(context, buffer_size, target=GL_UNIFORM_BUFFER)
 
 
 # Utility functions:

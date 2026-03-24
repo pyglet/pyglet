@@ -23,8 +23,10 @@ primitives of the same OpenGL primitive mode.
 from __future__ import annotations
 
 import ctypes
+import weakref
 from typing import TYPE_CHECKING, Any, Sequence
 
+import pyglet
 
 from pyglet.graphics.api.gl import (
     GL_BYTE,
@@ -41,8 +43,9 @@ from pyglet.graphics.api.gl import (
     GLvoid,
     vertexarray, OpenGLSurfaceContext,
 )
-from pyglet.graphics.api.gl.buffer import AttributeBufferObject, IndexedBufferObject
+from pyglet.graphics.api.gl.buffer import GLAttributeBufferObject, GLIndexedBufferObject, PersistentBufferObject
 from pyglet.graphics.api.gl.enums import geometry_map
+from pyglet.graphics.api.gl.lib import GLException, MissingFunctionException
 from pyglet.graphics.api.gl.shader import GLAttribute
 from pyglet.graphics.instance import InstanceBucket, InstanceDomain, VertexInstance
 from pyglet.graphics.vertexdomain import (
@@ -63,7 +66,7 @@ from pyglet.graphics.vertexdomain import (
 
 if TYPE_CHECKING:
     from ctypes import Array
-    from pyglet.graphics.shader import AttributeView
+    from pyglet.graphics.shader import AttributeView, GraphicsAttribute
     from pyglet.graphics import Group
     from pyglet.enums import GeometryMode
     from pyglet.graphics.shader import Attribute
@@ -109,17 +112,46 @@ class _GLVertexStreamMix(VertexStream):
     _ctx: OpenGLSurfaceContext
 
     def __init__(self, ctx: OpenGLSurfaceContext, initial_size: int, attrs: Sequence[Attribute], *, divisor: int = 0):
+        self._linked_vaos = weakref.WeakSet()
+        self._persistent_buffers_supported = self._supports_persistent_buffers(ctx)
+        self._has_persistent_buffers = False
         super().__init__(ctx, initial_size, attrs, divisor=divisor)
 
     def get_graphics_attribute(self, attribute: Attribute, view: AttributeView) -> GLAttribute:
         return GLAttribute(attribute, view)
 
-    def get_buffer(self, size: int, attribute) -> AttributeBufferObject:
-        # TODO: use persistent buffer if we have GL support for it:
-        # attribute.buffer = PersistentBufferObject(attribute.stride * self.allocator.capacity, attribute, self.vao)
-        return AttributeBufferObject(self._ctx, size, attribute)
+    @staticmethod
+    def _supports_persistent_buffers(ctx: OpenGLSurfaceContext) -> bool:
+        if not pyglet.options.opengl_persistent_buffers:
+            return False
+        info = ctx.get_info()
+        if info.get_opengl_api() != "gl":
+            return False
+        return info.have_version(4, 4) or info.have_extension("GL_ARB_buffer_storage")
+
+    def get_buffer(self, size: int, attribute: GraphicsAttribute) -> GLAttributeBufferObject | PersistentBufferObject:
+        if self._persistent_buffers_supported:
+            try:
+                buffer = PersistentBufferObject(self._ctx, size, attribute)
+                self._has_persistent_buffers = True
+                return buffer
+            except (GLException, MissingFunctionException, NotImplementedError):
+                self._persistent_buffers_supported = False
+        return GLAttributeBufferObject(self._ctx, size, attribute)
+
+    def resize(self, capacity: int) -> None:
+        old_capacity = self.allocator.capacity
+        super().resize(capacity)
+        if not self._has_persistent_buffers or capacity <= old_capacity:
+            return
+        # Have to rebind any vaos once the buffer is resized.
+        for vao in tuple(self._linked_vaos):
+            vao.bind()
+            self.bind_into(vao)
+            vao.unbind()
 
     def bind_into(self, vao) -> None:
+        self._linked_vaos.add(vao)
         for attribute, buffer in zip(self.attribute_names.values(), self.buffers):
             buffer.bind()
             attribute.enable()
@@ -209,13 +241,10 @@ class GLInstanceVertexList(GLVertexList):
             start = self.start
         buffer = stream.attrib_name_buffers[name]
 
-        array_start = buffer.element_count * start
-        array_end = buffer.element_count * count + array_start
         try:
-            buffer.data[array_start:array_end] = data
-            buffer.invalidate_region(start, count)
+            buffer.set_region(start, count, data)
         except ValueError:
-            msg = f"Invalid data size for '{buffer}'. Expected {array_end - array_start}, got {len(data)}."
+            msg = f"Invalid data size for '{buffer}'. Expected {buffer.element_count * count}, got {len(data)}."
             raise ValueError(msg) from None
 
 
@@ -295,13 +324,10 @@ class GLInstanceIndexedVertexList(GLVertexList):
             start = self.start
         buffer = stream.attrib_name_buffers[name]
 
-        array_start = buffer.element_count * start
-        array_end = buffer.element_count * count + array_start
         try:
-            buffer.data[array_start:array_end] = data
-            buffer.invalidate_region(start, count)
+            buffer.set_region(start, count, data)
         except ValueError:
-            msg = f"Invalid data size for '{buffer}'. Expected {array_end - array_start}, got {len(data)}."
+            msg = f"Invalid data size for '{buffer}'. Expected {buffer.element_count * count}, got {len(data)}."
             raise ValueError(msg) from None
 
     def dealloc_from_group(self, vertex_list):
@@ -320,7 +346,7 @@ class GLVertexDomain(VertexDomain):
     per_vertex: list[Attribute]
 
     attribute_meta: dict[str, Attribute]
-    buffer_attributes: list[tuple[AttributeBufferObject, Attribute]]
+    buffer_attributes: list[tuple[GLAttributeBufferObject, Attribute]]
     vao: GLVertexArrayBinding
     attribute_names: dict[str, Attribute]
     attrib_name_buffers: dict[str, GLVertexStream]
@@ -577,8 +603,8 @@ class GLIndexStream(IndexStream):  # noqa: D101
         self.index_element_size = ctypes.sizeof(self.index_c_type)
         super().__init__(ctx, data_type, initial_elems)
 
-    def _create_buffer(self) -> IndexedBufferObject:
-        return IndexedBufferObject(
+    def _create_buffer(self) -> GLIndexedBufferObject:
+        return GLIndexedBufferObject(
             self.ctx, self.allocator.capacity * self.index_element_size, self.index_c_type, self.index_element_size, 1,
         )
 

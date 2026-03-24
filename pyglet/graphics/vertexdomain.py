@@ -154,13 +154,10 @@ class VertexList:
         stream = self.domain.attrib_name_buffers[name]
         buffer = stream.attrib_name_buffers[name]
 
-        array_start = buffer.element_count * self.start
-        array_end = buffer.element_count * self.count + array_start
         try:
-            buffer.data[array_start:array_end] = data
-            buffer.invalidate_region(self.start, self.count)
+            buffer.set_region(self.start, self.count, data)
         except ValueError:
-            msg = f"Invalid data size for '{name}'. Expected {array_end - array_start}, got {len(data)}."
+            msg = f"Invalid data size for '{name}'. Expected {buffer.element_count * self.count}, got {len(data)}."
             raise ValueError(msg) from None
 
 
@@ -187,13 +184,10 @@ class InstanceVertexList(VertexList):
             start = self.start
         buffer = stream.attrib_name_buffers[name]
 
-        array_start = buffer.element_count * start
-        array_end = buffer.element_count * count + array_start
         try:
-            buffer.data[array_start:array_end] = data
-            buffer.invalidate_region(start, count)
+            buffer.set_region(start, count, data)
         except ValueError:
-            msg = f"Invalid data size for '{buffer}'. Expected {array_end - array_start}, got {len(data)}."
+            msg = f"Invalid data size for '{buffer}'. Expected {buffer.element_count * count}, got {len(data)}."
             raise ValueError(msg) from None
 
 
@@ -390,13 +384,10 @@ class InstanceIndexedVertexList(VertexList):
             start = self.start
         buffer = stream.attrib_name_buffers[name]
 
-        array_start = buffer.element_count * start
-        array_end = buffer.element_count * count + array_start
         try:
-            buffer.data[array_start:array_end] = data
-            buffer.invalidate_region(start, count)
+            buffer.set_region(start, count, data)
         except ValueError:
-            msg = f"Invalid data size for '{buffer}'. Expected {array_end - array_start}, got {len(data)}."
+            msg = f"Invalid data size for '{buffer}'. Expected {buffer.element_count * count}, got {len(data)}."
             raise ValueError(msg) from None
 
     def dealloc_from_group(self, vertex_list):

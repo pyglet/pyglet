@@ -45,7 +45,7 @@ from pyglet.graphics.api.gl import (
 )
 from pyglet.graphics.api.gl.enums import geometry_map
 from pyglet.graphics.api.gl.shader import GLAttribute
-from pyglet.graphics.api.gl2.buffer import AttributeBufferObject, IndexedBufferObject
+from pyglet.graphics.api.gl2.buffer import GL2AttributeBufferObject, GL2IndexedBufferObject
 from pyglet.graphics.vertexdomain import (
     VertexStream,
     IndexStream,
@@ -150,10 +150,10 @@ class GLVertexStream(VertexStream):
     def get_graphics_attribute(self, attribute: Attribute, view: AttributeView) -> GLAttribute:
         return GLAttribute(attribute, view)
 
-    def get_buffer(self, size: int, attribute) -> AttributeBufferObject:
+    def get_buffer(self, size: int, attribute) -> GL2AttributeBufferObject:
         # TODO: use persistent buffer if we have GL support for it:
         # attribute.buffer = PersistentBufferObject(attribute.stride * self.allocator.capacity, attribute, self.vao)
-        return AttributeBufferObject(self._ctx, size, attribute)
+        return GL2AttributeBufferObject(self._ctx, size, attribute)
 
     def bind_into(self, _vao: None) -> None:
         for attribute, buffer in zip(self.attribute_names.values(), self.buffers):
@@ -177,11 +177,11 @@ class GLIndexStream(IndexStream):
         self.index_element_size = ctypes.sizeof(self.index_c_type)
         super().__init__(ctx, data_type, initial_elems)
 
-    def _create_buffer(self) -> IndexedBufferObject:
-        return IndexedBufferObject(self.ctx, self.allocator.capacity * self.index_element_size,
-                                                self.index_c_type,
-                                                self.index_element_size,
-                                                1)
+    def _create_buffer(self) -> GL2IndexedBufferObject:
+        return GL2IndexedBufferObject(self.ctx, self.allocator.capacity * self.index_element_size,
+                                      self.index_c_type,
+                                      self.index_element_size,
+                                      1)
 
     def bind_into(self, vao: VertexArrayBinding) -> None:
         #self.buffer.bind_to_index_buffer()
