@@ -72,6 +72,27 @@ class TextureWrapping(Enum):
     WRAP_R = auto()
 
 
+class AnimationChannelTargetPath(str, Enum):
+    # Keep the values of the strings as is, to match glTF 2.0 specifications
+    TRANSLATION = "translation"
+    ROTATION = "rotation"
+    SCALE = "scale"
+    WEIGHTS = "weights"
+
+    def __str__(self) -> str:
+        return self.value
+
+
+class AnimationInterpolation(str, Enum):
+    # Keep the values of the strings as is, to match glTF 2.0 specifications
+    LINEAR = "LINEAR"
+    STEP = "STEP"
+    CUBIC_SPLINE = "CUBICSPLINE"
+
+    def __str__(self) -> str:
+        return self.value
+
+
 class ComponentFormat(str, Enum):
     """Texture component format identifiers."""
     R = 'R'
