@@ -47,6 +47,7 @@ from pyglet.graphics.api.gl.buffer import GLAttributeBufferObject, GLIndexedBuff
 from pyglet.graphics.api.gl.enums import geometry_map
 from pyglet.graphics.api.gl.lib import GLException, MissingFunctionException
 from pyglet.graphics.api.gl.shader import GLAttribute
+from pyglet.graphics.buffer import _data_type_size
 from pyglet.graphics.instance import InstanceBucket, InstanceDomain, VertexInstance
 from pyglet.graphics.vertexdomain import (
     VertexStream,
@@ -70,18 +71,7 @@ if TYPE_CHECKING:
     from pyglet.graphics import Group
     from pyglet.enums import GeometryMode
     from pyglet.graphics.shader import Attribute
-    from pyglet.customtypes import CType, DataTypes
-
-_c_types = {
-    GL_BYTE: ctypes.c_byte,
-    GL_UNSIGNED_BYTE: ctypes.c_ubyte,
-    GL_SHORT: ctypes.c_short,
-    GL_UNSIGNED_SHORT: ctypes.c_ushort,
-    GL_INT: ctypes.c_int,
-    GL_UNSIGNED_INT: ctypes.c_uint,
-    GL_FLOAT: ctypes.c_float,
-    GL_DOUBLE: ctypes.c_double,
-}
+    from pyglet.customtypes import DataTypes
 
 _gl_types = {
     'b': GL_BYTE,
@@ -594,18 +584,21 @@ class GLInstancedVertexDomain(InstancedVertexDomain, GLVertexDomain):  # noqa: D
 
 class GLIndexStream(IndexStream):  # noqa: D101
     index_element_size: int
-    index_c_type: CType
     gl_type: int
 
     def __init__(self, ctx: OpenGLSurfaceContext, data_type: DataTypes, initial_elems: int) -> None:  # noqa: D107
         self.gl_type = _gl_types[data_type]
-        self.index_c_type = _c_types[self.gl_type]
-        self.index_element_size = ctypes.sizeof(self.index_c_type)
         super().__init__(ctx, data_type, initial_elems)
+        self.index_element_size = self.buffer.element_size
 
     def _create_buffer(self) -> GLIndexedBufferObject:
+        index_element_size = _data_type_size(self.data_type)
         return GLIndexedBufferObject(
-            self.ctx, self.allocator.capacity * self.index_element_size, self.index_c_type, self.index_element_size, 1,
+            self.ctx,
+            self.allocator.capacity * index_element_size,
+            self.data_type,
+            index_element_size,
+            1,
         )
 
     def bind_into(self, vao: VertexArrayBinding) -> None:

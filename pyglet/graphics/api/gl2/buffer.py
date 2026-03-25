@@ -10,7 +10,7 @@ from pyglet.graphics.api.gl.buffer import GLBackedBufferObject, GLBufferObject, 
 from pyglet.graphics.buffer import BufferDataStore, MappedBufferObject as BaseMappedBufferObject
 
 if TYPE_CHECKING:
-    from pyglet.customtypes import CType
+    from pyglet.customtypes import DataTypes
     from pyglet.graphics.shader import GraphicsAttribute
 
 
@@ -53,7 +53,7 @@ class GL2BackedBufferObject(GLBackedBufferObject):
         self,
         context: OpenGLSurfaceContext,
         size: int,
-        c_type: CType,
+        data_type: DataTypes,
         stride: int,
         element_count: int,
         usage: int = GL_DYNAMIC_DRAW,
@@ -63,7 +63,7 @@ class GL2BackedBufferObject(GLBackedBufferObject):
         super().__init__(
             context,
             size,
-            c_type,
+            data_type,
             stride,
             element_count,
             usage=usage,
@@ -85,7 +85,7 @@ class GL2AttributeBufferObject(GL2BackedBufferObject):
         super().__init__(
             context,
             size,
-            graphics_attr.attribute.c_type,
+            graphics_attr.attribute.fmt.data_type,
             graphics_attr.view.stride,
             graphics_attr.attribute.fmt.components,
             store=store,
@@ -99,7 +99,7 @@ class GL2IndexedBufferObject(GL2BackedBufferObject):
         self,
         context: OpenGLSurfaceContext,
         size: int,
-        c_type: CType,
+        data_type: DataTypes,
         stride: int,
         count: int,
         usage: int = GL_DYNAMIC_DRAW,
@@ -108,7 +108,7 @@ class GL2IndexedBufferObject(GL2BackedBufferObject):
         super().__init__(
             context,
             size,
-            c_type,
+            data_type,
             stride,
             count,
             usage=usage,

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import ctypes
 import sys
 from functools import lru_cache
 from typing import TYPE_CHECKING, Sequence
@@ -38,7 +37,7 @@ from pyglet.graphics.buffer import (
 )
 
 if TYPE_CHECKING:
-    from pyglet.customtypes import CType
+    from pyglet.customtypes import DataTypes
     from pyglet.graphics.api.webgl import OpenGLSurfaceContext
     from pyglet.graphics.api.webgl.webgl_js import WebGLBuffer
     from pyglet.graphics.shader import GraphicsAttribute
@@ -184,14 +183,12 @@ class WebGLBackedBufferObject(BaseBackedBufferObject, WebGLBufferObject):
     _dirty_min: int
     _dirty_max: int
     _dirty: bool
-    c_type: CType
-    _ctypes_size: int
 
     def __init__(
         self,
         context: OpenGLSurfaceContext,
         size: int,
-        c_type: CType,
+        data_type: DataTypes,
         stride: int,
         element_count: int,
         usage: int = GL_DYNAMIC_DRAW,
@@ -200,9 +197,7 @@ class WebGLBackedBufferObject(BaseBackedBufferObject, WebGLBufferObject):
     ) -> None:
         WebGLBufferObject.__init__(self, context, size, target=target, usage=usage)
 
-        self.c_type = c_type
-        self._ctypes_size = ctypes.sizeof(c_type)
-        store = store or CTypeDataStore(size, c_type, stride, element_count)
+        store = store or CTypeDataStore(size, data_type, stride, element_count)
         assert store.size == size and store.stride == stride and store.element_count == element_count, (
             "Store layout mismatch. "
             f"Expected size={size}, stride={stride}, element_count={element_count}; "
@@ -289,7 +284,7 @@ class WebGLAttributeBufferObject(WebGLBackedBufferObject):
         super().__init__(
             context,
             size,
-            graphics_attr.attribute.c_type,
+            graphics_attr.attribute.fmt.data_type,
             graphics_attr.view.stride,
             graphics_attr.attribute.fmt.components,
             store=store,
@@ -303,7 +298,7 @@ class WebGLIndexedBufferObject(WebGLBackedBufferObject):
         self,
         context: OpenGLSurfaceContext,
         size: int,
-        c_type: CType,
+        data_type: DataTypes,
         stride: int,
         count: int,
         usage: int = GL_DYNAMIC_DRAW,
@@ -312,7 +307,7 @@ class WebGLIndexedBufferObject(WebGLBackedBufferObject):
         super().__init__(
             context,
             size,
-            c_type,
+            data_type,
             stride,
             count,
             usage,

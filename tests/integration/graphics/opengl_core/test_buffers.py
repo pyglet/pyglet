@@ -22,9 +22,9 @@ else:
 
 def test_ctype_data_store_assertions():
     with pytest.raises(AssertionError):
-        CTypeDataStore(size=3, c_type=ctypes.c_uint32, stride=4, element_count=1)
+        CTypeDataStore(size=3, data_type="I", stride=4, element_count=1)
 
-    store = CTypeDataStore(size=8, c_type=ctypes.c_uint32, stride=4, element_count=1)
+    store = CTypeDataStore(size=8, data_type="I", stride=4, element_count=1)
     with pytest.raises(AssertionError):
         store.set_bytes(7, b"\x00\x01")
 
@@ -103,7 +103,7 @@ def test_backed_index_buffer_commit_resize_and_delete(gl3_context):
     gl3_context.switch_to()
     ctx = gl3_context.context
 
-    buffer = GLIndexedBufferObject(ctx, size=8, c_type=ctypes.c_uint32, stride=4, count=1)
+    buffer = GLIndexedBufferObject(ctx, size=8, data_type="I", stride=4, count=1)
 
     buffer.set_region(0, 2, [5, 9])
     buffer.commit()
@@ -136,7 +136,7 @@ def test_backed_index_buffer_set_data_with_ctypes_array(gl3_context):
     gl3_context.switch_to()
     ctx = gl3_context.context
 
-    buffer = GLIndexedBufferObject(ctx, size=16, c_type=ctypes.c_uint32, stride=4, count=1)
+    buffer = GLIndexedBufferObject(ctx, size=16, data_type="I", stride=4, count=1)
 
     initial_values = (ctypes.c_uint32 * 4)(11, 22, 33, 44)
     buffer.set_data(initial_values)
@@ -153,7 +153,7 @@ def test_backed_index_buffer_set_data_with_python_list(gl3_context):
     gl3_context.switch_to()
     ctx = gl3_context.context
 
-    buffer = GLIndexedBufferObject(ctx, size=16, c_type=ctypes.c_uint32, stride=4, count=1)
+    buffer = GLIndexedBufferObject(ctx, size=16, data_type="I", stride=4, count=1)
 
     buffer.set_data([11, 22, 33, 44])
     buffer.commit()
@@ -169,7 +169,7 @@ def test_backed_index_buffer_set_data_region_with_python_list(gl3_context):
     gl3_context.switch_to()
     ctx = gl3_context.context
 
-    buffer = GLIndexedBufferObject(ctx, size=16, c_type=ctypes.c_uint32, stride=4, count=1)
+    buffer = GLIndexedBufferObject(ctx, size=16, data_type="I", stride=4, count=1)
 
     initial_values = (ctypes.c_uint32 * 4)(11, 22, 33, 44)
     buffer.set_data(initial_values)
@@ -189,7 +189,7 @@ def test_backed_index_buffer_set_data_ptr_with_ctypes_pointer(gl3_context):
     gl3_context.switch_to()
     ctx = gl3_context.context
 
-    buffer = GLIndexedBufferObject(ctx, size=16, c_type=ctypes.c_uint32, stride=4, count=1)
+    buffer = GLIndexedBufferObject(ctx, size=16, data_type="I", stride=4, count=1)
 
     initial_values = (ctypes.c_uint32 * 4)(11, 22, 33, 44)
     buffer.set_data(initial_values)

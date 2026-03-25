@@ -42,11 +42,12 @@ from pyglet.graphics.buffer import (
     TextureBuffer,
     TransformFeedbackBuffer,
     UniformBufferObject,
+    _data_type_size,
+    _data_type_to_ctype,
 )
 
 if TYPE_CHECKING:
-    from ctypes import Array, _SimpleCData
-    from pyglet.customtypes import CType, CTypesPointer
+    from pyglet.customtypes import CTypesPointer, DataTypes
     from pyglet.graphics.shader import GraphicsAttribute
 
 
@@ -203,19 +204,17 @@ class GLMappedBufferObject(GLBufferObject, BaseMappedBufferObject):
 class GLBackedBufferObject(BaseBackedBufferObject, GLBufferObject):
     """Buffer with host-side mirrored store and deferred GPU commit."""
 
-    data: Array[CType] | Array[_SimpleCData] | object
+    data: object
     data_ptr: int | None
     _dirty_min: int
     _dirty_max: int
     _dirty: bool
-    c_type: CType
-    _ctypes_size: int
 
     def __init__(
         self,
         context: OpenGLSurfaceContext,
         size: int,
-        c_type: CType,
+        data_type: DataTypes,
         stride: int,
         element_count: int,
         usage: int = GL_DYNAMIC_DRAW,
@@ -224,9 +223,7 @@ class GLBackedBufferObject(BaseBackedBufferObject, GLBufferObject):
     ) -> None:
         GLBufferObject.__init__(self, context, size, target=target, usage=usage)
 
-        self.c_type = c_type
-        self._ctypes_size = ctypes.sizeof(c_type)
-        store = store or CTypeDataStore(size, c_type, stride, element_count)
+        store = store or CTypeDataStore(size, data_type, stride, element_count)
         assert store.size == size and store.stride == stride and store.element_count == element_count, (
             "Store layout mismatch. "
             f"Expected size={size}, stride={stride}, element_count={element_count}; "
@@ -317,7 +314,7 @@ class GLAttributeBufferObject(GLBackedBufferObject):
         super().__init__(
             context,
             size,
-            graphics_attr.attribute.c_type,
+            graphics_attr.attribute.fmt.data_type,
             graphics_attr.view.stride,
             graphics_attr.attribute.fmt.components,
             store=store,
@@ -331,7 +328,7 @@ class GLIndexedBufferObject(GLBackedBufferObject):
         self,
         context: OpenGLSurfaceContext,
         size: int,
-        c_type: CType,
+        data_type: DataTypes,
         stride: int,
         count: int,
         usage: int = GL_DYNAMIC_DRAW,
@@ -340,7 +337,7 @@ class GLIndexedBufferObject(GLBackedBufferObject):
         super().__init__(
             context,
             size,
-            c_type,
+            data_type,
             stride,
             count,
             usage,
@@ -432,7 +429,9 @@ class PersistentBufferObject(BaseMappedBufferObject):
     flags: int
     stride: int
     element_count: int
-    c_type: CType
+    data_type: DataTypes
+    _ctype: type[object]
+    _element_size: int
     _mapped: object | None
     _mapped_ptr: int
     _storage_size: int
@@ -453,7 +452,9 @@ class PersistentBufferObject(BaseMappedBufferObject):
         self._context = context
         self.stride = graphics_attr.view.stride
         self.element_count = graphics_attr.attribute.fmt.components
-        self.c_type = graphics_attr.attribute.c_type
+        self.data_type = graphics_attr.attribute.fmt.data_type
+        self._ctype = _data_type_to_ctype(self.data_type)
+        self._element_size = _data_type_size(self.data_type)
         self.flags = GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT
 
         self.id = None
@@ -502,6 +503,10 @@ class PersistentBufferObject(BaseMappedBufferObject):
     def _require_mapped_ptr(self) -> int:
         assert self._mapped_ptr != 0, "PersistentBufferObject is not mapped."
         return self._mapped_ptr
+
+    @property
+    def element_size(self) -> int:
+        return self._element_size
 
     def bind(self) -> None:
         self._context.glBindBuffer(self.target, self.id)
@@ -570,19 +575,19 @@ class PersistentBufferObject(BaseMappedBufferObject):
         self._validate_byte_range(byte_start, byte_size)
 
         array_count = self.element_count * count
-        ptr_type = ctypes.POINTER(self.c_type * array_count)
+        ptr_type = ctypes.POINTER(self._ctype * array_count)
         return ctypes.cast(self._require_mapped_ptr() + byte_start, ptr_type).contents
 
     def set_region(self, start: int, count: int, data: Sequence[float | int]) -> None:
         assert start >= 0 and count >= 0, "Start and count must be non-negative."  # noqa: PT018
         array_start = self.element_count * start
         array_end = self.element_count * count + array_start
-        typed_count = self.size // ctypes.sizeof(self.c_type)
+        typed_count = self.size // self._element_size
         assert array_end <= typed_count, (
             f"Region [{array_start}, {array_end}) exceeds typed element count {typed_count}."
         )
 
-        ptr_type = ctypes.POINTER(self.c_type * typed_count)
+        ptr_type = ctypes.POINTER(self._ctype * typed_count)
         typed = ctypes.cast(self._require_mapped_ptr(), ptr_type).contents
         typed[array_start:array_end] = data
 

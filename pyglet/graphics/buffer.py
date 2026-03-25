@@ -12,17 +12,48 @@ from __future__ import annotations
 
 import abc
 import ctypes
+import struct
 from ctypes import Array
 from typing import TYPE_CHECKING, Any, Sequence, Union
 
 import pyglet
 
 if TYPE_CHECKING:
-    from pyglet.customtypes import CType, CTypesPointer
+    from pyglet.customtypes import CType, CTypesPointer, DataTypes
 
 
 ByteSource = Union[bytes, bytearray, memoryview]
 DataSource = Union[Sequence[Union[float, int]], Array[Any]]
+
+_DATA_TYPE_TO_CTYPE: dict[str, type[Any]] = {
+    "?": ctypes.c_bool,
+    "b": ctypes.c_byte,
+    "B": ctypes.c_ubyte,
+    "h": ctypes.c_short,
+    "H": ctypes.c_ushort,
+    "i": ctypes.c_int,
+    "I": ctypes.c_uint,
+    "q": ctypes.c_longlong,
+    "Q": ctypes.c_ulonglong,
+    "f": ctypes.c_float,
+    "d": ctypes.c_double,
+}
+
+
+def _data_type_to_ctype(data_type: DataTypes) -> CType:
+    c_type = _DATA_TYPE_TO_CTYPE.get(data_type)
+    if c_type is None:
+        msg = f"Unsupported data type '{data_type}'."
+        raise Exception(msg)
+    return c_type
+
+
+def _data_type_size(data_type: DataTypes) -> int:
+    try:
+        return struct.calcsize(data_type)
+    except struct.error as exc:
+        msg = f"Unsupported data type '{data_type}'."
+        raise AssertionError(msg) from exc
 
 
 def _to_bytes(data: ByteSource | Sequence[int] | CTypesPointer, length: int | None = None) -> bytes:
@@ -229,14 +260,16 @@ class CTypeDataStore(BufferDataStore):
     This is the default host-side data store and keeps data in a ctypes array.
     """
 
-    c_type: CType
-    _ctypes_size: int
+    data_type: DataTypes
+    _ctype: CType
+    _element_size: int
     _data: Any
     _data_ptr: int
 
-    def __init__(self, size: int, c_type: CType, stride: int, element_count: int) -> None:
-        self.c_type = c_type
-        self._ctypes_size = ctypes.sizeof(c_type)
+    def __init__(self, size: int, data_type: DataTypes, stride: int, element_count: int) -> None:
+        self.data_type = data_type
+        self._ctype = _data_type_to_ctype(data_type)
+        self._element_size = _data_type_size(data_type)
         self.stride = stride
         self.element_count = element_count
         self.size = size
@@ -252,16 +285,16 @@ class CTypeDataStore(BufferDataStore):
 
     @property
     def element_size(self) -> int:
-        return self._ctypes_size
+        return self._element_size
 
     def _allocate(self, size: int) -> None:
-        assert size % self._ctypes_size == 0, (
-            f"Buffer size {size} is not aligned to ctype size {self._ctypes_size} "
-            f"for {self.c_type}."
+        assert size % self._element_size == 0, (
+            f"Buffer size {size} is not aligned to element size {self._element_size} "
+            f"for data type '{self.data_type}'."
         )
 
-        count = size // self._ctypes_size
-        self._data = (self.c_type * count)()
+        count = size // self._element_size
+        self._data = (self._ctype * count)()
         self._data_ptr = ctypes.addressof(self._data)
 
     def _validate_byte_range(self, offset: int, length: int) -> None:
@@ -284,7 +317,7 @@ class CTypeDataStore(BufferDataStore):
     def get_region(self, start: int, count: int) -> Array[Any]:
         byte_start = self.stride * start
         array_count = self.element_count * count
-        ptr_type = ctypes.POINTER(self.c_type * array_count)
+        ptr_type = ctypes.POINTER(self._ctype * array_count)
         return ctypes.cast(self._data_ptr + byte_start, ptr_type).contents
 
     def set_region(self, start: int, count: int, data: Sequence[float | int]) -> None:
@@ -334,6 +367,10 @@ class BackedBufferObject(AbstractBuffer):
     @property
     def data_ptr(self) -> int | None:
         return self.store.data_ptr
+
+    @property
+    def element_size(self) -> int:
+        return self.store.element_size
 
     @abc.abstractmethod
     def commit(self) -> None:
