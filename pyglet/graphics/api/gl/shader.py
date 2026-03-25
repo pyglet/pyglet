@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import re
 import warnings
 import weakref
-from collections import defaultdict
 from ctypes import (
     POINTER,
     Array,
@@ -40,8 +38,12 @@ from pyglet.graphics.api.gl import (
 from pyglet.graphics.shader import (
     Attribute,
     AttributeView,
+    _build_uniform_struct_from_uniforms,
     GraphicsAttribute,
     Shader,
+    UBOBindingManager,
+    UniformArrayBase,
+    UniformBase,
     UniformBlock as BaseUniformBlock,
     ShaderProgram,
     ShaderSource,
@@ -203,54 +205,22 @@ class GLAttribute(GraphicsAttribute):
 
 
 
-class _UniformArray:
+class _UniformArray(UniformArrayBase):
     """Wrapper of the GLSL array data inside a Uniform.
 
     Allows access to get and set items for a more Pythonic implementation.
     Types with a length longer than 1 will be returned as tuples as an inner list would not support individual value
     reassignment. Array data must either be set in full, or by indexing.
     """
-    _uniform: _Uniform
-    _gl_type: GLDataType
-    _gl_getter: GLFunc
-    _gl_setter: GLFunc
-    _is_matrix: bool
     _dsa: bool
-    _c_array: Array[GLDataType]
-    _ptr: CTypesPointer[GLDataType]
-    _idx_to_loc: dict[int, int]
-
-    __slots__ = (
-        '_c_array',
-        '_context',
-        '_dsa',
-        '_gl_getter',
-        '_gl_setter',
-        '_gl_type',
-        '_idx_to_loc',
-        '_is_matrix',
-        '_ptr',
-        '_uniform',
-    )
+    __slots__ = "_context", "_dsa"
 
     def __init__(
         self, uniform: _Uniform, gl_getter: GLFunc, gl_setter: GLFunc, gl_type: GLDataType, is_matrix: bool, dsa: bool,
     ) -> None:
         self._context = pyglet.graphics.api.core.current_context
-        self._uniform = uniform
-        self._gl_type = gl_type
-        self._gl_getter = gl_getter
-        self._gl_setter = gl_setter
-        self._is_matrix = is_matrix
-        self._idx_to_loc = {}  # Array index to uniform location mapping.
         self._dsa = dsa
-
-        if self._uniform.length > 1:
-            self._c_array = (gl_type * self._uniform.length * self._uniform.size)()
-        else:
-            self._c_array = (gl_type * self._uniform.size)()
-
-        self._ptr = cast(self._c_array, POINTER(gl_type))
+        super().__init__(uniform, gl_getter, gl_setter, gl_type, is_matrix)
 
     def _get_location_for_index(self, index: int) -> int:
         """Get the location for the array name.
@@ -265,78 +235,7 @@ class _UniformArray:
                                 create_string_buffer(f"{self._uniform.name}[{index}]".encode()))
         return loc
 
-    def _get_array_loc(self, index: int) -> int:
-        try:
-            return self._idx_to_loc[index]
-        except KeyError:
-            loc = self._idx_to_loc[index] = self._get_location_for_index(index)
-
-        if loc == -1:
-            msg = f"{self._uniform.name}[{index}] not found.\nThis may have been optimized out by the OpenGL driver if unused."
-            raise ShaderException(msg)
-
-        return loc
-
-    def __len__(self) -> int:
-        return self._uniform.size
-
-    def __delitem__(self, key: int) -> None:
-        msg = "Deleting items is not support for UniformArrays."
-        raise ShaderException(msg)
-
-    def __getitem__(self, key: slice | int) -> list[tuple] | tuple:
-        # Return as a tuple. Returning as a list may imply setting inner list elements will update values.
-        if isinstance(key, slice):
-            sliced_data = self._c_array[key]
-            if self._uniform.length > 1:
-                return [tuple(data) for data in sliced_data]
-
-            return tuple([data for data in sliced_data])  # noqa: C416
-
-        try:
-            value = self._c_array[key]
-            return tuple(value) if self._uniform.length > 1 else value
-        except IndexError:
-            msg = f"{self._uniform.name}[{key}] not found. This may have been optimized out by the OpenGL driver if unused."
-            raise ShaderException(msg)
-
-    def __setitem__(self, key: slice | int, value: Sequence) -> None:
-        if isinstance(key, slice):
-            self._c_array[key] = value
-            self._update_uniform(self._ptr)
-            return
-
-        self._c_array[key] = value
-
-        if self._uniform.length > 1:
-            assert len(
-                value) == self._uniform.length, (f"Setting this key requires {self._uniform.length} values, "
-                                                 f"received {len(value)}.")
-            data = (self._gl_type * self._uniform.length)(*value)
-        else:
-            data = self._gl_type(value)
-
-        self._update_uniform(data, offset=key)
-
-    def get(self) -> _UniformArray:
-        self._gl_getter(self._uniform.program, self._uniform.location, self._ptr)
-        return self
-
-    def set(self, values: Sequence) -> None:
-        assert len(self._c_array) == len(
-            values), f"Size of data ({len(values)}) does not match size of the uniform: {len(self._c_array)}."
-
-        self._c_array[:] = values
-        self._update_uniform(self._ptr)
-
-    def _update_uniform(self, data: Sequence, offset: int = 0) -> None:
-        if offset != 0:
-            size = 1
-        else:
-            size = self._uniform.size
-
-        location = self._get_location_for_index(offset)
-
+    def _apply_uniform_update(self, location: int, size: int, data: Sequence) -> None:
         if self._dsa:
             if self._is_matrix:
                 self._gl_setter(self._uniform.program, location, size, GL_FALSE, data)
@@ -349,11 +248,6 @@ class _UniformArray:
             else:
                 self._gl_setter(location, size, data)
 
-    def __repr__(self) -> str:
-        data = [tuple(data) if self._uniform.length > 1 else data for data in self._c_array]
-        return f"UniformArray(uniform={self._uniform}, data={data})"
-
-
 _gl_matrices: tuple[int, ...] = (
     gl.GL_FLOAT_MAT2, gl.GL_FLOAT_MAT2x3, gl.GL_FLOAT_MAT2x4,
     gl.GL_FLOAT_MAT3, gl.GL_FLOAT_MAT3x2, gl.GL_FLOAT_MAT3x4,
@@ -361,45 +255,49 @@ _gl_matrices: tuple[int, ...] = (
 )
 
 
-class _Uniform:
-    type: int
-    size: int
-    location: int
-    program: int
-    name: str
-    length: int
-    get: Callable[[], Array[GLDataType] | GLDataType]
-    set: Callable[[float], None] | Callable[[Sequence], None]
-
-    __slots__ = 'count', 'get', 'length', 'location', 'name', 'program', 'set', 'size', 'type'
+class _Uniform(UniformBase):
+    _ctx: OpenGLSurfaceContext
+    _dsa: bool
+    __slots__ = "_ctx", "_dsa"
 
     def __init__(self, ctx, program: int, name: str, uniform_type: int, size: int, location: int, dsa: bool) -> None:
-        self.name = name
-        self.type = uniform_type
-        self.size = size
-        self.location = location
-        self.program = program
+        self._ctx = ctx
+        self._dsa = dsa
+        super().__init__(
+            name=name,
+            uniform_type=uniform_type,
+            size=size,
+            location=location,
+            program=program,
+            matrix_types=_gl_matrices,
+            array_wrapper_factory=lambda uniform, gl_getter, gl_setter, gl_type, is_matrix:
+                _UniformArray(uniform, gl_getter, gl_setter, gl_type, is_matrix, dsa),
+        )
 
-        gl_type, gl_setter_legacy, gl_setter_dsa, length = ctx.uniform_setters[uniform_type]
-        gl_setter = gl_setter_dsa if dsa else gl_setter_legacy
-        gl_getter = ctx.uniform_getters[gl_type]
+    def _get_uniform_accessors(self, uniform_type: int) -> tuple[GLDataType, GLFunc, GLFunc, int]:
+        gl_type, gl_setter_legacy, gl_setter_dsa, length = self._ctx.uniform_setters[uniform_type]
+        gl_setter = gl_setter_dsa if self._dsa else gl_setter_legacy
+        gl_getter = self._ctx.uniform_getters[gl_type]
+        return gl_type, gl_getter, gl_setter, length
 
-        # Argument length of data
-        self.length = length
-
-        is_matrix = uniform_type in _gl_matrices
-
-        # If it's an array, use the wrapper object.
-        if size > 1:
-            array = _UniformArray(self, gl_getter, gl_setter, gl_type, is_matrix, dsa)
-            self.get = array.get
-            self.set = array.set
-        else:
-            c_array: Array[GLDataType] = (gl_type * length)()
-            ptr = cast(c_array, POINTER(gl_type))
-
-            self.get = self._create_getter_func(program, location, gl_getter, c_array, length)
-            self.set = self._create_setter_func(ctx, program, location, gl_setter, c_array, length, ptr, is_matrix, dsa)
+    def _create_scalar_get_set(
+        self,
+        *,
+        program: int,
+        location: int,
+        gl_getter: GLFunc,
+        gl_setter: GLFunc,
+        gl_type: GLDataType,
+        length: int,
+        is_matrix: bool,
+    ) -> tuple[Callable, Callable]:
+        c_array: Array[GLDataType] = (gl_type * length)()
+        ptr = cast(c_array, POINTER(gl_type))
+        getter = self._create_getter_func(program, location, gl_getter, c_array, length)
+        setter = self._create_setter_func(
+            self._ctx, program, location, gl_setter, c_array, length, ptr, is_matrix, self._dsa,
+        )
+        return getter, setter
 
     @staticmethod
     def _create_getter_func(program_id: int, location: int, gl_getter: GLFunc, c_array: Array[GLDataType],
@@ -472,86 +370,11 @@ def get_maximum_binding_count() -> int:
     return pyglet.graphics.api.core.current_context.get_info().MAX_UNIFORM_BUFFER_BINDINGS
 
 
-class _UBOBindingManager:
-    """Manages the global Uniform Block binding assignments in the OpenGL context."""
-    _in_use: set[int]
-    _pool: list[int]
-    _max_binding_count: int
-    _ubo_names: dict[str, int]
-    _ubo_programs: defaultdict[Any, weakref.WeakSet[ShaderProgram]]
+class _UBOBindingManager(UBOBindingManager):
+    """OpenGL-backed Uniform Block binding manager."""
 
     def __init__(self) -> None:
-        self._ubo_programs = defaultdict(weakref.WeakSet)
-        # Reserve 'WindowBlock' for 0.
-        self._ubo_names = {'WindowBlock': 0}
-        self._max_binding_count = get_maximum_binding_count()
-        self._pool = list(range(1, self._max_binding_count))
-        self._in_use = {0}
-
-    @property
-    def max_value(self) -> int:
-        return self._max_binding_count
-
-    def get_name(self, binding: int) -> str | None:
-        """Return the uniform name associated with the binding number."""
-        for name, current_binding in self._ubo_names.items():
-            if binding == current_binding:
-                return name
-        return None
-
-    def binding_exists(self, binding: int) -> bool:
-        """Check if a binding index value is in use."""
-        return binding in self._in_use
-
-    def add_explicit_binding(self, shader_program: ShaderProgram, ub_name: str, binding: int) -> None:
-        """Used when a uniform block has set its own binding point."""
-        self._ubo_programs[ub_name].add(shader_program)
-        self._ubo_names[ub_name] = binding
-        if binding in self._pool:
-            self._pool.remove(binding)
-        self._in_use.add(binding)
-
-    def get_binding(self, shader_program: ShaderProgram, ub_name: str) -> int:
-        """Retrieve a global Uniform Block Binding ID value."""
-        self._ubo_programs[ub_name].add(shader_program)
-
-        if ub_name in self._ubo_names:
-            return self._ubo_names[ub_name]
-
-        self._check_freed_bindings()
-
-        binding = self._get_new_binding()
-        self._ubo_names[ub_name] = binding
-        return binding
-
-    def _check_freed_bindings(self) -> None:
-        """Find and remove any Uniform Block names that no longer have a shader in use."""
-        for ubo_name in list(self._ubo_programs):
-            if ubo_name != 'WindowBlock' and not self._ubo_programs[ubo_name]:
-                del self._ubo_programs[ubo_name]
-                # Return the binding number to the pool.
-                self.return_binding(self._ubo_names[ubo_name])
-                del self._ubo_names[ubo_name]
-
-    def _get_new_binding(self) -> int:
-        if not self._pool:
-            msg = "All Uniform Buffer Bindings are in use."
-            raise ValueError(msg)
-
-        number = self._pool.pop(0)
-        self._in_use.add(number)
-        return number
-
-    def return_binding(self, index: int) -> None:
-        if index in self._in_use:
-            self._pool.append(index)
-            self._in_use.remove(index)
-        else:
-            msg = f"Uniform binding point: {index} is not in use."
-            raise ValueError(msg)
-
-# Regular expression to detect array indices like [0], [1], etc.
-array_regex = re.compile(r"(\w+)\[(\d+)\]")
+        super().__init__(get_maximum_binding_count())
 
 class GLUniformBlock(BaseUniformBlock):
     __slots__ = ('_context',)
@@ -599,94 +422,8 @@ class GLUniformBlock(BaseUniformBlock):
         # gl.glGetActiveUniformsiv(p_id, active_count, indices, gl.GL_UNIFORM_TYPE, gl_types_ptr)
         # gl.glGetActiveUniformsiv(p_id, active_count, indices, gl.GL_UNIFORM_MATRIX_STRIDE, stride_ptr)
 
-        array_sizes = {}
-        dynamic_structs = {}
-        p_count = 0
-
-        def rep_func(s):
-            names_fields = ", ".join((f"{k}={v.__name__}" for k, v in dict(s._fields_).items()))
-            return f"UBOView({names_fields})"
-
-        def build_ctypes_struct(name: str, struct_dict: dict) -> type:
-            fields = []
-            for field_name, field_type in struct_dict.items():
-                if isinstance(field_type, dict):
-                    # Recursive call for nested structures
-                    element_struct = build_ctypes_struct(field_name, field_type)
-                    field_type = element_struct  # noqa: PLW2901
-                    if field_name in array_sizes and array_sizes[field_name] > 1:
-                        field_type = element_struct * array_sizes[field_name]  # noqa: PLW2901
-                else:
-                    # This handles base types like c_float_Array_2, which isn't a dict.
-                    fields.append((field_name, field_type))
-                    continue
-                fields.append((field_name, field_type))
-
-            return type(name.title(), (Structure,), {"_fields_": fields, "__repr__": rep_func})
-
-        # Build a ctypes Structure of the uniforms including arrays and nested structures.
-        for i in range(active_count):
-            u_name, gl_type, length, u_size = self.uniforms[indices[i]]
-
-            parts = u_name.split(".")
-
-            current_structure = dynamic_structs
-            for part_idx, part in enumerate(parts):
-                part_name = part
-                match = array_regex.match(part_name)
-                if match:  # It's an array
-                    arr_name, index = match.groups()
-                    part_name = arr_name
-
-                    if part_idx != len(parts) - 1:
-                        index = int(index)  # Convert the index to an integer
-
-                        # Track array sizes for the current array name
-                        array_sizes[arr_name] = max(array_sizes.get(arr_name, 0), index + 1)
-                        if array_sizes[arr_name] > 1:
-                            break
-
-                        if arr_name not in current_structure:
-                            current_structure[arr_name] = {}
-
-                        current_structure = current_structure[arr_name]  # Move to the correct index of the array
-                        continue
-
-                # The end should be a regular attribute
-                if part_idx == len(parts) - 1:  # The last part is the actual type
-                    if u_size > 1:
-                        # If size > 1, treat as an array of type
-                        if length > 1:
-                            current_structure[part_name] = (gl_type * length) * u_size
-                        else:
-                            current_structure[part_name] = gl_type * u_size
-                    else:
-                        if length > 1:
-                            current_structure[part_name] = gl_type * length
-                        else:
-                            current_structure[part_name] = gl_type
-
-                    offset_size = offsets[i + 1] - offsets[i]
-                    c_type_size = sizeof(current_structure[part_name])
-                    padding = offset_size - c_type_size
-
-                    # TODO: Cannot get a different stride on my hardware. Needs testing.
-                    # is_matrix = gl_types[i] in _gl_matrices
-                    # if is_matrix:
-                    #     stride_padding = (mat_stride[i] // 4) * 4 - offset_size
-                    #     if stride_padding > 0:
-                    #         view_fields.append((f'_matrix_stride{i}', c_byte * stride_padding))
-
-                    if padding > 0:
-                        current_structure[f'_padding{p_count}'] = c_byte * padding
-                        p_count += 1
-                else:
-                    if part_name not in current_structure:
-                        current_structure[part_name] = {}
-                    current_structure = current_structure[part_name]  # Drill down into nested structures
-
-        # Custom ctypes Structure for Uniform access:
-        return build_ctypes_struct('View', dynamic_structs)
+        uniforms = [self.uniforms[indices[i]] for i in range(active_count)]
+        return _build_uniform_struct_from_uniforms("View", uniforms, offsets)
 
     def _actual_binding_point(self) -> int:
         """Queries OpenGL to find what the bind point currently is."""
@@ -1396,7 +1133,7 @@ class GLShaderProgram(ShaderProgram):
             raise ShaderException from err
 
     def _vertex_list_create(self, count: int, mode: GeometryMode, indices: Sequence[int] | None = None,
-                            instances: dict[str, int] | None = None, batch: Batch = None, group: Group = None,
+                            instances: dict[str, int] | None = None, batch: Batch | None = None, group: Group | None = None,
                             **data: Any) -> VertexList | InstanceVertexList | IndexedVertexList | InstanceIndexedVertexList:
         assert isinstance(mode, GeometryMode), f"Mode {mode} is not geometry mode."
         attributes = {}
@@ -1449,7 +1186,7 @@ class GLShaderProgram(ShaderProgram):
 
         return vlist
 
-    def vertex_list(self, count: int, mode: GeometryMode, batch: Batch = None, group: Group = None,
+    def vertex_list(self, count: int, mode: GeometryMode, batch: Batch | None = None, group: Group | None = None,
                     **data: Any) -> VertexList:
         """Create a VertexList.
 
