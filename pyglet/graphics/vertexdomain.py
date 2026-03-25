@@ -53,14 +53,14 @@ def _nearest_pow2(v: int) -> int:
 
 def _make_attribute_property(name: str) -> property:
     def _attribute_getter(self: VertexList) -> Array[float | int]:
-        buffer = self.domain.attrib_name_buffers[name]
-        region = buffer.get_attribute_region(name, self.start, self.count)
-        buffer.invalidate_attribute_region(name, self.start, self.count)
+        stream = self.domain.attrib_name_buffers[name]
+        region = stream.get_attribute_region(name, self.start, self.count)
+        stream.invalidate_attribute_region(name, self.start, self.count)
         return region
 
     def _attribute_setter(self: VertexList, data: Any) -> None:
-        buffer = self.domain.attrib_name_buffers[name]
-        buffer.set_region(self.start, self.count, data)
+        stream = self.domain.attrib_name_buffers[name]
+        stream.set_attribute_region(name, self.start, self.count, data)
 
     return property(_attribute_getter, _attribute_setter)
 
@@ -852,7 +852,7 @@ class VertexStream(Stream):
 
     def set_attribute_region(self, name: str, start: int, count: int, data: Any):
         buf = self.attrib_name_buffers[name]
-        return buf.set_region(start, count)
+        return buf.set_region(start, count, data)
 
     def get_attribute_region(self, name: str, start: int, count: int):
         buf = self.attrib_name_buffers[name]
