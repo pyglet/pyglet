@@ -1,6 +1,27 @@
-from ctypes import *
-
-import sys, platform, struct
+from ctypes import (
+    CFUNCTYPE,
+    Structure,
+    c_bool,
+    c_char,
+    c_char_p,
+    c_double,
+    c_float,
+    c_int,
+    c_long,
+    c_longlong,
+    c_short,
+    c_ubyte,
+    c_uint,
+    c_uint32,
+    c_ulong,
+    c_ulonglong,
+    c_ushort,
+    c_void_p,
+    c_wchar,
+    py_object,
+)
+import platform
+import struct
 
 __LP64__ = (8*struct.calcsize("P") == 64)
 __i386__ = (platform.machine() == 'i386')
@@ -17,6 +38,9 @@ def encoding_for_ctype(vartype):
 # Note CGBase.h located at
 # /System/Library/Frameworks/ApplicationServices.framework/Frameworks/CoreGraphics.framework/Headers/CGBase.h
 # defines CGFloat as double if __LP64__, otherwise it's a float.
+NSInteger: type[c_long] | type[c_int]
+NSUInteger: type[c_ulong] | type[c_uint]
+CGFloat: type[c_double] | type[c_float]
 if __LP64__:
     NSInteger = c_long
     NSUInteger = c_ulong

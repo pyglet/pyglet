@@ -4,7 +4,7 @@ import atexit
 import os
 import weakref
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Protocol, get_type_hints, Sequence, Callable
+from typing import TYPE_CHECKING, Any, Protocol, get_type_hints, Sequence, Callable, NoReturn
 
 if TYPE_CHECKING:
     from pyglet.math import Mat4
@@ -66,6 +66,28 @@ class BackendGlobalObject(ABC):  # Temp name for now.
         with open(resource_path, 'rb') as file:
             return file.read()
 
+class NullBackend(BackendGlobalObject):  # noqa: D101
+    def _raise_no_backend(self) -> NoReturn:
+        msg = ("A backend is not currently available. Ensure the backend choice is correct. "
+               "If your environment variable is set to no backend, then backend-required resources may have been imported.")
+        raise RuntimeError(msg)
+
+    @property
+    def object_space(self) -> ObjectSpace:
+        self._raise_no_backend()
+
+    def get_surface_context(self, window: Window, config) -> SurfaceContext:
+        self._raise_no_backend()
+
+    def get_default_configs(self) -> Sequence:
+        self._raise_no_backend()
+
+    def initialize_matrices(self, window: Window) -> None:
+        self._raise_no_backend()
+
+    def set_viewport(self, window, x: int, y: int, width: int, height: int) -> None:
+        self._raise_no_backend()
+
 
 class SurfaceContext(ABC):  # Temp name for now.
     """A container for backend resources and information that are tied to a specific Window.
@@ -119,10 +141,20 @@ class NullContext:
               (for example as an argument to a ctypes call).
     """
 
-    def __getattribute__(self, item):
+    @staticmethod
+    def _raise_no_context() -> NoReturn:
         msg = ("A rendering Context has not yet been created, or has already been deleted. Please ensure "
                "a context exists (create a Window) before attempting to perform any GPU related activities.")
         raise RuntimeError(msg)
+
+    def __getattribute__(self, item):
+        self._raise_no_context()
+
+    def __enter__(self) -> NoReturn:
+        self._raise_no_context()
+
+    def __exit__(self, *_args: Any) -> None:
+        return None
 
     def __eq__(self, other):
         return other is None

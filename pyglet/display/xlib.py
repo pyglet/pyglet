@@ -348,6 +348,7 @@ class XlibScreenXinerama(XlibScreen):
 
 
 class XlibScreenXrandr(XlibScreen):
+    display: XlibDisplay
     def __init__(
         self,
         display: XlibDisplay,
