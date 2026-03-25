@@ -95,7 +95,7 @@ class ShaderProgram(ABC):
         On some backends like OpenGL, this is unnecessary unless you want to redefine the buffers.
         """
         for attrib in attributes:
-            self._attributes[attrib.name] = attrib
+            self._attributes[attrib.fmt.name] = attrib
 
     def set_uniform_blocks(self, *uniform_blocks: UniformBlockDesc) -> None:
         for ub in uniform_blocks:
@@ -133,11 +133,11 @@ class ShaderProgram(ABC):
         return self._uniform_blocks
 
     def _vertex_list_create(self, count: int, mode: GeometryMode, indices: Sequence[int] | None = None,
-                            instances: Sequence[str] | None = None, batch: Batch = None, group: Group = None,
+                            instances: Sequence[str] | None = None, batch: Batch | None = None, group: Group | None = None,
                             **data: Any) -> VertexList | InstanceVertexList | IndexedVertexList | InstanceIndexedVertexList:
         raise NotImplementedError
 
-    def vertex_list(self, count: int, mode: GeometryMode, batch: Batch = None, group: Group = None,
+    def vertex_list(self, count: int, mode: GeometryMode, batch: Batch | None = None, group: Group | None = None,
                     **data: Any) -> VertexList:
         """Create a VertexList.
 
@@ -159,13 +159,13 @@ class ShaderProgram(ABC):
         """
         return self._vertex_list_create(count, mode, None, None, batch=batch, group=group, **data)
 
-    def vertex_list_instanced(self, count: int, mode: GeometryMode, instance_attributes: dict[str, int], batch: Batch = None,
-                              group: Group = None, **data: Any) -> InstanceVertexList:
+    def vertex_list_instanced(self, count: int, mode: GeometryMode, instance_attributes: dict[str, int],
+                              batch: Batch | None = None, group: Group | None = None, **data: Any) -> InstanceVertexList:
         assert len(instance_attributes) > 0, "You must provide at least one attribute name to be instanced."
         return self._vertex_list_create(count, mode, None, instance_attributes, batch=batch, group=group, **data)
 
-    def vertex_list_indexed(self, count: int, mode: GeometryMode, indices: Sequence[int], batch: Batch = None,
-                            group: Group = None, **data: Any) -> IndexedVertexList:
+    def vertex_list_indexed(self, count: int, mode: GeometryMode, indices: Sequence[int], batch: Batch | None = None,
+                            group: Group | None = None, **data: Any) -> IndexedVertexList:
         """Create a IndexedVertexList.
 
         Args:
@@ -188,7 +188,7 @@ class ShaderProgram(ABC):
         return self._vertex_list_create(count, mode, indices, None, batch=batch, group=group, **data)
 
     def vertex_list_instanced_indexed(self, count: int, *, mode: GeometryMode, indices: Sequence[int],
-                                      instance_attributes: Sequence[str], batch: Batch = None, group: Group = None,
+                                      instance_attributes: Sequence[str], batch: Batch | None = None, group: Group | None = None,
                                       **data: Any) -> InstanceIndexedVertexList:
         assert len(instance_attributes) > 0, "You must provide at least one attribute name to be instanced."
         return self._vertex_list_create(count, mode, indices, instance_attributes, batch=batch, group=group, **data)
@@ -349,7 +349,7 @@ class UniformBlock:
     size: int
     binding: int
     uniforms: dict
-    view_cls: type[ctypes.Structure] | None
+    view_cls: type[ctypes.Structure]
     __slots__ = 'binding', 'index', 'name', 'program', 'size', 'uniform_count', 'uniforms', 'view_cls'
 
     def __init__(self, program: ShaderProgram, name: str, index: int, size: int, binding: int,

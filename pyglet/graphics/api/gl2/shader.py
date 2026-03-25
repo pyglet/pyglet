@@ -21,6 +21,7 @@ from pyglet.graphics.api.gl.shader import GLShaderProgram
 from pyglet.graphics.shader import ShaderException, ShaderSource, ShaderType
 
 if TYPE_CHECKING:
+    from pyglet.graphics.api.base import NullContext
     from pyglet.graphics.api.gl import OpenGLSurfaceContext
     from pyglet.customtypes import CType, DataTypes
 
@@ -154,7 +155,7 @@ class Shader(GLShader):
     You can reuse a Shader object in multiple ShaderPrograms.
     """
 
-    _context: OpenGLSurfaceContext | None
+    _context: OpenGLSurfaceContext | NullContext
     _id: int | None
     type: ShaderType
 

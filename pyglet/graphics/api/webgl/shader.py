@@ -25,6 +25,7 @@ from typing import TYPE_CHECKING, Any, Callable, Sequence, Type, Union
 import pyglet
 
 from pyglet.enums import GeometryMode
+from pyglet.graphics.api.base import NullContext
 from pyglet.graphics.api.webgl import gl
 from pyglet.graphics.api.webgl.buffer import WebGLUniformBufferObject
 from pyglet.graphics.api.webgl.gl import (
@@ -340,7 +341,7 @@ _gl_matrices: tuple[int, ...] = (
 
 
 class _Uniform:
-    _ctx: OpenGLSurfaceContext | None
+    _ctx: OpenGLSurfaceContext | NullContext
     type: int
     size: int
     location: int
@@ -564,7 +565,7 @@ def compute_std140_offsets(uniforms):
 
 
 class WebGLUniformBlock(BaseUniformBlock):  # noqa: D101
-    ctx: OpenGLSurfaceContext | None
+    ctx: OpenGLSurfaceContext | NullContext
     __slots__ = ('ctx',)
 
     def __init__(
@@ -787,10 +788,10 @@ def _introspect_uniform_blocks(
 
         uniforms: dict[int, tuple[str, GLDataType, int, int]] = {}
 
-        if not hasattr(pyglet.graphics.api.core.current_context, "ubo_manager"):
-            pyglet.graphics.api.core.current_context.ubo_manager = _UBOBindingManager()
+        if not hasattr(ctx, "ubo_manager"):
+            ctx.ubo_manager = _UBOBindingManager()
 
-        manager = pyglet.graphics.api.core.current_context.ubo_manager
+        manager = ctx.ubo_manager
 
         for block_uniform_index in indices:
             uniform_name, u_type, u_size = _query_uniform(gl_ctx, program_id, block_uniform_index)
@@ -903,7 +904,7 @@ class WebGLShader(Shader):
     You can reuse a Shader object in multiple ShaderPrograms.
     """
 
-    _context: OpenGLSurfaceContext | None
+    _context: OpenGLSurfaceContext | NullContext
     _id: int | None
     type: ShaderType
 
@@ -992,7 +993,8 @@ class WebGLShader(Shader):
     def __del__(self) -> None:
         if self._id is not None:
             try:
-                self._context.delete_shader(self._id)
+                if not isinstance(self._context, NullContext):
+                    self._context.delete_shader(self._id)
                 if _debug_api_shaders:
                     print(f"Destroyed {self.type} Shader '{self._id}'")
                 self._id = None
@@ -1007,7 +1009,7 @@ class WebGLShaderProgram(ShaderProgram):
     """OpenGL shader program."""
 
     _id: int | WebGLProgram | None
-    _context: OpenGLSurfaceContext | None
+    _context: OpenGLSurfaceContext | NullContext
     _uniforms: dict[str, _Uniform]
     _uniform_blocks: dict[str, WebGLUniformBlock]
 
@@ -1079,7 +1081,8 @@ class WebGLShaderProgram(ShaderProgram):
     def __del__(self) -> None:
         if self._id is not None:
             try:
-                self._context.delete_shader_program(self._id)
+                if not isinstance(self._context, NullContext):
+                    self._context.delete_shader_program(self._id)
                 self._id = None
             except (AttributeError, ImportError):
                 pass  # Interpreter is shutting down

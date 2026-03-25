@@ -55,6 +55,7 @@ from pyglet.util import debug_print
 
 if TYPE_CHECKING:
     from _weakref import CallableProxyType
+    from pyglet.graphics.api.base import NullContext
     from pyglet.customtypes import CTypesPointer, DataTypes, CType
     from pyglet.graphics import Batch, Group
     from pyglet.graphics.api.gl.vertexdomain import InstanceVertexList, InstanceIndexedVertexList
@@ -1171,7 +1172,7 @@ class GLShader(Shader):
     Shader objects are compiled on instantiation.
     You can reuse a Shader object in multiple ShaderPrograms.
     """
-    _context: OpenGLSurfaceContext | None
+    _context: OpenGLSurfaceContext | NullContext
     _id: int | None
     type: ShaderType
 
@@ -1282,7 +1283,7 @@ class GLShader(Shader):
 class GLShaderProgram(ShaderProgram):
     """OpenGL shader program."""
     _id: int | None
-    _context: OpenGLSurfaceContext | None
+    _context: OpenGLSurfaceContext | NullContext
     _uniforms: dict[str, _Uniform]
     _uniform_blocks: dict[str, GLUniformBlock]
     _shader_storage_blocks: dict[str, GLShaderStorageBlock]
@@ -1512,7 +1513,7 @@ class GLShaderProgram(ShaderProgram):
 
 class GLComputeShaderProgram:
     """OpenGL Compute Shader Program."""
-    _context: OpenGLSurfaceContext | None
+    _context: OpenGLSurfaceContext | NullContext
     _id: int | None
     _shader: GLShader
     _uniforms: dict[str, Any]
