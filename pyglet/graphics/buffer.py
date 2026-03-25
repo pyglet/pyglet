@@ -265,15 +265,51 @@ class CTypeDataStore(BufferDataStore):
     _element_size: int
     _data: Any
     _data_ptr: int
+    _owns_memory: bool
 
-    def __init__(self, size: int, data_type: DataTypes, stride: int, element_count: int) -> None:
+    def __init__(
+        self,
+        size: int,
+        data_type: DataTypes,
+        stride: int,
+        element_count: int,
+        data_ptr: int | None = None,
+    ) -> None:
+        """Create a ctypes-backed typed data store.
+
+        Args:
+            size:
+                Total byte size for the store.
+            data_type:
+                Struct-format data type code (for example ``"f"`` or ``"I"``)
+                used to determine the underlying ctypes type and element size.
+            stride:
+                Byte stride for one logical element in this buffer layout.
+            element_count:
+                Number of scalar values per logical element.
+            data_ptr:
+                Optional pointer to externally owned memory. When provided, this
+                store binds to that memory instead of allocating its own ctypes
+                array.
+
+        Note:
+            The ``_owns_memory`` flag indicates whether this store allocated its
+            own backing array (``True``) or is bound to external memory
+            (``False``). This is used to protect ``resize``: externally backed
+            stores cannot reallocate memory and must be rebound with
+            ``rebind_external``.
+        """
         self.data_type = data_type
         self._ctype = _data_type_to_ctype(data_type)
         self._element_size = _data_type_size(data_type)
         self.stride = stride
         self.element_count = element_count
         self.size = size
-        self._allocate(size)
+        self._owns_memory = data_ptr is None
+        if data_ptr is None:
+            self._allocate(size)
+        else:
+            self._bind_external_memory(data_ptr)
 
     @property
     def data(self) -> Array[Any]:
@@ -296,6 +332,37 @@ class CTypeDataStore(BufferDataStore):
         count = size // self._element_size
         self._data = (self._ctype * count)()
         self._data_ptr = ctypes.addressof(self._data)
+
+    def _bind_external_memory(self, data_ptr: int) -> None:
+        """Bind this store to an external memory region.
+
+        The region is assumed to stay valid for the lifetime of the binding.
+        The store creates a typed ctypes view over that pointer so normal
+        ``get/set_region`` and ``get/set_bytes`` operations work without copying.
+
+        Args:
+            data_ptr:
+                Integer pointer address for the externally managed memory block.
+                The block must be large enough for ``self.size`` bytes.
+        """
+        assert data_ptr != 0, "External data pointer must be non-zero."
+        assert self.size % self._element_size == 0, (
+            f"Buffer size {self.size} is not aligned to element size {self._element_size} "
+            f"for data type '{self.data_type}'."
+        )
+
+        self._data_ptr = data_ptr
+        count = self.size // self._element_size
+        if count > 0:
+            self._data = (self._ctype * count).from_address(data_ptr)
+        else:
+            self._data = (self._ctype * 0)()
+
+    def rebind_external(self, size: int, data_ptr: int) -> None:
+        """Rebind this store to a new externally-owned memory region."""
+        self.size = size
+        self._owns_memory = False
+        self._bind_external_memory(data_ptr)
 
     def _validate_byte_range(self, offset: int, length: int) -> None:
         assert offset >= 0 and length >= 0, "Offset and length must be non-negative."  # noqa: PT018
@@ -336,6 +403,7 @@ class CTypeDataStore(BufferDataStore):
         ctypes.memmove(self._data_ptr + byte_dst, self._data_ptr + byte_src, byte_size)
 
     def resize(self, size: int) -> None:
+        assert self._owns_memory, "Cannot resize an externally backed store. Use rebind_external instead."
         old_data = self._data
         old_size = self.size
         self.size = size

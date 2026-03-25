@@ -42,8 +42,6 @@ from pyglet.graphics.buffer import (
     TextureBuffer,
     TransformFeedbackBuffer,
     UniformBufferObject,
-    _data_type_size,
-    _data_type_to_ctype,
 )
 
 if TYPE_CHECKING:
@@ -430,8 +428,7 @@ class PersistentBufferObject(BaseMappedBufferObject):
     stride: int
     element_count: int
     data_type: DataTypes
-    _ctype: type[object]
-    _element_size: int
+    store: CTypeDataStore | None
     _mapped: object | None
     _mapped_ptr: int
     _storage_size: int
@@ -453,11 +450,10 @@ class PersistentBufferObject(BaseMappedBufferObject):
         self.stride = graphics_attr.view.stride
         self.element_count = graphics_attr.attribute.fmt.components
         self.data_type = graphics_attr.attribute.fmt.data_type
-        self._ctype = _data_type_to_ctype(self.data_type)
-        self._element_size = _data_type_size(self.data_type)
         self.flags = GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT
 
         self.id = None
+        self.store = None
         self._mapped = None
         self._mapped_ptr = 0
         self._storage_size = 0
@@ -495,6 +491,16 @@ class PersistentBufferObject(BaseMappedBufferObject):
         self._mapped = new_mapped
         self._mapped_ptr = new_ptr
         self._storage_size = storage_size
+        if self.store is None:
+            self.store = CTypeDataStore(
+                size,
+                self.data_type,
+                self.stride,
+                self.element_count,
+                data_ptr=new_ptr,
+            )
+        else:
+            self.store.rebind_external(size, new_ptr)
         self.get_region.cache_clear()
 
         if old_id is not None:
@@ -504,9 +510,22 @@ class PersistentBufferObject(BaseMappedBufferObject):
         assert self._mapped_ptr != 0, "PersistentBufferObject is not mapped."
         return self._mapped_ptr
 
+    def _require_store(self) -> CTypeDataStore:
+        self._require_mapped_ptr()
+        assert self.store is not None, "PersistentBufferObject store is not initialized."
+        return self.store
+
+    @property
+    def data(self):
+        return self._require_store().data
+
+    @property
+    def data_ptr(self) -> int:
+        return self._require_store().data_ptr
+
     @property
     def element_size(self) -> int:
-        return self._element_size
+        return self._require_store().element_size
 
     def bind(self) -> None:
         self._context.glBindBuffer(self.target, self.id)
@@ -515,21 +534,21 @@ class PersistentBufferObject(BaseMappedBufferObject):
         self._context.glBindBuffer(self.target, 0)
 
     def get_bytes(self) -> bytes:
-        return ctypes.string_at(self._require_mapped_ptr(), self.size)
+        return self._require_store().get_bytes()
 
     def get_bytes_region(self, offset: int, length: int) -> bytes:
         self._validate_byte_range(offset, length)
-        return ctypes.string_at(self._require_mapped_ptr() + offset, length)
+        return self._require_store().get_bytes(offset, length)
 
     def set_bytes(self, data: bytes | bytearray | memoryview) -> None:
         raw = bytes(data)
         assert len(raw) == self.size, f"Expected {self.size} bytes for full upload, got {len(raw)}."
-        ctypes.memmove(self._require_mapped_ptr(), raw, self.size)
+        self._require_store().set_bytes(0, raw)
 
     def set_bytes_region(self, offset: int, data: bytes | bytearray | memoryview) -> None:
         raw = bytes(data)
         self._validate_byte_range(offset, len(raw))
-        ctypes.memmove(self._require_mapped_ptr() + offset, raw, len(raw))
+        self._require_store().set_bytes(offset, raw)
 
     def map(self, bits: int = GL_WRITE_ONLY) -> CTypesPointer[ctypes.c_byte]:  # noqa: ARG002
         ptr_type = ctypes.POINTER(ctypes.c_byte * self.size)
@@ -574,22 +593,11 @@ class PersistentBufferObject(BaseMappedBufferObject):
         byte_size = self.stride * count
         self._validate_byte_range(byte_start, byte_size)
 
-        array_count = self.element_count * count
-        ptr_type = ctypes.POINTER(self._ctype * array_count)
-        return ctypes.cast(self._require_mapped_ptr() + byte_start, ptr_type).contents
+        return self._require_store().get_region(start, count)
 
     def set_region(self, start: int, count: int, data: Sequence[float | int]) -> None:
         assert start >= 0 and count >= 0, "Start and count must be non-negative."  # noqa: PT018
-        array_start = self.element_count * start
-        array_end = self.element_count * count + array_start
-        typed_count = self.size // self._element_size
-        assert array_end <= typed_count, (
-            f"Region [{array_start}, {array_end}) exceeds typed element count {typed_count}."
-        )
-
-        ptr_type = ctypes.POINTER(self._ctype * typed_count)
-        typed = ctypes.cast(self._require_mapped_ptr(), ptr_type).contents
-        typed[array_start:array_end] = data
+        self._require_store().set_region(start, count, data)
 
     def resize(self, size: int) -> None:
         assert size >= 0, "Size must be non-negative."
