@@ -32,7 +32,7 @@ class State:
 
         Dependents flag must be set to True for this to have any effect.
         """
-        yield
+        yield None
 
     def set_state(self, ctx: SurfaceContext) -> None:
         """Called when the state is set (enters scope)."""

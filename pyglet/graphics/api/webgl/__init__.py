@@ -223,7 +223,7 @@ class WebGLBackend(BackendGlobalObject):
     def have_context(self) -> bool:
         return self._have_context
 
-    def initialize_matrices(self, window):
+    def initialize_matrices(self, window: Window) -> OpenGL3_Matrices:
         return OpenGL3_Matrices(window, self)
 
     def set_viewport(self, window, x: int, y: int, width: int, height: int) -> None:

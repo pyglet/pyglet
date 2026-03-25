@@ -235,6 +235,7 @@ class XlibDisplay(LinuxSelectDevice, Display):
 
 class XlibScreen(Screen):
     _initial_mode = None
+    display: XlibDisplay
 
     def __init__(self, display: XlibDisplay, x: int, y: int, width: int, height: int):
         super().__init__(display, x, y, width, height)

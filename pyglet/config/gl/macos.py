@@ -41,7 +41,7 @@ catalina:       19.0 -> 19.6
 big_sur:        20.0 ->
 """
 
-os_x_release: dict[str, tuple[float] | tuple[float, float] | tuple[float, float, float]] = {
+os_x_release: dict[str, tuple[float, ...]] = {
     'pre-release': (0, 1),
     'kodiak': (1, 2, 1),
     'cheetah': (1, 3, 1),
@@ -64,13 +64,13 @@ os_x_release: dict[str, tuple[float] | tuple[float, float] | tuple[float, float,
 }
 
 
-def os_x_version() -> tuple[int, ...] | tuple[tuple[int, ...]]:
+def os_x_version() -> tuple[int, ...]:
     version = tuple([int(v) for v in platform.release().split('.')])
 
     # ensure we return a tuple
     if len(version) > 0:
         return version
-    return (version,)
+    return (0,)
 
 
 _os_x_version = os_x_version()

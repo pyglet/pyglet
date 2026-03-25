@@ -6,7 +6,7 @@ import pathlib
 from ctypes import POINTER, Array, byref, c_void_p, cast, create_unicode_buffer, pointer, py_object, sizeof, string_at
 from ctypes.wintypes import BOOL, FLOAT, UINT
 from enum import Flag
-from typing import TYPE_CHECKING, BinaryIO, Sequence, Generator
+from typing import TYPE_CHECKING, BinaryIO, Sequence, Generator, ClassVar
 
 import pyglet
 from pyglet.font import base, FontManager
@@ -853,20 +853,20 @@ class Win32DirectWriteFont(base.Font):
     """DirectWrite Font object for Windows 7+."""
 
     # To load fonts from files, we need to produce a custom collection.
-    _custom_collection = None
+    _custom_collection: IDWriteFontCollection1 | IDWriteFontCollection | None = None
 
     # Shared loader values
-    _write_factory = None  # Factory required to run any DirectWrite interfaces.
-    _font_loader = None
+    _write_factory: IDWriteFactory | IDWriteFactory2 | IDWriteFactory5 | IDWriteFactory7 | None = None  # Factory required to run any DirectWrite interfaces.
+    _font_loader: IDWriteInMemoryFontFileLoader | LegacyFontFileLoader | None = None
 
     # Windows 10 loader values.
-    _font_builder = None
-    _font_set = None
+    _font_builder: IDWriteFontSetBuilder1 | None = None
+    _font_set: IDWriteFontSet | None = None
 
     # Legacy loader values
-    _font_collection_loader = None
-    _font_cache = []
-    _font_loader_key = None
+    _font_collection_loader: LegacyCollectionLoader | None = None
+    _font_cache: ClassVar[list[BinaryIO]] = []
+    _font_loader_key: c_void_p | None = None
 
     _glyph_renderer = None
     _empty_glyph = None
@@ -1206,7 +1206,7 @@ class Win32DirectWriteFont(base.Font):
         if not cls._font_loader:
             cls._initialize_custom_loaders()
 
-        return _get_font_collection_family_data(cls._custom_collection)
+        return list(_get_font_collection_family_data(cls._custom_collection))
 
     @classmethod
     def add_font_data(cls: type[Win32DirectWriteFont], data: BinaryIO, font_manager: FontManager) -> None:

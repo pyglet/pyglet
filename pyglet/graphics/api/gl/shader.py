@@ -58,8 +58,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.api.base import NullContext
     from pyglet.customtypes import CTypesPointer, DataTypes, CType
     from pyglet.graphics import Batch, Group
-    from pyglet.graphics.api.gl.vertexdomain import InstanceVertexList, InstanceIndexedVertexList
-    from pyglet.graphics.vertexdomain import IndexedVertexList, VertexList
+    from pyglet.graphics.vertexdomain import IndexedVertexList, VertexList, InstanceVertexList, InstanceIndexedVertexList
 
 _debug_api_shaders = pyglet.options.debug_api_shaders
 _debug_api_shader_print = debug_print('debug_api_shaders')

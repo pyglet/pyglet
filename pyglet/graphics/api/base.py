@@ -40,7 +40,7 @@ class BackendGlobalObject(ABC):  # Temp name for now.
         """Configs to use if none specified."""
 
     @abstractmethod
-    def initialize_matrices(self, window: Window) -> None:
+    def initialize_matrices(self, window: Window) -> WindowTransformations:
         """Initialize the global matrices."""
 
     @abstractmethod
