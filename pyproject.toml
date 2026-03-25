@@ -59,7 +59,6 @@ ignore = [
     "B028",  # No explicit stack level in warn
     "FIX002",  # Fixme
     "TD003",  # Missing issue link on the line following this TODO"
-    "T201",   # allow writing print
     "I001",  # remove after refactors.
 ]
 

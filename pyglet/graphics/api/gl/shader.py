@@ -51,6 +51,7 @@ from pyglet.graphics.shader import ShaderException
 
 from pyglet.graphics.api.gl.buffer import GLUniformBufferObject
 from pyglet.enums import GeometryMode
+from pyglet.util import debug_print
 
 if TYPE_CHECKING:
     from _weakref import CallableProxyType
@@ -60,7 +61,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.vertexdomain import IndexedVertexList, VertexList
 
 _debug_api_shaders = pyglet.options.debug_api_shaders
-
+_debug_api_shader_print = debug_print('debug_api_shaders')
 
 GLDataType = Union[Type[gl.GLint], Type[gl.GLfloat], Type[gl.GLboolean], int]
 GLFunc = Callable
@@ -773,7 +774,7 @@ def _introspect_attributes(ctx, program_id: int) -> dict[str, Attribute]:
 
     if _debug_api_shaders:
         for attribute in attributes.values():
-            print(f" Found attribute: {attribute}")
+            assert _debug_api_shader_print(f" Found attribute: {attribute}")
 
     return attributes
 
@@ -860,7 +861,7 @@ def _introspect_uniforms(ctx, program_id: int, have_dsa: bool) -> dict[str, _Uni
 
     if _debug_api_shaders:
         for uniform in uniforms.values():
-            print(f" Found uniform: {uniform}")
+            assert _debug_api_shader_print(f" Found uniform: {uniform}")
 
     return uniforms
 
@@ -941,7 +942,7 @@ def _introspect_uniform_blocks(ctx, program: GLShaderProgram | GLComputeShaderPr
 
         if _debug_api_shaders:
             for block in uniform_blocks.values():
-                print(f" Found uniform block: {block}")
+                assert _debug_api_shader_print(f" Found uniform block: {block}")
 
     return uniform_blocks
 
@@ -1101,7 +1102,7 @@ def _introspect_shader_storage_blocks(
 
         if _debug_api_shaders:
             for block in storage_blocks.values():
-                print(f" Found shader storage block: {block}")
+                assert _debug_api_shader_print(f" Found shader storage block: {block}")
 
     return storage_blocks
 
@@ -1224,7 +1225,7 @@ class GLShader(Shader):
             raise ShaderException(msg)
 
         if _debug_api_shaders:
-            print(self._get_shader_log(shader_id))
+            assert _debug_api_shader_print(self._get_shader_log(shader_id))
 
     @staticmethod
     def get_string_class() -> type[GLShaderSource]:
@@ -1269,8 +1270,7 @@ class GLShader(Shader):
         if self._id is not None:
             try:
                 self._context.delete_shader(self._id)
-                if _debug_api_shaders:
-                    print(f"Destroyed {self.type} Shader '{self._id}'")
+                assert _debug_api_shader_print(f"Destroyed {self.type} Shader '{self._id}'")
                 self._id = None
             except (AttributeError, ImportError):
                 pass  # Interpreter is shutting down
@@ -1297,7 +1297,7 @@ class GLShaderProgram(ShaderProgram):
         self._id = _link_program(self._context, *shaders)
 
         if _debug_api_shaders:
-            print(_get_program_log(self._id))
+            assert _debug_api_shader_print(_get_program_log(self._context, self._id))
 
         # Query if Direct State Access is available:
 
@@ -1539,7 +1539,7 @@ class GLComputeShaderProgram:
         self._id = _link_program(self._context, self._shader)
 
         if _debug_api_shaders:
-            print(_get_program_log(self._id))
+            assert _debug_api_shader_print(_get_program_log(self._context, self._id))
 
         have_dsa = pyglet.graphics.api.have_version(4, 1) or pyglet.graphics.api.have_extension("GL_ARB_separate_shader_objects")
         self._uniforms = _introspect_uniforms(self._context, self._id, have_dsa)
