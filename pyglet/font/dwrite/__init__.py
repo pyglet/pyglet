@@ -1195,7 +1195,7 @@ class Win32DirectWriteFont(base.Font):
             cls._font_loader_key = cast(create_unicode_buffer("legacy_font_loader"), c_void_p)
 
     @classmethod
-    def get_added_fonts(cls: type[Win32DirectWriteFont]) -> list[str]:
+    def get_added_fonts(cls: type[Win32DirectWriteFont]) -> set[str]:
         """Retrieves the added Font Family names from the custom font set.
 
         Note that this API functionality is only supported in Windows 10 1607 and higher.
@@ -1206,7 +1206,7 @@ class Win32DirectWriteFont(base.Font):
         if not cls._font_loader:
             cls._initialize_custom_loaders()
 
-        return list(_get_font_collection_family_data(cls._custom_collection))
+        return _get_font_collection_family_data(cls._custom_collection)
 
     @classmethod
     def add_font_data(cls: type[Win32DirectWriteFont], data: BinaryIO, font_manager: FontManager) -> None:

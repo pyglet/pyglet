@@ -69,7 +69,8 @@ def add_version_changes(  # noqa: D103
         msg = f"Structure: {structure} from: {library} has already been added for version {version}."
         raise Exception(msg)
 
-    _version_changes[library][version][structure] = CustomField(fields, list(removals), list(repositions) if repositions else None)
+    _version_changes[library][version][structure] = CustomField(
+        fields, list(removals) if removals else None, list(repositions) if repositions else None)
 
 
 def apply_version_changes() -> None:
