@@ -53,14 +53,14 @@ def _nearest_pow2(v: int) -> int:
 
 def _make_attribute_property(name: str) -> property:
     def _attribute_getter(self: VertexList) -> Array[float | int]:
-        buffer = self.domain.attrib_name_buffers[name]
-        region = buffer.get_attribute_region(name, self.start, self.count)
-        buffer.invalidate_attribute_region(name, self.start, self.count)
+        stream = self.domain.attrib_name_buffers[name]
+        region = stream.get_attribute_region(name, self.start, self.count)
+        stream.invalidate_attribute_region(name, self.start, self.count)
         return region
 
     def _attribute_setter(self: VertexList, data: Any) -> None:
-        buffer = self.domain.attrib_name_buffers[name]
-        buffer.set_region(self.start, self.count, data)
+        stream = self.domain.attrib_name_buffers[name]
+        stream.set_attribute_region(name, self.start, self.count, data)
 
     return property(_attribute_getter, _attribute_setter)
 
@@ -154,13 +154,10 @@ class VertexList:
         stream = self.domain.attrib_name_buffers[name]
         buffer = stream.attrib_name_buffers[name]
 
-        array_start = buffer.element_count * self.start
-        array_end = buffer.element_count * self.count + array_start
         try:
-            buffer.data[array_start:array_end] = data
-            buffer.invalidate_region(self.start, self.count)
+            buffer.set_region(self.start, self.count, data)
         except ValueError:
-            msg = f"Invalid data size for '{name}'. Expected {array_end - array_start}, got {len(data)}."
+            msg = f"Invalid data size for '{name}'. Expected {buffer.element_count * self.count}, got {len(data)}."
             raise ValueError(msg) from None
 
 
@@ -187,13 +184,10 @@ class InstanceVertexList(VertexList):
             start = self.start
         buffer = stream.attrib_name_buffers[name]
 
-        array_start = buffer.element_count * start
-        array_end = buffer.element_count * count + array_start
         try:
-            buffer.data[array_start:array_end] = data
-            buffer.invalidate_region(start, count)
+            buffer.set_region(start, count, data)
         except ValueError:
-            msg = f"Invalid data size for '{buffer}'. Expected {array_end - array_start}, got {len(data)}."
+            msg = f"Invalid data size for '{buffer}'. Expected {buffer.element_count * count}, got {len(data)}."
             raise ValueError(msg) from None
 
 
@@ -390,13 +384,10 @@ class InstanceIndexedVertexList(VertexList):
             start = self.start
         buffer = stream.attrib_name_buffers[name]
 
-        array_start = buffer.element_count * start
-        array_end = buffer.element_count * count + array_start
         try:
-            buffer.data[array_start:array_end] = data
-            buffer.invalidate_region(start, count)
+            buffer.set_region(start, count, data)
         except ValueError:
-            msg = f"Invalid data size for '{buffer}'. Expected {array_end - array_start}, got {len(data)}."
+            msg = f"Invalid data size for '{buffer}'. Expected {buffer.element_count * count}, got {len(data)}."
             raise ValueError(msg) from None
 
     def dealloc_from_group(self, vertex_list):
@@ -861,7 +852,7 @@ class VertexStream(Stream):
 
     def set_attribute_region(self, name: str, start: int, count: int, data: Any):
         buf = self.attrib_name_buffers[name]
-        return buf.set_region(start, count)
+        return buf.set_region(start, count, data)
 
     def get_attribute_region(self, name: str, start: int, count: int):
         buf = self.attrib_name_buffers[name]

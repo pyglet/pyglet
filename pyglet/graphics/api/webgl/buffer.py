@@ -1,126 +1,132 @@
-"""OpenGL Buffer Objects.
-
-:py:class:`~BufferObject` and a :py:class:`~BackedBufferObject` are provied.
-The first is a lightweight abstraction over an OpenGL buffer, as created
-with ``glGenBuffers``. The backed buffer object is similar, but provides a
-full mirror of the data in CPU memory. This allows for delayed uploading of
-changes to GPU memory, which can improve performance is some cases.
-"""
+"""WebGL Buffer Objects."""
 
 from __future__ import annotations
 
-import ctypes
 import sys
 from functools import lru_cache
 from typing import TYPE_CHECKING, Sequence
 
-import js  # noqa: F821
-import pyodide.ffi  # noqa: F821
+import js
+import pyodide.ffi
 
 from pyglet.graphics.api.webgl.gl import (
     GL_ARRAY_BUFFER,
     GL_BUFFER_SIZE,
+    GL_DRAW_INDIRECT_BUFFER,
     GL_DYNAMIC_DRAW,
     GL_ELEMENT_ARRAY_BUFFER,
-    GL_MAP_WRITE_BIT,
-    GL_WRITE_ONLY,
+    GL_PIXEL_PACK_BUFFER,
+    GL_PIXEL_UNPACK_BUFFER,
+    GL_TEXTURE_BUFFER,
+    GL_TRANSFORM_FEEDBACK_BUFFER,
+    GL_UNIFORM_BUFFER,
 )
-from pyglet.graphics.buffer import AbstractBuffer
+from pyglet.graphics.buffer import (
+    AbstractBuffer,
+    BackedBufferObject as BaseBackedBufferObject,
+    BufferDataStore,
+    CTypeDataStore,
+    DrawIndirectBuffer,
+    MappedBufferObject as BaseMappedBufferObject,
+    PixelBuffer,
+    PixelPackBuffer,
+    PixelUnpackBuffer,
+    TextureBuffer,
+    TransformFeedbackBuffer,
+    UniformBufferObject,
+)
 
 if TYPE_CHECKING:
-    from pyglet.customtypes import CType, CTypesPointer
-    from ctypes import Array
-
+    from pyglet.customtypes import DataTypes
     from pyglet.graphics.api.webgl import OpenGLSurfaceContext
     from pyglet.graphics.api.webgl.webgl_js import WebGLBuffer
     from pyglet.graphics.shader import GraphicsAttribute
 
 
-class BufferObject(AbstractBuffer):
-    """Lightweight representation of an OpenGL Buffer Object.
+def _to_js_uint8(data: bytes) -> js.Uint8Array:
+    buffer = pyodide.ffi.to_js(memoryview(data))
+    return js.Uint8Array.new(buffer)
 
-    The data in the buffer is not replicated in any system memory (unless it
-    is done so by the video driver).  While this can reduce system memory usage,
-    performing multiple small updates to the buffer can be relatively slow.
-    The target of the buffer is ``GL_ARRAY_BUFFER`` internally to avoid
-    accidentally overriding other states when altering the buffer contents.
-    The intended target can be set when binding the buffer.
+
+class WebGLBufferObject(AbstractBuffer):
+    """Lightweight WebGL buffer object.
+
+    This class intentionally treats data as bytes for GPU transfer.
     """
 
-    id: WebGLBuffer
+    id: WebGLBuffer | None
     usage: int
     target: int
-    _context: OpenGLSurfaceContext | None
+    _context: OpenGLSurfaceContext
 
-    def __init__(self, context: OpenGLSurfaceContext, size: int, target: int = GL_ARRAY_BUFFER,
-                 usage: int = GL_DYNAMIC_DRAW) -> None:
-        """Initialize the BufferObject with the given size and draw usage.
-
-        JS does not allow to directly map memory, so all of them must be backed.
-        """
-        super().__init__('b', size)
+    def __init__(
+        self,
+        context: OpenGLSurfaceContext,
+        size: int,
+        target: int = GL_ARRAY_BUFFER,
+        usage: int = GL_DYNAMIC_DRAW,
+    ) -> None:
+        super().__init__(size)
         self.usage = usage
         self.target = target
         self._context = context
-        self._gl = self._context.gl
+        self._gl = context.gl
 
         self.id = self._gl.createBuffer()
-
-        self._gl.bindBuffer(self.target, self.id)
+        self.bind()
         self._gl.bufferData(self.target, self.size, self.usage)
 
-    def get_bytes(self) -> bytes: ...
-
-    def get_bytes_region(self, offset: int, length: int) -> bytes: ...
-
-    def get_data_region(self, start: int, length: int) -> ctypes.Array[CType]: ...
-
-    def set_bytes(self, data: bytes) -> None: ...
-
-    def set_bytes_region(self, start: int, length: int) -> None: ...
-
-    def set_data_ptr(self, offset: int, length: int, ptr: CTypesPointer) -> None: ...
-
-    def get_buffer_size(self):
-        return self._gl.getBufferParameter(self.target, GL_BUFFER_SIZE)
-
-    def invalidate(self) -> None:
-        self._gl.bufferData(self.target, None, self.usage)
+    def _validate_byte_range(self, offset: int, length: int) -> None:
+        assert offset >= 0 and length >= 0, "Offset and length must be non-negative."
+        assert offset + length <= self.size, (
+            f"Byte range [{offset}, {offset + length}) exceeds buffer size {self.size}."
+        )
 
     def bind(self) -> None:
         self._gl.bindBuffer(self.target, self.id)
 
     def unbind(self) -> None:
-        self._gl.bindBuffer(self.target, 0)
+        self._gl.bindBuffer(self.target, None)
 
-    def get_data(self) -> ctypes.Array[CType]:
+    def get_buffer_size(self) -> int:
+        self.bind()
+        return self._gl.getBufferParameter(self.target, GL_BUFFER_SIZE)
+
+    def get_bytes(self) -> bytes:
+        self.bind()
         data = js.Uint8Array.new(self.size)
-        self._gl.bindBuffer(self.target, self.id)
         self._gl.getBufferSubData(self.target, 0, data)
-        py_buffer = data.buffer.to_py(depth=1)
-        return bytes(py_buffer)
+        return bytes(data.buffer.to_py(depth=1))
 
-    def set_data(self, data: Sequence[int] | CTypesPointer) -> None:
-        byte_data = ctypes.string_at(data, ctypes.sizeof(data.contents))
-        buffer = pyodide.ffi.to_js(memoryview(byte_data))
-        js_array = js.Uint8Array.new(buffer)
-        self._gl.bindBuffer(self.target, self.id)
-        self._gl.bufferData(self.target, js_array, self.usage)
+    def get_bytes_region(self, offset: int, length: int) -> bytes:
+        self._validate_byte_range(offset, length)
+        self.bind()
+        data = js.Uint8Array.new(length)
+        self._gl.getBufferSubData(self.target, offset, data)
+        return bytes(data.buffer.to_py(depth=1))
 
-    def set_data_region(self, data: Sequence[int] | CTypesPointer, start: int, length: int) -> None:
-        self._gl.bindBuffer(self.target, self.id)
-        self._gl.bufferSubData(self.target, start, data)
+    def set_bytes(self, data: bytes | bytearray | memoryview) -> None:
+        raw = bytes(data)
+        assert len(raw) == self.size, f"Expected {self.size} bytes for full upload, got {len(raw)}."
+        self.bind()
+        self._gl.bufferData(self.target, _to_js_uint8(raw), self.usage)
 
-    def map(self, bits=GL_WRITE_ONLY) -> CTypesPointer[ctypes.c_byte]:
-        raise NotImplementedError
+    def set_bytes_region(self, offset: int, data: bytes | bytearray | memoryview) -> None:
+        # BufferObject updates are whole-buffer by design. Patch the local
+        # bytes and re-upload the full content.
+        raw = bytes(data)
+        self._validate_byte_range(offset, len(raw))
+        whole = bytearray(self.get_bytes())
+        whole[offset:offset + len(raw)] = raw
+        self.set_bytes(whole)
 
-    def map_range(self, start: int, size: int, ptr_type: type[CTypesPointer], bits=GL_MAP_WRITE_BIT) -> CTypesPointer:
-        raise NotImplementedError
-
-    def unmap(self) -> None:
-        raise NotImplementedError
+    def invalidate(self) -> None:
+        self.bind()
+        self._gl.bufferData(self.target, self.size, self.usage)
 
     def delete(self) -> None:
+        if self.id is None:
+            return
         self._gl.deleteBuffer(self.id)
         self.id = None
 
@@ -133,12 +139,13 @@ class BufferObject(AbstractBuffer):
                 pass  # Interpreter is shutting down
 
     def resize(self, size: int) -> None:
-        # Copy data from old buffer into new buffer, then reinitialize.
+        # Copy data from old buffer into new buffer, then replace.
+        old_id = self.id
         new_id = self._gl.createBuffer()
 
-        self._gl.bindBuffer(self._gl.COPY_READ_BUFFER, self.id)
+        self._gl.bindBuffer(self._gl.COPY_READ_BUFFER, old_id)
         self._gl.bindBuffer(self._gl.COPY_WRITE_BUFFER, new_id)
-        self._gl.bufferData(self._gl.COPY_WRITE_BUFFER, self.size, self._gl.DYNAMIC_DRAW)
+        self._gl.bufferData(self._gl.COPY_WRITE_BUFFER, size, self._gl.DYNAMIC_DRAW)
 
         self._gl.copyBufferSubData(
             self._gl.COPY_READ_BUFFER,
@@ -147,158 +154,241 @@ class BufferObject(AbstractBuffer):
             0,
             min(self.size, size),
         )
-        self.size = size
+        self._gl.deleteBuffer(old_id)
         self.id = new_id
+        self.size = size
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(id={self.id}, data_type={self.data_type}, size={self.size})"
+        return f"{self.__class__.__name__}(id={self.id}, size={self.size})"
 
 
-class BackedBufferObject(BufferObject):
-    """A buffer with system-memory backed store.
+class WebGLMappedBufferObject(WebGLBufferObject, BaseMappedBufferObject):
+    """Mapped WebGL buffers are not supported."""
 
-    Updates to the data via ``set_data`` and ``set_data_region`` will be held
-    in system memory until ``commit`` is called.  The advantage is that fewer
-    OpenGL calls are needed, which can increase performance at the expense of
-    system memory.
-    """
+    def map(self, bits: int = 0):
+        raise NotImplementedError("WebGL does not support mapped buffers.")
 
-    data: CType
-    data_ptr: int
+    def map_range(self, start: int, size: int, ptr_type, bits: int = 0):
+        raise NotImplementedError("WebGL does not support mapped buffers.")
+
+    def unmap(self) -> None:
+        raise NotImplementedError("WebGL does not support mapped buffers.")
+
+
+class WebGLBackedBufferObject(BaseBackedBufferObject, WebGLBufferObject):
+    """Buffer with host-side mirrored store and deferred GPU commit."""
+
+    data: object
+    data_ptr: int | None
     _dirty_min: int
     _dirty_max: int
     _dirty: bool
-    stride: int
-    element_count: int
-    ctype: CType
 
     def __init__(
-        self, context: OpenGLSurfaceContext, size: int, c_type: CType, stride: int, element_count: int,
-            usage: int = GL_DYNAMIC_DRAW, target: int=GL_ARRAY_BUFFER,
+        self,
+        context: OpenGLSurfaceContext,
+        size: int,
+        data_type: DataTypes,
+        stride: int,
+        element_count: int,
+        usage: int = GL_DYNAMIC_DRAW,
+        target: int = GL_ARRAY_BUFFER,
+        store: BufferDataStore | None = None,
     ) -> None:
-        super().__init__(context, size, target, usage)
+        WebGLBufferObject.__init__(self, context, size, target=target, usage=usage)
 
-        self.c_type = c_type
-        self._ctypes_size = ctypes.sizeof(c_type)
-        number = size // self._ctypes_size
-        self.data = (c_type * number)()
-        self.data_ptr = ctypes.addressof(self.data)
+        store = store or CTypeDataStore(size, data_type, stride, element_count)
+        assert store.size == size and store.stride == stride and store.element_count == element_count, (
+            "Store layout mismatch. "
+            f"Expected size={size}, stride={stride}, element_count={element_count}; "
+            f"got size={store.size}, stride={store.stride}, element_count={store.element_count}."
+        )
+        BaseBackedBufferObject.__init__(self, size, store)
 
         self._dirty_min = sys.maxsize
         self._dirty_max = 0
         self._dirty = False
 
-        self.stride = stride
-        self.element_count = element_count
+    def _mark_dirty_bytes(self, byte_start: int, byte_end: int) -> None:
+        if byte_start < self._dirty_min:
+            self._dirty_min = byte_start
+        if byte_end > self._dirty_max:
+            self._dirty_max = byte_end
+        self._dirty = True
+
+    def set_bytes(self, data: bytes | bytearray | memoryview) -> None:
+        raw = bytes(data)
+        assert len(raw) == self.size, f"Expected {self.size} bytes for full upload, got {len(raw)}."
+        self.store.set_bytes(0, raw)
+        self._mark_dirty_bytes(0, self.size)
+
+    def set_bytes_region(self, offset: int, data: bytes | bytearray | memoryview) -> None:
+        raw = bytes(data)
+        assert 0 <= offset <= self.size and offset + len(raw) <= self.size, (
+            f"Byte range [{offset}, {offset + len(raw)}) exceeds buffer size {self.size}."
+        )
+        self.store.set_bytes(offset, raw)
+        self._mark_dirty_bytes(offset, offset + len(raw))
 
     def commit(self) -> None:
-        """Commits all saved changes to the underlying buffer before drawing.
-
-        Allows submitting multiple changes at once, rather than having to call glBufferSubData for every change.
-        """
         if not self._dirty:
             return
 
-        self._gl.bindBuffer(self.target, self.id)
+        self.bind()
         size = self._dirty_max - self._dirty_min
         if size > 0:
             if size == self.size:
-                byte_data = ctypes.string_at(self.data_ptr, self.size)
-                buffer = pyodide.ffi.to_js(memoryview(byte_data))
-                js_array = js.Uint8Array.new(buffer)
-                self._gl.bufferData(self.target, js_array, self.usage)
+                self._gl.bufferData(self.target, _to_js_uint8(self.store.get_bytes()), self.usage)
             else:
-                byte_data = ctypes.string_at(self.data_ptr + self._dirty_min, size)
-                buffer = pyodide.ffi.to_js(memoryview(byte_data))
-                js_array = js.Uint8Array.new(buffer)
-
-                self._gl.bufferSubData(self.target, self._dirty_min, js_array)
+                self._gl.bufferSubData(
+                    self.target,
+                    self._dirty_min,
+                    _to_js_uint8(self.store.get_bytes(self._dirty_min, size)),
+                )
 
             self._dirty_min = sys.maxsize
             self._dirty_max = 0
             self._dirty = False
 
     @lru_cache(maxsize=None)  # noqa: B019
-    def get_region(self, start: int, count: int) -> Array[CType]:
-        byte_start = self.stride * start  # byte offset
-        array_count = self.element_count * count  # number of values
-        ptr_type = ctypes.POINTER(self.c_type * array_count)
-        return ctypes.cast(self.data_ptr + byte_start, ptr_type).contents
+    def get_region(self, start: int, count: int):
+        return self.store.get_region(start, count)
 
-    def set_region(self, start: int, count: int, data: Sequence[float]) -> None:
-        array_start = self.element_count * start
-        array_end = self.element_count * count + array_start
+    def set_region(self, start: int, count: int, data: Sequence[float | int]) -> None:
+        self.store.set_region(start, count, data)
+        self.invalidate_region(start, count)
 
-        self.data[array_start:array_end] = data
-
-        # replicated from self.invalidate_region
-        byte_start = self.stride * start
-        byte_end = byte_start + self.stride * count
-        # As of Python 3.11, this is faster than min/max:
-        if byte_start < self._dirty_min:
-            self._dirty_min = byte_start
-        if byte_end > self._dirty_max:
-            self._dirty_max = byte_end
-        self._dirty = True
+    def copy_region(self, dst: int, src: int, count: int) -> None:
+        self.store.copy_region(dst, src, count)
+        self.invalidate_region(dst, count)
 
     def resize(self, size: int) -> None:
-        # size is the allocator size * attribute.stride
-        number = size // ctypes.sizeof(self.c_type)
-        data = (self.c_type * number)()
-        ctypes.memmove(data, self.data, min(size, self.size))
-        self.data = data
-        self.data_ptr = ctypes.addressof(data)
-        self.size = size
+        self.resize_store(size)
 
-        # Set the dirty range to be the entire buffer.
         self._dirty_min = 0
         self._dirty_max = self.size
         self._dirty = True
-
         self.get_region.cache_clear()
 
-    def invalidate(self) -> None:
-        super().invalidate()
-        self._dirty = True
 
-    def invalidate_region(self, start: int, count: int) -> None:
-        byte_start = self.stride * start
-        byte_end = byte_start + self.stride * count
-        # As of Python 3.11, this is faster than min/max:
-        if byte_start < self._dirty_min:
-            self._dirty_min = byte_start
-        if byte_end > self._dirty_max:
-            self._dirty_max = byte_end
-        self._dirty = True
+class WebGLAttributeBufferObject(WebGLBackedBufferObject):
+    """A backed buffer used for shader attributes."""
 
-
-class AttributeBufferObject(BackedBufferObject):
-    """A backed buffer used for Shader Program attributes."""
-
-    def __init__(self, context: OpenGLSurfaceContext, size: int, graphics_attr: GraphicsAttribute) -> None:
-        # size is the allocator size * attribute.stride (buffer size)
-        super().__init__(context, size, graphics_attr.attribute.c_type,
-                         graphics_attr.view.stride,
-                         graphics_attr.attribute.fmt.components)
+    def __init__(
+        self,
+        context: OpenGLSurfaceContext,
+        size: int,
+        graphics_attr: GraphicsAttribute,
+        store: BufferDataStore | None = None,
+    ) -> None:
+        super().__init__(
+            context,
+            size,
+            graphics_attr.attribute.fmt.data_type,
+            graphics_attr.view.stride,
+            graphics_attr.attribute.fmt.components,
+            store=store,
+        )
 
 
-
-class IndexedBufferObject(BackedBufferObject):
+class WebGLIndexedBufferObject(WebGLBackedBufferObject):
     """A backed buffer used for indices."""
 
-    def __init__(self, context: OpenGLSurfaceContext, size: int, c_type: CType, stride: int, element_count: int,
-                 usage: int = GL_DYNAMIC_DRAW) -> None:
-        super().__init__(context, size, c_type, stride, element_count, usage, GL_ELEMENT_ARRAY_BUFFER)
+    def __init__(
+        self,
+        context: OpenGLSurfaceContext,
+        size: int,
+        data_type: DataTypes,
+        stride: int,
+        count: int,
+        usage: int = GL_DYNAMIC_DRAW,
+        store: BufferDataStore | None = None,
+    ) -> None:
+        super().__init__(
+            context,
+            size,
+            data_type,
+            stride,
+            count,
+            usage,
+            target=GL_ELEMENT_ARRAY_BUFFER,
+            store=store,
+        )
 
     def bind_to_index_buffer(self) -> None:
-        """Binds this buffer as an index buffer on the active vertex array."""
         self._gl.bindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.id)
 
 
-class PersistentBufferObject(BackedBufferObject):
-    """A persistently mapped buffer.
+class WebGLPixelBufferObject(WebGLBufferObject, PixelBuffer):
+    """WebGL pixel transfer buffer object (PBO)."""
 
-    Available in OpenGL 4.3+ contexts. Persistently mapped buffers
-    are mapped one time on creation, and can be updated at any time
-    without the need to map or unmap.
-    """
+    def __init__(
+        self,
+        context: OpenGLSurfaceContext,
+        size: int,
+        *,
+        pack: bool = False,
+        usage: int = GL_DYNAMIC_DRAW,
+    ) -> None:
+        target = GL_PIXEL_PACK_BUFFER if pack else GL_PIXEL_UNPACK_BUFFER
+        super().__init__(context, size, target=target, usage=usage)
+
+
+class WebGLPixelPackBufferObject(WebGLPixelBufferObject, PixelPackBuffer):
+    """WebGL pixel pack buffer object (readback path)."""
+
+    def __init__(self, context: OpenGLSurfaceContext, size: int, usage: int = GL_DYNAMIC_DRAW) -> None:
+        super().__init__(context, size, pack=True, usage=usage)
+
+
+class WebGLPixelUnpackBufferObject(WebGLPixelBufferObject, PixelUnpackBuffer):
+    """WebGL pixel unpack buffer object (upload path)."""
+
+    def __init__(self, context: OpenGLSurfaceContext, size: int, usage: int = GL_DYNAMIC_DRAW) -> None:
+        super().__init__(context, size, pack=False, usage=usage)
+
+
+class WebGLTransformFeedbackBufferObject(WebGLBufferObject, TransformFeedbackBuffer):
+    """WebGL transform feedback buffer object."""
+
+    def __init__(self, context: OpenGLSurfaceContext, size: int, usage: int = GL_DYNAMIC_DRAW) -> None:
+        super().__init__(context, size, target=GL_TRANSFORM_FEEDBACK_BUFFER, usage=usage)
+
+    def bind_base(self, index: int) -> None:
+        self._gl.bindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, index, self.id)
+
+    def bind_range(self, index: int, offset: int, size: int) -> None:
+        self._validate_byte_range(offset, size)
+        self._gl.bindBufferRange(GL_TRANSFORM_FEEDBACK_BUFFER, index, self.id, offset, size)
+
+
+class WebGLTextureBufferObject(WebGLBufferObject, TextureBuffer):
+    """WebGL texture buffer object (TBO)."""
+
+    def __init__(self, context: OpenGLSurfaceContext, size: int, usage: int = GL_DYNAMIC_DRAW) -> None:
+        super().__init__(context, size, target=GL_TEXTURE_BUFFER, usage=usage)
+
+
+class WebGLDrawIndirectBufferObject(WebGLBufferObject, DrawIndirectBuffer):
+    """WebGL draw indirect buffer object."""
+
+    def __init__(self, context: OpenGLSurfaceContext, size: int, usage: int = GL_DYNAMIC_DRAW) -> None:
+        super().__init__(context, size, target=GL_DRAW_INDIRECT_BUFFER, usage=usage)
+
+
+class WebGLUniformBufferObject(UniformBufferObject):
+    """WebGL Uniform Buffer Object wrapper."""
+
+    buffer: WebGLBufferObject
+    __slots__ = ()
+
+    def _create_buffer(self, context: OpenGLSurfaceContext, buffer_size: int) -> WebGLBufferObject:
+        return WebGLBufferObject(context, buffer_size, target=GL_UNIFORM_BUFFER)
+
+
+class WebGLPersistentBufferObject(BaseMappedBufferObject):
+    """Persistently mapped buffers are not currently implemented."""
+
+    def __init__(self, context, size, attribute, vao):  # noqa: ANN001
+        msg = "PersistentBufferObject is not supported by WebGL."
+        raise NotImplementedError(msg)

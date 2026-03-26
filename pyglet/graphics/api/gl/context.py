@@ -361,17 +361,21 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
             gl.GL_INT_SAMPLER_3D: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
             gl.GL_UNSIGNED_INT_SAMPLER_3D: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
 
-            gl.GL_FLOAT_MAT2: (gl.GLfloat, self.glUniformMatrix2fv, self.glProgramUniformMatrix2fv, 4),
-            gl.GL_FLOAT_MAT3: (gl.GLfloat, self.glUniformMatrix3fv, self.glProgramUniformMatrix3fv, 6),
-            gl.GL_FLOAT_MAT4: (gl.GLfloat, self.glUniformMatrix4fv, self.glProgramUniformMatrix4fv, 16),
+            # Buffer Samplers
+            gl.GL_SAMPLER_BUFFER: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
+            gl.GL_INT_SAMPLER_BUFFER: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
+            gl.GL_UNSIGNED_INT_SAMPLER_BUFFER: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
 
-            # TODO: test/implement these:
-            # GL_FLOAT_MAT2x3: glUniformMatrix2x3fv, glProgramUniformMatrix2x3fv,
-            # GL_FLOAT_MAT2x4: glUniformMatrix2x4fv, glProgramUniformMatrix2x4fv,
-            # GL_FLOAT_MAT3x2: glUniformMatrix3x2fv, glProgramUniformMatrix3x2fv,
-            # GL_FLOAT_MAT3x4: glUniformMatrix3x4fv, glProgramUniformMatrix3x4fv,
-            # GL_FLOAT_MAT4x2: glUniformMatrix4x2fv, glProgramUniformMatrix4x2fv,
-            # GL_FLOAT_MAT4x3: glUniformMatrix4x3fv, glProgramUniformMatrix4x3fv,
+            # Matrices
+            gl.GL_FLOAT_MAT2: (gl.GLfloat, self.glUniformMatrix2fv, self.glProgramUniformMatrix2fv, 4),
+            gl.GL_FLOAT_MAT2x3: (gl.GLfloat, self.glUniformMatrix2x3fv, self.glProgramUniformMatrix2x3fv, 6),
+            gl.GL_FLOAT_MAT2x4: (gl.GLfloat, self.glUniformMatrix2x4fv, self.glProgramUniformMatrix2x4fv, 8),
+            gl.GL_FLOAT_MAT3: (gl.GLfloat, self.glUniformMatrix3fv, self.glProgramUniformMatrix3fv, 9),
+            gl.GL_FLOAT_MAT3x2: (gl.GLfloat, self.glUniformMatrix3x2fv, self.glProgramUniformMatrix3x2fv, 6),
+            gl.GL_FLOAT_MAT3x4: (gl.GLfloat, self.glUniformMatrix3x4fv, self.glProgramUniformMatrix3x4fv, 12),
+            gl.GL_FLOAT_MAT4: (gl.GLfloat, self.glUniformMatrix4fv, self.glProgramUniformMatrix4fv, 16),
+            gl.GL_FLOAT_MAT4x2: (gl.GLfloat, self.glUniformMatrix4x2fv, self.glProgramUniformMatrix4x2fv, 8),
+            gl.GL_FLOAT_MAT4x3: (gl.GLfloat, self.glUniformMatrix4x3fv, self.glProgramUniformMatrix4x3fv, 12),
 
             gl.GL_IMAGE_1D: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
             gl.GL_IMAGE_2D: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 2),

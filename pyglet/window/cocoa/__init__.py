@@ -49,6 +49,7 @@ class CocoaWindow(BaseWindow):
     context: CocoaContext
     # NSWindow instance.
     _nswindow: darwin.ObjCInstance | None = None
+    _nsview: darwin.ObjCInstance | None = None
 
     # Delegate object.
     _delegate: darwin.ObjCInstance | None = None
@@ -101,8 +102,12 @@ class CocoaWindow(BaseWindow):
                 self.context.detach()
                 self._nswindow.release()
                 self._nswindow = None
+
+            if self._nsview:
                 self._nsview.release()
                 self._nsview = None
+
+            if self._delegate:
                 self._delegate.release()
                 self._delegate = None
 

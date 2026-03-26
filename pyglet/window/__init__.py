@@ -89,15 +89,15 @@ from typing import TYPE_CHECKING, Any, Callable, Sequence
 import pyglet
 import pyglet.window.key
 import pyglet.window.mouse
-from pyglet.config import UserConfig
 from pyglet.event import EVENT_HANDLE_STATE, EventDispatcher
 
 from pyglet.math import Mat4
 from pyglet.window import event, key, dialog
 
 if TYPE_CHECKING:
+    from pyglet.config import UserConfig
     import BaseWindow as Window
-    from pyglet.graphics.api.base import VerifiedGraphicsConfig, SurfaceContext, GraphicsConfig
+    from pyglet.graphics.api.base import VerifiedGraphicsConfig, SurfaceContext, GraphicsConfig, WindowTransformations
     from pyglet.display.base import Display, Screen, ScreenMode
     from pyglet.text import Label
 
@@ -130,6 +130,7 @@ class MouseCursor:
     #: Indicates if the cursor is drawn via the graphical api, or natively by the operating system.
     api_drawable: bool = True
     hw_drawable: bool = False
+    scaling: float = 1.0
 
     def draw(self, x: int, y: int) -> None:
         """Abstract render method.
@@ -372,6 +373,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     _projection_matrix: Mat4 = pyglet.math.Mat4()
     _view_matrix: Mat4 = pyglet.math.Mat4()
     _viewport: tuple[int, int, int, int] = 0, 0, 0, 0
+    _matrices: WindowTransformations | None = None
 
     # Used to restore window size and position after fullscreen
     _windowed_size: tuple[int, int] | None = None
@@ -821,7 +823,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         to either a single screen or the entire virtual desktop.
         """
 
-    def on_close(self) -> None:
+    def on_close(self) -> EVENT_HANDLE_STATE:
         """Default on_close handler."""
         self.has_exit = True
         from pyglet import app
@@ -1147,7 +1149,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         """
         self._keyboard_exclusive = exclusive
 
-    def set_icon(self, *images: pyglet.image._AbstractImage) -> None:
+    def set_icon(self, *images: pyglet.image.ImageData) -> None:
         """Set the window icon.
 
         If multiple images are provided, one with an appropriate size
@@ -1784,6 +1786,7 @@ class FPSDisplay:
     .. note: Setting the `update_period` to a value smaller than your Window refresh rate will cause
              inaccurate readings.
     """
+    _delta_times: deque[float]
 
     #: Time in seconds between updates.
     update_period = 0.25
@@ -1792,7 +1795,7 @@ class FPSDisplay:
     label: Label
 
     def __init__(self, window: pyglet.window.Window, color: tuple[int, int, int, int] = (127, 127, 127, 127),
-                 batch=None, samples: int = 240) -> None:
+                 batch: pyglet.graphics.Batch | None = None, samples: int = 240) -> None:
         """Create an FPS Display.
 
         Args:
@@ -1800,14 +1803,17 @@ class FPSDisplay:
                 The Window you wish to display frame rate for.
             color:
                 The RGBA color of the text display. Each channel represented as 0-255.
+            batch:
+                Optional batch to add the label to.
+                Using a Batch is strongly recommended.
             samples:
                 How many delta samples are used to calculate the mean FPS.
         """
-        from collections import deque
-        from statistics import mean
-        from time import time
+        from collections import deque  # noqa: PLC0415
+        from statistics import mean  # noqa: PLC0415
+        from time import time  # noqa: PLC0415
 
-        from pyglet.text import Label
+        from pyglet.text import Label  # noqa: PLC0415
         self._time = time
         self._mean = mean
 

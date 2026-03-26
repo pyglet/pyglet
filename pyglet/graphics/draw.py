@@ -575,7 +575,3 @@ class ShaderGroup(Group):
         super().__init__(order, parent)
         self.set_shader_program(program)
 
-
-# Backwards-compatible alias.
-BatchBase = Batch
-

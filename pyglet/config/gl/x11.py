@@ -122,7 +122,7 @@ class XlibGLSurfaceConfig(SurfaceConfig):
         if not XRenderFindVisualFormat:
             return False
 
-        xrender_format = XRenderFindVisualFormat(self.canvas.display._display, visual)
+        xrender_format = XRenderFindVisualFormat(self.display._display, visual)
         return xrender_format and xrender_format.contents.direct.alphaMask != 0
 
     def get_visual_info(self) -> glx.XVisualInfo:
