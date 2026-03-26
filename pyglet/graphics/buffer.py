@@ -12,84 +12,32 @@ from __future__ import annotations
 
 import abc
 import ctypes
-import struct
 from ctypes import Array
 from typing import TYPE_CHECKING, Any, Sequence, Union
 
 import pyglet
 
 if TYPE_CHECKING:
-    from pyglet.customtypes import CType, CTypesPointer, DataTypes
+    from pyglet.customtypes import CType, CTypesPointer
 
 
 ByteSource = Union[bytes, bytearray, memoryview]
 DataSource = Union[Sequence[Union[float, int]], Array[Any]]
 
-_DATA_TYPE_TO_CTYPE: dict[str, type[Any]] = {
-    "?": ctypes.c_bool,
-    "b": ctypes.c_byte,
-    "B": ctypes.c_ubyte,
-    "h": ctypes.c_short,
-    "H": ctypes.c_ushort,
-    "i": ctypes.c_int,
-    "I": ctypes.c_uint,
-    "q": ctypes.c_longlong,
-    "Q": ctypes.c_ulonglong,
-    "f": ctypes.c_float,
-    "d": ctypes.c_double,
-}
 
-
-def _data_type_to_ctype(data_type: DataTypes) -> CType:
-    c_type = _DATA_TYPE_TO_CTYPE.get(data_type)
-    if c_type is None:
-        msg = f"Unsupported data type '{data_type}'."
-        raise Exception(msg)
-    return c_type
-
-
-def _data_type_size(data_type: DataTypes) -> int:
-    try:
-        return struct.calcsize(data_type)
-    except struct.error as exc:
-        msg = f"Unsupported data type '{data_type}'."
-        raise AssertionError(msg) from exc
-
-
-def _to_bytes(data: ByteSource | Sequence[int] | CTypesPointer, length: int | None = None) -> bytes:
+def _to_bytes(data: ByteSource | Sequence[int] | CTypesPointer) -> bytes:
     """Convert supported host-side inputs into raw bytes."""
-    if isinstance(data, (bytes, bytearray, memoryview)):
-        raw = bytes(data)
-        if length is None:
-            return raw
-        assert len(raw) >= length, f"Insufficient data length. Expected at least {length} bytes, got {len(raw)}."
-        return raw[:length]
-
-    if isinstance(data, ctypes.Array):
-        raw = bytes(data)
-        if length is None:
-            return raw
-        assert len(raw) >= length, f"Insufficient data length. Expected at least {length} bytes, got {len(raw)}."
-        return raw[:length]
-
-    # ctypes pointer-like objects (e.g. pointer(struct), POINTER(c_ubyte), etc.)
     if hasattr(data, "contents"):
-        size = length if length is not None else ctypes.sizeof(data.contents)
-        return ctypes.string_at(data, size)
+        return ctypes.string_at(data, ctypes.sizeof(data.contents))
 
     try:
-        raw = bytes(data)
+        return bytes(data)
     except TypeError as exc:
         msg = (
             f"Unsupported data type: {type(data)!r}. "
             "Use bytes-like objects, ctypes arrays, ctypes pointers, or integer sequences."
         )
         raise AssertionError(msg) from exc
-
-    if length is None:
-        return raw
-    assert len(raw) >= length, f"Insufficient data length. Expected at least {length} bytes, got {len(raw)}."
-    return raw[:length]
 
 
 class AbstractBuffer(abc.ABC):
@@ -146,7 +94,13 @@ class AbstractBuffer(abc.ABC):
 
     def set_data_region(self, data: Sequence[int] | CTypesPointer | ByteSource, start: int, length: int) -> None:
         """Compatibility helper for callers that expect `set_data_region`."""
-        self.set_bytes_region(start, _to_bytes(data, length))
+        if hasattr(data, "contents"):
+            self.set_bytes_region(start, ctypes.string_at(data, length))
+            return
+
+        raw = _to_bytes(data)
+        assert len(raw) >= length, f"Insufficient data length. Expected at least {length} bytes, got {len(raw)}."
+        self.set_bytes_region(start, raw[:length])
 
     def set_data_ptr(self, offset: int, length: int, ptr: CTypesPointer) -> None:
         """Compatibility helper for callers that pass a ctypes pointer."""
@@ -260,56 +214,18 @@ class CTypeDataStore(BufferDataStore):
     This is the default host-side data store and keeps data in a ctypes array.
     """
 
-    data_type: DataTypes
-    _ctype: CType
-    _element_size: int
+    c_type: CType
+    _ctypes_size: int
     _data: Any
     _data_ptr: int
-    _owns_memory: bool
 
-    def __init__(
-        self,
-        size: int,
-        data_type: DataTypes,
-        stride: int,
-        element_count: int,
-        data_ptr: int | None = None,
-    ) -> None:
-        """Create a ctypes-backed typed data store.
-
-        Args:
-            size:
-                Total byte size for the store.
-            data_type:
-                Struct-format data type code (for example ``"f"`` or ``"I"``)
-                used to determine the underlying ctypes type and element size.
-            stride:
-                Byte stride for one logical element in this buffer layout.
-            element_count:
-                Number of scalar values per logical element.
-            data_ptr:
-                Optional pointer to externally owned memory. When provided, this
-                store binds to that memory instead of allocating its own ctypes
-                array.
-
-        Note:
-            The ``_owns_memory`` flag indicates whether this store allocated its
-            own backing array (``True``) or is bound to external memory
-            (``False``). This is used to protect ``resize``: externally backed
-            stores cannot reallocate memory and must be rebound with
-            ``rebind_external``.
-        """
-        self.data_type = data_type
-        self._ctype = _data_type_to_ctype(data_type)
-        self._element_size = _data_type_size(data_type)
+    def __init__(self, size: int, c_type: CType, stride: int, element_count: int) -> None:
+        self.c_type = c_type
+        self._ctypes_size = ctypes.sizeof(c_type)
         self.stride = stride
         self.element_count = element_count
         self.size = size
-        self._owns_memory = data_ptr is None
-        if data_ptr is None:
-            self._allocate(size)
-        else:
-            self._bind_external_memory(data_ptr)
+        self._allocate(size)
 
     @property
     def data(self) -> Array[Any]:
@@ -321,48 +237,17 @@ class CTypeDataStore(BufferDataStore):
 
     @property
     def element_size(self) -> int:
-        return self._element_size
+        return self._ctypes_size
 
     def _allocate(self, size: int) -> None:
-        assert size % self._element_size == 0, (
-            f"Buffer size {size} is not aligned to element size {self._element_size} "
-            f"for data type '{self.data_type}'."
+        assert size % self._ctypes_size == 0, (
+            f"Buffer size {size} is not aligned to ctype size {self._ctypes_size} "
+            f"for {self.c_type}."
         )
 
-        count = size // self._element_size
-        self._data = (self._ctype * count)()
+        count = size // self._ctypes_size
+        self._data = (self.c_type * count)()
         self._data_ptr = ctypes.addressof(self._data)
-
-    def _bind_external_memory(self, data_ptr: int) -> None:
-        """Bind this store to an external memory region.
-
-        The region is assumed to stay valid for the lifetime of the binding.
-        The store creates a typed ctypes view over that pointer so normal
-        ``get/set_region`` and ``get/set_bytes`` operations work without copying.
-
-        Args:
-            data_ptr:
-                Integer pointer address for the externally managed memory block.
-                The block must be large enough for ``self.size`` bytes.
-        """
-        assert data_ptr != 0, "External data pointer must be non-zero."
-        assert self.size % self._element_size == 0, (
-            f"Buffer size {self.size} is not aligned to element size {self._element_size} "
-            f"for data type '{self.data_type}'."
-        )
-
-        self._data_ptr = data_ptr
-        count = self.size // self._element_size
-        if count > 0:
-            self._data = (self._ctype * count).from_address(data_ptr)
-        else:
-            self._data = (self._ctype * 0)()
-
-    def rebind_external(self, size: int, data_ptr: int) -> None:
-        """Rebind this store to a new externally-owned memory region."""
-        self.size = size
-        self._owns_memory = False
-        self._bind_external_memory(data_ptr)
 
     def _validate_byte_range(self, offset: int, length: int) -> None:
         assert offset >= 0 and length >= 0, "Offset and length must be non-negative."  # noqa: PT018
@@ -384,7 +269,7 @@ class CTypeDataStore(BufferDataStore):
     def get_region(self, start: int, count: int) -> Array[Any]:
         byte_start = self.stride * start
         array_count = self.element_count * count
-        ptr_type = ctypes.POINTER(self._ctype * array_count)
+        ptr_type = ctypes.POINTER(self.c_type * array_count)
         return ctypes.cast(self._data_ptr + byte_start, ptr_type).contents
 
     def set_region(self, start: int, count: int, data: Sequence[float | int]) -> None:
@@ -403,7 +288,6 @@ class CTypeDataStore(BufferDataStore):
         ctypes.memmove(self._data_ptr + byte_dst, self._data_ptr + byte_src, byte_size)
 
     def resize(self, size: int) -> None:
-        assert self._owns_memory, "Cannot resize an externally backed store. Use rebind_external instead."
         old_data = self._data
         old_size = self.size
         self.size = size
@@ -435,10 +319,6 @@ class BackedBufferObject(AbstractBuffer):
     @property
     def data_ptr(self) -> int | None:
         return self.store.data_ptr
-
-    @property
-    def element_size(self) -> int:
-        return self.store.element_size
 
     @abc.abstractmethod
     def commit(self) -> None:
