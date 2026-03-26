@@ -310,6 +310,123 @@ will only occur when you manually change the visibility of the window or when
 the window is minimized or restored.  On Mac OS X the user can also hide or
 show the window (affecting visibility) using the Command+H shortcut.
 
+File dialogs
+------------
+
+Use :py:class:`~pyglet.window.dialog.FileOpenDialog` and
+:py:class:`~pyglet.window.dialog.FileSaveDialog` to open native system file
+dialogs from your pyglet application.
+
+These dialogs are non-blocking and dispatch events when the user completes or
+cancels the operation. They only return path information; your code is
+responsible for opening or saving the file data.
+
+Both :py:class:`FileOpenDialog` and :py:class:`FileSaveDialog` accept
+``filetypes`` as a list of ``(label, pattern)`` tuples.
+
+Use wildcard patterns (recommended), and separate multiple extensions in one
+entry with spaces::
+
+    filetypes = [
+        ("PNG Image", "*.png"),
+        ("Images", "*.png *.jpg *.bmp"),
+        ("All Files", "*.*"),
+    ]
+
+Simple extensions (like ``".png"``) are also accepted.
+
+Open file dialog example::
+
+    import pyglet
+    from pyglet.window import key
+    from pyglet.window.dialog import FileOpenDialog
+
+    window = pyglet.window.Window()
+
+    open_dialog = FileOpenDialog(
+        title="Open image(s)",
+        filetypes=[("Images", "*.png *.jpg *.bmp"), ("All Files", "*.*")],
+        multiple=True,
+    )
+
+    @open_dialog.event
+    def on_dialog_open(filenames):
+        if not filenames:
+            return  # User canceled
+        print("Selected files:", filenames)
+
+    @window.event
+    def on_key_press(symbol, modifiers):
+        if symbol == key.O:
+            open_dialog.open()
+
+    pyglet.app.run()
+
+Save file dialog example::
+
+    import pyglet
+    from pyglet.window import key
+    from pyglet.window.dialog import FileSaveDialog
+
+    window = pyglet.window.Window()
+
+    save_dialog = FileSaveDialog(
+        title="Save scene",
+        filetypes=[("Scene Files", "*.json"), ("All Files", "*.*")],
+        default_ext=".json",
+        initial_file="scene",
+    )
+
+    @save_dialog.event
+    def on_dialog_save(filename):
+        if not filename:
+            return  # User canceled
+        print("Save to:", filename)
+
+    @window.event
+    def on_key_press(symbol, modifiers):
+        if symbol == key.S and modifiers & key.MOD_CTRL:
+            save_dialog.open()
+
+    pyglet.app.run()
+
+.. note:: ``initial_file`` is not supported by macOS for
+:py:class:`~pyglet.window.dialog.FileOpenDialog`.
+
+
+Clipboard access
+----------------
+
+Use :py:meth:`~pyglet.window.Window.set_clipboard_text` and
+:py:meth:`~pyglet.window.Window.get_clipboard_text` for plain-text clipboard
+access:
+
+Clipboard example::
+
+    import pyglet
+    from pyglet.window import key
+
+    window = pyglet.window.Window()
+    message = "Hello from pyglet clipboard"
+
+    @window.event
+    def on_key_press(symbol, modifiers):
+        if symbol == key.C and modifiers & key.MOD_CTRL:
+            window.set_clipboard_text(message)
+            print("Copied:", message)
+
+        if symbol == key.V and modifiers & key.MOD_CTRL:
+            text = window.get_clipboard_text()
+            if text:
+                print("Pasted:", text)
+            else:
+                print("Clipboard does not contain text.")
+
+    pyglet.app.run()
+
+Clipboard support is text-only through this API. If no text is available,
+:py:meth:`~pyglet.window.Window.get_clipboard_text` returns an empty string.
+
 .. _guide_subclassing-window:
 
 Subclassing Window
