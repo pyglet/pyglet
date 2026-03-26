@@ -397,35 +397,17 @@ Save file dialog example::
 Clipboard access
 ----------------
 
-Use :py:meth:`~pyglet.window.Window.set_clipboard_text` and
-:py:meth:`~pyglet.window.Window.get_clipboard_text` for plain-text clipboard
-access:
+Pyglet offers very basic clipboard access.
 
-Clipboard example::
-
-    import pyglet
-    from pyglet.window import key
-
-    window = pyglet.window.Window()
-    message = "Hello from pyglet clipboard"
-
-    @window.event
-    def on_key_press(symbol, modifiers):
-        if symbol == key.C and modifiers & key.MOD_CTRL:
-            window.set_clipboard_text(message)
-            print("Copied:", message)
-
-        if symbol == key.V and modifiers & key.MOD_CTRL:
-            text = window.get_clipboard_text()
-            if text:
-                print("Pasted:", text)
-            else:
-                print("Clipboard does not contain text.")
-
-    pyglet.app.run()
+Use :py:meth:`~pyglet.window.Window.set_clipboard_text` to set the clipboard
+text string and :py:meth:`~pyglet.window.Window.get_clipboard_text` to retrieve
+plain-text to the clipboard.
 
 Clipboard support is text-only through this API. If no text is available,
 :py:meth:`~pyglet.window.Window.get_clipboard_text` returns an empty string.
+
+.. note:: On some Linux distributions, it has been reported that some clipboard managers
+may interfere with the setting or retrieving of clipboard data.
 
 .. _guide_subclassing-window:
 
