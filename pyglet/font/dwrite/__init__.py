@@ -3,10 +3,10 @@ from __future__ import annotations
 import contextlib
 import math
 import pathlib
-from ctypes import POINTER, Array, byref, c_void_p, cast, create_unicode_buffer, pointer, py_object, sizeof, string_at
+from ctypes import POINTER, Array, _Pointer, byref, c_void_p, cast, create_unicode_buffer, pointer, py_object, sizeof, string_at
 from ctypes.wintypes import BOOL, FLOAT, UINT
 from enum import Flag
-from typing import TYPE_CHECKING, BinaryIO, Sequence, Generator, ClassVar
+from typing import TYPE_CHECKING, BinaryIO, Sequence, Generator, ClassVar, Any
 
 import pyglet
 from pyglet.font import base, FontManager
@@ -108,7 +108,7 @@ from pyglet.font.dwrite.dwrite_lib import (
     DWRITE_INFORMATIONAL_STRING_FULL_NAME,
 )
 from pyglet.font.harfbuzz import get_harfbuzz_shaped_glyphs, get_resource_from_dw_font, harfbuzz_available
-from pyglet.image.codecs.wincodec_lib import GUID_WICPixelFormat32bppPBGRA
+from pyglet.image.codecs.wincodec_lib import GUID_WICPixelFormat32bppPBGRA, IWICBitmap
 from pyglet.libs.win32 import UINT16, UINT32, UINT64, com
 from pyglet.libs.win32 import _kernel32 as kernel32
 from pyglet.libs.win32.constants import (
@@ -260,15 +260,15 @@ class _DWriteTextRenderer(com.COMObject):
     def DrawInlineObject(self, *_args) -> int:  # noqa: ANN002, N802
         return com.E_NOTIMPL
 
-    def IsPixelSnappingDisabled(self, _draw_ctx: c_void_p, is_disabled: POINTER(FLOAT)) -> int:  # noqa: N802
+    def IsPixelSnappingDisabled(self, _draw_ctx: c_void_p, is_disabled: _Pointer[FLOAT]) -> int:  # noqa: N802
         is_disabled[0] = self.pixel_snapping
         return 0
 
-    def GetPixelsPerDip(self, _draw_ctx: c_void_p, pixels_per_dip: POINTER(FLOAT)) -> int:  # noqa: N802
+    def GetPixelsPerDip(self, _draw_ctx: c_void_p, pixels_per_dip: _Pointer[FLOAT]) -> int:  # noqa: N802
         pixels_per_dip[0] = self.pixels_per_dip
         return 0
 
-    def GetCurrentTransform(self, _draw_ctx: c_void_p, transform: POINTER(DWRITE_MATRIX)) -> int:  # noqa: N802
+    def GetCurrentTransform(self, _draw_ctx: c_void_p, transform: _Pointer[DWRITE_MATRIX]) -> int:  # noqa: N802
         transform[0] = self.dmatrix
         return 0
 
@@ -278,8 +278,8 @@ class _DWriteTextRenderer(com.COMObject):
         _baseline_x: float,
         _baseline_y: float,
         mode: int,
-        glyph_run_ptr: POINTER(DWRITE_GLYPH_RUN),
-        _run_des: POINTER(DWRITE_GLYPH_RUN_DESCRIPTION),
+        glyph_run_ptr: _Pointer[DWRITE_GLYPH_RUN],
+        _run_des: _Pointer[DWRITE_GLYPH_RUN_DESCRIPTION],
         _effect: c_void_p,
     ) -> int:
         c_buf = create_unicode_buffer(_run_des.contents.text)
@@ -376,8 +376,14 @@ def get_glyph_metrics(
 
 
 class DirectWriteGlyphRenderer(base.GlyphRenderer):  # noqa: D101
+    _render_target: ID2D1RenderTarget | ID2D1DeviceContext4 | None
+    _brush: ID2D1SolidColorBrush | None
+    _bitmap: IWICBitmap | None
+    current_offsets: list[base.GlyphPosition]
+    current_glyphs: list[base.Glyph]
     current_run: list[DWRITE_GLYPH_RUN]
     font: Win32DirectWriteFont
+
     antialias_mode = (
         D2D1_TEXT_ANTIALIAS_MODE_DEFAULT
         if pyglet.options.text_antialiasing is True
@@ -387,10 +393,10 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):  # noqa: D101
     measuring_mode = DWRITE_MEASURING_MODE_NATURAL
 
     def __init__(self, font: Win32DirectWriteFont) -> None:  # noqa: D107
-        self._render_target = None
+        self._render_target: ID2D1RenderTarget | ID2D1DeviceContext4 | None = None
         self._ctx_supported = False
-        self._bitmap = None
-        self._brush = None
+        self._bitmap: IWICBitmap | None = None
+        self._brush: ID2D1SolidColorBrush | None = None
         self._bitmap_dimensions = (0, 0)
         self.current_glyphs = []
         self.current_offsets = []
@@ -407,10 +413,10 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):  # noqa: D101
         text_buffer = create_unicode_buffer(text)
 
         text_layout = IDWriteTextLayout()
-        self.font._write_factory.CreateTextLayout(
+        self.font._write_factory.CreateTextLayout(  # noqa: SLF001
             text_buffer,
             len(text_buffer),
-            self.font._text_format,
+            self.font._text_format,  # noqa: SLF001
             width,  # Doesn't affect bitmap size.
             height,
             byref(text_layout),
@@ -419,7 +425,7 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):  # noqa: D101
         layout_metrics = DWRITE_TEXT_METRICS()
         text_layout.GetMetrics(byref(layout_metrics))
 
-        width, height = int(math.ceil(layout_metrics.width)), int(math.ceil(layout_metrics.height))
+        width, height = math.ceil(layout_metrics.width), math.ceil(layout_metrics.height)
 
         wic_fmt = GUID_WICPixelFormat32bppPBGRA
         bitmap = wic.get_bitmap(width, height, wic_fmt)
@@ -868,9 +874,9 @@ class Win32DirectWriteFont(base.Font):
     _font_cache: ClassVar[list[BinaryIO]] = []
     _font_loader_key: c_void_p | None = None
 
-    _glyph_renderer = None
-    _empty_glyph = None
-    _zero_glyph = None
+    _glyph_renderer: DirectWriteGlyphRenderer | None = None
+    _empty_glyph: base.Glyph | None = None
+    _zero_glyph: base.Glyph | None = None
 
     glyph_renderer_class = DirectWriteGlyphRenderer
 

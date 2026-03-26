@@ -285,7 +285,7 @@ class GLCompressedImageData(CompressedImageData):
         self._current_mipmap_texture = texture
         return texture
 
-    def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int, internalformat: int = None):
+    def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int, internalformat: int | None = None):
         if not self._have_extension():
             raise ImageException(f"{self.extension} is required to decode {self}")
 

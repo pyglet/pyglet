@@ -481,13 +481,15 @@ def _introspect_attributes(program_id: WebGLProgram) -> dict[str, Attribute]:
     return attributes
 
 
-def _link_program(gl: WebGLRenderingContext, *shaders: Shader) -> int:
+def _link_program(gl: WebGLRenderingContext, *shaders: Shader) -> WebGLProgram:
     """Link one or more Shaders into a ShaderProgram.
 
     Returns:
         The ID assigned to the linked ShaderProgram.
     """
     program_id = gl.createProgram()
+    if not program_id:
+        raise ShaderException("Shader program could not be created.")
     for shader in shaders:
         gl.attachShader(program_id, shader.id)
     gl.linkProgram(program_id)
@@ -495,10 +497,8 @@ def _link_program(gl: WebGLRenderingContext, *shaders: Shader) -> int:
     # Check the link status of program
     status = gl.getProgramParameter(program_id, GL_LINK_STATUS)
     if not status:
-        length = gl.getProgramParameter(program_id, GL_INFO_LOG_LENGTH)
-        log = c_buffer(length.value)
-        gl.getProgramInfoLog(program_id, len(log), None, log)
-        msg = f"Error linking shader program:\n{log.value.decode()}"
+        log = gl.getProgramInfoLog(program_id)
+        msg = f"Error linking shader program:\n{log}"
         raise ShaderException(msg)
 
     # Shader objects no longer needed
@@ -686,7 +686,7 @@ class WebGLShader(Shader):
     """
 
     _context: OpenGLSurfaceContext | NullContext
-    _id: int | None
+    _id: WebGLShader | None
     type: ShaderType
 
     def __init__(self, source_string: str, shader_type: ShaderType) -> None:
@@ -719,6 +719,8 @@ class WebGLShader(Shader):
         # source_length = c_int(len(shader_source_utf8))
 
         shader_id = self._gl.createShader(shader_gl_type)
+        if not shader_id:
+            raise ShaderException("Could not create shader.")
         self._id = shader_id
         self._gl.shaderSource(shader_id, source_string)
         self._gl.compileShader(shader_id)
@@ -753,10 +755,10 @@ class WebGLShader(Shader):
         return 'vertex', 'fragment', 'compute', 'geometry', 'tesscontrol', 'tessevaluation'
 
     @property
-    def id(self) -> int | WebGLProgram:
+    def id(self) -> WebGLShader:
         return self._id
 
-    def _get_shader_log(self, shader_id: int) -> str:
+    def _get_shader_log(self, shader_id: WebGLShader) -> str:
         info_log = self._gl.getShaderInfoLog(shader_id)
         if info_log:
             return f"OpenGL returned the following message when compiling the '{self.type}' shader: \n{info_log}"
@@ -789,7 +791,7 @@ class WebGLShader(Shader):
 class WebGLShaderProgram(ShaderProgram):
     """OpenGL shader program."""
 
-    _id: int | WebGLProgram | None
+    _id: WebGLProgram | None
     _context: OpenGLSurfaceContext | NullContext
     _uniforms: dict[str, _Uniform]
     _uniform_blocks: dict[str, WebGLUniformBlock]
@@ -824,7 +826,7 @@ class WebGLShaderProgram(ShaderProgram):
         return _introspect_uniform_blocks(self._context, self)
 
     @property
-    def id(self) -> int:
+    def id(self) -> WebGLProgram | None:
         return self._id
 
     @property
