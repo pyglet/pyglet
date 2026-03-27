@@ -3,13 +3,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Sequence
 
 import pyglet
-from pyglet.graphics.api.base import ResourceManagement
+from pyglet.graphics.api.base import ResourceManagement, NullBackend
 
 if TYPE_CHECKING:
     from pyglet.graphics.api.base import GraphicsConfig
     from pyglet.graphics.shader import ShaderType
 
-core = None
+core = NullBackend()
 
 resource_manager = ResourceManagement()
 

@@ -105,7 +105,6 @@ class OpenGLBackend(BackendGlobalObject):
     platform_func: WGLFunctions | None
     gl_api: Literal["gl", "gles"]
     current_context: OpenGLSurfaceContext | NullContext
-    _have_context: bool = False
 
     def __init__(self, gl_api: Literal["gl", "gles"] = "gl") -> None:
         self.gl_api = gl_api
@@ -217,10 +216,6 @@ class OpenGLBackend(BackendGlobalObject):
             self.current_context.default_batch = pyglet.graphics.Batch()
 
         return self.current_context.default_batch
-
-    @property
-    def have_context(self) -> bool:
-        return self._have_context
 
     def initialize_matrices(self, window: Window) -> OpenGL3_Matrices:
         return OpenGL3_Matrices(window, self)

@@ -89,7 +89,7 @@ def link_GL_proxy(name: str, restype: Any, argtypes: Any, requires: str | None =
         ftype = ctypes.WINFUNCTYPE(*fargs)
         if _have_get_proc_address:
             from pyglet.graphics.api import core
-            if core and core.have_context:
+            if core.have_context:
                 address = wglGetProcAddress(asbytes(name))
                 if cast(address, POINTER(c_int)):  # check cast because address is func
                     func = cast(address, ftype)

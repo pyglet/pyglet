@@ -18,10 +18,15 @@ class BackendGlobalObject(ABC):  # Temp name for now.
     Meant to be accessed from a global level.
     """
     windows: weakref.WeakKeyDictionary[Window, SurfaceContext]
+    _have_context: bool = False
 
     def __init__(self) -> None:
         self.windows = weakref.WeakKeyDictionary()
         self._current_window = None
+
+    @property
+    def have_context(self) -> bool:
+        return self._have_context
 
     @property
     @abstractmethod
