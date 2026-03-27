@@ -799,6 +799,7 @@ class GLTextureArray(_TextureArrayShared[GLTextureArrayRegion], GLTexture, Unifo
 
         size = (texture.width * texture.height * texture.images * len(internal_format))
         data = (GLubyte * size)()
+        ctx.glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
         texture._allocate(data)
 
         items = []
