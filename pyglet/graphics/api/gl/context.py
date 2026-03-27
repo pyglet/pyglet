@@ -27,7 +27,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
     """
     gles_pixel_fbo: GLFramebuffer | None
     #: gl_info.GLInfo instance, filled in on first set_current
-    _info: gl_info.GLInfo | None = None
+    _info: gl_info.GLInfo
 
     #: A container which is shared between all contexts that share GL objects.
     object_space: ObjectSpace
@@ -128,7 +128,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
                 self.platform_func = self.platform_func_class()
             self.uniform_getters, self.uniform_setters = self._get_uniform_func_tables()
             self._info.query(self)
-            if self.get_info().get_opengl_api() == "gles":
+            if self.info.get_opengl_api() == "gles":
                 from pyglet.graphics.api.gl.framebuffer import GLFramebuffer
                 self.gles_pixel_fbo = GLFramebuffer(context=self)
 
@@ -300,9 +300,14 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
         else:
             self.doomed_framebuffers.append(fbo_id)
 
-    def get_info(self) -> gl_info.GLInfo:
+    @property
+    def info(self) -> gl_info.GLInfo:
         """Get the :py:class:`~GLInfo` instance for this context."""
         return self._info
+
+    def get_info(self) -> gl_info.GLInfo:
+        """Get the :py:class:`~GLInfo` instance for this context."""
+        return self.info
 
     def _get_uniform_func_tables(self):
         _uniform_getters: dict[GLDataType, Callable] = {

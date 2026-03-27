@@ -190,7 +190,7 @@ class VertexDomain(BaseVertexDomain):
     :py:func:`create_domain` function.
     """
     def _has_multi_draw_extension(self, ctx: OpenGLSurfaceContext) -> bool:
-        return ctx.get_info().have_extension("GL_EXT_multi_draw_arrays")
+        return ctx.info.have_extension("GL_EXT_multi_draw_arrays")
 
     def _create_vertex_class(self) -> type:
         return type(self._vertex_class.__name__, (self._vertex_class,), self.vertex_buffers._property_dict)
@@ -296,7 +296,7 @@ class IndexedVertexDomain(BaseIndexedVertexDomain):
                                       self.vertex_buffers._property_dict)  # noqa: SLF001
 
     def _has_multi_draw_extension(self, ctx: OpenGLSurfaceContext) -> bool:
-        return ctx.get_info().have_extension("GL_EXT_multi_draw_arrays")
+        return ctx.info.have_extension("GL_EXT_multi_draw_arrays")
 
     def _create_vao(self) -> GLVertexArrayBinding:
         return GLVertexArrayBinding(self._context, self._streams)

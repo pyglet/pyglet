@@ -114,7 +114,7 @@ class _GLVertexStreamMix(VertexStream):
     def _supports_persistent_buffers(ctx: OpenGLSurfaceContext) -> bool:
         if not pyglet.options.opengl_persistent_buffers:
             return False
-        info = ctx.get_info()
+        info = ctx.info
         if info.get_opengl_api() != "gl":
             return False
         return info.have_version(4, 4) or info.have_extension("GL_ARB_buffer_storage")
@@ -348,7 +348,7 @@ class GLVertexDomain(VertexDomain):
         super().__init__(context, initial_count, attribute_meta)
 
     def _has_multi_draw_extension(self, ctx: OpenGLSurfaceContext) -> bool:
-        return ctx.get_info().have_extension("GL_EXT_multi_draw_arrays")
+        return ctx.info.have_extension("GL_EXT_multi_draw_arrays")
 
     def draw_bucket(self, mode: int, bucket) -> None:
         bucket.draw(self, mode)
@@ -619,11 +619,11 @@ class GLIndexedVertexDomain(IndexedVertexDomain):
                  index_type: DataTypes = "I") -> None:
         self.index_type = index_type
         #self._supports_base_vertex = False
-        self._supports_base_vertex = context.get_info().have_extension("GL_ARB_draw_elements_base_vertex")
+        self._supports_base_vertex = context.info.have_extension("GL_ARB_draw_elements_base_vertex")
         super().__init__(context, initial_count, attribute_meta)
 
     def _has_multi_draw_extension(self, ctx: OpenGLSurfaceContext) -> bool:
-        return ctx.get_info().have_extension("GL_EXT_multi_draw_arrays")
+        return ctx.info.have_extension("GL_EXT_multi_draw_arrays")
 
     def _create_vertex_class(self) -> type:
         # Make a custom VertexList class w/ properties for each attribute in the ShaderProgram:

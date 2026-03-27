@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import warnings
 import weakref
 from ctypes import (
@@ -367,7 +368,7 @@ class _Uniform(UniformBase):
 
 def get_maximum_binding_count() -> int:
     """The maximum binding value that can be used for this hardware."""
-    return pyglet.graphics.api.core.current_context.get_info().MAX_UNIFORM_BUFFER_BINDINGS
+    return pyglet.graphics.api.core.current_context.info.MAX_UNIFORM_BUFFER_BINDINGS
 
 
 class _UBOBindingManager(UBOBindingManager):
@@ -868,7 +869,7 @@ class GLShaderSource(ShaderSource):
 
         self._version = self._find_glsl_version()
 
-        if pyglet.graphics.api.core.current_context.get_info().get_opengl_api() == "gles":
+        if pyglet.graphics.api.core.current_context.info.get_opengl_api() == "gles":
             self._lines[0] = "#version 310 es"
             self._lines.insert(1, "precision mediump float;")
 

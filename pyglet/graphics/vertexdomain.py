@@ -581,7 +581,7 @@ class IndexedVertexDomain(VertexDomain):
     def __init__(self, context: SurfaceContext, initial_count: int, attribute_meta: dict[str, Attribute],
                  index_type: DataTypes = "I") -> None:
         self.index_type = index_type
-        self._supports_base_vertex = context.get_info().have_extension("GL_ARB_draw_elements_base_vertex")
+        self._supports_base_vertex = context.info.have_extension("GL_ARB_draw_elements_base_vertex")
         super().__init__(context, initial_count, attribute_meta)
 
     def get_group_bucket(self, group: Group) -> IndexedVertexGroupBucket:

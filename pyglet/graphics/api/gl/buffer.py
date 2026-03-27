@@ -164,7 +164,7 @@ class GLMappedBufferObject(GLBufferObject, BaseMappedBufferObject):
                  usage: int = GL_DYNAMIC_DRAW) -> None:
         super().__init__(context, size, target, usage)
         # GLES3 only supports mapping a range.
-        self._supports_range_only = self._context.get_info().get_opengl_api() == "gles"
+        self._supports_range_only = self._context.info.get_opengl_api() == "gles"
 
     @staticmethod
     def _to_map_range_bits(bits: int) -> int:

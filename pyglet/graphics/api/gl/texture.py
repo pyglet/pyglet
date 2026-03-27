@@ -165,12 +165,12 @@ _data_types = {
 
 def get_max_texture_size() -> int:
     """Return the maximum texture size available."""
-    return pyglet.graphics.api.core.current_context.get_info().MAX_TEXTURE_SIZE
+    return pyglet.graphics.api.core.current_context.info.MAX_TEXTURE_SIZE
 
 
 def get_max_array_texture_layers() -> int:
     """Return the maximum TextureArray depth."""
-    return pyglet.graphics.api.core.current_context.get_info().MAX_ARRAY_TEXTURE_LAYERS
+    return pyglet.graphics.api.core.current_context.info.MAX_ARRAY_TEXTURE_LAYERS
 
 
 def _get_gl_format_and_type(fmt: str, data_type: str) -> tuple[int | None, int | None]:
@@ -468,7 +468,7 @@ class GLTexture(Texture):
         size = self.width * self.height * self.images * len(fmt)
         buf = (GLubyte * size)()
 
-        if self._context.get_info().get_opengl_api() == "gles":
+        if self._context.info.get_opengl_api() == "gles":
             self._context.gles_pixel_fbo.bind()
             self._context.glPixelStorei(GL_PACK_ALIGNMENT, 1)
             self._attach_gles_fbo_texture(z, level)
