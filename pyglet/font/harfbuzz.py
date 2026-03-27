@@ -13,13 +13,13 @@ if TYPE_CHECKING:
     from pyglet.font.quartz import QuartzFont
     from pyglet.font.base import Font, Glyph
 
-from .harfbuzz_lib import hb_lib
+from pyglet.libs.shared.lib_harfbuzz import hb_lib
 _available = False
 
 if hb_lib:
     _available = True
 
-from .harfbuzz_lib import HB_MEMORY_MODE_READONLY, HB_DIRECTION_LTR
+from pyglet.libs.shared.lib_harfbuzz import HB_MEMORY_MODE_READONLY, HB_DIRECTION_LTR
 
 
 def harfbuzz_available() -> bool:
@@ -183,7 +183,7 @@ def get_harfbuzz_shaped_glyphs(font: Font, text: str) -> tuple[list[Glyph], list
 
                 offsets.append(
                     GlyphPosition(glyph_info["x_advance"] - glyph.advance, glyph_info["y_advance"],
-                                  glyph_info["x_offset"], glyph_info["y_offset"])
+                                  glyph_info["x_offset"], glyph_info["y_offset"]),
                 )
 
     return glyphs, offsets
@@ -209,6 +209,7 @@ class _HarfbuzzResources:
 
     def shape_text(self, text: str, pixel_size: int, direction: int=HB_DIRECTION_LTR):
         """Shapes the given string using the provided hb_font.
+
         Returns a list of dictionaries for each glyph containing:
           - codepoint: the glyph index
           - cluster: the index into the original string
