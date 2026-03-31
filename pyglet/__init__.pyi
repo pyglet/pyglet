@@ -7,6 +7,7 @@ from . import clock as clock
 from . import config as config
 from . import customtypes as customtypes
 from . import display as display
+from . import enums as enums
 from . import event as event
 from . import font as font
 from . import graphics as graphics
