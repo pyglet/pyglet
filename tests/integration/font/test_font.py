@@ -1,4 +1,6 @@
 import pyglet
+import pytest
+from pyglet.font.harfbuzz import harfbuzz_available
 from tests.annotations import skip_platform, require_platform, Platform
 
 
@@ -162,3 +164,25 @@ def test_user_font(gl3_context, test_data):
     assert len(result) == 2  # Should be a tuple of Glyph, GlyphPosition
     assert isinstance(result[0][0], pyglet.font.base.Glyph)
     assert isinstance(result[1][0], pyglet.font.base.GlyphPosition)
+
+@pytest.mark.skipif(not harfbuzz_available(), reason="HarfBuzz library is unavailable.")
+def test_load_privatefont_harfbuzz_integration(gl3_context, test_data):
+    previous_shaping = pyglet.options.text_shaping
+    file = test_data.get_file('fonts', 'action_man.ttf')
+
+    try:
+        # Ensure the next load path creates a fresh Font with HarfBuzz resources.
+        pyglet.font.manager._invalidate()
+        pyglet.options.text_shaping = "harfbuzz"
+
+        pyglet.font.add_file(file)
+        myfont = pyglet.font.load("Action Man", size=12, dpi=96)
+
+        assert myfont.hb_resource is not None
+
+        glyphs, offsets = myfont.get_glyphs("test", True)
+        assert len(glyphs) == len(offsets)
+        assert len(glyphs) > 0
+    finally:
+        pyglet.font.manager._invalidate()
+        pyglet.options.text_shaping = previous_shaping

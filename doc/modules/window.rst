@@ -6,6 +6,7 @@ pyglet.window
 .. toctree::
    :maxdepth: 1
 
+   dialog
    window_key
    window_mouse
 
@@ -32,10 +33,12 @@ Classes
   .. automethod:: get_location
   .. automethod:: get_pixel_ratio
   .. automethod:: get_size
+  .. automethod:: get_clipboard_text
   .. automethod:: get_system_mouse_cursor
   .. automethod:: maximize
   .. automethod:: minimize
   .. automethod:: set_caption
+  .. automethod:: set_clipboard_text
   .. automethod:: set_exclusive_keyboard
   .. automethod:: set_exclusive_mouse
   .. automethod:: set_fullscreen

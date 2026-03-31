@@ -134,7 +134,7 @@ class Control(pyglet.event.EventDispatcher):
         self._update_control()
 
     def _update_control(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def hit_test(self, x, y):
         return (self.x < x < self.x + self.width and
@@ -383,8 +383,11 @@ class MediaPlayer:
 
     def add_tracks(self, filename_list: list[str]):
         for filename in filename_list:
-            media = pyglet.media.load(filename)
-            self.player.queue(media)
+            try:
+                source = pyglet.media.load_video(filename)
+            except MediaException:
+                source = pyglet.media.load_audio(filename)
+            self.player.queue(source)
 
         self.gui_update_source()
         self.set_default_video_size()
@@ -419,10 +422,13 @@ class MediaPlayer:
         video_format = self.player.source.video_format
         width = video_format.width
         height = video_format.height
-        if video_format.sample_aspect > 1:
-            width *= video_format.sample_aspect
-        elif video_format.sample_aspect < 1:
-            height /= video_format.sample_aspect
+        sample_aspect = video_format.sample_aspect
+        if not sample_aspect or sample_aspect <= 0:  # 0 is unknown, just default to 1.0 ratio.
+            sample_aspect = 1.0
+        if sample_aspect > 1.0:
+            width *= sample_aspect
+        elif sample_aspect < 1.0:
+            height /= sample_aspect
         return width, height
 
     def set_default_video_size(self):

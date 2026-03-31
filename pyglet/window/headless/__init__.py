@@ -47,7 +47,7 @@ class HeadlessWindow(BaseWindow):
             self.context.before_draw()
 
     def set_caption(self, caption: str) -> None:
-        pass
+        self._caption = caption
 
     def set_minimum_size(self, width: int, height: int) -> None:
         pass
@@ -71,6 +71,7 @@ class HeadlessWindow(BaseWindow):
         pass
 
     def set_visible(self, visible: bool = True) -> None:
+        self._visible = visible
         if visible:
             self.dispatch_event('_on_internal_resize', self._width, self._height)
             self.dispatch_event('on_show')

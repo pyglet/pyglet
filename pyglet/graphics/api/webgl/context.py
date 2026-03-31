@@ -1,20 +1,19 @@
 from __future__ import annotations
 
 import weakref
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Callable
 
-import js
-from pyodide.ffi import create_proxy
+from pyodide.ffi import create_proxy  # noqa: F401, F821
 
-from pyglet.graphics.api.base import SurfaceContext
+from pyglet.graphics.api.base import SurfaceContext, NullContext
 from pyglet.graphics.api.webgl import gl
 from pyglet.graphics.api.webgl.gl import GL_COLOR_BUFFER_BIT
 from pyglet.graphics.api.webgl.gl_info import GLInfo
-from pyglet.graphics.api.webgl.shader import GLDataType
 
 if TYPE_CHECKING:
+    from pyglet.graphics.api.webgl.shader import GLDataType
+    from pyglet.config import SurfaceConfig
     from pyglet.graphics.api import WebGLBackend
-    from pyglet.graphics.api.webgl.config import OpenGLWindowConfig
     from pyglet.graphics.api.webgl.webgl_js import WebGL2RenderingContext
     from pyglet.window import Window
     from pyglet.window.emscripten import EmscriptenWindow
@@ -40,14 +39,14 @@ class OpenGLSurfaceContext(SurfaceContext):
     """
 
     gl: WebGL2RenderingContext
-    config: OpenGLWindowConfig
+    config: SurfaceConfig
     context_share: OpenGLSurfaceContext | None
 
     def __init__(
         self,
         global_ctx: WebGLBackend,
         window: EmscriptenWindow,
-        config: OpenGLWindowConfig,  # noqa: D417
+        config: SurfaceConfig,
         context_share: OpenGLSurfaceContext | None = None,
     ) -> None:
         """Initialize a context.
@@ -67,8 +66,8 @@ class OpenGLSurfaceContext(SurfaceContext):
         self.context_share = context_share
         self.is_current = False
 
-        # The GL Context.
-        self.gl = self.window.canvas.getContext("webgl2")
+        # The GL Context.  Pass through the WebGLConfig settings:
+        self.gl = self.window.canvas.getContext("webgl2", **self.config.attributes)
 
         self._info = GLInfo()
         self._info.query(self.gl)
@@ -84,9 +83,14 @@ class OpenGLSurfaceContext(SurfaceContext):
         self.cached_programs = weakref.WeakValueDictionary()
         self._create_uniform_dicts()
 
-    def get_info(self) -> GLInfo:
+    @property
+    def info(self) -> GLInfo:
         """Get the :py:class:`~GLInfo` instance for this context."""
         return self._info
+
+    def get_info(self) -> GLInfo:
+        """Get the :py:class:`~GLInfo` instance for this context."""
+        return self.info
 
     def resized(self, width, height): ...
 
@@ -122,7 +126,7 @@ class OpenGLSurfaceContext(SurfaceContext):
         # self.detach()
         #
         if self.core.current_context is self:
-            self.core.current_context = None
+            self.core.current_context = NullContext()
         #     #gl_info.remove_active_context()
 
     def attach(self, window: Window) -> None:
@@ -217,7 +221,7 @@ class OpenGLSurfaceContext(SurfaceContext):
             gl.GL_INT_SAMPLER_3D: (gl.GLint, self.gl.uniform1iv, 1),
             gl.GL_UNSIGNED_INT_SAMPLER_3D: (gl.GLint, self.gl.uniform1iv, 1),
             gl.GL_FLOAT_MAT2: (gl.GLfloat, self.gl.uniformMatrix2fv, 4),
-            gl.GL_FLOAT_MAT3: (gl.GLfloat, self.gl.uniformMatrix3fv, 6),
+            gl.GL_FLOAT_MAT3: (gl.GLfloat, self.gl.uniformMatrix3fv, 9),
             gl.GL_FLOAT_MAT4: (gl.GLfloat, self.gl.uniformMatrix4fv, 16),
             # Images
             gl.GL_IMAGE_1D: (gl.GLint, self.gl.uniform1iv, 1),

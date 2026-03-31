@@ -45,36 +45,26 @@ from pyglet.graphics.api.gl import (
 )
 from pyglet.graphics.api.gl.enums import geometry_map
 from pyglet.graphics.api.gl.shader import GLAttribute
-from pyglet.graphics.api.gl2.buffer import AttributeBufferObject, IndexedBufferObject
+from pyglet.graphics.api.gl2.buffer import GL2AttributeBufferObject, GL2IndexedBufferObject
+from pyglet.graphics.buffer import _data_type_size
 from pyglet.graphics.vertexdomain import (
     VertexStream,
     IndexStream,
     VertexArrayBinding,
     VertexArrayProtocol,
-    VertexDomainBase,
-    VertexListBase,
-    IndexedVertexDomainBase,
-    IndexedVertexListBase,
+    VertexDomain as BaseVertexDomain,
+    VertexList as BaseVertexList,
+    IndexedVertexDomain as BaseIndexedVertexDomain,
+    IndexedVertexList as BaseIndexedVertexList,
     VertexGroupBucket,
     _RunningIndexSupport,
 )
 
 if TYPE_CHECKING:
     from pyglet.graphics.shader import AttributeView
-    from pyglet.customtypes import CType, DataTypes
+    from pyglet.customtypes import DataTypes
     from pyglet.enums import GeometryMode
     from pyglet.graphics.shader import Attribute
-
-_c_types = {
-    GL_BYTE: ctypes.c_byte,
-    GL_UNSIGNED_BYTE: ctypes.c_ubyte,
-    GL_SHORT: ctypes.c_short,
-    GL_UNSIGNED_SHORT: ctypes.c_ushort,
-    GL_INT: ctypes.c_int,
-    GL_UNSIGNED_INT: ctypes.c_uint,
-    GL_FLOAT: ctypes.c_float,
-    GL_DOUBLE: ctypes.c_double,
-}
 
 _gl_types = {
     'b': GL_BYTE,
@@ -90,14 +80,14 @@ _gl_types = {
 
 def _make_attribute_property(name: str) -> property:
     def _attribute_getter(self: VertexList) -> Array[float | int]:
-        buffer = self.domain.attrib_name_buffers[name]
-        region = buffer.get_region(self.start, self.count)
-        buffer.invalidate_region(self.start, self.count)
+        stream = self.domain.attrib_name_buffers[name]
+        region = stream.get_attribute_region(name, self.start, self.count)
+        stream.invalidate_attribute_region(name, self.start, self.count)
         return region
 
     def _attribute_setter(self: VertexList, data: Any) -> None:
-        buffer = self.domain.attrib_name_buffers[name]
-        buffer.set_region(self.start, self.count, data)
+        stream = self.domain.attrib_name_buffers[name]
+        stream.set_attribute_region(name, self.start, self.count, data)
 
     return property(_attribute_getter, _attribute_setter)
 
@@ -133,11 +123,11 @@ class InstancedIndexedVertexDomain:
         raise NotImplementedError("InstancedIndexedVertexDomain is not available in OpenGL 2.0.")
 
 
-class VertexList(VertexListBase):
+class VertexList(BaseVertexList):
     ...
 
 
-class IndexedVertexList(IndexedVertexListBase):
+class IndexedVertexList(BaseIndexedVertexList):
     ...
 
 
@@ -150,10 +140,10 @@ class GLVertexStream(VertexStream):
     def get_graphics_attribute(self, attribute: Attribute, view: AttributeView) -> GLAttribute:
         return GLAttribute(attribute, view)
 
-    def get_buffer(self, size: int, attribute) -> AttributeBufferObject:
+    def get_buffer(self, size: int, attribute) -> GL2AttributeBufferObject:
         # TODO: use persistent buffer if we have GL support for it:
         # attribute.buffer = PersistentBufferObject(attribute.stride * self.allocator.capacity, attribute, self.vao)
-        return AttributeBufferObject(self._ctx, size, attribute)
+        return GL2AttributeBufferObject(self._ctx, size, attribute)
 
     def bind_into(self, _vao: None) -> None:
         for attribute, buffer in zip(self.attribute_names.values(), self.buffers):
@@ -168,20 +158,22 @@ class GLVertexStream(VertexStream):
 
 class GLIndexStream(IndexStream):
     index_element_size: int
-    index_c_type: CType
     gl_type: int
 
     def __init__(self, ctx: OpenGLSurfaceContext, data_type: DataTypes, initial_elems: int) -> None:
         self.gl_type = _gl_types[data_type]
-        self.index_c_type = _c_types[self.gl_type]
-        self.index_element_size = ctypes.sizeof(self.index_c_type)
         super().__init__(ctx, data_type, initial_elems)
+        self.index_element_size = self.buffer.element_size
 
-    def _create_buffer(self) -> IndexedBufferObject:
-        return IndexedBufferObject(self.ctx, self.allocator.capacity * self.index_element_size,
-                                                self.index_c_type,
-                                                self.index_element_size,
-                                                1)
+    def _create_buffer(self) -> GL2IndexedBufferObject:
+        index_element_size = _data_type_size(self.data_type)
+        return GL2IndexedBufferObject(
+            self.ctx,
+            self.allocator.capacity * index_element_size,
+            self.data_type,
+            index_element_size,
+            1,
+        )
 
     def bind_into(self, vao: VertexArrayBinding) -> None:
         #self.buffer.bind_to_index_buffer()
@@ -191,14 +183,14 @@ class GLIndexStream(IndexStream):
         self.buffer.unbind()
 
 
-class VertexDomain(VertexDomainBase):
+class VertexDomain(BaseVertexDomain):
     """Management of a set of vertex lists.
 
     Construction of a vertex domain is usually done with the
     :py:func:`create_domain` function.
     """
     def _has_multi_draw_extension(self, ctx: OpenGLSurfaceContext) -> bool:
-        return ctx.get_info().have_extension("GL_EXT_multi_draw_arrays")
+        return ctx.info.have_extension("GL_EXT_multi_draw_arrays")
 
     def _create_vertex_class(self) -> type:
         return type(self._vertex_class.__name__, (self._vertex_class,), self.vertex_buffers._property_dict)
@@ -288,7 +280,7 @@ class VertexDomain(VertexDomainBase):
 
 
 
-class IndexedVertexDomain(IndexedVertexDomainBase):
+class IndexedVertexDomain(BaseIndexedVertexDomain):
     """Management of a set of indexed vertex lists.
 
     Construction of an indexed vertex domain is usually done with the
@@ -304,7 +296,7 @@ class IndexedVertexDomain(IndexedVertexDomainBase):
                                       self.vertex_buffers._property_dict)  # noqa: SLF001
 
     def _has_multi_draw_extension(self, ctx: OpenGLSurfaceContext) -> bool:
-        return ctx.get_info().have_extension("GL_EXT_multi_draw_arrays")
+        return ctx.info.have_extension("GL_EXT_multi_draw_arrays")
 
     def _create_vao(self) -> GLVertexArrayBinding:
         return GLVertexArrayBinding(self._context, self._streams)

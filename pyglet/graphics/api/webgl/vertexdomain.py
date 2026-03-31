@@ -43,43 +43,33 @@ from pyglet.graphics.api.webgl.gl import (
 )
 from pyglet.graphics.api.webgl.enums import geometry_map
 from pyglet.graphics.api.webgl.shader import GLAttribute
-from pyglet.graphics.api.webgl.buffer import AttributeBufferObject, IndexedBufferObject
-from pyglet.graphics.instance import InstanceBucket, BaseInstanceDomain, VertexInstanceBase
+from pyglet.graphics.api.webgl.buffer import WebGLAttributeBufferObject, WebGLIndexedBufferObject
+from pyglet.graphics.buffer import _data_type_size
+from pyglet.graphics.instance import InstanceBucket, InstanceDomain, VertexInstance
 from pyglet.graphics.vertexdomain import (
     VertexArrayBinding,
     VertexArrayProtocol,
     InstanceStream,
     VertexStream,
     IndexStream,
-    VertexListBase,
-    IndexedVertexListBase,
-    VertexDomainBase,
-    IndexedVertexDomainBase,
+    VertexList,
+    IndexedVertexList,
+    VertexDomain,
+    IndexedVertexDomain,
     VertexGroupBucket,
     _RunningIndexSupport,
-    InstanceIndexedVertexListBase,
-    InstancedIndexedVertexDomainBase,
-    InstancedVertexDomainBase,
-    InstanceVertexListBase,
+    InstanceIndexedVertexList,
+    InstancedIndexedVertexDomain,
+    InstancedVertexDomain,
+    InstanceVertexList,
 )
 
 if TYPE_CHECKING:
     from pyglet.graphics.shader import AttributeView
-    from pyglet.customtypes import CType, DataTypes
+    from pyglet.customtypes import DataTypes
     from pyglet.enums import GeometryMode
     from pyglet.graphics.shader import Attribute
     from pyglet.graphics.api.webgl.context import OpenGLSurfaceContext
-
-_c_types = {
-    GL_BYTE: ctypes.c_byte,
-    GL_UNSIGNED_BYTE: ctypes.c_ubyte,
-    GL_SHORT: ctypes.c_short,
-    GL_UNSIGNED_SHORT: ctypes.c_ushort,
-    GL_INT: ctypes.c_int,
-    GL_UNSIGNED_INT: ctypes.c_uint,
-    GL_FLOAT: ctypes.c_float,
-    GL_DOUBLE: ctypes.c_double,
-}
 
 _gl_types = {
     'b': GL_BYTE,
@@ -94,22 +84,22 @@ _gl_types = {
 
 
 def _make_attribute_property(name: str) -> property:
-    def _attribute_getter(self: VertexList) -> ctypes.Array[float | int]:
-        buffer = self.domain.attrib_name_buffers[name]
-        region = buffer.get_region(self.start, self.count)
-        buffer.invalidate_region(self.start, self.count)
+    def _attribute_getter(self: WebGLVertexList) -> ctypes.Array[float | int]:
+        stream = self.domain.attrib_name_buffers[name]
+        region = stream.get_attribute_region(name, self.start, self.count)
+        stream.invalidate_attribute_region(name, self.start, self.count)
         return region
 
-    def _attribute_setter(self: VertexList, data: Any) -> None:
-        buffer = self.domain.attrib_name_buffers[name]
-        buffer.set_region(self.start, self.count, data)
+    def _attribute_setter(self: WebGLVertexList, data: Any) -> None:
+        stream = self.domain.attrib_name_buffers[name]
+        stream.set_attribute_region(name, self.start, self.count, data)
 
     return property(_attribute_getter, _attribute_setter)
 
 
 class _GLVertexStreamMix(VertexStream):
     _ctx: OpenGLSurfaceContext
-    attrib_name_buffers: dict[str, AttributeBufferObject]
+    attrib_name_buffers: dict[str, WebGLAttributeBufferObject]
 
     def __init__(self, ctx: OpenGLSurfaceContext, initial_size: int, attrs: Sequence[Attribute], *, divisor: int = 0):
         super().__init__(ctx, initial_size, attrs, divisor=divisor)
@@ -117,8 +107,8 @@ class _GLVertexStreamMix(VertexStream):
     def get_graphics_attribute(self, attribute: Attribute, view: AttributeView) -> GLAttribute:
         return GLAttribute(attribute, view)
 
-    def get_buffer(self, size: int, attribute) -> AttributeBufferObject:
-        return AttributeBufferObject(self._ctx, size, attribute)
+    def get_buffer(self, size: int, attribute) -> WebGLAttributeBufferObject:
+        return WebGLAttributeBufferObject(self._ctx, size, attribute)
 
     def bind_into(self, vao) -> None:
         for attribute, buffer in zip(self.attribute_names.values(), self.buffers):
@@ -166,40 +156,42 @@ class GLVertexArrayBinding(VertexArrayBinding):  # noqa: D101
         self.vao.unbind()
 
 
-class VertexList(VertexListBase):
+class WebGLVertexList(VertexList):
     ...
 
-class InstanceVertexList(InstanceVertexListBase):
+class WebGLInstanceVertexList(InstanceVertexList):
     ...
 
-class IndexedVertexList(IndexedVertexListBase):
+class WebGLIndexedVertexList(IndexedVertexList):
     ...
 
-class InstanceIndexedVertexList(InstanceIndexedVertexListBase):
+class WebGLInstanceIndexedVertexList(InstanceIndexedVertexList):
     ...
 
 class GLIndexStream(IndexStream):  # noqa: D101
     index_element_size: int
-    index_c_type: CType
     gl_type: int
 
     def __init__(self, ctx: OpenGLSurfaceContext, data_type: DataTypes, initial_elems: int) -> None:  # noqa: D107
         self.gl_type = _gl_types[data_type]
-        self.index_c_type = _c_types[self.gl_type]
-        self.index_element_size = ctypes.sizeof(self.index_c_type)
         super().__init__(ctx, data_type, initial_elems)
+        self.index_element_size = self.buffer.element_size
 
-    def _create_buffer(self) -> IndexedBufferObject:
-        return IndexedBufferObject(self.ctx, self.allocator.capacity * self.index_element_size,
-                                                self.index_c_type,
-                                                self.index_element_size,
-                                                1)
+    def _create_buffer(self) -> WebGLIndexedBufferObject:
+        index_element_size = _data_type_size(self.data_type)
+        return WebGLIndexedBufferObject(
+            self.ctx,
+            self.allocator.capacity * index_element_size,
+            self.data_type,
+            index_element_size,
+            1,
+        )
 
     def bind_into(self, vao: VertexArrayBinding) -> None:
         self.buffer.bind_to_index_buffer()
 
 
-class VertexDomain(VertexDomainBase):
+class WebGLVertexDomain(VertexDomain):
     """Management of a set of vertex lists.
 
     Construction of a vertex domain is usually done with the
@@ -277,7 +269,7 @@ class VertexDomain(VertexDomainBase):
                 for start, size in zip(starts, sizes):
                     self._gl.drawArrays(mode, start, size)
 
-    def draw_subset(self, mode: GeometryMode, vertex_list: VertexList) -> None:
+    def draw_subset(self, mode: GeometryMode, vertex_list: WebGLVertexList) -> None:
         """Draw a specific VertexList in the domain.
 
         The `vertex_list` parameter specifies a :py:class:`VertexList`
@@ -302,7 +294,7 @@ class VertexDomain(VertexDomainBase):
         return f'<{self.__class__.__name__}@{id(self):x} vertex_alloc={self.vertex_buffers.allocator}>'
 
 
-class GLInstanceDomainArrays(BaseInstanceDomain):  # noqa: D101
+class GLInstanceDomainArrays(InstanceDomain):  # noqa: D101
     def __init__(self, domain: Any, initial_instances: int) -> None:
         super().__init__(domain, initial_instances)
         self._ctx = domain._context  # noqa: SLF001
@@ -325,14 +317,14 @@ class GLInstanceDomainArrays(BaseInstanceDomain):  # noqa: D101
             bucket.stream.commit()
             self._gl.drawArraysInstanced(mode, first_vertex, vertex_count, bucket.instance_count)
 
-    def draw_subset(self, mode: int, vertex_list: InstanceVertexList):
+    def draw_subset(self, mode: int, vertex_list: WebGLInstanceVertexList):
         """Draw a specific VertexList in the domain."""
         bucket = vertex_list.bucket
         bucket.vao.bind()
         bucket.stream.commit()
         self._gl.drawArraysInstanced(mode, vertex_list.start, vertex_list.count, bucket.instance_count)
 
-class GLInstanceDomainElements(BaseInstanceDomain):  # noqa: D101
+class GLInstanceDomainElements(InstanceDomain):  # noqa: D101
     _ctx: OpenGLSurfaceContext
 
     def __init__(self, domain: Any, initial_instances: int, index_stream: GLIndexStream) -> None:
@@ -363,7 +355,7 @@ class GLInstanceDomainElements(BaseInstanceDomain):  # noqa: D101
             bucket.instance_count,
         )
 
-    def draw_subset(self, mode: GeometryMode, vertex_list: InstanceIndexedVertexList) -> None:
+    def draw_subset(self, mode: GeometryMode, vertex_list: WebGLInstanceIndexedVertexList) -> None:
         """Draw a specific VertexList in the domain."""
         byte_offset = vertex_list.index_start * self._elem_size
         self._gl.drawElementsInstanced(
@@ -385,9 +377,9 @@ class GLInstanceDomainElements(BaseInstanceDomain):  # noqa: D101
             )
 
 
-class InstancedVertexDomain(InstancedVertexDomainBase):  # noqa: D101
+class WebGLInstancedVertexDomain(InstancedVertexDomain):  # noqa: D101
     _vertexinstance_class: type
-    _vertex_class = InstanceVertexList
+    _vertex_class = WebGLInstanceVertexList
 
     def _create_vertex_class(self) -> type:
         return type(self._vertex_class.__name__, (self._vertex_class,), self.vertex_buffers._property_dict)
@@ -402,7 +394,7 @@ class InstancedVertexDomain(InstancedVertexDomainBase):  # noqa: D101
         self.vertex_buffers = GLVertexStream(self._context, size, self.per_vertex)
         return [self.vertex_buffers]
 
-    def create_instance_domain(self, size: int) -> BaseInstanceDomain:
+    def create_instance_domain(self, size: int) -> InstanceDomain:
         return GLInstanceDomainArrays(self, size)
 
     def draw_buckets(self, mode: int, buckets: list[VertexGroupBucket]) -> None:
@@ -426,7 +418,7 @@ class InstancedVertexDomain(InstancedVertexDomainBase):  # noqa: D101
         self.vertex_buffers.commit()
         self.instance_buckets.draw(mode)
 
-    def draw_subset(self, mode: GeometryMode, vertex_list: InstanceVertexList) -> None:
+    def draw_subset(self, mode: GeometryMode, vertex_list: WebGLInstanceVertexList) -> None:
         """Draw a specific VertexList in the domain.
 
         The `vertex_list` parameter specifies a :py:class:`VertexList`
@@ -443,14 +435,14 @@ class InstancedVertexDomain(InstancedVertexDomainBase):  # noqa: D101
 
 
 
-class IndexedVertexDomain(IndexedVertexDomainBase):
+class WebGLIndexedVertexDomain(IndexedVertexDomain):
     """Management of a set of indexed vertex lists.
 
     Construction of an indexed vertex domain is usually done with the
     :py:func:`create_domain` function.
     """
 
-    _vertex_class = IndexedVertexList
+    _vertex_class = WebGLIndexedVertexList
     _supports_base_vertex: bool = False
 
     def __init__(self, context: SurfaceContext, initial_count: int, attribute_meta: dict[str, Attribute],
@@ -528,7 +520,7 @@ class IndexedVertexDomain(IndexedVertexDomainBase):
                     self._gl.drawElements(mode, size, self.index_stream.gl_type,
                                           start * self.index_stream.index_element_size)
 
-    def draw_subset(self, mode: GeometryMode, vertex_list: IndexedVertexList) -> None:
+    def draw_subset(self, mode: GeometryMode, vertex_list: WebGLIndexedVertexList) -> None:
         """Draw a specific IndexedVertexList in the domain.
 
         The `vertex_list` parameter specifies a :py:class:`IndexedVertexList`
@@ -548,14 +540,14 @@ class IndexedVertexDomain(IndexedVertexDomainBase):
                        vertex_list.index_start * self.index_stream.index_element_size)
 
 
-class InstancedIndexedVertexDomain(InstancedIndexedVertexDomainBase):
+class WebGLInstancedIndexedVertexDomain(InstancedIndexedVertexDomain):
     """Management of a set of indexed vertex lists.
 
     Construction of an indexed vertex domain is usually done with the
     :py:func:`create_domain` function.
     """
     _initial_index_count: int = 16
-    _vertex_class = InstanceIndexedVertexList
+    _vertex_class = WebGLInstanceIndexedVertexList
 
     def _create_vertex_class(self) -> type:
         return type(self._vertex_class.__name__, (_RunningIndexSupport, self._vertex_class),
@@ -598,7 +590,7 @@ class InstancedIndexedVertexDomain(InstancedIndexedVertexDomainBase):
             for vl_range in bucket.ranges:
                 self.instance_domain.draw_bucket(mode, self._instance_map[vl_range])
 
-    def draw_subset(self, mode: GeometryMode, vertex_list: InstanceIndexedVertexListBase) -> None:
+    def draw_subset(self, mode: GeometryMode, vertex_list: InstanceIndexedVertexList) -> None:
         """Draw a specific IndexedVertexList in the domain.
 
         The ``vertex_list`` parameter specifies a :py:class:`IndexedVertexList`

@@ -29,7 +29,7 @@ from functools import lru_cache
 from typing import TYPE_CHECKING, Sequence
 
 import pyglet
-from pyglet.display.xlib import XlibScreenXinerama
+from pyglet.display.xlib import XlibScreenXinerama, XlibDisplay
 from pyglet.event import EventDispatcher
 from pyglet.libs.linux.x11 import cursorfont, xlib
 from pyglet.libs.linux.x11.xrender import XRenderFindVisualFormat
@@ -128,6 +128,7 @@ ViewEventHandler = _ViewEventHandler
 
 class XlibWindow(BaseWindow):
     config: XlibGLSurfaceConfig
+    display: XlibDisplay
     _x_display: xlib.Display | None = None  # X display connection
     _x_screen_id: int | None = None  # X screen index
     _x_ic: xlib.XIC | None = None  # X input context

@@ -5,7 +5,7 @@ import weakref
 from typing import Callable, TYPE_CHECKING
 
 from pyglet.graphics.api.gl import gl, gl_info, ObjectSpace
-from pyglet.graphics.api.base import SurfaceContext
+from pyglet.graphics.api.base import SurfaceContext, NullContext
 from pyglet.graphics.api.gl.gl import GLFunctions, GLuint, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT
 
 
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.api.gl.xlib.glx_info import GLXInfo
     from pyglet.graphics.api.gl.win32.wgl_info import WGLInfo
     from pyglet.graphics.api.gl.global_opengl import OpenGLBackend
-    from pyglet.graphics.api.gl.framebuffer import Framebuffer
+    from pyglet.graphics.api.gl.framebuffer import GLFramebuffer
 
 
 class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
@@ -25,9 +25,9 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
 
     Use ``DisplayConfig.create_context`` to create a context.
     """
-    gles_pixel_fbo: Framebuffer | None
+    gles_pixel_fbo: GLFramebuffer | None
     #: gl_info.GLInfo instance, filled in on first set_current
-    _info: gl_info.GLInfo | None = None
+    _info: gl_info.GLInfo
 
     #: A container which is shared between all contexts that share GL objects.
     object_space: ObjectSpace
@@ -128,9 +128,9 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
                 self.platform_func = self.platform_func_class()
             self.uniform_getters, self.uniform_setters = self._get_uniform_func_tables()
             self._info.query(self)
-            if self.get_info().get_opengl_api() == "gles":
-                from pyglet.graphics.api.gl.framebuffer import Framebuffer
-                self.gles_pixel_fbo = Framebuffer(context=self)
+            if self.info.get_opengl_api() == "gles":
+                from pyglet.graphics.api.gl.framebuffer import GLFramebuffer
+                self.gles_pixel_fbo = GLFramebuffer(context=self)
 
         if self.object_space.doomed_textures:
             self._delete_objects(self.object_space.doomed_textures, self.glDeleteTextures)
@@ -192,8 +192,8 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
         self.detach()
 
         if self.core.current_context is self:
-            self.core.current_context = None
-            #gl_info.remove_active_context()
+            self.core.current_context = NullContext()
+            # gl_info.remove_active_context()
 
     def _safe_to_operate_on_object_space(self) -> bool:
         """Check if it's safe to interact with this context's object space.
@@ -202,7 +202,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
         object space is the same as this context's object space and this
         method is called from the main thread.
         """
-        return (self.object_space is self.core.current_context.object_space and
+        return (self.core.current_context and self.object_space is self.core.current_context.object_space and
                 threading.current_thread() is threading.main_thread())
 
     def _safe_to_operate_on(self) -> bool:
@@ -300,9 +300,14 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
         else:
             self.doomed_framebuffers.append(fbo_id)
 
-    def get_info(self) -> gl_info.GLInfo:
+    @property
+    def info(self) -> gl_info.GLInfo:
         """Get the :py:class:`~GLInfo` instance for this context."""
         return self._info
+
+    def get_info(self) -> gl_info.GLInfo:
+        """Get the :py:class:`~GLInfo` instance for this context."""
+        return self.info
 
     def _get_uniform_func_tables(self):
         _uniform_getters: dict[GLDataType, Callable] = {
@@ -361,17 +366,21 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
             gl.GL_INT_SAMPLER_3D: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
             gl.GL_UNSIGNED_INT_SAMPLER_3D: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
 
-            gl.GL_FLOAT_MAT2: (gl.GLfloat, self.glUniformMatrix2fv, self.glProgramUniformMatrix2fv, 4),
-            gl.GL_FLOAT_MAT3: (gl.GLfloat, self.glUniformMatrix3fv, self.glProgramUniformMatrix3fv, 6),
-            gl.GL_FLOAT_MAT4: (gl.GLfloat, self.glUniformMatrix4fv, self.glProgramUniformMatrix4fv, 16),
+            # Buffer Samplers
+            gl.GL_SAMPLER_BUFFER: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
+            gl.GL_INT_SAMPLER_BUFFER: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
+            gl.GL_UNSIGNED_INT_SAMPLER_BUFFER: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
 
-            # TODO: test/implement these:
-            # GL_FLOAT_MAT2x3: glUniformMatrix2x3fv, glProgramUniformMatrix2x3fv,
-            # GL_FLOAT_MAT2x4: glUniformMatrix2x4fv, glProgramUniformMatrix2x4fv,
-            # GL_FLOAT_MAT3x2: glUniformMatrix3x2fv, glProgramUniformMatrix3x2fv,
-            # GL_FLOAT_MAT3x4: glUniformMatrix3x4fv, glProgramUniformMatrix3x4fv,
-            # GL_FLOAT_MAT4x2: glUniformMatrix4x2fv, glProgramUniformMatrix4x2fv,
-            # GL_FLOAT_MAT4x3: glUniformMatrix4x3fv, glProgramUniformMatrix4x3fv,
+            # Matrices
+            gl.GL_FLOAT_MAT2: (gl.GLfloat, self.glUniformMatrix2fv, self.glProgramUniformMatrix2fv, 4),
+            gl.GL_FLOAT_MAT2x3: (gl.GLfloat, self.glUniformMatrix2x3fv, self.glProgramUniformMatrix2x3fv, 6),
+            gl.GL_FLOAT_MAT2x4: (gl.GLfloat, self.glUniformMatrix2x4fv, self.glProgramUniformMatrix2x4fv, 8),
+            gl.GL_FLOAT_MAT3: (gl.GLfloat, self.glUniformMatrix3fv, self.glProgramUniformMatrix3fv, 9),
+            gl.GL_FLOAT_MAT3x2: (gl.GLfloat, self.glUniformMatrix3x2fv, self.glProgramUniformMatrix3x2fv, 6),
+            gl.GL_FLOAT_MAT3x4: (gl.GLfloat, self.glUniformMatrix3x4fv, self.glProgramUniformMatrix3x4fv, 12),
+            gl.GL_FLOAT_MAT4: (gl.GLfloat, self.glUniformMatrix4fv, self.glProgramUniformMatrix4fv, 16),
+            gl.GL_FLOAT_MAT4x2: (gl.GLfloat, self.glUniformMatrix4x2fv, self.glProgramUniformMatrix4x2fv, 8),
+            gl.GL_FLOAT_MAT4x3: (gl.GLfloat, self.glUniformMatrix4x3fv, self.glProgramUniformMatrix4x3fv, 12),
 
             gl.GL_IMAGE_1D: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
             gl.GL_IMAGE_2D: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 2),

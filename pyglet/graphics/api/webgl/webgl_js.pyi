@@ -1,5 +1,5 @@
 # WebGL object types
-from typing import Any, Sequence
+from typing import Any, Sequence, overload
 
 class WebGLShader: ...
 class WebGLProgram: ...
@@ -57,20 +57,24 @@ class WebGLRenderingContext:
     # --- Texture Functions ---
     def createTexture(self) -> WebGLTexture | None: ...
     def bindTexture(self, target: int, texture: WebGLTexture | None) -> None: ...
+    @overload
     def texImage2D(
         self, target: int, level: int, internalformat: int,
         width: int, height: int, border: int,
         format: int, type: int, pixels: bytes | memoryview | None = None,
     ) -> None: ...
+    @overload
     def texImage2D(
         self, target: int, level: int, internalformat: int,
         format: int, type: int, source: Any,
     ) -> None: ...  # Overload for image sources
+    @overload
     def texSubImage2D(
         self, target: int, level: int, xoffset: int, yoffset: int,
         width: int, height: int, format: int, type: int,
         pixels: bytes | memoryview | None = None,
     ) -> None: ...
+    @overload
     def texSubImage2D(
         self, target: int, level: int, xoffset: int, yoffset: int,
         format: int, type: int, source: Any,
@@ -277,22 +281,26 @@ class WebGL2RenderingContext(WebGLRenderingContext):
     def waitSync(self, sync: WebGLSync, flags: int, timeout: int) -> int: ...
     def readBuffer(self, source: int) -> None: ...
     def transformFeedbackVaryings(self, program: WebGLProgram, varyings: Sequence[str], buffermode: int) -> None: ...
+    @overload
     def texImage3D(
         self, target: int, level: int, internalformat: int,
         width: int, height: int, depth: int, border: int,
         format: int, type: int, pixels: int | bytes | memoryview | None = None,
     ) -> None: ...
+    @overload
     def texImage3D(
         self, target: int, level: int, internalformat: int,
         width: int, height: int, depth: int, border: int,
         format: int, type: int, source: Any,
     ) -> None: ...  # Overload for image sources
     def texStorage3D(self, target: int, levels: int, internalformat: int, width: int, height: int, depth: int) -> None: ...
+    @overload
     def texSubImage3D(
         self, target: int, level: int, xoffset: int, yoffset: int,
         zoffset: int, width: int, height: int, depth: int, format: int,
         type: int, pixels: int | bytes | memoryview | None = None,
     ) -> None: ...
+    @overload
     def texSubImage3D(
         self, target: int, level: int, xoffset: int, yoffset: int,
         zoffset: int, width: int, height: int, depth: int, format: int,

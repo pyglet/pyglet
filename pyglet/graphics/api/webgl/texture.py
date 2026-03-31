@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, Iterator, Literal, Union
+from typing import TYPE_CHECKING, Callable
 
 import js
 import pyodide
@@ -44,20 +44,24 @@ from pyglet.graphics.api.webgl.gl import (
     GL_UNPACK_SKIP_ROWS,
     GL_UNSIGNED_BYTE,
 )
-from pyglet.graphics.texture import TextureBase, TextureRegionBase, UniformTextureSequence, TextureArraySizeExceeded, \
-    TextureArrayDepthExceeded
+from pyglet.graphics.texture import Texture, UniformTextureSequence, _TextureRegionShared, _Texture3DShared, \
+    _TextureArrayShared, TextureGrid
 from pyglet.image.base import (
     CompressedImageData,
     ImageData,
     ImageDataRegion,
     ImageException,
-    ImageGrid,
-    T,
-    _AbstractGrid,
     _AbstractImage,
 )
 
 # from pyglet.image.buffer import Framebuffer, Renderbuffer, get_max_color_attachments
+
+
+if TYPE_CHECKING:
+    from typing import Callable
+
+    from pyglet.graphics.api.webgl import OpenGLSurfaceContext
+    from pyglet.graphics.api.webgl.webgl_js import WebGL2RenderingContext
 
 _api_base_internal_formats = {
     'R': 'GL_R',
@@ -112,13 +116,6 @@ def _get_internal_format(component_format: ComponentFormat, bit_size: int = 8, d
     raise ValueError(f"GL constant '{gl_format}' not defined.")
 
 
-if TYPE_CHECKING:
-    from collections.abc import Iterator
-    from typing import Callable, Literal
-
-    from pyglet.graphics.api.webgl import OpenGLSurfaceContext
-    from pyglet.graphics.api.webgl.webgl_js import WebGL2RenderingContext
-
 _api_pixel_formats = {
     'R': GL_RED,
     'RG': GL_RG,
@@ -139,11 +136,11 @@ _api_pixel_formats = {
 
 def get_max_texture_size() -> int:
     """Query the maximum texture size available"""
-    return pyglet.graphics.api.core.current_context.get_info().MAX_ARRAY_TEXTURE_LAYERS
+    return pyglet.graphics.api.core.current_context.info.MAX_TEXTURE_SIZE
 
 
 def get_max_array_texture_layers() -> int:
-    return pyglet.graphics.api.core.current_context.get_info().MAX_ARRAY_TEXTURE_LAYERS
+    return pyglet.graphics.api.core.current_context.info.MAX_ARRAY_TEXTURE_LAYERS
 
 
 def _get_gl_format_and_type(fmt: str):
@@ -216,11 +213,11 @@ class GLCompressedImageData(CompressedImageData):
 
         return self.extension is None or core.have_extension(self.extension)
 
-    def get_texture(self) -> TextureBase:
+    def get_texture(self) -> Texture:
         if self._current_texture:
             return self._current_texture
 
-        texture = TextureBase.create(self.width, self.height, blank_data=False)
+        texture = WebGLTexture.create(self.width, self.height, blank_data=False)
 
         if self.anchor_x or self.anchor_y:
             texture.anchor_x = self.anchor_x
@@ -233,7 +230,7 @@ class GLCompressedImageData(CompressedImageData):
 
         if self._have_extension():
             gl.compressedTexImage2D(
-                texture.target, texture.level, self.gl_format, self.width, self.height, 0, len(self.data), self.data,
+                texture.target, 0, self.gl_format, self.width, self.height, 0, len(self.data), self.data,
             )
         elif self.decoder:
             image = self.decoder(self.data, self.width, self.height)
@@ -248,7 +245,7 @@ class GLCompressedImageData(CompressedImageData):
         self._current_texture = texture
         return texture
 
-    def get_mipmapped_texture(self) -> TextureBase:
+    def get_mipmapped_texture(self) -> Texture:
         if self._current_mipmap_texture:
             return self._current_mipmap_texture
 
@@ -257,7 +254,7 @@ class GLCompressedImageData(CompressedImageData):
             #       For now, just return a non-mipmapped texture.
             return self.get_texture()
 
-        texture = TextureBase.create(self.width, self.height, GL_TEXTURE_2D, None)
+        texture = WebGLTexture.create(self.width, self.height, blank_data=False)
 
         if self.anchor_x or self.anchor_y:
             texture.anchor_x = self.anchor_x
@@ -272,7 +269,7 @@ class GLCompressedImageData(CompressedImageData):
             gl.generateMipmap(texture.target)
 
         gl.compressedTexImage2D(
-            texture.target, texture.level, self.gl_format, self.width, self.height, 0, len(self.data), self.data,
+            texture.target, 0, self.gl_format, self.width, self.height, 0, len(self.data), self.data,
         )
 
         width, height = self.width, self.height
@@ -288,7 +285,7 @@ class GLCompressedImageData(CompressedImageData):
         self._current_mipmap_texture = texture
         return texture
 
-    def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int, internalformat: int = None):
+    def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int, internalformat: int | None = None):
         if not self._have_extension():
             raise ImageException(f"{self.extension} is required to decode {self}")
 
@@ -353,47 +350,17 @@ def _get_pixel_format(image_data: ImageData) -> tuple[int, int]:
     return fmt, gl_type
 
 
-class Texture(TextureBase):
+class WebGLTexture(Texture):
     """An image loaded into GPU memory.
 
     Typically, you will get an instance of Texture by accessing calling
     the ``get_texture()`` method of any AbstractImage class (such as ImageData).
     """
 
-    region_class: TextureRegion  # Set to TextureRegion after it's defined
+    region_class: WebGLTextureRegion  # Set to WebGLTextureRegion after it's defined
     """The class to use when constructing regions of this texture.
      The class should be a subclass of TextureRegion.
     """
-
-    tex_coords = (0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0)
-    """12-tuple of float, named (u1, v1, r1, u2, v2, r2, ...).
-    ``u, v, r`` give the 3D texture coordinates for vertices 1-4. The vertices
-    are specified in the order bottom-left, bottom-right, top-right and top-left.
-    """
-
-    tex_coords_order: tuple[int, int, int, int] = (0, 1, 2, 3)
-    """The default vertex winding order for a quad.
-    This defaults to counter-clockwise, starting at the bottom-left.
-    """
-
-    # If this backend supports pixel data conversion.
-    # If False, will force data to be RGBA, even if CPU is used to order it.
-    pixel_conversion = True
-
-    level: int = 0
-    """The mipmap level of this texture."""
-
-    images = 1
-
-    default_filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR, TextureFilter.LINEAR
-    """The default minification and magnification filters, as a tuple.
-    Both default to LINEAR. If a texture is created without specifying
-    a filter, these defaults will be used. 
-    """
-
-    x: int = 0
-    y: int = 0
-    z: int = 0
 
     _ctx: OpenGLSurfaceContext
     _gl: WebGL2RenderingContext
@@ -423,14 +390,6 @@ class Texture(TextureBase):
         self._gl.deleteTexture(self.id)
         self.id = None
 
-    def __del__(self):
-        if self.id is not None:
-            try:
-                self._context.delete_texture(self.id)
-                self.id = None
-            except (AttributeError, ImportError):
-                pass  # Interpreter is shutting down
-
     def bind(self, texture_unit: int = 0) -> None:
         """Bind to a specific Texture Unit by number."""
         self._gl.activeTexture(GL_TEXTURE0 + texture_unit)
@@ -450,6 +409,88 @@ class Texture(TextureBase):
         .. note:: OpenGL 4.3, or 4.2 with the GL_ARB_compute_shader extention is required.
         """
         raise NotImplementedError("Not supported.")
+
+    def _flush(self) -> None:
+        self._gl.flush()
+
+    def _delete_resource(self) -> None:
+        self._context.delete_texture(self.id)
+        self.id = None
+
+    def _begin_upload(self, image_data: ImageData | ImageDataRegion) -> None:
+        data_pitch = abs(image_data._current_pitch)
+
+        if data_pitch & 0x1:
+            align = 1
+        elif data_pitch & 0x2:
+            align = 2
+        else:
+            align = 4
+
+        row_length = data_pitch // len(image_data.format)
+
+        self._gl.pixelStorei(GL_UNPACK_ALIGNMENT, align)
+        self._gl.pixelStorei(GL_UNPACK_ROW_LENGTH, row_length)
+
+        if isinstance(image_data, ImageDataRegion):
+            self._gl.pixelStorei(GL_UNPACK_SKIP_PIXELS, image_data.x)
+            self._gl.pixelStorei(GL_UNPACK_SKIP_ROWS, image_data.y)
+
+    def _end_upload(self, image_data: ImageData | ImageDataRegion) -> None:
+        self._gl.pixelStorei(GL_UNPACK_ROW_LENGTH, 0)
+
+        if isinstance(image_data, ImageDataRegion):
+            self._gl.pixelStorei(GL_UNPACK_SKIP_PIXELS, 0)
+            self._gl.pixelStorei(GL_UNPACK_SKIP_ROWS, 0)
+
+    def _apply_filters(self) -> None:
+        self._gl_min_filter = texture_map[self.min_filter]
+        self._gl_mag_filter = texture_map[self.mag_filter]
+
+        self.bind()
+        self._gl.texParameteri(self.target, GL_TEXTURE_MIN_FILTER, self._gl_min_filter)
+        self._gl.texParameteri(self.target, GL_TEXTURE_MAG_FILTER, self._gl_mag_filter)
+
+    def _allocate_mipmap_level(self, level: int, width: int, height: int, depth: int,
+                               data_size: int | None) -> None:
+        data = js.Uint8Array.new(data_size) if data_size is not None else None
+        self._gl.texImage2D(
+            self.target,
+            level,
+            self._gl_internal_format,
+            width,
+            height,
+            0,
+            _get_base_format(self.internal_format),
+            GL_UNSIGNED_BYTE,
+            data,
+        )
+
+    def _generate_mipmaps(self) -> None:
+        self._gl.generateMipmap(self.target)
+        self._gl.flush()
+
+    def _update_subregion(self, image_data: ImageData | ImageDataRegion, x: int, y: int, z: int,
+                          level: int = 0) -> None:
+        data_format = image_data.format
+        data_pitch = abs(image_data._current_pitch)
+
+        fmt, gl_type = _get_pixel_format(image_data)
+
+        # Get data in required format (hopefully will be the same format it's already
+        # in, unless that's an obscure format, upside-down or the driver is old).
+        data = image_data.convert(data_format, data_pitch)
+
+        js_array = js.Uint8Array.new(data)
+
+        if self.target == GL_TEXTURE_3D or self.target == GL_TEXTURE_2D_ARRAY:
+            self._gl.texSubImage3D(
+                self.target, level, x, y, z, image_data.width, image_data.height, 1, fmt, gl_type, js_array,
+            )
+        else:
+            self._gl.texSubImage2D(
+                self.target, level, x, y, image_data.width, image_data.height, fmt, gl_type, js_array,
+            )
 
     @staticmethod
     def _get_image_alignment(image_data: ImageData) -> tuple[int, int]:
@@ -482,6 +523,7 @@ class Texture(TextureBase):
             row_length = pitch // components
 
         return align, row_length
+
     @classmethod
     def create_from_image(cls,
                           image_data: ImageData | ImageDataRegion,
@@ -491,7 +533,7 @@ class Texture(TextureBase):
                           address_mode: AddressMode = AddressMode.REPEAT,
                           anisotropic_level: int = 0,
                           context: OpenGLSurfaceContext | None = None,
-                          ) -> Texture:
+                          ) -> WebGLTexture:
         """Create a Texture from image data.
 
         Args:
@@ -550,6 +592,7 @@ class Texture(TextureBase):
             js_array,
         )
         gl.flush()
+        texture._mark_mipmap_valid(0)
         return texture
 
     @classmethod
@@ -561,7 +604,7 @@ class Texture(TextureBase):
                filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                address_mode: AddressMode = AddressMode.REPEAT,
                anisotropic_level: int = 0,
-               blank_data: bool = True, context: OpenGLSurfaceContext | None = None) -> TextureBase:
+               blank_data: bool = True, context: OpenGLSurfaceContext | None = None) -> WebGLTexture:
         """Create a Texture.
 
         Create a Texture with the specified dimensions, and attributes.
@@ -607,6 +650,8 @@ class Texture(TextureBase):
 
         data = js.Uint8Array.new(width * height * len(internal_format)) if blank_data else None
         texture._allocate(data)
+        if blank_data:
+            texture._mark_mipmap_valid(0)
         return texture
 
     def _allocate(self, data: None | js.Uint8Array) -> None:
@@ -619,10 +664,10 @@ class Texture(TextureBase):
                              data)
         self._gl.flush()
 
-    def _attach_texture_to_fbo(self, z: int = 0) -> None:
-        self._gl.framebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.id, self.level)
+    def _attach_texture_to_fbo(self, z: int = 0, level: int = 0) -> None:
+        self._gl.framebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.id, level)
 
-    def fetch(self, z: int = 0) -> ImageData:
+    def fetch(self, z: int = 0, level: int = 0) -> ImageData:
         """Fetch the image data of this texture from the GPU.
 
         Bind the texture, and read the pixel data back from the GPU.
@@ -634,6 +679,8 @@ class Texture(TextureBase):
         Args:
             z:
                 For 3D textures, the image slice to retrieve.
+            level:
+                The mipmap level of the texture to retrieve.
         """
         self._gl.bindTexture(self.target, self.id)
 
@@ -647,7 +694,7 @@ class Texture(TextureBase):
         self._gl.pixelStorei(GL_PACK_ALIGNMENT, 1)
         fbo = self._gl.createFramebuffer()
         self._gl.bindFramebuffer(GL_FRAMEBUFFER, fbo)
-        self._attach_texture_to_fbo(z)
+        self._attach_texture_to_fbo(z, level)
 
         if self._gl.checkFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE:
             raise Exception("Framebuffer is incomplete.")
@@ -660,218 +707,20 @@ class Texture(TextureBase):
         data = ImageData(self.width, self.height, fmt, pixel_buf)
         return data
 
-    def get_image_data(self, z: int = 0) -> ImageData:
-        """Get the image data of this texture.
-
-        Bind the texture, and read the pixel data back from the GPU.
-        This can be a somewhat costly operation.
-        Modifying the returned ImageData object has no effect on the
-        texture itself. Uploading ImageData back to the GPU/texture
-        can be done with the :py:meth:`~Texture.upload` method.
-
-        Args:
-            z:
-                For 3D textures, the image slice to retrieve.
-        """
-        return self.fetch(z)
-
-    def _apply_region_unpack(self, image_data: ImageData | ImageDataRegion) -> None:
-        if isinstance(image_data, ImageDataRegion):
-            self._gl.pixelStorei(GL_UNPACK_SKIP_PIXELS, image_data.x)
-            self._gl.pixelStorei(GL_UNPACK_SKIP_ROWS, image_data.y)
-
-    def _default_region_unpack(self, image_data: ImageData | ImageDataRegion) -> None:
-        if isinstance(image_data, ImageDataRegion):
-            self._gl.pixelStorei(GL_UNPACK_SKIP_PIXELS, 0)
-            self._gl.pixelStorei(GL_UNPACK_SKIP_ROWS, 0)
-
-    def upload(self, image_data: ImageData | ImageDataRegion, x: int, y: int, z: int) -> None:
-        """Upload image data into the Texture at specific coordinates.
-
-        You must have this texture bound before uploading data.
-
-        The image's anchor point will be aligned to the given ``x`` and ``y``
-        coordinates.  If this texture is a 3D texture, the ``z``
-        parameter gives the image slice to blit into.
-        """
-        x -= self.anchor_x
-        y -= self.anchor_y
-
-        data_format = image_data.format
-        data_pitch = abs(image_data._current_pitch)
-
-        fmt, gl_type = _get_pixel_format(image_data)
-
-        # Get data in required format (hopefully will be the same format it's already
-        # in, unless that's an obscure format, upside-down or the driver is old).
-        data = image_data.convert(data_format, data_pitch)
-
-        js_array = js.Uint8Array.new(data)
-
-        if data_pitch & 0x1:
-            align = 1
-        elif data_pitch & 0x2:
-            align = 2
-        else:
-            align = 4
-        row_length = data_pitch // len(data_format)
-
-        gl = self._gl
-        gl.pixelStorei(GL_UNPACK_ALIGNMENT, align)
-        gl.pixelStorei(GL_UNPACK_ROW_LENGTH, row_length)
-        self._apply_region_unpack(image_data)
-
-        if self.target == GL_TEXTURE_3D or self.target == GL_TEXTURE_2D_ARRAY:
-            gl.texSubImage3D(
-                self.target, self.level, x, y, z, image_data.width, image_data.height, 1, fmt, gl_type, js_array,
-            )
-        else:
-            gl.texSubImage2D(self.target, self.level, x, y, image_data.width, image_data.height, fmt, gl_type, js_array)
-
-        gl.pixelStorei(GL_UNPACK_ROW_LENGTH, 0)
-        self._default_region_unpack(image_data)
-
-        # Flush image upload before data gets GC'd:
-        gl.flush()
-
-    def get_texture(self) -> TextureBase:
-        return self
-
-    def get_mipmapped_texture(self) -> TextureBase:
-        raise NotImplementedError(f"Not implemented for {self}.")
-
-    def get_region(self, x: int, y: int, width: int, height: int) -> TextureRegionBase:
-        return self.region_class(x, y, 0, width, height, self)
-
-    def get_transform(
-        self, flip_x: bool = False, flip_y: bool = False, rotate: Literal[0, 90, 180, 270, 360] = 0,
-    ) -> TextureRegionBase:
-        """Create a copy of this image applying a simple transformation.
-
-        The transformation is applied to the texture coordinates only;
-        :py:meth:`~pyglet.image.AbstractImage.get_image_data` will return the
-        untransformed data. The transformation is applied around the anchor point.
-
-        Args:
-            flip_x:
-                If True, the returned image will be flipped horizontally.
-            flip_y:
-                If True, the returned image will be flipped vertically.
-            rotate:
-                Degrees of clockwise rotation of the returned image.  Only
-                90-degree increments are supported.
-        """
-        transform = self.get_region(0, 0, self.width, self.height)
-        bl, br, tr, tl = 0, 1, 2, 3
-        transform.anchor_x = self.anchor_x
-        transform.anchor_y = self.anchor_y
-        if flip_x:
-            bl, br, tl, tr = br, bl, tr, tl
-            transform.anchor_x = self.width - self.anchor_x
-        if flip_y:
-            bl, br, tl, tr = tl, tr, bl, br
-            transform.anchor_y = self.height - self.anchor_y
-        rotate %= 360
-        if rotate < 0:
-            rotate += 360
-        if rotate == 0:
-            pass
-        elif rotate == 90:
-            bl, br, tr, tl = br, tr, tl, bl
-            transform.anchor_x, transform.anchor_y = transform.anchor_y, transform.width - transform.anchor_x
-        elif rotate == 180:
-            bl, br, tr, tl = tr, tl, bl, br
-            transform.anchor_x = transform.width - transform.anchor_x
-            transform.anchor_y = transform.height - transform.anchor_y
-        elif rotate == 270:
-            bl, br, tr, tl = tl, bl, br, tr
-            transform.anchor_x, transform.anchor_y = transform.height - transform.anchor_y, transform.anchor_x
-        else:
-            raise ImageException("Only 90 degree rotations are supported.")
-        if rotate in (90, 270):
-            transform.width, transform.height = transform.height, transform.width
-        transform._set_tex_coords_order(bl, br, tr, tl)
-        return transform
-
-    def _set_tex_coords_order(self, bl, br, tr, tl) -> None:
-        tex_coords = (self.tex_coords[:3], self.tex_coords[3:6], self.tex_coords[6:9], self.tex_coords[9:])
-        self.tex_coords = tex_coords[bl] + tex_coords[br] + tex_coords[tr] + tex_coords[tl]
-
-        order = self.tex_coords_order
-        self.tex_coords_order = (order[bl], order[br], order[tr], order[tl])
-
-    @property
-    def uv(self) -> tuple[float, float, float, float]:
-        """Tuple containing the left, bottom, right, top 2D texture coordinates."""
-        tex_coords = self.tex_coords
-        return tex_coords[0], tex_coords[1], tex_coords[3], tex_coords[7]
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(id={self.id}, size={self.width}x{self.height})"
-
-
-class TextureRegion(Texture):
+class WebGLTextureRegion(_TextureRegionShared, WebGLTexture):
     """A rectangular region of a texture, presented as if it were a separate texture."""
 
-    def __init__(self, x: int, y: int, z: int, width: int, height: int, owner: TextureBase):
+    def __init__(self, x: int, y: int, z: int, width: int, height: int, owner: Texture):
         super().__init__(owner._context, width, height, owner.id, owner.tex_type, owner.internal_format,
                          owner.internal_format_size, owner.internal_format_type, owner.filters, owner.address_mode,
                          owner.anisotropic_level)
-
-        self.x = x
-        self.y = y
-        self.z = z
-        self._width = width
-        self._height = height
-        self.owner = owner
-        owner_u1 = owner.tex_coords[0]
-        owner_v1 = owner.tex_coords[1]
-        owner_u2 = owner.tex_coords[3]
-        owner_v2 = owner.tex_coords[7]
-        scale_u = owner_u2 - owner_u1
-        scale_v = owner_v2 - owner_v1
-        u1 = x / owner.width * scale_u + owner_u1
-        v1 = y / owner.height * scale_v + owner_v1
-        u2 = (x + width) / owner.width * scale_u + owner_u1
-        v2 = (y + height) / owner.height * scale_v + owner_v1
-        r = z / owner.images + owner.tex_coords[2]
-        self.tex_coords = (u1, v1, r, u2, v1, r, u2, v2, r, u1, v2, r)
-
-    def fetch(self, _z: int = 0) -> ImageDataRegion:
-        image_data = self.owner.fetch(self.z)
-        return image_data.get_region(self.x, self.y, self.width, self.height)
-
-    def get_image_data(self):
-        return self.fetch()
-
-    def get_region(self, x: int, y: int, width: int, height: int) -> TextureRegionBase:
-        x += self.x
-        y += self.y
-        region = self.region_class(x, y, self.z, width, height, self.owner)
-        region._set_tex_coords_order(*self.tex_coords_order)
-        return region
-
-    def upload(self, source: _AbstractImage, x: int, y: int, z: int) -> None:
-        assert source.width <= self._width and source.height <= self._height, f"{source} is larger than {self}"
-        self.owner.blit_into(source, x + self.x, y + self.y, z + self.z)
-
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(id={self.id},"
-            f" size={self.width}x{self.height}, owner={self.owner.width}x{self.owner.height})"
-        )
-
-    def delete(self) -> None:
-        """Deleting a TextureRegion has no effect. Operate on the owning texture instead."""
-
-    def __del__(self):
-        pass
+        self._init_region(x, y, z, width, height, owner)
 
 
-Texture.region_class = TextureRegion
+WebGLTexture.region_class = WebGLTextureRegion
 
 
-class Texture3D(Texture, UniformTextureSequence):
+class WebGLTexture3D(_Texture3DShared[WebGLTextureRegion], WebGLTexture, UniformTextureSequence[WebGLTextureRegion]):
     """A texture with more than one image slice.
 
     Use the :py:meth:`create_for_images` or :py:meth:`create_for_image_grid`
@@ -889,7 +738,7 @@ class Texture3D(Texture, UniformTextureSequence):
                  filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT,
                  anisotropic_level: int = 0,
-                 context: OpenGLSurfaceContext | None = None) -> Texture3D:
+                 context: OpenGLSurfaceContext | None = None) -> WebGLTexture3D:
         ctx = context or pyglet.graphics.api.core.current_context
         gl = ctx.gl
         item_width = images[0].width
@@ -940,37 +789,45 @@ class Texture3D(Texture, UniformTextureSequence):
                                    GL_UNSIGNED_BYTE,
                                    0)
 
-    def _attach_texture_to_fbo(self, z: int = 0) -> None:
-        self._gl.framebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.id, self.level, z)
+    def upload(self, image: ImageData | ImageDataRegion, x: int, y: int, z: int, level: int = 0) -> None:
+        WebGLTexture.upload(self, image, x, y, z, level=level)
 
-    def __len__(self):
-        return len(self.items)
+    def _get_mipmap_depth(self, level: int) -> int:
+        depth = max(1, int(self.images))
+        return max(1, depth >> level)
 
-    def __getitem__(self, index):
-        return self.items[index]
+    def _allocate_mipmap_level(self, level: int, width: int, height: int, depth: int,
+                               data_size: int | None) -> None:
+        data = js.Uint8Array.new(data_size) if data_size is not None else None
+        self._gl.texImage3D(
+            self.target,
+            level,
+            self._gl_internal_format,
+            width,
+            height,
+            depth,
+            0,
+            _get_base_format(self.internal_format),
+            GL_UNSIGNED_BYTE,
+            data,
+        )
 
-    def __setitem__(self, index, value):
-        if type(index) is slice:
-            self._gl.bindTexture(self.target, self.id)
+    def _attach_texture_to_fbo(self, z: int = 0, level: int = 0) -> None:
+        self._gl.framebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.id, level, z)
 
-            for item, image in zip(self[index], value):
-                self.upload(self, image, image.anchor_x, image.anchor_y, item.z)
-        else:
-            self.upload(value, value.anchor_x, value.anchor_y, self[index].z)
-
-    def __iter__(self) -> Iterator[TextureRegionBase]:
-        return iter(self.items)
+    def _bind_sequence_texture(self) -> None:
+        self._gl.bindTexture(self.target, self.id)
 
 
-class TextureArrayRegion(TextureRegion):
+class WebGLTextureArrayRegion(WebGLTextureRegion):
     """A region of a TextureArray, presented as if it were a separate texture."""
 
     def __repr__(self):
         return f"{self.__class__.__name__}(id={self.id}, size={self.width}x{self.height}, layer={self.z})"
 
 
-class TextureArray(Texture, UniformTextureSequence):
-    items: list[TextureArrayRegion]
+class WebGLTextureArray(_TextureArrayShared[WebGLTextureArrayRegion], WebGLTexture, UniformTextureSequence[WebGLTextureArrayRegion]):
+    items: list[WebGLTextureArrayRegion]
 
     def __init__(self, context: OpenGLSurfaceContext, width, height, tex_id, max_depth,
                  internal_format: ComponentFormat = ComponentFormat.RGBA,
@@ -993,7 +850,7 @@ class TextureArray(Texture, UniformTextureSequence):
                filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                address_mode: AddressMode = AddressMode.REPEAT,
                anisotropic_level: int = 0,
-               context: OpenGLSurfaceContext | None = None) -> TextureArray:
+               context: OpenGLSurfaceContext | None = None) -> WebGLTextureArray:
         """Create an empty TextureArray.
 
         You may specify the maximum depth, or layers, the Texture Array should have. This defaults
@@ -1031,21 +888,22 @@ class TextureArray(Texture, UniformTextureSequence):
         texture._allocate(None)
         return texture
 
-    def _update_subregion(self, image_data: ImageData, x: int, y: int, z: int):
+    def _update_subregion(self, image_data: ImageData, x: int, y: int, z: int,
+                          level: int = 0):
         data_pitch = abs(image_data._current_pitch)
 
         data = image_data.convert(image_data.format, data_pitch)
 
         fmt, gl_type = _get_pixel_format(image_data)
 
-        self._gl.texSubImage3D(self.target, self.level,
+        self._gl.texSubImage3D(self.target, level,
                                       x, y, z,
                                       image_data.width, image_data.height, 1,
                                       fmt, gl_type,
                                       data)
 
-    def _attach_texture_to_fbo(self, z: int = 0) -> None:
-        self._gl.framebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.id, self.level, z)
+    def _attach_texture_to_fbo(self, z: int = 0, level: int = 0) -> None:
+        self._gl.framebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.id, level, z)
 
     def _allocate(self, data: None | js.Uint8Array) -> None:
         self._gl.texImage3D(self.target, 0,
@@ -1056,172 +914,38 @@ class TextureArray(Texture, UniformTextureSequence):
                                    GL_UNSIGNED_BYTE,
                                    0)
 
-    def _verify_size(self, image: _AbstractImage) -> None:
-        if image.width > self.width or image.height > self.height:
-            raise TextureArraySizeExceeded(
-                f'Image ({image.width}x{image.height}) exceeds the size of the TextureArray ({self.width}x'
-                f'{self.height})',
-            )
+    def _get_mipmap_depth(self, level: int) -> int:
+        return max(1, int(self.max_depth))
 
-    def add(self, image: pyglet.image.ImageData) -> TextureArrayRegion:
-        if len(self.items) >= self.max_depth:
-            raise TextureArrayDepthExceeded("TextureArray is full.")
-
-        self._verify_size(image)
-        start_length = len(self.items)
-        item = self.region_class(0, 0, start_length, image.width, image.height, self)
-
-        self.upload(image, image.anchor_x, image.anchor_y, start_length)
-        self.items.append(item)
-        return item
-
-    def allocate(self, *images: _AbstractImage) -> list[TextureArrayRegion]:
-        """Allocates multiple images at once."""
-        if len(self.items) + len(images) > self.max_depth:
-            raise TextureArrayDepthExceeded("The amount of images being added exceeds the depth of this TextureArray.")
-
-        self._gl.bindTexture(self.target, self.id)
-
-        start_length = len(self.items)
-        for i, image in enumerate(images):
-            self._verify_size(image)
-            item = self.region_class(0, 0, start_length + i, image.width, image.height, self)
-            self.items.append(item)
-            image.blit_to_texture(self.target, self.level, image.anchor_x, image.anchor_y, start_length + i)
-
-        return self.items[start_length:]
-
-    @classmethod
-    def create_for_image_grid(cls, grid) -> TextureArray:
-        texture_array = cls.create(grid[0].width, grid[0].height,
-                                   internal_format=ComponentFormat(grid[0].format),
-                                   max_depth=len(grid))
-        texture_array.allocate(*grid[:])
-        return texture_array
-
-    def __len__(self) -> int:
-        return len(self.items)
-
-    def __getitem__(self, index) -> TextureArrayRegion:
-        return self.items[index]
-
-    def __setitem__(self, index, value) -> None:
-        if type(index) is slice:
-            self._gl.bindTexture(self.target, self.id)
-
-            for old_item, image in zip(self[index], value):
-                self._verify_size(image)
-                item = self.region_class(0, 0, old_item.z, image.width, image.height, self)
-                image.blit_to_texture(self.target, self.level, image.anchor_x, image.anchor_y, old_item.z)
-                self.items[old_item.z] = item
-        else:
-            self._verify_size(value)
-            item = self.region_class(0, 0, index, value.width, value.height, self)
-            self.upload(value, value.anchor_x, value.anchor_y, index)
-            self.items[index] = item
-
-    def __iter__(self) -> Iterator[TextureRegionBase]:
-        return iter(self.items)
-
-
-TextureArray.region_class = TextureArrayRegion
-TextureArrayRegion.region_class = TextureArrayRegion
-
-
-class TextureGrid(_AbstractGrid[Union[Texture, TextureRegion]]):
-    """A texture containing a regular grid of texture regions.
-
-    To construct, create an :py:class:`~pyglet.image.ImageGrid` first::
-
-        image_grid = ImageGrid(...)
-        texture_grid = TextureGrid(image_grid)
-
-    The texture grid can be accessed as a single texture, or as a sequence
-    of :py:class:`~pyglet.graphics.TextureRegion`.  When accessing as a sequence, you can specify
-    integer indexes, in which the images are arranged in rows from the
-    bottom-left to the top-right::
-
-        # assume the texture_grid is 3x3:
-        current_texture = texture_grid[3] # get the middle-left image
-
-    You can also specify tuples in the sequence methods, which are addressed
-    as ``row, column``::
-
-        # equivalent to the previous example:
-        current_texture = texture_grid[1, 0]
-
-    When using tuples in a slice, the returned sequence is over the
-    rectangular region defined by the slice::
-
-        # returns center, center-right, center-top, top-right images in that
-        # order:
-        images = texture_grid[(1,1):]
-        # equivalent to
-        images = texture_grid[(1,1):(3,3)]
-
-    """
-
-    def __init__(
-        self,
-        texture: Texture | TextureRegion,
-        rows: int,
-        columns: int,
-        item_width: int,
-        item_height: int,
-        row_padding: int = 0,
-        column_padding: int = 0,
-    ) -> None:
-        """Construct a grid for the given image.
-
-        You can specify parameters for the grid, for example setting
-        the padding between cells.  Grids are always aligned to the
-        bottom-left corner of the image.
-
-        Args:
-            texture:
-                A texture or region over which to construct the grid.
-            rows:
-                Number of rows in the grid.
-            columns:
-                Number of columns in the grid.
-            item_width:
-                Width of each column.  If unspecified, is calculated such
-                that the entire texture width is used.
-            item_height:
-                Height of each row.  If unspecified, is calculated such that
-                the entire texture height is used.
-            row_padding:
-                Pixels separating adjacent rows.  The padding is only
-                inserted between rows, not at the edges of the grid.
-            column_padding:
-                Pixels separating adjacent columns.  The padding is only
-                inserted between columns, not at the edges of the grid.
-        """
-        if isinstance(texture, TextureRegion):
-            owner = texture.owner
-        else:
-            owner = texture
-
-        item_width = item_width or (texture.width - column_padding * (columns - 1)) // columns
-        item_height = item_height or (texture.height - row_padding * (rows - 1)) // rows
-        self.texture = owner
-        super().__init__(rows, columns, item_width, item_height, row_padding, column_padding)
-
-    @classmethod
-    def from_image_grid(cls, image_grid: ImageGrid) -> TextureGrid:
-        texture = image_grid.image.get_texture()
-        return cls(
-            texture,
-            image_grid.rows,
-            image_grid.columns,
-            image_grid.item_width,
-            image_grid.item_height,
-            image_grid.row_padding,
-            image_grid.column_padding,
+    def _allocate_mipmap_level(self, level: int, width: int, height: int, depth: int,
+                               data_size: int | None) -> None:
+        data = js.Uint8Array.new(data_size) if data_size is not None else None
+        self._gl.texImage3D(
+            self.target,
+            level,
+            self._gl_internal_format,
+            width,
+            height,
+            self.max_depth,
+            0,
+            _get_base_format(self.internal_format),
+            GL_UNSIGNED_BYTE,
+            data,
         )
 
-    def _create_item(self, x: int, y: int, width: int, height: int) -> TextureRegion:
-        return self.texture.get_region(x, y, width, height)
+    def _generate_mipmaps(self) -> None:
+        self._gl.generateMipmap(self.target)
+        self._gl.flush()
 
-    def _update_item(self, existing_item: T, new_item: T) -> None:
-        existing_item.upload(new_item, new_item.anchor_x, new_item.anchor_y, 0)
+    def _bind_sequence_texture(self) -> None:
+        self._gl.bindTexture(self.target, self.id)
+
+    def _allocate_image(self, image: ImageData, layer: int) -> None:
+        self.upload(image, image.anchor_x, image.anchor_y, layer)
+
+WebGLTextureArray.region_class = WebGLTextureArrayRegion
+WebGLTextureArrayRegion.region_class = WebGLTextureArrayRegion
+
+
+class WebGLTextureGrid(TextureGrid):
+    pass

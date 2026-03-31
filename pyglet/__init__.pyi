@@ -72,6 +72,7 @@ class Options:
     wayland: bool
     backend: str | None
     optimize_states: bool
+    opengl_persistent_buffers: bool
     pyodide: PyodideOptions
 
     def get(self, item: str, default: Any = None) -> Any:

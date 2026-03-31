@@ -5,7 +5,7 @@ from typing import Callable, Sequence, Any, TYPE_CHECKING
 import pyglet
 from pyglet.graphics.api.gl.enums import geometry_map
 
-from pyglet.graphics.draw import _DomainKey, BatchBase, Group
+from pyglet.graphics.draw import _DomainKey, Batch, Group
 from pyglet.graphics.api.gl import (
     vertexdomain, OpenGLSurfaceContext,
 )
@@ -15,8 +15,8 @@ _debug_graphics_batch = pyglet.options.debug_graphics_batch
 
 if TYPE_CHECKING:
     from pyglet.enums import GeometryMode
-    from pyglet.graphics.api.gl2.shader import ShaderProgram
-    from pyglet.graphics.api.gl.vertexdomain import VertexList, IndexedVertexList
+    from pyglet.graphics.api.gl.shader import GLShaderProgram as ShaderProgram
+    from pyglet.graphics.api.gl.vertexdomain import GLIndexedVertexList, GLVertexList
 
 
 # Default Shader source:
@@ -87,7 +87,7 @@ _fragment_primitive_source: str = """#version 330 core
 """
 
 
-def get_default_batch() -> Batch:
+def get_default_batch() -> GLBatch:
     """Batch used globally for objects that have no Batch specified."""
     return pyglet.graphics.api.core.get_default_batch()
     # try:
@@ -106,16 +106,16 @@ def get_default_shader() -> ShaderProgram:
     )
 
 
-_domain_class_map: dict[tuple[bool, bool], type[vertexdomain.VertexDomain]] = {
+_domain_class_map: dict[tuple[bool, bool], type[vertexdomain.GLVertexDomain]] = {
     # Indexed, Instanced : Domain
-    (False, False): vertexdomain.VertexDomain,
-    (True, False): vertexdomain.IndexedVertexDomain,
-    (False, True): vertexdomain.InstancedVertexDomain,
-    (True, True): vertexdomain.InstancedIndexedVertexDomain,
+    (False, False): vertexdomain.GLVertexDomain,
+    (True, False): vertexdomain.GLIndexedVertexDomain,
+    (False, True): vertexdomain.GLInstancedVertexDomain,
+    (True, True): vertexdomain.GLInstancedIndexedVertexDomain,
 }
 
 
-class Batch(BatchBase):
+class GLBatch(Batch):
     """Manage a collection of drawables for batched rendering.
 
     Many drawable pyglet objects accept an optional `Batch` argument in their
@@ -145,7 +145,7 @@ class Batch(BatchBase):
     _draw_list: list[Callable]
     top_groups: list[Group]
     group_children: dict[Group, list[Group]]
-    group_map: dict[Group, dict[_DomainKey, vertexdomain.VertexDomain]]
+    group_map: dict[Group, dict[_DomainKey, vertexdomain.GLVertexDomain]]
 
     def __init__(self, context: OpenGLSurfaceContext | None = None, initial_count: int = 32) -> None:
         """Initialize the batch for use.
@@ -175,7 +175,7 @@ class Batch(BatchBase):
         """
         self._draw_list_dirty = True
 
-    def update_shader(self, vertex_list: VertexList | IndexedVertexList, mode: GeometryMode, group: Group,
+    def update_shader(self, vertex_list: GLVertexList | GLIndexedVertexList, mode: GeometryMode, group: Group,
                       program: ShaderProgram) -> bool:
         """Migrate a vertex list to another domain that has the specified shader attributes.
 
@@ -215,8 +215,8 @@ class Batch(BatchBase):
 
         return True
 
-    def migrate(self, vertex_list: VertexList | IndexedVertexList, mode: GeometryMode, group: Group,
-                batch: Batch) -> None:
+    def migrate(self, vertex_list: GLVertexList | GLIndexedVertexList, mode: GeometryMode, group: Group,
+                batch: GLBatch) -> None:
         """Migrate a vertex list to another batch and/or group.
 
         `vertex_list` and `mode` together identify the vertex list to migrate.
@@ -252,7 +252,7 @@ class Batch(BatchBase):
             self._draw_list_dirty = True
 
     def get_domain(self, indexed: bool, instanced: bool, mode: GeometryMode, group: Group,
-                   attributes: dict[str, Any]) -> vertexdomain.VertexDomain | vertexdomain.IndexedVertexDomain | vertexdomain.InstancedVertexDomain | vertexdomain.InstancedIndexedVertexDomain:
+                   attributes: dict[str, Any]) -> vertexdomain.GLVertexDomain | vertexdomain.GLIndexedVertexDomain | vertexdomain.GLInstancedVertexDomain | vertexdomain.GLInstancedIndexedVertexDomain:
         """Get, or create, the vertex domain corresponding to the given arguments.
 
         mode is the render mode such as GL_LINES or GL_TRIANGLES
@@ -584,7 +584,7 @@ class Batch(BatchBase):
 
         self.delete_empty_domains()
 
-    def draw_subset(self, vertex_lists: Sequence[VertexList | IndexedVertexList]) -> None:
+    def draw_subset(self, vertex_lists: Sequence[GLVertexList | GLIndexedVertexList]) -> None:
         """Draw only some vertex lists in the batch.
 
         The use of this method is highly discouraged, as it is quite

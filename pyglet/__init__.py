@@ -289,6 +289,13 @@ class Options:
     backend: Literal["opengl", "gl2", "gles3", "gles2", "webgl"] = "opengl"
     """Specify the graphics API backend."""
 
+    opengl_persistent_buffers: bool = False
+    """If ``True``, the OpenGL backend uses persistent mapped vertex buffers when supported.
+
+    Requires OpenGL 4.4 or the ``GL_ARB_buffer_storage`` extension. If unavailable or ``False``, pyglet
+    falls back to normal backed buffer objects.
+    """
+
     optimize_states: bool = True
     """Runs a second pass on the draw list to remove any redundant states.
 

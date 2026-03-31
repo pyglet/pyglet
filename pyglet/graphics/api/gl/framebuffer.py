@@ -33,7 +33,7 @@ from pyglet.graphics.api.gl.texture import _get_internal_format
 
 if TYPE_CHECKING:
     from pyglet.graphics.api.gl import OpenGLSurfaceContext
-    from pyglet.graphics.api.gl.texture import Texture
+    from pyglet.graphics.api.gl.texture import GLTexture
 
 _gl_target_map = {
     FramebufferTarget.FRAMEBUFFER: gl.GL_FRAMEBUFFER,
@@ -99,10 +99,10 @@ def get_screenshot() -> ImageData:
 
 def get_max_color_attachments() -> int:
     """Return the maximum number of color attachments supported by the current context."""
-    return pyglet.graphics.api.core.current_context.get_info().MAX_COLOR_ATTACHMENTS
+    return pyglet.graphics.api.core.current_context.info.MAX_COLOR_ATTACHMENTS
 
 
-class Renderbuffer:
+class GLRenderbuffer:
     """OpenGL Renderbuffer Object."""
 
     def __init__(self, context: OpenGLSurfaceContext, width: int, height: int,
@@ -169,7 +169,7 @@ _status_states = {
     gl.GL_FRAMEBUFFER_COMPLETE: "Framebuffer is complete.",
 }
 
-class Framebuffer:
+class GLFramebuffer:
     """OpenGL Framebuffer Object.
 
     .. versionadded:: 2.0
@@ -251,7 +251,8 @@ class Framebuffer:
 
         return _status_states.get(gl_status, "Unknown error")
 
-    def attach_texture(self, texture: Texture, attachment: FramebufferAttachment = FramebufferAttachment.COLOR0) -> None:
+    def attach_texture(self, texture: GLTexture, attachment: FramebufferAttachment = FramebufferAttachment.COLOR0,
+                       level: int = 0) -> None:
         """Attach a Texture to the Framebuffer.
 
         Args:
@@ -260,16 +261,18 @@ class Framebuffer:
                 point named by attachment.
             attachment:
                 Specifies the attachment point of the framebuffer.
+            level:
+                The mipmap level of the targeted texture to attach to the framebuffer.
         """
         self.bind()
         gl_attachment = _gl_attachment_map[attachment]
-        self._context.glFramebufferTexture(self._gl_target, gl_attachment, texture.id, texture.level)
+        self._context.glFramebufferTexture(self._gl_target, gl_attachment, texture.id, level)
         self._attachment_types |= gl_attachment
         self._width = max(texture.width, self._width)
         self._height = max(texture.height, self._height)
         self.unbind()
 
-    def attach_texture_layer(self, texture: Texture, layer: int, level: int,
+    def attach_texture_layer(self, texture: GLTexture, layer: int, level: int,
                              attachment: FramebufferAttachment = FramebufferAttachment.COLOR0) -> None:
         """Attach a Texture layer to the Framebuffer.
 
@@ -292,7 +295,7 @@ class Framebuffer:
         self._height = max(texture.height, self._height)
         self.unbind()
 
-    def attach_renderbuffer(self, renderbuffer: Renderbuffer,
+    def attach_renderbuffer(self, renderbuffer: GLRenderbuffer,
                             attachment: FramebufferAttachment = FramebufferAttachment.COLOR0) -> None:
         """Attach a Renderbuffer to the Framebuffer.
 

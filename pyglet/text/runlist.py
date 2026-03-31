@@ -252,13 +252,16 @@ class AbstractRunIterator:
 
 
 class RunIterator(AbstractRunIterator):
-    _run_list_iter: Iterator[AbstractRunIterator]
+    _run_list_iter: Iterator[tuple[int, int, Any]]
+    start: int
+    end: int
+    value: Any
 
-    def __init__(self, run_list: Iterable[AbstractRunIterator] | RunList) -> None:
+    def __init__(self, run_list: Iterable[tuple[int, int, Any]] | RunList) -> None:
         self._run_list_iter = iter(run_list)
         self.start, self.end, self.value = next(self)
 
-    def __next__(self) -> AbstractRunIterator:
+    def __next__(self) -> tuple[int, int, Any]:
         return next(self._run_list_iter)
 
     def __getitem__(self, index: int) -> Any:

@@ -2,15 +2,20 @@ from __future__ import annotations
 from enum import Enum, auto
 
 
-class GraphicsAPI(Enum):
-    OPENGL = auto()
-    OPENGL_2 = auto()
-    OPENGL_ES_2 = auto()
-    OPENGL_ES_3 = auto()
-    WEBGL = auto()
+class GraphicsAPI(str, Enum):
+    """Supported graphics backends."""
+    OPENGL = "opengl"
+    OPENGL_2 = "gl2"
+    OPENGL_ES_2 = "gles2"
+    OPENGL_ES_3 = "gles3"
+    WEBGL = "webgl"
+
+    def __str__(self) -> str:
+        return self.value
 
 
 class GeometryMode(Enum):
+    """Primitive drawing modes for geometry."""
     POINTS = auto()
     LINES = auto()
     LINE_STRIP = auto()
@@ -20,6 +25,7 @@ class GeometryMode(Enum):
 
 
 class BlendFactor(Enum):
+    """Blend factors used for color blending operations."""
     ZERO = "ZERO"
     ONE = "ONE"
     SRC_COLOR = "SRC_COLOR"
@@ -37,6 +43,7 @@ class BlendFactor(Enum):
 
 
 class BlendOp(Enum):
+    """Blend operations used when combining source and destination colors."""
     ADD = "ADD"
     SUBTRACT = "SUBTRACT"
     REVERSE_SUBTRACT = "REVERSE_SUBTRACT"
@@ -45,11 +52,13 @@ class BlendOp(Enum):
 
 
 class TextureFilter(Enum):
+    """Texture minification and magnification filters."""
     LINEAR = auto()
     NEAREST = auto()
 
 
 class AddressMode(Enum):
+    """Texture sampling behavior outside the [0, 1] coordinate range."""
     REPEAT = auto()
     MIRRORED_REPEAT = auto()
     CLAMP_TO_EDGE = auto()
@@ -57,12 +66,35 @@ class AddressMode(Enum):
 
 
 class TextureWrapping(Enum):
+    """Texture wrapping configuration per axis."""
     WRAP_S = auto()
     WRAP_T = auto()
     WRAP_R = auto()
 
 
+class AnimationChannelTargetPath(str, Enum):
+    # Keep the values of the strings as is, to match glTF 2.0 specifications
+    TRANSLATION = "translation"
+    ROTATION = "rotation"
+    SCALE = "scale"
+    WEIGHTS = "weights"
+
+    def __str__(self) -> str:
+        return self.value
+
+
+class AnimationInterpolation(str, Enum):
+    # Keep the values of the strings as is, to match glTF 2.0 specifications
+    LINEAR = "LINEAR"
+    STEP = "STEP"
+    CUBIC_SPLINE = "CUBICSPLINE"
+
+    def __str__(self) -> str:
+        return self.value
+
+
 class ComponentFormat(str, Enum):
+    """Texture component format identifiers."""
     R = 'R'
     RG = 'RG'
     RGB = 'RGB'
@@ -76,6 +108,7 @@ class ComponentFormat(str, Enum):
 
 
 class TextureType(Enum):
+    """Texture target/type identifiers."""
     TYPE_1D = auto()
     TYPE_2D = auto()
     TYPE_3D = auto()
@@ -86,6 +119,7 @@ class TextureType(Enum):
 
 
 class CompareOp(Enum):
+    """Comparison operations used for depth or sampler comparisons."""
     NEVER = auto()
     LESS = auto()
     EQUAL = auto()
@@ -97,12 +131,14 @@ class CompareOp(Enum):
 
 
 class FramebufferTarget(Enum):
+    """Framebuffer binding targets."""
     FRAMEBUFFER = auto()
     DRAW = auto()
     READ = auto()
 
 
 class FramebufferAttachment(Enum):
+    """Framebuffer attachment points."""
     COLOR0 = auto()
     COLOR1 = auto()
     COLOR2 = auto()

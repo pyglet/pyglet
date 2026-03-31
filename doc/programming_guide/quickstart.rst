@@ -170,15 +170,15 @@ The following example plays an MP3 file [#mp3]_::
 
     import pyglet
 
-    music = pyglet.resource.media('music.mp3')
+    music = pyglet.resource.audio('music.mp3')
     music.play()
 
     pyglet.app.run()
 
 As with the image loading example presented earlier,
-:func:`~pyglet.resource.media` locates the sound file in the application's
+:func:`~pyglet.resource.audio` locates the sound file in the application's
 directory (not the working directory).  If you know the actual filesystem path
-(either relative or absolute), use :func:`pyglet.media.load`.
+(either relative or absolute), use :func:`pyglet.media.load_audio`.
 
 By default, audio is streamed when playing. This works well for longer music
 tracks. Short sounds, such as a gunfire shot used in a game, should instead be
@@ -187,7 +187,7 @@ immediately and incur less of a CPU performance penalty. It also allows playing
 the same sound repeatedly without reloading it.
 Specify ``streaming=False`` in this case::
 
-    sound = pyglet.resource.media('shot.wav', streaming=False)
+    sound = pyglet.resource.audio('shot.wav', streaming=False)
     sound.play()
 
 The `examples/media/media_player.py` example demonstrates playback of streaming

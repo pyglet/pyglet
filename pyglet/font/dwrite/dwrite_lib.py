@@ -20,7 +20,7 @@ from ctypes import (
     windll,
 )
 from ctypes.wintypes import BOOL, FLOAT, HDC, UINT, WCHAR
-from typing import NoReturn
+from typing import Any, NoReturn
 
 from pyglet.font.dwrite.d2d1_types_lib import (
     D2D1_COLOR_F,
@@ -1375,7 +1375,7 @@ class TextAnalysis(com.COMObject):
         analyzer.AnalyzeScript(self, 0, text_length, self)
 
     def SetScriptAnalysis(self, textPosition: UINT32, textLength: UINT32,
-                          scriptAnalysis: POINTER(DWRITE_SCRIPT_ANALYSIS)) -> int:
+                          scriptAnalysis: POINTER[DWRITE_SCRIPT_ANALYSIS]) -> int:
         # textPosition - The index of the first character in the string that the result applies to
         # textLength - How many characters of the string from the index that the result applies to
         # scriptAnalysis - The analysis information for all glyphs starting at position for length.
@@ -1393,12 +1393,12 @@ class TextAnalysis(com.COMObject):
         return 0
         # return 0x80004001
 
-    def GetTextBeforePosition(self, textPosition: UINT32, textString: POINTER(POINTER(WCHAR)),
-                              textLength: POINTER(UINT32)) -> NoReturn:
+    def GetTextBeforePosition(self, textPosition: UINT32, textString: POINTER[POINTER[WCHAR]],
+                              textLength: POINTER[UINT32]) -> NoReturn:
         msg = "Currently not implemented."
         raise Exception(msg)
 
-    def GetTextAtPosition(self, textPosition: UINT32, textString: c_wchar_p, textLength: POINTER(UINT32)) -> int:
+    def GetTextAtPosition(self, textPosition: UINT32, textString: c_wchar_p, textLength: POINTER[UINT32]) -> int:
         # This method will retrieve a substring of the text in this layout
         #   to be used in an analysis step.
         # Arguments:
@@ -1421,8 +1421,8 @@ class TextAnalysis(com.COMObject):
     def GetParagraphReadingDirection(self) -> int:
         return 0
 
-    def GetLocaleName(self, textPosition: UINT32, textLength: POINTER(UINT32),
-                      localeName: POINTER(POINTER(WCHAR))) -> int:
+    def GetLocaleName(self, textPosition: UINT32, textLength: POINTER[UINT32],
+                      localeName: POINTER[POINTER[WCHAR]]) -> int:
         self.__local_name = c_wchar_p("")  # TODO: Add more locales.
         localeName[0] = self.__local_name
         textLength[0] = self._textlength - textPosition
@@ -1477,8 +1477,8 @@ class MyFontFileStream(com.COMObject):
         self._size = len(data)
         self._ptrs = []
 
-    def ReadFileFragment(self, fragmentStart: POINTER(c_void_p), fileOffset: UINT64, fragmentSize: UINT64,
-                         fragmentContext: POINTER(c_void_p)) -> int:
+    def ReadFileFragment(self, fragmentStart: Any, fileOffset: UINT64, fragmentSize: UINT64,
+                         fragmentContext: Any) -> int:
         if fileOffset + fragmentSize > self._size:
             return 0x80004005  # E_FAIL
 
@@ -1494,11 +1494,11 @@ class MyFontFileStream(com.COMObject):
     def ReleaseFileFragment(self, fragmentContext: c_void_p) -> int:
         return 0
 
-    def GetFileSize(self, fileSize: POINTER(UINT64)) -> int:
+    def GetFileSize(self, fileSize: Any) -> int:
         fileSize[0] = self._size
         return 0
 
-    def GetLastWriteTime(self, lastWriteTime: POINTER(UINT64)) -> int:
+    def GetLastWriteTime(self, lastWriteTime: Any) -> int:
         return com.E_NOTIMPL
 
 
@@ -1510,7 +1510,7 @@ class LegacyFontFileLoader(com.COMObject):
         self._streams = {}
 
     def CreateStreamFromKey(self, fontfileReferenceKey: c_void_p, fontFileReferenceKeySize: UINT32,
-                            fontFileStream: POINTER(IDWriteFontFileStream)) -> int:
+                            fontFileStream: Any) -> int:
         convert_index = cast(fontfileReferenceKey, POINTER(c_uint32))
 
         self._ptr = cast(self._streams[convert_index.contents.value].as_interface(IDWriteFontFileStream),

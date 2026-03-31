@@ -37,7 +37,7 @@ class ScrollableTextLayout(TextLayout):
 
     def __init__(self, document: AbstractDocument,  # noqa: D107
                  x: float = 0, y: float = 0, z: float = 0,
-                 width: int = None, height: int = None,
+                 width: int | None = None, height: int | None = None,
                  anchor_x: AnchorX = 'left', anchor_y: AnchorY = 'bottom', rotation: float = 0, multiline: bool = False,
                  dpi: float | None = None, batch: Batch | None = None, group: Group | None = None,
                  program: ShaderProgram | None = None, wrap_lines: bool = True) -> None:

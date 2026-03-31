@@ -64,7 +64,7 @@ def dump_window():
     window = pyglet.window.Window(visible=False)
     from pyglet.graphics.api import core
     if not core.have_version(3) or not core.have_version(2):
-        print(f"Insufficient OpenGL version: {core.get_info().get_version_string()}")
+        print(f"Insufficient OpenGL version: {core.info.get_version_string()}")
         return
     display = pyglet.display.get_display()
     print('display:', repr(display))
@@ -83,7 +83,7 @@ def dump_window():
 def dump_gl(context=None):
     """Dump GL info."""
     if context is not None:
-        info = context.get_info()
+        info = context.info
     else:
         from pyglet.graphics.api.gl import gl_info as info
     print('gl_info.get_version_string():', info.get_version_string())

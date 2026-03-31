@@ -118,11 +118,11 @@ class _AbstractImageSequence(ABC):
         return Animation.from_image_sequence(self, period, loop)
 
     @abstractmethod
-    def __getitem__(self, item) -> _AbstractImage:
+    def __getitem__(self, item) -> ImageData:
         """Retrieve one or more images by index."""
 
     @abstractmethod
-    def __setitem__(self, item, image: _AbstractImage) -> _AbstractImage:
+    def __setitem__(self, item, image: ImageData) -> None:
         """Replace one or more images in the sequence.
 
         Args:
@@ -136,7 +136,7 @@ class _AbstractImageSequence(ABC):
         """Length of the image sequence."""
 
     @abstractmethod
-    def __iter__(self) -> Iterator[_AbstractImage]:
+    def __iter__(self) -> Iterator[ImageData]:
         """Iterate over the images in sequence."""
 
 
@@ -259,24 +259,6 @@ class ImageData(_AbstractImage):
         self._current_pitch = pitch
         self._current_data = data
         self._current_texture = None
-
-    def get_data(self, fmt: str | None = None, pitch: int | None = None) -> NotImplementedError:
-        """Get the byte data of the image.
-
-        Warning:
-            This method is deprecated and will be removed in the next version.
-            Use :py:meth:`~get_bytes` instead.
-        """
-        raise NotImplementedError("Removed. Use `get_bytes` instead.")
-
-    def set_data(self, fmt: str, pitch: int, data: bytes) -> NotImplementedError:
-        """Set the byte data of the image.
-
-        Warning:
-            This method is deprecated and will be removed in the next version.
-            Use :py:meth:`~set_bytes` instead.
-        """
-        raise NotImplementedError("Removed. Use `set_bytes` instead.")
 
     def create_texture(self, cls: type[Texture]) -> Texture:
         """Given a texture class, create a texture containing this image."""
@@ -724,7 +706,7 @@ class ImageGrid(_AbstractGrid[Union[ImageData, ImageDataRegion]], _AbstractImage
         """
         warnings.warn("Use pyglet.graphics.TextureGrid instead", DeprecationWarning)
         if not self._texture_grid:
-            from pyglet.graphics.texture import TextureGrid
+            from pyglet.graphics.texture import TextureGrid  # noqa: PLC0415
             self._texture_grid = TextureGrid.from_image_grid(self)
         return self._texture_grid
 

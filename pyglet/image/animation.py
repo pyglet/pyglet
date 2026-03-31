@@ -47,7 +47,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Literal
     from pyglet.graphics.atlas import TextureBin
-    from pyglet.graphics.texture import TextureBase, TextureSequence
+    from pyglet.graphics.texture import Texture, TextureSequence
 
 
 class Animation:
@@ -130,7 +130,7 @@ class AnimationFrame:
 
     __slots__ = 'image', 'duration'
 
-    def __init__(self, image: TextureBase, duration: float | None) -> None:
+    def __init__(self, image: Texture, duration: float | None) -> None:
         """Create an animation frame from an image."""
         self.image = image
         self.duration = duration

@@ -53,6 +53,8 @@ if TYPE_CHECKING:
     from pyglet.font import FontManager
 
 class FreeTypeGlyphRenderer(base.GlyphRenderer):
+    font: FreeTypeFont
+
     def __init__(self, font: FreeTypeFont) -> None:
         super().__init__(font)
         self.font = font

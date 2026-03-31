@@ -17,9 +17,13 @@ Modules must also implement the two functions::
 from __future__ import annotations
 
 import os.path
+from typing import TYPE_CHECKING
 
 from pyglet.util import CodecRegistry, Decoder, Encoder, DecodeException, EncodeException
 from pyglet import compat_platform
+
+if TYPE_CHECKING:
+    from pyglet.customtypes import MediaTypes
 
 
 class _ImageCodecRegistry(CodecRegistry):
@@ -39,9 +43,10 @@ class _ImageCodecRegistry(CodecRegistry):
                 self._decoder_animation_extensions[extension].append(decoder)
 
     def get_animation_decoders(self, filename=None):
-        """Get a list of animation decoders. If a `filename` is provided, only
-           decoders supporting that extension will be returned. An empty list
-           will be return if no encoders for that extension are available.
+        """Get a list of animation decoders.
+
+        If a `filename` is provided, only decoders supporting that extension will be returned. An empty list
+        will be return if no encoders for that extension are available.
         """
         if filename:
             extension = os.path.splitext(filename)[1].lower()
@@ -90,22 +95,30 @@ class ImageEncodeException(EncodeException):
 
 
 class ImageDecoder(Decoder):
+    def get_media_capabilities(self) -> tuple[MediaTypes, ...]:
+        """Return the media capabilities supported by this decoder."""
+        return ('image',)
 
     def get_animation_file_extensions(self) -> list[str]:
-        """Return a list of accepted file extensions, e.g. ['.gif', '.flc']
+        """Return a list of accepted file extensions.
+
+        Example: ['.gif', '.flc']
+
         Lower-case only.
         """
         return []
 
     def decode(self, filename, file):
         """Decode the given file object and return an instance of `Image`.
+
         Throws ImageDecodeException if there is an error.  filename
         can be a file type hint.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def decode_animation(self, filename, file):
         """Decode the given file object and return an instance of :py:class:`~pyglet.image.Animation`.
+
         Throws ImageDecodeException if there is an error.  filename
         can be a file type hint.
         """
@@ -120,10 +133,11 @@ class ImageDecoder(Decoder):
 class ImageEncoder(Encoder):
 
     def encode(self, image, filename, file):
-        """Encode the given image to the given file.  filename
-        provides a hint to the file format desired.
+        """Encode the given image to the given file.
+
+        filename provides a hint to the file format desired.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}{self.get_file_extensions()}"
@@ -148,7 +162,6 @@ def add_default_codecs():
         registry.add_decoders(ktx2)
     except ImportError:
         pass
-
 
     # Mac OS X default: Quartz
     if compat_platform == 'darwin':
