@@ -104,7 +104,8 @@ def load(filename: str, file: BinaryIO | None = None,
          streaming: bool = True, decoder: MediaDecoder | None = None,
          audio_sample_format: str | None = None,
          audio_sample_rate: int | None = None,
-         audio_channels: int | None = None) -> Source | StreamingSource:
+         audio_channels: int | None = None,
+         audio_resample_hq: bool=False) -> Source | StreamingSource:
     """Load a Source from disk, or an opened file.
 
     All decoders that are registered for the filename extension are tried.
@@ -138,10 +139,16 @@ def load(filename: str, file: BinaryIO | None = None,
             rather than relying on autimatic detection. For possible values see
             the AUDIO_CHANNELS_* constants.
             Note: currently only supported by FFmpegDecoder!
+        audio_resample_hq:
+            Whether to use high-quality resampling when resamplig is required
+            (e.g. when a specific sample rate is requested), at the cost of
+            increased CPU usage.
+            Note: currently only supported by FFmpegDecoder!
+
     """
 
     audio_driver = get_audio_driver()
-    if audio_sample_format:
+    if audio_sample_format is not None:
         if audio_sample_format not in _VALID_AUDIO_SAMPLE_FORMATS:
             raise ValueError(
                 f"Invalid audio_sample_format '{audio_sample_format}'. "
@@ -152,19 +159,24 @@ def load(filename: str, file: BinaryIO | None = None,
                 f"{type(audio_driver).__name__} is only compatible with: "
                 f"{', '.join(audio_driver.sample_formats)}")
 
-    if audio_sample_rate:
+    if audio_sample_rate is not None:
         if audio_sample_rate not in _VALID_AUDIO_SAMPLE_RATES:
             raise ValueError(
                 f"Invalid audio_sample_rate '{audio_sample_rate}'. "
                 f"Expected one of: "
                 f"{', '.join([str(x) for x in _VALID_AUDIO_SAMPLE_RATES])}")
 
-    if audio_channels:
+    if audio_channels is not None:
         if audio_channels not in _VALID_AUDIO_CHANNELS:
             raise ValueError(
                 f"Invalid audio_channels '{audio_channels}'. "
                 f"Expected one of: "
                 f"{', '.join([str(x) for x in _VALID_AUDIO_CHANNELS])}")
+
+    if not isinstance(audio_resample_hq, bool):
+        raise ValueError(
+                f"Invalid audio_resample_hq '{audio_resample_hq}'. "
+                f"Expected a boolean (True, False)")
 
     if decoder:
         if type(decoder).__name__ == "FFmpegDecoder":
@@ -173,7 +185,8 @@ def load(filename: str, file: BinaryIO | None = None,
                 audio_sample_format=audio_sample_format,
                 audio_driver_sample_formats=audio_driver.sample_formats,
                 audio_sample_rate=audio_sample_rate,
-                audio_channels=audio_channels)
+                audio_channels=audio_channels,
+                audio_resample_hq=audio_resample_hq)
         else:
             return decoder.decode(filename, file, streaming=streaming)
 

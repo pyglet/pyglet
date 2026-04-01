@@ -585,7 +585,8 @@ class FFmpegSource(StreamingSource):
                  audio_sample_format: str | None=None,
                  audio_driver_sample_formats: list[str] | None=None,
                  audio_sample_rate: int | None=None,
-                 audio_channels: int | None=None):
+                 audio_channels: int | None=None,
+                 audio_resample_hq: bool=False):
         self._packet = None
         self._video_stream = None
         self._audio_stream = None
@@ -706,7 +707,7 @@ class FFmpegSource(StreamingSource):
                     raise FFmpegException(
                         'Cannot create sample rate converter.')
 
-                # Dither withnoise-shaping when reducing bit-depth
+                # Dither with noise-shaping when reducing bit-depth
                 if (self.AV_FORMAT_MAP[self.tgt_format][0] < sample_bits):
                     avutil.av_opt_set(self.audio_convert_ctx,
                                       asbytes("dither_method"),
@@ -722,6 +723,32 @@ class FFmpegSource(StreamingSource):
                     matrix = MatrixArrayType(*data)
                     swresample.swr_set_matrix(self.audio_convert_ctx, matrix,
                                               info.channels)
+
+                if audio_resample_hq:  # Replace with soxr in future?
+                    avutil.av_opt_set_int(self.audio_convert_ctx,
+                                          asbytes("filter_size"),
+                                          128,
+                                          0)
+                    avutil.av_opt_set_int(self.audio_convert_ctx,
+                                          asbytes("phase_shift"),
+                                          14,
+                                          0)
+                    avutil.av_opt_set_int(self.audio_convert_ctx,
+                                          asbytes("kaiser_beta"),
+                                          12,
+                                          0)
+                    avutil.av_opt_set_double(self.audio_convert_ctx,
+                                             asbytes("cutoff"),
+                                             0.98,
+                                             0)
+                    avutil.av_opt_set_int(self.audio_convert_ctx,
+                                          asbytes("exact_rational"),
+                                          1,
+                                          0)
+                    avutil.av_opt_set_int(self.audio_convert_ctx,
+                                          asbytes("linear_interp"),
+                                          0,
+                                          0)
 
                 result = swresample.swr_init(self.audio_convert_ctx)
                 if result < 0:
@@ -1295,7 +1322,8 @@ class FFmpegDecoder(MediaDecoder):
                streaming: bool=True, audio_sample_format: str | None=None,
                audio_driver_sample_formats: list[str] | None=None,
                audio_sample_rate: int | None=None,
-               audio_channels: int | None=None
+               audio_channels: int | None=None,
+               audio_resample_hq: bool=False
     ) -> FFmpegSource | StaticSource:
 
         if audio_sample_format \
@@ -1307,13 +1335,15 @@ class FFmpegDecoder(MediaDecoder):
             return FFmpegSource(filename, file, audio_sample_format,
                                 audio_driver_sample_formats,
                                 audio_sample_rate,
-                                audio_channels)
+                                audio_channels,
+                                audio_resample_hq)
         else:
             return StaticSource(FFmpegSource(filename, file,
                                              audio_sample_format,
                                              audio_driver_sample_formats,
                                              audio_sample_rate,
-                                             audio_channels))
+                                             audio_channels,
+                                             audio_resample_hq))
 
 
 def get_decoders() -> list[FFmpegDecoder]:
