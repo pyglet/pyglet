@@ -5,7 +5,7 @@ from ctypes import byref, Array
 from typing import Sequence
 
 import pyglet
-from pyglet.enums import TextureType, TextureFilter, ComponentFormat, AddressMode
+from pyglet.enums import TextureType, TextureFilter, ComponentFormat, AddressMode, GraphicsAPI
 from pyglet.graphics.api.gl import OpenGLSurfaceContext, GL_COMPRESSED_RGB8_ETC2
 from pyglet.graphics.api.gl.gl import (
     GL_RED,
@@ -165,12 +165,12 @@ _data_types = {
 
 def get_max_texture_size() -> int:
     """Return the maximum texture size available."""
-    return pyglet.graphics.api.core.current_context.get_info().MAX_TEXTURE_SIZE
+    return pyglet.graphics.api.core.current_context.info.MAX_TEXTURE_SIZE
 
 
 def get_max_array_texture_layers() -> int:
     """Return the maximum TextureArray depth."""
-    return pyglet.graphics.api.core.current_context.get_info().MAX_ARRAY_TEXTURE_LAYERS
+    return pyglet.graphics.api.core.current_context.info.MAX_ARRAY_TEXTURE_LAYERS
 
 
 def _get_gl_format_and_type(fmt: str, data_type: str) -> tuple[int | None, int | None]:
@@ -468,7 +468,7 @@ class GLTexture(Texture):
         size = self.width * self.height * self.images * len(fmt)
         buf = (GLubyte * size)()
 
-        if self._context.get_info().get_opengl_api() in ("gles2", "gles3"):
+        if self._context.info.get_opengl_api() in (GraphicsAPI.OPENGL_ES_2, GraphicsAPI.OPENGL_ES_3):
             self._context.gles_pixel_fbo.bind()
             self._context.glPixelStorei(GL_PACK_ALIGNMENT, 1)
             self._attach_gles_fbo_texture(z, level)
@@ -799,6 +799,7 @@ class GLTextureArray(_TextureArrayShared[GLTextureArrayRegion], GLTexture, Unifo
 
         size = (texture.width * texture.height * texture.images * len(internal_format))
         data = (GLubyte * size)()
+        ctx.glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
         texture._allocate(data)
 
         items = []

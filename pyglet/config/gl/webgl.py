@@ -18,6 +18,7 @@ class WebGLSurfaceConfig(SurfaceConfig):
             setattr(self, name, value)
         super().__init__(window, config, handle)
 
+    @property
     def attributes(self) -> dict[str, Any]:
         # Only return the WebGL specific attributes
         return asdict(self.config)

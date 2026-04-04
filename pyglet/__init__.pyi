@@ -7,6 +7,7 @@ from . import clock as clock
 from . import config as config
 from . import customtypes as customtypes
 from . import display as display
+from . import enums as enums
 from . import event as event
 from . import font as font
 from . import graphics as graphics
@@ -72,6 +73,7 @@ class Options:
     wayland: bool
     backend: str | None
     optimize_states: bool
+    opengl_persistent_buffers: bool
     pyodide: PyodideOptions
 
     def get(self, item: str, default: Any = None) -> Any:

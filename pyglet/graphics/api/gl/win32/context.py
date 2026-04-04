@@ -108,7 +108,3 @@ class Win32ARBContext(_Win32Context):
         share = None if isinstance(share, NullContext) else share
         self._context = _global_wgl.funcs.wglCreateContextAttribsARB(window.dc, share, attribs)
         super().attach(window)
-
-
-# Backwards-compatible alias.
-_BaseWin32Context = _Win32Context

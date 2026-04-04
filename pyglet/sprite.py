@@ -370,14 +370,19 @@ class Sprite(event.EventDispatcher):
         self._update_position()
 
     def _set_texture(self, texture: Texture) -> None:
-        if texture.id is not self._texture.id:
-            self._vertex_list.delete()
-            self._texture = texture
-            self._group = self.get_sprite_group()
-            self._create_vertex_list()
-        else:
-            self._vertex_list.tex_coords[:] = texture.tex_coords
+        texture_changed = texture.id != self._texture.id
         self._texture = texture
+
+        if texture_changed:
+            self._group = self.get_sprite_group()
+            if self._batch is not None:
+                self._batch.migrate(self._vertex_list, GeometryMode.TRIANGLES, self._group, self._batch)
+            else:
+                self._vertex_list.delete()
+                self._create_vertex_list()
+                return
+
+        self._vertex_list.tex_coords[:] = texture.tex_coords
 
     def _create_vertex_list(self) -> None:
         self._vertex_list = self.program.vertex_list_indexed(

@@ -848,7 +848,7 @@ class Texture3D(_Texture3DShared[TextureRegion], Texture, UniformTextureSequence
         raise NotImplementedError
 
 
-class TextureGrid(_AbstractGrid):
+class TextureGrid(_AbstractGrid[TextureRegion]):
     """A texture containing a regular grid of texture regions.
 
     To construct, create an :py:class:`~pyglet.image.ImageGrid` first::
@@ -908,15 +908,9 @@ class TextureGrid(_AbstractGrid):
                 Pixels separating adjacent columns.  The padding is only
                 inserted between columns, not at the edges of the grid.
         """
-        # Backend-specific region implementations may not inherit the abstract TextureRegion base.
-        if isinstance(texture, TextureRegion) or hasattr(texture, "owner"):
-            owner = texture.owner
-        else:
-            owner = texture
-
         item_width = item_width or (texture.width - column_padding * (columns - 1)) // columns
         item_height = item_height or (texture.height - row_padding * (rows - 1)) // rows
-        self.texture = owner
+        self.texture = texture
         super().__init__(rows, columns, item_width, item_height, row_padding, column_padding)
 
     def _create_item(self, x: int, y: int, width: int, height: int) -> TextureRegion:

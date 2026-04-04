@@ -4,7 +4,7 @@ import atexit
 import os
 import weakref
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Protocol, get_type_hints, Sequence, Callable
+from typing import TYPE_CHECKING, Any, Protocol, get_type_hints, Sequence, Callable, NoReturn
 
 if TYPE_CHECKING:
     from pyglet.math import Mat4
@@ -18,10 +18,15 @@ class BackendGlobalObject(ABC):  # Temp name for now.
     Meant to be accessed from a global level.
     """
     windows: weakref.WeakKeyDictionary[Window, SurfaceContext]
+    _have_context: bool = False
 
     def __init__(self) -> None:
         self.windows = weakref.WeakKeyDictionary()
         self._current_window = None
+
+    @property
+    def have_context(self) -> bool:
+        return self._have_context
 
     @property
     @abstractmethod
@@ -40,7 +45,7 @@ class BackendGlobalObject(ABC):  # Temp name for now.
         """Configs to use if none specified."""
 
     @abstractmethod
-    def initialize_matrices(self, window: Window) -> None:
+    def initialize_matrices(self, window: Window) -> WindowTransformations:
         """Initialize the global matrices."""
 
     @abstractmethod
@@ -66,6 +71,128 @@ class BackendGlobalObject(ABC):  # Temp name for now.
         with open(resource_path, 'rb') as file:
             return file.read()
 
+class NullBackend(BackendGlobalObject):  # noqa: D101
+    def _raise_no_backend(self) -> NoReturn:
+        msg = ("A backend is not currently available. Ensure the backend choice is correct. "
+               "If your environment variable is set to no backend, then backend-required resources may have been imported.")
+        raise RuntimeError(msg)
+
+    @property
+    def object_space(self) -> ObjectSpace:
+        self._raise_no_backend()
+
+    def get_surface_context(self, window: Window, config) -> SurfaceContext:
+        self._raise_no_backend()
+
+    def get_default_configs(self) -> Sequence:
+        self._raise_no_backend()
+
+    def initialize_matrices(self, window: Window) -> None:
+        self._raise_no_backend()
+
+    def set_viewport(self, window, x: int, y: int, width: int, height: int) -> None:
+        self._raise_no_backend()
+
+
+class SurfaceInfo(ABC):
+    """Base backend capability info shared by all rendering APIs.
+
+    Individual backends are expected to subclass this and fill values in ``query``.
+    """
+    extensions: set[str]
+    vendor: str
+    renderer: str
+    version: str
+    shading_language_version: str
+    major_version: int
+    minor_version: int
+    api: str
+    was_queried: bool
+
+    # Common capability limits shared by backends these should be automatically queried by the API.
+    MAX_ARRAY_TEXTURE_LAYERS: int
+    MAX_TEXTURE_SIZE: int
+    MAX_COLOR_ATTACHMENTS: int
+    MAX_SAMPLES: int
+    MAX_COLOR_TEXTURE_SAMPLES: int
+    MAX_TEXTURE_IMAGE_UNITS: int
+    MAX_COMBINED_TEXTURE_IMAGE_UNITS: int
+    MAX_UNIFORM_BUFFER_BINDINGS: int
+    MAX_UNIFORM_BLOCK_SIZE: int
+    MAX_VERTEX_ATTRIBS: int
+
+    def __init__(self) -> None:
+        self.extensions = set()
+        self.vendor = ""
+        self.renderer = ""
+        self.version = "0.0"
+        self.shading_language_version = ""
+        self.major_version = 0
+        self.minor_version = 0
+        self.api = "unknown"
+        self.was_queried = False
+
+        self.MAX_ARRAY_TEXTURE_LAYERS = 0
+        self.MAX_TEXTURE_SIZE = 0
+        self.MAX_COLOR_ATTACHMENTS = 0
+        self.MAX_SAMPLES = 0
+        self.MAX_COLOR_TEXTURE_SAMPLES = 0
+        self.MAX_TEXTURE_IMAGE_UNITS = 0
+        self.MAX_COMBINED_TEXTURE_IMAGE_UNITS = 0
+        self.MAX_UNIFORM_BUFFER_BINDINGS = 0
+        self.MAX_UNIFORM_BLOCK_SIZE = 0
+        self.MAX_VERTEX_ATTRIBS = 0
+
+    @property
+    def opengl_api(self) -> str:
+        """Compatibility alias for legacy OpenGL naming."""
+        return self.api
+
+    @opengl_api.setter
+    def opengl_api(self, value: str) -> None:
+        self.api = value
+
+    @abstractmethod
+    def query(self, *_args: Any, **_kwargs: Any) -> None:
+        """Populate backend info from an active context/device."""
+
+    def have_extension(self, extension: str) -> bool:
+        """Determine if an extension is available."""
+        return extension in self.extensions
+
+    def get_extensions(self) -> set[str]:
+        """Get a set of available extensions."""
+        return self.extensions
+
+    def get_version(self) -> tuple[int, int]:
+        """Get the current major and minor API version."""
+        return self.major_version, self.minor_version
+
+    def get_version_string(self) -> str:
+        """Get the backend version string."""
+        return self.version
+
+    def have_version(self, major: int, minor: int = 0) -> bool:
+        """Determine if a version is supported."""
+        if not self.major_version and not self.minor_version:
+            return False
+
+        return (self.major_version > major or
+                (self.major_version == major and self.minor_version >= minor) or
+                (self.major_version == major and self.minor_version == minor))
+
+    def get_renderer(self) -> str:
+        """Determine the renderer string."""
+        return self.renderer
+
+    def get_vendor(self) -> str:
+        """Determine the vendor string."""
+        return self.vendor
+
+    def get_opengl_api(self) -> str:
+        """Compatibility alias for existing OpenGL callers."""
+        return self.api
+
 
 class SurfaceContext(ABC):  # Temp name for now.
     """A container for backend resources and information that are tied to a specific Window.
@@ -78,6 +205,20 @@ class SurfaceContext(ABC):  # Temp name for now.
         self.core = global_ctx
         self.window = window
         self.config = config
+
+    @property
+    @abstractmethod
+    def info(self) -> SurfaceInfo:
+        """Backend and hardware capability information for this context."""
+
+    def get_info(self) -> SurfaceInfo:
+        """Backend and hardware capability information for this context.
+
+        Deprecated, use the `info` property instead.
+
+        .. deprecated:: 3.0
+        """
+        return self.info
 
     @abstractmethod
     def set_clear_color(self, r: float, g: float, b: float, a: float) -> None:
@@ -119,10 +260,20 @@ class NullContext:
               (for example as an argument to a ctypes call).
     """
 
-    def __getattribute__(self, item):
+    @staticmethod
+    def _raise_no_context() -> NoReturn:
         msg = ("A rendering Context has not yet been created, or has already been deleted. Please ensure "
                "a context exists (create a Window) before attempting to perform any GPU related activities.")
         raise RuntimeError(msg)
+
+    def __getattribute__(self, item):
+        self._raise_no_context()
+
+    def __enter__(self) -> NoReturn:
+        self._raise_no_context()
+
+    def __exit__(self, *_args: Any) -> None:
+        return None
 
     def __eq__(self, other):
         return other is None

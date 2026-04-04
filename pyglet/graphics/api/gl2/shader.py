@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from ctypes import (
-    Structure,
     c_byte,
     c_double,
     c_float,
@@ -15,12 +14,14 @@ from typing import TYPE_CHECKING
 
 import pyglet
 import pyglet.graphics.api.gl.gl as gl
+from pyglet.graphics.api.gl2.buffer import UniformBufferObject  # noqa: F401
 from pyglet.graphics.api.gl.shader import GLDataType
 from pyglet.graphics.api.gl.shader import GLShader
 from pyglet.graphics.api.gl.shader import GLShaderProgram
 from pyglet.graphics.shader import ShaderException, ShaderSource, ShaderType
 
 if TYPE_CHECKING:
+    from pyglet.graphics.api.base import NullContext
     from pyglet.graphics.api.gl import OpenGLSurfaceContext
     from pyglet.customtypes import CType, DataTypes
 
@@ -64,16 +65,6 @@ class UniformBlock:
         uniform_count: int,
     ) -> None:
         raise NotImplementedError
-
-
-class UniformBufferObject:
-    """Not supported by OpenGL 2.0."""
-
-    def __init__(self, view_class: type[Structure], buffer_size: int, binding: int) -> None:
-        """Initialize the Uniform Buffer Object with the specified Structure."""
-        raise NotImplementedError
-
-
 
 
 # Shader & program classes:
@@ -164,7 +155,7 @@ class Shader(GLShader):
     You can reuse a Shader object in multiple ShaderPrograms.
     """
 
-    _context: OpenGLSurfaceContext | None
+    _context: OpenGLSurfaceContext | NullContext
     _id: int | None
     type: ShaderType
 

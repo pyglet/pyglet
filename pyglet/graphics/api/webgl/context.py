@@ -83,9 +83,14 @@ class OpenGLSurfaceContext(SurfaceContext):
         self.cached_programs = weakref.WeakValueDictionary()
         self._create_uniform_dicts()
 
-    def get_info(self) -> GLInfo:
+    @property
+    def info(self) -> GLInfo:
         """Get the :py:class:`~GLInfo` instance for this context."""
         return self._info
+
+    def get_info(self) -> GLInfo:
+        """Get the :py:class:`~GLInfo` instance for this context."""
+        return self.info
 
     def resized(self, width, height): ...
 
@@ -216,7 +221,7 @@ class OpenGLSurfaceContext(SurfaceContext):
             gl.GL_INT_SAMPLER_3D: (gl.GLint, self.gl.uniform1iv, 1),
             gl.GL_UNSIGNED_INT_SAMPLER_3D: (gl.GLint, self.gl.uniform1iv, 1),
             gl.GL_FLOAT_MAT2: (gl.GLfloat, self.gl.uniformMatrix2fv, 4),
-            gl.GL_FLOAT_MAT3: (gl.GLfloat, self.gl.uniformMatrix3fv, 6),
+            gl.GL_FLOAT_MAT3: (gl.GLfloat, self.gl.uniformMatrix3fv, 9),
             gl.GL_FLOAT_MAT4: (gl.GLfloat, self.gl.uniformMatrix4fv, 16),
             # Images
             gl.GL_IMAGE_1D: (gl.GLint, self.gl.uniform1iv, 1),

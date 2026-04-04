@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 import pyglet
 
 if TYPE_CHECKING:
+    from pyglet.graphics.api.base import NullContext
     from pyglet.graphics.api.webgl import OpenGLSurfaceContext
     from pyglet.graphics.api.webgl.webgl_js import WebGLVertexArrayObject
 
@@ -14,7 +15,7 @@ __all__ = ['VertexArray']
 class VertexArray:
     """OpenGL Vertex Array Object."""
 
-    _context: OpenGLSurfaceContext | None
+    _context: OpenGLSurfaceContext | NullContext
     _id: WebGLVertexArrayObject
 
     def __init__(self, context: OpenGLSurfaceContext) -> None:

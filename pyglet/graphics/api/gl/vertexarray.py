@@ -7,6 +7,7 @@ from pyglet.graphics.api.gl import GLuint
 
 if TYPE_CHECKING:
     from ctypes import c_uint
+    from pyglet.graphics.api.base import NullContext
     from pyglet.graphics.api.gl.context import OpenGLSurfaceContext
 
 __all__ = ['VertexArray']
@@ -14,7 +15,7 @@ __all__ = ['VertexArray']
 
 class VertexArray:
     """OpenGL Vertex Array Object."""
-    _context: OpenGLSurfaceContext | None
+    _context: OpenGLSurfaceContext | NullContext
     _id: c_uint
 
     def __init__(self, context: OpenGLSurfaceContext) -> None:

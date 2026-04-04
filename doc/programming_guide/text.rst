@@ -597,6 +597,28 @@ a default sans-serif font (Helvetica on Mac OS X, Arial on Windows XP)::
 
     sans_serif = pyglet.font.load(None, 16)
 
+HarfBuzz shaping
+^^^^^^^^^^^^^^^^
+
+Some platforms like Linux do not have any text shaping capability to provide advanced features
+such as ligatures, substitutions, cluster-aware glyph placement, etc. To provide
+a more cross-platform solution, pyglet can utilize HarfBuzz. To enable it, set
+``pyglet.options.text_shaping`` to ``"harfbuzz"`` before loading fonts or
+creating text layouts::
+
+    import pyglet
+    pyglet.options.text_shaping = "harfbuzz"
+
+If HarfBuzz is not available in your environment, pyglet falls back to
+platform shaping.
+
+Visit the harfbuzz website on installation instructions:: https://harfbuzz.github.io/install-harfbuzz.html
+
+Harfbuzz provides functionality for many font features, so not all files are required to shape text. Pyglet
+does not rely on any of the binaries files such as ``hb-*.exe`` only the ``lib*`` files.
+
+.. note:: On Windows, libharfbuzz-0.dll depends on the ``libglib-*.dll`` and ``libintl-*.dll`` files for shaping.
+
 Font sizes
 ----------
 

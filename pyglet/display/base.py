@@ -18,7 +18,7 @@ class Display:
     x_screen: int = None
     """The X11 screen number of this display, if applicable."""
 
-    def __init__(self, name: str = None, x_screen: int = None) -> None:
+    def __init__(self, name: str | None = None, x_screen: int | None = None) -> None:
         """Create a display connection for the given name and screen.
 
         On X11, :attr:`name` is of the form ``"hostname:display"``, where the

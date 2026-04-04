@@ -5,8 +5,7 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from pyglet.graphics.vertexdomain import InstanceStream, VertexArrayBinding
-    from pyglet.graphics.api.gl.vertexdomain import InstanceVertexList, InstanceIndexedVertexList
+    from pyglet.graphics.vertexdomain import InstanceStream, VertexArrayBinding, InstanceVertexList, InstanceIndexedVertexList
     from _weakref import ReferenceType
     from pyglet.customtypes import DataTypes
 
@@ -27,14 +26,14 @@ class InstanceAllocator:
         self.slot_to_inst.clear()
         self.count = 0
 
-    def add(self, inst) -> int:
+    def add(self, inst: VertexInstance) -> int:
         slot = self.count
         self.count += 1
         self.inst_to_slot[inst] = slot
         self.slot_to_inst[slot] = inst
         return slot
 
-    def remove(self, inst: VertexInstance) -> tuple[int, int, int] | None:
+    def remove(self, inst: VertexInstance) -> tuple[int, int, VertexInstance] | None:
         slot = self.inst_to_slot.pop(inst)
         last = self.count - 1
         if slot != last:

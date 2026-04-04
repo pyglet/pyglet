@@ -4,7 +4,7 @@ import re
 import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, BinaryIO, Callable, Generic, Iterator, Sequence, TypeVar, Union
+from typing import TYPE_CHECKING, Any, BinaryIO, Callable, Generic, Iterator, Sequence, TypeVar, Union, overload
 
 from pyglet.customtypes import DataTypes
 from pyglet.image.animation import Animation
@@ -563,8 +563,14 @@ class _AbstractGrid(ABC, Generic[T]):
 
         Must be implemented by subclasses, even if it does not change the data.
         """
+    @overload
+    def __getitem__(self, index: int) -> T: ...
+    @overload
+    def __getitem__(self, index: tuple[int, int]) -> T: ...
+    @overload
+    def __getitem__(self, index: slice) -> list[T]: ...
 
-    def __getitem__(self, index: int | tuple[int, int] | slice) -> list[Any] | None | Any:
+    def __getitem__(self, index: int | tuple[int, int] | slice) -> list[T] | T | None:
         items = self._generate_items()
         if isinstance(index, slice):
             if type(index.start) is not tuple and type(index.stop) is not tuple:
@@ -681,6 +687,8 @@ class ImageGrid(_AbstractGrid[Union[ImageData, ImageDataRegion]], _AbstractImage
         """
         item_width = item_width or (image.width - column_padding * (columns - 1)) // columns
         item_height = item_height or (image.height - row_padding * (rows - 1)) // rows
+        assert item_width is not None
+        assert item_height is not None
         super().__init__(rows, columns, item_width, item_height, row_padding, column_padding)
         self.image = image
 

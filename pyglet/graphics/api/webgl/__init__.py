@@ -161,22 +161,26 @@ class WebGLBackend(BackendGlobalObject):
     def get_config(self, **kwargs: float | str | None) -> pyglet.config.WebGLUserConfig:
         return pyglet.config.WebGLUserConfig(**kwargs)
 
+    @property
+    def info(self):
+        return self.current_context.info
+
     def get_info(self):
-        return self.current_context.get_info()
+        return self.info
 
     def have_extension(self, extension_name: str) -> bool:
         if not self.current_context:
             warnings.warn('No GL context created yet or current context not set.')
             return False
 
-        return self.current_context.get_info().have_extension(extension_name)
+        return self.current_context.info.have_extension(extension_name)
 
     def have_version(self, major: int, minor: int = 0) -> bool:
         if not self.current_context:
             warnings.warn('No GL context created yet or current context not set.')
             return False
 
-        return self.current_context.get_info().have_version(major, minor)
+        return self.current_context.info.have_version(major, minor)
 
     def get_cached_shader(self, name: str, *sources: tuple[str, ShaderType]) -> ShaderProgram:
         """Create a ShaderProgram from OpenGL GLSL source.
@@ -219,11 +223,7 @@ class WebGLBackend(BackendGlobalObject):
 
         return self.current_context.default_batch
 
-    @property
-    def have_context(self) -> bool:
-        return self._have_context
-
-    def initialize_matrices(self, window):
+    def initialize_matrices(self, window: Window) -> OpenGL3_Matrices:
         return OpenGL3_Matrices(window, self)
 
     def set_viewport(self, window, x: int, y: int, width: int, height: int) -> None:
