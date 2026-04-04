@@ -6,12 +6,11 @@ from dataclasses import asdict
 from ctypes import byref, c_uint32, c_int
 
 from pyglet.config.gl import GLSurfaceConfig
-
 from pyglet.libs.darwin import cocoapy, quartz
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from pyglet.config import OpenGLConfig
+    from pyglet.config import OpenGLUserConfig
     from pyglet.graphics.api.gl.cocoa.context import NSOpenGLPixelFormat, CocoaContext
     from pyglet.window.cocoa import CocoaWindow
     from pyglet.graphics.api import OpenGLBackend
@@ -132,7 +131,7 @@ _fake_gl_attributes = {
 }
 
 
-def match(config: OpenGLConfig, window: CocoaWindow) -> CocoaGLSurfaceConfig | None:
+def match(config: OpenGLUserConfig, window: CocoaWindow) -> CocoaGLSurfaceConfig | None:
     # Construct array of attributes for NSOpenGLPixelFormat
     attrs = []
     for name, value in asdict(config).items():
@@ -199,7 +198,7 @@ def match(config: OpenGLConfig, window: CocoaWindow) -> CocoaGLSurfaceConfig | N
 
 class CocoaGLSurfaceConfig(GLSurfaceConfig):
 
-    def __init__(self, window: CocoaWindow, config: OpenGLConfig, pixel_format: NSOpenGLPixelFormat) -> None:
+    def __init__(self, window: CocoaWindow, config: OpenGLUserConfig, pixel_format: NSOpenGLPixelFormat) -> None:
         super().__init__(window, config, pixel_format)
         self._pixel_format = pixel_format
 

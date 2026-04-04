@@ -13,7 +13,7 @@ from pyglet.libs.win32.wgl import WGLFunctions
 from pyglet.util import asstr
 
 if TYPE_CHECKING:
-    from pyglet.config import OpenGLConfig
+    from pyglet.config import OpenGLUserConfig
     from pyglet.window.win32 import Win32Window
     from pyglet.graphics.api import OpenGLBackend
     from pyglet.graphics.api.gl.win32.context import Win32ARBContext, Win32Context
@@ -99,7 +99,7 @@ class _WGL:
 # A global WGL instance object that has retrieved all the proc addresses for WGL functions.
 _global_wgl = _WGL()
 
-def match(config: OpenGLConfig, window: Win32Window) -> GLSurfaceConfig | None:
+def match(config: OpenGLUserConfig, window: Win32Window) -> GLSurfaceConfig | None:
     if not _global_wgl.loaded:
         _global_wgl.create()
 
@@ -110,7 +110,7 @@ def match(config: OpenGLConfig, window: Win32Window) -> GLSurfaceConfig | None:
 
     return finalized_config
 
-def _get_pixel_format_descriptor_matching_configs(config: OpenGLConfig, window: Win32Window) -> GLLegacyConfig | None:
+def _get_pixel_format_descriptor_matching_configs(config: OpenGLUserConfig, window: Win32Window) -> GLLegacyConfig | None:
     """Get matching configs using standard PIXELFORMATDESCRIPTOR technique."""
     pfd = PIXELFORMATDESCRIPTOR()
     pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR)
@@ -152,7 +152,7 @@ def _get_pixel_format_descriptor_matching_configs(config: OpenGLConfig, window: 
 
     return None
 
-def _get_arb_pixel_format_matching_configs(config: OpenGLConfig, window: Win32Window) -> GLSurfaceConfig | None:
+def _get_arb_pixel_format_matching_configs(config: OpenGLUserConfig, window: Win32Window) -> GLSurfaceConfig | None:
     """Get configs using the WGL_ARB_pixel_format extension.
 
     This method assumes a (dummy) GL context is already created.
@@ -187,7 +187,7 @@ def _get_arb_pixel_format_matching_configs(config: OpenGLConfig, window: Win32Wi
 
 
 class GLLegacyConfig(GLSurfaceConfig):
-    def __init__(self, window: Win32Window, pf: int, user_config: OpenGLConfig) -> None:
+    def __init__(self, window: Win32Window, pf: int, user_config: OpenGLUserConfig) -> None:
         super().__init__(window, user_config, pf)
         self._pf = pf
         self._pfd = PIXELFORMATDESCRIPTOR()
@@ -239,7 +239,7 @@ class GLSurfaceConfig(GLSurfaceConfig):
         'accum_alpha_size': wglext_arb.WGL_ACCUM_ALPHA_BITS_ARB,
     }
 
-    def __init__(self, window: Win32Window, pf: int, user_config: OpenGLConfig) -> None:
+    def __init__(self, window: Win32Window, pf: int, user_config: OpenGLUserConfig) -> None:
         super().__init__(window, user_config, pf)
         self._pf = pf
 

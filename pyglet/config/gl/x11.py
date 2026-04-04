@@ -13,12 +13,12 @@ from pyglet.config import SurfaceConfig
 if TYPE_CHECKING:
     from pyglet.graphics.api.gl.xlib.context import XlibContext
     from pyglet.graphics.api import OpenGLBackend
-    from pyglet.config import OpenGLConfig
+    from pyglet.config import OpenGLUserConfig
     from pyglet.graphics.api.gl.xlib import glx_info
     from pyglet.window.xlib import XlibWindow
 
 
-def match(config: OpenGLConfig, window: XlibWindow) -> XlibGLSurfaceConfig | None:
+def match(config: OpenGLUserConfig, window: XlibWindow) -> XlibGLSurfaceConfig | None:
     x_display = window._x_display  # noqa: SLF001
     x_screen = window._x_screen_id  # noqa: SLF001
 
@@ -96,7 +96,7 @@ class XlibGLSurfaceConfig(SurfaceConfig):
     }
 
     def __init__(self, window: XlibWindow, fbconfig: glx.GLXFBConfig,
-                 config: OpenGLConfig) -> None:
+                 config: OpenGLUserConfig) -> None:
         super().__init__(window, config, fbconfig)
 
         self.fbconfig = fbconfig

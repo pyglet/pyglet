@@ -11,6 +11,8 @@ import warnings
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Literal, Sequence
 
+from .enums import GraphicsAPI
+
 if TYPE_CHECKING:
     from types import FrameType
     from typing import Any, Callable, ItemsView, Sized
@@ -286,7 +288,7 @@ class Options:
     .. versionadded:: 3.0.0
     """
 
-    backend: Literal["opengl", "gl2", "gles3", "gles2", "webgl"] = "opengl"
+    backend: Literal["opengl", "gl2", "gles3", "gles2", "webgl"] | GraphicsAPI = GraphicsAPI.OPENGL
     """Specify the graphics API backend."""
 
     optimize_states: bool = True

@@ -82,10 +82,17 @@ class XlibContext(OpenGLSurfaceContext):
         if user_config.minor_version is not None:
             attribs.extend([glxext_arb.GLX_CONTEXT_MINOR_VERSION_ARB, user_config.minor_version])
 
-        if user_config.opengl_api == "gl":
+        print("GOT", user_config.major_version, user_config.minor_version)
+
+        if user_config.opengl_api == "opengl":
             attribs.extend([glxext_arb.GLX_CONTEXT_PROFILE_MASK_ARB, glxext_arb.GLX_CONTEXT_CORE_PROFILE_BIT_ARB])
-        elif user_config.opengl_api == "gles":
+        elif user_config.opengl_api in ("gles2", "gles3"):
             attribs.extend([glxext_arb.GLX_CONTEXT_PROFILE_MASK_ARB, glxext_arb.GLX_CONTEXT_ES2_PROFILE_BIT_EXT])
+        elif user_config.opengl_api == "gl2":
+            pass
+        else:
+            msg = f"The '{user_config.opengl_api}' backend is not supported under GLX"
+            raise ContextException(msg)
 
         flags = 0
         if user_config.forward_compatible:

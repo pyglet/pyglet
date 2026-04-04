@@ -35,7 +35,7 @@ class GLInfo:
     version: str = '0.0'
     major_version: int = 0
     minor_version: int = 0
-    opengl_api: str = 'gl'
+    opengl_api: str = 'opengl'
 
     was_queried = False
 
@@ -81,7 +81,10 @@ class GLInfo:
 
         # NOTE: The version string requirements for gles is a lot stricter
         #       so using this to rely on detecting the API is not too unreasonable
-        self.opengl_api = "gles" if "opengl es" in self.version.lower() else "gl"
+        is_gles2 = "opengl es 2" in self.version.lower()
+        is_gles3 = "opengl es 3" in self.version.lower()
+        self.opengl_api = "gles2" if is_gles2 else "gles3" if is_gles3 else "opengl"
+        print("GOT OPENGL API: ", self.opengl_api, self.version)
 
         try:
             self.major_version = self.get_int(gl.GL_MAJOR_VERSION)
@@ -155,11 +158,11 @@ class GLInfo:
     def get_opengl_api(self) -> str:
         """Determine the OpenGL API version.
 
-        Usually ``gl`` or ``gles``.
+        Usually ``opengl`` or ``gles2``.
         """
         return self.opengl_api
 
-    def get_int(self, enum: int, default: int=0) -> int | tuple[int]:
+    def get_int(self, enum: int, default: int = 0) -> int | tuple[int]:
         try:
             value = c_int()
             self.context.glGetIntegerv(enum, value)

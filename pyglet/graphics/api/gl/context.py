@@ -128,7 +128,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
                 self.platform_func = self.platform_func_class()
             self.uniform_getters, self.uniform_setters = self._get_uniform_func_tables()
             self._info.query(self)
-            if self.get_info().get_opengl_api() == "gles":
+            if self.get_info().get_opengl_api() in ("gles2", "gles3"):
                 from pyglet.graphics.api.gl.framebuffer import GLFramebuffer
                 self.gles_pixel_fbo = GLFramebuffer(context=self)
 

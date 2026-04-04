@@ -22,7 +22,7 @@ class GLInfo:
     version: str = '0.0'
     major_version: int = 0
     minor_version: int = 0
-    opengl_api: str = 'gl'
+    opengl_api: str = 'webgl'
 
     _have_context: bool = False
 
@@ -125,6 +125,6 @@ class GLInfo:
     def get_opengl_api(self) -> str:
         """Determine the OpenGL API version.
 
-        Usually ``gl`` or ``gles``.
+        Usually ``opengl``, ``gles2``, ``webgl``, etc..
         """
         return self.opengl_api

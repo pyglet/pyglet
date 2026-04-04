@@ -468,7 +468,7 @@ class GLTexture(Texture):
         size = self.width * self.height * self.images * len(fmt)
         buf = (GLubyte * size)()
 
-        if self._context.get_info().get_opengl_api() == "gles":
+        if self._context.get_info().get_opengl_api() in ("gles2", "gles3"):
             self._context.gles_pixel_fbo.bind()
             self._context.glPixelStorei(GL_PACK_ALIGNMENT, 1)
             self._attach_gles_fbo_texture(z, level)

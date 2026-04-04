@@ -89,7 +89,7 @@ from typing import TYPE_CHECKING, Any, Callable, Sequence
 import pyglet
 import pyglet.window.key
 import pyglet.window.mouse
-from pyglet.config import UserConfig
+from pyglet.config import UserConfig, Configs
 from pyglet.event import EVENT_HANDLE_STATE, EventDispatcher
 
 from pyglet.math import Mat4
@@ -415,7 +415,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                  file_drops: bool = False,
                  display: Display | None = None,
                  screen: Screen | None = None,
-                 config: UserConfig | Sequence[UserConfig] | None = None,
+                 config: UserConfig | Configs | None = None,
                  context: SurfaceContext | None = None,
                  mode: ScreenMode | None = None) -> None:
         """Create a window.
@@ -454,7 +454,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                 would like to change attributes of the window before
                 having it appear to the user.
             vsync:
-                If True, buffer flips are synchronised to the primary screen's
+                If True, buffer flips are synchronized to the primary screen's
                 vertical retrace, eliminating flicker.
             file_drops:
                 If True, the Window will accept files being dropped into it and call the ``on_file_drop`` event.

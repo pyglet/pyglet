@@ -2,18 +2,18 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 from dataclasses import asdict
-from pyglet.config import SurfaceConfig, WebGLConfig
+from pyglet.config import SurfaceConfig, WebGLUserConfig
 
 if TYPE_CHECKING:
     from pyglet.window import BaseWindow, Any
 
 
-def match(config: WebGLConfig, window: BaseWindow) -> WebGLSurfaceConfig:
+def match(config: WebGLUserConfig, window: BaseWindow) -> WebGLSurfaceConfig:
     return WebGLSurfaceConfig(window, config, None)
 
 
 class WebGLSurfaceConfig(SurfaceConfig):
-    def __init__(self, window: BaseWindow, config: WebGLConfig, handle=None):
+    def __init__(self, window: BaseWindow, config: WebGLUserConfig, handle=None):
         for name, value in asdict(config).items():
             setattr(self, name, value)
         super().__init__(window, config, handle)
