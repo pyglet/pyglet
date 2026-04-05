@@ -77,18 +77,18 @@ if TYPE_CHECKING:
     from pyglet.graphics.texture import Texture
 
 from pyglet.graphics import Group, Batch, ShaderProgram
-from pyglet.enums import BlendFactor, GeometryMode
+from pyglet.enums import BlendFactor, GeometryMode, GraphicsAPI
 from pyglet.image.base import Animation
 from pyglet.graphics.texture import TextureArrayRegion
 
 
-if pyglet.options.backend in ("opengl", "gles3"):
+if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
     from pyglet.graphics.api.gl.sprite import get_default_array_shader, get_default_shader
-elif pyglet.options.backend in ("gl2", "gles2"):
+elif pyglet.options.backend in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
     from pyglet.graphics.api.gl2.sprite import get_default_array_shader, get_default_shader
-elif pyglet.options.backend == "webgl":
+elif pyglet.options.backend == GraphicsAPI.WEBGL:
     from pyglet.graphics.api.webgl.sprite import get_default_array_shader, get_default_shader
-elif pyglet.options.backend == "vulkan":
+elif pyglet.options.backend == GraphicsAPI.VULKAN:
     from pyglet.graphics.api.vulkan.sprite import get_default_array_shader, get_default_shader, SpriteGroup
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run

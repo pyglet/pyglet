@@ -7,7 +7,7 @@ import sys
 from functools import lru_cache
 from typing import TYPE_CHECKING, Sequence
 
-import pyglet
+from pyglet.enums import GraphicsAPI
 from pyglet.graphics.api.gl import (
     GL_ARRAY_BUFFER,
     GL_DRAW_INDIRECT_BUFFER,
@@ -164,7 +164,7 @@ class GLMappedBufferObject(GLBufferObject, BaseMappedBufferObject):
                  usage: int = GL_DYNAMIC_DRAW) -> None:
         super().__init__(context, size, target, usage)
         # GLES3 only supports mapping a range.
-        self._supports_range_only = self._context.info.get_opengl_api() == "gles"
+        self._supports_range_only = self._context.info.get_opengl_api() == GraphicsAPI.OPENGL_ES_3
 
     @staticmethod
     def _to_map_range_bits(bits: int) -> int:

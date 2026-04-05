@@ -140,7 +140,7 @@ class OpenGLBackend(BackendGlobalObject):
         """
         # On Windows if you specify GLES but set 3.3 as major/minor version, it will upgrade to a full context.
         # Version 3.2 needs to be specified explicitly.
-        if self.gl_api == "gles3":
+        if self.gl_api == GraphicsAPI.OPENGL_ES_3:
             configs = [
                 pyglet.config.OpenGLUserConfig(
                     double_buffer=True, depth_size=24, major_version=3, minor_version=2, opengl_api=self.gl_api,

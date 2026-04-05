@@ -4,10 +4,10 @@ from typing import Generator, Any, TYPE_CHECKING
 
 import pyglet
 
+from pyglet.enums import GraphicsAPI
+
 if TYPE_CHECKING:
     from pyglet.graphics.api.base import SurfaceContext
-
-
 
 
 class State:
@@ -50,6 +50,7 @@ class State:
         when the draw list is being processed.
         """
 
+
 def _expand_states_in_order(states: list[State]) -> list[State]:
     """Return all states expanded in dependency order (parents first)."""
     visited = set()
@@ -71,11 +72,12 @@ def _expand_states_in_order(states: list[State]) -> list[State]:
 
     return ordered
 
-if pyglet.options.backend in ("opengl", "gles3", "gl2", "gles2"):
+
+if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2, GraphicsAPI.OPENGL_ES_3):
     from pyglet.graphics.api.gl import state as _backend_state
-elif pyglet.options.backend == "webgl":
+elif pyglet.options.backend == GraphicsAPI.WEBGL:
     from pyglet.graphics.api.webgl import state as _backend_state
-elif pyglet.options.backend == "vulkan":
+elif pyglet.options.backend == GraphicsAPI.VULKAN:
     from pyglet.graphics.api.vulkan import state as _backend_state
 else:
     msg = f"Unsupported backend: {pyglet.options.backend}"

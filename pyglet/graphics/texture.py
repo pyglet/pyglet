@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Generic, Iterator, Literal, Protocol, Sequence, TYPE_CHECKING, TypeVar, cast, overload
+from typing import Generic, Iterator, Literal, Protocol, Sequence, TYPE_CHECKING, TypeVar, overload
 
 import pyglet
-from pyglet.enums import AddressMode, ComponentFormat, TextureFilter, TextureType
+from pyglet.enums import AddressMode, ComponentFormat, TextureFilter, TextureType, GraphicsAPI
 from pyglet.image.base import (
     _AbstractImage,
     _AbstractImageSequence,
@@ -992,7 +992,7 @@ class CompressedTexture(_AbstractImage):
         return self
 
 
-if pyglet.options.backend in ("opengl", "gles3", "gl2", "gles2"):
+if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2, GraphicsAPI.OPENGL_ES_3):
     from pyglet.graphics.api.gl.framebuffer import (  # noqa: F401
         GLFramebuffer as Framebuffer,
         GLRenderbuffer as Renderbuffer,
@@ -1017,7 +1017,7 @@ if pyglet.options.backend in ("opengl", "gles3", "gl2", "gles2"):
         get_max_texture_size,
         get_max_array_texture_layers,
     )
-elif pyglet.options.backend == "webgl":
+elif pyglet.options.backend == GraphicsAPI.WEBGL:
     from pyglet.graphics.api.webgl.framebuffer import (  # noqa: F401
         WebGLFramebuffer as Framebuffer,
         WebGLRenderbuffer as Renderbuffer,
@@ -1039,5 +1039,5 @@ elif pyglet.options.backend == "webgl":
         get_max_texture_size,  # noqa: F401
         get_max_array_texture_layers,  # noqa: F401
     )
-elif pyglet.options.backend == "vulkan":
-    pass
+elif pyglet.options.backend == GraphicsAPI.VULKAN:
+    raise NotImplementedError("Vulkan is not yet implemented")

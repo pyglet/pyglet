@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from ctypes import c_int
 
+from pyglet.enums import GraphicsAPI
 from pyglet.graphics.api.base import NullContext
 from pyglet.graphics.api.gl.base import ContextException
 from pyglet.graphics.api.gl.context import OpenGLSurfaceContext
@@ -94,7 +95,7 @@ class Win32ARBContext(_Win32Context):
             flags |= wglext_arb.WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB
         if user_config.debug:
             flags |= wglext_arb.WGL_CONTEXT_DEBUG_BIT_ARB
-        if user_config.opengl_api in ("gles2", "gles3"):
+        if user_config.opengl_api in (GraphicsAPI.OPENGL_ES_2, GraphicsAPI.OPENGL_ES_3):
             attribs.extend([wglext_arb.WGL_CONTEXT_PROFILE_MASK_ARB, wglext_arb.WGL_CONTEXT_ES2_PROFILE_BIT_EXT])
         if flags:
             attribs.extend([wglext_arb.WGL_CONTEXT_FLAGS_ARB, flags])
