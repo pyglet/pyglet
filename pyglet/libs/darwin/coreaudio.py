@@ -171,7 +171,7 @@ kAudio_MemFullError = -108
 # All error constants below correspond to identically named errors in
 # Apple's audiotoolbox. The doc for each is at URLs ending with the same
 # names. For example, kAudioFileUnspecifiedError's documentation is at:
-# https://developer.apple.com/documentation/audiotoolbox/
+# https://developer.apple.com/documentation/audiotoolbox/kAudioFileUnspecifiedError
 
 # General file read errors
 kAudioFileNotOpenError = -38
