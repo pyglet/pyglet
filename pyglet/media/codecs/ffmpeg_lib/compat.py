@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, NamedTuple, Protocol, Sequence, TYPE_CHECKING
+from typing import Any, NamedTuple, Protocol, Sequence, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ctypes import Structure
@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 LibraryName = str
 Version = int
-FieldDef = tuple[str, Any]
+FieldDef = Tuple[str, Any]
 
 class Reposition(NamedTuple):
     field: str

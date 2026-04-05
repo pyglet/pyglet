@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 
 ByteSource = Union[bytes, bytearray, memoryview]
-DataSource = Union[Sequence[Union[float, int]], Array[Any]]
+DataSource = Union[Sequence[Union[float, int]], Array]
 
 _DATA_TYPE_TO_CTYPE: dict[str, type[Any]] = {
     "?": ctypes.c_bool,
