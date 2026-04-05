@@ -15,7 +15,8 @@ This module includes:
 from __future__ import annotations
 from ctypes import c_void_p, c_int, c_bool, Structure, c_uint32, util, cdll, c_uint, c_double, POINTER, c_int64, \
     CFUNCTYPE
-from typing import Final
+from types import MappingProxyType
+from typing import Final, Mapping
 
 from pyglet.libs.darwin import CFURLRef
 
@@ -194,9 +195,9 @@ kAudioFileInvalidPacketOffsetError = c_literal('pck?')  # 0x70636B3F, 1885563711
 kAudioFileInvalidFileError = c_literal('dta?')  # 0x6474613F, 1685348671
 kAudioFileOperationNotSupportedError = c_literal('op?')  # 0x6F703F3F, 1869627199
 
-
 # Maps kAudio errors -> error text
-err_str_db: Final[dict[int, str]] = {
+# MappingProxyType ensures that `err_str_db` keys and values are immutable
+err_str_db: Final[Mapping[int, str]] = MappingProxyType({
     kAudioFileNotOpenError: "The file is closed.",
     kAudioFileEndOfFileError: "End of file.",
     kAudioFilePositionError: "Invalid file position.",
@@ -213,7 +214,7 @@ err_str_db: Final[dict[int, str]] = {
     kAudioFileInvalidPacketOffsetError: "A packet offset was past the end of the file, or not at the end of the file when a VBR format was written, or a corrupt packet size was read when the packet table was built.",
     kAudioFileInvalidFileError: "The file is malformed, or otherwise not a valid instance of an audio file of its type.",
     kAudioFileOperationNotSupportedError: "The operation cannot be performed.",
-}
+})
 
 
 class CoreAudioException(Exception):
