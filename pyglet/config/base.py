@@ -1,8 +1,6 @@
-from typing import Any, TYPE_CHECKING
+from typing import Any
 
-
-if TYPE_CHECKING:
-    from pyglet.window import Window
+from pyglet.window import Window
 
 
 class SurfaceConfig:
