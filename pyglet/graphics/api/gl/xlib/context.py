@@ -83,8 +83,6 @@ class XlibContext(OpenGLSurfaceContext):
         if user_config.minor_version is not None:
             attribs.extend([glxext_arb.GLX_CONTEXT_MINOR_VERSION_ARB, user_config.minor_version])
 
-        print("GOT", user_config.major_version, user_config.minor_version)
-
         if user_config.opengl_api == GraphicsAPI.OPENGL:
             attribs.extend([glxext_arb.GLX_CONTEXT_PROFILE_MASK_ARB, glxext_arb.GLX_CONTEXT_CORE_PROFILE_BIT_ARB])
         elif user_config.opengl_api in (GraphicsAPI.OPENGL_ES_2, GraphicsAPI.OPENGL_ES_3):
