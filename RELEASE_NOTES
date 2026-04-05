@@ -1,3 +1,19 @@
+pyglet 2.1.14
+
+Bugfixes
+--------
+shapes: Handle ZeroDivisionError and domain error when calculating miter scale (#1418)
+window: On macOS, fix RecursionError when resizing Windows. (#1421)
+text: Fix larger sized characters causing wrap issues. (#1426)
+
+Improvements
+------------
+typing: Fix the Label type hints for font_family. (#1407)
+typing: Add type hints to the Quaternion.from_mat* methods. (#1406)
+typing: Provide concrete typing for Window based on selected platform. (#1409)
+docs: Fix typo. (#1416)
+
+
 pyglet 2.1.13
 
 Bugfixes
