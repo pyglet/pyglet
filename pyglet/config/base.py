@@ -3,6 +3,10 @@ from typing import Any
 from pyglet.window import Window
 
 
+class UserConfig:
+    """User configuration information."""
+
+
 class SurfaceConfig:
     """Surface configuration information returned by a platform.
 
@@ -33,7 +37,3 @@ class SurfaceConfig:
     @property
     def is_finalized(self) -> bool:
         return True
-
-
-class UserConfig:
-    """User configuration information."""
