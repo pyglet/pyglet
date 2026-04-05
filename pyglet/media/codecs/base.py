@@ -27,14 +27,34 @@ class AudioFormat:
             (pyglet does not yet support surround-sound sources).
         sample_size (int): Bits per sample; only 8 or 16 are supported.
         sample_rate (int): Samples per second (in Hertz).
+        sample_type (str): "int", "uint" or "float"
     """
 
-    def __init__(self, channels: int, sample_size: int, sample_rate: int) -> None:
+    SAMPLE_TYPE_INT = 'int'
+    SAMPLE_TYPE_UINT = 'uint'
+    SAMPLE_TYPE_FLOAT = 'float'
+
+    _VALID_TYPES = (SAMPLE_TYPE_INT, SAMPLE_TYPE_UINT, SAMPLE_TYPE_FLOAT)
+
+    def __init__(self, channels: int, sample_size: int, sample_rate: int,
+                 sample_type: str | None = None) -> None:
         self.channels = channels
         self.sample_size = sample_size
         self.sample_rate = sample_rate
+        if sample_type is None:
+            if self.sample_size == 8:
+                sample_type = self.SAMPLE_TYPE_UINT
+            else:
+                sample_type = self.SAMPLE_TYPE_INT
+        if sample_type not in self._VALID_TYPES:
+            raise ValueError(f"sample_type must be one of {self._VALID_TYPES}")
+        self.sample_type = sample_type
 
         # Convenience
+        prefixes = {self.SAMPLE_TYPE_INT: "S",
+                    self.SAMPLE_TYPE_UINT: "U",
+                    self.SAMPLE_TYPE_FLOAT: "F"}
+        self.sample_format = f"{prefixes[self.sample_type]}{self.sample_size}"
 
         self.bytes_per_frame = (sample_size // 8) * channels
         self.bytes_per_second = self.bytes_per_frame * sample_rate
@@ -71,13 +91,17 @@ class AudioFormat:
         if isinstance(other, AudioFormat):
             return (self.channels == other.channels and
                     self.sample_size == other.sample_size and
-                    self.sample_rate == other.sample_rate)
+                    self.sample_rate == other.sample_rate and
+                    self.sample_type == other.sample_type)
         return NotImplemented
 
     def __repr__(self) -> str:
-        return '%s(channels=%d, sample_size=%d, sample_rate=%d)' % (
-            self.__class__.__name__, self.channels, self.sample_size,
-            self.sample_rate)
+        return (
+            '%s(channels=%d, sample_size=%d, sample_rate=%d, sample_type=%s)'
+            % (self.__class__.__name__, self.channels, self.sample_size,
+               self.sample_rate, self.sample_type)
+        )
+
 
 @dataclass
 class VideoFormat:
