@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import sys
+import math
 from collections import deque
 from ctypes import (
     POINTER,
@@ -654,7 +655,16 @@ class FFmpegSource(StreamingSource):
                 if not audio_channels:
                     audio_channels = info.channels
                 channels_out = min(2, abs(audio_channels))
-                channel_input = self._get_default_channel_layout(info.channels)
+
+                channel_input = 0
+                if hasattr(stream.codec_context.contents, "ch_layout"):
+                    channel_input = stream.codec_context.contents.ch_layout
+                elif hasattr(stream.codec_context.contents, "channel_layout"):
+                    channel_input = stream.codec_context.contents.channel_layout
+                if not channel_input:
+                    channel_input = self._get_default_channel_layout(
+                        info.channels)
+
                 channel_output = self._get_default_channel_layout(channels_out)
 
                 sample_format = stream.codec_context.contents.sample_fmt
@@ -716,12 +726,29 @@ class FFmpegSource(StreamingSource):
 
                 # Set matrix for mixing down to dual-mono
                 if audio_channels == -2 and info.channels > 1:
-                    num_elements = info.channels * 2
-                    weight = 1.0 / info.channels
-                    MatrixArrayType = c_double * num_elements
-                    data = [weight] * num_elements
-                    matrix = MatrixArrayType(*data)
-                    swresample.swr_set_matrix(self.audio_convert_ctx, matrix,
+                    if isinstance(channel_input, int):
+                        in_layout = channel_input
+                    else:
+                        in_layout = channel_input.u.mask
+                    speakers = \
+                        [1 << i for i in range(64) if in_layout & (1 << i)]
+                    mono_row = []
+                    for i in range(info.channels):
+                        speaker = speakers[i] if i < len(speakers) else 0
+                        if speaker in (0x1, 0x2):
+                            w = 0.5                   # FL, FR (-6dB)
+                        elif speaker == 0x4:
+                            w = math.sqrt(0.5)        # Center (-3dB)
+                        elif speaker == 0x8:
+                            w = 0.0                   # LFE (Discarded)
+                        else:
+                            w = 0.5 * math.sqrt(0.5)  # Surrounds (-9dB)
+                        mono_row.append(w * 0.99)
+                    final_weights = mono_row + mono_row
+                    self._matrix_storage = \
+                        (c_double * len(final_weights))(*final_weights)
+                    swresample.swr_set_matrix(self.audio_convert_ctx,
+                                              self._matrix_storage,
                                               info.channels)
 
                 if audio_resample_hq:  # Replace with soxr in future?
@@ -739,7 +766,7 @@ class FFmpegSource(StreamingSource):
                                           0)
                     avutil.av_opt_set_double(self.audio_convert_ctx,
                                              asbytes("cutoff"),
-                                             0.98,
+                                             c_double(0.98),
                                              0)
                     avutil.av_opt_set_int(self.audio_convert_ctx,
                                           asbytes("exact_rational"),
