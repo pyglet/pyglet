@@ -8,8 +8,7 @@ from select import POLLIN
 from pyglet import app, lib
 from pyglet.app.base import PlatformEventLoop
 
-# TODO: remove eventfd fallbacks once Python 3.9 is EOL
-#       remove timerfd fallbacks once Python 3.12 is EOL
+# TODO: remove timerfd fallbacks once Python 3.12 is EOL
 try:
     from os import timerfd_create, timerfd_settime, timerfd_gettime
     from os import EFD_SEMAPHORE, eventfd, eventfd_read, eventfd_write
@@ -51,22 +50,6 @@ except ImportError:
         time_until_expiry = curr_value.it_value.tv_sec + curr_value.it_value.tv_nsec * 1e-9
         interval = curr_value.it_interval.tv_sec + curr_value.it_interval.tv_nsec * 1e-9
         return time_until_expiry, interval
-
-    libc.eventfd.restype = ctypes.c_int
-    libc.eventfd.argtypes = [ctypes.c_uint, ctypes.c_int]
-    libc.eventfd_read.restype = ctypes.c_ssize_t
-    libc.eventfd_read.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_uint64)]
-    libc.eventfd_write.restype = ctypes.c_ssize_t
-    libc.eventfd_write.argtypes = [ctypes.c_int, ctypes.c_uint64]
-
-    def eventfd(initval, flags):
-        return libc.eventfd(initval, flags)
-
-    def eventfd_read(fd):
-        return libc.eventfd_read(fd, ctypes.c_ulong(8))
-
-    def eventfd_write(fd, value):
-        return libc.eventfd_write(fd, value)
 
 
 class XlibSelectDevice:
