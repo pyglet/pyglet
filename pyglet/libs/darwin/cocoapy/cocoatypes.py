@@ -23,7 +23,6 @@ from ctypes import (
 )
 import platform
 import struct
-from typing import Union
 
 __LP64__ = (8*struct.calcsize("P") == 64)
 __i386__ = (platform.machine() == 'i386')
@@ -40,9 +39,9 @@ def encoding_for_ctype(vartype):
 # Note CGBase.h located at
 # /System/Library/Frameworks/ApplicationServices.framework/Frameworks/CoreGraphics.framework/Headers/CGBase.h
 # defines CGFloat as double if __LP64__, otherwise it's a float.
-NSInteger: Union[type[c_long],  type[c_int]]
-NSUInteger: Union[type[c_ulong], type[c_uint]]
-CGFloat: Union[type[c_double], type[c_float]]
+NSInteger: type[c_long] | type[c_int]
+NSUInteger: type[c_ulong] | type[c_uint]
+CGFloat: type[c_double] | type[c_float]
 if __LP64__:
     NSInteger = c_long
     NSUInteger = c_ulong
