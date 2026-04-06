@@ -6,7 +6,9 @@ __pycache__
 # Virtualenvs (from project root)
 /env
 /.env
-/.venv*
+/.venv
+/.venv2
+/.venv3
 
 # Pyenv
 .python-version
