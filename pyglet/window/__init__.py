@@ -96,7 +96,7 @@ from pyglet.window import event, key, dialog
 
 if TYPE_CHECKING:
     import BaseWindow as Window
-    from pyglet.config import Configs
+    from pyglet.config import Config
     from pyglet.graphics.api.base import VerifiedGraphicsConfig, SurfaceContext, WindowTransformations
     from pyglet.display.base import Display, Screen, ScreenMode
     from pyglet.text import Label
@@ -368,7 +368,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     _vsync: bool = False
     _file_drops: bool = False
     _screen: Screen | None = None
-    _config: VerifiedGraphicsConfig | None = None
+    _config: VerifiedGraphicsConfig | UserConfig |  None = None
     _context: SurfaceContext | None = None
     _projection_matrix: Mat4 = pyglet.math.Mat4()
     _view_matrix: Mat4 = pyglet.math.Mat4()
@@ -417,7 +417,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                  file_drops: bool = False,
                  display: Display | None = None,
                  screen: Screen | None = None,
-                 config: Configs | Iterable[Configs] | None = None,
+                 config: Config | Iterable[Config] | None = None,
                  context: SurfaceContext | None = None,
                  mode: ScreenMode | None = None) -> None:
         """Create a window.
@@ -476,21 +476,17 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         EventDispatcher.__init__(self)
         self._event_queue = deque()
 
-        self._config = config
+        # TODO: migrate this to the _assign_config method?
+        if isinstance(config, Iterable):
+            self._config = [getattr(c, pyglet.options.backend) for c in config]
+        else:
+            self._config = getattr(config, pyglet.options.backend) if config else None
+
+        # self._config = config
         self._context = context
 
-        if not display:
-            display = pyglet.display.get_display()
-
-        if not screen:
-            screen = display.get_default_screen()
-
-        # XXX deprecate config's being screen-specific
-        if hasattr(self._config, 'screen'):
-            self._screen = self._config.screen
-        else:
-            self._screen = screen
-        self._display = self._screen.display
+        self._display = display or pyglet.display.get_display()
+        self._screen = screen or self._display.get_default_screen()
 
         if fullscreen:
             if width is None and height is None:

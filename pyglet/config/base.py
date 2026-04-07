@@ -8,6 +8,10 @@ class UserConfig:
     """User configuration information."""
     api: GraphicsAPI
 
+    @property
+    def is_finalized(self) -> bool:
+        return False
+
 
 class SurfaceConfig:
     """Surface configuration information returned by a platform.
