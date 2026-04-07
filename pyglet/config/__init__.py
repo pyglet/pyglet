@@ -14,10 +14,10 @@ if TYPE_CHECKING:
 
 
 class Configs:
-    opengl: OpenGLUserConfig = OpenGLUserConfig(opengl_api=GraphicsAPI.OPENGL)
-    gl2: OpenGLUserConfig = OpenGLUserConfig(opengl_api=GraphicsAPI.OPENGL_2)
-    gles2: OpenGLUserConfig = OpenGLUserConfig(opengl_api=GraphicsAPI.OPENGL_ES_2)
-    gles3: OpenGLUserConfig = OpenGLUserConfig(opengl_api=GraphicsAPI.OPENGL_ES_3)
+    opengl: OpenGLUserConfig = OpenGLUserConfig(api=GraphicsAPI.OPENGL)
+    gl2: OpenGLUserConfig = OpenGLUserConfig(api=GraphicsAPI.OPENGL_2)
+    gles2: OpenGLUserConfig = OpenGLUserConfig(api=GraphicsAPI.OPENGL_ES_2)
+    gles3: OpenGLUserConfig = OpenGLUserConfig(api=GraphicsAPI.OPENGL_ES_3)
     webgl: WebGLUserConfig = WebGLUserConfig()
     # vulkan:TBD
 

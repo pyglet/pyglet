@@ -50,14 +50,14 @@ def match(config: OpenGLUserConfig, window: HeadlessWindow | WaylandWindow) -> E
         attrs.extend([egl.EGL_ALPHA_SIZE, 8])
         attrs.extend([egl.EGL_DEPTH_SIZE, 8])
 
-    if config.opengl_api == GraphicsAPI.OPENGL:
+    if config.api == GraphicsAPI.OPENGL:
         attrs.extend([egl.EGL_RENDERABLE_TYPE, egl.EGL_OPENGL_BIT])
-    elif config.opengl_api == GraphicsAPI.OPENGL_ES_2:
+    elif config.api == GraphicsAPI.OPENGL_ES_2:
         attrs.extend([egl.EGL_RENDERABLE_TYPE, egl.EGL_OPENGL_ES2_BIT])
-    elif config.opengl_api == GraphicsAPI.OPENGL_ES_3:
+    elif config.api == GraphicsAPI.OPENGL_ES_3:
         attrs.extend([egl.EGL_RENDERABLE_TYPE, egl.EGL_OPENGL_ES3_BIT])
     else:
-        msg = f"Unknown OpenGL API: {config.opengl_api}"
+        msg = f"Unknown OpenGL API: {config.api}"
         raise ValueError(msg)
 
     attrs.extend([egl.EGL_NONE])
@@ -95,7 +95,7 @@ class EGLSurfaceConfig(SurfaceConfig):
         context_attribs = [egl.EGL_CONTEXT_MAJOR_VERSION, config.major_version or 2,
                            egl.EGL_CONTEXT_MINOR_VERSION, config.minor_version or 0]
 
-        if config.opengl_api == GraphicsAPI.OPENGL and config.forward_compatible:
+        if config.api == GraphicsAPI.OPENGL and config.forward_compatible:
             context_attribs.extend([egl.EGL_CONTEXT_OPENGL_FORWARD_COMPATIBLE, 1])
 
         if config.debug:

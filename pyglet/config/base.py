@@ -1,10 +1,12 @@
 from typing import Any
 
+from pyglet.enums import GraphicsAPI
 from pyglet.window import Window
 
 
 class UserConfig:
     """User configuration information."""
+    api: GraphicsAPI
 
 
 class SurfaceConfig:

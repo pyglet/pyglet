@@ -59,8 +59,8 @@ class OpenGLUserConfig(UserConfig):
     debug: bool | None = None
     #: If the framebuffer should be transparent.
     transparent_framebuffer: bool | None = None
-
-    opengl_api: GraphicsAPI = GraphicsAPI.OPENGL
+    #: Which rendering API is being used (GL, ES, etc.).
+    api: GraphicsAPI = GraphicsAPI.OPENGL
 
     @property
     def is_finalized(self) -> bool:
@@ -90,7 +90,7 @@ class WebGLUserConfig(UserConfig):
     desynchronized: bool | None = None
 
     @property
-    def opengl_api(self):
+    def api(self):
         return GraphicsAPI.WEBGL
 
     @property

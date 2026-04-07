@@ -41,12 +41,12 @@ class EGLContext(OpenGLSurfaceContext):
 
         user_config = self.config.config
 
-        if user_config.opengl_api == GraphicsAPI.OPENGL:
+        if user_config.api == GraphicsAPI.OPENGL:
             egl.eglBindAPI(egl.EGL_OPENGL_API)
-        elif user_config.opengl_api in (GraphicsAPI.OPENGL_ES_2, GraphicsAPI.OPENGL_ES_3):
+        elif user_config.api in (GraphicsAPI.OPENGL_ES_2, GraphicsAPI.OPENGL_ES_3):
             egl.eglBindAPI(egl.EGL_OPENGL_ES_API)
         else:
-            msg = f"The '{user_config.opengl_api}' backend is not supported under EGL"
+            msg = f"The '{user_config.api}' backend is not supported under EGL"
             raise ContextException(msg)
 
         return egl.eglCreateContext(

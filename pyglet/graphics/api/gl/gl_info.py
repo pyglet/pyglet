@@ -83,7 +83,7 @@ class GLInfo(SurfaceInfo):
         #       so using this to rely on detecting the API is not too unreasonable
         is_gles2 = "opengl es 2" in self.version.lower()
         is_gles3 = "opengl es 3" in self.version.lower()
-        self.opengl_api = "gles2" if is_gles2 else "gles3" if is_gles3 else "opengl"
+        self.api = "gles2" if is_gles2 else "gles3" if is_gles3 else "opengl"
 
         try:
             self.major_version = self.get_int(gl.GL_MAJOR_VERSION)
