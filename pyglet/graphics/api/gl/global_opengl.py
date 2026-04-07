@@ -143,10 +143,10 @@ class OpenGLBackend(BackendGlobalObject):
         if self.gl_api == GraphicsAPI.OPENGL_ES_3:
             configs = [
                 pyglet.config.OpenGLUserConfig(
-                    double_buffer=True, depth_size=24, major_version=3, minor_version=2, opengl_api=self.gl_api,
+                    double_buffer=True, depth_size=24, major_version=3, minor_version=2, api=self.gl_api,
                 ),
                 pyglet.config.OpenGLUserConfig(
-                    double_buffer=True, depth_size=16, major_version=3, minor_version=2, opengl_api=self.gl_api,
+                    double_buffer=True, depth_size=16, major_version=3, minor_version=2, api=self.gl_api,
                 ),
             ]
         else:

@@ -22,7 +22,7 @@ def _is_gles2_context(gl3_context) -> bool:
         return True
 
     info = gl3_context.context.get_info()
-    return info.get_opengl_api() == "gles" and not info.have_version(3, 0)
+    return info.get_opengl_api() == "gles2" and not info.have_version(3, 0)
 
 
 def _skip_unsupported_matrix_uniform(gl3_context, matrix_type: str) -> None:

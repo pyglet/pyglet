@@ -95,9 +95,9 @@ from pyglet.math import Mat4
 from pyglet.window import event, key, dialog
 
 if TYPE_CHECKING:
-    from pyglet.config import UserConfig
     import BaseWindow as Window
-    from pyglet.graphics.api.base import VerifiedGraphicsConfig, SurfaceContext, GraphicsConfig, WindowTransformations
+    from pyglet.config import Configs
+    from pyglet.graphics.api.base import VerifiedGraphicsConfig, SurfaceContext, WindowTransformations
     from pyglet.display.base import Display, Screen, ScreenMode
     from pyglet.text import Label
 
@@ -417,7 +417,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                  file_drops: bool = False,
                  display: Display | None = None,
                  screen: Screen | None = None,
-                 config: UserConfig | Configs | None = None,
+                 config: Configs | Iterable[Configs] | None = None,
                  context: SurfaceContext | None = None,
                  mode: ScreenMode | None = None) -> None:
         """Create a window.

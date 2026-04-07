@@ -28,6 +28,7 @@ from typing import TYPE_CHECKING, Any, Sequence
 
 import pyglet
 
+from pyglet.enums import GraphicsAPI
 from pyglet.graphics.api.gl import (
     GL_BYTE,
     GL_DOUBLE,
@@ -115,7 +116,7 @@ class _GLVertexStreamMix(VertexStream):
         if not pyglet.options.opengl_persistent_buffers:
             return False
         info = ctx.info
-        if info.get_opengl_api() != "gl":
+        if info.get_opengl_api() != GraphicsAPI.OPENGL:
             return False
         return info.have_version(4, 4) or info.have_extension("GL_ARB_buffer_storage")
 
