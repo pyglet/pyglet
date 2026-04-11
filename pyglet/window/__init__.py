@@ -96,7 +96,7 @@ from pyglet.window import event, key, dialog
 
 if TYPE_CHECKING:
     import BaseWindow as Window
-    from pyglet.config import Config
+    from pyglet.config import Config, UserConfig
     from pyglet.graphics.api.base import VerifiedGraphicsConfig, SurfaceContext, WindowTransformations
     from pyglet.display.base import Display, Screen, ScreenMode
     from pyglet.text import Label
@@ -476,13 +476,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         EventDispatcher.__init__(self)
         self._event_queue = deque()
 
-        # TODO: migrate this to the _assign_config method?
-        if isinstance(config, Iterable):
-            self._config = [getattr(c, pyglet.options.backend) for c in config]
-        else:
-            self._config = getattr(config, pyglet.options.backend) if config else None
-
-        # self._config = config
+        self._user_config = config
         self._context = context
 
         self._display = display or pyglet.display.get_display()
@@ -530,8 +524,14 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
 
     def _assign_config(self) -> None:
         if pyglet.options.backend:
-            config = self._config
+            config = self._user_config
             context = self._context
+
+            # Pull out the backend specific config/s:
+            if isinstance(config, Iterable):
+                config = [getattr(c, pyglet.options.backend, None) for c in config]
+            else:
+                config = getattr(config, pyglet.options.backend, None)
 
             if not config:
                 for template_config in pyglet.graphics.api.get_default_configs():
@@ -947,7 +947,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             # Restore windowed location.
             self.set_location(*self._windowed_location)
 
-    def _set_fullscreen_mode(self, mode: ScreenMode, width: int, height: int) -> tuple[int, int]:
+    def _set_fullscreen_mode(self, mode: ScreenMode | None, width: int | None, height: int | None) -> tuple[int, int]:
         if mode is not None:
             self.screen.set_mode(mode)
             if width is None:
