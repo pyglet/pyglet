@@ -1,8 +1,6 @@
 import sys
 import warnings
 
-from typing import BinaryIO
-
 from pyglet.util import CodecRegistry, Decoder, Encoder
 from .base import *
 
