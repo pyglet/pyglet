@@ -20,12 +20,52 @@ get_encoders = registry.get_encoders
 
 class MediaDecoder(Decoder):
 
-    def decode(self, filename, file, streaming):
+    def decode(self, filename: str, file: BinaryIO | None, streaming: bool,
+               audio_sample_format: str | None=None,
+               audio_driver_sample_formats: list[str] | None=None,
+               audio_sample_rate: int | None=None,
+               audio_channels: int | None=None,
+               audio_resample_hq: bool=False
+    ) -> Source | StreamingSource:
         """Read the given file object and return an instance of `Source`
-        or `StreamingSource`. 
-        Throws DecodeException if there is an error.  `filename`
-        can be a file type hint.
+        or `StreamingSource`. Throws DecodeException if there is an error.
+        `filename` can be a file type hint.
+
+        Args:
+        filename:
+            Used to guess the media format, and to load the file if ``file``
+            is unspecified.
+        file:
+            An optional file-like object containing the source data.
+        streaming:
+            If ``False``, a :class:`StaticSource` will be returned; otherwise
+            a :class:`~pyglet.media.StreamingSource` is created.
+        decoder:
+            A specific decoder you wish to use, rather than relying on
+            automatic detection. If specified, no other decoders are tried.
+        audio_sample_format:
+            A specific audio sample format you wish the decoder to ouput,
+            rather than relying on automatic detection. For possible values see
+            the AUDIO_SAMPLE_FORMAT_* constants.
+            NOTE: currently only supported by FFmpegDecoder!
+        audio_sample_rate:
+            A specific audio sample rate (in Hz) you wish the decoder to
+            output, rather than relying on automatic detection. For possible
+            values see the AUDIO_SAMPLE_RATE_* constants.
+            NOTE: currently only supported by FFmpegDecoder!
+        audio_channels:
+            A specific number of channels you wish the decoder to output,
+            rather than relying on autimatic detection. For possible values see
+            the AUDIO_CHANNELS_* constants.
+            Note: currently only supported by FFmpegDecoder!
+        audio_resample_hq:
+            Whether to use high-quality resampling when resamplig is required
+            (e.g. when a specific sample rate is requested), at the cost of
+            increased CPU usage.
+            Note: currently only supported by FFmpegDecoder!
+
         """
+
         raise NotImplementedError()
 
 

@@ -179,18 +179,21 @@ def load(filename: str, file: BinaryIO | None = None,
                 f"Expected a boolean (True, False)")
 
     if decoder:
-        if type(decoder).__name__ == "FFmpegDecoder":
-            return decoder.decode(
-                filename, file, streaming=streaming,
-                audio_sample_format=audio_sample_format,
-                audio_driver_sample_formats=audio_driver.sample_formats,
-                audio_sample_rate=audio_sample_rate,
-                audio_channels=audio_channels,
-                audio_resample_hq=audio_resample_hq)
-        else:
-            return decoder.decode(filename, file, streaming=streaming)
+        return decoder.decode(
+            filename, file, streaming=streaming,
+            audio_sample_format=audio_sample_format,
+            audio_driver_sample_formats=audio_driver.sample_formats,
+            audio_sample_rate=audio_sample_rate,
+            audio_channels=audio_channels,
+            audio_resample_hq=audio_resample_hq)
 
-    return _codec_registry.decode(filename, file, streaming=streaming)
+    return _codec_registry.decode(
+        filename, file, streaming=streaming,
+        audio_sample_format=audio_sample_format,
+        audio_driver_sample_formats=audio_driver.sample_formats,
+        audio_sample_rate=audio_sample_rate,
+        audio_channels=audio_channels,
+        audio_resample_hq=audio_resample_hq)
 
 
 _add_default_codecs()

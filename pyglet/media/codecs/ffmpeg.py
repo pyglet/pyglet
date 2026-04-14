@@ -652,9 +652,11 @@ class FFmpegSource(StreamingSource):
                   and self._audio_stream is None):
                 stream = ffmpeg_open_stream(self._file, i)
 
+                self._audio_stream = stream
+                self._audio_stream_index = i
+
                 if not audio_channels:
                     audio_channels = info.channels
-                channels_out = min(2, abs(audio_channels))
 
                 channel_input = 0
                 if hasattr(stream.codec_context.contents, "ch_layout"):
@@ -665,6 +667,7 @@ class FFmpegSource(StreamingSource):
                     channel_input = self._get_default_channel_layout(
                         info.channels)
 
+                channels_out = min(2, abs(audio_channels))
                 channel_output = self._get_default_channel_layout(channels_out)
 
                 sample_format = stream.codec_context.contents.sample_fmt
@@ -705,8 +708,6 @@ class FFmpegSource(StreamingSource):
                     sample_size=self.AV_FORMAT_MAP[self.tgt_format][0],
                     sample_type=self.AV_FORMAT_MAP[self.tgt_format][1],
                     sample_rate=self.tgt_sample_rate)
-                self._audio_stream = stream
-                self._audio_stream_index = i
 
                 self.audio_convert_ctx = self.get_formatted_swr_context(
                     channel_output, info.sample_rate, channel_input,
