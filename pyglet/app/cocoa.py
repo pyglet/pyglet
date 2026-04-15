@@ -6,7 +6,7 @@ import time
 from pyglet import app
 from pyglet.app.base import PlatformEventLoop, EventLoop
 from pyglet.libs.darwin import cocoapy, AutoReleasePool, ObjCSubclass, PyObjectEncoding, ObjCInstance, send_super, \
-    ObjCClass, get_selector
+    ObjCClass, get_selector, set_realtime_thread_policy
 
 NSApplication = cocoapy.ObjCClass('NSApplication')
 NSMenu = cocoapy.ObjCClass('NSMenu')
@@ -161,6 +161,7 @@ class CocoaPlatformEventLoop(PlatformEventLoop):
 
     def __init__(self):
         super().__init__()
+        set_realtime_thread_policy()
         self._timer = None
 
         with AutoReleasePool():
