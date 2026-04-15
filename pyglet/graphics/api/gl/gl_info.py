@@ -8,6 +8,7 @@ Usage::
 """
 from __future__ import annotations
 
+import warnings
 from ctypes import c_char_p, cast, c_int, c_float
 from typing import TYPE_CHECKING
 
@@ -83,18 +84,36 @@ class GLInfo(SurfaceInfo):
         #       so using this to rely on detecting the API is not too unreasonable
         self.api = "gles" if "opengl es" in self.version.lower() else "gl"
 
-        try:
-            self.major_version = self.get_int(gl.GL_MAJOR_VERSION)
-            """Major version number of the OpenGL API supported by the current context."""
+        self.major_version = self.get_int(gl.GL_MAJOR_VERSION)
+        """Major version number of the OpenGL API supported by the current context."""
 
-            self.minor_version = self.get_int(gl.GL_MINOR_VERSION)
-            """Minor version number of the OpenGL API supported by the current context"""
+        self.minor_version = self.get_int(gl.GL_MINOR_VERSION)
+        """Minor version number of the OpenGL API supported by the current context"""
 
-            num_ext = self.get_int(gl.GL_NUM_EXTENSIONS)
+        # With older GL versions, the above constants may not be supported.
+        if not self.major_version:
+            version_str = self.get_str(gl.GL_VERSION)
+            if version_str != "Unknown":
+                try:
+                    version_number = version_str.split()[0]
+                    major, minor = map(int, version_number.split("."))
+
+                    self.major_version = major
+                    self.minor_version = minor
+                except ValueError:
+                    warnings.warn("Unable to determine GL version.")
+
+        num_ext = self.get_int(gl.GL_NUM_EXTENSIONS)
+        if num_ext == 0:
+            # No extensions present, attempt finding via old extension value.
+            ext_str = self.get_str(gl.GL_EXTENSIONS)
+            if ext_str == "Unknown":
+                warnings.warn("Unable to retrieve GL extension list. Driver may be missing or corrupt.")
+            else:
+                self.extensions = set(ext_str.split())
+        else:
             extensions = (self.get_str_index(gl.GL_EXTENSIONS, i) for i in range(num_ext))
             self.extensions = set(extensions)
-        except GLException:
-            pass  # GL3 is likely not available
 
         if self.platform_info:
             self.extensions.update(set(self.platform_info.get_extensions(context)))
@@ -109,7 +128,7 @@ class GLInfo(SurfaceInfo):
         except GLException:
             return default
 
-    def get_float(self, enum: int, default=0.0) -> float:
+    def get_float(self, enum: int, default: float = 0.0) -> float:
         try:
             value = c_float()
             self.context.glGetFloatv(enum, value)
