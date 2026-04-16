@@ -1,10 +1,10 @@
-Creating an OpenGL context
-==========================
+Creating a rendering context
+============================
 
-This section describes how to configure an OpenGL context.  For most
-applications the information described here is far too low-level to be of any
-concern, however more advanced applications can take advantage of the complete
-control pyglet provides.
+This section describes how to configure a rendering context. For most
+applications this is handled automatically, but advanced applications can use
+these options for finer control. OpenGL-family configuration options are
+covered in detail below.
 
 Displays, screens, configs and contexts
 ---------------------------------------
@@ -17,16 +17,15 @@ Displays, screens, configs and contexts
 Contexts and configs
 ^^^^^^^^^^^^^^^^^^^^
 
-When you draw on a window in pyglet, you are drawing to an OpenGL context.
-Every window has its own context, which is created when the window is created.
-You can access the window's context via its
-:attr:`~pyglet.window.Window.context` attribute.
+When you draw on a window in pyglet, you are drawing to the rendering context
+for the active backend. Every window has its own context, created when the
+window is created. You can access it via
+:attr:`~pyglet.window.Window.context`.
 
-The context is created from an OpenGL configuration (or "config"), which
-describes various properties of the context such as what color format to use,
-how many buffers are available, and so on.  You can access the config
-that was used to create a context via the context's
-:attr:`~pyglet.gl.Context.config` attribute.
+For OpenGL-family backends, the context is created from a configuration
+(or "config"), which describes properties such as color format and buffer
+layout. You can access the config used by a window via
+:attr:`~pyglet.window.Window.config` (or ``window.context.config``).
 
 For example, here we create a window using the default config and examine some
 of its properties::
@@ -48,9 +47,9 @@ selected by pyglet from a list of configs supported by the system.  You can
 make no guarantee that a given config is valid on a system unless it was
 provided to you by the system.
 
-pyglet simplifies the process of selecting one of the system's configs by
-allowing you to create a "template" config which specifies only the values you
-are interested in.  See :ref:`guide_simple-context-configuration` for details.
+pyglet simplifies config selection by allowing you to request only the
+attributes you care about and letting the window choose a compatible result.
+See :ref:`guide_simple-context-configuration` for details.
 
 
 .. _guide_displays:
@@ -138,8 +137,9 @@ You can access this screen directly using
 OpenGL configuration options
 ----------------------------
 
-When configuring or selecting a :class:`~pyglet.gl.Config`, you do so based
-on the properties of that config.  pyglet supports a fixed subset of the
+When configuring or selecting an OpenGL config, you do so based on the
+properties of ``pyglet.config.Config.opengl`` (or ``.gl2``/``.gles2``/``.gles3``).
+pyglet supports a fixed subset of the
 options provided by AGL, GLX, WGL and their extensions.  In particular, these
 constraints are placed on all OpenGL configs:
 
@@ -248,16 +248,14 @@ context will currently prevent usage of these modules.
         features from the context. Khronos does not recommend this option.
 
 .. note::
-   To request a higher higher version OpenGL context on Mac OSX, it is necessary
-   to disable the pyglet shadow context. To do this, set the pyglet option
-   ``pyglet.options['shadow_window']`` to ``False`` `before` creating a Window,
-   or importing ``pyglet.window``.
+   On macOS, requesting higher OpenGL versions can be more restrictive than on
+   other platforms and may depend on driver and platform constraints.
 
 The default configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you create a :class:`~pyglet.window.Window` without specifying the context
-or config, pyglet will use a template config with the following properties:
+or config, pyglet will use a default backend config with the following properties:
 
     .. list-table::
         :header-rows: 1
@@ -275,89 +273,57 @@ Simple context configuration
 ----------------------------
 
 A context can only be created from a config that was provided by the system.
-Enumerating and comparing the attributes of all the possible configs is
-a complicated process, so pyglet provides a simpler interface based on
-"template" configs.
+Enumerating and comparing all possible configs is platform-specific, so pyglet
+provides a simpler interface based on user configuration objects.
 
-To get the config with the attributes you need, construct a
-:class:`~pyglet.gl.Config` and set only the attributes you are interested in.
-You can then supply this config to the :class:`~pyglet.window.Window`
-constructor to create the context.
+To request specific attributes, construct :class:`~pyglet.config.Config`,
+set values on the backend-specific entry (such as ``config.opengl``), and pass
+it to :class:`~pyglet.window.Window`.
 
 For example, to create a window with an alpha channel::
 
-    config = pyglet.gl.Config(alpha_size=8)
+    config = pyglet.config.Config()
+    config.opengl.alpha_size = 8
     window = pyglet.window.Window(config=config)
 
-It is sometimes necessary to create the context yourself, rather than letting
-the :class:`~pyglet.window.Window` constructor do this for you.  In this case
-use :meth:`~pyglet.display.Screen.get_best_config` to obtain a "complete"
-config, which you can then use to create the context::
+You can predefine settings for multiple backends in the same object::
 
-    display = pyglet.display.get_display()
-    screen = display.get_default_screen()
+    config = pyglet.config.Config()
+    config.opengl.major_version = 4
+    config.opengl.minor_version = 1
+    config.gl2.double_buffer = True
+    window = pyglet.window.Window(config=config)
 
-    template = pyglet.gl.Config(alpha_size=8)
-    config = screen.get_best_config(template)
-    context = config.create_context(None)
-    window = pyglet.window.Window(context=context)
-
-Note that you cannot create a context directly from a template (any
-:class:`~pyglet.gl.Config` you constructed yourself).  The
-:class:`~pyglet.window.Window` constructor performs a similar process to the
-above to create the context if a template config is given.
-
-Not all configs will be possible on all machines.  The call to
-:meth:`~pyglet.display.Screen.get_best_config` will raise
+Not all requested configs will be possible on all machines. Window creation
+raises
 :class:`~pyglet.window.NoSuchConfigException` if the hardware does not
-support the requested attributes.  It will never return a config that does not
-meet or exceed the attributes you specify in the template.
+support the requested attributes.
 
 You can use this to support newer hardware features where available, but also
 accept a lesser config if necessary.  For example, the following code creates
 a window with multisampling if possible, otherwise leaves multisampling off::
 
-    template = pyglet.gl.Config(sample_buffers=1, samples=4)
-    try:
-        config = screen.get_best_config(template)
-    except pyglet.window.NoSuchConfigException:
-        template = gl.Config()
-        config = screen.get_best_config(template)
-    window = pyglet.window.Window(config=config)
+    multisample = pyglet.config.Config()
+    multisample.opengl.sample_buffers = 1
+    multisample.opengl.samples = 4
 
-Selecting the best configuration
---------------------------------
+    fallback = pyglet.config.Config()
+    fallback.opengl.depth_size = 24
 
-Allowing pyglet to select the best configuration based on a template is
-sufficient for most applications, however some complex programs may want to
-specify their own algorithm for selecting a set of OpenGL attributes.
+    window = pyglet.window.Window(config=[multisample, fallback])
 
-You can enumerate a screen's configs using the
-:meth:`~pyglet.display.Screen.get_matching_configs` method. You must supply a
-template as a minimum specification, but you can supply an "empty" template
-(one with no attributes set) to get a list of all configurations supported by
-the screen.
+Selecting config priority
+-------------------------
 
-In the following example, all configurations with either an auxiliary buffer
-or an accumulation buffer are printed::
-
-    display = pyglet.display.get_display()
-    screen = display.get_default_screen()
-
-    for config in screen.get_matching_configs(gl.Config()):
-        if config.aux_buffers or config.accum_red_size:
-            print(config)
-
-As well as supporting more complex configuration selection algorithms,
-enumeration allows you to efficiently find the maximum value of an attribute
-(for example, the maximum samples per pixel), or present a list of possible
-configurations to the user.
+Passing an iterable of :class:`~pyglet.config.Config` lets you define a
+priority order. pyglet tries each config in order and uses the first one that
+can be matched by the active backend.
 
 Sharing objects between contexts
 --------------------------------
 
-Every window in pyglet has its own OpenGL context.  Each context has its own
-OpenGL state, including the matrix stacks and current flags.  However,
+Every window in pyglet has its own rendering context. Each context has its own
+backend state. However,
 contexts can optionally share their objects with one or more other contexts.
 Shareable objects include:
 
@@ -382,10 +348,10 @@ the old one and lose all the objects already created, you can
 1. Create the new context, sharing object space with the old context, then
 2. Destroy the old context.  The new context retains all the old objects.
 
-pyglet defines an :class:`~pyglet.gl.ObjectSpace`: a representation of a
-collection of objects used by one or more contexts.  Each context has a single
-object space, accessible via its
-:py:attr:`~pyglet.gl.base.Context.object_space` attribute.
+For OpenGL-family backends, pyglet defines an
+:class:`~pyglet.gl.ObjectSpace`: a representation of a collection of objects
+used by one or more contexts. Each context has a single object space,
+accessible as ``window.context.object_space``.
 
 By default, all contexts share the same object space as long as at least one
 context using it is "alive".  If all the contexts sharing an object space are
@@ -393,18 +359,10 @@ lost or destroyed, the object space will be destroyed also.  This is why it is
 necessary to follow the steps outlined above for retaining objects when a
 context is recreated.
 
-pyglet creates a hidden "shadow" context as soon as :mod:`pyglet.gl` is
-imported. By default, all windows will share object space with this shadow
-context, so the above steps are generally not needed. The shadow context also
-allows objects such as textures to be loaded before a window is created (see
-``shadow_window`` in :data:`pyglet.options` for further details).
-
-When you create a :class:`~pyglet.gl.Context`, you tell pyglet which other
-context it will obtain an object space from.  By default (when using the
-:class:`~pyglet.window.Window` constructor
-to create the context) the most recently created context will be used.  You
-can specify another context, or specify no context (to create a new object
-space) in the :class:`~pyglet.gl.Context` constructor.
+When creating backend-specific contexts directly, you can choose which existing
+context to share resources with. By default (when using the
+:class:`~pyglet.window.Window` constructor), the most recently created
+compatible context is used.
 
 It can be useful to keep track of which object space an object was created in.
 For example, when you load a font, pyglet caches the textures used and reuses
@@ -416,7 +374,7 @@ In the following example, an attribute is set on the object space indicating
 that game objects have been loaded.  This way, if the context is recreated,
 you can check for this attribute to determine if you need to load them again::
 
-    context = pyglet.gl.current_context
+    context = pyglet.graphics.api.core.current_context
     object_space = context.object_space
     object_space.my_game_objects_loaded = True
 

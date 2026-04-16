@@ -1,7 +1,10 @@
-from typing import Any
+from __future__ import annotations
 
-from pyglet.enums import GraphicsAPI
-from pyglet.window import Window
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pyglet.window import Window
+    from pyglet.enums import GraphicsAPI
 
 
 class UserConfig:

@@ -1,13 +1,13 @@
-"""Configuration options for the Graphics Context.
-"""
+"""Configuration options for the Graphics Context."""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, NamedTuple
 
-from .base import UserConfig, SurfaceConfig
-from .gl import OpenGLUserConfig, WebGLUserConfig
 from pyglet.enums import GraphicsAPI
+
+from .base import SurfaceConfig, UserConfig  # noqa: TC001
+from .gl import OpenGLUserConfig, WebGLUserConfig
 
 if TYPE_CHECKING:
     from pyglet.window import Window
@@ -15,7 +15,13 @@ if TYPE_CHECKING:
 
 class Config:
     """A container for backend specific user configuration."""
-    __slots__ = 'opengl', 'gl2', 'gles2', 'gles3', 'webgl', 'vulkan'
+    opengl: OpenGLUserConfig
+    gl2: OpenGLUserConfig
+    gles2: OpenGLUserConfig
+    gles3: OpenGLUserConfig
+    webgl: WebGLUserConfig
+
+    __slots__ = 'gl2', 'gles2', 'gles3', 'opengl', 'vulkan', 'webgl'
 
     def __init__(self):
         self.opengl: OpenGLUserConfig = OpenGLUserConfig(api=GraphicsAPI.OPENGL)

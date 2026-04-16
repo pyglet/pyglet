@@ -18,8 +18,7 @@ arguments, defaults will be assumed for all parameters::
 The default parameters used are:
 
 * The window will have a size of 960x540, and not be resizable.
-* A default context will be created using template config described in
-  :ref:`guide_glconfig`.
+* A default context will be created using the current backend defaults.
 * The window caption will be the name of the executing Python script
   (i.e., ``sys.argv[0]``).
 
@@ -31,37 +30,46 @@ example shows how to create and display a window in two steps::
     # ... perform some additional initialisation
     window.set_visible()
 
-OpenGL Context configuration
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _guide_window-config:
+
+Graphics context configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The context of a window cannot be changed once created.  There are several
 ways to control the context that is created:
 
-* Supply an already-created :py:class:`~pyglet.gl.Context` using the
-  ``context`` argument::
+* Supply a :py:class:`~pyglet.config.Config` using the ``config`` argument.
+  pyglet selects the backend-specific options that match
+  ``pyglet.options.backend``::
 
-      context = config.create_context(share)
-      window = pyglet.window.Window(context=context)
-
-* Supply a complete :py:class:`~pyglet.gl.Config` obtained from a
-  :py:class:`~pyglet.display.Screen` using the ``config``
-  argument.  The context will be created from this config and will share object
-  space with the most recently created existing context::
-
-      display = pyglet.display.get_display()
-      screen = display.get_default_screen()
-      config = screen.get_best_config(template)
+      config = pyglet.config.Config()
+      config.opengl.alpha_size = 8
+      config.opengl.depth_size = 24
       window = pyglet.window.Window(config=config)
 
-* Supply a template :py:class:`~pyglet.gl.Config` using the ``config``
-  argument. The context will use the best config obtained from the default
-  screen of the default display::
+  You can set options for multiple backends up front, and pyglet will select
+  the matching one at runtime::
 
-      config = gl.Config(double_buffer=True)
+      config = pyglet.config.Config()
+      config.opengl.major_version = 4
+      config.opengl.minor_version = 1
+      config.gl2.double_buffer = True
       window = pyglet.window.Window(config=config)
+
+* Supply multiple :py:class:`~pyglet.config.Config` objects in priority order.
+  The first compatible config is used::
+
+      high_quality = pyglet.config.Config()
+      high_quality.opengl.sample_buffers = 1
+      high_quality.opengl.samples = 4
+
+      fallback = pyglet.config.Config()
+      fallback.opengl.depth_size = 24
+
+      window = pyglet.window.Window(config=[high_quality, fallback])
 
 * Specify a :py:class:`~pyglet.display.Screen` using the ``screen`` argument.
-  The context will use a config created from default template configuration
+  The context will use a config created from default backend configuration
   and this screen::
 
       display = pyglet.display.get_display()
@@ -70,15 +78,13 @@ ways to control the context that is created:
 
 * Specify a :py:class:`~pyglet.display.Display` using the ``display`` argument.
   The default screen on this display will be used to obtain a context using
-  the default template configuration::
+  the default backend configuration::
 
       display = platform.get_display(display_name)
       window = pyglet.window.Window(display=display)
 
-If a template :py:class:`~pyglet.gl.Config` is given, a
-:py:class:`~pyglet.display.Screen` or :py:class:`~pyglet.display.Display`
-may also be specified; however any other combination of parameters
-overconstrains the configuration and some parameters will be ignored.
+If no compatible config can be matched, window creation raises
+:py:class:`~pyglet.window.NoSuchConfigException`.
 
 Fullscreen windows
 ^^^^^^^^^^^^^^^^^^
@@ -419,7 +425,7 @@ each type of window you will display, or as your main application class.  There
 are several benefits:
 
 * You can load font and other resources from the constructor, ensuring the
-  OpenGL context has already been created.
+  rendering context has already been created.
 * You can add event handlers simply by defining them on the class.  The
   :py:meth:`~pyglet.window.Window.on_resize` event will be called as soon as
   the window is created (this
@@ -448,20 +454,20 @@ in :ref:`quickstart`, using a subclass of :py:class:`~pyglet.window.Window`::
 This example program is located in
 ``examples/programming_guide/window_subclass.py``.
 
-Windows and OpenGL contexts
----------------------------
+Windows and rendering contexts
+------------------------------
 
-Every window in pyglet has an associated OpenGL context.
-Specifying the configuration of this context has already been covered in
+Every window in pyglet has an associated rendering context for the active
+backend. Specifying the configuration of this context has already been covered in
 :ref:`guide_creating-a-window`.
-Drawing into the OpenGL context is the only way to draw into the window's
+Drawing into that rendering context is the only way to draw into the window's
 client area.
 
 Double-buffering
 ^^^^^^^^^^^^^^^^
 
 If the window is double-buffered (i.e., the configuration specified
-``double_buffer=True``, the default), OpenGL commands are applied to a hidden
+``double_buffer=True``, the default), rendering commands are applied to a hidden
 back buffer. This back buffer can be brought to the front using the `flip`
 method. The previous front buffer then becomes the hidden back buffer
 we render to in the next frame. If you are using the standard `pyglet.app.run`

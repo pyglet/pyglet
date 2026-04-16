@@ -250,9 +250,12 @@ Other notable API changes
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 Additional changes not covered above:
 
-* ``pyglet.config``:
-  The old ``pyglet.gl.Config`` was replaced by backend-specific configs such as
-  ``pyglet.config.Config``.
+* ``pyglet.config`` and ``pyglet.window.Window(config=...)``:
+  The old ``pyglet.gl.Config`` flow was replaced by ``pyglet.config.Config``.
+  Configure backend-specific options on ``config.opengl``, ``config.gl2``,
+  ``config.gles2``, ``config.gles3``, or ``config.webgl``. You can pass one
+  ``Config`` or multiple ``Config`` objects (in priority order) to
+  ``Window(config=...)``. See :ref:`guide_window-config`.
 
 * ``pyglet.graphics.Texture``:
   ``Texture.blit_into`` was renamed to ``Texture.upload`` and
