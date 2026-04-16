@@ -5,7 +5,7 @@ from ctypes import byref, Array
 from typing import Sequence
 
 import pyglet
-from pyglet.enums import TextureType, TextureFilter, ComponentFormat, AddressMode
+from pyglet.enums import TextureType, TextureFilter, ComponentFormat, AddressMode, GraphicsAPI
 from pyglet.graphics.api.gl import OpenGLSurfaceContext, GL_COMPRESSED_RGB8_ETC2
 from pyglet.graphics.api.gl.gl import (
     GL_RED,
@@ -468,7 +468,7 @@ class GLTexture(Texture):
         size = self.width * self.height * self.images * len(fmt)
         buf = (GLubyte * size)()
 
-        if self._context.info.get_opengl_api() == "gles":
+        if self._context.info.get_opengl_api() in (GraphicsAPI.OPENGL_ES_2, GraphicsAPI.OPENGL_ES_3):
             self._context.gles_pixel_fbo.bind()
             self._context.glPixelStorei(GL_PACK_ALIGNMENT, 1)
             self._attach_gles_fbo_texture(z, level)

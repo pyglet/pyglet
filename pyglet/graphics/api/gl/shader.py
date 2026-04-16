@@ -53,7 +53,7 @@ from pyglet.graphics.shader import (
 from pyglet.graphics.shader import ShaderException
 
 from pyglet.graphics.api.gl.buffer import GLUniformBufferObject
-from pyglet.enums import GeometryMode
+from pyglet.enums import GeometryMode, GraphicsAPI
 from pyglet.util import debug_print
 
 if TYPE_CHECKING:
@@ -869,7 +869,7 @@ class GLShaderSource(ShaderSource):
 
         self._version = self._find_glsl_version()
 
-        if pyglet.graphics.api.core.current_context.info.get_opengl_api() == "gles":
+        if pyglet.graphics.api.core.current_context.info.get_opengl_api() == GraphicsAPI.OPENGL_ES_3:
             self._lines[0] = "#version 310 es"
             self._lines.insert(1, "precision mediump float;")
 

@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Sequence
 
 import pyglet
+
+from pyglet.enums import GraphicsAPI
 from pyglet.graphics.api.base import ResourceManagement, NullBackend
 
 if TYPE_CHECKING:
@@ -17,12 +19,12 @@ resource_manager = ResourceManagement()
 # Enforce WebGL if emscripten is detected.
 # Create better fallback/choosing system later.
 if pyglet.compat_platform == "emscripten":
-    pyglet.options.backend = "webgl"
+    pyglet.options.backend = GraphicsAPI.WEBGL
 
-if pyglet.options.backend in ("opengl", "gles3"):
+if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
     from pyglet.graphics.api.gl.global_opengl import OpenGLBackend
 
-    core = OpenGLBackend("gles" if pyglet.options.backend == "gles3" else "gl")
+    core = OpenGLBackend(gl_api=pyglet.options.backend)
 
     from pyglet.graphics.api.gl.draw import GLBatch as Batch
     from pyglet.graphics.api.gl.draw import get_default_shader, get_default_batch
@@ -32,16 +34,16 @@ if pyglet.options.backend in ("opengl", "gles3"):
         GLShaderProgram as ShaderProgram,
     )
 
-elif pyglet.options.backend in ("gl2", "gles2"):
+elif pyglet.options.backend in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
     from pyglet.graphics.api.gl2.global_opengl import OpenGL2Backend
 
-    core = OpenGL2Backend("gles" if pyglet.options.backend == "gles2" else "gl")
+    core = OpenGL2Backend(gl_api=pyglet.options.backend)
 
     from pyglet.graphics.api.gl2.draw import GL2Batch as Batch
     from pyglet.graphics.api.gl2.draw import get_default_shader, get_default_batch
     from pyglet.graphics.api.gl2.shader import ShaderProgram, Shader, ComputeShaderProgram
 
-elif pyglet.options.backend == "webgl":
+elif pyglet.options.backend == GraphicsAPI.WEBGL:
     from pyglet.graphics.api.webgl import WebGLBackend
 
     core = WebGLBackend()
@@ -54,15 +56,16 @@ elif pyglet.options.backend == "webgl":
         WebGLShaderProgram as ShaderProgram,
     )
 
-elif pyglet.options.backend == "vulkan":
+elif pyglet.options.backend == GraphicsAPI.VULKAN:
     from pyglet.graphics.api.vulkan.instance import VulkanGlobal
     core = VulkanGlobal()
 
     from pyglet.graphics.api.vulkan.draw import Batch
     from pyglet.graphics.api.vulkan.draw import get_default_shader, get_default_batch
     from pyglet.graphics.api.vulkan.shader import ShaderProgram, Shader
+
 else:
-    raise Exception("Backend not set. Cannot utilize a graphics API.")
+    raise Exception(f"Invalid rendering backend. Choose one of {[str(a) for a in GraphicsAPI]}.")
 
 
 def get_config(**kwargs: float | str | None) -> GraphicsConfig:

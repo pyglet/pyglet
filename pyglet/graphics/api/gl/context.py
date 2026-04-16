@@ -4,6 +4,7 @@ import threading
 import weakref
 from typing import Callable, TYPE_CHECKING
 
+from pyglet.enums import GraphicsAPI
 from pyglet.graphics.api.gl import gl, gl_info, ObjectSpace
 from pyglet.graphics.api.base import SurfaceContext, NullContext
 from pyglet.graphics.api.gl.gl import GLFunctions, GLuint, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT
@@ -128,7 +129,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
                 self.platform_func = self.platform_func_class()
             self.uniform_getters, self.uniform_setters = self._get_uniform_func_tables()
             self._info.query(self)
-            if self.info.get_opengl_api() == "gles":
+            if self.info.get_opengl_api() in (GraphicsAPI.OPENGL_ES_2, GraphicsAPI.OPENGL_ES_3):
                 from pyglet.graphics.api.gl.framebuffer import GLFramebuffer
                 self.gles_pixel_fbo = GLFramebuffer(context=self)
 

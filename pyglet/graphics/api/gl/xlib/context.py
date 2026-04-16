@@ -4,6 +4,7 @@ import warnings
 from ctypes import byref, c_int, c_uint
 from typing import TYPE_CHECKING
 
+from pyglet.enums import GraphicsAPI
 from pyglet.graphics.api import gl
 from pyglet.graphics.api.gl import lib, OpenGLSurfaceContext
 from pyglet.graphics.api.gl.base import ContextException
@@ -82,10 +83,15 @@ class XlibContext(OpenGLSurfaceContext):
         if user_config.minor_version is not None:
             attribs.extend([glxext_arb.GLX_CONTEXT_MINOR_VERSION_ARB, user_config.minor_version])
 
-        if user_config.opengl_api == "gl":
+        if user_config.api == GraphicsAPI.OPENGL:
             attribs.extend([glxext_arb.GLX_CONTEXT_PROFILE_MASK_ARB, glxext_arb.GLX_CONTEXT_CORE_PROFILE_BIT_ARB])
-        elif user_config.opengl_api == "gles":
+        elif user_config.api in (GraphicsAPI.OPENGL_ES_2, GraphicsAPI.OPENGL_ES_3):
             attribs.extend([glxext_arb.GLX_CONTEXT_PROFILE_MASK_ARB, glxext_arb.GLX_CONTEXT_ES2_PROFILE_BIT_EXT])
+        elif user_config.api == GraphicsAPI.OPENGL_2:
+            pass
+        else:
+            msg = f"The '{user_config.api}' backend is not supported under GLX"
+            raise ContextException(msg)
 
         flags = 0
         if user_config.forward_compatible:

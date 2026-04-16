@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import sys
 import warnings
-from typing import Sequence, TYPE_CHECKING, Literal
+from typing import Sequence, TYPE_CHECKING
 
 import pyglet
-from pyglet.graphics.api.base import BackendGlobalObject, SurfaceContext, NullContext, UBOMatrixTransformations
 from pyglet.math import Mat4
+from pyglet.enums import GraphicsAPI
+from pyglet.graphics.api.base import BackendGlobalObject, SurfaceContext, NullContext, UBOMatrixTransformations
 from pyglet.graphics.api.gl.shader import GLShader as Shader, GLShaderProgram as ShaderProgram
 
 if TYPE_CHECKING:
@@ -103,10 +104,10 @@ class OpenGL3_Matrices(UBOMatrixTransformations):
 
 class OpenGLBackend(BackendGlobalObject):
     platform_func: WGLFunctions | None
-    gl_api: Literal["gl", "gles"]
+    gl_api: GraphicsAPI
     current_context: OpenGLSurfaceContext | NullContext
 
-    def __init__(self, gl_api: Literal["gl", "gles"] = "gl") -> None:
+    def __init__(self, gl_api: GraphicsAPI = GraphicsAPI.OPENGL) -> None:
         self.gl_api = gl_api
         self.initialized = False
         self.current_context = NullContext()
@@ -132,32 +133,32 @@ class OpenGLBackend(BackendGlobalObject):
         self._have_context = True
         return context
 
-    def get_default_configs(self) -> Sequence[pyglet.config.OpenGLConfig]:
+    def get_default_configs(self) -> Sequence[pyglet.config.OpenGLUserConfig]:
         """A sequence of configs to use if the user does not specify any.
 
         These will be used during Window creation.
         """
         # On Windows if you specify GLES but set 3.3 as major/minor version, it will upgrade to a full context.
         # Version 3.2 needs to be specified explicitly.
-        if self.gl_api == "gles":
+        if self.gl_api == GraphicsAPI.OPENGL_ES_3:
             configs = [
-                pyglet.config.OpenGLConfig(
-                    double_buffer=True, depth_size=24, major_version=3, minor_version=2, opengl_api=self.gl_api,
+                pyglet.config.OpenGLUserConfig(
+                    double_buffer=True, depth_size=24, major_version=3, minor_version=2, api=self.gl_api,
                 ),
-                pyglet.config.OpenGLConfig(
-                    double_buffer=True, depth_size=16, major_version=3, minor_version=2, opengl_api=self.gl_api,
+                pyglet.config.OpenGLUserConfig(
+                    double_buffer=True, depth_size=16, major_version=3, minor_version=2, api=self.gl_api,
                 ),
             ]
         else:
             configs = [
-                pyglet.config.OpenGLConfig(double_buffer=True, depth_size=24, major_version=3, minor_version=3),
-                pyglet.config.OpenGLConfig(double_buffer=True, depth_size=16, major_version=3, minor_version=3),
+                pyglet.config.OpenGLUserConfig(double_buffer=True, depth_size=24, major_version=3, minor_version=3),
+                pyglet.config.OpenGLUserConfig(double_buffer=True, depth_size=16, major_version=3, minor_version=3),
             ]
 
         return configs
 
-    def get_config(self, **kwargs: float | str | None) -> pyglet.config.OpenGLConfig:
-        return pyglet.config.OpenGLConfig(**kwargs)
+    def get_config(self, **kwargs: float | str | None) -> pyglet.config.OpenGLUserConfig:
+        return pyglet.config.OpenGLUserConfig(**kwargs)
 
     @property
     def info(self):

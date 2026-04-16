@@ -216,7 +216,7 @@ def test_gl_vertex_stream_persistent_resize_rebinds_vao(gl3_context):
     ctx = gl3_context.context
     info = ctx.get_info()
 
-    if info.get_opengl_api() != "gl":
+    if info.get_opengl_api() != "opengl":
         pytest.skip("Persistent buffers are only integrated for desktop OpenGL contexts.")
     if not (info.have_version(4, 4) or info.have_extension("GL_ARB_buffer_storage")):
         pytest.skip("Persistent buffers require OpenGL 4.4 or GL_ARB_buffer_storage.")

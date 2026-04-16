@@ -95,9 +95,9 @@ from pyglet.math import Mat4
 from pyglet.window import event, key, dialog
 
 if TYPE_CHECKING:
-    from pyglet.config import UserConfig
     import BaseWindow as Window
-    from pyglet.graphics.api.base import VerifiedGraphicsConfig, SurfaceContext, GraphicsConfig, WindowTransformations
+    from pyglet.config import Config, UserConfig
+    from pyglet.graphics.api.base import VerifiedGraphicsConfig, SurfaceContext, WindowTransformations
     from pyglet.display.base import Display, Screen, ScreenMode
     from pyglet.text import Label
 
@@ -368,7 +368,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     _vsync: bool = False
     _file_drops: bool = False
     _screen: Screen | None = None
-    _config: VerifiedGraphicsConfig | None = None
+    _config: VerifiedGraphicsConfig | UserConfig |  None = None
     _context: SurfaceContext | None = None
     _projection_matrix: Mat4 = pyglet.math.Mat4()
     _view_matrix: Mat4 = pyglet.math.Mat4()
@@ -417,7 +417,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                  file_drops: bool = False,
                  display: Display | None = None,
                  screen: Screen | None = None,
-                 config: UserConfig | Sequence[UserConfig] | None = None,
+                 config: Config | Iterable[Config] | None = None,
                  context: SurfaceContext | None = None,
                  mode: ScreenMode | None = None) -> None:
         """Create a window.
@@ -456,7 +456,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                 would like to change attributes of the window before
                 having it appear to the user.
             vsync:
-                If True, buffer flips are synchronised to the primary screen's
+                If True, buffer flips are synchronized to the primary screen's
                 vertical retrace, eliminating flicker.
             file_drops:
                 If True, the Window will accept files being dropped into it and call the ``on_file_drop`` event.
@@ -476,21 +476,11 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         EventDispatcher.__init__(self)
         self._event_queue = deque()
 
-        self._config = config
+        self._user_config = config
         self._context = context
 
-        if not display:
-            display = pyglet.display.get_display()
-
-        if not screen:
-            screen = display.get_default_screen()
-
-        # XXX deprecate config's being screen-specific
-        if hasattr(self._config, 'screen'):
-            self._screen = self._config.screen
-        else:
-            self._screen = screen
-        self._display = self._screen.display
+        self._display = display or pyglet.display.get_display()
+        self._screen = screen or self._display.get_default_screen()
 
         if fullscreen:
             if width is None and height is None:
@@ -534,8 +524,14 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
 
     def _assign_config(self) -> None:
         if pyglet.options.backend:
-            config = self._config
+            config = self._user_config
             context = self._context
+
+            # Pull out the backend specific config/s:
+            if isinstance(config, Iterable):
+                config = [getattr(c, pyglet.options.backend, None) for c in config]
+            else:
+                config = getattr(config, pyglet.options.backend, None)
 
             if not config:
                 for template_config in pyglet.graphics.api.get_default_configs():
@@ -951,7 +947,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             # Restore windowed location.
             self.set_location(*self._windowed_location)
 
-    def _set_fullscreen_mode(self, mode: ScreenMode, width: int, height: int) -> tuple[int, int]:
+    def _set_fullscreen_mode(self, mode: ScreenMode | None, width: int | None, height: int | None) -> tuple[int, int]:
         if mode is not None:
             self.screen.set_mode(mode)
             if width is None:
