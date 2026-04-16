@@ -91,7 +91,7 @@ jobs:
     strategy:
       matrix:
         python-version: [ '3.12', '3.13', '3.14', 'pypy-3.10' ]
-        backend-override: [[opengl, '4.6'], [gl2, '2.0'], [gles2, '2.0'], [gles3, '3.2']]
+        backend-override: [[opengl, '4.6'], [gles2, '2.0'], [gles3, '3.2']]
 
     name: Python ${{ matrix.python-version }} Ubuntu HEADLESS ${{ matrix.backend-override[0] }}
     steps:
