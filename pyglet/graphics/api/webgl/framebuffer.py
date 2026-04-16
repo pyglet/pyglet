@@ -23,12 +23,13 @@ from __future__ import annotations
 
 
 import pyglet
+import js
 from typing import TYPE_CHECKING
 
 from pyglet.enums import FramebufferTarget, FramebufferAttachment, ComponentFormat
 from pyglet.graphics.api.webgl import gl
-from pyglet.image.base import ImageData
 from pyglet.graphics.api.webgl.texture import _get_internal_format
+from pyglet.image.base import ImageData
 
 if TYPE_CHECKING:
     from pyglet.graphics.api.webgl.webgl_js import WebGLFramebuffer as WebGLFramebufferObject, WebGLRenderbuffer as WebGLRenderbufferObject
@@ -73,6 +74,7 @@ def get_viewport() -> tuple:
     ctx.glGetIntegerv(gl.GL_VIEWPORT, viewport)
     return tuple(viewport)
 
+
 def get_screenshot() -> ImageData:
     """Read the pixel data from the default color buffer into ImageData.
 
@@ -82,21 +84,19 @@ def get_screenshot() -> ImageData:
 
     .. versionadded:: 3.0
     """
-    # ctx = pyglet.graphics.api.core.current_context
-    # fmt = 'RGBA'
-    # viewport = get_viewport()
-    # width = viewport[2]
-    # height = viewport[3]
-    #
-    # buf = (gl.GLubyte * (len(fmt) * width * height))()
-    #
-    # ctx.glReadBuffer(gl.GL_BACK)
-    # ctx.glPixelStorei(gl.GL_PACK_ALIGNMENT, 1)
-    # ctx.glReadPixels(0, 0, width, height, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, buf)
-    # return ImageData(width, height, fmt, buf)
-    raise NotImplementedError("Not yet implemented.")
+    ctx = pyglet.graphics.api.core.current_context
+    _gl = ctx.gl
 
+    width = _gl.drawingBufferWidth
+    height = _gl.drawingBufferHeight
+    fmt = 'RGBA'
 
+    size = len(fmt) * width * height
+    buf = js.Uint8Array.new(size)
+
+    _gl.readPixels(0, 0, width, height, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, buf)
+
+    return ImageData(width, height, fmt, buf)
 
 
 def get_max_color_attachments() -> int:

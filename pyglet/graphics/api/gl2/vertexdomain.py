@@ -40,7 +40,7 @@ from pyglet.graphics.api.gl import (
     GLintptr,
     GLsizei,
     GLvoid,
-    GL_ARRAY_BUFFER, OpenGLSurfaceContext,
+    OpenGLSurfaceContext,
 
 )
 from pyglet.graphics.api.gl.enums import geometry_map
@@ -147,6 +147,8 @@ class GLVertexStream(VertexStream):
 
     def bind_into(self, _vao: None) -> None:
         for attribute, buffer in zip(self.attribute_names.values(), self.buffers):
+            # Enforce bind even if buffer is not dirty.
+            buffer.bind()
             buffer.commit()
             attribute.enable()
             attribute.set_pointer()
@@ -175,9 +177,10 @@ class GLIndexStream(IndexStream):
             1,
         )
 
-    def bind_into(self, vao: VertexArrayBinding) -> None:
-        #self.buffer.bind_to_index_buffer()
-        pass
+    def bind_into(self, _vao: VertexArrayBinding) -> None:
+        # Indexed draw offsets are interpreted relative to the currently bound element buffer.
+        self.buffer.bind_to_index_buffer()
+        self.buffer.commit()
 
     def unbind(self):
         self.buffer.unbind()
@@ -261,15 +264,10 @@ class VertexDomain(BaseVertexDomain):
                 Vertex list to draw.
 
         """
-        for buffer, attribute in self.buffer_attributes:
-            buffer.commit()
-            attribute.enable()
-            attribute.set_pointer(0)
-
+        self.vao.bind()
+        self.vertex_buffers.commit()
         self._context.glDrawArrays(geometry_map[mode], vertex_list.start, vertex_list.count)
-
-        for _, attribute in self.buffer_attributes:
-            attribute.disable()
+        self.vao.unbind()
 
     @property
     def is_empty(self) -> bool:
@@ -340,17 +338,13 @@ class IndexedVertexDomain(BaseIndexedVertexDomain):
             vertex_list:
                 Vertex list to draw.
         """
-        for buffer, attribute in self.buffer_attributes:
-            buffer.commit()
-            attribute.enable()
-            attribute.set_pointer(0)
-
-        self.index_buffer.commit()
-
-        self._context.glDrawElements(geometry_map[mode], vertex_list.index_count, self.index_gl_type,
-                       vertex_list.index_start * self.index_element_size)
-
-        for _, attribute in self.buffer_attributes:
-            attribute.disable()
-
-        self._context.glBindBuffer(GL_ARRAY_BUFFER, 0)
+        self.vao.bind()
+        self.vertex_buffers.commit()
+        self.index_stream.commit()
+        self._context.glDrawElements(
+            geometry_map[mode],
+            vertex_list.index_count,
+            self.index_stream.gl_type,
+            vertex_list.index_start * self.index_stream.index_element_size,
+        )
+        self.vao.unbind()
