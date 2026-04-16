@@ -356,6 +356,23 @@ Note that the first argument gives the number of vertices in the data, not the
 number of indices (which is implicit on the length of the index list given in
 the third argument).
 
+Drawing vertex lists
+~~~~~~~~~~~~~~~~~~~~
+
+It is *highly* recommended to instead use batched rendering. See :ref:`guide_batched-rendering` for details.
+
+However, for debugging purposes or in other situations where you only need to draw a single vertex list,
+this can be done using :py:meth:`~pyglet.graphics.vertexdomain.VertexList.draw` method and passing a
+GL geometry mode.
+
+Since a ``VertexList`` is *not* state aware, you will have to manually activate and de-activate states before drawing, or
+you may receive incorrect output, or no output at all::
+
+    def on_draw():
+        program.use()
+        vlist.draw(pyglet.gl.GL_TRIANGLES)
+        program.stop()
+
 Resource Management
 ~~~~~~~~~~~~~~~~~~~
 
