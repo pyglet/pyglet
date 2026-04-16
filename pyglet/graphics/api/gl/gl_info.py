@@ -8,6 +8,7 @@ Usage::
 """
 from __future__ import annotations
 
+import re
 import warnings
 from ctypes import c_char_p, cast, c_int, c_float
 from typing import TYPE_CHECKING
@@ -94,16 +95,13 @@ class GLInfo(SurfaceInfo):
 
         # With older GL versions, the above constants may not be supported.
         if not self.major_version:
-            version_str = self.get_str(gl.GL_VERSION)
-            if version_str != "Unknown":
-                try:
-                    version_number = version_str.split()[0]
-                    major, minor = map(int, version_number.split("."))
-
-                    self.major_version = major
-                    self.minor_version = minor
-                except ValueError:
-                    warnings.warn("Unable to determine GL version.")
+            if match := re.search(r'[0-4]\.\d+', self.version):
+                version_string = match.group()
+                major, minor = map(int, version_string.split("."))
+                self.major_version = major
+                self.minor_version = minor
+        else:
+            warnings.warn(f"Unable to determine GL version from driver version string: {self.version}.")
 
         num_ext = self.get_int(gl.GL_NUM_EXTENSIONS)
         if num_ext == 0:
