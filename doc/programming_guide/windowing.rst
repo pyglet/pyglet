@@ -476,7 +476,7 @@ automatically after each :py:meth:`~pyglet.window.Window.on_draw` event.
 
 If the window is not double-buffered, the
 :py:meth:`~pyglet.window.Window.flip`  operation is unnecessary,
-and you should remember only to call :py:func:`pyglet.gl.glFlush` to
+and you should remember only to call :py:func:`pyglet.graphics.api.gl.glFlush` to
 ensure buffered commands are executed.
 
 Vertical retrace synchronisation

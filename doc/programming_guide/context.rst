@@ -349,7 +349,7 @@ the old one and lose all the objects already created, you can
 2. Destroy the old context.  The new context retains all the old objects.
 
 For OpenGL-family backends, pyglet defines an
-:class:`~pyglet.gl.ObjectSpace`: a representation of a collection of objects
+:class:`~pyglet.graphics.api.gl.ObjectSpace`: a representation of a collection of objects
 used by one or more contexts. Each context has a single object space,
 accessible as ``window.context.object_space``.
 
@@ -368,7 +368,7 @@ It can be useful to keep track of which object space an object was created in.
 For example, when you load a font, pyglet caches the textures used and reuses
 them; but only if the font is being loaded on the same object space.  The
 easiest way to do this is to set your own attributes on the
-:py:class:`~pyglet.gl.ObjectSpace` object.
+:py:class:`~pyglet.graphics.api.gl.ObjectSpace` object.
 
 In the following example, an attribute is set on the object space indicating
 that game objects have been loaded.  This way, if the context is recreated,
@@ -378,5 +378,5 @@ you can check for this attribute to determine if you need to load them again::
     object_space = context.object_space
     object_space.my_game_objects_loaded = True
 
-Avoid using attribute names on :class:`~pyglet.gl.ObjectSpace` that begin with
+Avoid using attribute names on :class:`~pyglet.graphics.api.gl.ObjectSpace` that begin with
 ``"pyglet"``, as they may conflict with an internal module.

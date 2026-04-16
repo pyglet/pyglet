@@ -13,7 +13,7 @@ The interface is a "thin-wrapper" around ``libGL.so`` on Linux,
 maintainers regenerate the interface from the latest specifications, so it is
 always up-to-date with the latest version and almost all extensions.
 
-The interface is provided by the ``pyglet.gl`` package.  To use it you will
+The interface is provided by the ``pyglet.graphics.api.gl`` package.  To use it you will
 need a good knowledge of OpenGL, C and ctypes.  You may prefer to use OpenGL
 without using ctypes, in which case you should investigate `PyOpenGL`_.
 `PyOpenGL`_ provides similar functionality with a more "Pythonic" interface,
@@ -110,14 +110,14 @@ early on.  However, it has a significant impact on performance, and is
 disabled when python is run with the ``-O`` option.
 
 You can also disable this error check by setting the following option `before`
-importing ``pyglet.gl`` or ``pyglet.window``::
+importing ``pyglet.graphics.api.gl`` or ``pyglet.window``::
 
     # Disable error checking for increased performance
     pyglet.options['debug_api'] = False
 
     from pyglet.graphics.api.gl import *
 
-Setting the option after importing ``pyglet.gl`` will have no effect.  Once
+Setting the option after importing ``pyglet.graphics.api.gl`` will have no effect.  Once
 disabled, there is no error-checking overhead in each GL call.
 
 Using extension functions
@@ -126,16 +126,16 @@ Using extension functions
 Before using an extension function, you should check that the extension is
 implemented by the current driver.  Typically this is done using
 ``glGetString(GL_EXTENSIONS)``, but pyglet has a convenience module,
-`pyglet.gl.gl_info` that does this for you::
+`pyglet.graphics.api.gl.gl_info` that does this for you::
 
-    if pyglet.gl.gl_info.have_extension('GL_ARB_shadow'):
+    if pyglet.graphics.api.gl.gl_info.have_extension('GL_ARB_shadow'):
         # ... do shadow-related code.
     else:
         # ... raise an exception, or use a fallback method
 
 You can also easily check the version of OpenGL::
 
-    if pyglet.gl.gl_info.have_version(4, 6):
+    if pyglet.graphics.api.gl.gl_info.have_version(4, 6):
         # We can assume all OpenGL 4.6 functions are implemented.
 
 Remember to only call the ``gl_info`` functions after creating a window.
@@ -171,8 +171,8 @@ AGL on OS X, GLX under X11 and WGL on Windows.  pyglet handles these details
 when a window is created, but you may need to use the functions directly (for
 example, to use pbuffers) or an extension function.
 
-The modules are named ``pyglet.gl.agl``, ``pyglet.gl.glx`` and
-``pyglet.gl.wgl``.  You must only import the correct module for the running
+The modules are named ``pyglet.graphics.api.gl.agl``, ``pyglet.graphics.api.gl.glx`` and
+``pyglet.graphics.api.gl.wgl``.  You must only import the correct module for the running
 operating system::
 
     if sys.platform.startswith('linux'):
@@ -188,12 +188,12 @@ by pyglet. For example FreeBSD systems will appear as ``linux-compat``
 in ``pyglet.compat_platform``.
 
 There are convenience modules for querying the version and extensions of WGL
-and GLX named ``pyglet.gl.wgl_info`` and ``pyglet.gl.glx_info``, respectively.
+and GLX named ``pyglet.graphics.api.gl.wgl_info`` and ``pyglet.graphics.api.gl.glx_info``, respectively.
 AGL does not have such a module, just query the version of OS X instead.
 
-If using GLX extensions, you can import ``pyglet.gl.glxext_arb`` for the
-registered extensions or ``pyglet.gl.glxext_nv`` for the latest nVidia
+If using GLX extensions, you can import ``pyglet.graphics.api.gl.glxext_arb`` for the
+registered extensions or ``pyglet.graphics.api.gl.glxext_nv`` for the latest nVidia
 extensions.
 
-Similarly, if using WGL extensions, import ``pyglet.gl.wglext_arb`` or
-``pyglet.gl.wglext_nv``.
+Similarly, if using WGL extensions, import ``pyglet.graphics.api.gl.wglext_arb`` or
+``pyglet.graphics.api.gl.wglext_nv``.
