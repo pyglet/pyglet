@@ -253,7 +253,7 @@ class Options:
 
     .. versionadded:: 2.0.5"""
 
-    dpi_scaling: Literal["platform", "stretch"] = "platform"
+    dpi_scaling: Literal["platform", "stretch", "none"] = "platform"
     """For 'HiDPI' displays, Window behavior can differ between operating systems. Defaults to `'platform'`.
 
     The current options are an attempt to create consistent behavior across all of the operating systems.
@@ -270,6 +270,10 @@ class Options:
     No rescaling and repositioning of content will be necessary, but at the cost of blurry content depending on the
     extent of the stretch. For example, 800x600 at 150% DPI will be 800x600 for `window.get_size()` and 1200x900 for
     `window.get_framebuffer_size()`.
+
+    `'none'`: DPI scaling is completely ignored. The window and framebuffer are created at exactly the requested pixel
+    size, with a 1:1 mapping between logical pixels and physical pixels. The window may appear smaller on HiDPI
+    displays, but rendering will be pixel-perfect with no interpolation or scaling artifacts.
     """
 
     shader_bind_management: bool = True

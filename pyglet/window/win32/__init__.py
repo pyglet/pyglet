@@ -197,7 +197,10 @@ class Win32Window(BaseWindow):
         else:
             self._ws_style &= ~(constants.WS_THICKFRAME | constants.WS_MAXIMIZEBOX)
 
-        self._dpi = self._screen.get_dpi()
+        if pyglet.options.dpi_scaling == "none":
+            self._dpi = 96
+        else:
+            self._dpi = self._screen.get_dpi()
 
         if self._fullscreen:
             width = self.screen.width
@@ -1420,7 +1423,7 @@ class Win32Window(BaseWindow):
 
     @Win32EventHandler(constants.WM_GETDPISCALEDSIZE)
     def _event_dpi_scaled_size(self, msg: int, wParam: int, lParam: int) -> int | None:
-        if pyglet.options.dpi_scaling == "stretch":
+        if pyglet.options.dpi_scaling in ("stretch", "none"):
             return None
 
         size = cast(lParam, POINTER(SIZE)).contents
@@ -1448,6 +1451,9 @@ class Win32Window(BaseWindow):
     @Win32EventHandler(constants.WM_DPICHANGED)
     def _event_dpi_change(self, msg: int, wParam: int, lParam: int) -> int:
         y_dpi, x_dpi = self._get_location(wParam)
+
+        if pyglet.options.dpi_scaling == "none":
+            return 1
 
         scale = x_dpi / constants.USER_DEFAULT_SCREEN_DPI
 
