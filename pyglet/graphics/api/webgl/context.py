@@ -63,7 +63,7 @@ class OpenGLSurfaceContext(SurfaceContext):
         self.global_ctx = global_ctx
         self.window = window
         self.config = config
-        self.context_share = context_share
+        self.context_share = context_share or None  # Use a real NoneType instead of NullContext
         self.is_current = False
 
         # The GL Context.  Pass through the WebGLConfig settings:

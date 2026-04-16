@@ -54,7 +54,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
         self.window = window
         self.config = config
         #super().__init__(core, window, config)
-        self.context_share = context_share
+        self.context_share = context_share or None  # Use a real NoneType instead of NullContext
         self.is_current = False
         self._info = gl_info.GLInfo(platform_info)
         self.platform_func_class = platform_func_class
