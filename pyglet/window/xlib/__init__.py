@@ -30,6 +30,7 @@ from typing import TYPE_CHECKING, Sequence
 
 import pyglet
 from pyglet.display.xlib import XlibScreenXinerama, XlibDisplay
+from pyglet.enums import GraphicsAPI
 from pyglet.event import EventDispatcher
 from pyglet.libs.linux.x11 import cursorfont, xlib
 from pyglet.libs.linux.x11.xrender import XRenderFindVisualFormat
@@ -245,7 +246,7 @@ class XlibWindow(BaseWindow):
                     depth = visual_info.depth
 
                 # Vulkan just uses the default visual ID
-                elif pyglet.options.backend == "vulkan":
+                elif pyglet.options.backend == GraphicsAPI.VULKAN:
                     visual = xlib.XDefaultVisual(self._x_display, self._x_screen_id)
                     depth = xlib.XDefaultDepth(self._x_display, self._x_screen_id)
                 else:
@@ -302,7 +303,7 @@ class XlibWindow(BaseWindow):
             self.display._window_map[self._x_window] = self.dispatch_platform_event_view  # noqa: SLF001
 
             # Vulkan surface needs to be created after the window. Possibly move surface creation to context.attach.
-            if pyglet.options.backend == "vulkan" and not self._shadow:
+            if pyglet.options.backend == GraphicsAPI.VULKAN and not self._shadow:
                 self._assign_config()
 
             if self.context:
