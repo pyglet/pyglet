@@ -8,9 +8,9 @@ jobs:
     strategy:
       matrix:
         python-version: [ '3.9', '3.10', '3.11', '3.12', '3.13', '3.14', 'pypy-3.10' ]
-        backend-override: [ 'opengl', 'gl2', 'gles2', 'gles3']
+        backend-override: [[opengl, 4.6], [gl2, 2.0], [gles2, 2.0], [gles3, 3.2]]
 
-    name: Python ${{ matrix.python-version }} Ubuntu ${{ matrix.backend-override }}
+    name: Python ${{ matrix.python-version }} Ubuntu ${{ matrix.backend-override[0] }}
     steps:
       - uses: actions/checkout@v4
       - name: Setup python
@@ -26,7 +26,9 @@ jobs:
           sudo apt-get install xvfb ffmpeg
       - name: Run tests
         env:
-          PYGLET_BACKEND: ${{ matrix.backend-override }}
+          PYGLET_BACKEND: ${{ matrix.backend-override[0] }}
+          MESA_GL_VERSION_OVERRIDE: ${{ matrix.backend-override[1] }}
+          MESA_GLES_VERSION_OVERRIDE: ${{ matrix.backend-override[1] }}
           ALSOFT_DRIVERS: "null"
           ALSOFT_LOGLEVEL: 1
         run: |
@@ -89,9 +91,9 @@ jobs:
     strategy:
       matrix:
         python-version: [ '3.12', '3.13', '3.14', 'pypy-3.10' ]
-        backend-override: [ 'opengl', 'gles2', 'gles3']
+        backend-override: [[opengl, 4.6], [gl2, 2.0], [gles2, 2.0], [gles3, 3.2]]
 
-    name: Python ${{ matrix.python-version }} Ubuntu HEADLESS ${{ matrix.backend-override }}
+    name: Python ${{ matrix.python-version }} Ubuntu HEADLESS ${{ matrix.backend-override[0] }}
     steps:
       - uses: actions/checkout@v4
       - name: Setup python
@@ -106,7 +108,9 @@ jobs:
           sudo apt-get install --fix-missing libgl1-mesa-dev xvfb
       - name: Run tests
         env:
-          PYGLET_BACKEND: ${{ matrix.backend-override }}
+          PYGLET_BACKEND: ${{ matrix.backend-override[0] }}
+          MESA_GL_VERSION_OVERRIDE: ${{ matrix.backend-override[1] }}
+          MESA_GLES_VERSION_OVERRIDE: ${{ matrix.backend-override[1] }}
           PYGLET_HEADLESS: true
         run: |
           python3 -m pyglet.info
