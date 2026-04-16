@@ -179,6 +179,13 @@ constants defined in :py:mod:`pyglet.window.key` are::
     MOD_SCROLLLOCK
     MOD_ACCEL       Equivalent to MOD_CTRL, or MOD_COMMAND on Mac OS X.
 
+If you want shortcut-style behavior that matches each platform, use
+``MOD_ACCEL`` with another key. For example, this checks ``Ctrl+S`` on
+Windows/Linux and ``Command+S`` on macOS::
+
+    if symbol == key.S and modifiers & key.MOD_ACCEL:
+        save_document()
+
 For example, to test if the shift key is held down::
 
     if modifiers & MOD_SHIFT:

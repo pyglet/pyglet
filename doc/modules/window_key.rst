@@ -34,7 +34,8 @@ Modifier mask constants
   *
     * ``MOD_FUNCTION``
   *
-    * ``MOD_ACCEL`` (``MOD_CTRL`` on Windows & Linux, ``MOD_CMD`` on OS X)
+    * ``MOD_ACCEL`` (``MOD_CTRL`` on Windows & Linux, ``MOD_COMMAND`` on OS X)
+
 
 ASCII commands
 ^^^^^^^^^^^^^^
