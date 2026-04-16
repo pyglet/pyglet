@@ -267,10 +267,10 @@ class NullContext:
         raise RuntimeError(msg)
 
     def __getattribute__(self, item):
-        self._raise_no_context()
+        object.__getattribute__(self, "_raise_no_context")()
 
     def __enter__(self) -> NoReturn:
-        self._raise_no_context()
+        object.__getattribute__(self, "_raise_no_context")()
 
     def __exit__(self, *_args: Any) -> None:
         return None
