@@ -61,8 +61,9 @@ jobs:
     strategy:
       matrix:
         python-version: [ '3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
-        backend-override: [ 'opengl', 'gl2', 'gles2' ]
-    name: Python ${{ matrix.python-version }} Windows ${{ matrix.backend-override }}
+        backend-override: [[opengl, '4.6'], [gl2, '2.0'], [gles2, '2.0']]
+
+    name: Python ${{ matrix.python-version }} Windows ${{ matrix.backend-override[0] }}
     steps:
       - uses: actions/checkout@v4
       - name: Setup python
@@ -81,7 +82,9 @@ jobs:
       - name: Run tests
         shell: pwsh
         env:
-          PYGLET_BACKEND: ${{ matrix.backend-override }}
+          PYGLET_BACKEND: ${{ matrix.backend-override[0] }}
+          MESA_GL_VERSION_OVERRIDE: ${{ matrix.backend-override[1] }}
+          MESA_GLES_VERSION_OVERRIDE: ${{ matrix.backend-override[1] }}
         run: |
           python3 -m pyglet.info
           pytest tests --ignore=tests/interactive
