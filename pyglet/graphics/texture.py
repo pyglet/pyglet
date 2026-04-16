@@ -962,6 +962,7 @@ class CompressedTexture(_AbstractImage):
     """The mipmap level of this texture."""
 
     images = 1
+    default_filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR, TextureFilter.LINEAR
 
     x: int = 0
     y: int = 0
@@ -978,6 +979,7 @@ class CompressedTexture(_AbstractImage):
         self.id = tex_id
         self.tex_type = tex_type
 
+        filters = filters or self.default_filters
         if isinstance(filters, TextureFilter):
             self.min_filter = filters
             self.mag_filter = filters
@@ -990,6 +992,14 @@ class CompressedTexture(_AbstractImage):
 
     def get_texture(self) -> CompressedTexture:
         return self
+
+    def get_image_data(self) -> ImageData:
+        msg = f"Compressed texture readback is not implemented for {self}."
+        raise NotImplementedError(msg)
+
+    def get_region(self, x: int, y: int, width: int, height: int) -> _AbstractImage:
+        msg = f"Region views are not implemented for {self}."
+        raise NotImplementedError(msg)
 
 
 if pyglet.options.backend in ("opengl", "gles3", "gl2", "gles2"):
