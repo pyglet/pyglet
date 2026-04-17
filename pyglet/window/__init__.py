@@ -367,6 +367,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     _screen: Screen | None = None
     _config: VerifiedGraphicsConfig | UserConfig |  None = None
     _context: SurfaceContext | None = None
+    _context_share: SurfaceContext | None = None
     _projection_matrix: Mat4 = pyglet.math.Mat4()
     _view_matrix: Mat4 = pyglet.math.Mat4()
     _viewport: tuple[int, int, int, int] = 0, 0, 0, 0
@@ -467,7 +468,9 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                 objects in priority order. The first compatible config for the
                 selected backend is used.
             context:
-                The context to attach to this window.  The context must not already be attached to another window.
+                A context that will share resources with the newly created context.
+                * Passing ``None`` will create a Window with an isolated graphics context.
+                * Pass another window's ``context`` to create a new context that shares resources with it.
             mode:
                 The screen will be switched to this mode if `fullscreen` is
                 True.  If None, an appropriate mode is selected to accommodate ``width`` and ``height``.
@@ -477,7 +480,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         self._event_queue = deque()
 
         self._user_config = config
-        self._context = context
+        self._context = None
+        self._context_share = context
 
         self._display = display or pyglet.display.get_display()
         self._screen = screen or self._display.get_default_screen()
@@ -565,7 +569,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             if not context:
                 from pyglet.graphics.api import core
                 if core:
-                    context = core.get_surface_context(self, config)
+                    context = core.get_surface_context(self, config, shared=self._context_share)
 
             # Set these in reverse order as above, to ensure we get user preference
             self._context = context

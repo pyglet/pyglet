@@ -7,7 +7,12 @@ from typing import Sequence, TYPE_CHECKING
 import pyglet
 from pyglet.math import Mat4
 from pyglet.enums import GraphicsAPI
-from pyglet.graphics.api.base import BackendGlobalObject, SurfaceContext, NullContext, UBOMatrixTransformations
+from pyglet.graphics.api.base import (
+    BackendGlobalObject,
+    SurfaceContext,
+    NullContext,
+    UBOMatrixTransformations,
+)
 from pyglet.graphics.api.gl.shader import GLShader as Shader, GLShaderProgram as ShaderProgram
 
 if TYPE_CHECKING:
@@ -128,8 +133,9 @@ class OpenGLBackend(BackendGlobalObject):
     def create_context(self, config: GLSurfaceConfig, shared: OpenGLSurfaceContext | None) -> OpenGLSurfaceContext:
         return config.create_context(self, shared)
 
-    def get_surface_context(self, window: Window, config: GLSurfaceConfig) -> SurfaceContext:
-        context = self.windows[window] = self.create_context(config, shared=self.current_context)
+    def get_surface_context(self, window: Window, config: GLSurfaceConfig,
+                            shared: OpenGLSurfaceContext | None = None) -> SurfaceContext:
+        context = self.windows[window] = self.create_context(config, shared=shared)
         self._have_context = True
         return context
 

@@ -68,6 +68,12 @@ ways to control the context that is created:
 
       window = pyglet.window.Window(config=[high_quality, fallback])
 
+* Control context sharing using the ``context`` argument::
+
+      primary = pyglet.window.Window()
+      shared = pyglet.window.Window(context=primary.context)
+      isolated = pyglet.window.Window(context=None)
+
 * Specify a :py:class:`~pyglet.display.Screen` using the ``screen`` argument.
   The context will use a config created from default backend configuration
   and this screen::
@@ -462,6 +468,14 @@ backend. Specifying the configuration of this context has already been covered i
 :ref:`guide_creating-a-window`.
 Drawing into that rendering context is the only way to draw into the window's
 client area.
+
+You can control context sharing explicitly with the ``context`` argument::
+
+    shared_window = pyglet.window.Window()
+    # Shares resources with shared_window:
+    another_shared = pyglet.window.Window(context=shared_window.context)
+    # Creates an isolated context with sharing disabled:
+    isolated = pyglet.window.Window(context=None)
 
 Double-buffering
 ^^^^^^^^^^^^^^^^
