@@ -10,7 +10,6 @@ import pyglet
 from pyglet.graphics.api.webgl.context import OpenGLSurfaceContext
 from pyglet.graphics.api.base import (
     BackendGlobalObject,
-    DEFAULT_CONTEXT_SHARE,
     SurfaceContext,
     UBOMatrixTransformations,
     NullContext,
