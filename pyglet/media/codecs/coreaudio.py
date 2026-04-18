@@ -171,7 +171,7 @@ class CoreAudioDecoder(MediaDecoder):
     def get_file_extensions(self):
         return '.aac', '.ac3', '.aif', '.aiff', '.aifc', '.caf', '.mp3', '.mp4', '.m4a', '.snd', '.au', '.sd2', '.wav'
 
-    def decode(self, filename, file, streaming=True):
+    def decode(self, filename, file, streaming=True, **kwargs):
         if streaming:
             return CoreAudioSource(filename, file)
         else:

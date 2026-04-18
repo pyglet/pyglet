@@ -1,3 +1,4 @@
+#from pyglet.media import _VALID_AUDIO_SAMPLE_FORMATS
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer, MediaEvent
 from pyglet.media.drivers.listener import AbstractListener
 from pyglet.media.player_worker_thread import PlayerWorkerThread
@@ -8,6 +9,14 @@ class SilentDriver(AbstractAudioDriver):
         super().__init__()
         self.worker = PlayerWorkerThread()
         self.worker.start()
+
+    @property
+    def sample_formats(self):
+        return ("U8",
+                "S16",
+                "S24",
+                "S32",
+                "F32")
 
     def create_audio_player(self, source, player):
         return SilentAudioPlayer(self, source, player)

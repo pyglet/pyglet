@@ -20,12 +20,51 @@ get_encoders = registry.get_encoders
 
 class MediaDecoder(Decoder):
 
-    def decode(self, filename, file, streaming):
+    def decode(self, filename, file, streaming, audio_sample_format,
+               audio_driver_sample_formats, audio_sample_rate, audio_channels,
+               audio_resample_hq):
         """Read the given file object and return an instance of `Source`
-        or `StreamingSource`. 
-        Throws DecodeException if there is an error.  `filename`
-        can be a file type hint.
+        or `StreamingSource`. Throws DecodeException if there is an error.
+        `filename` can be a file type hint.
+
+        Args:
+            filename (str):
+                Used to guess the media format, and to load the file if
+                ``file`` is unspecified.
+            file (BinaryIO, optional):
+                A file-like object containing the source data.
+            streaming (bool):
+                If ``False``, a :class:`StaticSource` will be returned;
+                otherwise a :class:`~pyglet.media.StreamingSource` is created.
+            audio_sample_format (str, optional):
+                A specific audio sample format you wish the decoder to ouput,
+                rather than relying on automatic detection. For possible values
+                see ``pyglet.media.AUDIO_SAMPLE_FORMAT_*`` constants.
+                NOTE: currently only supported by FFmpegDecoder!
+            audio_driver_sample_formats (list[str], optional)
+                A list of sample formats supported by the current audio driver.
+                For possible values see ``pyglet.media.AUDIO_SAMPLE_FORMAT_*``
+                constants.
+                NOTE: currently only supported by FFmpegDecoder!
+            audio_sample_rate (int, optional):
+                A specific audio sample rate (in Hz) you wish the decoder to
+                output, rather than relying on automatic detection. For
+                possible values see ``pyglet.media.AUDIO_SAMPLE_RATE_*``
+                constants.
+                NOTE: currently only supported by FFmpegDecoder!
+            audio_channels (int, optional):
+                A specific number of channels you wish the decoder to output,
+                rather than relying on autimatic detection. For possible values
+                see ``pyglet.media.AUDIO_CHANNELS_*`` constants.
+                Note: currently only supported by FFmpegDecoder!
+            audio_resample_hq (bool, optional, default=False):
+                Whether to use high-quality resampling when resamplig is
+                required (e.g. when a specific sample rate is requested), at
+                the cost of increased CPU usage.
+                Note: currently only supported by FFmpegDecoder!
+
         """
+
         raise NotImplementedError()
 
 

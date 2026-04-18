@@ -70,7 +70,7 @@ class WaveDecoder(MediaDecoder):
     def get_file_extensions(self):
         return '.wav', '.wave', '.riff'
 
-    def decode(self, filename, file, streaming=True):
+    def decode(self, filename, file, streaming=True, **kwargs):
         if streaming:
             return WaveSource(filename, file)
         else:
