@@ -24,10 +24,10 @@ class Config:
     __slots__ = 'gl2', 'gles2', 'gles3', 'opengl', 'vulkan', 'webgl'
 
     def __init__(self):
-        self.opengl: OpenGLUserConfig = OpenGLUserConfig(api=GraphicsAPI.OPENGL)
-        self.gl2: OpenGLUserConfig = OpenGLUserConfig(api=GraphicsAPI.OPENGL_2)
-        self.gles2: OpenGLUserConfig = OpenGLUserConfig(api=GraphicsAPI.OPENGL_ES_2)
-        self.gles3: OpenGLUserConfig = OpenGLUserConfig(api=GraphicsAPI.OPENGL_ES_3)
+        self.opengl: OpenGLUserConfig = OpenGLUserConfig(major_version=3, minor_version=3, api=GraphicsAPI.OPENGL)
+        self.gl2: OpenGLUserConfig = OpenGLUserConfig(major_version=2, minor_version=0, api=GraphicsAPI.OPENGL_2)
+        self.gles2: OpenGLUserConfig = OpenGLUserConfig(major_version=2, minor_version=0, api=GraphicsAPI.OPENGL_ES_2)
+        self.gles3: OpenGLUserConfig = OpenGLUserConfig(major_version=3, minor_version=2, api=GraphicsAPI.OPENGL_ES_3)
         self.webgl: WebGLUserConfig = WebGLUserConfig()
         # self.vulkan: TBD
 

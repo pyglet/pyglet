@@ -78,22 +78,10 @@ class XlibContext(OpenGLSurfaceContext):
         user_config = self.config.config
 
         attribs = []
-        major_version = user_config.major_version
-        minor_version = user_config.minor_version
-        if major_version is None or minor_version is None:
-            for default_config in self.core.get_default_configs():
-                if default_config.api != user_config.api:
-                    continue
-                if major_version is None:
-                    major_version = default_config.major_version
-                if minor_version is None:
-                    minor_version = default_config.minor_version
-                break
-
-        if major_version is not None:
-            attribs.extend([glxext_arb.GLX_CONTEXT_MAJOR_VERSION_ARB, major_version])
-        if minor_version is not None:
-            attribs.extend([glxext_arb.GLX_CONTEXT_MINOR_VERSION_ARB, minor_version])
+        if user_config.major_version is not None:
+            attribs.extend([glxext_arb.GLX_CONTEXT_MAJOR_VERSION_ARB, user_config.major_version])
+        if user_config.minor_version is not None:
+            attribs.extend([glxext_arb.GLX_CONTEXT_MINOR_VERSION_ARB, user_config.minor_version])
 
         if user_config.api == GraphicsAPI.OPENGL:
             attribs.extend([glxext_arb.GLX_CONTEXT_PROFILE_MASK_ARB, glxext_arb.GLX_CONTEXT_CORE_PROFILE_BIT_ARB])
