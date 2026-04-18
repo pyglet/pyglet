@@ -92,7 +92,9 @@ class VertexList:
             mode:
                 OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
         """
+        self.group.set_state_recursive(self.domain._context)  # noqa: SLF001
         self.domain.draw_subset(mode, self)
+        self.group.unset_state_recursive(self.domain._context)  # noqa: SLF001
 
     def resize(self, count: int, index_count: int | None = None) -> None:  # noqa: ARG002
         """Resize this group.

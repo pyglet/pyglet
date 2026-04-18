@@ -62,19 +62,17 @@ opening a fullscreen window on each screen::
 
 Specifying a screen has no effect if the window is not fullscreen.
 
-Specifying the Graphical context properties
-----------------------------------------
+Specifying the graphical context properties
+-------------------------------------------
 
 Each window has its own context which is created when the window is created.
 You can specify the properties of the context before it is created
-by creating a "template" configuration::
+by creating a backend-aware "template" configuration::
 
-    from pyglet.graphics.api import get_config
-    # Create template config
-    config = get_config()
-    config.stencil_size = 8
-    config.aux_buffers = 4
-    # Create a window using this config
+    config = pyglet.config.Config()
+    config.opengl.stencil_size = 8
+    config.opengl.aux_buffers = 4
+    # Create a window using this config:
     win = window.Window(config=config)
 """
 from __future__ import annotations
@@ -264,15 +262,14 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     conventions.  This will ensure it is not obscured by other windows,
     and appears on an appropriate screen for the user.
 
-    For OpenGL, to render into a window, you must first call its :py:meth:`.switch_to`
-    method to make it the active OpenGL context. If you use only one
-    window in your application, you can skip this step as it will always
-    be the active context.
+    To render into a window, call :py:meth:`.switch_to` to make its rendering
+    context active for the current backend. If you use only one window in your
+    application, you can usually skip this step as it will already be active.
     """
 
     # Filled in by metaclass with the names of all methods on this (sub)class
     # that are platform event handlers.
-    _platform_event_names: set[_PlatformEventHandler] = set()  # noqa: RUF012
+    _platform_event_names: set[Callable] = set()  # noqa: RUF012
 
     #: The default window style.
     WINDOW_STYLE_DEFAULT: None = None
@@ -370,6 +367,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     _screen: Screen | None = None
     _config: VerifiedGraphicsConfig | UserConfig |  None = None
     _context: SurfaceContext | None = None
+    _context_share: SurfaceContext | None = None
     _projection_matrix: Mat4 = pyglet.math.Mat4()
     _view_matrix: Mat4 = pyglet.math.Mat4()
     _viewport: tuple[int, int, int, int] = 0, 0, 0, 0
@@ -431,8 +429,9 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         will be inferred, and a default ``config`` and ``context`` will be
         created.
 
-        ``config`` is a special case; it can be a template created by the
-        user specifying the attributes desired
+        ``config`` can be a :class:`pyglet.config.Config` object (or an
+        iterable of them). pyglet chooses the backend-specific config section
+        that matches ``pyglet.options.backend``.
 
         The context will be active as soon as the window is created, as if
         :py:meth:`~pyglet.window.Window.switch_to` was just called.
@@ -465,9 +464,13 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             screen:
                 The screen to use, if in fullscreen.
             config:
-                Either a template from which to create a complete config, or a complete config.
+                A :class:`pyglet.config.Config` object, or iterable of config
+                objects in priority order. The first compatible config for the
+                selected backend is used.
             context:
-                The context to attach to this window.  The context must not already be attached to another window.
+                A context that will share resources with the newly created context.
+                * Passing ``None`` will create a Window with an isolated graphics context.
+                * Pass another window's ``context`` to create a new context that shares resources with it.
             mode:
                 The screen will be switched to this mode if `fullscreen` is
                 True.  If None, an appropriate mode is selected to accommodate ``width`` and ``height``.
@@ -477,7 +480,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         self._event_queue = deque()
 
         self._user_config = config
-        self._context = context
+        self._context = None
+        self._context_share = context
 
         self._display = display or pyglet.display.get_display()
         self._screen = screen or self._display.get_default_screen()
@@ -565,7 +569,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             if not context:
                 from pyglet.graphics.api import core
                 if core:
-                    context = core.get_surface_context(self, config)
+                    context = core.get_surface_context(self, config, shared=self._context_share)
 
             # Set these in reverse order as above, to ensure we get user preference
             self._context = context
@@ -1160,13 +1164,9 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     def switch_to(self) -> None:
         """Make this window the current rendering context.
 
-        Only one OpenGL context can be active at a time. This method
-        sets the current window context as the active one.
-
-        In most cases, you should use this method instead of directly
-        calling :py:meth:`~pyglet.graphics.api.gl.Context.set_current`. The latter
-        will not perform platform-specific state management tasks for
-        you.
+        Only one rendering context can be active at a time for a given backend.
+        This method sets this window's context as active and performs any
+        required platform-specific state management.
         """
 
     @abstractmethod

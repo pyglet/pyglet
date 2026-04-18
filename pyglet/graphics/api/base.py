@@ -7,6 +7,7 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Protocol, get_type_hints, Sequence, Callable, NoReturn
 
 if TYPE_CHECKING:
+    from pyglet.config import SurfaceConfig
     from pyglet.math import Mat4
     from pyglet.graphics.api.gl import ObjectSpace
     from pyglet.window import Window
@@ -34,7 +35,7 @@ class BackendGlobalObject(ABC):  # Temp name for now.
         ...
 
     @abstractmethod
-    def get_surface_context(self, window: Window, config) -> SurfaceContext:
+    def get_surface_context(self, window: Window, config: SurfaceConfig, shared: SurfaceContext | None) -> SurfaceContext:
         """After a window is created, this will be called.
 
         This must return a BackendWindowObject object.
@@ -81,7 +82,8 @@ class NullBackend(BackendGlobalObject):  # noqa: D101
     def object_space(self) -> ObjectSpace:
         self._raise_no_backend()
 
-    def get_surface_context(self, window: Window, config) -> SurfaceContext:
+    def get_surface_context(self, window: Window, config: SurfaceConfig,
+                            shared: SurfaceContext | None = None) -> SurfaceContext:
         self._raise_no_backend()
 
     def get_default_configs(self) -> Sequence:
@@ -267,10 +269,10 @@ class NullContext:
         raise RuntimeError(msg)
 
     def __getattribute__(self, item):
-        self._raise_no_context()
+        object.__getattribute__(self, "_raise_no_context")()
 
     def __enter__(self) -> NoReturn:
-        self._raise_no_context()
+        object.__getattribute__(self, "_raise_no_context")()
 
     def __exit__(self, *_args: Any) -> None:
         return None

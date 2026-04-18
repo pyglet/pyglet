@@ -100,8 +100,8 @@ class GLInfo(SurfaceInfo):
                 major, minor = map(int, version_string.split("."))
                 self.major_version = major
                 self.minor_version = minor
-        else:
-            warnings.warn(f"Unable to determine GL version from driver version string: {self.version}.")
+            else:
+                warnings.warn(f"Unable to determine GL version from driver version string: {self.version}.")
 
         num_ext = self.get_int(gl.GL_NUM_EXTENSIONS)
         if num_ext == 0:

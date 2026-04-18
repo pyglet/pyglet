@@ -2,13 +2,18 @@ from __future__ import annotations
 
 import sys
 import warnings
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Sequence, cast
 
 import js
 
 import pyglet
 from pyglet.graphics.api.webgl.context import OpenGLSurfaceContext
-from pyglet.graphics.api.base import BackendGlobalObject, SurfaceContext, UBOMatrixTransformations, NullContext
+from pyglet.graphics.api.base import (
+    BackendGlobalObject,
+    SurfaceContext,
+    UBOMatrixTransformations,
+    NullContext,
+)
 from pyglet.graphics.api.webgl.shader import WebGLShader as Shader, WebGLShaderProgram as ShaderProgram
 from pyglet.math import Mat4
 
@@ -137,8 +142,9 @@ class WebGLBackend(BackendGlobalObject):
     def create_context(self, config: SurfaceConfig, shared: OpenGLSurfaceContext | None) -> OpenGLSurfaceContext:
         return OpenGLSurfaceContext(self, config._window, config, shared)
 
-    def get_surface_context(self, window: Window, config: SurfaceConfig) -> SurfaceContext:
-        context = self.windows[window] = self.create_context(config, self.current_context)
+    def get_surface_context(self, window: Window, config: SurfaceConfig,
+                            shared: OpenGLSurfaceContext | None = None) -> SurfaceContext:
+        context = self.windows[window] = self.create_context(config, shared)
         self.current_context = context
         self._have_context = True
         return context

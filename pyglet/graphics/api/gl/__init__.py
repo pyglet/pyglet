@@ -13,7 +13,7 @@ editions.
 .. _OpenGL Programming Guide: http://opengl-redbook.com/
 
 The following subpackages are imported into this "mega" package already
-(and so are available by importing ``pyglet.gl``):
+(and so are available by importing ``pyglet.graphics.api.gl``):
 
 ``pyglet.graphics.api.gl.gl``
     OpenGL
