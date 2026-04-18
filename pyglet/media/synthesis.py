@@ -45,7 +45,7 @@ class FlatEnvelope(Envelope):
     def __init__(self, amplitude: float = 0.5):
         self.amplitude = max(min(1.0, amplitude), 0)
 
-    def get_generator(self, sample_rate: float = None, duration: float = None) -> Generator[float]:
+    def get_generator(self, sample_rate: float | None = None, duration: float | None = None) -> Generator[float]:
         amplitude = self.amplitude
         while True:
             yield amplitude
@@ -270,37 +270,43 @@ class SynthesisSource(Source):
 
 
 class Silence(SynthesisSource):
-    def __init__(self, duration: float, frequency: int = 440, sample_rate: int = 44800, envelope: Envelope = None):
+    def __init__(self, duration: float, frequency: int = 440, sample_rate: int = 44800,
+                 envelope: Envelope | None = None):
         """Create a Silent waveform."""
         super().__init__(silence_generator(frequency, sample_rate), duration, sample_rate, envelope)
 
 
 class WhiteNoise(SynthesisSource):
-    def __init__(self, duration: float, frequency: int = 440, sample_rate: int = 44800, envelope: Envelope = None):
+    def __init__(self, duration: float, frequency: int = 440, sample_rate: int = 44800,
+                 envelope: Envelope | None = None):
         """Create a random white noise waveform."""
         super().__init__(noise_generator(frequency, sample_rate), duration, sample_rate, envelope)
 
 
 class Sine(SynthesisSource):
-    def __init__(self, duration: float, frequency: int = 440, sample_rate: int = 44800, envelope: Envelope = None):
+    def __init__(self, duration: float, frequency: int = 440, sample_rate: int = 44800,
+                 envelope: Envelope | None = None):
         """Create a sinusoid (sine) waveform."""
         super().__init__(sine_generator(frequency, sample_rate), duration, sample_rate, envelope)
 
 
 class Square(SynthesisSource):
-    def __init__(self, duration: float, frequency: int = 440, sample_rate: int = 44800, envelope: Envelope = None):
+    def __init__(self, duration: float, frequency: int = 440, sample_rate: int = 44800,
+                 envelope: Envelope | None = None):
         """Create a Square (pulse) waveform."""
         super().__init__(pulse_generator(frequency, sample_rate), duration, sample_rate, envelope)
 
 
 class Triangle(SynthesisSource):
-    def __init__(self, duration: float, frequency: int = 440, sample_rate: int = 44800, envelope: Envelope = None):
+    def __init__(self, duration: float, frequency: int = 440, sample_rate: int = 44800,
+                 envelope: Envelope | None = None):
         """Create a Triangle waveform."""
         super().__init__(triangle_generator(frequency, sample_rate), duration, sample_rate, envelope)
 
 
 class Sawtooth(SynthesisSource):
-    def __init__(self, duration: float, frequency: int = 440, sample_rate: int = 44800, envelope: Envelope = None):
+    def __init__(self, duration: float, frequency: int = 440, sample_rate: int = 44800,
+                 envelope: Envelope | None = None):
         """Create a Sawtooth waveform."""
         super().__init__(sawtooth_generator(frequency, sample_rate), duration, sample_rate, envelope)
 

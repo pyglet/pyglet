@@ -166,9 +166,11 @@ the amount of driver related bugs and exceptions.
 
 This change should only affect you if you attempt to load resources before a Window is created.
 
-If your application still needs this behavior, it can still be done by creating your own hidden window, as shown below::
+If your application still needs this behavior, it can still be done by creating your own hidden window, and
+assigning the new window the same graphical context as the shadow window.::
 
     shadow_window = pyglet.window.Window(1, 1, visible=False)
+    actual_window = pyglet.window.Window(800, 600, context=shadow_window.context)
 
 
 pyglet.graphics.Group changes
@@ -250,9 +252,12 @@ Other notable API changes
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 Additional changes not covered above:
 
-* ``pyglet.config``:
-  The old ``pyglet.gl.Config`` was replaced by backend-specific configs such as
-  ``pyglet.config.Config``.
+* ``pyglet.config`` and ``pyglet.window.Window(config=...)``:
+  The old ``pyglet.gl.Config`` flow was replaced by ``pyglet.config.Config``.
+  Configure backend-specific options on ``config.opengl``, ``config.gl2``,
+  ``config.gles2``, ``config.gles3``, or ``config.webgl``. You can pass one
+  ``Config`` or multiple ``Config`` objects (in priority order) to
+  ``Window(config=...)``. See :ref:`guide_window-config`.
 
 * ``pyglet.graphics.Texture``:
   ``Texture.blit_into`` was renamed to ``Texture.upload`` and
@@ -273,3 +278,7 @@ Additional changes not covered above:
   Controllers now dispatch separate events for left/right sticks and
   left/right triggers.
 
+* ``pyglet.window``:
+  As mentioned above in the shadow window section. The ``context`` keyword argument in Pyglet window
+  creation has been changed take an existing context. This context will share resources with the
+  newly created window.

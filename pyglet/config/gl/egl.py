@@ -8,10 +8,11 @@ from pyglet import options
 from pyglet.graphics.api.gl.egl.context import EGLContext
 from pyglet.libs import egl
 from pyglet.config import SurfaceConfig
+from pyglet.enums import GraphicsAPI
 
 if TYPE_CHECKING:
     from pyglet.graphics.api import OpenGLBackend
-    from pyglet.config import OpenGLConfig
+    from pyglet.config import OpenGLUserConfig
     from pyglet.window.headless import HeadlessWindow
     from pyglet.window.wayland import WaylandWindow
 
@@ -26,7 +27,7 @@ _fake_gl_attributes = {
 }
 
 
-def match(config: OpenGLConfig, window: HeadlessWindow | WaylandWindow) -> EGLSurfaceConfig:
+def match(config: OpenGLUserConfig, window: HeadlessWindow | WaylandWindow) -> EGLSurfaceConfig:
     display_connection = window.egl_display_connection  # noqa: SLF001
     assert display_connection is not None
 
@@ -49,12 +50,14 @@ def match(config: OpenGLConfig, window: HeadlessWindow | WaylandWindow) -> EGLSu
         attrs.extend([egl.EGL_ALPHA_SIZE, 8])
         attrs.extend([egl.EGL_DEPTH_SIZE, 8])
 
-    if config.opengl_api == "gl":
+    if config.api == GraphicsAPI.OPENGL:
         attrs.extend([egl.EGL_RENDERABLE_TYPE, egl.EGL_OPENGL_BIT])
-    elif config.opengl_api == "gles":
+    elif config.api == GraphicsAPI.OPENGL_ES_2:
+        attrs.extend([egl.EGL_RENDERABLE_TYPE, egl.EGL_OPENGL_ES2_BIT])
+    elif config.api == GraphicsAPI.OPENGL_ES_3:
         attrs.extend([egl.EGL_RENDERABLE_TYPE, egl.EGL_OPENGL_ES3_BIT])
     else:
-        msg = f"Unknown OpenGL API: {config.opengl_api}"
+        msg = f"Unknown OpenGL API: {config.api}"
         raise ValueError(msg)
 
     attrs.extend([egl.EGL_NONE])
@@ -65,7 +68,7 @@ def match(config: OpenGLConfig, window: HeadlessWindow | WaylandWindow) -> EGLSu
     configs = (egl.EGLConfig * num_config.value)()
     egl.eglChooseConfig(display_connection, attrs_list, configs, num_config.value, byref(num_config))
 
-    result = [EGLSurfaceConfig(window, c, config) for c in configs]
+    result = [EGLSurfaceConfig(window, config, c) for c in configs]
     return result[0]
 
 
@@ -85,14 +88,14 @@ class EGLSurfaceConfig(SurfaceConfig):
         'samples': egl.EGL_SAMPLES,
     }
 
-    def __init__(self, window: HeadlessWindow | WaylandWindow, egl_config: egl.EGLConfig, config: OpenGLConfig) -> None:
+    def __init__(self, window: HeadlessWindow | WaylandWindow, config: OpenGLUserConfig, egl_config: egl.EGLConfig) -> None:
         super().__init__(window, config, egl_config)
         self._egl_config = egl_config
 
         context_attribs = [egl.EGL_CONTEXT_MAJOR_VERSION, config.major_version or 2,
                            egl.EGL_CONTEXT_MINOR_VERSION, config.minor_version or 0]
 
-        if config.opengl_api == "gl" and config.forward_compatible:
+        if config.api == GraphicsAPI.OPENGL and config.forward_compatible:
             context_attribs.extend([egl.EGL_CONTEXT_OPENGL_FORWARD_COMPATIBLE, 1])
 
         if config.debug:

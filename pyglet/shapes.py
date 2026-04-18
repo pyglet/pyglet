@@ -73,20 +73,20 @@ from typing import TYPE_CHECKING, Sequence, Tuple, Union
 import pyglet
 from pyglet.extlibs import earcut
 from pyglet.graphics import Batch, Group, ShaderProgram
-from pyglet.enums import BlendFactor, GeometryMode
+from pyglet.enums import BlendFactor, GeometryMode, GraphicsAPI
 from pyglet.math import Vec2
 
 if TYPE_CHECKING:
     from pyglet.graphics.shader import ShaderProgram
 
 
-if pyglet.options.backend in ("opengl", "gles3"):
+if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
     from pyglet.graphics.api.gl.shapes import get_default_shader
-elif pyglet.options.backend in ("gl2", "gles2"):
+elif pyglet.options.backend in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
     from pyglet.graphics.api.gl2.shapes import get_default_shader
-elif pyglet.options.backend == "webgl":
+elif pyglet.options.backend == GraphicsAPI.WEBGL:
     from pyglet.graphics.api.webgl.shapes import get_default_shader
-elif pyglet.options.backend == "vulkan":
+elif pyglet.options.backend == GraphicsAPI.VULKAN:
     from pyglet.graphics.api.vulkan.shapes import get_default_shader
 
 

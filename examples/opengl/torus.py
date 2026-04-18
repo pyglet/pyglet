@@ -16,7 +16,7 @@ This example demonstrates:
 from math import pi, sin, cos
 
 import pyglet
-from pyglet.config import OpenGLConfig
+from pyglet.config import OpenGLUserConfig
 from pyglet.enums import GeometryMode
 
 from pyglet.graphics.api.gl import (
@@ -29,7 +29,7 @@ from pyglet.math import Mat4, Vec3
 
 try:
     # Try and create a window with multisampling (antialiasing)
-    config = OpenGLConfig(sample_buffers=1, samples=4, depth_size=16, double_buffer=True)
+    config = OpenGLUserConfig(sample_buffers=1, samples=4, depth_size=16, double_buffer=True)
     window = pyglet.window.Window(width=960, height=540, resizable=True, config=config)
 except pyglet.window.NoSuchConfigException:
     # Fall back to no multisampling ifR not supported

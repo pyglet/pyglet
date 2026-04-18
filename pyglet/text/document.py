@@ -403,7 +403,7 @@ class AbstractDocument(event.EventDispatcher):
 
     def _delete_text(self, start: int, end: int) -> None:
         for element in list(self._elements):
-            assert element.position is not None
+            assert element._position is not None
             if start <= element._position < end: # noqa: SLF001
                 self._elements.remove(element)
             elif element._position >= end:  # fixes #538  # noqa: SLF001

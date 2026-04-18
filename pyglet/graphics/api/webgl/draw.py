@@ -588,7 +588,3 @@ class WebGLBatch(Batch):
         for top_group in self.top_groups:
             if top_group.visible:
                 visit(top_group)
-
-
-# Backwards-compatible alias.
-Batch = WebGLBatch

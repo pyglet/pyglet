@@ -35,7 +35,7 @@ class MediaDecoder(Decoder):
 
 class MediaEncoder(Encoder):
 
-    def encode(self, source: Any, filename: str, file: BinaryIO) -> None:
+    def encode(self, source: Any, filename: str, file: BinaryIO | None) -> None:
         """Encode the given source to the given file.
 
         `filename` provides a hint to the file format desired.  options are

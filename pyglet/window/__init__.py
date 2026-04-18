@@ -62,19 +62,17 @@ opening a fullscreen window on each screen::
 
 Specifying a screen has no effect if the window is not fullscreen.
 
-Specifying the Graphical context properties
-----------------------------------------
+Specifying the graphical context properties
+-------------------------------------------
 
 Each window has its own context which is created when the window is created.
 You can specify the properties of the context before it is created
-by creating a "template" configuration::
+by creating a backend-aware "template" configuration::
 
-    from pyglet.graphics.api import get_config
-    # Create template config
-    config = get_config()
-    config.stencil_size = 8
-    config.aux_buffers = 4
-    # Create a window using this config
+    config = pyglet.config.Config()
+    config.opengl.stencil_size = 8
+    config.opengl.aux_buffers = 4
+    # Create a window using this config:
     win = window.Window(config=config)
 """
 from __future__ import annotations
@@ -89,7 +87,6 @@ from typing import TYPE_CHECKING, Any, Callable, Sequence
 import pyglet
 import pyglet.window.key
 import pyglet.window.mouse
-from pyglet.config import UserConfig
 from pyglet.event import EVENT_HANDLE_STATE, EventDispatcher
 
 from pyglet.math import Mat4
@@ -97,7 +94,8 @@ from pyglet.window import event, key, dialog
 
 if TYPE_CHECKING:
     import BaseWindow as Window
-    from pyglet.graphics.api.base import VerifiedGraphicsConfig, SurfaceContext, GraphicsConfig
+    from pyglet.config import Config, UserConfig
+    from pyglet.graphics.api.base import VerifiedGraphicsConfig, SurfaceContext, WindowTransformations
     from pyglet.display.base import Display, Screen, ScreenMode
     from pyglet.text import Label
 
@@ -130,6 +128,7 @@ class MouseCursor:
     #: Indicates if the cursor is drawn via the graphical api, or natively by the operating system.
     api_drawable: bool = True
     hw_drawable: bool = False
+    scaling: float = 1.0
 
     def draw(self, x: int, y: int) -> None:
         """Abstract render method.
@@ -263,15 +262,14 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     conventions.  This will ensure it is not obscured by other windows,
     and appears on an appropriate screen for the user.
 
-    For OpenGL, to render into a window, you must first call its :py:meth:`.switch_to`
-    method to make it the active OpenGL context. If you use only one
-    window in your application, you can skip this step as it will always
-    be the active context.
+    To render into a window, call :py:meth:`.switch_to` to make its rendering
+    context active for the current backend. If you use only one window in your
+    application, you can usually skip this step as it will already be active.
     """
 
     # Filled in by metaclass with the names of all methods on this (sub)class
     # that are platform event handlers.
-    _platform_event_names: set[_PlatformEventHandler] = set()  # noqa: RUF012
+    _platform_event_names: set[Callable] = set()  # noqa: RUF012
 
     #: The default window style.
     WINDOW_STYLE_DEFAULT: None = None
@@ -367,11 +365,13 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     _vsync: bool = False
     _file_drops: bool = False
     _screen: Screen | None = None
-    _config: VerifiedGraphicsConfig | None = None
+    _config: VerifiedGraphicsConfig | UserConfig |  None = None
     _context: SurfaceContext | None = None
+    _context_share: SurfaceContext | None = None
     _projection_matrix: Mat4 = pyglet.math.Mat4()
     _view_matrix: Mat4 = pyglet.math.Mat4()
     _viewport: tuple[int, int, int, int] = 0, 0, 0, 0
+    _matrices: WindowTransformations | None = None
 
     # Used to restore window size and position after fullscreen
     _windowed_size: tuple[int, int] | None = None
@@ -415,7 +415,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                  file_drops: bool = False,
                  display: Display | None = None,
                  screen: Screen | None = None,
-                 config: UserConfig | Sequence[UserConfig] | None = None,
+                 config: Config | Iterable[Config] | None = None,
                  context: SurfaceContext | None = None,
                  mode: ScreenMode | None = None) -> None:
         """Create a window.
@@ -429,8 +429,9 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         will be inferred, and a default ``config`` and ``context`` will be
         created.
 
-        ``config`` is a special case; it can be a template created by the
-        user specifying the attributes desired
+        ``config`` can be a :class:`pyglet.config.Config` object (or an
+        iterable of them). pyglet chooses the backend-specific config section
+        that matches ``pyglet.options.backend``.
 
         The context will be active as soon as the window is created, as if
         :py:meth:`~pyglet.window.Window.switch_to` was just called.
@@ -454,7 +455,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                 would like to change attributes of the window before
                 having it appear to the user.
             vsync:
-                If True, buffer flips are synchronised to the primary screen's
+                If True, buffer flips are synchronized to the primary screen's
                 vertical retrace, eliminating flicker.
             file_drops:
                 If True, the Window will accept files being dropped into it and call the ``on_file_drop`` event.
@@ -463,9 +464,13 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             screen:
                 The screen to use, if in fullscreen.
             config:
-                Either a template from which to create a complete config, or a complete config.
+                A :class:`pyglet.config.Config` object, or iterable of config
+                objects in priority order. The first compatible config for the
+                selected backend is used.
             context:
-                The context to attach to this window.  The context must not already be attached to another window.
+                A context that will share resources with the newly created context.
+                * Passing ``None`` will create a Window with an isolated graphics context.
+                * Pass another window's ``context`` to create a new context that shares resources with it.
             mode:
                 The screen will be switched to this mode if `fullscreen` is
                 True.  If None, an appropriate mode is selected to accommodate ``width`` and ``height``.
@@ -474,21 +479,12 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         EventDispatcher.__init__(self)
         self._event_queue = deque()
 
-        self._config = config
-        self._context = context
+        self._user_config = config
+        self._context = None
+        self._context_share = context
 
-        if not display:
-            display = pyglet.display.get_display()
-
-        if not screen:
-            screen = display.get_default_screen()
-
-        # XXX deprecate config's being screen-specific
-        if hasattr(self._config, 'screen'):
-            self._screen = self._config.screen
-        else:
-            self._screen = screen
-        self._display = self._screen.display
+        self._display = display or pyglet.display.get_display()
+        self._screen = screen or self._display.get_default_screen()
 
         if fullscreen:
             if width is None and height is None:
@@ -532,8 +528,14 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
 
     def _assign_config(self) -> None:
         if pyglet.options.backend:
-            config = self._config
+            config = self._user_config
             context = self._context
+
+            # Pull out the backend specific config/s:
+            if isinstance(config, Iterable):
+                config = [getattr(c, pyglet.options.backend, None) for c in config]
+            else:
+                config = getattr(config, pyglet.options.backend, None)
 
             if not config:
                 for template_config in pyglet.graphics.api.get_default_configs():
@@ -567,7 +569,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             if not context:
                 from pyglet.graphics.api import core
                 if core:
-                    context = core.get_surface_context(self, config)
+                    context = core.get_surface_context(self, config, shared=self._context_share)
 
             # Set these in reverse order as above, to ensure we get user preference
             self._context = context
@@ -821,7 +823,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         to either a single screen or the entire virtual desktop.
         """
 
-    def on_close(self) -> None:
+    def on_close(self) -> EVENT_HANDLE_STATE:
         """Default on_close handler."""
         self.has_exit = True
         from pyglet import app
@@ -949,7 +951,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             # Restore windowed location.
             self.set_location(*self._windowed_location)
 
-    def _set_fullscreen_mode(self, mode: ScreenMode, width: int, height: int) -> tuple[int, int]:
+    def _set_fullscreen_mode(self, mode: ScreenMode | None, width: int | None, height: int | None) -> tuple[int, int]:
         if mode is not None:
             self.screen.set_mode(mode)
             if width is None:
@@ -1147,7 +1149,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         """
         self._keyboard_exclusive = exclusive
 
-    def set_icon(self, *images: pyglet.image._AbstractImage) -> None:
+    def set_icon(self, *images: pyglet.image.ImageData) -> None:
         """Set the window icon.
 
         If multiple images are provided, one with an appropriate size
@@ -1162,13 +1164,9 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     def switch_to(self) -> None:
         """Make this window the current rendering context.
 
-        Only one OpenGL context can be active at a time. This method
-        sets the current window context as the active one.
-
-        In most cases, you should use this method instead of directly
-        calling :py:meth:`~pyglet.graphics.api.gl.Context.set_current`. The latter
-        will not perform platform-specific state management tasks for
-        you.
+        Only one rendering context can be active at a time for a given backend.
+        This method sets this window's context as active and performs any
+        required platform-specific state management.
         """
 
     @abstractmethod
@@ -1784,6 +1782,7 @@ class FPSDisplay:
     .. note: Setting the `update_period` to a value smaller than your Window refresh rate will cause
              inaccurate readings.
     """
+    _delta_times: deque[float]
 
     #: Time in seconds between updates.
     update_period = 0.25
@@ -1792,7 +1791,7 @@ class FPSDisplay:
     label: Label
 
     def __init__(self, window: pyglet.window.Window, color: tuple[int, int, int, int] = (127, 127, 127, 127),
-                 batch=None, samples: int = 240) -> None:
+                 batch: pyglet.graphics.Batch | None = None, samples: int = 240) -> None:
         """Create an FPS Display.
 
         Args:
@@ -1800,14 +1799,17 @@ class FPSDisplay:
                 The Window you wish to display frame rate for.
             color:
                 The RGBA color of the text display. Each channel represented as 0-255.
+            batch:
+                Optional batch to add the label to.
+                Using a Batch is strongly recommended.
             samples:
                 How many delta samples are used to calculate the mean FPS.
         """
-        from collections import deque
-        from statistics import mean
-        from time import time
+        from collections import deque  # noqa: PLC0415
+        from statistics import mean  # noqa: PLC0415
+        from time import time  # noqa: PLC0415
 
-        from pyglet.text import Label
+        from pyglet.text import Label  # noqa: PLC0415
         self._time = time
         self._mean = mean
 

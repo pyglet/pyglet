@@ -9,6 +9,7 @@ class GraphicsAPI(str, Enum):
     OPENGL_ES_2 = "gles2"
     OPENGL_ES_3 = "gles3"
     WEBGL = "webgl"
+    VULKAN = "vulkan"
 
     def __str__(self) -> str:
         return self.value

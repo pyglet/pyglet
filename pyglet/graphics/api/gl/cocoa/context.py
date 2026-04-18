@@ -37,7 +37,7 @@ class CocoaContext(OpenGLSurfaceContext):
         super().attach(window)
         # The NSView instance should be attached to a nondeferred window before calling
         # setView, otherwise you get an "invalid drawable" message.
-        self._nscontext.setView_(window._nsview)  # noqa: SLF001
+        self._nscontext.setView_(window._nsview)  # noqa: SLF001 # type: ignore[attr-defined]
 
         self.set_current()
 

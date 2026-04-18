@@ -42,12 +42,12 @@ import pyglet.lib
 
 _lib = pyglet.lib.load_library('X11')
 
-_int_types = (c_int16, c_int32)
+_int_types = [c_int16, c_int32]
 if hasattr(ctypes, 'c_int64'):
     # Some builds of ctypes apparently do not have c_int64
     # defined; it's a pretty good bet that these builds do not
     # have 64-bit pointers.
-    _int_types += (ctypes.c_int64,)
+    _int_types.append(ctypes.c_int64)
 for t in _int_types:
     if sizeof(t) == sizeof(c_size_t):
         c_ptrdiff_t = t
@@ -559,15 +559,6 @@ struct__XGC._fields_ = [
 ]
 
 
-class struct__XGC(Structure):
-    __slots__ = [
-    ]
-
-
-struct__XGC._fields_ = [
-    ('_opaque_struct', c_int),
-]
-
 GC = POINTER(struct__XGC)  # /usr/include/X11/Xlib.h:233
 
 
@@ -861,15 +852,6 @@ class struct_funcs(Structure):
     ]
 
 
-class struct__XDisplay(Structure):
-    __slots__ = [
-    ]
-
-
-struct__XDisplay._fields_ = [
-    ('_opaque_struct', c_int),
-]
-
 struct_funcs._fields_ = [
     ('create_image', POINTER(
         CFUNCTYPE(POINTER(struct__XImage), POINTER(struct__XDisplay), POINTER(Visual), c_uint, c_int, c_int, c_char_p,
@@ -1112,25 +1094,6 @@ struct_anon_35._fields_ = [
 XModifierKeymap = struct_anon_35  # /usr/include/X11/Xlib.h:489
 
 
-class struct__XDisplay(Structure):
-    __slots__ = [
-    ]
-
-
-struct__XDisplay._fields_ = [
-    ('_opaque_struct', c_int),
-]
-
-
-class struct__XDisplay(Structure):
-    __slots__ = [
-    ]
-
-
-struct__XDisplay._fields_ = [
-    ('_opaque_struct', c_int),
-]
-
 Display = struct__XDisplay  # /usr/include/X11/Xlib.h:498
 
 
@@ -1193,36 +1156,6 @@ struct__XPrivate._fields_ = [
 ]
 
 
-class struct__XDisplay(Structure):
-    __slots__ = [
-    ]
-
-
-struct__XDisplay._fields_ = [
-    ('_opaque_struct', c_int),
-]
-
-
-class struct__XPrivate(Structure):
-    __slots__ = [
-    ]
-
-
-struct__XPrivate._fields_ = [
-    ('_opaque_struct', c_int),
-]
-
-
-class struct__XPrivate(Structure):
-    __slots__ = [
-    ]
-
-
-struct__XPrivate._fields_ = [
-    ('_opaque_struct', c_int),
-]
-
-
 class struct__XrmHashBucketRec(Structure):
     __slots__ = [
     ]
@@ -1232,15 +1165,6 @@ struct__XrmHashBucketRec._fields_ = [
     ('_opaque_struct', c_int),
 ]
 
-
-class struct__XDisplay(Structure):
-    __slots__ = [
-    ]
-
-
-struct__XDisplay._fields_ = [
-    ('_opaque_struct', c_int),
-]
 
 struct_anon_36._fields_ = [
     ('ext_data', POINTER(XExtData)),
@@ -2537,15 +2461,6 @@ struct__XOM._fields_ = [
 ]
 
 
-class struct__XOM(Structure):
-    __slots__ = [
-    ]
-
-
-struct__XOM._fields_ = [
-    ('_opaque_struct', c_int),
-]
-
 XOM = POINTER(struct__XOM)  # /usr/include/X11/Xlib.h:1104
 
 
@@ -2559,36 +2474,8 @@ struct__XOC._fields_ = [
 ]
 
 
-class struct__XOC(Structure):
-    __slots__ = [
-    ]
-
-
-struct__XOC._fields_ = [
-    ('_opaque_struct', c_int),
-]
-
 XOC = POINTER(struct__XOC)  # /usr/include/X11/Xlib.h:1105
 
-
-class struct__XOC(Structure):
-    __slots__ = [
-    ]
-
-
-struct__XOC._fields_ = [
-    ('_opaque_struct', c_int),
-]
-
-
-class struct__XOC(Structure):
-    __slots__ = [
-    ]
-
-
-struct__XOC._fields_ = [
-    ('_opaque_struct', c_int),
-]
 
 XFontSet = POINTER(struct__XOC)  # /usr/include/X11/Xlib.h:1105
 
@@ -2695,15 +2582,6 @@ struct__XIM._fields_ = [
 ]
 
 
-class struct__XIM(Structure):
-    __slots__ = [
-    ]
-
-
-struct__XIM._fields_ = [
-    ('_opaque_struct', c_int),
-]
-
 XIM = POINTER(struct__XIM)  # /usr/include/X11/Xlib.h:1156
 
 
@@ -2716,15 +2594,6 @@ struct__XIC._fields_ = [
     ('_opaque_struct', c_int),
 ]
 
-
-class struct__XIC(Structure):
-    __slots__ = [
-    ]
-
-
-struct__XIC._fields_ = [
-    ('_opaque_struct', c_int),
-]
 
 XIC = POINTER(struct__XIC)  # /usr/include/X11/Xlib.h:1157
 XIMProc = CFUNCTYPE(None, XIM, XPointer, XPointer)  # /usr/include/X11/Xlib.h:1159
@@ -4801,15 +4670,6 @@ XSetLocaleModifiers.restype = c_char_p
 XSetLocaleModifiers.argtypes = [c_char_p]
 
 
-class struct__XrmHashBucketRec(Structure):
-    __slots__ = [
-    ]
-
-
-struct__XrmHashBucketRec._fields_ = [
-    ('_opaque_struct', c_int),
-]
-
 # /usr/include/X11/Xlib.h:3567
 XOpenOM = _lib.XOpenOM
 XOpenOM.restype = XOM
@@ -5004,15 +4864,6 @@ Xutf8DrawImageString.restype = None
 Xutf8DrawImageString.argtypes = [POINTER(Display), Drawable, XFontSet, GC, c_int, c_int, c_char_p, c_int]
 
 
-class struct__XrmHashBucketRec(Structure):
-    __slots__ = [
-    ]
-
-
-struct__XrmHashBucketRec._fields_ = [
-    ('_opaque_struct', c_int),
-]
-
 # /usr/include/X11/Xlib.h:3836
 XOpenIM = _lib.XOpenIM
 XOpenIM.restype = XIM
@@ -5119,30 +4970,12 @@ XVaCreateNestedList.restype = XVaNestedList
 XVaCreateNestedList.argtypes = [c_int]
 
 
-class struct__XrmHashBucketRec(Structure):
-    __slots__ = [
-    ]
-
-
-struct__XrmHashBucketRec._fields_ = [
-    ('_opaque_struct', c_int),
-]
-
 # /usr/include/X11/Xlib.h:3941
 XRegisterIMInstantiateCallback = _lib.XRegisterIMInstantiateCallback
 XRegisterIMInstantiateCallback.restype = c_int
 XRegisterIMInstantiateCallback.argtypes = [POINTER(Display), POINTER(struct__XrmHashBucketRec), c_char_p, c_char_p,
                                            XIDProc, XPointer]
 
-
-class struct__XrmHashBucketRec(Structure):
-    __slots__ = [
-    ]
-
-
-struct__XrmHashBucketRec._fields_ = [
-    ('_opaque_struct', c_int),
-]
 
 # /usr/include/X11/Xlib.h:3950
 XUnregisterIMInstantiateCallback = _lib.XUnregisterIMInstantiateCallback
@@ -5421,15 +5254,6 @@ struct__XRegion._fields_ = [
     ('_opaque_struct', c_int),
 ]
 
-
-class struct__XRegion(Structure):
-    __slots__ = [
-    ]
-
-
-struct__XRegion._fields_ = [
-    ('_opaque_struct', c_int),
-]
 
 Region = POINTER(struct__XRegion)  # /usr/include/X11/Xutil.h:5010
 RectangleOut = 0  # /usr/include/X11/Xutil.h:5014

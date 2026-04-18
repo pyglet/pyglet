@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import ctypes
 import sys
-from typing import Sequence, TYPE_CHECKING
+from typing import Sequence, TYPE_CHECKING, Literal
 
 import pyglet
+from pyglet.enums import GraphicsAPI
 from pyglet.graphics.api.gl.global_opengl import OpenGLBackend
 from pyglet.graphics.api.base import WindowTransformations
 from pyglet.graphics.api.gl2.shader import ShaderProgram, Shader
@@ -67,18 +68,20 @@ class OpenGL2_Matrices(WindowTransformations):
     def model(self, model: Mat4) -> None:
         self._model = model
 
-class OpenGL2Backend(OpenGLBackend):
 
-    def get_default_configs(self) -> Sequence[pyglet.config.OpenGLConfig]:
+class OpenGL2Backend(OpenGLBackend):
+    gl_api: GraphicsAPI
+
+    def get_default_configs(self) -> Sequence[pyglet.config.OpenGLUserConfig]:
         """A sequence of configs to use if the user does not specify any.
 
         These will be used during Window creation.
         """
         return [
-            pyglet.config.OpenGLConfig(double_buffer=True, depth_size=24, major_version=2, minor_version=0,
-                                                opengl_api=self.gl_api),
-            pyglet.config.OpenGLConfig(double_buffer=True, depth_size=16, major_version=2, minor_version=0,
-                                                opengl_api=self.gl_api),
+            pyglet.config.OpenGLUserConfig(double_buffer=True, depth_size=24, major_version=2, minor_version=0,
+                                           api=self.gl_api),
+            pyglet.config.OpenGLUserConfig(double_buffer=True, depth_size=16, major_version=2, minor_version=0,
+                                           api=self.gl_api),
         ]
 
     def get_cached_shader(self, name: str, *sources: tuple[str, ShaderType]) -> ShaderProgram:

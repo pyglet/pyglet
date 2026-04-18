@@ -7,6 +7,10 @@ from typing import TYPE_CHECKING, ClassVar
 
 import pyglet
 from pyglet.font.ttf import TruetypeInfoBytes
+from pyglet.font import base, FontManager
+from pyglet.font.base import Glyph, FontException, GlyphPosition
+
+from pyglet.image import ImageData
 
 _debug = pyglet.options.debug_font
 
@@ -15,14 +19,6 @@ try:
     import pyodide.ffi
 except ImportError:
     raise ImportError
-
-from pyglet.font import base, FontManager
-from pyglet.font.base import Glyph, FontException, GlyphPosition
-
-from pyglet.image import ImageData
-
-if TYPE_CHECKING:
-    from pyglet.image import AbstractImage
 
 
 _font_canvas = js.document.createElement("canvas")
@@ -199,7 +195,7 @@ class JavascriptPyodideFont(base.Font):
     def create_glyph(self, img: ImageData) -> Glyph:
         return super().create_glyph(img)
 
-    def get_glyphs(self, text: str, shaping: bool) -> tuple[list[Glyph], list[GlyphPosition]]:
+    def get_glyphs(self, text: str, shaping: bool = False) -> tuple[list[Glyph], list[GlyphPosition]]:
         self._initialize_renderer()
 
         glyphs = []  # glyphs that are committed.

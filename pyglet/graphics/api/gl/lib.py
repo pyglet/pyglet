@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import ctypes
-from typing import Any, Callable, NoReturn, Sequence
+from typing import Any, Callable, NoReturn, Protocol, Sequence
 
 import pyglet
 
@@ -50,6 +50,18 @@ class GLException(Exception):
     pass
 
 
+class GLLinkFunction(Protocol):
+    def __call__(
+        self,
+        name: str,
+        restype: Any,
+        argtypes: Any,
+        requires: str | None = None,
+        suggestions: Sequence[str] | None = None,
+    ) -> Callable[..., Any]:
+        ...
+
+
 def errcheck(result: Any, func: Callable, arguments: Sequence) -> Any:
     if _debug_api_trace:
         try:
@@ -89,11 +101,12 @@ def decorate_function(func: Callable, name: str) -> None:
         func.__name__ = name
 
 
-link_AGL = None
-link_GLX = None
-link_WGL = None
-link_WGL_proxy = None
-link_GL_proxy = None
+link_AGL: GLLinkFunction | None = None
+link_GLX: GLLinkFunction | None = None
+link_WGL: GLLinkFunction | None = None
+link_WGL_proxy: GLLinkFunction | None = None
+link_GL: GLLinkFunction
+link_GL_proxy: GLLinkFunction
 
 if pyglet.compat_platform in ('win32', 'cygwin'):
     from pyglet.libs.win32.lib_wgl import link_GL, link_GL_proxy, link_WGL

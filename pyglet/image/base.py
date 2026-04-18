@@ -4,7 +4,7 @@ import re
 import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, BinaryIO, Callable, Generic, Iterator, Sequence, TypeVar, Union
+from typing import TYPE_CHECKING, Any, BinaryIO, Callable, Generic, Iterator, Sequence, TypeVar, Union, overload
 
 from pyglet.customtypes import DataTypes
 from pyglet.image.animation import Animation
@@ -214,7 +214,7 @@ class ImageData(_AbstractImage):
         arguments. For example, if the image format is ``RGBA``, and you wish to get
         the byte data in ``RGB`` format::
 
-            rgb_pitch = my_image.width // len('RGB')
+            rgb_pitch = my_image.width * len('RGB')
             rgb_img_bytes = my_image.get_bytes(fmt='RGB', pitch=rgb_pitch)
 
         The image ``pitch`` may be negative, so be sure to check that when converting
@@ -298,7 +298,7 @@ class ImageData(_AbstractImage):
         data = self._current_data
         current_pitch = self._current_pitch
         current_format = self._current_format
-        sign_pitch = current_pitch // abs(current_pitch)
+        sign_pitch = -1 if current_pitch < 0 else 1
         if fmt != self._current_format:
             # Create replacement string, e.g. r'\4\1\2\3' to convert RGBA to ARGB
             repl = asbytes('')
@@ -335,26 +335,24 @@ class ImageData(_AbstractImage):
             current_pitch = sign_pitch * (len(fmt) * self.width)
 
         if pitch != current_pitch:
-            diff = abs(current_pitch) - abs(pitch)
-            if diff > 0:
-                # New pitch is shorter than old pitch, chop bytes off each row
-                new_pitch = abs(pitch)
-                rows = [data[i : i + new_pitch - diff] for i in range(0, len(data), new_pitch)]
-                data = b''.join(rows)
+            # Re-pack per source row when changing row width and/or sign.
+            old_pitch = abs(current_pitch)
+            new_pitch = abs(pitch)
+            rows = [data[row * old_pitch : (row + 1) * old_pitch] for row in range(self.height)]
 
-            elif diff < 0:
-                # New pitch is longer than old pitch, add '0' bytes to each row
-                new_pitch = abs(current_pitch)
-                padding = bytes(1) * -diff
-                rows = [data[i : i + new_pitch] + padding for i in range(0, len(data), new_pitch)]
-                data = b''.join(rows)
+            if new_pitch < old_pitch:
+                # New pitch is shorter than old pitch, chop bytes off each row.
+                rows = [row[:new_pitch] for row in rows]
+            elif new_pitch > old_pitch:
+                # New pitch is longer than old pitch, add '0' bytes to each row.
+                padding = bytes(new_pitch - old_pitch)
+                rows = [row + padding for row in rows]
 
             if current_pitch * pitch < 0:
-                # Pitch differs in sign, swap row order
-                new_pitch = abs(pitch)
-                rows = [data[i : i + new_pitch] for i in range(0, len(data), new_pitch)]
+                # Pitch differs in sign, swap row order.
                 rows.reverse()
-                data = b''.join(rows)
+
+            data = b''.join(rows)
 
         return data
 
@@ -563,8 +561,14 @@ class _AbstractGrid(ABC, Generic[T]):
 
         Must be implemented by subclasses, even if it does not change the data.
         """
+    @overload
+    def __getitem__(self, index: int) -> T: ...
+    @overload
+    def __getitem__(self, index: tuple[int, int]) -> T: ...
+    @overload
+    def __getitem__(self, index: slice) -> list[T]: ...
 
-    def __getitem__(self, index: int | tuple[int, int] | slice) -> list[Any] | None | Any:
+    def __getitem__(self, index: int | tuple[int, int] | slice) -> list[T] | T | None:
         items = self._generate_items()
         if isinstance(index, slice):
             if type(index.start) is not tuple and type(index.stop) is not tuple:
@@ -681,6 +685,8 @@ class ImageGrid(_AbstractGrid[Union[ImageData, ImageDataRegion]], _AbstractImage
         """
         item_width = item_width or (image.width - column_padding * (columns - 1)) // columns
         item_height = item_height or (image.height - row_padding * (rows - 1)) // rows
+        assert item_width is not None
+        assert item_height is not None
         super().__init__(rows, columns, item_width, item_height, row_padding, column_padding)
         self.image = image
 

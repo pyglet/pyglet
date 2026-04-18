@@ -40,14 +40,23 @@ class AVPacketList(Structure):
     pass
 
 
+
 class AVInputFormat(Structure):
-    _fields_ = [
-        ('name', c_char_p)
+    _fields_ = [  # noqa: RUF012
+        ("name", c_char_p),
+        ("long_name", c_char_p),
+        ("flags", c_int),
+        ("extensions", c_char_p),
+        ("mime_type", c_char_p),
     ]
 
-
 class AVOutputFormat(Structure):
-    pass
+    _fields_ = [  # noqa: RUF012
+        ("name", c_char_p),
+        ("long_name", c_char_p),
+        ("mime_type", c_char_p),
+        ("extensions", c_char_p),
+    ]
 
 
 AVCodecContext = libavcodec.AVCodecContext
@@ -422,22 +431,7 @@ else:
     for compat_ver in (59, 60, 61, 62):
         compat.add_version_changes('avformat', compat_ver, AVFormatContext, AVFormatContext_Fields,
                                    removals=('filename', 'internal'))
-class AVInputFormat(Structure):
-    _fields_ = [
-        ("name", c_char_p),
-        ("long_name", c_char_p),
-        ("flags", c_int),
-        ("extensions", c_char_p),
-        ("mime_type", c_char_p),
-    ]
 
-class AVOutputFormat(Structure):
-    _fields_ = [
-        ("name", c_char_p),
-        ("long_name", c_char_p),
-        ("mime_type", c_char_p),
-        ("extensions", c_char_p),
-    ]
 
 avformat.av_find_input_format.restype = c_int
 avformat.av_find_input_format.argtypes = [c_int]

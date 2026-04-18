@@ -153,7 +153,7 @@ if harfbuzz_available():
     retrieve the full font bytes from memory, we must construct callbacks for harfbuzz
     to retrieve the tag tables.
     """
-    from pyglet.font.harfbuzz.harfbuzz_lib import (
+    from pyglet.libs.shared.lib_harfbuzz import (
         hb_lib,
         hb_destroy_func_t,
         hb_reference_table_func_t,

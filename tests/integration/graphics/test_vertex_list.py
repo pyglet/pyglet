@@ -77,6 +77,35 @@ class VertexListTest(unittest.TestCase):
 
         assert tuple(vertex_list.position[:]) == pytest.approx(vertices_2)
 
+    def test_vertex_list_property_direct_set(self):
+        program = pyglet.graphics.api.get_default_shader()
+
+        vertices_1 = (
+            100, 300, 0,
+            200, 250, 0,
+            200, 350, 0,
+        )
+
+        vertices_2 = (
+            90, 200, 1,
+            180, 210, 1,
+            260, 340, 1,
+        )
+
+        colors = (
+            1, 0, 0, 1,
+            0, 1, 0, 1,
+            0.3, 0.3, 1, 1,
+        )
+
+        vertex_list = program.vertex_list(3, GeometryMode.TRIANGLES,
+                                          position=('f', vertices_1),
+                                          colors=('f', colors))
+
+        vertex_list.position = vertices_2
+
+        assert tuple(vertex_list.position[:]) == pytest.approx(vertices_2)
+
     def test_indexed_vertex_list_creation(self):
         program = pyglet.graphics.api.get_default_shader()
 
@@ -113,6 +142,24 @@ class VertexListTest(unittest.TestCase):
         assert tuple(vertex_list.position[:]) == pytest.approx(vertices_1)
 
         vertex_list.position[:] = vertices_2
+
+        assert tuple(vertex_list.position[:]) == pytest.approx(vertices_2)
+
+    def test_indexed_vertex_list_property_direct_set(self):
+        program = pyglet.graphics.api.get_default_shader()
+
+        vertices_1 = _create_quad_vertices(0, 0, 0, 50, 50)
+        vertices_2 = _create_quad_vertices(10, 20, 5, 40, 20)
+        colors = (1, 0.5, 0.2, 1) * 4
+        indices = [0, 1, 2, 0, 2, 3]
+
+        vertex_list = program.vertex_list_indexed(4, GeometryMode.TRIANGLES, indices,
+                                                  batch=None,
+                                                  group=None,
+                                                  position=('f', vertices_1),
+                                                  colors=('f', colors))
+
+        vertex_list.position = vertices_2
 
         assert tuple(vertex_list.position[:]) == pytest.approx(vertices_2)
 

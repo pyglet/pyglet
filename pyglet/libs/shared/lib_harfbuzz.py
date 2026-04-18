@@ -26,7 +26,6 @@ hb_lib = None
 with contextlib.suppress(ImportError):
     hb_lib = pyglet.lib.load_library("harfbuzz", win32='libharfbuzz-0.dll', darwin='libharfbuzz.0.dylib')
 
-
 HB_MEMORY_MODE_READONLY = 0  # for read-only font data
 
 HB_DIRECTION_INVALID = 0
@@ -192,7 +191,7 @@ if hb_lib:
 
     hb_lib.hb_buffer_get_glyph_positions.argtypes = [
         c_void_p,  # hb_buffer_t *buffer
-        POINTER(c_uint)  # pointer for length (can be None)
+        POINTER(c_uint), # pointer for length (can be None)
     ]
     hb_lib.hb_buffer_get_glyph_positions.restype = POINTER(hb_glyph_position_t)
 

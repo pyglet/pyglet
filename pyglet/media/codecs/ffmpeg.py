@@ -570,6 +570,8 @@ class AudioPacket(_Packet):
 
 
 class FFmpegSource(StreamingSource):
+    _audio_stream: FFmpegStream | None
+    _video_stream: FFmpegStream | None
     # Max increase/decrease of original sample size
     SAMPLE_CORRECTION_PERCENT_MAX = 10
 

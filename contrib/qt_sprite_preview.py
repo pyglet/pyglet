@@ -468,8 +468,7 @@ class Ui_MainWindow:
                 print("Successfully compiled shader.")
         except pyglet.graphics.api.gl.GLException as err:
             print(f"Failed to compile shader: {err}")
-        except Exception as err:
-            print("Unexpected error", err)
+
     def loadImages(self) -> None:
         options = self.get_file_dialog_options()
         fileNames, _ = QFileDialog.getOpenFileNames(
@@ -652,10 +651,14 @@ class PygletWidget(QOpenGLWidget):
 
     def initializeGL(self) -> None:
         """Call anything that needs a context to be created."""
+        # Requires a window to create a backend context.
+        self._shadow_window = pyglet.window.Window(1, 1, visible=False)
+
+        # Set back to widget's context.
+        self.makeCurrent()
+
         self._projection_matrix = pyglet.math.Mat4()
         self._view_matrix = pyglet.math.Mat4()
-
-        self._shadow_window = pyglet.window.Window(1, 1, visible=False)
 
         self.batch = pyglet.graphics.Batch()
 

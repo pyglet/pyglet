@@ -2,13 +2,18 @@ from __future__ import annotations
 
 import sys
 import warnings
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Sequence, cast
 
 import js
 
 import pyglet
 from pyglet.graphics.api.webgl.context import OpenGLSurfaceContext
-from pyglet.graphics.api.base import BackendGlobalObject, SurfaceContext, UBOMatrixTransformations, NullContext
+from pyglet.graphics.api.base import (
+    BackendGlobalObject,
+    SurfaceContext,
+    UBOMatrixTransformations,
+    NullContext,
+)
 from pyglet.graphics.api.webgl.shader import WebGLShader as Shader, WebGLShaderProgram as ShaderProgram
 from pyglet.math import Mat4
 
@@ -137,8 +142,9 @@ class WebGLBackend(BackendGlobalObject):
     def create_context(self, config: SurfaceConfig, shared: OpenGLSurfaceContext | None) -> OpenGLSurfaceContext:
         return OpenGLSurfaceContext(self, config._window, config, shared)
 
-    def get_surface_context(self, window: Window, config: SurfaceConfig) -> SurfaceContext:
-        context = self.windows[window] = self.create_context(config, self.current_context)
+    def get_surface_context(self, window: Window, config: SurfaceConfig,
+                            shared: OpenGLSurfaceContext | None = None) -> SurfaceContext:
+        context = self.windows[window] = self.create_context(config, shared)
         self.current_context = context
         self._have_context = True
         return context
@@ -151,32 +157,36 @@ class WebGLBackend(BackendGlobalObject):
     #     self._have_context = True
     #     return context
 
-    def get_default_configs(self) -> Sequence[pyglet.config.WebGLConfig]:
+    def get_default_configs(self) -> Sequence[pyglet.config.WebGLUserConfig]:
         """A sequence of configs to use if the user does not specify any.
 
         These will be used during Window creation.
         """
-        return [pyglet.config.WebGLConfig()]
+        return [pyglet.config.WebGLUserConfig()]
 
-    def get_config(self, **kwargs: float | str | None) -> pyglet.config.WebGLConfig:
-        return pyglet.config.WebGLConfig(**kwargs)
+    def get_config(self, **kwargs: float | str | None) -> pyglet.config.WebGLUserConfig:
+        return pyglet.config.WebGLUserConfig(**kwargs)
+
+    @property
+    def info(self):
+        return self.current_context.info
 
     def get_info(self):
-        return self.current_context.get_info()
+        return self.info
 
     def have_extension(self, extension_name: str) -> bool:
         if not self.current_context:
             warnings.warn('No GL context created yet or current context not set.')
             return False
 
-        return self.current_context.get_info().have_extension(extension_name)
+        return self.current_context.info.have_extension(extension_name)
 
     def have_version(self, major: int, minor: int = 0) -> bool:
         if not self.current_context:
             warnings.warn('No GL context created yet or current context not set.')
             return False
 
-        return self.current_context.get_info().have_version(major, minor)
+        return self.current_context.info.have_version(major, minor)
 
     def get_cached_shader(self, name: str, *sources: tuple[str, ShaderType]) -> ShaderProgram:
         """Create a ShaderProgram from OpenGL GLSL source.
@@ -219,11 +229,7 @@ class WebGLBackend(BackendGlobalObject):
 
         return self.current_context.default_batch
 
-    @property
-    def have_context(self) -> bool:
-        return self._have_context
-
-    def initialize_matrices(self, window):
+    def initialize_matrices(self, window: Window) -> OpenGL3_Matrices:
         return OpenGL3_Matrices(window, self)
 
     def set_viewport(self, window, x: int, y: int, width: int, height: int) -> None:

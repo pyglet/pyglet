@@ -16,7 +16,7 @@ import random
 import sys
 
 import pyglet
-from pyglet.config import OpenGLConfig
+from pyglet.config import OpenGLUserConfig
 from pyglet.enums import GeometryMode
 
 from pyglet.graphics.api.gl import (
@@ -30,7 +30,7 @@ from pyglet.graphics.api.gl import (
 )
 
 # open a single-buffered window so we can do cheap accumulation
-config = OpenGLConfig(double_buffer=False)
+config = OpenGLUserConfig(double_buffer=False)
 window = pyglet.window.Window(fullscreen='-fs' in sys.argv, config=config)
 
 

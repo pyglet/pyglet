@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from pyglet.enums import GraphicsAPI
 from pyglet.graphics.api.gl import OpenGLSurfaceContext
 from pyglet.graphics.api.gl.base import ContextException
 from pyglet.libs import egl
@@ -40,10 +41,14 @@ class EGLContext(OpenGLSurfaceContext):
 
         user_config = self.config.config
 
-        if user_config.opengl_api == "gl":
+        if user_config.api == GraphicsAPI.OPENGL:
             egl.eglBindAPI(egl.EGL_OPENGL_API)
-        elif user_config.opengl_api == "gles":
+        elif user_config.api in (GraphicsAPI.OPENGL_ES_2, GraphicsAPI.OPENGL_ES_3):
             egl.eglBindAPI(egl.EGL_OPENGL_ES_API)
+        else:
+            msg = f"The '{user_config.api}' backend is not supported under EGL"
+            raise ContextException(msg)
+
         return egl.eglCreateContext(
             self.window.egl_display_connection,  # noqa: SLF001
             self.config._egl_config,

@@ -6,12 +6,11 @@ from dataclasses import asdict
 from ctypes import byref, c_uint32, c_int
 
 from pyglet.config.gl import GLSurfaceConfig
-
 from pyglet.libs.darwin import cocoapy, quartz
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from pyglet.config import OpenGLConfig
+    from pyglet.config import OpenGLUserConfig
     from pyglet.graphics.api.gl.cocoa.context import NSOpenGLPixelFormat, CocoaContext
     from pyglet.window.cocoa import CocoaWindow
     from pyglet.graphics.api import OpenGLBackend
@@ -41,7 +40,7 @@ catalina:       19.0 -> 19.6
 big_sur:        20.0 ->
 """
 
-os_x_release: dict[str, tuple[float] | tuple[float, float] | tuple[float, float, float]] = {
+os_x_release: dict[str, tuple[float, ...]] = {
     'pre-release': (0, 1),
     'kodiak': (1, 2, 1),
     'cheetah': (1, 3, 1),
@@ -64,13 +63,13 @@ os_x_release: dict[str, tuple[float] | tuple[float, float] | tuple[float, float,
 }
 
 
-def os_x_version() -> tuple[int, ...] | tuple[tuple[int, ...]]:
+def os_x_version() -> tuple[int, ...]:
     version = tuple([int(v) for v in platform.release().split('.')])
 
     # ensure we return a tuple
     if len(version) > 0:
         return version
-    return (version,)
+    return (0,)
 
 
 _os_x_version = os_x_version()
@@ -132,7 +131,7 @@ _fake_gl_attributes = {
 }
 
 
-def match(config: OpenGLConfig, window: CocoaWindow) -> CocoaGLSurfaceConfig | None:
+def match(config: OpenGLUserConfig, window: CocoaWindow) -> CocoaGLSurfaceConfig | None:
     # Construct array of attributes for NSOpenGLPixelFormat
     attrs = []
     for name, value in asdict(config).items():
@@ -199,7 +198,7 @@ def match(config: OpenGLConfig, window: CocoaWindow) -> CocoaGLSurfaceConfig | N
 
 class CocoaGLSurfaceConfig(GLSurfaceConfig):
 
-    def __init__(self, window: CocoaWindow, config: OpenGLConfig, pixel_format: NSOpenGLPixelFormat) -> None:
+    def __init__(self, window: CocoaWindow, config: OpenGLUserConfig, pixel_format: NSOpenGLPixelFormat) -> None:
         super().__init__(window, config, pixel_format)
         self._pixel_format = pixel_format
 

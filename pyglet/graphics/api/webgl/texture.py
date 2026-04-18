@@ -136,11 +136,11 @@ _api_pixel_formats = {
 
 def get_max_texture_size() -> int:
     """Query the maximum texture size available"""
-    return pyglet.graphics.api.core.current_context.get_info().MAX_ARRAY_TEXTURE_LAYERS
+    return pyglet.graphics.api.core.current_context.info.MAX_TEXTURE_SIZE
 
 
 def get_max_array_texture_layers() -> int:
-    return pyglet.graphics.api.core.current_context.get_info().MAX_ARRAY_TEXTURE_LAYERS
+    return pyglet.graphics.api.core.current_context.info.MAX_ARRAY_TEXTURE_LAYERS
 
 
 def _get_gl_format_and_type(fmt: str):
@@ -285,7 +285,7 @@ class GLCompressedImageData(CompressedImageData):
         self._current_mipmap_texture = texture
         return texture
 
-    def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int, internalformat: int = None):
+    def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int, internalformat: int | None = None):
         if not self._have_extension():
             raise ImageException(f"{self.extension} is required to decode {self}")
 

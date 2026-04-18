@@ -15,6 +15,9 @@ requires-python = ">=3.8"
 [project.urls]
 Home = "https://pyglet.org"
 
+[tool.mypy]
+exclude = "pyglet.experimental.*"
+
 [[tool.mypy.overrides]]
 # mypy incorrectly reports issues everywhere in pyglet.math because:
 # 1. pyglet.math is almost entirely typing.NamedTuple subclasses
@@ -59,7 +62,6 @@ ignore = [
     "B028",  # No explicit stack level in warn
     "FIX002",  # Fixme
     "TD003",  # Missing issue link on the line following this TODO"
-    "T201",   # allow writing print
     "I001",  # remove after refactors.
 ]
 

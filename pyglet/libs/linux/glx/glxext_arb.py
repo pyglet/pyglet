@@ -5,18 +5,20 @@ Do not modify this file.
 """
 from __future__ import annotations
 import ctypes
+from typing import cast
 
 from ctypes import (
     CFUNCTYPE, POINTER, Structure, c_char, c_long, c_float, c_int,
     c_int64, c_ulong, c_ubyte, c_uint, c_int32,
 )
-from pyglet.graphics.api.gl.lib import link_GLX as _link_function
+from pyglet.graphics.api.gl.lib import GLLinkFunction, link_GLX as _link_function
+_link_function = cast(GLLinkFunction, _link_function)
 from pyglet.libs.linux.glx import glx
 
 if not hasattr(ctypes, 'c_int64'):
     # XXX TODO completely wrong, but at least can import.
     # Can c_longlong still be used?
-    c_int64 = c_long
+    c_int64 = c_long  # type: ignore[misc,assignment]
     c_uint64 = c_ulong
 
 # BEGIN GENERATED CONTENT (do not edit below this line)

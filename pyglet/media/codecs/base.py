@@ -3,7 +3,7 @@ from __future__ import annotations
 import ctypes
 import io
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, BinaryIO, Optional, Union
+from typing import TYPE_CHECKING, BinaryIO, Optional, Union, ClassVar
 
 from pyglet.media.exceptions import MediaException, CannotSeekException
 
@@ -218,8 +218,8 @@ class Source:
             is the current source.
     """
 
-    _duration = None
-    _players: list[AudioPlayer] = []  # Players created through Source.play
+    _duration: float = 0.0
+    _players: ClassVar[list[AudioPlayer]] = []  # Players created through Source.play
 
     audio_format: AudioFormat | None = None
     video_format: VideoFormat | None = None

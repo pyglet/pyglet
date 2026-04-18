@@ -1,5 +1,6 @@
 import unittest
 
+from pyglet.graphics import TextureAtlas
 from pyglet.graphics import TextureGrid
 from pyglet.image import ImageData, ImageGrid
 from pyglet.window import Window
@@ -97,3 +98,31 @@ class TextureGridTestCase(unittest.TestCase):
             for col in range(2, 5):
                 self.check_cell(images[i], row * cols + col)
                 i += 1
+
+    def test_atlas_region_offset_preserved_for_multiple_border_sizes(self):
+        image = ImageData(2, 2, "RGBA", bytes((255, 0, 0, 255)) * 4)
+
+        for border in (0, 1, 2):
+            atlas = TextureAtlas(width=16, height=16)
+            region = atlas.add(image, border=border)
+            grid = TextureGrid(region, rows=1, columns=1, item_width=2, item_height=2)
+            cell = grid[0]
+
+            self.assertEqual((cell.x, cell.y), (region.x, region.y))
+            self.assertEqual(cell.tex_coords, region.tex_coords)
+
+            fetched = bytes(cell.get_image_data().get_bytes("RGBA", cell.width * 4))
+            self.assertEqual(fetched, bytes((255, 0, 0, 255)) * 4)
+
+    def test_texture_region_input_preserves_region_coordinates(self):
+        data = bytes(range(64))
+        texture = ImageData(4, 4, "RGBA", data).get_texture()
+        region = texture.get_region(1, 1, 2, 2)
+
+        grid = TextureGrid(region, rows=1, columns=1, item_width=2, item_height=2)
+        cell = grid[0]
+
+        self.assertEqual((cell.x, cell.y), (region.x, region.y))
+        self.assertEqual(cell.tex_coords, region.tex_coords)
+        self.assertEqual(cell.get_image_data().get_bytes("RGBA", cell.width * 4),
+                         region.get_image_data().get_bytes("RGBA", region.width * 4))
