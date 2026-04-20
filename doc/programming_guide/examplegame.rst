@@ -650,7 +650,7 @@ else play the game.  One way to provide visual feedback is to show an engine
 flame behind the player while the player is thrusting.
 
 Loading the flame texture
-^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The player will now be made of two sprites.  There’s nothing preventing us
 from letting a Sprite own another Sprite, so we’ll just give Player an

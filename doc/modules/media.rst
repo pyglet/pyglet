@@ -128,7 +128,10 @@ Functions
 ---------
 
 .. autofunction:: get_audio_driver
-.. autofunction:: load
+.. autofunction:: load_audio
+.. autofunction:: load_video
+.. autofunction:: play_audio
+.. autofunction:: play_video
 .. autofunction:: have_ffmpeg
 
 Exceptions

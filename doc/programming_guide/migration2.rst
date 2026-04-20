@@ -233,7 +233,7 @@ with a :py:meth:`~pyglet.math.Vec2.length` beneath a certain threshold::
 
 Non-Circular Sticks
 """""""""""""""""""
-:py:meth:`Vec2.normalize <pyglet.math.Vec2.normalize` can also help when
+:py:meth:`Vec2.normalize <pyglet.math.Vec2.normalize>` can also help when
 an unusual analog stick input could exceed ``1.0`` in length.
 
 For example, a :py:class:`~pyglet.input.Controller` for a device with a non-circular
@@ -246,7 +246,7 @@ greater than ``1.0``. Normalizating allows concisely clamping the input to ``1.0
 
 
 Accessing Vector Components
-""""""""""""""""""""""""""
+"""""""""""""""""""""""""""
 You can directly access  individual :py:attr:`~pyglet.math.Vec2.x` and
 :py:attr:`~pyglet.math.Vec2.y` attributes or unpack a vector:
 
