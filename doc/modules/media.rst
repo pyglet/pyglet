@@ -14,6 +14,12 @@ pyglet.media
 
 .. automodule:: pyglet.media
 
+.. py:class:: pyglet.media.AudioPlayer
+   :canonical: pyglet.media.player.AudioPlayer
+
+.. py:class:: pyglet.media.VideoPlayer
+   :canonical: pyglet.media.player.VideoPlayer
+
 Classes
 -------
 
