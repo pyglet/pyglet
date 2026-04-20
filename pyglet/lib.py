@@ -13,7 +13,7 @@ import ctypes
 import ctypes.util
 
 import pyglet
-from typing import NoReturn, Callable, Any
+from typing import NoReturn, Callable, Any, Iterator
 
 _debug_lib = pyglet.options.debug_lib
 _debug_trace = pyglet.options.debug_trace
@@ -72,6 +72,11 @@ if _is_pyglet_doc_run:
         def __rshift__(self, other: LibraryMock):
             return 0
 
+        def __bool__(self) -> bool:
+            return False
+
+        def __iter__(self) -> Iterator:
+            return iter([])
 
 class LibraryLoader:  # noqa: D101
 
