@@ -255,6 +255,7 @@ These styles are ignored for layouts without the ``multiline`` flag set.
 ``leading``
     Additional space to insert between consecutive lines within a paragraph,
     as a distance.  Defaults to 0.
+    Unicode text of ``\u2028`` is treated as the start of a new paragraph.
 ``line_spacing``
     Distance between consecutive baselines in a paragraph, as a distance.
     Defaults to ``None``, which automatically calculates the tightest line
