@@ -42,10 +42,6 @@ for i in range(1000):
     sprites.append(sprite)
 
 
-text = pyglet.text.Label("Hello World!", x=window.width // 2, y=window.height // 2, batch=batch)
-text2 = pyglet.text.Label("               asf af Hello World!", x=window.width // 2, y=window.height // 2, batch=batch)
-
-
 @window.event
 def on_draw():
     window.clear()

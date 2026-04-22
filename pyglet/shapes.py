@@ -72,12 +72,13 @@ from typing import TYPE_CHECKING, Sequence, Tuple, Union
 
 import pyglet
 from pyglet.extlibs import earcut
-from pyglet.graphics import Batch, Group, ShaderProgram
+from pyglet.graphics import Group
 from pyglet.enums import BlendFactor, GeometryMode, GraphicsAPI
 from pyglet.math import Vec2
 
 if TYPE_CHECKING:
     from pyglet.graphics.shader import ShaderProgram
+    from pyglet.graphics.draw import Batch
 
 
 if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
