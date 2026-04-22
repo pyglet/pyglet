@@ -12,8 +12,22 @@ The full source code can also be found in the ``examples/game/`` folder
 of the pyglet source directory, which you can follow along with.
 If anything is still not clear, let us know!
 
-Basic graphics
---------------
+How to follow this tutorial
+---------------------------
+
+This guide is split into five checkpoints that match the folders in
+``examples/game``. Work in order, and run each version before moving on:
+
+* ``version1``: Static scene setup (window, labels, ship, asteroids)
+* ``version2``: Movement, batching, and player controls
+* ``version3``: Collisions, cleanup, and movement feedback
+* ``version4``: Bullets, object spawning, and asteroid splitting
+* ``version5``: Score/lives loop, level reset, and game-over flow
+
+Version 1: Basic graphics
+-------------------------
+
+Folder checkpoint: ``examples/game/version1``
 
 Lets begin!  The first version of our game will simply show a score of zero,
 a label showing the name of the program, three randomly placed asteroids,
@@ -261,14 +275,16 @@ screen is as simple as it was for the player’s ship - just call their
         for asteroid in asteroids:
             asteroid.draw()
 
-This wraps up the first section.  Your "game" doesn't do much of anything yet,
-but we'll get to that in the following sections.  You may want to look over
-the `examples/game/version1` folder in the pyglet repository to review what we've
-done, and to find a functional copy.
+This wraps up Version 1. Your "game" does not do much yet, but the scene and
+resource loading foundation are in place.
+
+Checkpoint: compare your code with ``examples/game/version1`` before moving on.
 
 
-Basic motion
-------------
+Version 2: Basic motion
+-----------------------
+
+Folder checkpoint: ``examples/game/version2``
 
 In the second version of the example, we’ll introduce a simpler, faster way
 to draw all of the game objects, as well as add row of icons indicating the
@@ -359,7 +375,7 @@ movement calculations.  We’ll also write a Player class to respond to keyboard
 input.
 
 Creating the basic motion class
-===============================
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Since every visible object is represented by at least one Sprite, we may as
 well make our basic motion class a subclass of pyglet.sprite.Sprite. Another
@@ -594,8 +610,12 @@ That’s it! Now you should be able to run the game and move the player with the
 arrow keys.
 
 
-Giving the player something to do
----------------------------------
+Checkpoint: compare your code with ``examples/game/version2`` before moving on.
+
+Version 3: Basic collision and feedback
+---------------------------------------
+
+Folder checkpoint: ``examples/game/version3``
 
 In any good game, there needs to be something working against the player.
 In the case of Asteroids, it’s the threat of collision with, well, an asteroid.
@@ -821,8 +841,12 @@ disappear from the screen.  There’s still no game, but we are clearly
 making progress.
 
 
-Collision response
-------------------
+Checkpoint: compare your code with ``examples/game/version3`` before moving on.
+
+Version 4: Bullets and asteroid splitting
+-----------------------------------------
+
+Folder checkpoint: ``examples/game/version4``
 
 In the next section, we’ll add bullets.  This new feature will require us to
 start adding things to the game_objects list during the game,
@@ -1158,15 +1182,77 @@ Now we’re looking at something resembling a game.  It's simple, but all of
 the basics are there.
 
 
+Checkpoint: compare your code with ``examples/game/version4`` before moving on.
+
+
+Version 5: Score, lives, and game flow
+--------------------------------------
+
+Folder checkpoint: ``examples/game/version5``
+
+The final version turns the prototype into a complete gameplay loop:
+
+* The score increases as asteroids are destroyed
+* Player lives are consumed on death, with automatic level reset
+* A victory state advances to a harder round
+* A game-over label is shown when no lives remain
+
+These topics will be touched briefly, but you should consider it an
+exercise to understand why these changes were added.
+
+Resetting levels cleanly
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Version 5 moves one-time setup into ``init()`` and level-specific setup into
+``reset_level()``. This keeps round transitions and life-loss handling in one place::
+
+    def init():
+        global score, num_asteroids
+        score = 0
+        score_label.text = "Score: " + str(score)
+        num_asteroids = 3
+        reset_level(2)
+
+    def reset_level(num_lives=2):
+        ...
+        player_ship = player.Player(x=400, y=300, batch=main_batch)
+        player_lives = load.player_lives(num_lives, main_batch)
+        asteroids = load.asteroids(num_asteroids, player_ship.position, main_batch)
+        game_objects = [player_ship] + asteroids
+
+In this version we also track how many handlers were pushed to the event stack,
+so we can remove old handlers before rebuilding the level.
+
+Handling victory and loss in ``update()``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+After each frame update, check for three outcomes: player death, level clear,
+or continue playing. Version 5 does that by tracking ``player_dead`` and
+``asteroids_remaining`` during the update loop, then acting at the end:
+
+* If player died and lives remain: restart level with one fewer life
+* If player died and no lives remain: show ``GAME OVER``
+* If all asteroids are gone: increase asteroid count and reset the level
+
+Scaled collision accuracy
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Because asteroids split and shrink, collision distance needs to include sprite
+scale. Version 5 updates ``PhysicalObject.collides_with()`` like this::
+
+    collision_distance = self.image.width * 0.5 * self.scale + \
+                         other_object.image.width * 0.5 * other_object.scale
+
+Checkpoint: compare your code with ``examples/game/version5``.
+
+
 Next steps
 ----------
 
-So instead of walking you through a standard refactoring session,
-I’m going to leave it as an exercise for you to do the following:
+Now that the tutorial has reached a complete loop, useful follow-up exercises are:
 
-* Make the Score counter mean something
-* Let the player restart the level if they die
-* Implement lives and a “Game Over” screen
+* Add sound effects for shots, impacts, and game-over events
+* Add a title/start screen
 * Add particle effects
 * Implement the ``pyglet.math.Vec2`` class for movement and rotation
 
