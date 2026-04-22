@@ -333,7 +333,7 @@ These dialogs are non-blocking and dispatch events when the user completes or
 cancels the operation. They only return path information; your code is
 responsible for opening or saving the file data.
 
-Both :py:class:`FileOpenDialog` and :py:class:`FileSaveDialog` accept
+Both :py:class:`~pyglet.window.dialog.FileOpenDialog` and :py:class:`~pyglet.window.dialog.FileSaveDialog` accept
 ``filetypes`` as a list of ``(label, pattern)`` tuples.
 
 Use wildcard patterns (recommended), and separate multiple extensions in one
