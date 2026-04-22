@@ -172,10 +172,6 @@ class ShaderProgram(GLShaderProgram):  # noqa: D101
     _uniform_blocks: None
     __slots__ = '_attributes', '_context', '_id', '_uniform_blocks', '_uniforms'
 
-    def __init__(self, *shaders: Shader) -> None:
-        """Initialize the ShaderProgram using at least two Shader instances."""
-        super().__init__(*shaders)
-
     def _get_uniform_blocks(self) -> None:
         """Return Uniform Block information."""
         return

@@ -17,7 +17,7 @@ from ctypes import (
     cast,
     sizeof,
 )
-from typing import TYPE_CHECKING, Any, Callable, Sequence, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Sequence, Type, Union, overload
 
 import pyglet
 
@@ -33,6 +33,7 @@ from pyglet.graphics.api.webgl.gl import (
     GL_UNIFORM_BUFFER,
 )
 from pyglet.graphics.shader import (
+    _AbstractShader,
     Attribute,
     Shader,
     ShaderException,
@@ -59,8 +60,6 @@ class GLException(Exception):
 
 
 if TYPE_CHECKING:
-    from _weakref import CallableProxyType
-
     from pyglet.customtypes import CTypesPointer, DataTypes, CType
     from pyglet.graphics import Batch, Group
     from pyglet.graphics.api.webgl.context import OpenGLSurfaceContext
@@ -384,7 +383,7 @@ class WebGLUniformBlock(BaseUniformBlock):  # noqa: D101
 
     def __init__(
         self,
-        program: ShaderProgram,
+        program: WebGLShaderProgram,
         name: str,
         index: int,
         size: int,
@@ -550,7 +549,7 @@ def _introspect_uniforms(gl_ctx: WebGLRenderingContext, program_id: WebGLProgram
 
 
 def _introspect_uniform_blocks(
-    ctx: OpenGLSurfaceContext, program: ShaderProgram | WebGLComputeShaderProgram,
+    ctx: OpenGLSurfaceContext, program: WebGLShaderProgram | WebGLComputeShaderProgram,
 ) -> dict[str, WebGLUniformBlock]:
     uniform_blocks = {}
     gl_ctx: WebGL2RenderingContext = ctx.gl
@@ -678,7 +677,7 @@ class GLShaderSource(ShaderSource):
         raise ShaderException(msg)
 
 
-class WebGLShader(Shader):
+class WebGLShader(_AbstractShader):
     """OpenGL shader.
 
     Shader objects are compiled on instantiation.
@@ -829,32 +828,10 @@ class WebGLShaderProgram(ShaderProgram):
     def id(self) -> WebGLProgram | None:
         return self._id
 
-    @property
-    def uniforms(self) -> dict[str, Any]:
-        """Uniform metadata dictionary.
-
-        This property returns a dictionary containing metadata of all
-        Uniforms that were introspected in this ShaderProgram. Modifying
-        this dictionary has no effect. To set or get a uniform, the uniform
-        name is used as a key on the ShaderProgram instance. For example::
-
-            my_shader_program[uniform_name] = 123
-            value = my_shader_program[uniform_name]
-
-        """
-        return {n: {'location': u.location, 'length': u.length, 'size': u.size} for n, u in self._uniforms.items()}
-
     def use(self) -> None:
         self._gl.useProgram(self._id)
 
     def stop(self) -> None:
-        self._gl.useProgram(None)
-
-    __enter__ = use
-    bind = use
-    unbind = stop
-
-    def __exit__(self, *_) -> None:  # noqa: ANN002
         self._gl.useProgram(None)
 
     def delete(self) -> None:
@@ -908,8 +885,33 @@ class WebGLShaderProgram(ShaderProgram):
             raise ShaderException from err
 
 
+    @overload
+    def _vertex_list_create(self, count: int, mode: GeometryMode, indices: None = None,
+                            instances: None = None, batch: Batch | None = None, group: Group | None = None,
+                            **data: Any) -> VertexList:
+        ...
+
+    @overload
+    def _vertex_list_create(self, count: int, mode: GeometryMode, indices: Sequence[int] = ...,
+                            instances: None = None, batch: Batch | None = None, group: Group | None = None,
+                            **data: Any) -> IndexedVertexList:
+        ...
+
+    @overload
+    def _vertex_list_create(self, count: int, mode: GeometryMode, indices: None = None,
+                            instances: dict[str, int] = ..., batch: Batch | None = None, group: Group | None = None,
+                            **data: Any) -> InstanceVertexList:
+        ...
+
+    @overload
+    def _vertex_list_create(self, count: int, mode: GeometryMode, indices: Sequence[int] = ...,
+                            instances: dict[str, int] = ..., batch: Batch | None = None, group: Group | None = None,
+                            **data: Any) -> InstanceIndexedVertexList:
+        ...
+
     def _vertex_list_create(self, count: int, mode: GeometryMode, indices: Sequence[int] | None = None,
-                            instances: dict[str, int] | None = None, batch: Batch | None = None, group: Group | None = None,
+                            instances: dict[str, int] | None = None,
+                            batch: Batch | None = None, group: Group | None = None,
                             **data: Any) -> VertexList | InstanceVertexList | IndexedVertexList | InstanceIndexedVertexList:
         assert isinstance(mode, GeometryMode), f"Mode {mode} is not geometry mode."
         attributes = {}
@@ -958,88 +960,6 @@ class WebGLShaderProgram(ShaderProgram):
             vlist.set_attribute_data(name, array)
 
         return vlist
-
-
-    def vertex_list(
-        self, count: int, mode: GeometryMode, batch: Batch | None = None, group: Group | None = None, **data: Any,
-    ) -> VertexList:
-        """Create a VertexList.
-
-        Args:
-            count:
-                The number of vertices in the list.
-            mode:
-                OpenGL drawing mode enumeration; for example, one of
-                ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
-                This determines how the list is drawn in the given batch.
-            batch:
-                Batch to add the VertexList to, or ``None`` if a Batch will not be used.
-                Using a Batch is strongly recommended.
-            group:
-                Group to add the VertexList to, or ``None`` if no group is required.
-            data:
-                Attribute formats and initial data for the vertex list.
-
-        """
-        return self._vertex_list_create(count, mode, None, None, batch=batch, group=group, **data)
-
-    def vertex_list_instanced(
-        self,
-        count: int,
-        mode: GeometryMode,
-        instance_attributes: Sequence[str],
-        batch: Batch | None = None,
-        group: Group | None = None,
-        **data: Any,
-    ) -> VertexList:
-        assert len(instance_attributes) > 0, "You must provide at least one attribute name to be instanced."
-        return self._vertex_list_create(count, mode, None, instance_attributes, batch=batch, group=group, **data)
-
-    def vertex_list_indexed(
-        self,
-        count: int,
-        mode: GeometryMode,
-        indices: Sequence[int],
-        batch: Batch | None = None,
-        group: Group | None = None,
-        **data: Any,
-    ) -> IndexedVertexList:
-        """Create a IndexedVertexList.
-
-        Args:
-            count:
-                The number of vertices in the list.
-            mode:
-                OpenGL drawing mode enumeration; for example, one of
-                ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
-                This determines how the list is drawn in the given batch.
-            indices:
-                Sequence of integers giving indices into the vertex list.
-            batch:
-                Batch to add the VertexList to, or ``None`` if a Batch will not be used.
-                Using a Batch is strongly recommended.
-            group:
-                Group to add the VertexList to, or ``None`` if no group is required.
-            data:
-                Attribute formats and initial data for the vertex list.
-        """
-        return self._vertex_list_create(count, mode, indices, None, batch=batch, group=group, **data)
-
-    def vertex_list_instanced_indexed(
-        self,
-        count: int,
-        mode: GeometryMode,
-        indices: Sequence[int],
-        instance_attributes: Sequence[str],
-        batch: Batch | None = None,
-        group: Group | None = None,
-        **data: Any,
-    ) -> IndexedVertexList:
-        assert len(instance_attributes) > 0, "You must provide at least one attribute name to be instanced."
-        return self._vertex_list_create(count, mode, indices, instance_attributes, batch=batch, group=group, **data)
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(id={self.id})"
 
 
 class WebGLComputeShaderProgram:
