@@ -51,6 +51,7 @@ If you are migrating from an older version of pyglet, please read through
    programming_guide/shapes
    programming_guide/models
    programming_guide/resources
+   programming_guide/texture
    programming_guide/rendering
    programming_guide/events
    programming_guide/gui
