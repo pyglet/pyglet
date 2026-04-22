@@ -778,7 +778,7 @@ player can draw its current frame directly:
 
 For custom rendering pipelines, you can also access
 :attr:`~pyglet.media.player.VideoPlayer.texture` directly. This is the current video
-frame as a :py:class:`~pyglet.graphics.Texture` (or ``None`` if unavailable).
+frame as a :py:class:`~pyglet.graphics.texture.Texture` (or ``None`` if unavailable).
 Query this property each frame instead of caching it, as the underlying texture
 object will change.
 

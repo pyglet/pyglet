@@ -76,6 +76,7 @@ If you are migrating from an older version of pyglet, please read through
    modules/pyglet
    modules/app
    modules/clock
+   modules/config/index
    modules/display
    modules/customtypes
    modules/enums

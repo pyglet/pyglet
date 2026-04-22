@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from typing import Generic, Iterator, Literal, Protocol, Sequence, TYPE_CHECKING, TypeVar, overload
 
 import pyglet
@@ -33,8 +34,8 @@ TTexture = TypeVar("TTexture", bound="Texture")
 class TextureSequence(_AbstractImageSequence, Generic[TTexture]):
     """Interface for a sequence of textures.
 
-    Typical implementations store multiple :py:class:`~pyglet.graphics.TextureRegion`s
-    within one :py:class:`~pyglet.graphics.Texture` to minimise state changes.
+    Typical implementations store multiple :py:class:`~pyglet.graphics.texture.TextureRegion`s
+    within one :py:class:`~pyglet.graphics.texture.Texture` to minimise state changes.
     """
 
     @overload
@@ -857,7 +858,7 @@ class TextureGrid(_AbstractGrid[TextureRegion]):
         texture_grid = TextureGrid(image_grid)
 
     The texture grid can be accessed as a single texture, or as a sequence
-    of :py:class:`~pyglet.graphics.TextureRegion`.  When accessing as a sequence, you can specify
+    of :py:class:`~pyglet.graphics.texture.TextureRegion`.  When accessing as a sequence, you can specify
     integer indexes, in which the images are arranged in rows from the
     bottom-left to the top-right::
 
@@ -1002,52 +1003,55 @@ class CompressedTexture(_AbstractImage):
         raise NotImplementedError(msg)
 
 
-if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2, GraphicsAPI.OPENGL_ES_3):
-    from pyglet.graphics.api.gl.framebuffer import (  # noqa: F401
-        GLFramebuffer as Framebuffer,
-        GLRenderbuffer as Renderbuffer,
-        get_max_color_attachments,
-        get_screenshot,
-    )
-    from pyglet.graphics.api.gl.texture import (
-        GLCompressedTexture,
-        GLCompressedTexture as CompressedTexture,  # noqa: F401
-        GLTexture,
-        GLTexture as Texture,  # noqa: F401
-        GLTextureRegion,
-        GLTextureRegion as TextureRegion,  # noqa: F401
-        GLTexture3D,
-        GLTexture3D as Texture3D,  # noqa: F401
-        GLTextureArray,
-        GLTextureArray as TextureArray,  # noqa: F401
-        GLTextureArrayRegion,
-        GLTextureArrayRegion as TextureArrayRegion,  # noqa: F401
-        GLTextureGrid,
-        GLTextureGrid as TextureGrid,  # noqa: F401
-        get_max_texture_size,
-        get_max_array_texture_layers,
-    )
-elif pyglet.options.backend == GraphicsAPI.WEBGL:
-    from pyglet.graphics.api.webgl.framebuffer import (  # noqa: F401
-        WebGLFramebuffer as Framebuffer,
-        WebGLRenderbuffer as Renderbuffer,
-        get_max_color_attachments,
-        get_screenshot,
-    )
-    from pyglet.graphics.api.webgl.texture import (
-        WebGLTexture,
-        WebGLTexture as Texture,  # noqa: F401
-        WebGLTextureRegion as TextureRegion,  # noqa: F401
-        WebGLTexture3D,
-        WebGLTexture3D as Texture3D,  # noqa: F401
-        WebGLTextureArray,
-        WebGLTextureArray as TextureArray,  # noqa: F401
-        WebGLTextureArrayRegion,
-        WebGLTextureArrayRegion as TextureArrayRegion,  # noqa: F401
-        WebGLTextureGrid,
-        WebGLTextureGrid as TextureGrid,  # noqa: F401
-        get_max_texture_size,  # noqa: F401
-        get_max_array_texture_layers,  # noqa: F401
-    )
-elif pyglet.options.backend == GraphicsAPI.VULKAN:
-    raise NotImplementedError("Vulkan is not yet implemented")
+_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
+
+if not _is_pyglet_doc_run:
+    if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2, GraphicsAPI.OPENGL_ES_3):
+        from pyglet.graphics.api.gl.framebuffer import (  # noqa: F401
+            GLFramebuffer as Framebuffer,
+            GLRenderbuffer as Renderbuffer,
+            get_max_color_attachments,
+            get_screenshot,
+        )
+        from pyglet.graphics.api.gl.texture import (
+            GLCompressedTexture,
+            GLCompressedTexture as CompressedTexture,  # noqa: F401
+            GLTexture,
+            GLTexture as Texture,  # noqa: F401
+            GLTextureRegion,
+            GLTextureRegion as TextureRegion,  # noqa: F401
+            GLTexture3D,
+            GLTexture3D as Texture3D,  # noqa: F401
+            GLTextureArray,
+            GLTextureArray as TextureArray,  # noqa: F401
+            GLTextureArrayRegion,
+            GLTextureArrayRegion as TextureArrayRegion,  # noqa: F401
+            GLTextureGrid,
+            GLTextureGrid as TextureGrid,  # noqa: F401
+            get_max_texture_size,
+            get_max_array_texture_layers,
+        )
+    elif pyglet.options.backend == GraphicsAPI.WEBGL:
+        from pyglet.graphics.api.webgl.framebuffer import (  # noqa: F401
+            WebGLFramebuffer as Framebuffer,
+            WebGLRenderbuffer as Renderbuffer,
+            get_max_color_attachments,
+            get_screenshot,
+        )
+        from pyglet.graphics.api.webgl.texture import (
+            WebGLTexture,
+            WebGLTexture as Texture,  # noqa: F401
+            WebGLTextureRegion as TextureRegion,  # noqa: F401
+            WebGLTexture3D,
+            WebGLTexture3D as Texture3D,  # noqa: F401
+            WebGLTextureArray,
+            WebGLTextureArray as TextureArray,  # noqa: F401
+            WebGLTextureArrayRegion,
+            WebGLTextureArrayRegion as TextureArrayRegion,  # noqa: F401
+            WebGLTextureGrid,
+            WebGLTextureGrid as TextureGrid,  # noqa: F401
+            get_max_texture_size,  # noqa: F401
+            get_max_array_texture_layers,  # noqa: F401
+        )
+    elif pyglet.options.backend == GraphicsAPI.VULKAN:
+        raise NotImplementedError("Vulkan is not yet implemented")

@@ -5,7 +5,7 @@ This page covers GPU-side imaging in pyglet 3.0: drawing images, working with
 textures, texture atlases, and framebuffers.
 
 Texture classes moved from ``pyglet.image`` to ``pyglet.graphics.texture`` in
-pyglet 3.0. Use :py:class:`~pyglet.graphics.Texture` and related classes
+pyglet 3.0. Use :py:class:`~pyglet.graphics.texture.Texture` and related classes
 for GPU resources, and keep :py:mod:`pyglet.image` for CPU-side image
 data (see :doc:`image`).
 
@@ -117,7 +117,7 @@ Texture grids
 
 You can define the CPU-side grid first with :py:class:`~pyglet.image.ImageGrid`
 (see :ref:`guide_image-grids` in :doc:`image`). Then convert it to a
-GPU-side :py:class:`~pyglet.graphics.TextureGrid` for efficient
+GPU-side :py:class:`~pyglet.graphics.texture.TextureGrid` for efficient
 rendering:
 
 ::
@@ -128,7 +128,7 @@ rendering:
 
     first_frame = explosion_tex_grid[0]
 
-:py:class:`~pyglet.graphics.TextureGrid` can also be created directly
+:py:class:`~pyglet.graphics.texture.TextureGrid` can also be created directly
 with the same grid arguments as :py:class:`~pyglet.image.ImageGrid`
 (``rows``, ``columns``, optional ``item_width``/``item_height``, and padding),
 but with a texture as the first argument:
@@ -141,7 +141,7 @@ but with a texture as the first argument:
 ``pyglet.graphics.TextureGrid`` is the same class alias exposed as
 :py:class:`~pyglet.graphics.texture.TextureGrid`.
 
-:py:class:`~pyglet.graphics.TextureGrid` items are
+:py:class:`~pyglet.graphics.texture.TextureGrid` items are
 :py:class:`~pyglet.graphics.texture.TextureRegion` objects.
 
 .. _guide_texture-bins-and-atlases:
@@ -170,13 +170,13 @@ The result of ``TextureBin.add`` is typically a
 3D textures
 ^^^^^^^^^^^
 
-You can create a :py:class:`~pyglet.graphics.Texture3D` from a sequence
+You can create a :py:class:`~pyglet.graphics.texture.Texture3D` from a sequence
 of images or from an
 :py:class:`~pyglet.image.ImageGrid` (see :ref:`guide_image-grids`)::
 
     explosion_3d = pyglet.graphics.texture.Texture3D.create_for_image_grid(explosion_grid)
 
-Slicing a :py:class:`~pyglet.graphics.Texture3D` returns
+Slicing a :py:class:`~pyglet.graphics.texture.Texture3D` returns
 :py:class:`~pyglet.graphics.texture.TextureRegion` objects for layers.
 
 Framebuffers
@@ -270,7 +270,7 @@ To create a texture from image data:
     kitten = pyglet.image.load('kitten.jpg')
     texture = kitten.get_texture()
 
-A :py:class:`~pyglet.graphics.Texture` has a ``target`` and ``id``:
+A :py:class:`~pyglet.graphics.texture.Texture` has a ``target`` and ``id``:
 
 ::
 
@@ -286,15 +286,15 @@ By default, all textures are created with smooth (:py:data:`~pyglet.enums.Textur
 filtering.
 
 To use a different filter for a specific texture, pass the filtering constant(s)
-to the :py:meth:`pyglet.graphics.texture.Texture.create` via the ``filter``
-arguments or :py:meth:`pyglet.graphics.texture.Texture.create_from_image`.
+to ``Texture.create`` via the ``filter`` arguments or
+``Texture.create_from_image``.
 
 
 Pixel art
 """""""""
 
 To enable nearest-neighbor filtering for retro-style games, set the
-corresponding variables of :py:class:`pyglet.graphics.Texture` to
+corresponding variables of :py:class:`pyglet.graphics.texture.Texture` to
 :py:data:`~pyglet.enums.TextureFilter.NEAREST`:
 
 .. code-block:: python

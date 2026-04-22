@@ -103,7 +103,7 @@ class Options:
 
     debug_graphics_batch: bool = False
     """If ``True``, prints batch information being drawn, including :py:class:`~pyglet.graphics.Group`'s, VertexDomains,
-    and :py:class:`~pyglet.graphics.Texture` information. This can be useful to see how many Group's are being
+    and :py:class:`~pyglet.graphics.texture.Texture` information. This can be useful to see how many Group's are being
     consolidated."""
 
     debug_lib: bool = False

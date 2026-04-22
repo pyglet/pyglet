@@ -3,7 +3,7 @@
 This module provides classes for a variety of simplistic 2D shapes,
 such as Rectangles, Circles, and Lines. These shapes are made
 internally from OpenGL primitives, and provide excellent performance
-when drawn as part of a :py:class:`~pyglet.graphics.Batch`.
+when drawn as part of a :py:class:`~pyglet.graphics.draw.Batch`.
 Convenience methods are provided for positioning, changing color, opacity,
 and rotation.
 The Python ``in`` operator can be used to check whether a point is inside a shape.
@@ -442,7 +442,7 @@ class ShapeBase(ABC):
         .. warning:: Avoid this inefficient method for everyday use!
 
                      Regular drawing should add shapes to a :py:class:`Batch`
-                     and call its :py:meth:`~Batch.draw` method.
+                     and call its :py:meth:`~pyglet.graphics.draw.Batch.draw` method.
 
         """
         ctx = pyglet.graphics.api.core.current_context

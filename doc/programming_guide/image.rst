@@ -230,7 +230,7 @@ the following obtains the first four frames in the animation::
     start_frames = explosion_seq[:4]
 
 For efficient rendering, convert the grid into a
-:py:class:`~pyglet.graphics.TextureGrid` (see
+:py:class:`~pyglet.graphics.texture.TextureGrid` (see
 :ref:`guide_texture-grids`)::
 
     explosion_tex_seq = pyglet.graphics.TextureGrid.from_image_grid(explosion_seq)

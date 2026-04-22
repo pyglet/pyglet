@@ -11,6 +11,7 @@ pyglet.graphics
    draw
    framebuffer
    shader
+   texture
    vertexbuffer
    vertexdomain
 
