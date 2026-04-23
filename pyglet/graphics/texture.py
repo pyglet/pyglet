@@ -450,8 +450,8 @@ class Texture(_AbstractImage):
         """Create a copy of this image applying a simple transformation.
 
         The transformation is applied to the texture coordinates only;
-        :py:meth:`~pyglet.image.AbstractImage.get_image_data` will return the
-        untransformed data. The transformation is applied around the anchor point.
+        :py:meth:`~pyglet.graphics.texture.Texture.get_image_data` will fetch the
+        untransformed data from the GPU. The transformation is applied around the anchor point.
 
         Args:
             flip_x:

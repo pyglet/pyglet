@@ -34,8 +34,8 @@ animations, you can set the ``subpixel`` parameter to ``True`` when creating
 the sprite (:since: pyglet 1.2).
 
 The sprite's positioning, rotation and scaling all honor the original
-image's anchor (:py:attr:`~pyglet.image.AbstractImage.anchor_x`,
-:py:attr:`~pyglet.image.AbstractImage.anchor_y`).
+image's anchor (:py:attr:`~pyglet.image.ImageData.anchor_x`,
+:py:attr:`~pyglet.image.ImageData.anchor_y`).
 
 
 Drawing multiple sprites

@@ -167,8 +167,7 @@ optional `multiline` and `wrap_lines` flags.
 
 Like labels, layouts are positioned through their `x`, `y`,
 `anchor_x` and `anchor_y` properties.
-Note that unlike :py:class:`~pyglet.image.AbstractImage`, the `anchor`
-properties accept a string such as ``"bottom"`` or ``"center"`` instead of a
+The `anchor` properties accept a string such as ``"bottom"`` or ``"center"`` instead of a
 numeric displacement.
 
 .. _guide_formatted-text:
