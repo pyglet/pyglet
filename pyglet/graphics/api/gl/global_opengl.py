@@ -13,7 +13,7 @@ from pyglet.graphics.api.base import (
     NullContext,
     UBOMatrixTransformations,
 )
-from pyglet.graphics.api.gl.shader import GLShader as Shader, GLShaderProgram as ShaderProgram
+from pyglet.graphics.shader import Shader, ShaderProgram
 
 if TYPE_CHECKING:
     from pyglet.config.gl import GLSurfaceConfig

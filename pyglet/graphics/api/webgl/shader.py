@@ -968,3 +968,43 @@ class WebGLComputeShaderProgram:
     def __init__(self, source: str) -> None:
         """Create an OpenGL ComputeShaderProgram from source."""
         raise ShaderException("Compute Shaders are not supported in WebGL.")
+
+
+_default_vertex_source: str = """#version 330 core
+    in vec3 position;
+    in vec4 colors;
+
+    out vec4 vertex_colors;
+
+    uniform WindowBlock
+    {
+        mat4 projection;
+        mat4 view;
+    } window;
+
+    void main()
+    {
+        gl_Position = window.projection * window.view * vec4(position, 1.0);
+
+        vertex_colors = colors;
+    }
+"""
+
+_default_fragment_source: str = """#version 330 core
+    in vec4 vertex_colors;
+    out vec4 final_colors;
+
+    void main()
+    {
+        final_colors = vertex_colors;
+    }
+"""
+
+
+def get_default_shader() -> WebGLShaderProgram:
+    """A default basic shader for default batches."""
+    return pyglet.graphics.api.core.get_cached_shader(
+        "default_graphics",
+        (_default_vertex_source, 'vertex'),
+        (_default_fragment_source, 'fragment'),
+    )

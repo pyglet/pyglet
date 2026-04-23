@@ -3,7 +3,7 @@ import pyglet
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pyglet.graphics.api import ShaderProgram
+    from pyglet.graphics.shader import ShaderProgram
 
 vertex_source = """#version 110
     attribute vec2 position;

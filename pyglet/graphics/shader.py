@@ -3,6 +3,7 @@ from __future__ import annotations
 import abc
 import ctypes
 import re
+import sys
 import warnings
 import weakref
 from abc import ABC, abstractmethod
@@ -10,6 +11,8 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Literal, Sequence, Any, TYPE_CHECKING, Callable, Protocol, overload
 
+import pyglet
+from pyglet.enums import GraphicsAPI
 
 if TYPE_CHECKING:
     from pyglet.graphics.buffer import UniformBufferObject
@@ -289,7 +292,7 @@ class ShaderProgram(_AbstractShaderProgram):
     program state management.
     """
 
-    def __init__(self, *shaders: Shader) -> None:
+    def __init__(self, *shaders: _AbstractShader) -> None:
         """Initialize a shader program from one or more Shader objects.
 
         Args:
@@ -299,6 +302,14 @@ class ShaderProgram(_AbstractShaderProgram):
                 At least one shader is required.
         """
         super().__init__(*shaders)
+
+
+class ComputeShaderProgram:
+    """Backend-agnostic compute shader program container."""
+
+    def __init__(self, source: str) -> None:
+        msg = f"{self.__class__.__name__} is backend-specific and must be provided by the active backend."
+        raise NotImplementedError(msg)
 
 
 class ShaderSource(abc.ABC):
@@ -900,3 +911,34 @@ class UniformBlock:
     def __repr__(self) -> str:
         return (f"{self.__class__.__name__}(program={self.program.id}, location={self.index}, size={self.size}, "
                 f"binding={self.binding})")
+
+
+def get_default_shader() -> ShaderProgram:
+    """A default shader for rendering primitives."""
+    raise NotImplementedError
+
+_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
+
+if not _is_pyglet_doc_run:
+    if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
+        from pyglet.graphics.api.gl.shader import (
+            GLComputeShaderProgram as ComputeShaderProgram,
+            GLShader as Shader,
+            GLShaderProgram as ShaderProgram,
+        )
+        from pyglet.graphics.api.gl.shader import get_default_shader
+    elif pyglet.options.backend in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
+        from pyglet.graphics.api.gl2.shader import ComputeShaderProgram, Shader, ShaderProgram
+        from pyglet.graphics.api.gl2.shader import get_default_shader
+    elif pyglet.options.backend == GraphicsAPI.WEBGL:
+        from pyglet.graphics.api.webgl.shader import (
+            WebGLComputeShaderProgram as ComputeShaderProgram,
+            WebGLShader as Shader,
+            WebGLShaderProgram as ShaderProgram,
+        )
+        from pyglet.graphics.api.webgl.shader import get_default_shader
+    elif pyglet.options.backend == GraphicsAPI.VULKAN:
+        from pyglet.graphics.api.vulkan.shader import ComputeShaderProgram, Shader, ShaderProgram
+    else:
+        msg = f"Unsupported backend: {pyglet.options.backend}"
+        raise RuntimeError(msg)

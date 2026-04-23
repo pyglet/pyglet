@@ -19,74 +19,6 @@ if TYPE_CHECKING:
     from pyglet.graphics.api.gl.vertexdomain import GLIndexedVertexList, GLVertexList
 
 
-# Default Shader source:
-
-_vertex_texture_source: str = """#version 330 core
-    in vec3 position;
-    in vec4 colors;
-    in vec3 tex_coords;
-    out vec4 vertex_colors;
-    out vec3 texture_coords;
-
-    uniform WindowBlock
-    {
-        mat4 projection;
-        mat4 view;
-    } window;
-
-    void main()
-    {
-        gl_Position = window.projection * window.view * vec4(position, 1.0);
-
-        vertex_colors = colors;
-        texture_coords = tex_coords;
-    }
-"""
-
-_fragment_texture_source: str = """#version 330 core
-    in vec4 vertex_colors;
-    in vec3 texture_coords;
-    out vec4 final_colors;
-
-    uniform sampler2D our_texture;
-
-    void main()
-    {
-        final_colors = texture(our_texture, texture_coords.xy) + vertex_colors;
-    }
-"""
-
-_vertex_primitive_source: str = """#version 330 core
-    in vec3 position;
-    in vec4 colors;
-
-    out vec4 vertex_colors;
-
-    uniform WindowBlock
-    {
-        mat4 projection;
-        mat4 view;
-    } window;
-
-    void main()
-    {
-        gl_Position = window.projection * window.view * vec4(position, 1.0);
-
-        vertex_colors = colors;
-    }
-"""
-
-_fragment_primitive_source: str = """#version 330 core
-    in vec4 vertex_colors;
-    out vec4 final_colors;
-
-    void main()
-    {
-        final_colors = vertex_colors;
-    }
-"""
-
-
 def get_default_batch() -> GLBatch:
     """Batch used globally for objects that have no Batch specified."""
     return pyglet.graphics.api.core.get_default_batch()
@@ -95,16 +27,6 @@ def get_default_batch() -> GLBatch:
     # except AttributeError:
     #     pyglet.graphics.api.core.current_context.pyglet_graphics_default_batch = Batch()
     #     return pyglet.graphics.api.core.current_context.pyglet_graphics_default_batch
-
-
-def get_default_shader() -> ShaderProgram:
-    """A default basic shader for default batches."""
-    return pyglet.graphics.api.core.get_cached_shader(
-        "default_graphics",
-        (_vertex_primitive_source, 'vertex'),
-        (_fragment_primitive_source, 'fragment'),
-    )
-
 
 _domain_class_map: dict[tuple[bool, bool], type[vertexdomain.GLVertexDomain]] = {
     # Indexed, Instanced : Domain

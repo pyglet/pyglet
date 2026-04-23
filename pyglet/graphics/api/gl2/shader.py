@@ -185,3 +185,39 @@ class ComputeShaderProgram:
 
     def __init__(self, source: str) -> None:
         raise NotImplementedError
+
+
+_default_vertex_source: str = """#version 110
+    attribute vec3 position;
+    attribute vec4 colors;
+
+    varying vec4 vertex_colors;
+
+    uniform mat4 u_projection;
+    uniform mat4 u_view;
+
+    void main()
+    {
+        gl_Position = u_projection * u_view * vec4(position, 1.0);
+
+        vertex_colors = colors;
+    }
+"""
+
+_default_fragment_source: str = """#version 110
+    varying vec4 vertex_colors;
+
+    void main()
+    {
+        gl_FragColor = vertex_colors;
+    }
+"""
+
+
+def get_default_shader() -> ShaderProgram:
+    """A default basic shader for default batches."""
+    return pyglet.graphics.api.core.get_cached_shader(
+        "default_graphics",
+        (_default_vertex_source, 'vertex'),
+        (_default_fragment_source, 'fragment'),
+    )

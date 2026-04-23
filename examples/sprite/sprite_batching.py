@@ -1,6 +1,7 @@
 import random
 
 import pyglet
+from pyglet.graphics.draw import Batch
 
 window = pyglet.window.Window(vsync=False)
 
@@ -19,7 +20,7 @@ image.anchor_x = image.width // 2
 image.anchor_y = image.height // 2
 
 # Batching allows rendering groups of objects all at once instead of drawing one by one.
-batch = pyglet.graphics.Batch()
+batch = Batch()
 
 scales = [1.0, 0.75, 0.5, 0.25]
 
