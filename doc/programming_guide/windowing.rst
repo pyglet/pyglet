@@ -177,6 +177,71 @@ diagram:
 
     The position and size of the window relative to the desktop.
 
+DPI and scaling
+^^^^^^^^^^^^^^^
+
+One window can have two different sizes:
+
+* ``window.get_size()``: How big the window appears in your app's coordinate
+  system (the size you usually think in for layout).
+* ``window.get_framebuffer_size()``: How many real pixels are available for
+  drawing.
+
+At 100% display scaling, these are usually the same. On high-DPI displays
+(for example Retina, or 125%/150%/200% scaling), the framebuffer size can be
+larger than the window size.
+
+In simple terms:
+
+* Window size controls "how big it looks."
+* Framebuffer size controls "how many pixels it is drawn with."
+
+More framebuffer pixels usually means sharper output, but also more pixels for
+your app to render.
+
+Useful values and APIs:
+
+* :py:meth:`~pyglet.window.Window.get_size`: Logical window size.
+* :py:meth:`~pyglet.window.Window.get_framebuffer_size`: Physical pixel size of the framebuffer.
+* :py:attr:`~pyglet.window.Window.scale`: DPI scale factor for the window.
+* :py:attr:`~pyglet.window.Window.dpi`: Effective DPI value for the window.
+* ``on_scale`` event: Dispatched when DPI/scale changes at runtime.
+
+The global :py:attr:`pyglet.options.dpi_scaling <pyglet.Options.dpi_scaling>`
+option controls how window DPI scaling behaves. For a complete runnable
+example, see ``examples/dpi_scaled_window.py``.
+
+Typical results:
+
+* 100% scaling display: ``(800, 600)`` window and ``(800, 600)`` framebuffer,
+  scale ``1.0``.
+* 200% scaling display (commonly on macOS Retina with ``"platform"``):
+  ``(800, 600)`` window and ``(1600, 1200)`` framebuffer, scale ``2.0``.
+
+Platform note:
+
+* macOS: In ``"platform"`` mode on Retina displays, framebuffer size is often
+  larger than window size.
+* Windows: In ``"platform"`` mode, framebuffer and window size are usually
+  the same (1:1).
+
+The current modes are:
+
+* ``"platform"`` (default):
+  Follows platform-native DPI behavior. This usually gives the sharpest output.
+  However, your code may need to handle different window and framebuffer
+  sizes, especially for custom viewports, render targets, and fixed-size UI.
+
+* ``"stretch"``:
+  Keeps your requested window coordinate space and stretches content to the
+  framebuffer. This can simplify older code that assumes a fixed size.
+  However, stretched output can look blurry.
+
+When targeting multiple platforms or multi-monitor setups, test DPI behavior
+early. Moving a window between monitors can change scale at runtime, so handle
+the ``on_scale`` event when you need to re-layout UI or
+recompute size-dependent resources.
+
 Appearance
 ----------
 
