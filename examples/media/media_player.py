@@ -194,7 +194,7 @@ class Slider(Control):
         self.capture_events()
         self.dispatch_event('on_begin_scroll')
         self.dispatch_event('on_change', value)
-        pyglet.clock.schedule_once(self.seek_request, self.RESPONSIVNESS)
+        pyglet.clock.schedule_once(self.seek_request, self.RESPONSIVENESS)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         # On some platforms, on_mouse_drag is triggered with a high frequency.
@@ -208,7 +208,7 @@ class Slider(Control):
         if self.seek_value is None:
             # We have processed the last recorded mouse position.
             # We re-schedule seek_request
-            pyglet.clock.schedule_once(self.seek_request, self.RESPONSIVNESS)
+            pyglet.clock.schedule_once(self.seek_request, self.RESPONSIVENESS)
         self.seek_value = value
 
     def on_mouse_release(self, x, y, button, modifiers):
