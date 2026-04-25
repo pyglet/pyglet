@@ -13,7 +13,7 @@ following are available:
 #. The built-in pyglet WAV file decoder (always available)
 #. Platform-specific APIs and libraries
 #. PyOgg
-#. :ref:`guide-supportedmedia-ffmpeg` version 4, 5, 6, or 7.
+#. :ref:`guide-supportedmedia-ffmpeg` version 4, 5, 6, 7, or 8.
 
 Video is played into OpenGL textures, allowing real-time manipulation
 by applications. Examples include use in 3D environments or shader-based
@@ -304,7 +304,7 @@ FFmpeg
 ^^^^^^
 .. _FFmpeg's license overview: https://www.ffmpeg.org/legal.html
 
-.. note:: The most recent pyglet release can use FFmpeg versions 4.X, 5.X, 6.X, and 7.X
+.. note:: The most recent pyglet release can use FFmpeg versions 4.X, 5.X, 6.X, 7.X, and 8.X
 
           See :ref:`guide-media-ffmpeginstall` to learn more.
 
@@ -390,6 +390,7 @@ See the following to learn more:
   * `The FFmpeg 5.1 license breakdown <https://ffmpeg.org/doxygen/5.1/md_LICENSE.html>`_
   * `The FFmpeg 6.0 license breakdown <https://ffmpeg.org/doxygen/6.0/md_LICENSE.html>`_
   * `The FFmpeg 7.0 license breakdown <https://ffmpeg.org/doxygen/7.0/md_LICENSE.html>`_
+  * `The FFmpeg 8.0 license breakdown <https://ffmpeg.org/doxygen/8.0/md_LICENSE.html>`_
 
 .. _guide-media-ffmpeginstall:
 
@@ -406,6 +407,7 @@ All recent pyglet versions support FFmpeg 4.x.
 * Support for version 5.X requires at least: 1.5.28.
 * Support for version 6.X requires at least: 2.0.8.
 * Support for version 7.X requires at least: 2.0.20.
+* Support for version 8.X requires at least: 2.1.10.
 
 Choose the correct architecture depending on the targeted
 **Python interpreter**. If you're shipping your project with a 32 bits
@@ -620,8 +622,8 @@ Controlling playback
 
 You can implement many functions common to a media player using the
 :py:class:`~pyglet.media.player.AudioPlayer`
-class. Use of this class is also necessary for video playback. There are no
-parameters to its construction::
+class. For video playback, use :py:class:`~pyglet.media.player.VideoPlayer`.
+There are no parameters to AudioPlayer construction::
 
     player = pyglet.media.AudioPlayer()
 
@@ -759,20 +761,26 @@ on a Player as if it was a single source.
 Incorporating video
 -------------------
 
-When a :py:class:`~pyglet.media.player.AudioPlayer` is playing back a source with
-video, use the :attr:`~pyglet.media.AudioPlayer.texture` property to obtain the
-video frame image. This can be used to display the current video image
-synchronised with the audio track, for example::
+Use :py:class:`~pyglet.media.player.VideoPlayer` for sources that include video. The
+player can draw its current frame directly:
+
+::
+
+    video = pyglet.media.load_video("example.mp4")
+    player = pyglet.media.VideoPlayer()
+    player.queue(video)
+    player.play()
 
     @window.event
     def on_draw():
-        player.texture.blit(0, 0)
+        window.clear()
+        player.draw()
 
-The texture is an instance of :class:`pyglet.image.Texture`, with an internal
-format of either ``GL_TEXTURE_2D`` or ``GL_TEXTURE_RECTANGLE_ARB``. While the
-texture will typically be created only once and subsequentally updated each
-frame, you should make no such assumption in your application -- future
-versions of pyglet may use multiple texture objects.
+For custom rendering pipelines, you can also access
+:attr:`~pyglet.media.player.VideoPlayer.texture` directly. This is the current video
+frame as a :py:class:`~pyglet.graphics.texture.Texture` (or ``None`` if unavailable).
+Query this property each frame instead of caching it, as the underlying texture
+object will change.
 
 .. _guide-media-positionalaudio:
 

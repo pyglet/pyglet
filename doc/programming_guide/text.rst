@@ -167,8 +167,7 @@ optional `multiline` and `wrap_lines` flags.
 
 Like labels, layouts are positioned through their `x`, `y`,
 `anchor_x` and `anchor_y` properties.
-Note that unlike :py:class:`~pyglet.image.AbstractImage`, the `anchor`
-properties accept a string such as ``"bottom"`` or ``"center"`` instead of a
+The `anchor` properties accept a string such as ``"bottom"`` or ``"center"`` instead of a
 numeric displacement.
 
 .. _guide_formatted-text:
@@ -597,8 +596,33 @@ a default sans-serif font (Helvetica on Mac OS X, Arial on Windows XP)::
 
     sans_serif = pyglet.font.load(None, 16)
 
+Font groups
+-----------
+
+:py:class:`~pyglet.font.group.FontGroup` lets you define a named set of font
+fallbacks and assign each fallback to specific Unicode ranges. This is useful
+when one label or layout needs multiple scripts or symbol sets, but you still
+want to refer to the result as one logical font.
+
+Create a group, register it, then use the group name anywhere you would usually
+provide a font family name::
+
+    import pyglet
+
+    ui_font = pyglet.font.FontGroup("ui-font")
+    ui_font.add("Noto Sans", 0x0000, 0x024F)       # Basic Latin + Latin supplements
+    ui_font.add("Noto Sans CJK JP", 0x3040, 0x30FF)  # Hiragana + Katakana
+    ui_font.add("Noto Color Emoji", 0x1F300, 0x1FAFF)
+    pyglet.font.add_group(ui_font)
+
+    label = pyglet.text.Label(
+        "Hello こんにちは 😀",
+        font_name="ui-font",
+        font_size=18,
+    )
+
 HarfBuzz shaping
-^^^^^^^^^^^^^^^^
+----------------
 
 Some platforms like Linux do not have any text shaping capability to provide advanced features
 such as ligatures, substitutions, cluster-aware glyph placement, etc. To provide

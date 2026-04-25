@@ -170,23 +170,23 @@ object value. In the above example, the name would be ``WindowBlock`` while the 
 
 Normally with OpenGL, you would have to manually assign a global binding point value to each Uniform Block for each Shader Program, as they are created. With Pyglet, the global binding values and assignments are all taken care of internally.
 
-Uniform Blocks can be a convenient way to update uniforms of multiple Shader Programs at once, as their data is shared. This allows you to access the same information from multiple Shader Programs without having to bind every program using it, just to modify the uniform values. This can be achieved through a :py:class:`~pyglet.graphics.shader.UniformBufferObject`.
+Uniform Blocks can be a convenient way to update uniforms of multiple Shader Programs at once, as their data is shared. This allows you to access the same information from multiple Shader Programs without having to bind every program using it, just to modify the uniform values. This can be achieved through a :py:class:`~pyglet.graphics.buffer.UniformBufferObject`.
 
 To modify the uniforms in a :py:class:`~pyglet.graphics.shader.UniformBlock`, you must first create a
-:py:class:`~pyglet.graphics.shader.UniformBufferObject` using the
+:py:class:`~pyglet.graphics.buffer.UniformBufferObject` using the
 :py:meth:`~pyglet.graphics.shader.UniformBlock.create_ubo` method.::
 
     ubo = program.uniform_blocks['WindowBlock'].create_ubo()
 
-The :py:class:`~pyglet.graphics.shader.UniformBufferObject` can then be used as a context manager for easy
+The :py:class:`~pyglet.graphics.buffer.UniformBufferObject` can then be used as a context manager for easy
 access to update its uniforms::
 
         with ubo as window_block:
             window_block.projection[:] = new_matrix
 
-You can also create multiple :py:class:`~pyglet.graphics.shader.UniformBufferObject` instances if you need to swap between different sets of data. Calling :py:meth:`~pyglet.graphics.shader.UniformBufferObject.bind` will bind the buffers data to the associated binding point.
+You can also create multiple :py:class:`~pyglet.graphics.buffer.UniformBufferObject` instances if you need to swap between different sets of data. Calling :py:meth:`~pyglet.graphics.buffer.UniformBufferObject.bind` will bind the buffers data to the associated binding point.
 
-There may come a point where you don't want a specific :py:class:`~pyglet.graphics.shader.ShaderProgram`, or a group of them, to use the same uniform data set as the rest of your shaders. At this point, you will have to modify the binding point of those Uniform Blocks to one that is unused. This can be done through :py:meth:`~pyglet.graphics.shader.UniformBlock.set_binding`. Once the binding has been set, you will have to create a new :py:class:`~pyglet.graphics.shader.UniformBufferObject` using the :py:meth:`~pyglet.graphics.shader.UniformBlock.create_ubo` method again and supply it with your new data set.
+There may come a point where you don't want a specific :py:class:`~pyglet.graphics.shader.ShaderProgram`, or a group of them, to use the same uniform data set as the rest of your shaders. At this point, you will have to modify the binding point of those Uniform Blocks to one that is unused. This can be done through :py:meth:`~pyglet.graphics.shader.UniformBlock.set_binding`. Once the binding has been set, you will have to create a new :py:class:`~pyglet.graphics.buffer.UniformBufferObject` using the :py:meth:`~pyglet.graphics.shader.UniformBlock.create_ubo` method again and supply it with your new data set.
 
 .. warning:: When assigning custom binding points through py:meth:`~pyglet.graphics.shader.UniformBlock.set_binding`, it is recommended to use an unassigned binding point, as unexpected behavior may occur. A warning will be output if such a collision occurs.
 

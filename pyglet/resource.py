@@ -63,7 +63,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.texture import Texture, TextureRegion, TextureArrayRegion
     from typing import Literal
 
-    from pyglet.graphics import Shader
+    from pyglet.graphics.shader import Shader
     from pyglet.image import ImageData
     from pyglet.image.animation import Animation
     from pyglet.graphics.atlas import TextureBin, TextureArrayBin
@@ -526,7 +526,7 @@ class Loader:
     def image(self, name: str) -> ImageData:
         """Load an image and decode the properties associated with it.
 
-        This data is not GPU backed, and represents the raw pixel data, format, and pitch. See :py:class:`~pyglet.image.IamgeData`
+        This data is not GPU backed, and represents the raw pixel data, format, and pitch. See :py:class:`~pyglet.image.ImageData`
         """
         self._ensure_index()
         if name in self._cached_images:

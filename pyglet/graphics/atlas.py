@@ -5,7 +5,7 @@ This can have major performance benefits when dealing with a large number of ima
 
 :py:class:`~pyglet.image.atlas.TextureAtlas` maintains one texture; :py:class:`TextureBin`
 manages a collection of atlases of a given size. :py:class:`TextureArrayBin` works similarly
-except for :py:class:`~pyglet.graphics.TextureArray`s instead of altases.
+except for :py:class:`~pyglet.graphics.texture.TextureArray`s instead of altases.
 
 This module is used internally by the :py:mod:`~pyglet.resource` module.
 
@@ -140,7 +140,7 @@ class TextureAtlas:
     by allowing all the Images to be drawn together with a single
     Texture bind, rather than multiple tiny Texture binds per draw.
 
-    When creating a TextureAtlas instance, a new :py:class:`~pyglet.graphics.Texture`
+    When creating a TextureAtlas instance, a new :py:class:`~pyglet.graphics.texture.Texture`
     object will be created at the requested size. If the maximum texture
     size supported by the OpenGL driver is less than requested, the
     smaller of the two will be used.
@@ -159,7 +159,7 @@ class TextureAtlas:
         """Add ImageData to the atlas.
 
         Given :py:class:`~pyglet.image.ImageData`, add it to the Atlas and
-        return a new :py:class:`~pyglet.graphics.TextureRegion` object. An
+        return a new :py:class:`~pyglet.graphics.texture.TextureRegion` object. An
         optional ``border`` argument can be passed, which will leave the
         specified number of blank pixels around the added ImageData. This
         can be useful in certain situations and blend modes, where
@@ -234,7 +234,7 @@ class TextureArrayBin:
     def add(self, img: ImageData) -> TextureArrayRegion:
         """Add an image into this texture array bin.
 
-        This method calls :py:meth:`~pyglet.graphics.TextureArray.add` for the first
+        This method calls :py:meth:`~pyglet.graphics.texture.TextureArray.add` for the first
         array that has room for the image.
 
         ``TextureArraySizeExceeded`` is raised if the image exceeds the dimensions of

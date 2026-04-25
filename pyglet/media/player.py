@@ -14,6 +14,7 @@ from pyglet.util import debug_print
 _debug = debug_print('debug_media')
 
 if TYPE_CHECKING:
+    from pyglet.graphics.draw import Batch
     from pyglet.graphics import Texture
 
 
@@ -520,7 +521,14 @@ class VideoPlayer(AudioPlayer):
     """High-level sound and video player."""
     _sprite: pyglet.sprite.Sprite | None
 
-    def __init__(self, batch: pyglet.graphics.Batch | None = None) -> None:
+    def __init__(self, batch: Batch | None = None) -> None:
+        """Initialize the Video Player.
+
+        Args:
+            batch:
+                An optional Batch to draw the video with. If no Batch is specified, the
+                default batch will be used.
+        """
         super().__init__()
         self._texture = None
         self._sprite = None

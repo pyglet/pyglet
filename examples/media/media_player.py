@@ -11,7 +11,6 @@ from __future__ import annotations
 import warnings
 import weakref
 
-import os as _os
 from functools import partial
 
 import pyglet
@@ -20,70 +19,8 @@ pyglet.options.debug_media = False
 
 from pyglet.media.exceptions import MediaException
 
-from concurrent.futures import ProcessPoolExecutor as _ProcessPoolExecutor
-
-from pyglet.event import EventDispatcher as _EventDispatcher
+from pyglet.window.dialog import FileOpenDialog
 from pyglet.window import key
-
-
-
-class _Dialog(_EventDispatcher):
-    """Dialog base class
-
-    This base class sets up a ProcessPoolExecutor with a single
-    background Process. This allows the Dialog to display in
-    the background without blocking or interfering with the main
-    application Process. This also limits to a single open Dialog
-    at a time.
-    """
-
-    executor = _ProcessPoolExecutor(max_workers=1)
-    _dialog = None
-
-    @staticmethod
-    def _open_dialog(dialog):
-        import tkinter as tk
-        root = tk.Tk()
-        root.withdraw()
-        return dialog.show()
-
-    def open(self):
-        future = self.executor.submit(self._open_dialog, self._dialog)
-        future.add_done_callback(self._dispatch_event)
-
-    def _dispatch_event(self, future):
-        raise NotImplementedError
-
-
-class FileOpenDialog(_Dialog):
-    def __init__(self, title="Open File", initial_dir=_os.path.curdir, filetypes=None, multiple=False):
-        """
-        :Parameters:
-            `title` : str
-                The Dialog Window name. Defaults to "Open File".
-            `initial_dir` : str
-                The directory to start in.
-            `filetypes` : list of tuple
-                An optional list of tuples containing (name, extension) to filter by.
-                If none are given, all files will be shown and selectable.
-                For example: `[("PNG", ".png"), ("24-bit Bitmap", ".bmp")]`
-            `multiple` : bool
-                True if multiple files can be selected. Defaults to False.
-        """
-        from tkinter import filedialog
-        self._dialog = filedialog.Open(title=title,
-                                       initialdir=initial_dir,
-                                       filetypes=filetypes or (),
-                                       multiple=multiple)
-
-    def _dispatch_event(self, future):
-        pyglet.app.platform_event_loop.post_event(self, "on_dialog_open", future.result())
-
-    def on_dialog_open(self, filenames):
-        """Event for filename choices"""
-
-
-FileOpenDialog.register_event_type('on_dialog_open')
 
 
 class Control(pyglet.event.EventDispatcher):
@@ -210,7 +147,7 @@ class Slider(Control):
     THUMB_WIDTH = 6
     THUMB_HEIGHT = 10
     GROOVE_HEIGHT = 2
-    RESPONSIVNESS = 0.3
+    RESPONSIVENESS = 0.3
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -257,7 +194,7 @@ class Slider(Control):
         self.capture_events()
         self.dispatch_event('on_begin_scroll')
         self.dispatch_event('on_change', value)
-        pyglet.clock.schedule_once(self.seek_request, self.RESPONSIVNESS)
+        pyglet.clock.schedule_once(self.seek_request, self.RESPONSIVENESS)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         # On some platforms, on_mouse_drag is triggered with a high frequency.
@@ -271,7 +208,7 @@ class Slider(Control):
         if self.seek_value is None:
             # We have processed the last recorded mouse position.
             # We re-schedule seek_request
-            pyglet.clock.schedule_once(self.seek_request, self.RESPONSIVNESS)
+            pyglet.clock.schedule_once(self.seek_request, self.RESPONSIVENESS)
         self.seek_value = value
 
     def on_mouse_release(self, x, y, button, modifiers):

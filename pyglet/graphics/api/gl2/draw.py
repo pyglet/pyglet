@@ -15,7 +15,7 @@ import pyglet
 from pyglet.graphics.api.gl.enums import geometry_map
 from pyglet.graphics.api.gl2.vertexdomain import VertexList, IndexedVertexList, VertexDomain, IndexedVertexDomain, \
     InstancedVertexDomain, InstancedIndexedVertexDomain
-from pyglet.graphics.draw import _DomainKey, Batch as BaseBatch, Group
+from pyglet.graphics.draw import _DomainKey, Batch, Group
 
 
 _debug_graphics_batch = pyglet.options.debug_graphics_batch
@@ -27,38 +27,6 @@ if TYPE_CHECKING:
     from pyglet.enums import GeometryMode
     from pyglet.graphics.api.gl2.shader import ShaderProgram
 
-
-
-
-# Default Shader source (Primitives):
-
-_vertex_source: str = """#version 110
-    attribute vec3 position;
-    attribute vec4 colors;
-
-    varying vec4 vertex_colors;
-
-    uniform mat4 u_projection;
-    uniform mat4 u_view;
-
-    void main()
-    {
-        gl_Position = u_projection * u_view * vec4(position, 1.0);
-
-        vertex_colors = colors;
-    }
-"""
-
-_fragment_source: str = """#version 110
-    varying vec4 vertex_colors;
-
-    void main()
-    {
-        gl_FragColor = vertex_colors;
-    }
-"""
-
-
 def get_default_batch() -> GL2Batch:
     """Batch used globally for objects that have no Batch specified."""
     return pyglet.graphics.api.core.get_default_batch()
@@ -67,16 +35,6 @@ def get_default_batch() -> GL2Batch:
     # except AttributeError:
     #     pyglet.graphics.api.core.current_context.pyglet_graphics_default_batch = Batch()
     #     return pyglet.graphics.api.core.current_context.pyglet_graphics_default_batch
-
-
-def get_default_shader() -> ShaderProgram:
-    """A default basic shader for default batches."""
-    return pyglet.graphics.api.core.get_cached_shader(
-        "default_graphics",
-        (_vertex_source, 'vertex'),
-        (_fragment_source, 'fragment'),
-    )
-
 
 _domain_class_map: dict[tuple[bool, bool], type[VertexDomain]] = {
     # Indexed, Instanced : Domain
@@ -89,7 +47,7 @@ _domain_class_map: dict[tuple[bool, bool], type[VertexDomain]] = {
 
 
 
-class GL2Batch(BaseBatch):
+class GL2Batch(Batch):
     """Manage a collection of drawables for batched rendering.
 
     Many drawable pyglet objects accept an optional `Batch` argument in their
