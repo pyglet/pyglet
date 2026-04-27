@@ -3,7 +3,6 @@ import time
 
 from tests.annotations import Platform, require_platform
 from tests.base.interactive import InteractiveTestCase
-from tests.interactive.window import window_util
 
 from pyglet import window
 from pyglet.graphics.api.gl import *
@@ -84,7 +83,7 @@ class WINDOW_RESIZABLE(InteractiveTestCase):
         try:
             glClearColor(1, 1, 1, 1)
             while not w.has_exit:
-                window_util.draw_client_border(w)
+                w.clear()
                 w.flip()
                 w.dispatch_events()
         finally:
@@ -106,7 +105,6 @@ class WINDOW_MODE_SWITCH(InteractiveTestCase):
     def on_expose(self):
         glClearColor(1, 0, 0, 1)
         glClear(GL_COLOR_BUFFER_BIT)
-        window_util.draw_client_border(self.w)
         self.w.flip()
 
     def test_set_fullscreen(self):
