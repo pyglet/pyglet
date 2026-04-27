@@ -164,8 +164,8 @@ class ImageMouseCursor(MouseCursor):
     reasonably sized cursors will render correctly
     """
 
-    def __init__(self, image: pyglet.image._AbstractImage, hot_x: int = 0, hot_y: int = 0,
-                 acceleration: bool = False) -> None:
+    def __init__(self, image: pyglet.image.ImageData, hot_x: int = 0, hot_y: int = 0,
+                 acceleration: bool = True) -> None:
         """Create a mouse cursor from an image.
 
         Args:
