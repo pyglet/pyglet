@@ -181,6 +181,77 @@ def test_get_instance_by_index_indexed(vlist_factory):
     assert vlist.get_instance_index(inst2) == 1
 
 
+def _assert_instance_order(vlist, expected) -> None:
+    assert vlist.instance_count == len(expected)
+    for index, instance in enumerate(expected):
+        assert vlist.get_instance_by_index(index) is instance
+        assert vlist.get_instance_index(instance) == index
+
+
+def test_instance_reorder_helpers_non_indexed(vlist_non_indexed_factory):
+    vlist = vlist_non_indexed_factory(
+        (
+            0.0, 0.0, 0.0,
+            1.0, 0.0, 0.0,
+            0.0, 1.0, 0.0,
+        ),
+    )
+
+    inst_a = vlist.create_instance(colors=(1, 0, 0, 1), translate=(0, 0, 0))
+    inst_b = vlist.create_instance(colors=(0, 1, 0, 1), translate=(10, 0, 0))
+    inst_c = vlist.create_instance(colors=(0, 0, 1, 1), translate=(20, 0, 0))
+    inst_d = vlist.create_instance(colors=(1, 1, 0, 1), translate=(30, 0, 0))
+
+    _assert_instance_order(vlist, [inst_a, inst_b, inst_c, inst_d])
+
+    vlist.swap_instances(inst_a, inst_d)
+    _assert_instance_order(vlist, [inst_d, inst_b, inst_c, inst_a])
+
+    vlist.move_instance_to_index(inst_a, 1)
+    _assert_instance_order(vlist, [inst_d, inst_a, inst_b, inst_c])
+
+    vlist.move_to_back([inst_c, inst_d])
+    _assert_instance_order(vlist, [inst_c, inst_d, inst_a, inst_b])
+
+    vlist.move_to_top([inst_c, inst_a])
+    _assert_instance_order(vlist, [inst_d, inst_b, inst_c, inst_a])
+
+    vlist.set_instance_order([inst_b, inst_a, inst_d, inst_c])
+    _assert_instance_order(vlist, [inst_b, inst_a, inst_d, inst_c])
+
+    with pytest.raises(IndexError):
+        vlist.move_instance_to_index(inst_a, 8)
+
+    with pytest.raises(ValueError):
+        vlist.set_instance_order([inst_a, inst_b, inst_c])  # missing one instance
+
+
+def test_instance_reorder_helpers_indexed(vlist_factory):
+    vlist = vlist_factory((0.0,) * 12)
+
+    inst_a = vlist.create_instance(colors=(1, 0, 0, 1), translate=(0, 0, 0))
+    inst_b = vlist.create_instance(colors=(0, 1, 0, 1), translate=(10, 0, 0))
+    inst_c = vlist.create_instance(colors=(0, 0, 1, 1), translate=(20, 0, 0))
+    inst_d = vlist.create_instance(colors=(1, 1, 0, 1), translate=(30, 0, 0))
+
+    _assert_instance_order(vlist, [inst_a, inst_b, inst_c, inst_d])
+
+    vlist.swap_instances(inst_a, inst_d)
+    _assert_instance_order(vlist, [inst_d, inst_b, inst_c, inst_a])
+
+    vlist.move_instance_to_index(inst_a, 1)
+    _assert_instance_order(vlist, [inst_d, inst_a, inst_b, inst_c])
+
+    vlist.move_to_back([inst_c, inst_d])
+    _assert_instance_order(vlist, [inst_c, inst_d, inst_a, inst_b])
+
+    vlist.move_to_top([inst_c, inst_a])
+    _assert_instance_order(vlist, [inst_d, inst_b, inst_c, inst_a])
+
+    vlist.set_instance_order([inst_b, inst_a, inst_d, inst_c])
+    _assert_instance_order(vlist, [inst_b, inst_a, inst_d, inst_c])
+
+
 def test_instanced_indexed_migrate_moves_instances(shader_program, vlist_factory):
     from pyglet.graphics import Batch, ShaderGroup
 

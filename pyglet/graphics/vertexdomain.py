@@ -179,13 +179,55 @@ class InstanceVertexList(VertexList):
 
     @property
     def instance_count(self) -> int:
+        """Number of active instances in this vertex list."""
         return self.instance_bucket.instance_count
 
     def get_instance_by_index(self, index: int) -> VertexInstance | None:
-        return self.instance_bucket.allocator.slot_to_inst.get(index)
+        """Get an instance by its current slot index."""
+        return self.instance_bucket.get_instance_by_index(index)
 
     def get_instance_index(self, instance: VertexInstance) -> int | None:
-        return self.instance_bucket.allocator.inst_to_slot.get(instance)
+        """Get the current slot index for an instance."""
+        return self.instance_bucket.get_instance_index(instance)
+
+    def swap_instances(self, first: VertexInstance, second: VertexInstance) -> None:
+        """Swap two instances in-place.
+
+        Useful when changing draw order without rebuilding all instance data.
+        This can still be expensive if instance attributes are large.
+        """
+        self.instance_bucket.swap_instances(first, second)
+
+    def move_instance_to_index(self, instance: VertexInstance, index: int) -> None:
+        """Move one instance to a target slot index.
+
+        Other instances shift as needed to keep slots contiguous.
+        This may be expensive when moving across many slots.
+        """
+        self.instance_bucket.move_instance_to_index(instance, index)
+
+    def set_instance_order(self, order: Sequence[VertexInstance]) -> None:
+        """Set the exact full order of all active instances.
+
+        This can be expensive for large lists.
+        """
+        self.instance_bucket.set_instance_order(order)
+
+    def move_to_back(self, instances: Sequence[VertexInstance]) -> None:
+        """Move a subset of instances to the back in the given order.
+
+        Back means lower indices (drawn earlier). Unspecified instances remain
+        after the moved prefix. This can be expensive for large lists.
+        """
+        self.instance_bucket.move_to_back(instances)
+
+    def move_to_top(self, instances: Sequence[VertexInstance]) -> None:
+        """Move a subset of instances to the top in the given order.
+
+        Top means higher indices (drawn later). Unspecified instances remain
+        before the moved suffix. This can be expensive for large lists.
+        """
+        self.instance_bucket.move_to_top(instances)
 
     def set_attribute_data(self, name: str, data: Any) -> None:
         if self.initial_attribs[name].fmt.is_instanced:
@@ -440,13 +482,55 @@ class InstanceIndexedVertexList(VertexList):
 
     @property
     def instance_count(self) -> int:
+        """Number of active instances in this vertex list."""
         return self.instance_bucket.instance_count
 
     def get_instance_by_index(self, index: int) -> VertexInstance | None:
-        return self.instance_bucket.allocator.slot_to_inst.get(index)
+        """Get an instance by its current slot index."""
+        return self.instance_bucket.get_instance_by_index(index)
 
     def get_instance_index(self, instance: VertexInstance) -> int | None:
-        return self.instance_bucket.allocator.inst_to_slot.get(instance)
+        """Get the current slot index for an instance."""
+        return self.instance_bucket.get_instance_index(instance)
+
+    def swap_instances(self, first: VertexInstance, second: VertexInstance) -> None:
+        """Swap two instances in-place.
+
+        Useful when changing draw order without rebuilding all instance data.
+        This can still be expensive if instance attributes are large.
+        """
+        self.instance_bucket.swap_instances(first, second)
+
+    def move_instance_to_index(self, instance: VertexInstance, index: int) -> None:
+        """Move one instance to a target slot index.
+
+        Other instances shift as needed to keep slots contiguous.
+        This may be expensive when moving across many slots.
+        """
+        self.instance_bucket.move_instance_to_index(instance, index)
+
+    def set_instance_order(self, order: Sequence[VertexInstance]) -> None:
+        """Set the exact full order of all active instances.
+
+        This can be expensive for large lists.
+        """
+        self.instance_bucket.set_instance_order(order)
+
+    def move_to_back(self, instances: Sequence[VertexInstance]) -> None:
+        """Move a subset of instances to the back in the given order.
+
+        Back means lower indices (drawn earlier). Unspecified instances remain
+        after the moved prefix. This can be expensive for large lists.
+        """
+        self.instance_bucket.move_to_back(instances)
+
+    def move_to_top(self, instances: Sequence[VertexInstance]) -> None:
+        """Move a subset of instances to the top in the given order.
+
+        Top means higher indices (drawn later). Unspecified instances remain
+        before the moved suffix. This can be expensive for large lists.
+        """
+        self.instance_bucket.move_to_top(instances)
 
     def set_attribute_data(self, name: str, data: Any) -> None:
         if self.initial_attribs[name].fmt.is_instanced:
