@@ -218,8 +218,15 @@ class GLInstanceVertexList(GLVertexList):
     def create_instance(self, **attributes: Any) -> VertexInstance:
         return self.instance_bucket.create_instance(**attributes)
 
+    @property
+    def instance_count(self) -> int:
+        return self.instance_bucket.instance_count
+
     def get_instance_by_index(self, index: int) -> VertexInstance | None:
         return self.instance_bucket.allocator.slot_to_inst.get(index)
+
+    def get_instance_index(self, instance: VertexInstance) -> int | None:
+        return self.instance_bucket.allocator.inst_to_slot.get(instance)
 
     def set_attribute_data(self, name: str, data: Any) -> None:
         if self.initial_attribs[name].fmt.is_instanced:
@@ -261,7 +268,7 @@ class GLInstanceIndexedVertexList(GLVertexList):
 
     Use :py:meth:`IndexedVertexDomain.create` to construct this list.
     """
-    domain: GLIndexedVertexDomain | GLInstancedIndexedVertexDomain
+    domain: GLInstancedIndexedVertexDomain
     indexed: bool = True
     instanced: bool = True
 
@@ -269,8 +276,9 @@ class GLInstanceIndexedVertexList(GLVertexList):
     index_start: int
 
     instance_bucket: InstanceBucket
+    supports_base_vertex: bool
 
-    def __init__(self, domain: GLIndexedVertexDomain, group: Group, start: int, count: int,
+    def __init__(self, domain: GLInstancedIndexedVertexDomain, group: Group, start: int, count: int,
                  index_start: int, index_count: int, index_type: DataTypes, base_vertex: int,
                  instance_bucket: InstanceBucket) -> None:
         self.index_start = index_start
@@ -283,8 +291,16 @@ class GLInstanceIndexedVertexList(GLVertexList):
 
     def delete(self) -> None:
         """Delete this group."""
+        key = (self.index_start, self.index_count)
+
+        # Invalidate all instance handles associated with this list.
+        for instance in list(self.instance_bucket.allocator.slot_to_inst.values()):
+            instance.slot = -1
+        self.instance_bucket.allocator.clear()
+
         super().delete()
         self.domain.index_stream.dealloc(self.index_start, self.index_count)
+        self.domain._instance_map.pop(key, None)
 
     def migrate(self, domain: GLInstancedIndexedVertexDomain) -> None:
         old_domain = self.domain
@@ -303,6 +319,16 @@ class GLInstanceIndexedVertexList(GLVertexList):
 
     def create_instance(self, **attributes: Any) -> None:
         return self.instance_bucket.create_instance(**attributes)
+
+    @property
+    def instance_count(self) -> int:
+        return self.instance_bucket.instance_count
+
+    def get_instance_by_index(self, index: int) -> VertexInstance | None:
+        return self.instance_bucket.allocator.slot_to_inst.get(index)
+
+    def get_instance_index(self, instance: VertexInstance) -> int | None:
+        return self.instance_bucket.allocator.inst_to_slot.get(instance)
 
     def set_attribute_data(self, name: str, data: Any) -> None:
         if self.initial_attribs[name].fmt.is_instanced:
