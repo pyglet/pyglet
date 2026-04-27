@@ -28,7 +28,7 @@ def disable_automatic_caret_blinking(monkeypatch):
 # Brittle tangle of mocks due to tightly coupled Caret/Layout design
 @pytest.fixture
 def mock_layout():
-    from pyglet.graphics.api import ShaderProgram
+    from pyglet.graphics.shader import ShaderProgram
     from pyglet.graphics.vertexdomain import IndexedVertexList
 
     # Create layout mock

@@ -9,7 +9,8 @@ from pyglet.graphics.api.base import ResourceManagement, NullBackend
 
 if TYPE_CHECKING:
     from pyglet.graphics.api.base import GraphicsConfig
-    from pyglet.graphics.shader import ShaderType
+    from pyglet.graphics.draw import Batch
+    from pyglet.graphics.shader import ShaderType, ShaderProgram
 
 core = NullBackend()
 
@@ -26,43 +27,19 @@ if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
 
     core = OpenGLBackend(gl_api=pyglet.options.backend)
 
-    from pyglet.graphics.api.gl.draw import GLBatch as Batch
-    from pyglet.graphics.api.gl.draw import get_default_shader, get_default_batch
-    from pyglet.graphics.api.gl.shader import (
-        GLComputeShaderProgram as ComputeShaderProgram,
-        GLShader as Shader,
-        GLShaderProgram as ShaderProgram,
-    )
-
 elif pyglet.options.backend in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
     from pyglet.graphics.api.gl2.global_opengl import OpenGL2Backend
 
     core = OpenGL2Backend(gl_api=pyglet.options.backend)
-
-    from pyglet.graphics.api.gl2.draw import GL2Batch as Batch
-    from pyglet.graphics.api.gl2.draw import get_default_shader, get_default_batch
-    from pyglet.graphics.api.gl2.shader import ShaderProgram, Shader, ComputeShaderProgram
 
 elif pyglet.options.backend == GraphicsAPI.WEBGL:
     from pyglet.graphics.api.webgl import WebGLBackend
 
     core = WebGLBackend()
 
-    from pyglet.graphics.api.webgl.draw import WebGLBatch as Batch
-    from pyglet.graphics.api.webgl.draw import get_default_shader, get_default_batch
-    from pyglet.graphics.api.webgl.shader import (
-        WebGLComputeShaderProgram as ComputeShaderProgram,
-        WebGLShader as Shader,
-        WebGLShaderProgram as ShaderProgram,
-    )
-
 elif pyglet.options.backend == GraphicsAPI.VULKAN:
     from pyglet.graphics.api.vulkan.instance import VulkanGlobal
     core = VulkanGlobal()
-
-    from pyglet.graphics.api.vulkan.draw import Batch
-    from pyglet.graphics.api.vulkan.draw import get_default_shader, get_default_batch
-    from pyglet.graphics.api.vulkan.shader import ShaderProgram, Shader
 
 else:
     raise Exception(f"Invalid rendering backend. Choose one of {[str(a) for a in GraphicsAPI]}.")
@@ -86,3 +63,15 @@ def have_extension(extension_name: str) -> bool:
 
 def get_cached_shader(name: str, *sources: tuple[str, ShaderType]) -> ShaderProgram:
     return core.get_cached_shader(name, *sources)
+
+
+def get_default_batch() -> Batch:
+    from pyglet.graphics.draw import get_default_batch as _get_default_batch
+
+    return _get_default_batch()
+
+
+def get_default_shader() -> ShaderProgram:
+    from pyglet.graphics.shader import get_default_shader as _get_default_shader
+
+    return _get_default_shader()

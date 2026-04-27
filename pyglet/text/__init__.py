@@ -43,14 +43,14 @@ from os.path import splitext as _splitext
 from typing import TYPE_CHECKING, Any, BinaryIO, Literal
 
 import pyglet
-from pyglet.font import base
 
 from pyglet.text import caret, document, layout  # noqa: F401
 
 
 if TYPE_CHECKING:
+    from pyglet.font import base
     from pyglet.customtypes import AnchorX, AnchorY, HorizontalAlign
-    from pyglet.graphics import Batch, Group
+    from pyglet.graphics.draw import Batch, Group
     from pyglet.graphics.shader import ShaderProgram
     from pyglet.resource import Location
     from pyglet.text.document import AbstractDocument, FormattedDocument, UnformattedDocument

@@ -172,10 +172,6 @@ class ShaderProgram(GLShaderProgram):  # noqa: D101
     _uniform_blocks: None
     __slots__ = '_attributes', '_context', '_id', '_uniform_blocks', '_uniforms'
 
-    def __init__(self, *shaders: Shader) -> None:
-        """Initialize the ShaderProgram using at least two Shader instances."""
-        super().__init__(*shaders)
-
     def _get_uniform_blocks(self) -> None:
         """Return Uniform Block information."""
         return
@@ -189,3 +185,39 @@ class ComputeShaderProgram:
 
     def __init__(self, source: str) -> None:
         raise NotImplementedError
+
+
+_default_vertex_source: str = """#version 110
+    attribute vec3 position;
+    attribute vec4 colors;
+
+    varying vec4 vertex_colors;
+
+    uniform mat4 u_projection;
+    uniform mat4 u_view;
+
+    void main()
+    {
+        gl_Position = u_projection * u_view * vec4(position, 1.0);
+
+        vertex_colors = colors;
+    }
+"""
+
+_default_fragment_source: str = """#version 110
+    varying vec4 vertex_colors;
+
+    void main()
+    {
+        gl_FragColor = vertex_colors;
+    }
+"""
+
+
+def get_default_shader() -> ShaderProgram:
+    """A default basic shader for default batches."""
+    return pyglet.graphics.api.core.get_cached_shader(
+        "default_graphics",
+        (_default_vertex_source, 'vertex'),
+        (_default_fragment_source, 'fragment'),
+    )

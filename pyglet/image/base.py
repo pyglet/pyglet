@@ -636,13 +636,13 @@ class ImageGrid(_AbstractGrid[Union[ImageData, ImageDataRegion]], _AbstractImage
 
     The grid can be accessed either as a complete image, or as a sequence of images.
 
-    Any :py:class:`~pyglet.graphics.TextureGrid` generated via the method below will create
+    Any :py:class:`~pyglet.graphics.texture.TextureGrid` generated via the method below will create
     a separate texture resource::
 
         image_grid = ImageGrid(...)
         texture_grid = image_grid.get_texture_sequence()
 
-    For existing Texture's, it is recommended to use :py:class:`~pyglet.graphics.TextureGrid` directly.
+    For existing Texture's, it is recommended to use :py:class:`~pyglet.graphics.texture.TextureGrid` directly.
     """
 
     _texture_grid: TextureGrid | None = None
@@ -706,9 +706,9 @@ class ImageGrid(_AbstractGrid[Union[ImageData, ImageDataRegion]], _AbstractImage
         return self.image.get_image_data()
 
     def get_texture_sequence(self) -> TextureGrid:
-        """Create a :py:class:`~pyglet.graphics.TextureGrid` resource from the underlying image data.
+        """Create a :py:class:`~pyglet.graphics.texture.TextureGrid` resource from the underlying image data.
 
-        It is recommended to use :py:class:`~pyglet.graphics.TextureGrid` directly.
+        It is recommended to use :py:class:`~pyglet.graphics.texture.TextureGrid` directly.
         """
         warnings.warn("Use pyglet.graphics.TextureGrid instead", DeprecationWarning)
         if not self._texture_grid:

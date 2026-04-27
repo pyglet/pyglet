@@ -12,6 +12,8 @@ Classes
 
   .. rubric:: Methods
 
+  .. automethod:: __init__
+
   .. automethod:: open
 
   .. rubric:: Events
@@ -22,6 +24,8 @@ Classes
   :show-inheritance:
 
   .. rubric:: Methods
+
+  .. automethod:: __init__
 
   .. automethod:: open
 

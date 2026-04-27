@@ -245,7 +245,7 @@ class Sprite(event.EventDispatcher):
         """Create a sprite.
 
         :Parameters:
-            `img` : `~pyglet.image.AbstractImage` or `~pyglet.image.Animation`
+            `img` :
                 Image or animation to display.
             `x` : int
                 X coordinate of the sprite.
@@ -418,11 +418,7 @@ class Sprite(event.EventDispatcher):
 
     @property
     def image(self):
-        """Image or animation to display.
-
-        :type: :py:class:`~pyglet.image.AbstractImage` or
-               :py:class:`~pyglet.image.Animation`
-        """
+        """Image or animation to display."""
         if self._animation:
             return self._animation
         return self._texture

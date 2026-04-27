@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import sys
 import weakref
 from dataclasses import dataclass
 from typing import Any, Callable, Sequence, TYPE_CHECKING
 
 import pyglet
-from pyglet.enums import BlendFactor, BlendOp, CompareOp, GeometryMode
+from pyglet.enums import BlendFactor, BlendOp, CompareOp, GeometryMode, GraphicsAPI
 
 from pyglet.graphics.state import (
     State,
@@ -574,4 +575,41 @@ class ShaderGroup(Group):
     def __init__(self, program: ShaderProgram, order: int = 0, parent: Group | None = None) -> None:
         super().__init__(order, parent)
         self.set_shader_program(program)
+
+
+def get_default_batch() -> Batch:
+    """The built in batch object used for objects that have no specified batch."""
+    msg = "Default batch is not available for this backend."
+    raise RuntimeError(msg)
+
+
+_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
+
+if not _is_pyglet_doc_run:
+    if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
+        from pyglet.graphics.api.gl.draw import (
+            GLBatch,
+            get_default_batch as _backend_get_default_batch,
+        )
+
+        Batch = GLBatch
+        get_default_batch = _backend_get_default_batch
+
+    elif pyglet.options.backend in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
+        from pyglet.graphics.api.gl2.draw import (
+            GL2Batch,
+            get_default_batch as _backend_get_default_batch,
+        )
+
+        Batch = GL2Batch
+        get_default_batch = _backend_get_default_batch
+
+    elif pyglet.options.backend == GraphicsAPI.WEBGL:
+        from pyglet.graphics.api.webgl.draw import (
+            WebGLBatch,
+            get_default_batch as _backend_get_default_batch,
+        )
+
+        Batch = WebGLBatch
+        get_default_batch = _backend_get_default_batch
 

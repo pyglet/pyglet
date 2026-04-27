@@ -14,7 +14,7 @@ from pyglet.graphics.api.base import (
     UBOMatrixTransformations,
     NullContext,
 )
-from pyglet.graphics.api.webgl.shader import WebGLShader as Shader, WebGLShaderProgram as ShaderProgram
+from pyglet.graphics.shader import Shader, ShaderProgram
 from pyglet.math import Mat4
 
 if TYPE_CHECKING:

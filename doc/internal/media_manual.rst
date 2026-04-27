@@ -75,7 +75,7 @@ A silent audio driver that consumes, but does not play back any audio is also
 available.
 
 If your source contains video, and you are using a :class:`~pyglet.media.VideoPlayer`
-then the player will contain a :meth:`~pyglet.media.VideoPlayer.texture`
+then the player will contain a :attr:`~pyglet.media.player.VideoPlayer.texture`
 property returning the current video frame.
 
 The player has an internal `master clock` which is used to synchronize the
@@ -83,11 +83,11 @@ video and the audio. The audio synchronization is delegated to the
 ``AudioPlayer``. More info found below. The video synchronization is made by
 asking the :class:`~pyglet.media.Source` for the next video timestamp.
 The player then schedules on pyglet event loop a
-call to its :meth:`~pyglet.media.AudioPlayer.update_texture` with a delay
+call to its :meth:`~pyglet.media.player.VideoPlayer.update_texture` with a delay
 equal to the difference between the next video timestamp and the master clock
 current time.
 
-When :meth:`~pyglet.media.AudioPlayer.update_texture` is called, we will
+When :meth:`~pyglet.media.player.VideoPlayer.update_texture` is called, we will
 check if the actual master clock time is not too late compared to the video
 timestamp. This could happen if the loop was very busy and the function could
 not be called on time. In this case, the frame would be skipped until we find
@@ -309,21 +309,21 @@ When the client code runs ``player.play()``:
 The :class:`~pyglet.media.player.AudioPlayer` will check if there is an audio track
 on the media. If so it will instantiate an ``AudioPlayer`` appropriate for the
 available sound driver on the platform. It will create an empty
-:class:`~pyglet.image.Texture` if the media contains video frames and will
-schedule its :meth:`~pyglet.media.AudioPlayer.update_texture` to be called
+:class:`~pyglet.graphics.texture.Texture` if the media contains video frames and will
+schedule its :meth:`~pyglet.media.player.VideoPlayer.update_texture` to be called
 immediately. Finally it will start the master clock.
 
 The ``AudioPlayer`` will start playing
 :ref:`as described above <audioplayer-play>`.
 
-When the :meth:`~pyglet.media.VideoPlayer.update_texture` method is called,
+When the :meth:`~pyglet.media.player.VideoPlayer.update_texture` method is called,
 the next video timestamp will be checked with the master clock. We allow a
 delay up to the frame duration. If the master clock is beyond that time, the
 frame will be skipped. We will check the following frames for its timestamp
 until we find the appropriate frame for the master clock time. We will set the
 :attr:`~pyglet.media.player.VideoPlayer.texture` to the new video frame. We will
 check for the next video frame timestamp and we will schedule a new call to
-:meth:`~pyglet.media.VideoPlayer.update_texture` with a delay equals to the
+:meth:`~pyglet.media.player.VideoPlayer.update_texture` with a delay equals to the
 difference between the next video timestamps and the master clock time.
 
 Helpful tools

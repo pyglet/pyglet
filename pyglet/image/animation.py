@@ -100,7 +100,7 @@ class Animation:
 
         This method is useful for determining texture space requirements: due
         to the use of ``anchor_x`` the actual required viewing area during
-         playback may be larger.
+        playback may be larger.
         """
         return max([frame.image.width for frame in self.frames])
 

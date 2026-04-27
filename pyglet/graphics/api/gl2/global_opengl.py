@@ -8,7 +8,7 @@ import pyglet
 from pyglet.enums import GraphicsAPI
 from pyglet.graphics.api.gl.global_opengl import OpenGLBackend
 from pyglet.graphics.api.base import WindowTransformations
-from pyglet.graphics.api.gl2.shader import ShaderProgram, Shader
+from pyglet.graphics.shader import ShaderProgram, Shader
 
 from pyglet.math import Mat4
 

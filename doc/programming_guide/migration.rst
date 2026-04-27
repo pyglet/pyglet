@@ -123,7 +123,7 @@ Image Grids
 -----------
 The function `pyglet.image.ImageGrid.get_texture_sequence` has been removed. This is no longer recommended,
 as it created it's own texture, further reducing performance. Going forward, it is best to
-use :py:class:`~pyglet.graphics.TextureGrid`. This behaves the same way as :py:class:`~pyglet.image.ImageGrid`, but
+use :py:class:`~pyglet.graphics.texture.TextureGrid`. This behaves the same way as :py:class:`~pyglet.image.ImageGrid`, but
 for textures. This will allow you to use an already existing texture, such as one loaded from an atlas.
 
 

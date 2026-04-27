@@ -1,5 +1,5 @@
 pyglet.graphics.atlas
-==================
+=====================
 
 .. automodule:: pyglet.graphics.atlas
   :members:

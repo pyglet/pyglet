@@ -16,40 +16,6 @@ if TYPE_CHECKING:
     from pyglet.graphics.api.webgl.context import OpenGLSurfaceContext
     from pyglet.graphics.state import State
 
-
-# Default Shader source:
-
-_vertex_source: str = """#version 330 core
-    in vec3 position;
-    in vec4 colors;
-
-    out vec4 vertex_colors;
-
-    uniform WindowBlock
-    {
-        mat4 projection;
-        mat4 view;
-    } window;
-
-    void main()
-    {
-        gl_Position = window.projection * window.view * vec4(position, 1.0);
-
-        vertex_colors = colors;
-    }
-"""
-
-_fragment_source: str = """#version 330 core
-    in vec4 vertex_colors;
-    out vec4 final_colors;
-
-    void main()
-    {
-        final_colors = vertex_colors;
-    }
-"""
-
-
 def get_default_batch() -> WebGLBatch:
     """Batch used globally for objects that have no Batch specified."""
     return pyglet.graphics.api.core.get_default_batch()
@@ -58,16 +24,6 @@ def get_default_batch() -> WebGLBatch:
     # except AttributeError:
     #     pyglet.graphics.api.core.current_context.pyglet_graphics_default_batch = Batch()
     #     return pyglet.graphics.api.core.current_context.pyglet_graphics_default_batch
-
-
-def get_default_shader() -> ShaderProgram:
-    """A default basic shader for default batches."""
-    return pyglet.graphics.api.core.get_cached_shader(
-        "default_graphics",
-        (_vertex_source, 'vertex'),
-        (_fragment_source, 'fragment'),
-    )
-
 
 _domain_class_map: dict[tuple[bool, bool], type[vertexdomain.WebGLVertexDomain]] = {
     # Indexed, Instanced : Domain
