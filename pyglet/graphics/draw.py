@@ -588,28 +588,25 @@ _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 if not _is_pyglet_doc_run:
     if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
         from pyglet.graphics.api.gl.draw import (
-            GLBatch,
+            GLBatch as Batch,
             get_default_batch as _backend_get_default_batch,
         )
-
-        Batch = GLBatch
         get_default_batch = _backend_get_default_batch
 
     elif pyglet.options.backend in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
         from pyglet.graphics.api.gl2.draw import (
-            GL2Batch,
+            GL2Batch as Batch,
             get_default_batch as _backend_get_default_batch,
         )
 
-        Batch = GL2Batch
         get_default_batch = _backend_get_default_batch
 
     elif pyglet.options.backend == GraphicsAPI.WEBGL:
         from pyglet.graphics.api.webgl.draw import (
-            WebGLBatch,
+            WebGLBatch as Batch,
             get_default_batch as _backend_get_default_batch,
         )
-
-        Batch = WebGLBatch
         get_default_batch = _backend_get_default_batch
-
+    else:
+        msg = f"Unsupported backend: {pyglet.options.backend!r}"
+        raise Exception(msg)
