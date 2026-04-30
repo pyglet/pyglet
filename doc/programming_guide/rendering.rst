@@ -410,6 +410,22 @@ Example (indexed instancing)::
 If you lose track of your instances or wish to get them by index, you can do so via the helper method on the mesh
 vertex list: ``instance = vlist.get_instance_by_index(0)``.
 
+Instanced vertex lists also provide helper APIs for ordering:
+
+* ``vlist.instance_count`` to inspect the number of active instances.
+* ``vlist.get_instance_index(instance)`` to get the current slot for an instance.
+* ``vlist.swap_instances(a, b)`` to swap two instances.
+* ``vlist.move_instance_to_index(instance, index)`` to move one instance to a specific index.
+* ``vlist.move_to_back([inst1, inst2, ...])`` to move a subset to lower indices (drawn earlier).
+* ``vlist.move_to_top([inst1, inst2, ...])`` to move a subset to higher indices (drawn later).
+* ``vlist.set_instance_order([...])`` to set the full exact order of all active instances.
+
+.. note:: Moving instances may involve shifting existing instances around in the buffer, which can be slow.
+
+Groups control draw order between different vertex lists, but not between
+instances inside the same instanced vertex list. Use the ordering helpers above
+when you need explicit ordering among instances of a single mesh.
+
 Resource Management
 ~~~~~~~~~~~~~~~~~~~
 

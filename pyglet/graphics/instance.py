@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import weakref
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Sequence
 
 if TYPE_CHECKING:
     from pyglet.graphics.vertexdomain import InstanceStream, VertexArrayBinding, InstanceVertexList, InstanceIndexedVertexList
@@ -14,7 +14,7 @@ class InstanceAllocator:
     """Allocator for instances within a bucket."""
     count: int
     slot_to_handle: dict[int, VertexInstance]
-    handle_to_slot: dict[VertexInstance, int]
+    inst_to_slot: dict[VertexInstance, int]
 
     def __init__(self) -> None:  # noqa: D107
         self.count = 0
@@ -110,6 +110,159 @@ class InstanceBucket:
         if attributes:
             self.stream.set_region(slot, 1, attributes)
         return v_instance
+
+    def get_instance_by_index(self, index: int) -> VertexInstance | None:
+        """Return the instance currently stored at ``index`` or ``None``."""
+        return self.allocator.slot_to_inst.get(index)
+
+    def get_instance_index(self, instance: VertexInstance) -> int | None:
+        """Return the active slot index for ``instance`` or ``None``."""
+        return self.allocator.inst_to_slot.get(instance)
+
+    def _get_required_slot(self, instance: VertexInstance) -> int:
+        slot = self.allocator.inst_to_slot.get(instance)
+        if slot is None:
+            msg = "Instance does not belong to this vertex list."
+            raise ValueError(msg)
+        return slot
+
+    def _swap_slots(self, first_slot: int, second_slot: int) -> None:
+        if first_slot == second_slot:
+            return
+
+        first_instance = self.allocator.slot_to_inst[first_slot]
+        second_instance = self.allocator.slot_to_inst[second_slot]
+
+        for buffer in self.stream.attrib_name_buffers.values():
+            # Tuple to make a copy otherwise it's the actual memory.
+            first_data = tuple(buffer.get_region(first_slot, 1))
+            second_data = tuple(buffer.get_region(second_slot, 1))
+            buffer.set_region(first_slot, 1, second_data)
+            buffer.set_region(second_slot, 1, first_data)
+
+        self.allocator.slot_to_inst[first_slot] = second_instance
+        self.allocator.slot_to_inst[second_slot] = first_instance
+        self.allocator.inst_to_slot[first_instance] = second_slot
+        self.allocator.inst_to_slot[second_instance] = first_slot
+        first_instance.slot = second_slot
+        second_instance.slot = first_slot
+
+    def swap_instances(self, first: VertexInstance, second: VertexInstance) -> None:
+        """Swap two instances in-place.
+
+        This operation updates per-instance attribute rows for both slots.
+
+        Args:
+            first:
+                The first instance to swap.
+            second:
+                The second instance to swap.
+        """
+        first_slot = self._get_required_slot(first)
+        second_slot = self._get_required_slot(second)
+        self._swap_slots(first_slot, second_slot)
+
+    def move_instance_to_index(self, instance: VertexInstance, index: int) -> None:
+        """Move ``instance`` to an absolute slot index.
+
+        The moved instance ends up at ``index``. Other instances shift to keep
+        a contiguous slot layout.
+        This may be expensive when moving across many slots.
+
+        Args:
+            instance:
+                The instance to move.
+            index:
+                Target slot index in ``[0, instance_count - 1]``.
+        """
+        count = self.instance_count
+        if index < 0 or index >= count:
+            msg = f"Index out of range: {index} (instance_count={count})"
+            raise IndexError(msg)
+
+        current_slot = self._get_required_slot(instance)
+        if current_slot == index:
+            return
+
+        if current_slot > index:
+            for slot in range(current_slot, index, -1):
+                self._swap_slots(slot, slot - 1)
+        else:
+            for slot in range(current_slot, index):
+                self._swap_slots(slot, slot + 1)
+
+    def set_instance_order(self, order: Sequence[VertexInstance]) -> None:
+        """Set the exact full order of all active instances.
+
+        This can be expensive for large lists because many slot swaps may be
+        required.
+
+        Args:
+            order:
+                Sequence containing every active instance exactly once.
+        """
+        count = self.instance_count
+        if len(order) != count:
+            msg = f"Order length mismatch. Expected {count}, got {len(order)}."
+            raise ValueError(msg)
+
+        if len(set(order)) != count:
+            msg = "Order contains duplicate instances."
+            raise ValueError(msg)
+
+        active = set(self.allocator.inst_to_slot.keys())
+        requested = set(order)
+        if requested != active:
+            msg = "Order must contain every active instance exactly once."
+            raise ValueError(msg)
+
+        for target_slot, instance in enumerate(order):
+            current_slot = self.allocator.inst_to_slot[instance]
+            if current_slot != target_slot:
+                self._swap_slots(current_slot, target_slot)
+
+    def move_to_back(self, instances: Sequence[VertexInstance]) -> None:
+        """Move the provided instances to the back in the given order.
+
+        "Back" means lower indices (drawn earlier). Instances not listed remain
+        after the moved prefix, preserving their relative order.
+        This may be expensive when moving many instances.
+
+        Args:
+            instances:
+                Instances to move to back slots ``[0..len(instances)-1]``.
+        """
+        if len(set(instances)) != len(instances):
+            msg = "Instances to move contain duplicates."
+            raise ValueError(msg)
+
+        for instance in instances:
+            self._get_required_slot(instance)
+
+        for target_slot, instance in enumerate(instances):
+            self.move_instance_to_index(instance, target_slot)
+
+    def move_to_top(self, instances: Sequence[VertexInstance]) -> None:
+        """Move the provided instances to the top in the given order.
+
+        "Top" means higher indices (drawn later). Instances not listed remain
+        before the moved suffix, preserving their relative order.
+        This may be expensive when moving many instances.
+
+        Args:
+            instances:
+                Instances to move to the ending slots in the given order.
+        """
+        if len(set(instances)) != len(instances):
+            msg = "Instances to move contain duplicates."
+            raise ValueError(msg)
+
+        for instance in instances:
+            self._get_required_slot(instance)
+
+        top_start = self.instance_count - len(instances)
+        for offset in range(len(instances) - 1, -1, -1):
+            self.move_instance_to_index(instances[offset], top_start + offset)
 
     def delete_instance(self, vi: VertexInstance) -> None:
         # When removing an instance, take the last slot and move to the removed slot to maintain contiguous allocation.
