@@ -87,8 +87,6 @@ class _AbstractShaderProgram(ABC):
     def __init__(self, *shaders: Shader) -> None:
         self._id = None
 
-        assert shaders, "At least one Shader object is required."
-
         # Attribute description
         self._attributes = {}
 
@@ -177,6 +175,45 @@ class _AbstractShaderProgram(ABC):
 
         """
         return {n: {'location': u.location, 'length': u.length, 'size': u.size} for n, u in self._uniforms.items()}
+
+    @staticmethod
+    def _missing_uniform_message(uniform_name: str) -> str:
+        return (
+            f"A Uniform with the name `{uniform_name}` was not found.\n"
+            f"The spelling may be incorrect or, if not in use, it "
+            f"may have been optimized out by the OpenGL driver."
+        )
+
+    def _raise_uniform_operation_exception(self, err: Exception) -> None:
+        raise ShaderException from err
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        try:
+            uniform = self._uniforms[key]
+        except KeyError as err:
+            msg = self._missing_uniform_message(key)
+            if pyglet.options.debug_api_shaders:
+                warnings.warn(msg)
+                return
+            raise MissingUniformException(msg) from err
+        try:
+            uniform.set(value)
+        except Exception as err:  # noqa: BLE001
+            self._raise_uniform_operation_exception(err)
+
+    def __getitem__(self, item: str) -> Any:
+        try:
+            uniform = self._uniforms[item]
+        except KeyError as err:
+            msg = self._missing_uniform_message(item)
+            if pyglet.options.debug_api_shaders:
+                warnings.warn(msg)
+                return None
+            raise MissingUniformException(msg) from err
+        try:
+            return uniform.get()
+        except Exception as err:  # noqa: BLE001
+            self._raise_uniform_operation_exception(err)
 
     def use(self) -> None:
         """Bind this shader program for rendering commands."""
@@ -310,13 +347,15 @@ class ShaderProgram(_AbstractShaderProgram):
                 instances to be linked into a program by the active backend.
                 At least one shader is required.
         """
+        assert shaders, "At least one Shader object is required."
         super().__init__(*shaders)
 
 
-class ComputeShaderProgram:
+class ComputeShaderProgram(_AbstractShaderProgram):
     """Backend-agnostic compute shader program container."""
 
     def __init__(self, source: str) -> None:
+        super().__init__()
         msg = f"{self.__class__.__name__} is backend-specific and must be provided by the active backend."
         raise NotImplementedError(msg)
 

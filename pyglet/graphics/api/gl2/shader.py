@@ -20,6 +20,7 @@ from pyglet.graphics.api.gl.shader import GLShader
 from pyglet.graphics.api.gl.shader import GLShaderProgram
 from pyglet.graphics import UnsupportedBackendError
 from pyglet.graphics.shader import (
+    _AbstractShaderProgram,
     ShaderException,
     ShaderSource,
     ShaderType,
@@ -182,13 +183,14 @@ class ShaderProgram(GLShaderProgram):  # noqa: D101
         return
 
 
-class ComputeShaderProgram:
+class ComputeShaderProgram(_AbstractShaderProgram):
     """OpenGL Compute Shader Program.
 
     Not supported by OpenGL 2.0
     """
 
     def __init__(self, source: str) -> None:
+        super().__init__()
         raise UnsupportedBackendError("ComputeShaderProgram")
 
 

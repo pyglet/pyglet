@@ -34,9 +34,9 @@ from pyglet.graphics.api.webgl.gl import (
 )
 from pyglet.graphics.shader import (
     _AbstractShader,
+    _AbstractShaderProgram,
     Attribute,
     MissingAttributeException,
-    MissingUniformException,
     Shader,
     ShaderException,
     UnsupportedShaderType,
@@ -864,44 +864,6 @@ class WebGLShaderProgram(ShaderProgram):
             except (AttributeError, ImportError):
                 pass  # Interpreter is shutting down
 
-    def __setitem__(self, key: str, value: Any) -> None:
-        try:
-            uniform = self._uniforms[key]
-        except KeyError as err:
-            msg = (
-                f"A Uniform with the name `{key}` was not found.\n"
-                f"The spelling may be incorrect or, if not in use, it "
-                f"may have been optimized out by the OpenGL driver."
-            )
-            if _debug_api_shaders:
-                warnings.warn(msg)
-                return
-            raise MissingUniformException(msg) from err
-        try:
-            uniform.set(value)
-        except GLException as err:
-            raise ShaderException from err
-
-    def __getitem__(self, item: str) -> Any:
-        try:
-            uniform = self._uniforms[item]
-        except KeyError as err:
-            msg = (
-                f"A Uniform with the name `{item}` was not found.\n"
-                f"The spelling may be incorrect or, if not in use, it "
-                f"may have been optimized out by the OpenGL driver."
-            )
-            if _debug_api_shaders:
-                warnings.warn(msg)
-                return None
-
-            raise MissingUniformException(msg) from err
-        try:
-            return uniform.get()
-        except GLException as err:
-            raise ShaderException from err
-
-
     @overload
     def _vertex_list_create(self, count: int, mode: GeometryMode, indices: None = None,
                             instances: None = None, batch: Batch | None = None, group: Group | None = None,
@@ -1013,11 +975,12 @@ class WebGLTransformFeedbackShaderProgram(WebGLShaderProgram):
         self._gl.transformFeedbackVaryings(self._id, list(self._varyings), mode)
 
 
-class WebGLComputeShaderProgram:
+class WebGLComputeShaderProgram(_AbstractShaderProgram):
     """OpenGL Compute Shader Program."""
 
     def __init__(self, source: str) -> None:
         """Create an OpenGL ComputeShaderProgram from source."""
+        super().__init__()
         raise UnsupportedBackendError("Compute Shaders are not supported in WebGL.")
 
 

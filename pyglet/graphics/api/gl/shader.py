@@ -37,6 +37,7 @@ from pyglet.graphics.api.gl import (
     GL_UNIFORM_BUFFER,
 )
 from pyglet.graphics.shader import (
+    _AbstractShaderProgram,
     Attribute,
     AttributeView,
     _build_uniform_struct_from_uniforms,
@@ -49,7 +50,6 @@ from pyglet.graphics.shader import (
     ShaderProgram,
     ShaderSource,
     ShaderType,
-    MissingUniformException,
     MissingAttributeException,
     UnsupportedShaderType,
 )
@@ -1098,41 +1098,6 @@ class GLShaderProgram(ShaderProgram):
             except (AttributeError, ImportError):
                 pass  # Interpreter is shutting down
 
-    def __setitem__(self, key: str, value: Any) -> None:
-        try:
-            uniform = self._uniforms[key]
-        except KeyError as err:
-            msg = (f"A Uniform with the name `{key}` was not found.\n"
-                   f"The spelling may be incorrect or, if not in use, it "
-                   f"may have been optimized out by the OpenGL driver.")
-            if _debug_api_shaders:
-                warnings.warn(msg)
-                return
-            raise MissingUniformException(msg) from err
-        try:
-            uniform.set(value)
-        except GLException as err:
-            raise ShaderException from err
-
-    def __getitem__(self, item: str) -> Any:
-        try:
-            uniform = self._uniforms[item]
-        except KeyError as err:
-            msg = (
-                f"A Uniform with the name `{item}` was not found.\n"
-                f"The spelling may be incorrect or, if not in use, it "
-                f"may have been optimized out by the OpenGL driver."
-            )
-            if _debug_api_shaders:
-                warnings.warn(msg)
-                return None
-
-            raise MissingUniformException(msg) from err
-        try:
-            return uniform.get()
-        except GLException as err:
-            raise ShaderException from err
-
     @overload
     def _vertex_list_create(self, count: int, mode: GeometryMode, indices: None = None,
                             instances: None = None, batch: Batch | None = None, group: Group | None = None,
@@ -1251,7 +1216,7 @@ class GLTransformFeedbackShaderProgram(GLShaderProgram):
         self._context.glTransformFeedbackVaryings(self._id, len(self._varyings), ptr, mode)
 
 
-class GLComputeShaderProgram:
+class GLComputeShaderProgram(_AbstractShaderProgram):
     """OpenGL Compute Shader Program."""
     _context: OpenGLSurfaceContext | NullContext
     _id: int | None
@@ -1266,7 +1231,7 @@ class GLComputeShaderProgram:
 
     def __init__(self, source: str) -> None:
         """Create an OpenGL ComputeShaderProgram from source."""
-        self._id = None
+        super().__init__()
 
         if not (pyglet.graphics.api.have_version(4, 3) or pyglet.graphics.api.have_extension("GL_ARB_compute_shader")):
             msg = (
@@ -1323,10 +1288,6 @@ class GLComputeShaderProgram:
         return self._id
 
     @property
-    def uniforms(self) -> dict[str, dict[str, Any]]:
-        return {n: {'location': u.location, 'length': u.length, 'size': u.size} for n, u in self._uniforms.items()}
-
-    @property
     def uniform_blocks(self) -> dict[str, GLUniformBlock]:
         return self._uniform_blocks
 
@@ -1358,40 +1319,6 @@ class GLComputeShaderProgram:
                 self._id = None
             except (AttributeError, ImportError):
                 pass  # Interpreter is shutting down
-
-    def __setitem__(self, key: str, value: Any) -> None:
-        try:
-            uniform = self._uniforms[key]
-        except KeyError as err:
-            msg = (f"A Uniform with the name `{key}` was not found.\n"
-                   f"The spelling may be incorrect, or if not in use it "
-                   f"may have been optimized out by the OpenGL driver.")
-            if _debug_api_shaders:
-                warnings.warn(msg)
-                return
-
-            raise MissingUniformException(msg) from err
-        try:
-            uniform.set(value)
-        except GLException as err:
-            raise ShaderException from err
-
-    def __getitem__(self, item: str) -> Any:
-        try:
-            uniform = self._uniforms[item]
-        except KeyError as err:
-            msg = (f"A Uniform with the name `{item}` was not found.\n"
-                   f"The spelling may be incorrect, or if not in use it "
-                   f"may have been optimized out by the OpenGL driver.")
-            if _debug_api_shaders:
-                warnings.warn(msg)
-                return None
-
-            raise MissingUniformException(msg) from err
-        try:
-            return uniform.get()
-        except GLException as err:
-            raise ShaderException from err
 
 
 _default_vertex_source: str = """#version 330 core
