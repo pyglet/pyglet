@@ -13,6 +13,15 @@ from typing import TYPE_CHECKING
 import pyglet
 
 
+class UnsupportedBackendError(Exception):
+    """Raised when a graphics feature is unavailable on the active backend."""
+
+    def __init__(self, functionality: str, backend: GraphicsAPI | None = None) -> None:  # noqa: D107
+        super().__init__(f"{functionality} is unsupported on backend '{backend or pyglet.options.backend}'.")
+        self.functionality = functionality
+        self.backend = backend
+
+
 if TYPE_CHECKING:
     from pyglet.enums import GraphicsAPI
     from pyglet.graphics import api  # noqa: F401
@@ -39,13 +48,3 @@ else:
     from pyglet.graphics.texture import Texture, TextureGrid, Texture3D, TextureArray  # noqa: F401
     from pyglet.graphics.atlas import TextureBin, TextureArrayBin, TextureAtlas  # noqa: F401
     from pyglet.graphics.framebuffer import Framebuffer, Renderbuffer  # noqa: F401
-
-
-
-class UnsupportedBackendError(Exception):
-    """Raised when a graphics feature is unavailable on the active backend."""
-
-    def __init__(self, functionality: str, backend: GraphicsAPI | None = None) -> None:  # noqa: D107
-        super().__init__(f"{functionality} is unsupported on backend '{backend or pyglet.options.backend}'.")
-        self.functionality = functionality
-        self.backend = backend
