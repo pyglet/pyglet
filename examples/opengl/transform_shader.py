@@ -11,13 +11,12 @@ Press R to reset to the initial positions.
 
 from __future__ import annotations
 
-import struct
-
 import pyglet
 
 from pyglet.enums import GeometryMode
 from pyglet.graphics import Group, Shader, State, TransformFeedbackShaderProgram
-from pyglet.graphics.api.gl import GL_DYNAMIC_DRAW, GL_POINTS, GL_PROGRAM_POINT_SIZE, GL_RASTERIZER_DISCARD
+from pyglet.graphics.api.gl import GL_DYNAMIC_DRAW, GL_POINTS, GL_PROGRAM_POINT_SIZE, GL_RASTERIZER_DISCARD, \
+    OpenGLSurfaceContext
 from pyglet.graphics.api.gl.buffer import GLTransformFeedbackBufferObject
 
 
@@ -76,7 +75,9 @@ step_count = 0
 ctx = pyglet.graphics.api.core.current_context
 ctx.glEnable(GL_PROGRAM_POINT_SIZE)
 feedback_buffer_size = len(initial_positions) * 4  # 8 floats, 4 bytes each
-feedback_buffer = GLTransformFeedbackBufferObject(ctx, feedback_buffer_size, usage=GL_DYNAMIC_DRAW)
+feedback_buffer = GLTransformFeedbackBufferObject(ctx, feedback_buffer_size,
+                                                  usage=GL_DYNAMIC_DRAW,
+                                                  data_type="f")
 
 
 class TransformFeedbackCaptureState(State):
@@ -89,12 +90,12 @@ class TransformFeedbackCaptureState(State):
         self._buffer = tf_buffer
         self._binding_index = binding_index
 
-    def set_state(self, ctx) -> None:
+    def set_state(self, ctx: OpenGLSurfaceContext) -> None:
         self._buffer.bind_base(self._binding_index)
         ctx.glEnable(GL_RASTERIZER_DISCARD)
         ctx.glBeginTransformFeedback(GL_POINTS)
 
-    def unset_state(self, ctx) -> None:
+    def unset_state(self, ctx: OpenGLSurfaceContext) -> None:
         ctx.glEndTransformFeedback()
         ctx.glDisable(GL_RASTERIZER_DISCARD)
 
@@ -123,7 +124,7 @@ render_vertex_list = program.vertex_list(
 )
 
 
-def run_transform_feedback(dx: float = 0.12, dy: float = 0.05) -> tuple[float, ...]:
+def run_transform_feedback(dx: float = 0.12, dy: float = 0.05) -> list:
     # Feed back previous output as the next input.
     capture_vertex_list.position[:] = current_positions
 
@@ -133,10 +134,7 @@ def run_transform_feedback(dx: float = 0.12, dy: float = 0.05) -> tuple[float, .
 
     capture_vertex_list.draw(GeometryMode.POINTS)
     program.stop()
-
-    raw = feedback_buffer.get_data()
-    floats = struct.unpack(f"{len(initial_positions)}f", raw)
-    return floats
+    return feedback_buffer.get_data()[:]
 
 
 def print_capture(data: tuple[float, ...]) -> None:
