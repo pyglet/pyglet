@@ -24,7 +24,7 @@ from ctypes import (
     create_string_buffer,
     sizeof, c_void_p,
 )
-from typing import TYPE_CHECKING, Any, Callable, Sequence, Type, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, Literal, Sequence, Type, Union, overload
 
 import pyglet
 from pyglet.graphics.api.gl import GLException, gl, OpenGLSurfaceContext
@@ -49,6 +49,9 @@ from pyglet.graphics.shader import (
     ShaderProgram,
     ShaderSource,
     ShaderType,
+    MissingUniformException,
+    MissingAttributeException,
+    UnsupportedShaderType,
 )
 from pyglet.graphics.shader import ShaderException
 
@@ -517,8 +520,8 @@ def _introspect_attributes(ctx, program_id: int) -> dict[str, Attribute]:
     return attributes
 
 
-def _link_program(ctx: OpenGLSurfaceContext, *shaders: GLShader) -> int:
-    """Link one or more Shaders into a ShaderProgram.
+def _create_program(ctx: OpenGLSurfaceContext, *shaders: GLShader) -> int:
+    """Create a program and attach one or more Shader objects.
 
     Returns:
         The ID assigned to the linked ShaderProgram.
@@ -526,6 +529,11 @@ def _link_program(ctx: OpenGLSurfaceContext, *shaders: GLShader) -> int:
     program_id = ctx.glCreateProgram()
     for shader in shaders:
         ctx.glAttachShader(program_id, shader.id)
+    return program_id
+
+
+def _link_program(ctx: OpenGLSurfaceContext, program_id: int) -> None:
+    """Link an existing program object and validate link status."""
     ctx.glLinkProgram(program_id)
 
     # Check the link status of program
@@ -539,10 +547,18 @@ def _link_program(ctx: OpenGLSurfaceContext, *shaders: GLShader) -> int:
         msg = f"Error linking shader program:\n{log.value.decode()}"
         raise ShaderException(msg)
 
-    # Shader objects no longer needed
+
+def _detach_program_shaders(ctx: OpenGLSurfaceContext, program_id: int, *shaders: GLShader) -> None:
+    """Detach Shader objects from an already linked program."""
     for shader in shaders:
         ctx.glDetachShader(program_id, shader.id)
 
+
+def _build_program(ctx: OpenGLSurfaceContext, *shaders: GLShader) -> int:
+    """Create, link, and detach one or more Shaders into a ShaderProgram."""
+    program_id = _create_program(ctx, *shaders)
+    _link_program(ctx, program_id)
+    _detach_program_shaders(ctx, program_id, *shaders)
     return program_id
 
 
@@ -1032,7 +1048,13 @@ class GLShaderProgram(ShaderProgram):
         super().__init__(*shaders)
 
         self._context = pyglet.graphics.api.core.current_context
-        self._id = _link_program(self._context, *shaders)
+        self._id = _build_program(self._context, *shaders)
+
+        self._initialize_program_state()
+
+    def _initialize_program_state(self) -> None:
+        """Initialize debug output and shader introspection state."""
+        assert self._id is not None
 
         if _debug_api_shaders:
             assert _debug_api_shader_print(_get_program_log(self._context, self._id))
@@ -1086,7 +1108,7 @@ class GLShaderProgram(ShaderProgram):
             if _debug_api_shaders:
                 warnings.warn(msg)
                 return
-            raise ShaderException(msg) from err
+            raise MissingUniformException(msg) from err
         try:
             uniform.set(value)
         except GLException as err:
@@ -1105,7 +1127,7 @@ class GLShaderProgram(ShaderProgram):
                 warnings.warn(msg)
                 return None
 
-            raise ShaderException from err
+            raise MissingUniformException(msg) from err
         try:
             return uniform.get()
         except GLException as err:
@@ -1151,7 +1173,7 @@ class GLShaderProgram(ShaderProgram):
                 current_attrib = self._attributes[name]
             except KeyError:
                 msg = f"Attribute {name} not found. Existing attributes: {list(self._attributes.keys())}"
-                raise ShaderException(msg) from None
+                raise MissingAttributeException(msg) from None
             try:
                 if isinstance(fmt, tuple):
                     fmt, array = fmt  # noqa: PLW2901
@@ -1191,6 +1213,44 @@ class GLShaderProgram(ShaderProgram):
         return vlist
 
 
+class GLTransformFeedbackShaderProgram(GLShaderProgram):
+    """OpenGL shader program configured for transform feedback capture."""
+
+    __slots__ = '_varying_buffer_type', '_varyings'
+
+    def __init__(self, *shaders: GLShader, varyings: Sequence[str],
+                 varying_buffer_type: Literal["interleaved", "separate"] = "separate") -> None:
+        ShaderProgram.__init__(self, *shaders)
+        self._context = pyglet.graphics.api.core.current_context
+
+        self._varyings = tuple(varyings)
+        self._varying_buffer_type = varying_buffer_type
+
+        if not self._varyings:
+            msg = "At least one transform feedback varying is required."
+            raise ShaderException(msg)
+
+        self._id = _create_program(self._context, *shaders)
+        self._set_transform_feedback_varyings()
+        _link_program(self._context, self._id)
+        _detach_program_shaders(self._context, self._id, *shaders)
+
+        self._initialize_program_state()
+
+    def _set_transform_feedback_varyings(self) -> None:
+        c_array = (c_char_p * len(self._varyings))()
+        for i, name in enumerate(self._varyings):
+            c_array[i] = name.encode()
+
+        ptr = cast(c_array, POINTER(POINTER(c_char)))
+        mode = (
+            gl.GL_INTERLEAVED_ATTRIBS
+            if self._varying_buffer_type == "interleaved"
+            else gl.GL_SEPARATE_ATTRIBS
+        )
+        self._context.glTransformFeedbackVaryings(self._id, len(self._varyings), ptr, mode)
+
+
 class GLComputeShaderProgram:
     """OpenGL Compute Shader Program."""
     _context: OpenGLSurfaceContext | NullContext
@@ -1217,7 +1277,7 @@ class GLComputeShaderProgram:
 
         self._shader = GLShader(source, 'compute')
         self._context = pyglet.graphics.api.core.current_context
-        self._id = _link_program(self._context, self._shader)
+        self._id = _build_program(self._context, self._shader)
 
         if _debug_api_shaders:
             assert _debug_api_shader_print(_get_program_log(self._context, self._id))
@@ -1310,7 +1370,7 @@ class GLComputeShaderProgram:
                 warnings.warn(msg)
                 return
 
-            raise ShaderException from err
+            raise MissingUniformException(msg) from err
         try:
             uniform.set(value)
         except GLException as err:
@@ -1327,7 +1387,7 @@ class GLComputeShaderProgram:
                 warnings.warn(msg)
                 return None
 
-            raise ShaderException(msg) from err
+            raise MissingUniformException(msg) from err
         try:
             return uniform.get()
         except GLException as err:

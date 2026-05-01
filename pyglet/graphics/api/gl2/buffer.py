@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from pyglet.graphics.api.gl import GL_ARRAY_BUFFER, GL_DYNAMIC_DRAW, GL_ELEMENT_ARRAY_BUFFER, OpenGLSurfaceContext
 from pyglet.graphics.api.gl.buffer import GLBackedBufferObject, GLBufferObject, GLMappedBufferObject
 from pyglet.graphics.buffer import BufferDataStore, MappedBufferObject as BaseMappedBufferObject
+from pyglet.graphics import UnsupportedBackendError
 
 if TYPE_CHECKING:
     from pyglet.customtypes import DataTypes
@@ -124,8 +125,7 @@ class GL2UniformBufferObject:
     """Uniform buffers are unsupported in OpenGL 2.0."""
 
     def __init__(self, view_class: type[Structure], buffer_size: int, binding: int) -> None:
-        msg = "UniformBufferObject is not available in OpenGL 2.0."
-        raise NotImplementedError(msg)
+        raise UnsupportedBackendError("UniformBufferObject")
 
 
 UniformBufferObject = GL2UniformBufferObject
@@ -135,5 +135,4 @@ class GL2PersistentBufferObject(BaseMappedBufferObject):
     """Persistent mapped buffers are unsupported in OpenGL 2.0."""
 
     def __init__(self, context, size, attribute, vao):  # noqa: ANN001
-        msg = "PersistentBufferObject is not available in OpenGL 2.0."
-        raise NotImplementedError(msg)
+        raise UnsupportedBackendError("PersistentBufferObject")

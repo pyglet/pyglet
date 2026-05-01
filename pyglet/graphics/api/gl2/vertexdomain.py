@@ -43,6 +43,7 @@ from pyglet.graphics.api.gl import (
     OpenGLSurfaceContext,
 
 )
+from pyglet.graphics import UnsupportedBackendError
 from pyglet.graphics.api.gl.enums import geometry_map
 from pyglet.graphics.api.gl.shader import GLAttribute
 from pyglet.graphics.api.gl2.buffer import GL2AttributeBufferObject, GL2IndexedBufferObject
@@ -114,13 +115,13 @@ class GLVertexArrayBinding(VertexArrayBinding):
 class InstancedVertexDomain:
     """Not available in OpenGL 2.0"""
     def __init__(self, *args, **kwargs):
-        raise NotImplementedError("InstancedVertexDomain is not available in OpenGL 2.0.")
+        raise UnsupportedBackendError("InstancedVertexDomain")
 
 
 class InstancedIndexedVertexDomain:
     """Not available in OpenGL 2.0"""
     def __init__(self, *args, **kwargs):
-        raise NotImplementedError("InstancedIndexedVertexDomain is not available in OpenGL 2.0.")
+        raise UnsupportedBackendError("InstancedIndexedVertexDomain")
 
 
 class VertexList(BaseVertexList):

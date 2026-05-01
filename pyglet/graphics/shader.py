@@ -26,6 +26,15 @@ if TYPE_CHECKING:
 class ShaderException(BaseException):
     pass
 
+class MissingUniformException(ShaderException):
+    """Exception for when a Shader uniform is missing due to optimization or mispelling."""
+
+class UnsupportedShaderType(ShaderException):
+    """Exception for trying to create an unsupported shader."""
+
+class MissingAttributeException(ShaderException):
+    """Exception for when a Shader has a missing attribute name."""
+
 ShaderType = Literal['vertex', 'fragment', 'geometry', 'compute', 'tesscontrol', 'tessevaluation']
 
 # NormalizedType = Literal[
@@ -312,6 +321,42 @@ class ComputeShaderProgram:
         raise NotImplementedError(msg)
 
 
+class TransformFeedbackShaderProgram(ShaderProgram):
+    """Backend-agnostic transform feedback shader program container."""
+    _id: int
+
+    def __init__(
+        self,
+        *shaders: _AbstractShader,
+        varyings: Sequence[str],
+        varying_buffer_type: Literal["interleaved", "separate"] = "separate",
+    ) -> None:
+        """Initialize a transform feedback shader program.
+
+        Args:
+            shaders:
+                One or more :py:class:`~pyglet.graphics.shader.Shader` instances.
+            varyings:
+                Names of vertex/geometry shader output variables to capture with
+                transform feedback.
+            varying_buffer_type:
+                Buffer packing mode for captured outputs:
+                ``"separate"`` (one buffer per varying) or ``"interleaved"``
+                (single interleaved buffer).
+
+        Notes:
+            This class is replaced by a backend-specific implementation at
+            import time when a supported backend is active.
+        """
+        super().__init__(*shaders)
+        _ = varyings, varying_buffer_type
+        msg = f"{self.__class__.__name__} is backend-specific and must be provided by the active backend."
+        raise NotImplementedError(msg)
+
+    @property
+    def id(self) -> int:
+        return self._id
+
 class ShaderSource(abc.ABC):
     """String source of shader used during load of a Shader instance."""
 
@@ -340,7 +385,7 @@ class _AbstractShader(abc.ABC):
                 f"Shader type '{shader_type}' is not supported by this shader class."
                 f"Supported types are: {available_shaders}"
             )
-            raise ShaderException(msg)
+            raise UnsupportedShaderType(msg)
 
     @classmethod
     @abstractmethod
@@ -612,7 +657,7 @@ class UniformArrayBase:
                 f"{self._uniform.name}[{index}] not found.\n"
                 "This may have been optimized out by the OpenGL driver if unused."
             )
-            raise ShaderException(msg)
+            raise MissingUniformException(msg)
 
         return loc
 
@@ -640,7 +685,7 @@ class UniformArrayBase:
                 f"{self._uniform.name}[{key}] not found. "
                 "This may have been optimized out by the OpenGL driver if unused."
             )
-            raise ShaderException(msg)
+            raise MissingUniformException(msg)
 
     def __setitem__(self, key: slice | int, value: Sequence) -> None:
         if isinstance(key, slice):
@@ -925,16 +970,23 @@ if not _is_pyglet_doc_run:
             GLComputeShaderProgram as ComputeShaderProgram,
             GLShader as Shader,
             GLShaderProgram as ShaderProgram,
+            GLTransformFeedbackShaderProgram as TransformFeedbackShaderProgram,
         )
         from pyglet.graphics.api.gl.shader import get_default_shader
     elif pyglet.options.backend in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
-        from pyglet.graphics.api.gl2.shader import ComputeShaderProgram, Shader, ShaderProgram
+        from pyglet.graphics.api.gl2.shader import (
+            ComputeShaderProgram,
+            Shader,
+            ShaderProgram,
+            TransformFeedbackShaderProgram,
+        )
         from pyglet.graphics.api.gl2.shader import get_default_shader
     elif pyglet.options.backend == GraphicsAPI.WEBGL:
         from pyglet.graphics.api.webgl.shader import (
             WebGLComputeShaderProgram as ComputeShaderProgram,
             WebGLShader as Shader,
             WebGLShaderProgram as ShaderProgram,
+            WebGLTransformFeedbackShaderProgram as TransformFeedbackShaderProgram,
         )
         from pyglet.graphics.api.webgl.shader import get_default_shader
     elif pyglet.options.backend == GraphicsAPI.VULKAN:

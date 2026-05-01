@@ -683,3 +683,45 @@ def test_shader_uniform_matrix_array_types(gl3_context, matrix_type, matrix_leng
     assert len(fetched_data[2]) == matrix_length
     for actual, expected in zip(fetched_data[2], test_data):
         assert actual == pytest.approx(expected, abs=1e-06)
+
+
+@skip_graphics_api(GraphicsAPI.GL2)
+def test_transform_feedback_shader_program_varyings_are_linked(gl3_context):
+    vertex_source = """#version 150 core
+        in vec3 position;
+        out vec3 tf_position;
+
+        void main()
+        {
+            gl_Position = vec4(position, 1.0);
+            tf_position = position;
+        }
+    """
+
+    fragment_source = """#version 150 core
+        out vec4 final_colors;
+
+        void main()
+        {
+            final_colors = vec4(1.0);
+        }
+    """
+
+    program = pyglet.graphics.TransformFeedbackShaderProgram(
+        pyglet.graphics.Shader(vertex_source, "vertex"),
+        pyglet.graphics.Shader(fragment_source, "fragment"),
+        varyings=["tf_position"],
+    )
+
+    from pyglet.graphics.api.gl import gl
+
+    link_status = gl.GLint(0)
+    tf_count = gl.GLint(0)
+    ctx = pyglet.graphics.api.core.current_context
+    ctx.glGetProgramiv(program.id, gl.GL_LINK_STATUS, link_status)
+    ctx.glGetProgramiv(program.id, gl.GL_TRANSFORM_FEEDBACK_VARYINGS, tf_count)
+    link_status = link_status.value
+    tf_count = tf_count.value
+
+    assert link_status == 1
+    assert tf_count == 1

@@ -21,6 +21,7 @@ from pyglet.graphics.api.webgl.gl import (
     GL_TRANSFORM_FEEDBACK_BUFFER,
     GL_UNIFORM_BUFFER,
 )
+from pyglet.graphics import UnsupportedBackendError
 from pyglet.graphics.buffer import (
     AbstractBuffer,
     BackedBufferObject as BaseBackedBufferObject,
@@ -166,13 +167,13 @@ class WebGLMappedBufferObject(WebGLBufferObject, BaseMappedBufferObject):
     """Mapped WebGL buffers are not supported."""
 
     def map(self, bits: int = 0):
-        raise NotImplementedError("WebGL does not support mapped buffers.")
+        raise UnsupportedBackendError("MappedBufferObject")
 
     def map_range(self, start: int, size: int, ptr_type, bits: int = 0):
-        raise NotImplementedError("WebGL does not support mapped buffers.")
+        raise UnsupportedBackendError("MappedBufferObject")
 
     def unmap(self) -> None:
-        raise NotImplementedError("WebGL does not support mapped buffers.")
+        raise UnsupportedBackendError("MappedBufferObject")
 
 
 class WebGLBackedBufferObject(BaseBackedBufferObject, WebGLBufferObject):
@@ -390,5 +391,4 @@ class WebGLPersistentBufferObject(BaseMappedBufferObject):
     """Persistently mapped buffers are not currently implemented."""
 
     def __init__(self, context, size, attribute, vao):  # noqa: ANN001
-        msg = "PersistentBufferObject is not supported by WebGL."
-        raise NotImplementedError(msg)
+        raise UnsupportedBackendError("PersistentBufferObject")
