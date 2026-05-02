@@ -544,6 +544,33 @@ class PixelUnpackBuffer(PixelBuffer):
 
 class TransformFeedbackBuffer(IndexedBindingBuffer):
     """Backend-agnostic transform feedback buffer."""
+    _data_type: DataTypes
+
+    def __init__(self, size: int, *, data_type: DataTypes = "b") -> None:
+        """Create a transform feedback buffer view.
+
+        Args:
+            size:
+                The buffer size in bytes.
+            data_type:
+                Preferred format used by helper method :meth:`get_data`, defaults
+                to ``"b"`` for bytes.
+        """
+        super().__init__(size)
+        self._data_type = data_type
+
+    def get_data(self) -> Array[Any]:
+        """Read transform feedback data as the initialized ctypes array."""
+        element_size = _data_type_size(self._data_type)
+        assert self.size % element_size == 0, (
+            f"Buffer size {self.size} is not aligned to element size {element_size} "
+            f"for data type '{self._data_type}'."
+        )
+
+        c_type = _data_type_to_ctype(self._data_type)
+        count = self.size // element_size
+        raw = self.get_bytes()
+        return (c_type * count).from_buffer_copy(raw)
 
 
 class TextureBuffer(AbstractBuffer):

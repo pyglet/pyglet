@@ -10,7 +10,7 @@ from ctypes import (
     c_uint,
     c_ushort,
 )
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Sequence
 
 import pyglet
 import pyglet.graphics.api.gl.gl as gl
@@ -18,7 +18,13 @@ from pyglet.graphics.api.gl2.buffer import UniformBufferObject  # noqa: F401
 from pyglet.graphics.api.gl.shader import GLDataType
 from pyglet.graphics.api.gl.shader import GLShader
 from pyglet.graphics.api.gl.shader import GLShaderProgram
-from pyglet.graphics.shader import ShaderException, ShaderSource, ShaderType
+from pyglet.graphics import UnsupportedBackendError
+from pyglet.graphics.shader import (
+    _AbstractShaderProgram,
+    ShaderException,
+    ShaderSource,
+    ShaderType,
+)
 
 if TYPE_CHECKING:
     from pyglet.graphics.api.base import NullContext
@@ -64,7 +70,7 @@ class UniformBlock:
         uniforms: dict[int, tuple[str, GLDataType, int, int]],
         uniform_count: int,
     ) -> None:
-        raise NotImplementedError
+        raise UnsupportedBackendError("UniformBlock")
 
 
 # Shader & program classes:
@@ -177,14 +183,31 @@ class ShaderProgram(GLShaderProgram):  # noqa: D101
         return
 
 
-class ComputeShaderProgram:
+class ComputeShaderProgram(_AbstractShaderProgram):
     """OpenGL Compute Shader Program.
 
     Not supported by OpenGL 2.0
     """
 
     def __init__(self, source: str) -> None:
-        raise NotImplementedError
+        super().__init__()
+        raise UnsupportedBackendError("ComputeShaderProgram")
+
+
+class TransformFeedbackShaderProgram(ShaderProgram):
+    """OpenGL Transform Feedback Shader Program.
+
+    Not supported by OpenGL 2.0 / OpenGL ES 2.0.
+    """
+
+    def __init__(
+        self,
+        *shaders: Shader,
+        varyings: Sequence[str],
+        varying_buffer_type: str = "separate",
+    ) -> None:
+        _ = shaders, varyings, varying_buffer_type
+        raise UnsupportedBackendError("TransformFeedbackShaderProgram")
 
 
 _default_vertex_source: str = """#version 110

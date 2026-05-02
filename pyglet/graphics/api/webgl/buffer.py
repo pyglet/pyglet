@@ -21,6 +21,7 @@ from pyglet.graphics.api.webgl.gl import (
     GL_TRANSFORM_FEEDBACK_BUFFER,
     GL_UNIFORM_BUFFER,
 )
+from pyglet.graphics import UnsupportedBackendError
 from pyglet.graphics.buffer import (
     AbstractBuffer,
     BackedBufferObject as BaseBackedBufferObject,
@@ -34,6 +35,7 @@ from pyglet.graphics.buffer import (
     TextureBuffer,
     TransformFeedbackBuffer,
     UniformBufferObject,
+    _data_type_size,
 )
 
 if TYPE_CHECKING:
@@ -166,13 +168,13 @@ class WebGLMappedBufferObject(WebGLBufferObject, BaseMappedBufferObject):
     """Mapped WebGL buffers are not supported."""
 
     def map(self, bits: int = 0):
-        raise NotImplementedError("WebGL does not support mapped buffers.")
+        raise UnsupportedBackendError("MappedBufferObject")
 
     def map_range(self, start: int, size: int, ptr_type, bits: int = 0):
-        raise NotImplementedError("WebGL does not support mapped buffers.")
+        raise UnsupportedBackendError("MappedBufferObject")
 
     def unmap(self) -> None:
-        raise NotImplementedError("WebGL does not support mapped buffers.")
+        raise UnsupportedBackendError("MappedBufferObject")
 
 
 class WebGLBackedBufferObject(BaseBackedBufferObject, WebGLBufferObject):
@@ -351,8 +353,33 @@ class WebGLPixelUnpackBufferObject(WebGLPixelBufferObject, PixelUnpackBuffer):
 class WebGLTransformFeedbackBufferObject(WebGLBufferObject, TransformFeedbackBuffer):
     """WebGL transform feedback buffer object."""
 
-    def __init__(self, context: OpenGLSurfaceContext, size: int, usage: int = GL_DYNAMIC_DRAW) -> None:
+    def __init__(
+        self,
+        context: OpenGLSurfaceContext,
+        size: int,
+        usage: int = GL_DYNAMIC_DRAW,
+        data_type: DataTypes = "b",
+    ) -> None:
+        """Create a WebGL transform feedback buffer.
+
+        Args:
+            context:
+                Active WebGL surface context.
+            size:
+                Buffer size in bytes.
+            usage:
+                WebGL usage hint.
+            data_type:
+                Preferred scalar format for :meth:`get_data`. The helper always
+                returns a ctypes array of this scalar type.
+        """
+        element_size = _data_type_size(data_type)
+        assert size % element_size == 0, (
+            f"Buffer size {size} is not aligned to element size {element_size} "
+            f"for data type '{data_type}'."
+        )
         super().__init__(context, size, target=GL_TRANSFORM_FEEDBACK_BUFFER, usage=usage)
+        TransformFeedbackBuffer.__init__(self, size=size, data_type=data_type)
 
     def bind_base(self, index: int) -> None:
         self._gl.bindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, index, self.id)
@@ -390,5 +417,4 @@ class WebGLPersistentBufferObject(BaseMappedBufferObject):
     """Persistently mapped buffers are not currently implemented."""
 
     def __init__(self, context, size, attribute, vao):  # noqa: ANN001
-        msg = "PersistentBufferObject is not supported by WebGL."
-        raise NotImplementedError(msg)
+        raise UnsupportedBackendError("PersistentBufferObject")

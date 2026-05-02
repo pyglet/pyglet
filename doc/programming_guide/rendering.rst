@@ -195,6 +195,39 @@ There may come a point where you don't want a specific :py:class:`~pyglet.graphi
 
 .. note:: Binding point 0 cannot be set, as it is used internally for ``WindowBlock``.
 
+Transform Feedback
+^^^^^^^^^^^^^^^^^^
+
+:py:class:`~pyglet.graphics.shader.TransformFeedbackShaderProgram` is a specialized
+ShaderProgram that captures vertex (or geometry) shader outputs into a buffer,
+instead of only rasterizing them to the framebuffer.
+
+This is useful for GPU particle updates, simulation steps, and other workflows
+where one draw pass generates data for later passes.
+
+Create one the same way as a normal ShaderProgram, but provide ``varyings`` when
+linking::
+
+    tf_program = pyglet.graphics.TransformFeedbackShaderProgram(
+        vertex_shader,
+        fragment_shader,
+        varyings=("next_position", "next_velocity"),
+    )
+
+``varyings`` names must match ``out`` variables declared in your shader stage.
+Captured values are written to transform feedback buffer binding points in the
+order provided by ``varyings``.
+
+Use ``varying_buffer_type="separate"`` (default) to write each varying to a
+separate binding point, or ``"interleaved"`` to pack them into one stream.
+
+After linking, bind one or more
+:py:class:`~pyglet.graphics.buffer.TransformFeedbackBuffer` objects with
+``bind_base``/``bind_range`` and run a draw call while transform feedback is
+active.
+
+See ``examples/opengl/transform_shader.py`` for a complete end-to-end example.
+
 
 Creating Vertex Lists
 ^^^^^^^^^^^^^^^^^^^^^
