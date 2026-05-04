@@ -7,6 +7,8 @@ Intended usage is to create a file for bug reports, e.g.::
 """
 from __future__ import annotations
 
+from pyglet.enums import GraphicsAPI
+
 _first_heading = True
 
 
@@ -63,7 +65,8 @@ def dump_window():
     import pyglet.window
     window = pyglet.window.Window(visible=False)
     from pyglet.graphics.api import core
-    if not core.have_version(3) or not core.have_version(2):
+    if ((not core.have_version(3) and pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3)) or
+            (not core.have_version(2) and pyglet.options.backend in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2))):
         print(f"Insufficient OpenGL version: {core.info.get_version_string()}")
         return
     display = pyglet.display.get_display()
