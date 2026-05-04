@@ -181,21 +181,23 @@ def _get_gl_format_and_type(fmt: str, data_type: str) -> tuple[int | None, int |
     return None, None
 
 
-def _get_pixel_format(image_data: ImageData) -> tuple[int, int]:
-    """Determine the pixel format from format string for the Graphics API."""
-    data_format = image_data.format
-    fmt, gl_type = _get_gl_format_and_type(data_format, image_data.data_type)
-
-    if fmt is None:
-        # Need to convert data to a standard form
-        data_format = {
+def _normalize_upload_format(data_format: str) -> str:
+    """Normalize an image format string into a supported upload format."""
+    fmt = data_format
+    if fmt not in _api_pixel_formats:
+        fmt = {
             1: 'R',
             2: 'RG',
             3: 'RGB',
             4: 'RGBA',
         }.get(len(data_format))
-        fmt, gl_type = _get_gl_format_and_type(data_format, image_data.data_type)
+    return fmt
 
+
+def _get_pixel_format(image_data: ImageData) -> tuple[int, int]:
+    """Determine the pixel format from format string for the Graphics API."""
+    data_format = _normalize_upload_format(image_data.format)
+    fmt, gl_type = _get_gl_format_and_type(data_format, image_data.data_type)
     return fmt, gl_type
 
 
@@ -488,11 +490,24 @@ class GLTexture(Texture):
                           level: int = 0) -> None:
         data_pitch = abs(image_data._current_pitch)
 
+        api = self._context.info.get_opengl_api()
+        upload_fmt = image_data.format
+        upload_pitch = data_pitch
+
+        # GLES drivers can be strict about sub-image upload format compatibility.
+        # Match upload format to the texture's component format.
+        if api in (GraphicsAPI.OPENGL_ES_2, GraphicsAPI.OPENGL_ES_3):
+            desired_fmt = self.internal_format.value
+            if desired_fmt != upload_fmt:
+                upload_fmt = desired_fmt
+                upload_pitch = image_data.width * len(upload_fmt)
+
         # Get data in required format (hopefully will be the same format it's already
         # in, unless that's an obscure format, upside-down or the driver is old).
-        data = image_data.convert(image_data.format, data_pitch)
+        data = image_data.convert(upload_fmt, upload_pitch)
 
-        fmt, gl_type = _get_pixel_format(image_data)
+        upload_fmt = _normalize_upload_format(upload_fmt)
+        fmt, gl_type = _get_gl_format_and_type(upload_fmt, image_data.data_type)
 
         self._context.glTexSubImage2D(self.target, level,
                                       x, y,
