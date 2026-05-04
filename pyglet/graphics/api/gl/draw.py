@@ -68,6 +68,7 @@ class GLBatch(Batch):
     top_groups: list[Group]
     group_children: dict[Group, list[Group]]
     group_map: dict[Group, dict[_DomainKey, vertexdomain.GLVertexDomain]]
+    _domain_class_map = _domain_class_map
 
     def __init__(self, context: OpenGLSurfaceContext | None = None, initial_count: int = 32) -> None:
         """Initialize the batch for use.
@@ -99,102 +100,15 @@ class GLBatch(Batch):
 
     def update_shader(self, vertex_list: GLVertexList | GLIndexedVertexList, mode: GeometryMode, group: Group,
                       program: ShaderProgram) -> bool:
-        """Migrate a vertex list to another domain that has the specified shader attributes.
-
-        The results are undefined if `mode` is not correct or if `vertex_list`
-        does not belong to this batch (they are not checked and will not
-        necessarily throw an exception immediately).
-
-        Args:
-            vertex_list:
-                A vertex list currently belonging to this batch.
-            mode:
-                The current GL drawing mode of the vertex list.
-            group:
-                The new group to migrate to.
-            program:
-                The new shader program to migrate to.
-
-        Returns:
-            False if the domain's no longer match. The caller should handle this scenario.
-        """
-        # No new attributes.
-        attributes = program.attributes.copy()
-
-        # Formats may differ (normalization) than what is declared in the shader.
-        # Make those adjustments and attempt to get a domain.
-        for a_name in attributes:
-            if (a_name in vertex_list.initial_attribs and
-                    vertex_list.initial_attribs[a_name]['format'] != attributes[a_name]['format']):
-                attributes[a_name]['format'] = vertex_list.initial_attribs[a_name]['format']
-
-        domain = self.get_domain(vertex_list.indexed, vertex_list.instanced, mode, group, attributes)
-
-        # TODO: Allow migration if we can restore original vertices somehow. Much faster.
-        # If the domain's don't match, we need to re-create the vertex list. Tell caller no match.
-        if domain != vertex_list.domain:
-            return False
-
-        return True
+        return super().update_shader(vertex_list, mode, group, program)
 
     def migrate(self, vertex_list: GLVertexList | GLIndexedVertexList, mode: GeometryMode, group: Group,
                 batch: GLBatch) -> None:
-        """Migrate a vertex list to another batch and/or group.
-
-        `vertex_list` and `mode` together identify the vertex list to migrate.
-        `group` and `batch` are new owners of the vertex list after migration.
-
-        The results are undefined if `mode` is not correct or if `vertex_list`
-        does not belong to this batch (they are not checked and will not
-        necessarily throw an exception immediately).
-
-        ``batch`` can remain unchanged if only a group change is desired.
-
-        Args:
-            vertex_list:
-                A vertex list currently belonging to this batch.
-            mode:
-                The current GL drawing mode of the vertex list.
-            group:
-                The new group to migrate to.
-            batch:
-                The batch to migrate to (or the current batch).
-
-        """
-        attributes = vertex_list.domain.attribute_meta
-        domain = batch.get_domain(vertex_list.indexed, vertex_list.instanced, mode, group, attributes)
-
-        if domain != vertex_list.domain:
-            vertex_list.migrate(domain, group)
-        else:
-            # If the same domain, no need to move vertices, just update the group.
-            vertex_list.update_group(group)
-
-            # Updating group can potentially change draw order though.
-            self._draw_list_dirty = True
+        super().migrate(vertex_list, mode, group, batch)
 
     def get_domain(self, indexed: bool, instanced: bool, mode: GeometryMode, group: Group,
                    attributes: dict[str, Any]) -> vertexdomain.GLVertexDomain | vertexdomain.GLIndexedVertexDomain | vertexdomain.GLInstancedVertexDomain | vertexdomain.GLInstancedIndexedVertexDomain:
-        """Get, or create, the vertex domain corresponding to the given arguments.
-
-        mode is the render mode such as GL_LINES or GL_TRIANGLES
-        """
-        # Group map just used for group lookup now, not domains.
-        if group not in self.group_map:
-            self._add_group(group)
-
-        # If instanced, ensure a separate domain, as multiple instance sources can match the key.
-        # Find domain given formats, indices and mode
-        key = _DomainKey(indexed, instanced, mode, str(attributes))
-
-        try:
-            domain = self._domain_registry[key]
-        except KeyError:
-            # Create domain
-            domain = _domain_class_map[(indexed, instanced)](self._context, self.initial_count, attributes)
-            self._domain_registry[key] = domain
-            self._draw_list_dirty = True
-        return domain
+        return super().get_domain(indexed, instanced, mode, group, attributes)
 
     def _add_group(self, group: Group) -> None:
         self.group_map[group] = {}
