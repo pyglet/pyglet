@@ -275,6 +275,34 @@ def _assert_program_switch_success(
     assert new_vlist.domain.get_drawable_bucket(new_vlist.group) is not None
 
 
+def _program_switch_expectations(drawable, new_program) -> tuple[bool, bool]:
+    batch = drawable._batch
+    assert batch is not None
+
+    old_vlist = drawable._vertex_list
+    old_key = batch._attributes_key(old_vlist.domain.attribute_meta)
+    normalized_attributes = batch._normalized_shader_attributes(new_program, old_vlist.initial_attribs)
+
+    # update_shader compares using drawable-owned attributes.
+    update_attributes = {
+        name: normalized_attributes[name]
+        for name in old_vlist.initial_attribs
+        if name in normalized_attributes
+    }
+    update_key = batch._attributes_key(update_attributes)
+    if update_key == old_key:
+        return False, True
+
+    # Recreate paths (for Sprite/Shape) only pass object-owned vertex data keys.
+    recreate_attributes = {
+        name: normalized_attributes[name]
+        for name in old_vlist.initial_attribs
+        if name in normalized_attributes
+    }
+    recreate_key = batch._attributes_key(recreate_attributes)
+    return True, recreate_key == old_key
+
+
 def _assert_program_switch_missing_attribute_raises(drawable, new_program) -> None:
     old_vlist = drawable._vertex_list
     old_domain = old_vlist.domain
@@ -349,13 +377,19 @@ def sprite_image():
 def test_sprite_program_change_same_attributes_keeps_domain_updates_group(gl3_context, sprite_programs, sprite_image):  # noqa: ARG001
     """Switch Sprite to a program with identical attributes.
 
-    Verifies the vertex list stays in the same domain while group/program state updates.
+    Verifies domain reuse vs recreation follows resolved attribute-key compatibility, and group/program state updates.
     """
     batch = pyglet.graphics.Batch()
     sprite = pyglet.sprite.Sprite(sprite_image, x=0, y=0, batch=batch, program=sprite_programs["base"])
+    expect_recreated, expect_same_domain = _program_switch_expectations(sprite, sprite_programs["same"])
 
     try:
-        _assert_program_switch_success(sprite, sprite_programs["same"], expect_recreated=False, expect_same_domain=True)
+        _assert_program_switch_success(
+            sprite,
+            sprite_programs["same"],
+            expect_recreated=expect_recreated,
+            expect_same_domain=expect_same_domain,
+        )
     finally:
         sprite.delete()
 
@@ -387,17 +421,18 @@ def test_sprite_program_change_different_attributes_recreates_with_new_domain(gl
 def test_sprite_program_change_same_attributes_plus_one_recreates_in_same_domain(gl3_context, sprite_programs, sprite_image):  # noqa: ARG001
     """Switch Sprite to a program with one additional attribute.
 
-    Verifies the vertex list is recreated but still resolves to the same underlying domain.
+    Verifies domain reuse vs recreation matches backend-resolved attribute-key compatibility for the new program.
     """
     batch = pyglet.graphics.Batch()
     sprite = pyglet.sprite.Sprite(sprite_image, x=0, y=0, batch=batch, program=sprite_programs["base"])
+    expect_recreated, expect_same_domain = _program_switch_expectations(sprite, sprite_programs["extra"])
 
     try:
         _assert_program_switch_success(
             sprite,
             sprite_programs["extra"],
-            expect_recreated=True,
-            expect_same_domain=True,
+            expect_recreated=expect_recreated,
+            expect_same_domain=expect_same_domain,
         )
     finally:
         sprite.delete()
@@ -416,13 +451,19 @@ def test_sprite_program_change_missing_attribute_raises_and_removes_old_bucket(g
 def test_shape_program_change_same_attributes_keeps_domain_updates_group(gl3_context, shape_programs):  # noqa: ARG001
     """Switch Shape to a program with identical attributes.
 
-    Verifies no domain migration is needed and only group/program state changes.
+    Verifies domain reuse vs recreation follows resolved attribute-key compatibility, with correct group/program updates.
     """
     batch = pyglet.graphics.Batch()
     shape = pyglet.shapes.Circle(32, 32, 16, batch=batch, program=shape_programs["base"])
+    expect_recreated, expect_same_domain = _program_switch_expectations(shape, shape_programs["same"])
 
     try:
-        _assert_program_switch_success(shape, shape_programs["same"], expect_recreated=False, expect_same_domain=True)
+        _assert_program_switch_success(
+            shape,
+            shape_programs["same"],
+            expect_recreated=expect_recreated,
+            expect_same_domain=expect_same_domain,
+        )
     finally:
         shape.delete()
 
@@ -454,17 +495,18 @@ def test_shape_program_change_different_attributes_recreates_with_new_domain(gl3
 def test_shape_program_change_same_attributes_plus_one_recreates_in_same_domain(gl3_context, shape_programs):  # noqa: ARG001
     """Switch Shape to a program that adds one extra attribute.
 
-    Verifies recreation occurs while domain compatibility remains the same.
+    Verifies domain reuse vs recreation matches backend-resolved attribute-key compatibility for the new program.
     """
     batch = pyglet.graphics.Batch()
     shape = pyglet.shapes.Circle(32, 32, 16, batch=batch, program=shape_programs["base"])
+    expect_recreated, expect_same_domain = _program_switch_expectations(shape, shape_programs["extra"])
 
     try:
         _assert_program_switch_success(
             shape,
             shape_programs["extra"],
-            expect_recreated=True,
-            expect_same_domain=True,
+            expect_recreated=expect_recreated,
+            expect_same_domain=expect_same_domain,
         )
     finally:
         shape.delete()

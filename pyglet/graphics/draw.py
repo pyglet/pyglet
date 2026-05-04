@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import warnings
 from copy import copy
 import weakref
 from dataclasses import dataclass
@@ -391,7 +392,15 @@ class Batch:
         """
         attributes = self._normalized_shader_attributes(program, vertex_list.initial_attribs)
 
-        domain = self.get_domain(vertex_list.indexed, vertex_list.instanced, mode, group, attributes)
+        # Changing shaders for existing drawables are limited by the attributes
+        # the drawable originally allocated buffers for.
+        if missing := [name for name in vertex_list.initial_attribs if name not in attributes]:
+            if _debug_graphics_batch:
+                warnings.warn(f"Missing required shader attributes for update: {missing}")
+            return False
+
+        drawable_attributes = {name: attributes[name] for name in vertex_list.initial_attribs}
+        domain = self.get_domain(vertex_list.indexed, vertex_list.instanced, mode, group, drawable_attributes)
 
         # TODO: Allow migration if we can restore original vertices somehow. Much faster.
         # If the domain's don't match, we need to re-create the vertex list. Tell caller no match.
