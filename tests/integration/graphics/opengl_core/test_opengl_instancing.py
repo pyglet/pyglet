@@ -5,10 +5,10 @@ import random
 import pytest
 import ctypes
 
-from tests.annotations import skip_graphics_api, GraphicsAPI
+from tests.annotations import skip_graphics_api, GraphicsAPIGroups
 
 
-pytestmark = [skip_graphics_api(GraphicsAPI.GL2)]
+pytestmark = [skip_graphics_api(GraphicsAPIGroups.GL2)]
 
 
 _vertex_source: str = """#version 330 core

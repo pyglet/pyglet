@@ -5,7 +5,7 @@ import pytest
 import pyglet
 from pyglet.graphics.shader import MissingAttributeException
 
-from tests.annotations import GraphicsAPI
+from tests.annotations import GraphicsAPIGroups
 
 
 _SPRITE_LAYOUT_A = {
@@ -51,7 +51,7 @@ _SHAPE_ORDER_B = ("rotation", "colors", "translation", "position")
 
 
 def _is_gl2_backend() -> bool:
-    return pyglet.options.backend in GraphicsAPI.GL2
+    return pyglet.options.backend in GraphicsAPIGroups.GL2
 
 
 def _build_program(vertex_source: str, fragment_source: str):
