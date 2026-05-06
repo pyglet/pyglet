@@ -45,9 +45,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import Literal
+    from typing import Literal, Sequence
     from pyglet.graphics.atlas import TextureBin
-    from pyglet.graphics.texture import Texture, TextureSequence
+    from pyglet.graphics.texture import Texture, TextureGrid, TextureSequence
 
 
 class Animation:
@@ -114,7 +114,12 @@ class Animation:
         return max([frame.image.height for frame in self.frames])
 
     @classmethod
-    def from_image_sequence(cls, sequence: TextureSequence, duration: float, loop: bool = True) -> Animation:
+    def from_image_sequence(
+        cls,
+        sequence: TextureSequence | TextureGrid | Sequence[Texture],
+        duration: float,
+        loop: bool = True,
+    ) -> Animation:
         """Create an animation from a list of images and a per-frame duration."""
         frames = [AnimationFrame(image, duration) for image in sequence]
         if not loop:
