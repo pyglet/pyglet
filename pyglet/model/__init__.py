@@ -1,20 +1,30 @@
 """Loading of 3D scenes and models.
 
-The :py:mod:`~pyglet.model` module provides an interface for loading 3D "scenes"
-and models. A :py:class:`~pyglet.model.Scene` is a logical container that can
-contain the data of one or more models, and is closely based on the design
-of the glTF format.
+The :py:mod:`~pyglet.model` module provides an interface for loading 3D "scenes".
+A :py:class:`~pyglet.model.Scene` is a logical container that can contain the data
+of one or more models, and is closely based on the design of the glTF format.
+
+After loading a Scene, it is uploaded to the GPU (VertexLists created).
+From there, you can make an instance (or many instances) of the model.
+Instancing is used internally, with each instance able to be positioned independently.
 
 The following example loads a ``"teapot.obj"`` file. The wavefront format
-only contains a single model (mesh)::
+only contains a single model in the scene::
 
     import pyglet
 
     window = pyglet.window.Window()
     batch = pyglet.graphics.Batch()
 
+    # Load and parse the Scene (CPU operation):
     scene = pyglet.model.load('teapot.obj')
+    # Generate Models from the scene (upload to GPU):
     models = scene.create_models(batch=batch)
+    # Create visable Instances of each model (only one in this case):
+    instances = []
+    for model in models:
+        instance = model.create_instance(translation=Vec3(2.0, 0.0, 5.0))
+        instances.append(instance)
 
     @window.event
     def on_draw():
@@ -32,9 +42,9 @@ from math import pi, sin, cos
 from typing import TYPE_CHECKING
 
 import pyglet
-import pyglet.enums
+
 from pyglet import graphics
-from pyglet.math import Mat4
+from pyglet.enums import GeometryMode, CompareOp
 
 from .codecs import add_default_codecs as _add_default_codecs
 from .codecs import registry as _codec_registry
@@ -42,10 +52,11 @@ from .codecs.base import Material, Scene, SimpleMaterial
 
 if TYPE_CHECKING:
     from typing import BinaryIO, TextIO
+    from pyglet.math import Vec3
     from pyglet.graphics import Texture
     from pyglet.graphics import Batch, Group
     from pyglet.graphics import ShaderProgram
-    from pyglet.graphics.vertexdomain import VertexList, VertexInstance
+    from pyglet.graphics.vertexdomain import VertexInstance, InstanceVertexList, InstanceIndexedVertexList
     from pyglet.model.codecs import ModelDecoder
 
 
@@ -84,12 +95,13 @@ def get_default_textured_shader() -> ShaderProgram:
 
 
 class Model:
-    """Instance of a 3D object.
+    """Base instance of a 3D object.
 
     See the module documentation for usage.
     """
 
-    def __init__(self, vertex_lists: list[VertexList], groups: list[Group], batch: Batch | None = None) -> None:
+    def __init__(self, vertex_lists: list[InstanceVertexList | InstanceIndexedVertexList],
+                 groups: list[Group], batch: Batch | None = None) -> None:
         """Create a model instance.
 
         Args:
@@ -107,7 +119,6 @@ class Model:
         self.vertex_lists = vertex_lists
         self.groups = groups
         self._batch = batch or graphics.Batch()
-        self._modelview_matrix = Mat4()
 
     @property
     def batch(self) -> Batch:
@@ -129,9 +140,12 @@ class Model:
             batch = graphics.Batch()
 
         for group, vlist in zip(self.groups, self.vertex_lists):
-            self._batch.migrate(vlist, pyglet.enums.GeometryMode.TRIANGLES, group, batch)
+            self._batch.migrate(vlist, GeometryMode.TRIANGLES, group, batch)
 
         self._batch = batch
+
+    def create_instance(self, translation: Vec3 | None = None):
+        return ModelInstance(*[vlist.create_instance(TRANSLATE=translation) for vlist in self.vertex_lists])
 
 
 class ModelInstance:
@@ -156,6 +170,7 @@ class BaseMaterialGroup(graphics.ShaderGroup):
     def __init__(self, material: SimpleMaterial, program: ShaderProgram, order: int = 0, parent: Group | None = None) -> None:
         super().__init__(program, order, parent)
         self.material = material        # TODO: use
+        self.set_depth_test(func=CompareOp.LESS)
 
 
 class TexturedMaterialGroup(BaseMaterialGroup):
@@ -278,7 +293,7 @@ class MaterialGroup(BaseMaterialGroup):
 
 class Cube(Model):
 
-    def __init__(self, width=1.0, height=1.0, depth=1.0, color=(1.0, 1.0, 1.0, 1.0), translation=(0.0, 0.0, 0.0),
+    def __init__(self, width=1.0, height=1.0, depth=1.0, color=(1.0, 1.0, 1.0, 1.0),
                  material=None, batch=None, group=None, program=None):
         self._width = width
         self._height = height
@@ -293,12 +308,7 @@ class Cube(Model):
         self._group = pyglet.model.MaterialGroup(material=self._material, program=self._program, parent=group)
 
         self._base_vlist = self._create_base_vertexlist()
-        self._instances = [self._base_vlist.create_instance(TRANSLATE=translation)]
-
-        super().__init__(self._instances, [self._group], self._batch)
-
-    def create_instance(self, translation=(0.0, 0.0, 0.0)):
-        return ModelInstance(self._base_vlist.create_instance(TRANSLATE=translation))
+        super().__init__([self._base_vlist], [self._group], self._batch)
 
     def _create_base_vertexlist(self):
         w = self._width / 2
@@ -352,7 +362,7 @@ class Cube(Model):
                    3, 2, 0, 2, 1, 0]        # front
 
         return self._program.vertex_list_instanced_indexed(len(vertices) // 3,
-                                                           mode=pyglet.enums.GeometryMode.TRIANGLES,
+                                                           mode=GeometryMode.TRIANGLES,
                                                            indices=indices,
                                                            batch=self._batch, group=self._group,
                                                            instance_attributes={'TRANSLATE': 1},
@@ -364,7 +374,7 @@ class Cube(Model):
 
 class Sphere(Model):
 
-    def __init__(self, radius=1.0, stacks=30, sectors=30, color=(1.0, 1.0, 1.0, 1.0), translation=(0.0, 0.0, 0.0),
+    def __init__(self, radius=1.0, stacks=30, sectors=30, color=(1.0, 1.0, 1.0, 1.0),
                  material=None, batch=None, group=None, program=None):
         self._radius = radius
         self._stacks = stacks
@@ -379,12 +389,7 @@ class Sphere(Model):
         self._group = pyglet.model.MaterialGroup(material=self._material, program=self._program, parent=group)
 
         self._base_vlist = self._create_base_vertexlist()
-        self._instances = [self._base_vlist.create_instance(TRANSLATE=translation)]
-
-        super().__init__(self._instances, [self._group], self._batch)
-
-    def create_instance(self, translation=(0.0, 0.0, 0.0)):
-        return ModelInstance(self._base_vlist.create_instance(TRANSLATE=translation))
+        super().__init__([self._base_vlist], [self._group], self._batch)
 
     def _create_base_vertexlist(self):
         radius = self._radius / 2
@@ -418,7 +423,7 @@ class Sphere(Model):
                 indices.extend([first, second + 1, first + 1])
 
         return self._program.vertex_list_instanced_indexed(len(vertices) // 3,
-                                                           mode=pyglet.enums.GeometryMode.TRIANGLES,
+                                                           mode=GeometryMode.TRIANGLES,
                                                            indices=indices,
                                                            instance_attributes={'TRANSLATE': 1},
                                                            batch=self._batch, group=self._group,
@@ -428,10 +433,10 @@ class Sphere(Model):
                                                            COLOR_0=('f', self._color * (len(vertices) // 3)))
 
 
-class Capsule(Model, ModelInstance):
+class Capsule(Model):
 
     def __init__(self, radius=1.0, height=2.0, sectors=30, stacks=16, color=(1.0, 1.0, 1.0, 1.0),
-                 translation=(0.0, 0.0, 0.0), material=None, batch=None, group=None, program=None):
+                 material=None, batch=None, group=None, program=None):
         self._radius = radius
         self._height = height
         self._sectors = sectors
@@ -445,11 +450,7 @@ class Capsule(Model, ModelInstance):
         self._group = pyglet.model.MaterialGroup(material=self._material, program=self._program, parent=group)
 
         self._base_vlist = self._create_base_vlist()
-        self._instances = [self._base_vlist.create_instance(TRANSLATE=translation)]
-        super().__init__(self._instances, [self._group], self._batch)
-
-    def create_instance(self, translation=(0.0, 0.0, 0.0)):
-        return ModelInstance(self._base_vlist.create_instance(TRANSLATE=translation))
+        super().__init__([self._base_vlist], [self._group], self._batch)
 
     def _create_base_vlist(self):
         radius = self._radius / 2
@@ -543,7 +544,7 @@ class Capsule(Model, ModelInstance):
                 indices.extend([first, second + 1, first + 1])
 
         return self._program.vertex_list_instanced_indexed(len(vertices) // 3,
-                                                           mode=pyglet.enums.GeometryMode.TRIANGLES,
+                                                           mode=GeometryMode.TRIANGLES,
                                                            indices=indices,
                                                            instance_attributes={'TRANSLATE': 1},
                                                            batch=self._batch,

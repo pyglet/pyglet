@@ -245,8 +245,13 @@ class OBJScene(Scene):
                     matgroup = MaterialGroup(material, program, parent=group)
 
                 data = {a.name: (a.fmt, a.array) for a in primitive.attributes if a.name in program.attributes}
+                data |= {'TRANSLATE': ('f', (0.0, 0.0, 0.0))}
+                vertex_list = program.vertex_list_instanced(count=count,
+                                                            mode=GeometryMode.TRIANGLES,
+                                                            instance_attributes={'TRANSLATE': 1},
+                                                            batch=batch, group=matgroup, **data)
 
-                vertex_lists.append(program.vertex_list(count, GeometryMode.TRIANGLES, batch, matgroup, **data))
+                vertex_lists.append(vertex_list)
                 groups.append(matgroup)
 
         return [Model(vertex_lists=vertex_lists, groups=groups, batch=batch)]
