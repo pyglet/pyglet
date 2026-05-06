@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections import deque
 import ctypes
 import weakref
@@ -10,7 +12,7 @@ from pyglet.util import debug_print, next_or_equal_power_of_two
 
 if TYPE_CHECKING:
     from pyglet.media.codecs import Source
-    from pyglet.media.player import Player
+    from pyglet.media import AudioPlayer
 
 
 _debug = debug_print('debug_media')
@@ -97,7 +99,7 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
 
     audio_buffer_length = 0.9
 
-    def __init__(self, source: Source, player: Player) -> None:
+    def __init__(self, source: Source, player: AudioPlayer) -> None:
         """Create a new audio player.
 
         Args:
