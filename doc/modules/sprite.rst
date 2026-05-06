@@ -11,3 +11,11 @@ pyglet.sprite
   :members:
   :undoc-members:
 
+.. autoclass:: MultiTextureSprite
+  :members:
+  :undoc-members:
+
+.. autoclass:: MultiTextureSpriteGroup
+  :members:
+  :undoc-members:
+
