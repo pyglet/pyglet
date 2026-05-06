@@ -8,9 +8,8 @@ jobs:
     strategy:
       matrix:
         python-version: [ '3.9', '3.10', '3.11', '3.12', '3.13', '3.14', 'pypy-3.10' ]
-        backend-override: [[opengl, '4.6'], [gl2, '2.0'], [gles2, '2.0'], [gles3, '3.2']]
 
-    name: Python ${{ matrix.python-version }} Ubuntu ${{ matrix.backend-override[0] }}
+    name: Python ${{ matrix.python-version }} Ubuntu
     steps:
       - uses: actions/checkout@v4
       - name: Setup python
@@ -26,15 +25,34 @@ jobs:
           sudo apt-get install xvfb ffmpeg
       - name: Run tests
         env:
-          PYGLET_BACKEND: ${{ matrix.backend-override[0] }}
-          MESA_GL_VERSION_OVERRIDE: ${{ matrix.backend-override[1] }}
-          MESA_GLES_VERSION_OVERRIDE: ${{ matrix.backend-override[1] }}
           ALSOFT_DRIVERS: "null"
           ALSOFT_LOGLEVEL: 1
         run: |
+          backend_overrides=(
+            "opengl:4.6"
+            "gl2:2.0"
+            "gles2:2.0"
+            "gles3:3.2"
+          )
+
+          export PYGLET_BACKEND=opengl
+          export MESA_GL_VERSION_OVERRIDE=4.6
+          export MESA_GLES_VERSION_OVERRIDE=4.6
           openal-info || true
           xvfb-run --auto-servernum  python3 -m pyglet.info
-          xvfb-run --auto-servernum  pytest tests --ignore=tests/interactive
+          xvfb-run --auto-servernum  pytest tests \
+            --ignore=tests/interactive \
+            --ignore=tests/integration/graphics
+          for backend_override in "${backend_overrides[@]}"; do
+            backend="${backend_override%%:*}"
+            version="${backend_override##*:}"
+            export PYGLET_BACKEND="${backend}"
+            export MESA_GL_VERSION_OVERRIDE="${version}"
+            export MESA_GLES_VERSION_OVERRIDE="${version}"
+            echo "Running backend-sensitive tests for backend=${backend}, version=${version}"
+            xvfb-run --auto-servernum python3 -m pyglet.info
+            xvfb-run --auto-servernum pytest tests/integration/graphics
+          done
 
   osx:
     runs-on: macos-latest
@@ -61,9 +79,8 @@ jobs:
     strategy:
       matrix:
         python-version: [ '3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
-        backend-override: [[opengl, '4.6'], [gl2, '2.0'], [gles2, '2.0']]
 
-    name: Python ${{ matrix.python-version }} Windows ${{ matrix.backend-override[0] }}
+    name: Python ${{ matrix.python-version }} Windows
     steps:
       - uses: actions/checkout@v4
       - name: Setup python
@@ -81,22 +98,38 @@ jobs:
           pip install pytest
       - name: Run tests
         shell: pwsh
-        env:
-          PYGLET_BACKEND: ${{ matrix.backend-override[0] }}
-          MESA_GL_VERSION_OVERRIDE: ${{ matrix.backend-override[1] }}
-          MESA_GLES_VERSION_OVERRIDE: ${{ matrix.backend-override[1] }}
         run: |
+          $backend_test_args = @(
+            'tests/integration/graphics'
+          )
+
+          $backend_overrides = @(
+            @{ backend = 'opengl'; version = '4.6' },
+            @{ backend = 'gl2'; version = '2.0' },
+            @{ backend = 'gles2'; version = '2.0' }
+          )
+
+          $env:PYGLET_BACKEND = 'opengl'
+          $env:MESA_GL_VERSION_OVERRIDE = '4.6'
+          $env:MESA_GLES_VERSION_OVERRIDE = '4.6'
           python3 -m pyglet.info
-          pytest tests --ignore=tests/interactive
+          pytest tests --ignore=tests/interactive --ignore=tests/integration/graphics
+          foreach ($backend_override in $backend_overrides) {
+            $env:PYGLET_BACKEND = $backend_override.backend
+            $env:MESA_GL_VERSION_OVERRIDE = $backend_override.version
+            $env:MESA_GLES_VERSION_OVERRIDE = $backend_override.version
+            Write-Host "Running backend-sensitive tests for backend=$($backend_override.backend), version=$($backend_override.version)"
+            python3 -m pyglet.info
+            pytest @backend_test_args
+          }
 
   headless:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: [ '3.12', '3.13', '3.14', 'pypy-3.10' ]
-        backend-override: [[opengl, '4.6'], [gles2, '2.0'], [gles3, '3.2']]
 
-    name: Python ${{ matrix.python-version }} Ubuntu HEADLESS ${{ matrix.backend-override[0] }}
+    name: Python ${{ matrix.python-version }} Ubuntu HEADLESS
     steps:
       - uses: actions/checkout@v4
       - name: Setup python
@@ -111,13 +144,31 @@ jobs:
           sudo apt-get install --fix-missing libgl1-mesa-dev xvfb
       - name: Run tests
         env:
-          PYGLET_BACKEND: ${{ matrix.backend-override[0] }}
-          MESA_GL_VERSION_OVERRIDE: ${{ matrix.backend-override[1] }}
-          MESA_GLES_VERSION_OVERRIDE: ${{ matrix.backend-override[1] }}
           PYGLET_HEADLESS: true
         run: |
+          backend_overrides=(
+            "opengl:4.6"
+            "gles2:2.0"
+            "gles3:3.2"
+          )
+
+          export PYGLET_BACKEND=opengl
+          export MESA_GL_VERSION_OVERRIDE=4.6
+          export MESA_GLES_VERSION_OVERRIDE=4.6
           python3 -m pyglet.info
-          pytest tests --ignore=tests/interactive
+          pytest tests \
+            --ignore=tests/interactive \
+            --ignore=tests/integration/graphics
+          for backend_override in "${backend_overrides[@]}"; do
+            backend="${backend_override%%:*}"
+            version="${backend_override##*:}"
+            export PYGLET_BACKEND="${backend}"
+            export MESA_GL_VERSION_OVERRIDE="${version}"
+            export MESA_GLES_VERSION_OVERRIDE="${version}"
+            echo "Running backend-sensitive tests for backend=${backend}, version=${version}"
+            python3 -m pyglet.info
+            pytest tests/integration/graphics
+          done
 
   webgl-smoke:
     runs-on: ubuntu-latest

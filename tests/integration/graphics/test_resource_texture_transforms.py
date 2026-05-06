@@ -1,10 +1,10 @@
+from pathlib import Path
+
 import pytest
 
 from pyglet import resource
-from tests.annotations import skip_graphics_api, GraphicsAPI
 
-# GLES backends are currently failing on glTexSubImage2D
-pytestmark = [skip_graphics_api(GraphicsAPI.GLES)]
+TEST_RESOURCE_DIR = Path(__file__).resolve().parents[1] / 'resource'
 
 
 @pytest.mark.parametrize('transforms,tex_order', [
@@ -21,9 +21,8 @@ pytestmark = [skip_graphics_api(GraphicsAPI.GLES)]
 ])
 def test_resource_texture_loading(gl3_context, event_loop, transforms, tex_order):
     """Test loading an image resource with possible transformations."""
-    resource.path.append('@' + __name__)
+    resource.path = [str(TEST_RESOURCE_DIR)]
     resource.reindex()
-
     tex = resource.texture('rgbm.png', **transforms)
 
     assert tex.tex_coords_order == tex_order, f"{transforms}, {tex.tex_coords_order} != {tex_order}"

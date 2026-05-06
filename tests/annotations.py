@@ -23,7 +23,7 @@ class Platform:
     """Mac OS X platforms"""
 
 
-class GraphicsAPI:
+class GraphicsAPIGroups:
     GL3 = ("opengl", "gles3")
     GL2 = ("gl2", "gles2")
     GLES = ("gles2", "gles3")

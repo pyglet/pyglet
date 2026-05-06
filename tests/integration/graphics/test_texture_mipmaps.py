@@ -5,7 +5,7 @@ from pyglet.graphics.texture import TextureArray
 from pyglet.image import ImageData
 from pyglet.window import Window
 
-from tests.annotations import skip_graphics_api, GraphicsAPI
+from tests.annotations import skip_graphics_api, GraphicsAPIGroups
 
 
 def colorbyte(color):
@@ -59,7 +59,7 @@ class TestTextureMipmaps2D(unittest.TestCase):
             texture.init_mipmaps(levels=10)
 
 
-@skip_graphics_api(GraphicsAPI.GL2)
+@skip_graphics_api(GraphicsAPIGroups.GL2)
 class TestTextureMipmapsArrays(unittest.TestCase):
     def setUp(self):
         self.w = Window(visible=False)

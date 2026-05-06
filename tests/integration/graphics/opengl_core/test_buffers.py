@@ -4,11 +4,11 @@ import pyglet
 import pytest
 from pyglet.graphics.buffer import CTypeDataStore
 from pyglet.graphics.shader import Attribute
-from tests.annotations import GraphicsAPI, require_graphics_api
+from tests.annotations import GraphicsAPIGroups, require_graphics_api
 
-if pyglet.options.backend in GraphicsAPI.GL3:
+if pyglet.options.backend in GraphicsAPIGroups.GL3:
     from pyglet.graphics.api.gl.buffer import GLBufferObject, GLIndexedBufferObject, GLMappedBufferObject
-elif pyglet.options.backend in GraphicsAPI.GL2:
+elif pyglet.options.backend in GraphicsAPIGroups.GL2:
     from pyglet.graphics.api.gl2.buffer import (
         GL2BufferObject as GLBufferObject,
         GL2IndexedBufferObject as GLIndexedBufferObject,
@@ -73,7 +73,7 @@ def test_buffer_object_assertions(gl3_context):
 
     buffer.delete()
 
-@require_graphics_api(GraphicsAPI.GL3)
+@require_graphics_api(GraphicsAPIGroups.GL3)
 def test_mapped_buffer_region_updates(gl3_context):
     # Mapped buffers aren't supported by GLES2.
     gl3_context.switch_to()
@@ -206,7 +206,7 @@ def test_backed_index_buffer_set_data_ptr_with_ctypes_pointer(gl3_context):
 
     buffer.delete()
 
-@require_graphics_api(GraphicsAPI.DESKTOP_GL)
+@require_graphics_api(GraphicsAPIGroups.DESKTOP_GL)
 def test_gl_vertex_stream_persistent_resize_rebinds_vao(gl3_context):
     from pyglet.graphics.api.gl import GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING, GLint
     from pyglet.graphics.api.gl.buffer import PersistentBufferObject

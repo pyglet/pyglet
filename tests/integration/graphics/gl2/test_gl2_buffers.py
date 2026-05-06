@@ -4,7 +4,7 @@ import pyglet
 from pyglet.enums import GeometryMode
 from pyglet.graphics.api.gl import GL_ELEMENT_ARRAY_BUFFER_BINDING, GLint
 
-from tests.annotations import GraphicsAPI, require_graphics_api
+from tests.annotations import GraphicsAPIGroups, require_graphics_api
 
 
 def _create_quad_vertices(x: float, y: float, z: float, width: float, height: float) -> tuple[float, ...]:
@@ -16,7 +16,7 @@ def _create_quad_vertices(x: float, y: float, z: float, width: float, height: fl
     )
 
 
-@require_graphics_api(GraphicsAPI.GL2)
+@require_graphics_api(GraphicsAPIGroups.GL2)
 def test_gl2_indexed_batch_draw_keeps_element_buffer_bound(gl3_context) -> None:
     """Ensure GL2 indexed draws bind EBO every draw, even when index buffer is not dirty."""
     gl3_context.switch_to()

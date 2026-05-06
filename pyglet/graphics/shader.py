@@ -139,6 +139,11 @@ class _AbstractShaderProgram(ABC):
         return self._attributes.copy()
 
     @property
+    def attribute_keys(self) -> tuple[tuple[Any, ...], ...]:
+        """Stable tuple describing all attributes, sorted by attribute location."""
+        return tuple(attribute.key for attribute in sorted(self._attributes.values(), key=lambda attribute: attribute.location))
+
+    @property
     def uniform_blocks(self) -> dict[str, UniformBlock]:
         """A dictionary of introspected UniformBlocks.
 
@@ -541,6 +546,18 @@ class Attribute:
 
     def __repr__(self) -> str:
         return f"Attribute(location={self.location}, fmt={self.fmt}')"
+
+    @property
+    def key(self) -> tuple[str, int, int, DataTypes, bool, int]:
+        """Stable tuple that describes this attribute's domain-relevant format."""
+        return (
+            self.fmt.name,
+            self.location,
+            self.fmt.components,
+            self.fmt.data_type,
+            self.fmt.normalized,
+            self.fmt.divisor,
+        )
 
 
 class GraphicsAttribute:

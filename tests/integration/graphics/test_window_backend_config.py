@@ -1,13 +1,13 @@
 import pyglet
 
 
-def _backend_config(config: pyglet.config.Config):
+def _resolve_backend_config(config: pyglet.config.Config):
     return getattr(config, pyglet.options.backend)
 
 
 def test_window_accepts_single_config():
     user_config = pyglet.config.Config()
-    expected = _backend_config(user_config)
+    expected = _resolve_backend_config(user_config)
 
     window = pyglet.window.Window(visible=False, config=user_config)
     try:
@@ -19,7 +19,7 @@ def test_window_accepts_single_config():
 def test_window_accepts_multiple_configs():
     preferred = pyglet.config.Config()
     fallback = pyglet.config.Config()
-    expected = _backend_config(preferred)
+    expected = _resolve_backend_config(preferred)
 
     window = pyglet.window.Window(visible=False, config=(preferred, fallback))
     try:
@@ -31,8 +31,8 @@ def test_window_accepts_multiple_configs():
 def test_window_tries_next_config_when_first_match_fails(monkeypatch):
     preferred = pyglet.config.Config()
     fallback = pyglet.config.Config()
-    preferred_backend_config = _backend_config(preferred)
-    fallback_backend_config = _backend_config(fallback)
+    preferred_backend_config = _resolve_backend_config(preferred)
+    fallback_backend_config = _resolve_backend_config(fallback)
     match_calls = []
     original_match_surface_config = pyglet.config.match_surface_config
 
