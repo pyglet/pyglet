@@ -11,13 +11,13 @@ to your needs for first person games.
 
 from __future__ import annotations
 
+import random
 import weakref
 
 from math import radians, degrees
 
 import pyglet
 
-from pyglet.graphics.api.gl import glEnable, GL_DEPTH_TEST, GL_CULL_FACE
 from pyglet.math import Vec2, Vec3, Mat4, clamp
 from pyglet.window import key as _key
 
@@ -336,23 +336,52 @@ if __name__ == "__main__":
         window.clear()
         batch.draw()
 
-    glEnable(GL_DEPTH_TEST)
-    glEnable(GL_CULL_FACE)
-
     # These .obj files only have a single model in the scene:
-    model_logo = pyglet.resource.scene("logo3d.obj").create_models(batch=batch)[0]
-    model_box = pyglet.resource.scene("box.obj").create_models(batch=batch)[0]
+    logo_model = pyglet.resource.scene("logo3d.obj").create_models(batch=batch)[0]
+    box_model = pyglet.resource.scene("box.obj").create_models(batch=batch)[0]
 
-    # Camera controls the global projection & view matrixes:
-    camera = FPSCamera(window, position=Vec3(0.0, 0.0, 5.0))
+    # You have to make at least one instance of a model for it to appear:
+    box_instance = box_model.create_instance(translation=Vec3(2.0, 0.0, 0.0))
+
+    # You can make as many instances as you want, with their own translation:
+    logo_instances = []
+    for i in range(500):
+        x, y, z = random.uniform(-100, 100), random.uniform(1.0, 5.0), random.uniform(-100, 100)
+        instance = logo_model.create_instance(translation=Vec3(x, y, z))
+        logo_instances.append(instance)
+
+    # Create some sphere shapes (their centers are at y==0.0):
+    sphere_model = pyglet.model.Sphere(4.0, color=(0.3, 0.3, 1.0, 0.3), batch=batch)
+    sphere_instances = []
+    for i in range(500):
+        x = random.uniform(-100, 100)
+        y = random.uniform(1.0, 5.0)
+        z = random.uniform(-100, 100)
+        instance = sphere_model.create_instance(translation=Vec3(x, y, z))
+        sphere_instances.append(instance)
+
+    # Create some capsule shapes (their bottoms start at y==0.0):
+    capsule_model = pyglet.model.Capsule(1.0, height=3.0, batch=batch)
+    capsule_instances = []
+    for i in range(500):
+        x = random.uniform(-100, 100)
+        y = random.uniform(0.0, 5.0)
+        z = random.uniform(-100, 100)
+        instance = capsule_model.create_instance(translation=Vec3(x, y, z))
+        capsule_instances.append(instance)
+
+    # Make a "floor", positioned so it's top is at y==0.0:
+    floor_model = pyglet.model.Cube(width=999, height=1.0, depth=999, batch=batch)
+    floor_instance = floor_model.create_instance(translation=Vec3(0.0, -1.5, 0.0))
+
+    # Create the FPSCamera instance, which controls the global projection & view matrixes.
+    # Start with the position a bit back, and looking at the center of the scene:
+    camera = FPSCamera(window, position=Vec3(0.0, 1.0, 6.0), target=Vec3(0.0, 1.0, 0.0))
 
     # If a controller is connected, use it:
     if controllers := pyglet.input.get_controllers():
         controller = controllers[0]
         controller.open()
         controller.push_handlers(camera)
-
-    model_logo.matrix = Mat4.from_translation(Vec3(1.75, 0, 0))
-    model_box.matrix = Mat4.from_translation(Vec3(-1.75, 0, 0))
 
     pyglet.app.run()
