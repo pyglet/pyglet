@@ -45,7 +45,7 @@ if TYPE_CHECKING:
     from pyglet.graphics import Texture
     from pyglet.graphics import Batch, Group
     from pyglet.graphics import ShaderProgram
-    from pyglet.graphics.vertexdomain import VertexList
+    from pyglet.graphics.vertexdomain import VertexList, VertexInstance
     from pyglet.model.codecs import ModelDecoder
 
 
@@ -133,26 +133,29 @@ class Model:
 
         self._batch = batch
 
+
+class ModelInstance:
+
+    def __init__(self, *vertex_instances: VertexInstance):
+        self._instances = vertex_instances
+
     @property
-    def matrix(self) -> Mat4:
-        return self._modelview_matrix
+    def translation(self):
+        return self._instances[0].TRANSLATE[:]
 
-    @matrix.setter
-    def matrix(self, matrix: Mat4):
-        self._modelview_matrix = matrix
-        for group in self.groups:
-            group.uniforms["model"] = matrix
+    @translation.setter
+    def translation(self, values):
+        for instance in self._instances:
+            instance.TRANSLATE[:] = values
 
 
-class BaseMaterialGroup(graphics.Group):
+class BaseMaterialGroup(graphics.ShaderGroup):
     default_vert_src: str
     default_frag_src: str
-    matrix: Mat4 = Mat4()
 
     def __init__(self, material: SimpleMaterial, program: ShaderProgram, order: int = 0, parent: Group | None = None) -> None:
-        super().__init__(order, parent)
-        self.material = material
-        self.program = program
+        super().__init__(program, order, parent)
+        self.material = material        # TODO: use
 
 
 class TexturedMaterialGroup(BaseMaterialGroup):
@@ -161,6 +164,7 @@ class TexturedMaterialGroup(BaseMaterialGroup):
     in vec3 NORMAL;
     in vec2 TEXCOORD_0;
     in vec4 COLOR_0;
+    in vec3 TRANSLATE;
 
     out vec3 position;
     out vec3 normal;
@@ -173,11 +177,14 @@ class TexturedMaterialGroup(BaseMaterialGroup):
         mat4 view;
     } window;
 
-    uniform mat4 model;
-
     void main()
     {
-        mat4 mv = window.view * model;
+        mat4 m_translate = mat4(1.0);
+        m_translate[3][0] = TRANSLATE.x;
+        m_translate[3][1] = TRANSLATE.y;
+        m_translate[3][2] = TRANSLATE.z;
+        
+        mat4 mv = window.view * m_translate;
         vec4 pos = mv * vec4(POSITION, 1.0);
         gl_Position = window.projection * pos;
         mat3 normal_matrix = transpose(inverse(mat3(mv)));
@@ -211,9 +218,6 @@ class TexturedMaterialGroup(BaseMaterialGroup):
         super().__init__(material, program, order, parent)
         self.texture = texture
         self.set_texture(self.texture)
-        self.set_shader_program(program)
-        self.uniforms = {"model": self.matrix}
-        self.set_shader_uniforms(program, self.uniforms)
 
 
 class MaterialGroup(BaseMaterialGroup):
@@ -221,6 +225,7 @@ class MaterialGroup(BaseMaterialGroup):
     in vec3 POSITION;
     in vec3 NORMAL;
     in vec4 COLOR_0;
+    in vec3 TRANSLATE;
 
     out vec4 color_0;
     out vec3 normal;
@@ -232,11 +237,14 @@ class MaterialGroup(BaseMaterialGroup):
         mat4 view;
     } window;
 
-    uniform mat4 model;
-
     void main()
     {
-        mat4 mv = window.view * model;
+        mat4 m_translate = mat4(1.0);
+        m_translate[3][0] = TRANSLATE.x;
+        m_translate[3][1] = TRANSLATE.y;
+        m_translate[3][2] = TRANSLATE.z;
+        
+        mat4 mv = window.view * m_translate;
         vec4 pos = mv * vec4(POSITION, 1.0);
         gl_Position = window.projection * pos;
         mat3 normal_matrix = transpose(inverse(mat3(mv)));
@@ -262,14 +270,15 @@ class MaterialGroup(BaseMaterialGroup):
 
     def __init__(self, material: SimpleMaterial, program: ShaderProgram, order: int = 0, parent: Group | None = None):
         super().__init__(material, program, order, parent)
-        self.set_shader_program(program)
-        self.uniforms = {"model": self.matrix}
-        self.set_shader_uniforms(program, self.uniforms)
+
+
+# Test models
+# #############################################
 
 
 class Cube(Model):
 
-    def __init__(self, width=1.0, height=1.0, depth=1.0, color=(1.0, 1.0, 1.0, 1.0),
+    def __init__(self, width=1.0, height=1.0, depth=1.0, color=(1.0, 1.0, 1.0, 1.0), translation=(0.0, 0.0, 0.0),
                  material=None, batch=None, group=None, program=None):
         self._width = width
         self._height = height
@@ -283,11 +292,15 @@ class Cube(Model):
         self._material = material if material else SimpleMaterial(name="cube")
         self._group = pyglet.model.MaterialGroup(material=self._material, program=self._program, parent=group)
 
-        self._vlist = self._create_vertexlist()
+        self._base_vlist = self._create_base_vertexlist()
+        self._instances = [self._base_vlist.create_instance(TRANSLATE=translation)]
 
-        super().__init__([self._vlist], [self._group], self._batch)
+        super().__init__(self._instances, [self._group], self._batch)
 
-    def _create_vertexlist(self):
+    def create_instance(self, translation=(0.0, 0.0, 0.0)):
+        return ModelInstance(self._base_vlist.create_instance(TRANSLATE=translation))
+
+    def _create_base_vertexlist(self):
         w = self._width / 2
         h = self._height / 2
         d = self._depth / 2
@@ -338,16 +351,20 @@ class Cube(Model):
                    7, 6, 4, 6, 5, 4,        # back
                    3, 2, 0, 2, 1, 0]        # front
 
-        return self._program.vertex_list_indexed(len(vertices) // 3, pyglet.enums.GeometryMode.TRIANGLES, indices,
-                                                 batch=self._batch, group=self._group,
-                                                 POSITION=('f', vertices),
-                                                 NORMAL=('f', normals),
-                                                 COLOR_0=('f', self._color * (len(vertices) // 3)))
+        return self._program.vertex_list_instanced_indexed(len(vertices) // 3,
+                                                           mode=pyglet.enums.GeometryMode.TRIANGLES,
+                                                           indices=indices,
+                                                           batch=self._batch, group=self._group,
+                                                           instance_attributes={'TRANSLATE': 1},
+                                                           POSITION=('f', vertices),
+                                                           NORMAL=('f', normals),
+                                                           TRANSLATE=('f', (0.0, 0.0, 0.0)),
+                                                           COLOR_0=('f', self._color * (len(vertices) // 3)))
 
 
 class Sphere(Model):
 
-    def __init__(self, radius=1.0, stacks=30, sectors=30, color=(1.0, 1.0, 1.0, 1.0),
+    def __init__(self, radius=1.0, stacks=30, sectors=30, color=(1.0, 1.0, 1.0, 1.0), translation=(0.0, 0.0, 0.0),
                  material=None, batch=None, group=None, program=None):
         self._radius = radius
         self._stacks = stacks
@@ -361,11 +378,15 @@ class Sphere(Model):
         self._material = material if material else SimpleMaterial(name="sphere")
         self._group = pyglet.model.MaterialGroup(material=self._material, program=self._program, parent=group)
 
-        self._vlist = self._create_vertexlist()
+        self._base_vlist = self._create_base_vertexlist()
+        self._instances = [self._base_vlist.create_instance(TRANSLATE=translation)]
 
-        super().__init__([self._vlist], [self._group], self._batch)
+        super().__init__(self._instances, [self._group], self._batch)
 
-    def _create_vertexlist(self):
+    def create_instance(self, translation=(0.0, 0.0, 0.0)):
+        return ModelInstance(self._base_vlist.create_instance(TRANSLATE=translation))
+
+    def _create_base_vertexlist(self):
         radius = self._radius / 2
         sectors = self._sectors
         stacks = self._stacks
@@ -383,10 +404,10 @@ class Sphere(Model):
                 sector_angle = j * sector_step
                 vertices.append(radius * cos(stack_angle) * cos(sector_angle))    # x
                 vertices.append(radius * cos(stack_angle) * sin(sector_angle))    # y
-                vertices.append(radius * sin(stack_angle))                             # z
+                vertices.append(radius * sin(stack_angle))                        # z
                 normals.append(cos(stack_angle) * cos(sector_angle))              # x
                 normals.append(cos(stack_angle) * sin(sector_angle))              # y
-                normals.append(sin(stack_angle))                                       # z
+                normals.append(sin(stack_angle))                                  # z
 
         # Generate indices
         for i in range(stacks):
@@ -396,11 +417,141 @@ class Sphere(Model):
                 indices.extend([first, second, second + 1])
                 indices.extend([first, second + 1, first + 1])
 
-        return self._program.vertex_list_indexed(len(vertices) // 3, pyglet.enums.GeometryMode.TRIANGLES, indices,
-                                                 batch=self._batch, group=self._group,
-                                                 POSITION=('f', vertices),
-                                                 NORMAL=('f', normals),
-                                                 COLOR_0=('f', self._color * (len(vertices) // 3)))
+        return self._program.vertex_list_instanced_indexed(len(vertices) // 3,
+                                                           mode=pyglet.enums.GeometryMode.TRIANGLES,
+                                                           indices=indices,
+                                                           instance_attributes={'TRANSLATE': 1},
+                                                           batch=self._batch, group=self._group,
+                                                           POSITION=('f', vertices),
+                                                           NORMAL=('f', normals),
+                                                           TRANSLATE=('f', (0, 0, 0)),
+                                                           COLOR_0=('f', self._color * (len(vertices) // 3)))
+
+
+class Capsule(Model, ModelInstance):
+
+    def __init__(self, radius=1.0, height=2.0, sectors=30, stacks=16, color=(1.0, 1.0, 1.0, 1.0),
+                 translation=(0.0, 0.0, 0.0), material=None, batch=None, group=None, program=None):
+        self._radius = radius
+        self._height = height
+        self._sectors = sectors
+        self._stacks = stacks
+        self._color = color
+
+        self._batch = batch
+        self._program = program if program else get_default_shader()
+
+        self._material = material if material else SimpleMaterial(name="capsule")
+        self._group = pyglet.model.MaterialGroup(material=self._material, program=self._program, parent=group)
+
+        self._base_vlist = self._create_base_vlist()
+        self._instances = [self._base_vlist.create_instance(TRANSLATE=translation)]
+        super().__init__(self._instances, [self._group], self._batch)
+
+    def create_instance(self, translation=(0.0, 0.0, 0.0)):
+        return ModelInstance(self._base_vlist.create_instance(TRANSLATE=translation))
+
+    def _create_base_vlist(self):
+        radius = self._radius / 2
+        sectors = self._sectors
+        stacks = self._stacks
+        height = self._height
+
+        vertices = []
+        normals = []
+        indices = []
+
+        sector_step = 2 * pi / sectors
+        stack_step = pi / (2 * stacks)
+        n_per_ring = sectors + 1
+
+        # Extend up from y == 0
+        y_offset = height / 2 + radius
+
+        # Bottom cap
+        for i in range(stacks + 1):
+            stack_angle = pi / 2 - i * stack_step
+            y = -height / 2 - radius * sin(stack_angle) + y_offset
+            for j in range(sectors + 1):
+                sector_angle = j * sector_step
+                x = radius * cos(stack_angle) * cos(sector_angle)
+                z = radius * cos(stack_angle) * sin(sector_angle)
+
+                vertices.extend([x, y, z])
+                normals.extend([cos(stack_angle) * cos(sector_angle),
+                                -sin(stack_angle),
+                                cos(stack_angle) * sin(sector_angle)])
+
+        # Center tube
+        for i in range(2):
+            y = -height / 2 + i * height + y_offset
+            for j in range(sectors + 1):
+                sector_angle = j * sector_step
+                x = radius * cos(sector_angle)
+                z = radius * sin(sector_angle)
+
+                vertices.extend([x, y, z])
+                normals.extend([cos(sector_angle),
+                                0.0,
+                                sin(sector_angle)])
+
+        # Top cap
+        for i in range(stacks + 1):
+            stack_angle = i * stack_step
+            y = height / 2 + radius * sin(stack_angle) + y_offset
+            for j in range(sectors + 1):
+                sector_angle = j * sector_step
+                x = radius * cos(stack_angle) * cos(sector_angle)
+                z = radius * cos(stack_angle) * sin(sector_angle)
+
+                vertices.extend([x, y, z])
+                normals.extend([cos(stack_angle) * cos(sector_angle),
+                                sin(stack_angle),
+                                cos(stack_angle) * sin(sector_angle)])
+
+        offset = 0
+
+        # ###################
+        #  Make the Indices:
+        # ###################
+
+        # Bottom cap
+        for i in range(stacks):
+            for j in range(sectors):
+                first = offset + i * n_per_ring + j
+                second = first + n_per_ring
+                indices.extend([first, second, second + 1])
+                indices.extend([first, second + 1, first + 1])
+
+        offset += (stacks + 1) * n_per_ring
+
+        # Center tube
+        for j in range(sectors):
+            first = offset + j
+            second = first + n_per_ring
+            indices.extend([first, second, second + 1])
+            indices.extend([first, second + 1, first + 1])
+
+        offset += 2 * n_per_ring
+
+        # Top cap
+        for i in range(stacks):
+            for j in range(sectors):
+                first = offset + i * n_per_ring + j
+                second = first + n_per_ring
+                indices.extend([first, second, second + 1])
+                indices.extend([first, second + 1, first + 1])
+
+        return self._program.vertex_list_instanced_indexed(len(vertices) // 3,
+                                                           mode=pyglet.enums.GeometryMode.TRIANGLES,
+                                                           indices=indices,
+                                                           instance_attributes={'TRANSLATE': 1},
+                                                           batch=self._batch,
+                                                           group=self._group,
+                                                           POSITION=('f', vertices),
+                                                           TRANSLATE=('f', (0, 0, 0)),
+                                                           NORMAL=('f', normals),
+                                                           COLOR_0=('f', self._color * (len(vertices) // 3)))
 
 
 _add_default_codecs()
