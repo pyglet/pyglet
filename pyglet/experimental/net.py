@@ -1,4 +1,4 @@
-"""Experimental networking
+"""Experimental networking.
 
 This module contains experiments in making user-friendly Server and Client
 classes that integrate with pyglet's event system. These are very basic,
