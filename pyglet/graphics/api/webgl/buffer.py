@@ -59,6 +59,12 @@ class WebGLBufferObject(AbstractBuffer):
     id: WebGLBuffer | None
     usage: int
     target: int
+
+    # If the buffer data has been allocated yet.
+    _allocated: bool
+
+    # Even if it's allocated, there may be garbage in there. Mark when actual data exists.
+    _data_uploaded: bool
     _context: OpenGLSurfaceContext
 
     def __init__(
@@ -75,8 +81,8 @@ class WebGLBufferObject(AbstractBuffer):
         self._gl = context.gl
 
         self.id = self._gl.createBuffer()
-        self.bind()
-        self._gl.bufferData(self.target, self.size, self.usage)
+        self._allocated = False
+        self._data_uploaded = False
 
     def _validate_byte_range(self, offset: int, length: int) -> None:
         assert offset >= 0 and length >= 0, "Offset and length must be non-negative."
@@ -90,17 +96,36 @@ class WebGLBufferObject(AbstractBuffer):
     def unbind(self) -> None:
         self._gl.bindBuffer(self.target, None)
 
+    def _ensure_allocated(self) -> None:
+        if self._allocated:
+            return
+        self.bind()
+        self._gl.bufferData(self.target, self.size, self.usage)
+        self._allocated = True
+
+    def _require_uploaded_data(self) -> None:
+        assert self._data_uploaded, (
+            "Buffer data has not been uploaded yet. "
+            "Call set_bytes/set_bytes_region, commit, or write through a mapped pointer first."
+        )
+
+    def _set_data_uploaded(self) -> None:
+        self._allocated = True
+        self._data_uploaded = True
+
     def get_buffer_size(self) -> int:
         self.bind()
         return self._gl.getBufferParameter(self.target, GL_BUFFER_SIZE)
 
     def get_bytes(self) -> bytes:
+        self._require_uploaded_data()
         self.bind()
         data = js.Uint8Array.new(self.size)
         self._gl.getBufferSubData(self.target, 0, data)
         return bytes(data.buffer.to_py(depth=1))
 
     def get_bytes_region(self, offset: int, length: int) -> bytes:
+        self._require_uploaded_data()
         self._validate_byte_range(offset, length)
         self.bind()
         data = js.Uint8Array.new(length)
@@ -112,25 +137,30 @@ class WebGLBufferObject(AbstractBuffer):
         assert len(raw) == self.size, f"Expected {self.size} bytes for full upload, got {len(raw)}."
         self.bind()
         self._gl.bufferData(self.target, _to_js_uint8(raw), self.usage)
+        self._set_data_uploaded()
 
     def set_bytes_region(self, offset: int, data: bytes | bytearray | memoryview) -> None:
         # BufferObject updates are whole-buffer by design. Patch the local
         # bytes and re-upload the full content.
         raw = bytes(data)
         self._validate_byte_range(offset, len(raw))
-        whole = bytearray(self.get_bytes())
+        whole = bytearray(self.get_bytes()) if self._data_uploaded else bytearray(self.size)
         whole[offset:offset + len(raw)] = raw
         self.set_bytes(whole)
 
     def invalidate(self) -> None:
         self.bind()
         self._gl.bufferData(self.target, self.size, self.usage)
+        self._allocated = True
+        self._data_uploaded = False
 
     def delete(self) -> None:
         if self.id is None:
             return
         self._gl.deleteBuffer(self.id)
         self.id = None
+        self._allocated = False
+        self._data_uploaded = False
 
     def __del__(self) -> None:
         if self.id is not None:
@@ -141,24 +171,34 @@ class WebGLBufferObject(AbstractBuffer):
                 pass  # Interpreter is shutting down
 
     def resize(self, size: int) -> None:
+        if size == self.size:
+            return
+        if not self._allocated:
+            self.size = size
+            self._data_uploaded = False
+            return
+
         # Copy data from old buffer into new buffer, then replace.
         old_id = self.id
         new_id = self._gl.createBuffer()
+        copy_size = min(self.size, size) if self._data_uploaded else 0
 
         self._gl.bindBuffer(self._gl.COPY_READ_BUFFER, old_id)
         self._gl.bindBuffer(self._gl.COPY_WRITE_BUFFER, new_id)
         self._gl.bufferData(self._gl.COPY_WRITE_BUFFER, size, self._gl.DYNAMIC_DRAW)
-
-        self._gl.copyBufferSubData(
-            self._gl.COPY_READ_BUFFER,
-            self._gl.COPY_WRITE_BUFFER,
-            0,
-            0,
-            min(self.size, size),
-        )
+        if copy_size > 0:
+            self._gl.copyBufferSubData(
+                self._gl.COPY_READ_BUFFER,
+                self._gl.COPY_WRITE_BUFFER,
+                0,
+                0,
+                copy_size,
+            )
         self._gl.deleteBuffer(old_id)
         self.id = new_id
         self.size = size
+        self._allocated = True
+        self._data_uploaded = copy_size > 0
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(id={self.id}, size={self.size})"
@@ -238,19 +278,19 @@ class WebGLBackedBufferObject(BaseBackedBufferObject, WebGLBufferObject):
 
         self.bind()
         size = self._dirty_max - self._dirty_min
-        if size > 0:
-            if size == self.size:
-                self._gl.bufferData(self.target, _to_js_uint8(self.store.get_bytes()), self.usage)
-            else:
-                self._gl.bufferSubData(
-                    self.target,
-                    self._dirty_min,
-                    _to_js_uint8(self.store.get_bytes(self._dirty_min, size)),
-                )
+        if not self._allocated or not self._data_uploaded or size == self.size:
+            self._gl.bufferData(self.target, _to_js_uint8(self.store.get_bytes()), self.usage)
+        else:
+            self._gl.bufferSubData(
+                self.target,
+                self._dirty_min,
+                _to_js_uint8(self.store.get_bytes(self._dirty_min, size)),
+            )
+        self._set_data_uploaded()
 
-            self._dirty_min = sys.maxsize
-            self._dirty_max = 0
-            self._dirty = False
+        self._dirty_min = sys.maxsize
+        self._dirty_max = 0
+        self._dirty = False
 
     @lru_cache(maxsize=None)  # noqa: B019
     def get_region(self, start: int, count: int):
@@ -382,11 +422,15 @@ class WebGLTransformFeedbackBufferObject(WebGLBufferObject, TransformFeedbackBuf
         TransformFeedbackBuffer.__init__(self, size=size, data_type=data_type)
 
     def bind_base(self, index: int) -> None:
+        self._ensure_allocated()
         self._gl.bindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, index, self.id)
+        self._data_uploaded = True
 
     def bind_range(self, index: int, offset: int, size: int) -> None:
         self._validate_byte_range(offset, size)
+        self._ensure_allocated()
         self._gl.bindBufferRange(GL_TRANSFORM_FEEDBACK_BUFFER, index, self.id, offset, size)
+        self._data_uploaded = True
 
 
 class WebGLTextureBufferObject(WebGLBufferObject, TextureBuffer):
