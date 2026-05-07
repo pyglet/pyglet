@@ -881,8 +881,16 @@ class TextureGrid(_AbstractGrid[TextureRegion]):
         images = texture_grid[(1,1):(3,3)]
 
     """
-    def __init__(self, texture: Texture | TextureRegion, rows: int, columns: int, item_width: int,
-                 item_height: int, row_padding: int = 0, column_padding: int = 0) -> None:
+    def __init__(
+        self,
+        texture: Texture | TextureRegion,
+        rows: int,
+        columns: int,
+        item_width: int | None = None,
+        item_height: int | None = None,
+        row_padding: int = 0,
+        column_padding: int = 0,
+    ) -> None:
         """Construct a grid for the given image.
 
         You can specify parameters for the grid, for example setting

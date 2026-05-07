@@ -54,14 +54,13 @@ import sys
 import weakref
 import zipfile
 from io import BytesIO, StringIO
-from typing import IO, TYPE_CHECKING
+from typing import IO, TYPE_CHECKING, Literal, overload
 
 import pyglet
 
 if TYPE_CHECKING:
     from pyglet.customtypes import MediaTypes
     from pyglet.graphics.texture import Texture, TextureRegion, TextureArrayRegion
-    from typing import Literal
 
     from pyglet.graphics.shader import Shader
     from pyglet.image import ImageData
@@ -537,7 +536,26 @@ class Loader:
         self._cached_images[name] = img
         return img
 
-    def texture(self, name: str, flip_x: bool = False, flip_y: bool = False, rotate: Literal[0, 90, 180, 270, 360] = 0,
+    @overload
+    def texture(self, name: str, flip_x: bool = False, flip_y: bool = False,
+                rotate: Literal[0, 90, 180, 270, 360] = 0,
+                atlas: Literal[True] = True, border: int = 1) -> TextureRegion:
+        ...
+
+    @overload
+    def texture(self, name: str, flip_x: bool = False, flip_y: bool = False,
+                rotate: Literal[0, 90, 180, 270, 360] = 0,
+                atlas: Literal[False] = False, border: int = 1) -> Texture:
+        ...
+
+    @overload
+    def texture(self, name: str, flip_x: bool = False, flip_y: bool = False,
+                rotate: Literal[0, 90, 180, 270, 360] = 0,
+                atlas: bool = True, border: int = 1) -> Texture | TextureRegion:
+        ...
+
+    def texture(self, name: str, flip_x: bool = False, flip_y: bool = False,
+                rotate: Literal[0, 90, 180, 270, 360] = 0,
                 atlas: bool = True, border: int = 1) -> Texture | TextureRegion:
         """Loads an image into a GPU backed texture with optional transformations.
 
@@ -839,7 +857,57 @@ image = _default_loader.image
 animation = _default_loader.animation
 audio = _default_loader.audio
 video = _default_loader.video
-texture = _default_loader.texture
+
+@overload
+def texture(name: str, flip_x: bool = False, flip_y: bool = False, rotate: Literal[0, 90, 180, 270, 360] = 0,
+            atlas: Literal[True] = True, border: int = 1) -> TextureRegion:
+    ...
+
+
+@overload
+def texture(name: str, flip_x: bool = False, flip_y: bool = False, rotate: Literal[0, 90, 180, 270, 360] = 0,
+            atlas: Literal[False] = False, border: int = 1) -> Texture:
+    ...
+
+
+@overload
+def texture(name: str, flip_x: bool = False, flip_y: bool = False, rotate: Literal[0, 90, 180, 270, 360] = 0,
+            atlas: bool = True, border: int = 1) -> Texture | TextureRegion:
+    ...
+
+
+def texture(name: str, flip_x: bool = False, flip_y: bool = False, rotate: Literal[0, 90, 180, 270, 360] = 0,
+            atlas: bool = True, border: int = 1) -> Texture | TextureRegion:
+    """Loads an image into a GPU backed texture with optional transformations.
+
+    By default, the resulting texture will be packed into a
+    :py:class:`~pyglet.graphics.atlas.TextureBin` (TextureAtlas) if it is an appropriate size for packing.
+    This is more efficient than loading images into separate textures.
+
+    Args:
+        name:
+            The filename of the image source to load.
+        flip_x:
+            If ``True``, the returned image will be flipped horizontally.
+        flip_y:
+            If ``True``, the returned image will be flipped vertically.
+        rotate:
+            The returned image will be rotated clockwise by the given
+            number of degrees (a multiple of 90).
+        atlas:
+            If ``True``, the image will be loaded into an atlas managed by
+            pyglet. If atlas loading is not appropriate for specific texturing
+            reasons (e.g. border control is required) then set to ``False``.
+        border:
+            Leaves specified pixels of blank space around each image in
+            an atlas, which may help reduce texture bleeding.
+
+    .. note:: When using ``flip_x/y`` or ``rotate``, the actual pixel
+              data is not modified. Instead, the texture coordinates
+              are manipulated to produce the desired result.
+    """
+    return _default_loader.texture(name, flip_x, flip_y, rotate, atlas, border)
+
 html = _default_loader.html
 attributed = _default_loader.attributed
 text = _default_loader.text

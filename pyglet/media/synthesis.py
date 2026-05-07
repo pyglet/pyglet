@@ -57,13 +57,13 @@ class LinearDecayEnvelope(Envelope):
     This envelope linearly decays the amplitude from the peak value
     to 0, over the length of the waveform.
 
-    :Parameters:
-        `peak` : float
+    Args:
+        peak:
             The Initial peak value of the envelope, from 0.0 to 1.0.
             Values outside this range will be clamped.
     """
 
-    def __init__(self, peak=1.0):
+    def __init__(self, peak: float = 1.0):
         self.peak = max(min(1.0, peak), 0)
 
     def get_generator(self, sample_rate: float, duration: float) -> Generator[float]:
