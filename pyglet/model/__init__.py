@@ -44,6 +44,7 @@ from typing import TYPE_CHECKING
 import pyglet
 
 from pyglet import graphics
+from pyglet.math import Vec3, Vec4, Quaternion
 from pyglet.enums import GeometryMode, CompareOp
 
 from .codecs import add_default_codecs as _add_default_codecs
@@ -52,7 +53,6 @@ from .codecs.base import Material, Scene, SimpleMaterial
 
 if TYPE_CHECKING:
     from typing import BinaryIO, TextIO
-    from pyglet.math import Vec3
     from pyglet.graphics import Texture
     from pyglet.graphics import Batch, Group
     from pyglet.graphics import ShaderProgram
@@ -144,8 +144,9 @@ class Model:
 
         self._batch = batch
 
-    def create_instance(self, translation: Vec3 | None = None):
-        return ModelInstance(*[vlist.create_instance(TRANSLATE=translation) for vlist in self.vertex_lists])
+    def create_instance(self, translation: Vec3 = Vec3(), rotation: Vec4 | Quaternion = Quaternion()):
+        instances = [vlist.create_instance(TRANSLATION=translation, ROTATION=rotation) for vlist in self.vertex_lists]
+        return ModelInstance(*instances)
 
 
 class ModelInstance:
@@ -155,12 +156,12 @@ class ModelInstance:
 
     @property
     def translation(self):
-        return self._instances[0].TRANSLATE[:]
+        return self._instances[0].TRANSLATION[:]
 
     @translation.setter
     def translation(self, values):
         for instance in self._instances:
-            instance.TRANSLATE[:] = values
+            instance.TRANSLATION[:] = values
 
 
 class BaseMaterialGroup(graphics.ShaderGroup):
@@ -179,7 +180,8 @@ class TexturedMaterialGroup(BaseMaterialGroup):
     in vec3 NORMAL;
     in vec2 TEXCOORD_0;
     in vec4 COLOR_0;
-    in vec3 TRANSLATE;
+    in vec4 ROTATION;
+    in vec3 TRANSLATION;
 
     out vec3 position;
     out vec3 normal;
@@ -192,14 +194,46 @@ class TexturedMaterialGroup(BaseMaterialGroup):
         mat4 view;
     } window;
 
+    mat4 quat_to_mat4(vec4 q)
+    {
+        float x = q.x;
+        float y = q.y;
+        float z = q.z;
+        float w = q.w;
+    
+        float x2 = x + x;
+        float y2 = y + y;
+        float z2 = z + z;
+    
+        float xx = x * x2;
+        float xy = x * y2;
+        float xz = x * z2;
+        float yy = y * y2;
+        float yz = y * z2;
+        float zz = z * z2;
+        float wx = w * x2;
+        float wy = w * y2;
+        float wz = w * z2;
+    
+        return mat4(
+            1.0 - (yy + zz),  xy + wz,         xz - wy,         0.0,
+            xy - wz,          1.0 - (xx + zz), yz + wx,         0.0,
+            xz + wy,          yz - wx,         1.0 - (xx + yy), 0.0,
+            0.0,              0.0,             0.0,             1.0
+        );
+    }
+
+
     void main()
     {
-        mat4 m_translate = mat4(1.0);
-        m_translate[3][0] = TRANSLATE.x;
-        m_translate[3][1] = TRANSLATE.y;
-        m_translate[3][2] = TRANSLATE.z;
+        mat4 m_translation = mat4(1.0);
+        m_translation[3][0] = TRANSLATION.x;
+        m_translation[3][1] = TRANSLATION.y;
+        m_translation[3][2] = TRANSLATION.z;
         
-        mat4 mv = window.view * m_translate;
+        mat4 m_rotation = quat_to_mat4(ROTATION);
+        
+        mat4 mv = window.view * m_translation * m_rotation;
         vec4 pos = mv * vec4(POSITION, 1.0);
         gl_Position = window.projection * pos;
         mat3 normal_matrix = transpose(inverse(mat3(mv)));
@@ -240,7 +274,8 @@ class MaterialGroup(BaseMaterialGroup):
     in vec3 POSITION;
     in vec3 NORMAL;
     in vec4 COLOR_0;
-    in vec3 TRANSLATE;
+    in vec4 ROTATION;
+    in vec3 TRANSLATION;
 
     out vec4 color_0;
     out vec3 normal;
@@ -252,14 +287,46 @@ class MaterialGroup(BaseMaterialGroup):
         mat4 view;
     } window;
 
+    mat4 quat_to_mat4(vec4 q)
+    {
+        float x = q.x;
+        float y = q.y;
+        float z = q.z;
+        float w = q.w;
+    
+        float x2 = x + x;
+        float y2 = y + y;
+        float z2 = z + z;
+    
+        float xx = x * x2;
+        float xy = x * y2;
+        float xz = x * z2;
+        float yy = y * y2;
+        float yz = y * z2;
+        float zz = z * z2;
+        float wx = w * x2;
+        float wy = w * y2;
+        float wz = w * z2;
+    
+        return mat4(
+            1.0 - (yy + zz),  xy + wz,         xz - wy,         0.0,
+            xy - wz,          1.0 - (xx + zz), yz + wx,         0.0,
+            xz + wy,          yz - wx,         1.0 - (xx + yy), 0.0,
+            0.0,              0.0,             0.0,             1.0
+        );
+    }
+
+
     void main()
     {
-        mat4 m_translate = mat4(1.0);
-        m_translate[3][0] = TRANSLATE.x;
-        m_translate[3][1] = TRANSLATE.y;
-        m_translate[3][2] = TRANSLATE.z;
+        mat4 m_translation = mat4(1.0);
+        m_translation[3][0] = TRANSLATION.x;
+        m_translation[3][1] = TRANSLATION.y;
+        m_translation[3][2] = TRANSLATION.z;
         
-        mat4 mv = window.view * m_translate;
+        mat4 m_rotation = quat_to_mat4(ROTATION);
+        
+        mat4 mv = window.view * m_translation * m_rotation;
         vec4 pos = mv * vec4(POSITION, 1.0);
         gl_Position = window.projection * pos;
         mat3 normal_matrix = transpose(inverse(mat3(mv)));
@@ -365,10 +432,11 @@ class Cube(Model):
                                                            mode=GeometryMode.TRIANGLES,
                                                            indices=indices,
                                                            batch=self._batch, group=self._group,
-                                                           instance_attributes={'TRANSLATE': 1},
+                                                           instance_attributes={'TRANSLATION': 1, 'ROTATION': 1},
                                                            POSITION=('f', vertices),
                                                            NORMAL=('f', normals),
-                                                           TRANSLATE=('f', (0.0, 0.0, 0.0)),
+                                                           TRANSLATION=('f', (0.0, 0.0, 0.0)),
+                                                           ROTATION=('f', (0.0, 0.0, 0.0, 0.0)),
                                                            COLOR_0=('f', self._color * (len(vertices) // 3)))
 
 
@@ -425,11 +493,12 @@ class Sphere(Model):
         return self._program.vertex_list_instanced_indexed(len(vertices) // 3,
                                                            mode=GeometryMode.TRIANGLES,
                                                            indices=indices,
-                                                           instance_attributes={'TRANSLATE': 1},
+                                                           instance_attributes={'TRANSLATION': 1, 'ROTATION': 1},
                                                            batch=self._batch, group=self._group,
                                                            POSITION=('f', vertices),
                                                            NORMAL=('f', normals),
-                                                           TRANSLATE=('f', (0, 0, 0)),
+                                                           TRANSLATION=('f', (0, 0, 0)),
+                                                           ROTATION=('f', (0.0, 0.0, 0.0, 0.0)),
                                                            COLOR_0=('f', self._color * (len(vertices) // 3)))
 
 
@@ -546,11 +615,12 @@ class Capsule(Model):
         return self._program.vertex_list_instanced_indexed(len(vertices) // 3,
                                                            mode=GeometryMode.TRIANGLES,
                                                            indices=indices,
-                                                           instance_attributes={'TRANSLATE': 1},
+                                                           instance_attributes={'TRANSLATION': 1, 'ROTATION': 1},
                                                            batch=self._batch,
                                                            group=self._group,
                                                            POSITION=('f', vertices),
-                                                           TRANSLATE=('f', (0, 0, 0)),
+                                                           TRANSLATION=('f', (0.0, 0.0, 0.0)),
+                                                           ROTATION=('f', (0.0, 0.0, 0.0, 0.0)),
                                                            NORMAL=('f', normals),
                                                            COLOR_0=('f', self._color * (len(vertices) // 3)))
 
