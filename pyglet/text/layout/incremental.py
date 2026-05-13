@@ -617,10 +617,11 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
             # A line can have no vertex list if it's out of view OR is an empty row.
 
             # Accumulate the X accounting for multiple GlyphBoxes.
-            anchor_x = anchor_left
+            acc_anchor_x = anchor_left
             for box in line.boxes:
-                box.update_anchor(anchor_x, anchor_top)
-                anchor_x += box.advance
+                place_anchor_x = round(acc_anchor_x) if self._rotation == 0 else acc_anchor_x
+                box.update_anchor(place_anchor_x, anchor_top)
+                acc_anchor_x += box.advance
 
     def _get_bottom_anchor(self) -> float:
         """Returns the anchor for the Y axis from the bottom."""

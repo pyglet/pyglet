@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from typing import Any, BinaryIO, ClassVar
 
 from pyglet import image
-from pyglet.gl import GL_LINEAR, GL_RGBA, GL_TEXTURE_2D
+from pyglet.gl import GL_LINEAR, GL_RGBA, GL_TEXTURE_2D, GL_NEAREST
 
 _OTHER_GRAPHEME_EXTEND = {
     chr(x) for x in [0x09be, 0x09d7, 0x0be3, 0x0b57, 0x0bbe, 0x0bd7, 0x0cc2,
@@ -271,8 +271,8 @@ class Font:
     glyph_fit: int = 100
 
     texture_internalformat: int = GL_RGBA
-    texture_min_filter: int = GL_LINEAR
-    texture_mag_filter: int = GL_LINEAR
+    texture_min_filter: int = GL_NEAREST
+    texture_mag_filter: int = GL_NEAREST
 
     # These should also be set by subclass when known
     ascent: int = 0
