@@ -461,23 +461,25 @@ class _GlyphBox(_AbstractBox):
         vertices = []
         tex_coords = []
         baseline = 0
-        x1 = line_x
+        x1 = round(line_x)
         for start, end, baseline_ in context.baseline_iter.ranges(i, i + n_glyphs):
             baseline = layout._parse_distance(baseline_)  # noqa: SLF001
             assert len(self.glyphs[start - i:end - i]) == end - start
-            for (kern, glyph, glyph_pos) in self.glyphs[start - i:end - i]:
-                x1 += kern
+            y1 = round(line_y + baseline)
+            for kern, glyph, glyph_pos in self.glyphs[start - i:end - i]:
+                x1 += round(kern)
                 v0, v1, v2, v3 = glyph.vertices
-                v0 += x1 + glyph_pos.x_offset
-                v2 += x1 + glyph_pos.x_offset
-                v1 += line_y + baseline + glyph_pos.y_offset
-                v3 += line_y + baseline + glyph_pos.y_offset
-                vertices.extend(map(round, [v0, v1, 0, v2, v1, 0, v2, v3, 0, v0, v3, 0]))
-                t = glyph.tex_coords
-                tex_coords.extend(t)
-                x1 += glyph.advance + glyph_pos.x_advance
-                v1 += glyph_pos.y_advance
-                v3 += glyph_pos.y_advance
+                # Translate the whole glyph as a block. Rounding v0/v1/v2/v3 can distort vertices.
+                gx = x1 + round(glyph_pos.x_offset)
+                gy = y1 + round(glyph_pos.y_offset)
+                vertices.extend([
+                    v0 + gx, v1 + gy, 0,
+                    v2 + gx, v1 + gy, 0,
+                    v2 + gx, v3 + gy, 0,
+                    v0 + gx, v3 + gy, 0,
+                ])
+                tex_coords.extend(glyph.tex_coords)
+                x1 += round(glyph.advance + glyph_pos.x_advance)
 
         # Text color
         colors = []
@@ -1143,7 +1145,8 @@ class TextLayout:
         for line in self._lines:
             acc_anchor_x = self._anchor_left
             for box in line.boxes:
-                box.update_anchor(acc_anchor_x, anchor_y)
+                place_anchor_x = round(acc_anchor_x) if self._rotation == 0 else acc_anchor_x
+                box.update_anchor(place_anchor_x, anchor_y)
                 acc_anchor_x += box.advance
 
     @property
@@ -2001,7 +2004,8 @@ class TextLayout:
         acc_anchor_x = anchor_x
         # GlyphBoxes (boxes) are collection of Glyphs/Inline Elements. A line can have multiple GlyphBoxes.
         for box in boxes:
-            box.place(self, i, self._x, self._y, self._z, line_x, line_y, self._rotation, self._visible, acc_anchor_x,
+            place_anchor_x = round(acc_anchor_x) if self._rotation == 0 else acc_anchor_x
+            box.place(self, i, self._x, self._y, self._z, line_x, line_y, self._rotation, self._visible, place_anchor_x,
                       anchor_y, context)
             i += box.length
             acc_anchor_x += box.advance
