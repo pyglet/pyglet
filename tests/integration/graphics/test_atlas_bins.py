@@ -5,7 +5,7 @@ import pyglet
 from pyglet.graphics.atlas import AllocatorException, TextureAtlas, TextureBin, TextureArrayBin
 from pyglet.graphics.texture import TextureArraySizeExceeded
 from pyglet.image import ImageData
-from tests.annotations import GraphicsAPI, skip_graphics_api
+from tests.annotations import GraphicsAPIGroups, skip_graphics_api
 
 
 def _solid_rgba_image(width: int, height: int, color: tuple[int, int, int, int]) -> ImageData:
@@ -53,7 +53,7 @@ def test_texture_bin_creates_new_atlas_when_full(gl3_context):
     assert region_b.owner is texture_bin.atlases[1].texture
 
 
-@skip_graphics_api(GraphicsAPI.GL2)
+@skip_graphics_api(GraphicsAPIGroups.GL2)
 def test_texture_array_bin_creates_new_array_when_depth_full(gl3_context):
     gl3_context.switch_to()
 
@@ -73,7 +73,7 @@ def test_texture_array_bin_creates_new_array_when_depth_full(gl3_context):
     assert region_2.owner is array_bin.arrays[1]
 
 
-@skip_graphics_api(GraphicsAPI.GL2)
+@skip_graphics_api(GraphicsAPIGroups.GL2)
 def test_texture_array_bin_raises_for_oversized_image(gl3_context):
     gl3_context.switch_to()
 

@@ -15,6 +15,7 @@ import pyglet
 
 from pyglet.enums import BlendFactor, GeometryMode
 from pyglet.graphics import Shader, ShaderProgram, Group
+from pyglet.graphics.texture import Texture
 
 ###################################
 # Create a Window, and render Batch
@@ -78,17 +79,17 @@ class RenderGroup(Group):
     RenderGroups are equal if their Texture and ShaderProgram
     are equal.
     """
-    def __init__(self, texture, program, order=0, parent=None):
+    def __init__(self, texture: Texture, program: ShaderProgram, order: int = 0, parent: Group | None = None) -> None:
         """Create a RenderGroup.
 
-        :Parameters:
-            `texture` : `~pyglet.graphics.Texture`
+        Args:
+            texture:
                 Texture to bind.
-            `program` : `~pyglet.graphics.ShaderProgram`
+            program:
                 ShaderProgram to use.
-            `order` : int
+            order:
                 Change the order to render above or below other Groups.
-            `parent` : `~pyglet.graphics.Group`
+            parent:
                 Parent group.
         """
         super().__init__(order, parent)

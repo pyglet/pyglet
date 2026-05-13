@@ -4,11 +4,11 @@ import pyglet
 import pytest
 from pyglet.graphics.buffer import CTypeDataStore
 from pyglet.graphics.shader import Attribute
-from tests.annotations import GraphicsAPI, require_graphics_api
+from tests.annotations import GraphicsAPIGroups, require_graphics_api
 
-if pyglet.options.backend in GraphicsAPI.GL3:
+if pyglet.options.backend in GraphicsAPIGroups.GL3:
     from pyglet.graphics.api.gl.buffer import GLBufferObject, GLIndexedBufferObject, GLMappedBufferObject
-elif pyglet.options.backend in GraphicsAPI.GL2:
+elif pyglet.options.backend in GraphicsAPIGroups.GL2:
     from pyglet.graphics.api.gl2.buffer import (
         GL2BufferObject as GLBufferObject,
         GL2IndexedBufferObject as GLIndexedBufferObject,
@@ -35,7 +35,8 @@ def test_buffer_object_create_resize_and_delete(gl3_context):
 
     buffer = GLBufferObject(ctx, 16)
     assert buffer.size == 16
-    assert len(buffer.get_bytes()) == 16
+    with pytest.raises(AssertionError):
+        buffer.get_bytes()
 
     payload = bytes(range(16))
     buffer.set_bytes(payload)
@@ -59,6 +60,40 @@ def test_buffer_object_create_resize_and_delete(gl3_context):
     buffer.delete()
 
 
+@require_graphics_api(GraphicsAPIGroups.GL3)
+def test_index_buffer_creation_vao_element_buffer(gl3_context):
+    """This makes sure creating an index buffer does not overwrite the existing VAO's bound index buffer."""
+    from pyglet.graphics.api.gl import GL_ELEMENT_ARRAY_BUFFER, GL_ELEMENT_ARRAY_BUFFER_BINDING, GLint, GLuint
+
+    gl3_context.switch_to()
+    ctx = gl3_context.context
+
+    vao = GLuint()
+    ctx.glGenVertexArrays(1, vao)
+    created = None
+    anchor = None
+    ctx.glBindVertexArray(vao)
+    try:
+        anchor = GLBufferObject(ctx, 8, target=GL_ELEMENT_ARRAY_BUFFER)
+        anchor.set_bytes(b"\x00" * 8)
+
+        bound_before = GLint()
+        ctx.glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, bound_before)
+        assert bound_before.value == anchor.id
+
+        created = GLIndexedBufferObject(ctx, size=8, data_type="I", stride=4, count=1)
+        bound_after = GLint()
+        ctx.glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, bound_after)
+        assert bound_after.value == anchor.id
+    finally:
+        if created is not None:
+            created.delete()
+        if anchor is not None:
+            anchor.delete()
+        ctx.glBindVertexArray(0)
+        ctx.glDeleteVertexArrays(1, vao)
+
+
 def test_buffer_object_assertions(gl3_context):
     gl3_context.switch_to()
     ctx = gl3_context.context
@@ -67,13 +102,15 @@ def test_buffer_object_assertions(gl3_context):
     with pytest.raises(AssertionError):
         buffer.set_bytes(b"\x00")
     with pytest.raises(AssertionError):
+        buffer.get_bytes()
+    with pytest.raises(AssertionError):
         buffer.get_bytes_region(-1, 1)
     with pytest.raises(AssertionError):
         buffer.set_bytes_region(7, b"\x00\x01")
 
     buffer.delete()
 
-@require_graphics_api(GraphicsAPI.GL3)
+@require_graphics_api(GraphicsAPIGroups.GL3)
 def test_mapped_buffer_region_updates(gl3_context):
     # Mapped buffers aren't supported by GLES2.
     gl3_context.switch_to()
@@ -129,6 +166,22 @@ def test_backed_index_buffer_commit_resize_and_delete(gl3_context):
 
     buffer.delete()
     assert buffer.id is None
+    buffer.delete()
+
+
+def test_backed_index_buffer_first_partial_commit_allocates_and_uploads(gl3_context):
+    gl3_context.switch_to()
+    ctx = gl3_context.context
+
+    buffer = GLIndexedBufferObject(ctx, size=16, data_type="I", stride=4, count=1)
+
+    buffer.set_data_region([7], start=0, length=4)
+    buffer.commit()
+
+    gpu_data = GLBufferObject.get_bytes(buffer)
+    typed_gpu = (ctypes.c_uint32 * 4).from_buffer_copy(gpu_data)
+    assert tuple(typed_gpu) == (7, 0, 0, 0)
+
     buffer.delete()
 
 
@@ -206,7 +259,7 @@ def test_backed_index_buffer_set_data_ptr_with_ctypes_pointer(gl3_context):
 
     buffer.delete()
 
-@require_graphics_api(GraphicsAPI.DESKTOP_GL)
+@require_graphics_api(GraphicsAPIGroups.DESKTOP_GL)
 def test_gl_vertex_stream_persistent_resize_rebinds_vao(gl3_context):
     from pyglet.graphics.api.gl import GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING, GLint
     from pyglet.graphics.api.gl.buffer import PersistentBufferObject

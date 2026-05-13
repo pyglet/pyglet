@@ -4,7 +4,7 @@ import pyglet
 
 from pyglet.enums import ComponentFormat, FramebufferAttachment
 from pyglet.graphics.api.gl import gl
-from tests.annotations import skip_graphics_api, GraphicsAPI
+from tests.annotations import skip_graphics_api, GraphicsAPIGroups
 
 
 def _get_bound_framebuffer_id() -> int:
@@ -13,7 +13,7 @@ def _get_bound_framebuffer_id() -> int:
     return binding.value
 
 
-@skip_graphics_api(GraphicsAPI.GL2)
+@skip_graphics_api(GraphicsAPIGroups.GL2)
 def test_framebuffer_creation_and_binding(gl3_context):
     gl3_context.switch_to()
 
@@ -32,7 +32,7 @@ def test_framebuffer_creation_and_binding(gl3_context):
         framebuffer.delete()
 
 
-@skip_graphics_api(GraphicsAPI.GL2)
+@skip_graphics_api(GraphicsAPIGroups.GL2)
 def test_framebuffer_attach_texture_and_readback(gl3_context):
     gl3_context.switch_to()
 
@@ -63,7 +63,7 @@ def test_framebuffer_attach_texture_and_readback(gl3_context):
         texture.delete()
 
 
-@skip_graphics_api(GraphicsAPI.GL2)
+@skip_graphics_api(GraphicsAPIGroups.GL2)
 def test_framebuffer_attach_depth_renderbuffer(gl3_context):
     gl3_context.switch_to()
 

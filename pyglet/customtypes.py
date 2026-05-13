@@ -22,8 +22,8 @@ MediaTypes = Literal["audio", "video", "image"]
 
 Number = Union[int, float]
 
-RGBColor = Tuple[Number, Number, Number]
-RGBAColor = Tuple[Number, Number, Number, Number]
+RGBColor = Tuple[int, int, int]
+RGBAColor = Tuple[int, int, int, int]
 
 DataTypes = Literal[
     'f',  # float

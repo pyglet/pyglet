@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import sys
+import warnings
+from copy import copy
 import weakref
 from dataclasses import dataclass
 from typing import Any, Callable, Sequence, TYPE_CHECKING
@@ -243,6 +245,7 @@ class _DomainKey:
     mode: GeometryMode
     attributes: str
 
+
 class Batch:
     """Manage a collection of drawables for batched rendering.
 
@@ -277,6 +280,7 @@ class Batch:
     group_children: dict[Group, list[Group]]
     group_map: dict[Group, dict[_DomainKey, VertexDomain]]
     initial_count: int
+    _domain_class_map: dict[tuple[bool, bool], type[VertexDomain]] = _domain_class_map
 
     def __init__(self, initial_count: int = 32) -> None:
         """Initialize a graphics batch.
@@ -328,6 +332,43 @@ class Batch:
                 del self._domain_registry[domain_key]
         self._empty_domains.clear()
 
+    @staticmethod
+    def _attributes_key(attributes: dict[str, Any]) -> str:
+        """Sort by the location, since introspection order can change depending on platform."""
+        return str(tuple(
+            attribute.key for attribute in sorted(attributes.values(), key=lambda attribute: attribute.location)
+        ))
+
+    @staticmethod
+    def _normalized_shader_attributes(program: ShaderProgram, initial_attribs: dict[str, Any]) -> dict[str, Any]:
+        """Return shader attributes adjusted to the vertex-list's original buffer formats."""
+        attributes = program.attributes
+
+        # Preserve the vertex-list's concrete storage formats for lookup/compatibility.
+        for a_name, *_ in program.attribute_keys:
+            initial_attribute = initial_attribs.get(a_name)
+            if initial_attribute is None:
+                continue
+            attribute = attributes[a_name]
+
+            needs_data_type = (
+                initial_attribute.fmt.data_type != attribute.fmt.data_type or
+                initial_attribute.fmt.normalized != attribute.fmt.normalized
+            )
+            needs_divisor = initial_attribute.fmt.divisor != attribute.fmt.divisor
+
+            if not needs_data_type and not needs_divisor:
+                continue
+
+            adjusted_attribute = copy(attribute)
+            if needs_data_type:
+                adjusted_attribute.set_data_type(initial_attribute.fmt.data_type, initial_attribute.fmt.normalized)
+            if needs_divisor:
+                adjusted_attribute.set_divisor(initial_attribute.fmt.divisor)
+            attributes[a_name] = adjusted_attribute
+
+        return attributes
+
     def update_shader(self, vertex_list: VertexList | IndexedVertexList, mode: GeometryMode, group: Group,
                       program: ShaderProgram) -> bool:
         """Migrate a vertex list to another domain that has the specified shader attributes.
@@ -349,22 +390,27 @@ class Batch:
         Returns:
             False if the domain's no longer match. The caller should handle this scenario.
         """
-        # No new attributes.
-        attributes = program.attributes.copy()
+        attributes = self._normalized_shader_attributes(program, vertex_list.initial_attribs)
 
-        # Formats may differ (normalization) than what is declared in the shader.
-        # Make those adjustments and attempt to get a domain.
-        for a_name in attributes:
-            if (a_name in vertex_list.initial_attribs and
-                    vertex_list.initial_attribs[a_name]['format'] != attributes[a_name]['format']):
-                attributes[a_name]['format'] = vertex_list.initial_attribs[a_name]['format']
+        # Changing shaders for existing drawables are limited by the attributes
+        # the drawable originally allocated buffers for.
+        if missing := [name for name in vertex_list.initial_attribs if name not in attributes]:
+            if _debug_graphics_batch:
+                warnings.warn(f"Missing required shader attributes for update: {missing}")
+            return False
 
-        domain = self.get_domain(vertex_list.indexed, vertex_list.instanced, mode, group, attributes)
+        drawable_attributes = {name: attributes[name] for name in vertex_list.initial_attribs}
+        domain = self.get_domain(vertex_list.indexed, vertex_list.instanced, mode, group, drawable_attributes)
 
         # TODO: Allow migration if we can restore original vertices somehow. Much faster.
         # If the domain's don't match, we need to re-create the vertex list. Tell caller no match.
         if domain != vertex_list.domain:
             return False
+
+        # Same domain, but state can still differ (for example, a different program).
+        if vertex_list.group != group:
+            vertex_list.update_group(group)
+            self._draw_list_dirty = True
 
         return True
 
@@ -393,7 +439,16 @@ class Batch:
         """
         attributes = vertex_list.domain.attribute_meta
         domain = batch.get_domain(vertex_list.indexed, vertex_list.instanced, mode, group, attributes)
-        vertex_list.migrate(domain)
+
+        if domain != vertex_list.domain:
+            vertex_list.migrate(domain, group)
+        else:
+            # If the same domain, no need to move vertices, just update the group.
+            vertex_list.update_group(group)
+
+            # Updating group can potentially change draw order though.
+            self._draw_list_dirty = True
+
 
     def get_domain(self, indexed: bool, instanced: bool, mode: GeometryMode, group: Group,
                    attributes: dict[str, Any]) -> VertexDomain:
@@ -401,28 +456,21 @@ class Batch:
 
         mode is the render mode such as GL_LINES or GL_TRIANGLES
         """
-        # Batch group
+        # Group map just used for group lookup now, not domains.
         if group not in self.group_map:
             self._add_group(group)
 
-        domain_map = self.group_map[group]
-
         # If instanced, ensure a separate domain, as multiple instance sources can match the key.
-        if instanced:
-            self._instance_count += 1
-            key = (indexed, self._instance_count, mode, str(attributes))
-        else:
-            # Find domain given formats, indices and mode
-            key = (indexed, 0, mode, str(attributes))
+        # Find domain given formats, indices and mode
+        key = _DomainKey(indexed, instanced, mode, self._attributes_key(attributes))
 
         try:
-            domain = domain_map[key]
+            domain = self._domain_registry[key]
         except KeyError:
             # Create domain
-            domain = _domain_class_map[(indexed, instanced)](attributes)
-            domain_map[key] = domain
+            domain = self._domain_class_map[(indexed, instanced)](self._context, self.initial_count, attributes)
+            self._domain_registry[key] = domain
             self._draw_list_dirty = True
-
         return domain
 
     def _add_group(self, group: Group) -> None:

@@ -17,6 +17,7 @@ import time
 from typing import TYPE_CHECKING, Any, Pattern
 
 from pyglet import clock, event
+from pyglet.customtypes import RGBColor, RGBAColor
 from pyglet.window import key
 from pyglet.event import EventDispatcher
 from pyglet.enums import GeometryMode
@@ -75,21 +76,21 @@ class Caret(EventDispatcher):
     _next_attributes: dict[str, Any]
 
     def __init__(self, layout: IncrementalTextLayout, batch: Batch | None = None,
-                 color: tuple[int, int, int, int] = (0, 0, 0, 255), window: Window | None = None) -> None:
+                 color: RGBColor | RGBAColor = (0, 0, 0, 255), window: Window | None = None) -> None:
         """Create a caret for a layout.
 
         By default the layout's batch is used, so the caret does not need to
         be drawn explicitly.
 
-        :Parameters:
-            `layout` : `~pyglet.text.layout.IncrementalTextLayout`
+        Args:
+            layout:
                 Layout to control.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Graphics batch to add vertices to.
-            `color` : (int, int, int, int)
+            color:
                 An RGBA or RGB tuple with components in the range [0, 255].
                 RGB colors will be treated as having an opacity of 255.
-            `window` : `~pyglet.window.Window`
+            window:
                 For the clipboard feature to work, a window object is needed to be passed in to access and set clipboard content.
         """
         self._layout = layout

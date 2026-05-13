@@ -6,13 +6,14 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, BinaryIO, Callable, Generic, Iterator, Sequence, TypeVar, Union, overload
 
-from pyglet.customtypes import DataTypes
 from pyglet.image.animation import Animation
 from pyglet.image.codecs import ImageEncoder
 from pyglet.image.codecs import registry as _codec_registry
 from pyglet.util import asbytes
 
 if TYPE_CHECKING:
+    from pyglet.customtypes import RGBAColor
+    from pyglet.customtypes import DataTypes
     from pyglet.graphics.texture import CompressedTexture, Texture, TextureGrid, TextureSequence
 
 
@@ -20,12 +21,12 @@ class ImagePattern(ABC):
     """Abstract image creation class."""
 
     @abstractmethod
-    def create_image(self, width: int, height: int) -> _AbstractImage:
+    def create_image(self, width: int, height: int) -> ImageData:
         """Create an image of the given size."""
         raise NotImplementedError('method must be defined in subclass')
 
 
-def _color_as_bytes(color: Sequence[int, int, int, int]) -> bytes:
+def _color_as_bytes(color: RGBAColor) -> bytes:
     if len(color) != 4:
         raise TypeError("color is expected to have 4 components")
     return bytes(color)
@@ -100,8 +101,6 @@ class _AbstractImageSequence(ABC):
     @abstractmethod
     def get_texture_sequence(self) -> TextureSequence:
         """Get a TextureSequence.
-
-        :rtype: `TextureSequence`
 
         .. versionadded:: 1.1
         """

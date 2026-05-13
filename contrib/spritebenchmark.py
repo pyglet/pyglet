@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Simple sprite stress benchmark that adjusts sprite count to track target FPS."""
+
 import random
 
 import pyglet
