@@ -159,9 +159,18 @@ class ModelInstance:
         return self._instances[0].TRANSLATION[:]
 
     @translation.setter
-    def translation(self, values):
+    def translation(self, vector: Vec3):
         for instance in self._instances:
-            instance.TRANSLATION[:] = values
+            instance.TRANSLATION[:] = vector
+
+    @property
+    def rotation(self):
+        return self._instances[0].ROTATION[:]
+
+    @rotation.setter
+    def rotation(self, quaternion: Quaternion):
+        for instance in self._instances:
+            instance.ROTATION[:] = quaternion
 
 
 class BaseMaterialGroup(graphics.ShaderGroup):

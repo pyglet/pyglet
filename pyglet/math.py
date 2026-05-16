@@ -1398,6 +1398,26 @@ class Quaternion(_typing.NamedTuple):
     z: float = 0.0
 
     @classmethod
+    def from_rotation(cls, angle: float, axis: Vec3) -> Quaternion:
+        """Create a Quaternion from a rotation angle and axis.
+
+        This method takes a Vec3 as an axis argument. Only one axis (x, y, z)
+        should be given as a normalized value (1.0). The results are undefined
+        if more than one axis is passed. For example::
+
+            quat = Quaternion.from_rotation(0.5, Vec3(1.0, 0.0, 0.0))
+
+        Args:
+            angle: The rotation angle in radians.
+            axis: A Vec3 representing the axis of rotation (must be normalized).
+
+        Returns:
+            A new Quaternion instance.
+        """
+        sin_half = _math.sin(angle * 0.5)
+        return cls(w=_math.cos(angle * 0.5), x=axis.x * sin_half, y=axis.y * sin_half, z=axis.z * sin_half)
+
+    @classmethod
     def from_mat3(cls, mat: Mat3) -> Quaternion:
         raise NotImplementedError
 
