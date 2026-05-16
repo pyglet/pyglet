@@ -18,7 +18,7 @@ from math import radians, degrees
 
 import pyglet
 
-from pyglet.math import Vec2, Vec3, Mat4, clamp
+from pyglet.math import clamp, Vec2, Vec3, Mat4, Quaternion
 from pyglet.window import key as _key
 
 
@@ -104,9 +104,9 @@ class FPSCamera:
         # Make the camera point to the initial target.
         # We point it down the negative z-axis if no target is provided.
         if target is None:
-            target = position + Vec3(0.0, 0.0, -1.0)
+            target = self.position + Vec3(0.0, 0.0, -1.0)
 
-        self.teleport(position, target)
+        self.teleport(self.position, target)
 
         self._window.push_handlers(self)
         self.on_refresh(0.0)
@@ -384,4 +384,12 @@ if __name__ == "__main__":
         controller.open()
         controller.push_handlers(camera)
 
+    # def update(dt):
+    #     update.elapsed += dt
+    #     box_instance.rotation = Quaternion.from_rotation(0.1 * update.elapsed, Vec3(1.0, 0.0, 0.0))
+    #
+    #
+    # update.elapsed = 0.0
+    #
+    # pyglet.clock.schedule_interval(update, 1/33)
     pyglet.app.run()
