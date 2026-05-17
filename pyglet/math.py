@@ -19,7 +19,8 @@ All objects are immutable and hashable.
 #   on systems without access to compute shaders
 from __future__ import annotations
 
-import math as _math
+from math import sin, asin, cos, sqrt, ceil, trunc, atan2, floor, radians, tan, pi
+
 import typing as _typing
 import warnings as _warnings
 
@@ -162,13 +163,13 @@ class Vec2(_typing.NamedTuple):
         return Vec2(*(round(v, n_digits) for v in self))
 
     def __ceil__(self) -> Vec2:
-        return Vec2(_math.ceil(self[0]), _math.ceil(self[1]))
+        return Vec2(ceil(self[0]), ceil(self[1]))
 
     def __floor__(self) -> Vec2:
-        return Vec2(_math.floor(self[0]), _math.floor(self[1]))
+        return Vec2(floor(self[0]), floor(self[1]))
 
     def __trunc__(self) -> Vec2:
-        return Vec2(_math.trunc(self[0]), _math.trunc(self[1]))
+        return Vec2(trunc(self[0]), trunc(self[1]))
 
     def __mod__(self, other: Vec2 | tuple[float, float] | float) -> Vec2:
         try:
@@ -201,7 +202,7 @@ class Vec2(_typing.NamedTuple):
           heading: The desired heading, in radians
           length: The desired length of the vector
         """
-        return Vec2(length * _math.cos(heading), length * _math.sin(heading))
+        return Vec2(length * cos(heading), length * sin(heading))
 
     @staticmethod
     def from_polar(angle: float, length: float = 1.0) -> Vec2:
@@ -211,11 +212,11 @@ class Vec2(_typing.NamedTuple):
           angle: The angle, in radians.
           length: The desired length
         """
-        return Vec2(length * _math.cos(angle), length * _math.sin(angle))
+        return Vec2(length * cos(angle), length * sin(angle))
 
     def length(self) -> float:
         """Calculate the length of the vector: ``sqrt(x ** 2 + y ** 2)``."""
-        return _math.sqrt(self[0] ** 2 + self[1] ** 2)
+        return sqrt(self[0] ** 2 + self[1] ** 2)
 
     def heading(self) -> float:
         """Calculate the heading of the vector in radians.
@@ -224,7 +225,7 @@ class Vec2(_typing.NamedTuple):
         -pi and pi. ``Vec2(1, 0)`` will have a heading of 0. Counter-clockwise
         is positive moving towards pi, and clockwise is negative moving towards -pi.
         """
-        return _math.atan2(self[1], self[0])
+        return atan2(self[1], self[0])
 
     def length_squared(self) -> float:
         """Calculate the squared length of the vector.
@@ -283,8 +284,8 @@ class Vec2(_typing.NamedTuple):
         Args:
             angle: The desired angle, in radians.
         """
-        s = _math.sin(angle)
-        c = _math.cos(angle)
+        s = sin(angle)
+        c = cos(angle)
         return Vec2(c * self[0] - s * self[1], s * self[0] + c * self[1])
 
     def distance(self, other: Vec2 | tuple[int, int]) -> float:
@@ -293,7 +294,7 @@ class Vec2(_typing.NamedTuple):
         Args:
             other: The point to calculate the distance to.
         """
-        return _math.sqrt(((other[0] - self[0]) ** 2) + ((other[1] - self[1]) ** 2))
+        return sqrt(((other[0] - self[0]) ** 2) + ((other[1] - self[1]) ** 2))
 
     def normalize(self) -> Vec2:
         """Return a normalized version of the vector.
@@ -301,7 +302,7 @@ class Vec2(_typing.NamedTuple):
         This simply means the vector will have a length of 1.0. If the vector
         has a length of 0, the original vector will be returned.
         """
-        if d := _math.sqrt(self[0] ** 2 + self[1] ** 2):
+        if d := sqrt(self[0] ** 2 + self[1] ** 2):
             return Vec2(self[0] / d, self[1] / d)
         return self
 
@@ -491,13 +492,13 @@ class Vec3(_typing.NamedTuple):
         return Vec3(*(round(v, n_digits) for v in self))
 
     def __ceil__(self) -> Vec3:
-        return Vec3(_math.ceil(self[0]), _math.ceil(self[1]), _math.ceil(self[2]))
+        return Vec3(ceil(self[0]), ceil(self[1]), ceil(self[2]))
 
     def __floor__(self) -> Vec3:
-        return Vec3(_math.floor(self[0]), _math.floor(self[1]), _math.floor(self[2]))
+        return Vec3(floor(self[0]), floor(self[1]), floor(self[2]))
 
     def __trunc__(self) -> Vec3:
-        return Vec3(_math.trunc(self[0]), _math.trunc(self[1]), _math.trunc(self[2]))
+        return Vec3(trunc(self[0]), trunc(self[1]), trunc(self[2]))
 
     def __mod__(self, other: Vec3 | tuple[float, float, float] | float) -> Vec3:
         try:
@@ -531,18 +532,18 @@ class Vec3(_typing.NamedTuple):
             yaw: The yaw value in radians
         """
         return Vec3(
-            _math.cos(yaw) * _math.cos(pitch),
-            _math.sin(pitch),
-            _math.sin(yaw) * _math.cos(pitch),
+            cos(yaw) * cos(pitch),
+            sin(pitch),
+            sin(yaw) * cos(pitch),
         ).normalize()
 
     def get_pitch_yaw(self) -> tuple[float, float]:
         """Get the pitch and yaw angles from a unit vector in radians."""
-        return _math.asin(self.y), _math.atan2(self.z, self.x)
+        return asin(self.y), atan2(self.z, self.x)
 
     def length(self) -> float:
         """Calculate the length of the vector: ``sqrt(x ** 2 + y ** 2 + z ** 2)``."""
-        return _math.sqrt(self[0] ** 2 + self[1] ** 2 + self[2] ** 2)
+        return sqrt(self[0] ** 2 + self[1] ** 2 + self[2] ** 2)
 
     def length_squared(self) -> float:
         """Calculate the squared length of the vector.
@@ -593,7 +594,7 @@ class Vec3(_typing.NamedTuple):
         Args:
             other: The point to calculate the distance to.
         """
-        return _math.sqrt(((other[0] - self.x) ** 2) + ((other[1] - self.y) ** 2) + ((other[2] - self.z) ** 2))
+        return sqrt(((other[0] - self.x) ** 2) + ((other[1] - self.y) ** 2) + ((other[2] - self.z) ** 2))
 
     def normalize(self) -> Vec3:
         """Return a normalized version of the vector.
@@ -602,7 +603,7 @@ class Vec3(_typing.NamedTuple):
         has a length of 0, the original vector will be returned.
         """
         try:
-            d = _math.sqrt(self[0] ** 2 + self[1] ** 2 + self[2] ** 2)
+            d = sqrt(self[0] ** 2 + self[1] ** 2 + self[2] ** 2)
             return Vec3(self.x / d, self.y / d, self.z / d)
         except ZeroDivisionError:
             return self
@@ -793,13 +794,13 @@ class Vec4(_typing.NamedTuple):
         return Vec4(*(round(v, n_digits) for v in self))
 
     def __ceil__(self) -> Vec4:
-        return Vec4(_math.ceil(self[0]), _math.ceil(self[1]), _math.ceil(self[2]), _math.ceil(self[3]))
+        return Vec4(ceil(self[0]), ceil(self[1]), ceil(self[2]), ceil(self[3]))
 
     def __floor__(self) -> Vec4:
-        return Vec4(_math.floor(self[0]), _math.floor(self[1]), _math.floor(self[2]), _math.floor(self[3]))
+        return Vec4(floor(self[0]), floor(self[1]), floor(self[2]), floor(self[3]))
 
     def __trunc__(self) -> Vec4:
-        return Vec4(_math.trunc(self[0]), _math.trunc(self[1]), _math.trunc(self[2]), _math.trunc(self[3]))
+        return Vec4(trunc(self[0]), trunc(self[1]), trunc(self[2]), trunc(self[3]))
 
     def __mod__(self, other: Vec4 | tuple[int, int, int, int] | float) -> Vec4:
         try:
@@ -827,7 +828,7 @@ class Vec4(_typing.NamedTuple):
 
     def length(self) -> float:
         """Calculate the length of the vector: ``sqrt(x ** 2 + y ** 2 + z ** 2 + w ** 2)``."""
-        return _math.sqrt(self[0] ** 2 + self[1] ** 2 + self[2] ** 2 + self[3] ** 2)
+        return sqrt(self[0] ** 2 + self[1] ** 2 + self[2] ** 2 + self[3] ** 2)
 
     def length_squared(self) -> float:
         """Calculate the squared length of the vector.
@@ -859,7 +860,7 @@ class Vec4(_typing.NamedTuple):
         Args:
             other: The point to calculate the distance to.
         """
-        return _math.sqrt(
+        return sqrt(
             ((other.x - self.x) ** 2)
             + ((other.y - self.y) ** 2)
             + ((other.z - self.z) ** 2)
@@ -872,7 +873,7 @@ class Vec4(_typing.NamedTuple):
         This means that the vector will have the same direction, but a length of 1.0.
         If the vector has a length of 0, the original vector will be returned.
         """
-        if d := _math.sqrt(self[0] ** 2 + self[1] ** 2 + self[2] ** 2 + self[3] ** 2):
+        if d := sqrt(self[0] ** 2 + self[1] ** 2 + self[2] ** 2 + self[3] ** 2):
             return Vec4(self[0] / d, self[1] / d, self[2] / d, self[3] / d)
         return self
 
@@ -982,8 +983,8 @@ class Mat3(_typing.NamedTuple):
         return self @ Mat3(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, -tx, ty, 1.0)
 
     def rotate(self, phi: float) -> Mat3:
-        s = _math.sin(_math.radians(phi))
-        c = _math.cos(_math.radians(phi))
+        s = sin(radians(phi))
+        c = cos(radians(phi))
         return self @ Mat3(c, s, 0.0, -s, c, 0.0, 0.0, 0.0, 1.0)
 
     def shear(self, sx: float, sy: float) -> Mat3:
@@ -1150,7 +1151,7 @@ class Mat4(_typing.NamedTuple):
         create a 4x4 Projection Matrix. This is useful for setting
         :py:attr:`~pyglet.window.Window.projection`.
         """
-        xy_max = z_near * _math.tan(fov * _math.pi / 360)
+        xy_max = z_near * tan(fov * pi / 360)
         y_min = -xy_max
         x_min = -xy_max
 
@@ -1232,8 +1233,8 @@ class Mat4(_typing.NamedTuple):
         if not all(abs(n) <= 1 for n in vector):
             raise ValueError("vector must be normalized (<=1)")
         x, y, z = vector
-        c = _math.cos(angle)
-        s = _math.sin(angle)
+        c = cos(angle)
+        s = sin(angle)
         t = 1 - c
         temp_x, temp_y, temp_z = t * x, t * y, t * z
 
@@ -1406,6 +1407,10 @@ class Quaternion(_typing.NamedTuple):
         if more than one axis is passed. For example::
 
             quat = Quaternion.from_rotation(0.5, Vec3(1.0, 0.0, 0.0))
+            # or:
+            quat = Quaternion.from_rotation(0.5, Vec3(0.0, 1.0, 0.0))
+            # but NEVER:
+            quat = Quaternion.from_rotation(0.5, Vec3(1.0, 1.0, 0.0))
 
         Args:
             angle: The rotation angle in radians.
@@ -1414,8 +1419,8 @@ class Quaternion(_typing.NamedTuple):
         Returns:
             A new Quaternion instance.
         """
-        sin_half = _math.sin(angle * 0.5)
-        return cls(w=_math.cos(angle * 0.5), x=axis.x * sin_half, y=axis.y * sin_half, z=axis.z * sin_half)
+        sin_half = sin(angle * 0.5)
+        return cls(w=cos(angle * 0.5), x=axis.x * sin_half, y=axis.y * sin_half, z=axis.z * sin_half)
 
     @classmethod
     def from_mat3(cls, mat: Mat3) -> Quaternion:
@@ -1481,7 +1486,7 @@ class Quaternion(_typing.NamedTuple):
 
     def length(self) -> float:
         """Calculate the length of the quaternion from the origin."""
-        return _math.sqrt(self.w**2 + self.x**2 + self.y**2 + self.z**2)
+        return sqrt(self.w**2 + self.x**2 + self.y**2 + self.z**2)
 
     def conjugate(self) -> Quaternion:
         """Calculate the conjugate of this quaternion.
