@@ -833,13 +833,31 @@ cfunctype_table = {}
 
 
 def parse_type_encoding(encoding: bytes) -> List[bytes]:
-    """Takes a type encoding string and outputs a list of the separated type codes.
-    Currently does not handle unions or bitfields and strips out any field width
-    specifiers or type specifiers from the encoding.
+    """Split the bytes of a limited subset of encodings into a list of type codes.
+
+    Type encodings are covered in the Objective-C Runtime Programming Guide:
+    https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html
+
+    Limitations include:
+
+    * No support for unions, e.g. `b'(value=^v*)'`
+    * No support for bitfields, e.g. `b'b8'` for an 8-bit bitfield
+    * Numerical field widths after a type encoding are removed
+    * Objective-C method encoding specifiers are removed
 
     Examples:
-    parse_type_encoding('^v16@0:8') --> ['^v', '@', ':']
-    parse_type_encoding('{CGSize=dd}40@0:8{CGSize=dd}16Q32') --> ['{CGSize=dd}', '@', ':', '{CGSize=dd}', 'Q']
+    .. code-block:: python
+
+        >>> parse_type_encoding(b'^v16@0:8')
+        [b'^v', b'@', b':']
+        >>> parse_type_encoding(b'{CGSize=dd}40@0:8{CGSize=dd}16Q32')
+        [b'{CGSize=dd}', b'@', b':', b'{CGSize=dd}', b'Q']
+
+    Args:
+        encoding: A bytes object with a type encoding.
+
+    Returns:
+        A list of type encodings stripped of unsupported dta (field widths, method encodings, etc).
     """
     type_encodings: List[bytes] = []
     brace_count = 0  # number of unclosed curly braces
@@ -875,7 +893,9 @@ def parse_type_encoding(encoding: bytes) -> List[bytes]:
             # Ignore field width specifiers for now.
             pass
         elif c in b'rnNoORV':
-            # Also ignore type specifiers.
+            # Also ignore Objective C method type specifiers.
+            # See Table 6-2 at the bottom of the Objective-C Runtime Programming Guide:
+            # https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html
             pass
         elif c in b'^cislqCISLQfdBv*@#:b?':
             if typecode and typecode[-1:] == b'^':
