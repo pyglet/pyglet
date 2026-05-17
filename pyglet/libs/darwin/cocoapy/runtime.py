@@ -838,14 +838,20 @@ def parse_type_encoding(encoding: bytes) -> List[bytes]:
     Type encodings are covered in the Objective-C Runtime Programming Guide:
     https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html
 
-    Limitations include:
+    Limitations are numerous.
 
-    * No support for unions, e.g. `b'(value=^v*)'`
-    * No support for bitfields, e.g. `b'b8'` for an 8-bit bitfield
-    * Numerical field widths after a type encoding are removed
-    * Objective-C method encoding specifiers are removed
+    There is no support for:
+    * unions, e.g. ``b'(value=^v*)'`` for a union of:
+      * a void pointer
+      * a character string
+    * bitfields, e.g. `b'b8'` for an 8-bit bitfield
+
+    The following are removed:
+    * Numerical field widths (``'b'^v16'`` becomes ``[b'^v']``)
+    * Objective-C method encoding specifiers (any of ``b'rnNoORV'``)
 
     Examples:
+
     .. code-block:: python
 
         >>> parse_type_encoding(b'^v16@0:8')
@@ -857,7 +863,7 @@ def parse_type_encoding(encoding: bytes) -> List[bytes]:
         encoding: A bytes object with a type encoding.
 
     Returns:
-        A list of type encodings stripped of unsupported dta (field widths, method encodings, etc).
+        A list of type encodings stripped of unsupported data (field widths, method encodings, etc).
     """
     type_encodings: List[bytes] = []
     brace_count = 0  # number of unclosed curly braces
@@ -893,7 +899,7 @@ def parse_type_encoding(encoding: bytes) -> List[bytes]:
             # Ignore field width specifiers for now.
             pass
         elif c in b'rnNoORV':
-            # Also ignore Objective C method type specifiers.
+            # Also ignore Objective-C method type specifiers.
             # See Table 6-2 at the bottom of the Objective-C Runtime Programming Guide:
             # https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html
             pass
