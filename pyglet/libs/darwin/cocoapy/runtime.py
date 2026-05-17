@@ -38,7 +38,7 @@ from contextlib import contextmanager
 
 from ctypes import *
 from ctypes import util
-from typing import Type, TypeVar, Sequence, Any, Callable
+from typing import Type, TypeVar, Sequence, Any, Callable, List
 
 from .cocoatypes import *
 
@@ -832,7 +832,7 @@ def send_super(receiver, selName, *args, superclass_name=None, **kwargs):
 cfunctype_table = {}
 
 
-def parse_type_encoding(encoding: bytes):
+def parse_type_encoding(encoding: bytes) -> List[bytes]:
     """Takes a type encoding string and outputs a list of the separated type codes.
     Currently does not handle unions or bitfields and strips out any field width
     specifiers or type specifiers from the encoding.
@@ -841,7 +841,7 @@ def parse_type_encoding(encoding: bytes):
     parse_type_encoding('^v16@0:8') --> ['^v', '@', ':']
     parse_type_encoding('{CGSize=dd}40@0:8{CGSize=dd}16Q32') --> ['{CGSize=dd}', '@', ':', '{CGSize=dd}', 'Q']
     """
-    type_encodings = []
+    type_encodings: List[bytes] = []
     brace_count = 0  # number of unclosed curly braces
     bracket_count = 0  # number of unclosed square brackets
     typecode = b''
