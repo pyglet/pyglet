@@ -11,6 +11,7 @@ from .base import SimpleMaterial, Mesh, Primitive, Attribute, Node, Scene
 from pyglet.model import Model, MaterialGroup, TexturedMaterialGroup
 from pyglet.graphics import Batch, Group
 from pyglet.enums import GeometryMode
+from pyglet.math import Vec3, Quaternion
 
 
 def _new_mesh(name, material):
@@ -245,10 +246,10 @@ class OBJScene(Scene):
                     matgroup = MaterialGroup(material, program, parent=group)
 
                 data = {a.name: (a.fmt, a.array) for a in primitive.attributes if a.name in program.attributes}
-                data |= {'TRANSLATION': ('f', (0.0, 0.0, 0.0)), 'ROTATION': ('f', (1.0, 0.0, 0.0, 0.0))}
+                data |= {'TRANSLATION': ('f', Vec3()), 'ROTATION': ('f', Quaternion()), 'SCALE': ('f', Vec3(1.0, 1.0, 1.0))}
                 vertex_list = program.vertex_list_instanced(count=count,
                                                             mode=GeometryMode.TRIANGLES,
-                                                            instance_attributes={'TRANSLATION': 1, 'ROTATION': 2},
+                                                            instance_attributes={'TRANSLATION': 1, 'ROTATION': 1, 'SCALE': 1},
                                                             batch=batch, group=matgroup, **data)
 
                 vertex_lists.append(vertex_list)

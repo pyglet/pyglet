@@ -144,8 +144,11 @@ class Model:
 
         self._batch = batch
 
-    def create_instance(self, translation: Vec3 = Vec3(), rotation: Vec4 | Quaternion = Quaternion()):
-        instances = [vlist.create_instance(TRANSLATION=translation, ROTATION=rotation) for vlist in self.vertex_lists]
+    def create_instance(self, translation: Vec3 = Vec3(),
+                        rotation: Quaternion = Quaternion(),
+                        scale: Vec3 = Vec3(1.0, 1.0, 1.0)):
+        instances = [vlist.create_instance(TRANSLATION=translation, ROTATION=rotation, SCALE=scale)
+                     for vlist in self.vertex_lists]
         return ModelInstance(*instances)
 
 
@@ -172,6 +175,15 @@ class ModelInstance:
         for instance in self._instances:
             instance.ROTATION = quaternion
 
+    @property
+    def scale(self):
+        return self._instances[0].ROTATION[:]
+
+    @scale.setter
+    def scale(self, vector: Vec3):
+        for instance in self._instances:
+            instance.SCALE = vector
+
 
 class BaseMaterialGroup(graphics.ShaderGroup):
     default_vert_src: str
@@ -189,8 +201,9 @@ class TexturedMaterialGroup(BaseMaterialGroup):
     in vec3 NORMAL;
     in vec2 TEXCOORD_0;
     in vec4 COLOR_0;
-    in vec4 ROTATION;
     in vec3 TRANSLATION;
+    in vec4 ROTATION;
+    in vec3 SCALE;
 
     out vec3 position;
     out vec3 normal;
@@ -205,10 +218,11 @@ class TexturedMaterialGroup(BaseMaterialGroup):
 
     mat4 quat_to_mat4(vec4 q)
     {
-        float x = q.x;
-        float y = q.y;
-        float z = q.z;
-        float w = q.w;
+        // q is in pyglet order: (w, x, y, z)
+        float w = q.x;
+        float x = q.y;
+        float y = q.z;
+        float z = q.w;
     
         float x2 = x + x;
         float y2 = y + y;
@@ -232,17 +246,21 @@ class TexturedMaterialGroup(BaseMaterialGroup):
         );
     }
 
-
     void main()
     {
         mat4 m_translation = mat4(1.0);
         m_translation[3][0] = TRANSLATION.x;
         m_translation[3][1] = TRANSLATION.y;
         m_translation[3][2] = TRANSLATION.z;
-        
+
         mat4 m_rotation = quat_to_mat4(ROTATION);
-        
-        mat4 mv = window.view * m_translation * m_rotation;
+
+        mat4 m_scale = mat4(1.0);
+        m_scale[0][0] = SCALE.x;
+        m_scale[1][1] = SCALE.y;
+        m_scale[2][2] = SCALE.z;
+
+        mat4 mv = window.view * m_translation * m_rotation * m_scale;
         vec4 pos = mv * vec4(POSITION, 1.0);
         gl_Position = window.projection * pos;
         mat3 normal_matrix = transpose(inverse(mat3(mv)));
@@ -283,8 +301,9 @@ class MaterialGroup(BaseMaterialGroup):
     in vec3 POSITION;
     in vec3 NORMAL;
     in vec4 COLOR_0;
-    in vec4 ROTATION;
     in vec3 TRANSLATION;
+    in vec4 ROTATION;
+    in vec3 SCALE;
 
     out vec4 color_0;
     out vec3 normal;
@@ -298,10 +317,11 @@ class MaterialGroup(BaseMaterialGroup):
 
     mat4 quat_to_mat4(vec4 q)
     {
-        float x = q.x;
-        float y = q.y;
-        float z = q.z;
-        float w = q.w;
+        // q is in pyglet order: (w, x, y, z)
+        float w = q.x;
+        float x = q.y;
+        float y = q.z;
+        float z = q.w;
     
         float x2 = x + x;
         float y2 = y + y;
@@ -332,10 +352,15 @@ class MaterialGroup(BaseMaterialGroup):
         m_translation[3][0] = TRANSLATION.x;
         m_translation[3][1] = TRANSLATION.y;
         m_translation[3][2] = TRANSLATION.z;
-        
+
         mat4 m_rotation = quat_to_mat4(ROTATION);
+
+        mat4 m_scale = mat4(1.0);
+        m_scale[0][0] = SCALE.x;
+        m_scale[1][1] = SCALE.y;
+        m_scale[2][2] = SCALE.z;
         
-        mat4 mv = window.view * m_translation * m_rotation;
+        mat4 mv = window.view * m_translation * m_rotation * m_scale;
         vec4 pos = mv * vec4(POSITION, 1.0);
         gl_Position = window.projection * pos;
         mat3 normal_matrix = transpose(inverse(mat3(mv)));
@@ -441,12 +466,13 @@ class Cube(Model):
                                                            mode=GeometryMode.TRIANGLES,
                                                            indices=indices,
                                                            batch=self._batch, group=self._group,
-                                                           instance_attributes={'TRANSLATION': 1, 'ROTATION': 1},
+                                                           instance_attributes={'TRANSLATION': 1, 'ROTATION': 1, 'SCALE': 1},
                                                            POSITION=('f', vertices),
                                                            NORMAL=('f', normals),
+                                                           COLOR_0=('f', self._color * (len(vertices) // 3)),
                                                            TRANSLATION=('f', (0.0, 0.0, 0.0)),
-                                                           ROTATION=('f', (0.0, 0.0, 0.0, 0.0)),
-                                                           COLOR_0=('f', self._color * (len(vertices) // 3)))
+                                                           ROTATION=('f', (1.0, 0.0, 0.0, 0.0)),
+                                                           SCALE=('f', (1.0, 1.0, 1.0)))
 
 
 class Sphere(Model):
@@ -502,13 +528,14 @@ class Sphere(Model):
         return self._program.vertex_list_instanced_indexed(len(vertices) // 3,
                                                            mode=GeometryMode.TRIANGLES,
                                                            indices=indices,
-                                                           instance_attributes={'TRANSLATION': 1, 'ROTATION': 1},
+                                                           instance_attributes={'TRANSLATION': 1, 'ROTATION': 1, 'SCALE': 1},
                                                            batch=self._batch, group=self._group,
                                                            POSITION=('f', vertices),
                                                            NORMAL=('f', normals),
+                                                           COLOR_0=('f', self._color * (len(vertices) // 3)),
                                                            TRANSLATION=('f', (0, 0, 0)),
-                                                           ROTATION=('f', (0.0, 0.0, 0.0, 0.0)),
-                                                           COLOR_0=('f', self._color * (len(vertices) // 3)))
+                                                           ROTATION=('f', (1.0, 0.0, 0.0, 0.0)),
+                                                           SCALE=('f', (1.0, 1.0, 1.0)))
 
 
 class Capsule(Model):
@@ -624,14 +651,15 @@ class Capsule(Model):
         return self._program.vertex_list_instanced_indexed(len(vertices) // 3,
                                                            mode=GeometryMode.TRIANGLES,
                                                            indices=indices,
-                                                           instance_attributes={'TRANSLATION': 1, 'ROTATION': 1},
+                                                           instance_attributes={'TRANSLATION': 1, 'ROTATION': 1, 'SCALE': 1},
                                                            batch=self._batch,
                                                            group=self._group,
                                                            POSITION=('f', vertices),
-                                                           TRANSLATION=('f', (0.0, 0.0, 0.0)),
-                                                           ROTATION=('f', (0.0, 0.0, 0.0, 0.0)),
                                                            NORMAL=('f', normals),
-                                                           COLOR_0=('f', self._color * (len(vertices) // 3)))
+                                                           COLOR_0=('f', self._color * (len(vertices) // 3)),
+                                                           TRANSLATION=('f', (0, 0, 0)),
+                                                           ROTATION=('f', (1.0, 0.0, 0.0, 0.0)),
+                                                           SCALE=('f', (1.0, 1.0, 1.0)))
 
 
 _add_default_codecs()
