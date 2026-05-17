@@ -1748,3 +1748,4 @@ class ObjCBlock:
 
     def _wrapper(self, _block, *args):
         return self.func(*args)
+
