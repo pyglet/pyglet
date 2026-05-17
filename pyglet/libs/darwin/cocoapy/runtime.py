@@ -835,8 +835,7 @@ cfunctype_table = {}
 def parse_type_encoding(encoding: bytes):
     """Takes a type encoding string and outputs a list of the separated type codes.
     Currently does not handle unions or bitfields and strips out any field width
-    specifiers or type specifiers from the encoding.  For Python 3.2+, encoding is
-    assumed to be a bytes object and not unicode.
+    specifiers or type specifiers from the encoding.
 
     Examples:
     parse_type_encoding('^v16@0:8') --> ['^v', '@', ':']
@@ -847,11 +846,6 @@ def parse_type_encoding(encoding: bytes):
     bracket_count = 0  # number of unclosed square brackets
     typecode = b''
     for c in encoding:
-        # In Python 3, c comes out as an integer in the range 0-255.  In Python 2, c is a single character string.
-        # To fix the disparity, we convert c to a bytes object if necessary.
-        if isinstance(c, int):
-            c = bytes([c])
-
         if c == b'{':
             # Check if this marked the end of previous type code.
             if typecode and typecode[-1:] != b'^' and brace_count == 0 and bracket_count == 0:
