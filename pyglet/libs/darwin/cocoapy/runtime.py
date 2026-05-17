@@ -869,7 +869,7 @@ def parse_type_encoding(encoding: bytes) -> List[bytes]:
     brace_count = 0  # number of unclosed curly braces
     bracket_count = 0  # number of unclosed square brackets
     typecode = b''
-    for c in encoding:
+    for c in (encoding[i:i+1] for i in range(len(encoding))):
         if c == b'{':
             # Check if this marked the end of previous type code.
             if typecode and typecode[-1:] != b'^' and brace_count == 0 and bracket_count == 0:
