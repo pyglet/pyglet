@@ -13,12 +13,12 @@ from pyglet.graphics.api.gl import (
     GL_DRAW_INDIRECT_BUFFER,
     GL_DYNAMIC_DRAW,
     GL_ELEMENT_ARRAY_BUFFER,
+    GL_MAP_READ_BIT,
+    GL_MAP_WRITE_BIT,
     GL_READ_ONLY,
     GL_READ_WRITE,
     GL_MAP_COHERENT_BIT,
     GL_MAP_PERSISTENT_BIT,
-    GL_MAP_READ_BIT,
-    GL_MAP_WRITE_BIT,
     GL_PIXEL_PACK_BUFFER,
     GL_PIXEL_UNPACK_BUFFER,
     GL_TEXTURE_BUFFER,
@@ -491,11 +491,40 @@ class GLUniformBufferObject(UniformBufferObject):
     """OpenGL Uniform Buffer Object wrapper."""
 
     buffer: GLBufferObject
-    __slots__ = ()
+    minimum_alignment: int
+    __slots__ = ("minimum_alignment",)
+
+    def __init__(
+        self,
+        context: OpenGLSurfaceContext,
+        view_class: type[ctypes.Structure],
+        buffer_size: int,
+        binding: int,
+        *,
+        alignment: int | None = None,
+        copies_per_resource: int = 3,
+        strict: bool = False,
+    ) -> None:
+        self._context = context
+        self.minimum_alignment = max(1, context.info.MAX_UNIFORM_BUFFER_OFFSET_ALIGNMENT)
+        requested_alignment = (
+            self.minimum_alignment if alignment is None else max(int(alignment), self.minimum_alignment)
+        )
+        super().__init__(
+            context,
+            view_class,
+            buffer_size,
+            binding,
+            alignment=requested_alignment,
+            copies_per_resource=copies_per_resource,
+            strict=strict,
+        )
 
     def _create_buffer(self, context: OpenGLSurfaceContext, buffer_size: int) -> GLBufferObject:
         return GLBufferObject(context, buffer_size, target=GL_UNIFORM_BUFFER)
 
+    def _bind_range(self, binding: int, offset: int, size: int) -> None:
+        self._context.glBindBufferRange(GL_UNIFORM_BUFFER, binding, self.buffer.id, offset, size)
 
 class PersistentBufferObject(BaseMappedBufferObject):
     """A persistently mapped OpenGL buffer.
@@ -559,7 +588,10 @@ class PersistentBufferObject(BaseMappedBufferObject):
         self._context.glBufferStorage(self.target, storage_size, data, self.flags)
 
         ptr_type = ctypes.POINTER(ctypes.c_byte * storage_size)
-        mapped = ctypes.cast(self._context.glMapBufferRange(self.target, 0, storage_size, self.flags), ptr_type).contents
+        mapped = ctypes.cast(
+            self._context.glMapBufferRange(self.target, 0, storage_size, self.flags),
+            ptr_type,
+        ).contents
         mapped_ptr = ctypes.addressof(mapped)
         return new_id, mapped, mapped_ptr, storage_size
 

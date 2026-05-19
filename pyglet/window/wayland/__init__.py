@@ -80,10 +80,6 @@ class WaylandWindow(BaseWindow):
     def _recreate(self, changes: Sequence[str]) -> None:
         pass
 
-    def flip(self) -> None:
-        if self.context:
-            self.context.flip()
-
     def switch_to(self) -> None:
         if self.context:
             self.context.set_current()
@@ -141,9 +137,6 @@ class WaylandWindow(BaseWindow):
             EventDispatcher.dispatch_event(self, *self._event_queue.pop(0))
 
     def dispatch_pending_events(self) -> None:
-        pass
-
-    def before_draw(self) -> None:
         pass
 
     def _create(self) -> None:

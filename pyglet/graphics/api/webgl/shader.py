@@ -402,8 +402,24 @@ class WebGLUniformBlock(BaseUniformBlock):  # noqa: D101
     def _bind_buffer_base(self, binding: int, buffer_id: int) -> None:
         self.ctx.gl.bindBufferBase(GL_UNIFORM_BUFFER, binding, buffer_id)
 
-    def _create_backend_ubo(self, view_class: type[Structure], buffer_size: int, binding: int) -> WebGLUniformBufferObject:
-        return WebGLUniformBufferObject(self.ctx, view_class, buffer_size, binding)
+    def _create_backend_ubo(
+        self,
+        view_class: type[Structure],
+        buffer_size: int,
+        binding: int,
+        alignment: int | None,
+        copies_per_resource: int,
+        strict: bool,
+    ) -> WebGLUniformBufferObject:
+        return WebGLUniformBufferObject(
+            self.ctx,
+            view_class,
+            buffer_size,
+            binding,
+            alignment=alignment,
+            copies_per_resource=copies_per_resource,
+            strict=strict,
+        )
 
     def _set_block_binding(self) -> None:
         self.ctx.gl.uniformBlockBinding(self.program.id, self.index, self.binding)

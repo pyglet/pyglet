@@ -12,6 +12,14 @@ from typing import TYPE_CHECKING
 
 import pyglet
 
+class GraphicsBackendError(Exception):
+    """The base exception class for all graphics backends."""
+
+class GraphicsAPIError(GraphicsBackendError):
+    """An exception that occurs from the graphics API directly."""
+
+class GraphicsIntegrationError(GraphicsBackendError):
+    """An exception that occurs from pyglets internal graphics integration of the APIs."""
 
 class UnsupportedBackendError(Exception):
     """Raised when a graphics feature is unavailable on the active backend."""

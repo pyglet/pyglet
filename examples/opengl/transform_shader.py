@@ -103,7 +103,7 @@ class TransformFeedbackCaptureState(State):
 class TransformFeedbackCaptureGroup(Group):
     def __init__(self, tf_buffer: GLTransformFeedbackBufferObject, order: int = 0, parent: Group | None = None) -> None:
         super().__init__(order=order, parent=parent)
-        self.add_state(TransformFeedbackCaptureState(tf_buffer))
+        self.set_state(TransformFeedbackCaptureState(tf_buffer))
 
 
 capture_group = TransformFeedbackCaptureGroup(feedback_buffer)

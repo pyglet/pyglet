@@ -34,17 +34,9 @@ class HeadlessWindow(BaseWindow):
             self.dispatch_event('_on_internal_resize', self._width, self._height)
             self.dispatch_event('on_expose')
 
-    def flip(self) -> None:
-        if self.context:
-            self.context.flip()
-
     def switch_to(self) -> None:
         if self.context:
             self.context.set_current()
-
-    def before_draw(self) -> None:
-        if self.context:
-            self.context.before_draw()
 
     def set_caption(self, caption: str) -> None:
         self._caption = caption

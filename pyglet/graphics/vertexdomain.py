@@ -28,6 +28,7 @@ from typing import TYPE_CHECKING, Any, Sequence, Protocol, Iterable, NoReturn
 import pyglet
 from pyglet.graphics import allocation
 from pyglet.graphics.shader import Attribute, AttributeView, GraphicsAttribute, DataTypeTuple
+from pyglet.graphics.draw import DrawContext, BatchDrawOptions
 
 if TYPE_CHECKING:
     from ctypes import Array
@@ -92,9 +93,16 @@ class VertexList:
             mode:
                 OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
         """
-        self.group.set_state_recursive(self.domain._context)  # noqa: SLF001
+        draw_ctx = DrawContext(
+            surface_ctx=self.domain._context,
+            backend_ctx=None,
+            draw_pass=BatchDrawOptions().resolve(self.domain._context),
+            renderer=self.domain._context.renderer,
+        )
+        draw_ctx.begin()
+        self.group.set_state_recursive(draw_ctx)  # noqa: SLF001
         self.domain.draw_subset(mode, self)
-        self.group.unset_state_recursive(self.domain._context)  # noqa: SLF001
+        self.group.unset_state_recursive(draw_ctx)  # noqa: SLF001
 
     def resize(self, count: int, index_count: int | None = None) -> None:  # noqa: ARG002
         """Resize this group.
