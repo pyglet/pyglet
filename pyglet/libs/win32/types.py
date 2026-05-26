@@ -606,6 +606,38 @@ class VARIANT(Structure):
     ]
 
 
+class FORMATETC(Structure):
+    _fields_ = [
+        ('cfFormat', WORD),
+        ('ptd', c_void_p),
+        ('dwAspect', DWORD),
+        ('lindex', LONG),
+        ('tymed', DWORD),
+    ]
+
+
+class _STGMEDIUM_UNION(Union):
+    _fields_ = [
+        ('hBitmap', HANDLE),
+        ('hMetaFilePict', HANDLE),
+        ('hEnhMetaFile', HANDLE),
+        ('hGlobal', HANDLE),
+        ('lpszFileName', LPOLESTR),
+        ('pstm', LPSTREAM),
+        ('pstg', c_void_p),
+    ]
+
+
+class STGMEDIUM(Structure):
+    _anonymous_ = ['union']
+
+    _fields_ = [
+        ('tymed', DWORD),
+        ('union', _STGMEDIUM_UNION),
+        ('pUnkForRelease', com.pIUnknown),
+    ]
+
+
 class DWM_BLURBEHIND(Structure):
     _fields_ = [
         ("dwFlags", DWORD),
@@ -660,6 +692,45 @@ class IStream(com.pIUnknown):
          com.STDMETHOD(POINTER(STATSTG), UINT)),
         ('Clone',
          com.STDMETHOD()),
+    ]
+
+
+class IDataObject(com.pIUnknown):
+    _methods_ = [
+        ('GetData',
+         com.STDMETHOD(POINTER(FORMATETC), POINTER(STGMEDIUM))),
+        ('GetDataHere',
+         com.STDMETHOD(POINTER(FORMATETC), POINTER(STGMEDIUM))),
+        ('QueryGetData',
+         com.STDMETHOD(POINTER(FORMATETC))),
+        ('GetCanonicalFormatEtc',
+         com.STDMETHOD(POINTER(FORMATETC), POINTER(FORMATETC))),
+        ('SetData',
+         com.STDMETHOD(POINTER(FORMATETC), POINTER(STGMEDIUM), BOOL)),
+        ('EnumFormatEtc',
+         com.STDMETHOD(DWORD, c_void_p)),
+        ('DAdvise',
+         com.STDMETHOD(POINTER(FORMATETC), DWORD, c_void_p, POINTER(DWORD))),
+        ('DUnadvise',
+         com.STDMETHOD(DWORD)),
+        ('EnumDAdvise',
+         com.STDMETHOD(c_void_p)),
+    ]
+
+
+IID_IUNKNOWN = com.GUID(0x00000000, 0x0000, 0x0000, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46)
+IID_IDROPTARGET = com.GUID(0x00000122, 0x0000, 0x0000, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46)
+
+class IDropTarget(com.IUnknown):
+    _methods_ = [
+        ('DragEnter',
+         com.STDMETHOD(IDataObject, DWORD, POINT, POINTER(DWORD))),
+        ('DragOver',
+         com.STDMETHOD(DWORD, POINT, POINTER(DWORD))),
+        ('DragLeave',
+         com.STDMETHOD()),
+        ('Drop',
+         com.STDMETHOD(IDataObject, DWORD, POINT, POINTER(DWORD))),
     ]
 
 
