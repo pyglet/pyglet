@@ -1391,6 +1391,10 @@ class Quaternion(_typing.NamedTuple):
     """Quaternion.
 
     Quaternions are 4-dimensional complex numbers, useful for describing 3D rotations.
+
+    .. note:: Quaternions are defined as ``w, x, y, z``. When passing a Quaternion object
+              into a Shader as a Uniform or Vertex Attribute, keep in mind that the glsl vec4
+              is accessed as ``x, y, z, w``. Make sure to adjust in your Shader.
     """
 
     w: float = 1.0
@@ -1402,15 +1406,19 @@ class Quaternion(_typing.NamedTuple):
     def from_rotation(cls, angle: float, axis: Vec3) -> Quaternion:
         """Create a Quaternion from a rotation angle and axis.
 
-        This method takes a Vec3 as an axis argument. Only one axis (x, y, z)
-        should be given as a normalized value (1.0). The results are undefined
-        if more than one axis is passed. For example::
+        This method takes a Vec3 as an axis argument. Only ONE axis (x, y, z)
+        should be given as a normalized value (1.0), to choose the axis to
+        rotate around. For example::
 
             quat = Quaternion.from_rotation(0.5, Vec3(1.0, 0.0, 0.0))
             # or:
             quat = Quaternion.from_rotation(0.5, Vec3(0.0, 1.0, 0.0))
             # but NEVER:
             quat = Quaternion.from_rotation(0.5, Vec3(1.0, 1.0, 0.0))
+
+        The results are undefined if more than one axis is passed, but for
+        performance reasons, no validation is done to enforce this. Take care
+        to only pass a single axis when using this method.
 
         Args:
             angle: The rotation angle in radians.
@@ -1529,9 +1537,8 @@ class Quaternion(_typing.NamedTuple):
         return Quaternion(a - e, b - f, c - g, d - h)
 
     def __mul__(self, scalar: float) -> Quaternion:
-        w, x = self.w * scalar, self.x * scalar
-        y, z = self.y * scalar, self.z * scalar
-        return Quaternion(w, x, y, z)
+        w, x, y, z = self
+        return Quaternion(w * scalar, x * scalar, y * scalar, z * scalar)
 
     def __truediv__(self, other: Quaternion) -> Quaternion:
         return ~self @ other
