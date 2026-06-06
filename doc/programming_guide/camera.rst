@@ -63,25 +63,21 @@ Views can also be created from other views. For example::
 
 If ``scroll_box_a`` moves or zooms, ``scroll_box_b`` inherits those changes.
 
-Using camera scopes directly
-----------------------------
+Using camera scopes with batches
+--------------------------------
 
-Cameras and views can be used as context managers, or with ``begin()``::
+Cameras can be used to target a specific batch instead of groups::
 
     @window.event
     def on_draw():
         window.clear()
 
-        with world_camera:
-            world_batch.draw()
+        with world_batch.draw_with_options() as options:
+            options.camera = world_camera
 
-        gui_camera.begin()
-        gui_batch.draw()
-        gui_camera.end()
+        with gui_batch.draw_with_options() as options:
+            options.camera = gui_camera
 
-.. important:: Camera scopes are only applied. They are not automatically unset/restored.
-   Calling ``end()`` closes scope tracking, but it does not restore previous
-   projection/view/viewport.
 
 Using camera scopes in groups
 -----------------------------
@@ -129,9 +125,6 @@ camera/view transform::
 
 When a camera/view is applied through ``Group.set_camera``, pyglet automatically applies
 matching scissor state for that group.
-
-.. note:: Scissor is not automatically applied for direct ``with camera:`` / ``camera.begin()``
-   helper scopes, as they are state specific.
 
 For nested views, the effective scissor is the intersection of all scissor areas in the
 view chain.
