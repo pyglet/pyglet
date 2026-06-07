@@ -6,6 +6,7 @@ pyglet.window
 .. toctree::
    :maxdepth: 1
 
+   window_camera
    dialog
    window_key
    window_mouse
@@ -89,6 +90,7 @@ Classes
   .. autoattribute:: context
   .. autoattribute:: display
   .. autoattribute:: dpi
+  .. autoattribute:: default_camera
   .. autoattribute:: fullscreen
   .. autoattribute:: has_exit
   .. autoattribute:: height

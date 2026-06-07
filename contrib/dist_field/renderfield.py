@@ -33,7 +33,7 @@ class DistFieldGroup(pyglet.sprite.SpriteGroup):
     def __init__(self, texture: Texture, blend_src: BlendFactor, blend_dest: BlendFactor, program: ShaderProgram,
                  parent: Group | None = None) -> None:
         super().__init__(texture, blend_src, blend_dest, program, parent)
-        self.add_state(DepthFieldUniforms(program))
+        self.set_state(DepthFieldUniforms(program))
 
 
 class DistFieldSprite(pyglet.sprite.Sprite):

@@ -72,6 +72,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 import pyglet
 from pyglet import event, clock
+from pyglet.graphics.draw import DrawContext, BatchDrawOptions
 
 if TYPE_CHECKING:
     from typing import Literal
@@ -80,7 +81,6 @@ if TYPE_CHECKING:
     from pyglet.graphics.shader import ShaderProgram
 
 from pyglet.graphics import Group
-from pyglet.graphics.state import State
 from pyglet.enums import BlendFactor, GeometryMode, GraphicsAPI
 from pyglet.image.base import Animation, ImageData
 from pyglet.graphics.texture import TextureArrayRegion
@@ -751,9 +751,17 @@ class Sprite(event.EventDispatcher):
         efficiently.
         """
         ctx = pyglet.graphics.api.core.current_context
-        self._group.set_state_recursive(ctx)
+
+        draw_ctx = DrawContext(
+            surface_ctx=ctx,
+            backend_ctx=None,
+            draw_pass=BatchDrawOptions().resolve(ctx),
+            renderer=ctx.renderer,
+        )
+        draw_ctx.begin()
+        self._group.set_state_recursive(draw_ctx)
         self._vertex_list.draw(GeometryMode.TRIANGLES)
-        self._group.unset_state_recursive(ctx)
+        self._group.unset_state_recursive(draw_ctx)
 
     if _is_pyglet_doc_run:
         # Events
@@ -769,19 +777,6 @@ class Sprite(event.EventDispatcher):
             """
 
 
-@dataclass(frozen=True)
-class _MultiTextureSamplerState(State):
-    """Static per-program sampler bindings for multi-texture sprites."""
-    program: ShaderProgram
-    uniforms: tuple[tuple[str, int], ...]
-
-    sets_state: bool = True
-
-    def set_state(self, _ctx) -> None:  # noqa: ANN001
-        for uniform_name, texture_unit in self.uniforms:
-            self.program[uniform_name] = texture_unit
-
-
 class MultiTextureSpriteGroup(Group):
     """Shared Multi-texture Sprite rendering Group."""
 
@@ -791,11 +786,7 @@ class MultiTextureSpriteGroup(Group):
         super().__init__(parent=parent)
         self.set_shader_program(program)
         self.set_blend(blend_src, blend_dest)
-
-        for texture_unit, texture in enumerate(textures.values()):
-            self.set_texture(texture, texture_unit)
-
-        self.add_state(_MultiTextureSamplerState(program, tuple((name, idx) for idx, name in enumerate(textures))))
+        self.set_textures(textures, program)
 
 
 @dataclass

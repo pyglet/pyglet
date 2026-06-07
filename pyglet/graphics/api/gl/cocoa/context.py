@@ -72,5 +72,5 @@ class CocoaContext(OpenGLSurfaceContext):
         self._nscontext.getValues_forParameter_(byref(vals), cocoapy.NSOpenGLCPSwapInterval)
         return bool(vals.value)
 
-    def flip(self) -> None:
+    def present(self) -> None:
         self._nscontext.flushBuffer()

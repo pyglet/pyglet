@@ -15,7 +15,9 @@ import pyglet
 from pyglet.enums import GraphicsAPI
 
 if TYPE_CHECKING:
-    from pyglet.graphics.buffer import UniformBufferObject
+    from pyglet.graphics.buffer import (
+        UniformBufferObject,
+    )
     from pyglet.customtypes import DataTypes, CType
     from pyglet.graphics.vertexdomain import IndexedVertexList, VertexList, InstanceIndexedVertexList, InstanceVertexList
     from pyglet.graphics import Batch, Group
@@ -945,12 +947,25 @@ class UniformBlock:
         self.view_cls = self._create_structure()
 
     def bind(self, ubo: UniformBufferObject) -> None:
-        """Bind the Uniform Buffer Object to the binding point of this Uniform Block."""
+        """Bind a UBO to the binding point of this uniform block."""
         self._bind_buffer_base(self.binding, ubo.buffer.id)
 
-    def create_ubo(self) -> UniformBufferObject:
+    def create_ubo(
+        self,
+        *,
+        copies_per_resource: int = 3,
+        alignment: int | None = None,
+        strict: bool = False,
+    ) -> UniformBufferObject:
         """Create a new UniformBufferObject from this uniform block."""
-        return self._create_backend_ubo(self.view_cls, self.size, self.binding)
+        return self._create_backend_ubo(
+            self.view_cls,
+            self.size,
+            self.binding,
+            alignment,
+            copies_per_resource,
+            strict,
+        )
 
     def set_binding(self, binding: int) -> None:
         """Rebind the Uniform Block to a new binding index number.
@@ -998,6 +1013,9 @@ class UniformBlock:
         view_class: type[ctypes.Structure],
         buffer_size: int,
         binding: int,
+        alignment: int | None,
+        copies_per_resource: int,
+        strict: bool,
     ) -> UniformBufferObject:
         raise NotImplementedError
 

@@ -170,7 +170,7 @@ class XlibContext(OpenGLSurfaceContext):
             glxext_arb.glXGetVideoSyncSGI(byref(count))
             glxext_arb.glXWaitVideoSyncSGI(2, (count.value + 1) % 2, byref(count))
 
-    def flip(self) -> None:
+    def present(self) -> None:
         if not self.glx_window:
             return
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import ctypes
 import sys
 
-from typing import Union, Literal, Type, Protocol, Tuple
+from typing import Union, Literal, Type, Protocol, Tuple, runtime_checkable
 
 from ctypes import _SimpleCData, _Pointer  # type: ignore  # noqa: PGH003
 
@@ -44,11 +44,16 @@ CTypesPointer = _Pointer
 
 
 
+@runtime_checkable
 class ScissorProtocol(Protocol):
-    x: int
-    y: int
-    width: int
-    height: int
+    """Protocol for an object that holds information for scissor states."""
+
+    @property
+    def area(self) -> tuple[int, int, int, int]:
+        """Return the region of the scissor area.
+
+        Requires the x, y, width, and height in screen space coordinates.
+        """
 
 
 
@@ -64,4 +69,5 @@ __all__ = [
     "MediaTypes",
     "RGBAColor",
     "RGBColor",
+    "ScissorProtocol",
 ]
