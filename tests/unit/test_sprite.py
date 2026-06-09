@@ -238,3 +238,68 @@ def test_init_uses_array_shader_for_texture_array_region(monkeypatch):
         get_default_shader.assert_not_called()
     finally:
         sprite.delete()
+
+
+def _mock_texture(texture_id: int = 1, width: int = 32, height: int = 32, target: int = 3553):
+    texture = MagicMock()
+    texture.id = texture_id
+    texture.width = width
+    texture.height = height
+    texture.anchor_x = 0
+    texture.anchor_y = 0
+    texture.target = target
+    texture.tex_coords = (0.0,) * 12
+    texture.get_texture.return_value = texture
+    return texture
+
+
+def _mock_image(texture):
+    image = MagicMock()
+    image.get_texture.return_value = texture
+    return image
+
+
+def test_multitexture_init_uses_multitexture_shader_getter(monkeypatch):
+    image_a = _mock_image(_mock_texture(1))
+    image_b = _mock_image(_mock_texture(2))
+
+    multi_program = MagicMock()
+    get_multi_shader = MagicMock(return_value=multi_program)
+    monkeypatch.setattr('pyglet.sprite.get_default_multitexture_shader', get_multi_shader)
+
+    sprite = pyglet.sprite.MultiTextureSprite({'a': image_a, 'b': image_b})
+    try:
+        assert sprite.program is multi_program
+        get_multi_shader.assert_called_once()
+    finally:
+        sprite.delete()
+
+
+def test_multitexture_frame_index_property_not_supported():
+    image_a = _mock_image(_mock_texture(1))
+    image_b = _mock_image(_mock_texture(2))
+
+    sprite = pyglet.sprite.MultiTextureSprite({'a': image_a, 'b': image_b}, program=MagicMock())
+    try:
+        with pytest.raises(NotImplementedError):
+            _ = sprite.frame_index
+        with pytest.raises(NotImplementedError):
+            sprite.frame_index = 1
+    finally:
+        sprite.delete()
+
+
+def test_multitexture_get_set_layer():
+    image_a = _mock_image(_mock_texture(1, width=16, height=16))
+    image_b = _mock_image(_mock_texture(2, width=8, height=8))
+    image_c = _mock_image(_mock_texture(3, width=64, height=64))
+
+    sprite = pyglet.sprite.MultiTextureSprite({'a': image_a, 'b': image_b}, program=MagicMock())
+    try:
+        assert sprite.get_layer('a') is image_a
+        sprite.set_layer('a', image_c)
+        assert sprite.get_layer('a') is image_c
+        assert sprite.width == 64
+        assert sprite.height == 64
+    finally:
+        sprite.delete()

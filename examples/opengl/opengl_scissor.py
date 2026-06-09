@@ -35,19 +35,21 @@ class ScissorGroup(pyglet.graphics.Group):
     for every object that will use the group, equal groups
     will still be kept separate.
 
-    :Parameters:
-        `x` : int
+    Args:
+        x:
             The X coordinate of the Scissor area.
-        `x` : int
-            The X coordinate of the Scissor area.
-        `width` : int
+        y:
+            The Y coordinate of the Scissor area.
+        width:
             The width of the Scissor area.
-        `height` : int
+        height:
             The height of the Scissor area.
 
     """
 
-    def __init__(self, x, y, width, height, order=0, parent=None):
+    def __init__(
+        self, x: int, y: int, width: int, height: int, order: int = 0, parent: pyglet.graphics.Group | None = None
+    ) -> None:
         super().__init__(order, parent)
         self.x, self.y = x, y
         self.width, self.height = width, height
@@ -57,11 +59,11 @@ class ScissorGroup(pyglet.graphics.Group):
         self.set_scissor(self)
 
     @property
-    def area(self):
+    def area(self) -> tuple[int, int, int, int]:
         return int(self.x), int(self.y), int(self.width), int(self.height)
 
     @area.setter
-    def area(self, area):
+    def area(self, area: tuple[int, int, int, int]) -> None:
         self.x, self.y, self.width, self.height = area
 
 ###################################################

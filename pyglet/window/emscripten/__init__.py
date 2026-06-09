@@ -440,16 +440,8 @@ class EmscriptenWindow(BaseWindow):
         if height is not None:
             self._height = height
 
-    def flip(self) -> None:
-        if self._context:
-            self._context.flip()
-
     def switch_to(self) -> None:
         pass
-
-    def before_draw(self) -> None:
-        if self._context:
-            self._context.before_draw()
 
     def set_caption(self, caption: str) -> None:
         js.document.title = caption

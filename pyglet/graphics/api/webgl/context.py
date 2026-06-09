@@ -9,6 +9,7 @@ from pyglet.graphics.api.base import SurfaceContext, NullContext
 from pyglet.graphics.api.webgl import gl
 from pyglet.graphics.api.webgl.gl import GL_COLOR_BUFFER_BIT
 from pyglet.graphics.api.webgl.gl_info import GLInfo
+from pyglet.graphics.api.webgl.renderer import WebGLRenderer
 
 if TYPE_CHECKING:
     from pyglet.graphics.api.webgl.shader import GLDataType
@@ -82,6 +83,7 @@ class OpenGLSurfaceContext(SurfaceContext):
 
         self.cached_programs = weakref.WeakValueDictionary()
         self._create_uniform_dicts()
+        self.renderer = WebGLRenderer(self)
 
     @property
     def info(self) -> GLInfo:
@@ -112,7 +114,7 @@ class OpenGLSurfaceContext(SurfaceContext):
     def clear(self) -> None:
         self.gl.clear(GL_COLOR_BUFFER_BIT)
 
-    def flip(self):
+    def present(self):
         pass
 
     def destroy(self) -> None:
@@ -135,7 +137,8 @@ class OpenGLSurfaceContext(SurfaceContext):
         #     raise RuntimeError(msg)
         self.window = window
 
-    def before_draw(self) -> None:
+    def frame_begin(self) -> None:
+        super().frame_begin()
         self.gl.clearColor(*self._clear_color)
         self.gl.clear(GL_COLOR_BUFFER_BIT)
 

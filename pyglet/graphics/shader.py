@@ -3,16 +3,21 @@ from __future__ import annotations
 import abc
 import ctypes
 import re
+import sys
 import warnings
 import weakref
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Literal, Sequence, Any, TYPE_CHECKING, Callable, Protocol
+from typing import Literal, Sequence, Any, TYPE_CHECKING, Callable, Protocol, overload
 
+import pyglet
+from pyglet.enums import GraphicsAPI
 
 if TYPE_CHECKING:
-    from pyglet.graphics.buffer import UniformBufferObject
+    from pyglet.graphics.buffer import (
+        UniformBufferObject,
+    )
     from pyglet.customtypes import DataTypes, CType
     from pyglet.graphics.vertexdomain import IndexedVertexList, VertexList, InstanceIndexedVertexList, InstanceVertexList
     from pyglet.graphics import Batch, Group
@@ -22,6 +27,15 @@ if TYPE_CHECKING:
 
 class ShaderException(BaseException):
     pass
+
+class MissingUniformException(ShaderException):
+    """Exception for when a Shader uniform is missing due to optimization or mispelling."""
+
+class UnsupportedShaderType(ShaderException):
+    """Exception for trying to create an unsupported shader."""
+
+class MissingAttributeException(ShaderException):
+    """Exception for when a Shader has a missing attribute name."""
 
 ShaderType = Literal['vertex', 'fragment', 'geometry', 'compute', 'tesscontrol', 'tessevaluation']
 
@@ -65,24 +79,30 @@ class Sampler:
     stages: Sequence[ShaderType] = ("fragment",)
 
 
-class ShaderProgram(ABC):
+class _AbstractShaderProgram(ABC):
+    _id: int | None
     _attributes: dict[str, Attribute]
+    _uniforms: dict[str, Any]
     _uniform_blocks: dict[str, UniformBlock]
     _samplers: dict[str, Sampler]
 
     def __init__(self, *shaders: Shader) -> None:
         self._id = None
 
-        assert shaders, "At least one Shader object is required."
-
         # Attribute description
         self._attributes = {}
+
+        # Uniform description
+        self._uniforms = {}
 
         # Uniform Block description
         self._uniform_blocks = {}
 
+        # Sampler descriptions
+        self._samplers = {}
+
     @property
-    def id(self):
+    def id(self) -> int | None:
         return self._id
 
     @property
@@ -121,6 +141,11 @@ class ShaderProgram(ABC):
         return self._attributes.copy()
 
     @property
+    def attribute_keys(self) -> tuple[tuple[Any, ...], ...]:
+        """Stable tuple describing all attributes, sorted by attribute location."""
+        return tuple(attribute.key for attribute in sorted(self._attributes.values(), key=lambda attribute: attribute.location))
+
+    @property
     def uniform_blocks(self) -> dict[str, UniformBlock]:
         """A dictionary of introspected UniformBlocks.
 
@@ -134,8 +159,121 @@ class ShaderProgram(ABC):
         """
         return self._uniform_blocks
 
+    @property
+    def samplers(self) -> dict[str, Sampler]:
+        """A dictionary of introspected samplers.
+
+        This property returns a dictionary of
+        :py:class:`~pyglet.graphics.shader.Sampler` instances keyed by sampler name.
+        """
+        return self._samplers
+
+    @property
+    def uniforms(self) -> dict[str, Any]:
+        """Uniform metadata dictionary.
+
+        This property returns a dictionary containing metadata of all
+        Uniforms that were introspected in this ShaderProgram. Modifying
+        this dictionary has no effect. To set or get a uniform, the uniform
+        name is used as a key on the ShaderProgram instance. For example::
+
+            my_shader_program[uniform_name] = 123
+            value = my_shader_program[uniform_name]
+
+        """
+        return {n: {'location': u.location, 'length': u.length, 'size': u.size} for n, u in self._uniforms.items()}
+
+    @staticmethod
+    def _missing_uniform_message(uniform_name: str) -> str:
+        return (
+            f"A Uniform with the name `{uniform_name}` was not found.\n"
+            f"The spelling may be incorrect or, if not in use, it "
+            f"may have been optimized out by the OpenGL driver."
+        )
+
+    def _raise_uniform_operation_exception(self, err: Exception) -> None:
+        raise ShaderException from err
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        try:
+            uniform = self._uniforms[key]
+        except KeyError as err:
+            msg = self._missing_uniform_message(key)
+            if pyglet.options.debug_api_shaders:
+                warnings.warn(msg)
+                return
+            raise MissingUniformException(msg) from err
+        try:
+            uniform.set(value)
+        except Exception as err:  # noqa: BLE001
+            self._raise_uniform_operation_exception(err)
+
+    def __getitem__(self, item: str) -> Any:
+        try:
+            uniform = self._uniforms[item]
+        except KeyError as err:
+            msg = self._missing_uniform_message(item)
+            if pyglet.options.debug_api_shaders:
+                warnings.warn(msg)
+                return None
+            raise MissingUniformException(msg) from err
+        try:
+            return uniform.get()
+        except Exception as err:  # noqa: BLE001
+            self._raise_uniform_operation_exception(err)
+
+    def use(self) -> None:
+        """Bind this shader program for rendering commands."""
+        raise NotImplementedError
+
+    def bind(self) -> None:
+        """Alias for :meth:`use`."""
+        self.use()
+
+    def stop(self) -> None:
+        """Unbind this shader program from rendering commands."""
+        raise NotImplementedError
+
+    def unbind(self) -> None:
+        """Alias for :meth:`stop`."""
+        self.stop()
+
+    def delete(self) -> None:
+        """Delete this shader program and release backend resources."""
+        raise NotImplementedError
+
+    def __enter__(self) -> None:
+        self.use()
+
+    def __exit__(self, *_) -> None:  # noqa: ANN002
+        self.stop()
+
+    @overload
+    def _vertex_list_create(self, count: int, mode: GeometryMode, indices: None = None,
+                            instances: None = None, batch: Batch | None = None, group: Group | None = None,
+                            **data: Any) -> VertexList:
+        ...
+
+    @overload
+    def _vertex_list_create(self, count: int, mode: GeometryMode, indices: Sequence[int] = ...,
+                            instances: None = None, batch: Batch | None = None, group: Group | None = None,
+                            **data: Any) -> IndexedVertexList:
+        ...
+
+    @overload
+    def _vertex_list_create(self, count: int, mode: GeometryMode, indices: None = None,
+                            instances: dict[str, int] = ..., batch: Batch | None = None, group: Group | None = None,
+                            **data: Any) -> InstanceVertexList:
+        ...
+
+    @overload
+    def _vertex_list_create(self, count: int, mode: GeometryMode, indices: Sequence[int] = ...,
+                            instances: dict[str, int] = ..., batch: Batch | None = None, group: Group | None = None,
+                            **data: Any) -> InstanceIndexedVertexList:
+        ...
+
     def _vertex_list_create(self, count: int, mode: GeometryMode, indices: Sequence[int] | None = None,
-                            instances: Sequence[str] | None = None, batch: Batch | None = None, group: Group | None = None,
+                            instances: dict[str, int] | None = None, batch: Batch | None = None, group: Group | None = None,
                             **data: Any) -> VertexList | InstanceVertexList | IndexedVertexList | InstanceIndexedVertexList:
         raise NotImplementedError
 
@@ -190,13 +328,80 @@ class ShaderProgram(ABC):
         return self._vertex_list_create(count, mode, indices, None, batch=batch, group=group, **data)
 
     def vertex_list_instanced_indexed(self, count: int, *, mode: GeometryMode, indices: Sequence[int],
-                                      instance_attributes: Sequence[str], batch: Batch | None = None, group: Group | None = None,
+                                      instance_attributes: dict[str, int], batch: Batch | None = None, group: Group | None = None,
                                       **data: Any) -> InstanceIndexedVertexList:
         assert len(instance_attributes) > 0, "You must provide at least one attribute name to be instanced."
         return self._vertex_list_create(count, mode, indices, instance_attributes, batch=batch, group=group, **data)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(id={self.id})"
+
+
+class ShaderProgram(_AbstractShaderProgram):
+    """Backend-agnostic shader program container.
+
+    Concrete backends are responsible for compiling/linking shaders,
+    introspecting attributes and uniforms, and providing API-specific
+    program state management.
+    """
+
+    def __init__(self, *shaders: _AbstractShader) -> None:
+        """Initialize a shader program from one or more Shader objects.
+
+        Args:
+            shaders:
+                One or more :py:class:`~pyglet.graphics.shader.Shader`
+                instances to be linked into a program by the active backend.
+                At least one shader is required.
+        """
+        assert shaders, "At least one Shader object is required."
+        super().__init__(*shaders)
+
+
+class ComputeShaderProgram(_AbstractShaderProgram):
+    """Backend-agnostic compute shader program container."""
+
+    def __init__(self, source: str) -> None:
+        super().__init__()
+        msg = f"{self.__class__.__name__} is backend-specific and must be provided by the active backend."
+        raise NotImplementedError(msg)
+
+
+class TransformFeedbackShaderProgram(ShaderProgram):
+    """Backend-agnostic transform feedback shader program container."""
+    _id: int
+
+    def __init__(
+        self,
+        *shaders: _AbstractShader,
+        varyings: Sequence[str],
+        varying_buffer_type: Literal["interleaved", "separate"] = "separate",
+    ) -> None:
+        """Initialize a transform feedback shader program.
+
+        Args:
+            shaders:
+                One or more :py:class:`~pyglet.graphics.shader.Shader` instances.
+            varyings:
+                Names of vertex/geometry shader output variables to capture with
+                transform feedback.
+            varying_buffer_type:
+                Buffer packing mode for captured outputs:
+                ``"separate"`` (one buffer per varying) or ``"interleaved"``
+                (single interleaved buffer).
+
+        Notes:
+            This class is replaced by a backend-specific implementation at
+            import time when a supported backend is active.
+        """
+        super().__init__(*shaders)
+        _ = varyings, varying_buffer_type
+        msg = f"{self.__class__.__name__} is backend-specific and must be provided by the active backend."
+        raise NotImplementedError(msg)
+
+    @property
+    def id(self) -> int:
+        return self._id
 
 class ShaderSource(abc.ABC):
     """String source of shader used during load of a Shader instance."""
@@ -206,7 +411,7 @@ class ShaderSource(abc.ABC):
         """Return the validated shader source."""
 
 
-class Shader(abc.ABC):
+class _AbstractShader(abc.ABC):
     """Graphics shader.
 
     Shader objects may be compiled on instantiation if OpenGL or already compiled in Vulkan.
@@ -226,7 +431,7 @@ class Shader(abc.ABC):
                 f"Shader type '{shader_type}' is not supported by this shader class."
                 f"Supported types are: {available_shaders}"
             )
-            raise ShaderException(msg)
+            raise UnsupportedShaderType(msg)
 
     @classmethod
     @abstractmethod
@@ -237,6 +442,29 @@ class Shader(abc.ABC):
     @abstractmethod
     def get_string_class() -> type[ShaderSource]:
         """Return the proper ShaderSource class used to validate the shader."""
+
+class Shader(_AbstractShader):
+    """Graphics shader.
+
+    Shader objects may be compiled on instantiation if OpenGL or already compiled in Vulkan.
+    You can reuse a Shader object in multiple ShaderPrograms.
+    """
+    _src_str: str
+    type: ShaderType
+
+    def __init__(self, source_string: str, shader_type: ShaderType) -> None:
+        """Initialize a shader type."""
+        super().__init__(source_string, shader_type)
+
+    @classmethod
+    def supported_shaders(cls: type[_AbstractShader]) -> tuple[ShaderType, ...]:
+        """Return the supported shader types for this shader class."""
+        raise NotImplementedError
+
+    @staticmethod
+    def get_string_class() -> type[ShaderSource]:
+        """Return the proper ShaderSource class used to validate the shader."""
+        raise NotImplementedError
 
 DataTypeTuple = ('?', 'f', 'i', 'I', 'h',  'H', 'b', 'B', 'q','Q')
 
@@ -320,6 +548,18 @@ class Attribute:
 
     def __repr__(self) -> str:
         return f"Attribute(location={self.location}, fmt={self.fmt}')"
+
+    @property
+    def key(self) -> tuple[str, int, int, DataTypes, bool, int]:
+        """Stable tuple that describes this attribute's domain-relevant format."""
+        return (
+            self.fmt.name,
+            self.location,
+            self.fmt.components,
+            self.fmt.data_type,
+            self.fmt.normalized,
+            self.fmt.divisor,
+        )
 
 
 class GraphicsAttribute:
@@ -475,7 +715,7 @@ class UniformArrayBase:
                 f"{self._uniform.name}[{index}] not found.\n"
                 "This may have been optimized out by the OpenGL driver if unused."
             )
-            raise ShaderException(msg)
+            raise MissingUniformException(msg)
 
         return loc
 
@@ -503,7 +743,7 @@ class UniformArrayBase:
                 f"{self._uniform.name}[{key}] not found. "
                 "This may have been optimized out by the OpenGL driver if unused."
             )
-            raise ShaderException(msg)
+            raise MissingUniformException(msg)
 
     def __setitem__(self, key: slice | int, value: Sequence) -> None:
         if isinstance(key, slice):
@@ -707,12 +947,25 @@ class UniformBlock:
         self.view_cls = self._create_structure()
 
     def bind(self, ubo: UniformBufferObject) -> None:
-        """Bind the Uniform Buffer Object to the binding point of this Uniform Block."""
+        """Bind a UBO to the binding point of this uniform block."""
         self._bind_buffer_base(self.binding, ubo.buffer.id)
 
-    def create_ubo(self) -> UniformBufferObject:
+    def create_ubo(
+        self,
+        *,
+        copies_per_resource: int = 3,
+        alignment: int | None = None,
+        strict: bool = False,
+    ) -> UniformBufferObject:
         """Create a new UniformBufferObject from this uniform block."""
-        return self._create_backend_ubo(self.view_cls, self.size, self.binding)
+        return self._create_backend_ubo(
+            self.view_cls,
+            self.size,
+            self.binding,
+            alignment,
+            copies_per_resource,
+            strict,
+        )
 
     def set_binding(self, binding: int) -> None:
         """Rebind the Uniform Block to a new binding index number.
@@ -760,6 +1013,9 @@ class UniformBlock:
         view_class: type[ctypes.Structure],
         buffer_size: int,
         binding: int,
+        alignment: int | None,
+        copies_per_resource: int,
+        strict: bool,
     ) -> UniformBufferObject:
         raise NotImplementedError
 
@@ -774,3 +1030,41 @@ class UniformBlock:
     def __repr__(self) -> str:
         return (f"{self.__class__.__name__}(program={self.program.id}, location={self.index}, size={self.size}, "
                 f"binding={self.binding})")
+
+
+def get_default_shader() -> ShaderProgram:
+    """A default shader for rendering primitives."""
+    raise NotImplementedError
+
+_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
+
+if not _is_pyglet_doc_run:
+    if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
+        from pyglet.graphics.api.gl.shader import (
+            GLComputeShaderProgram as ComputeShaderProgram,
+            GLShader as Shader,
+            GLShaderProgram as ShaderProgram,
+            GLTransformFeedbackShaderProgram as TransformFeedbackShaderProgram,
+        )
+        from pyglet.graphics.api.gl.shader import get_default_shader
+    elif pyglet.options.backend in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
+        from pyglet.graphics.api.gl2.shader import (
+            ComputeShaderProgram,
+            Shader,
+            ShaderProgram,
+            TransformFeedbackShaderProgram,
+        )
+        from pyglet.graphics.api.gl2.shader import get_default_shader
+    elif pyglet.options.backend == GraphicsAPI.WEBGL:
+        from pyglet.graphics.api.webgl.shader import (
+            WebGLComputeShaderProgram as ComputeShaderProgram,
+            WebGLShader as Shader,
+            WebGLShaderProgram as ShaderProgram,
+            WebGLTransformFeedbackShaderProgram as TransformFeedbackShaderProgram,
+        )
+        from pyglet.graphics.api.webgl.shader import get_default_shader
+    elif pyglet.options.backend == GraphicsAPI.VULKAN:
+        from pyglet.graphics.api.vulkan.shader import ComputeShaderProgram, Shader, ShaderProgram
+    else:
+        msg = f"Unsupported backend: {pyglet.options.backend}"
+        raise RuntimeError(msg)

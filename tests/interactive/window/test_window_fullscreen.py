@@ -1,11 +1,11 @@
 import pytest
+
+import pyglet
 from tests.base.interactive import InteractiveTestCase
 
 from pyglet import window
 from pyglet.window.event import WindowEventLogger
 from pyglet.window import key
-
-from . import window_util
 
 
 @pytest.mark.requires_user_action
@@ -24,9 +24,6 @@ class WINDOW_SET_FULLSCREEN(InteractiveTestCase):
             4 - 1024x768
             5 - 1280x800 (widescreen)
             6 - 1280x1024
-
-        In all cases the window bounds will be indicated by a green rectangle
-        which should be completely visible.
 
         All events will be printed to the terminal.
 
@@ -57,9 +54,8 @@ class WINDOW_SET_FULLSCREEN(InteractiveTestCase):
         self.w.set_fullscreen(fullscreen, width=width, height=height)
 
     def on_expose(self):
-        glClearColor(1, 0, 0, 1)
-        glClear(GL_COLOR_BUFFER_BIT)
-        window_util.draw_client_border(self.w)
+        self.w.context.set_clear_color(1.0, 0.0, 0.0, 1.0)
+        self.w.clear()
         self.w.flip()
 
     def test_set_fullscreen(self):
@@ -98,8 +94,8 @@ class WINDOW_INITIAL_FULLSCREEN(InteractiveTestCase):
             self.w.set_fullscreen(False)
 
     def on_expose(self):
-        glClearColor(1, 0, 1, 1)
-        glClear(GL_COLOR_BUFFER_BIT)
+        self.w.context.set_clear_color(1.0, 0.0, 0.0, 1.0)
+        self.w.clear()
         self.w.flip()
 
     def test_initial_fullscreen(self):
@@ -145,12 +141,12 @@ class MULTIPLE_SCREEN(InteractiveTestCase):
 
     def on_expose(self):
         self.w.switch_to()
-        glClearColor(*self.colours[self.index])
-        glClear(GL_COLOR_BUFFER_BIT)
+        self.w.context.set_clear_color(*self.colours[self.index])
+        self.w.clear()
         self.w.flip()
 
     def test_multiple_screen(self):
-        display = window.get_platform().get_default_display()
+        display = pyglet.display.get_display()
         self.screens = display.get_screens()
         for i in range(len(self.screens)):
             self.index = i

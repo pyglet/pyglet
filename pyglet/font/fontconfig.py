@@ -196,7 +196,7 @@ class FontConfig:
         return FontConfigSearchPattern(self._fontconfig)
 
     def style_from_face(self, font_face: FT_Face):
-        pattern = self._fontconfig.FcFreeTypeQueryFace(font_face, None, 0, None)
+        pattern = self._fontconfig.FcFreeTypeQueryFace(font_face, b'', 0, None)
         result = FontConfigSearchResult(self._fontconfig, pattern)
         return result.weight, result.italic, result.stretch
 

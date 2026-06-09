@@ -1,6 +1,7 @@
 import random
 
 import pyglet
+from pyglet.graphics.draw import Batch
 
 window = pyglet.window.Window(vsync=False)
 
@@ -19,7 +20,7 @@ image.anchor_x = image.width // 2
 image.anchor_y = image.height // 2
 
 # Batching allows rendering groups of objects all at once instead of drawing one by one.
-batch = pyglet.graphics.Batch()
+batch = Batch()
 
 scales = [1.0, 0.75, 0.5, 0.25]
 
@@ -40,10 +41,6 @@ for i in range(1000):
 
     # Add sprites to keep in memory, like a list. Otherwise they will get GC'd when out of scope.
     sprites.append(sprite)
-
-
-text = pyglet.text.Label("Hello World!", x=window.width // 2, y=window.height // 2, batch=batch)
-text2 = pyglet.text.Label("               asf af Hello World!", x=window.width // 2, y=window.height // 2, batch=batch)
 
 
 @window.event

@@ -245,7 +245,7 @@ class Sprite(event.EventDispatcher):
         """Create a sprite.
 
         :Parameters:
-            `img` : `~pyglet.image.AbstractImage` or `~pyglet.image.Animation`
+            `img` :
                 Image or animation to display.
             `x` : int
                 X coordinate of the sprite.
@@ -418,11 +418,7 @@ class Sprite(event.EventDispatcher):
 
     @property
     def image(self):
-        """Image or animation to display.
-
-        :type: :py:class:`~pyglet.image.AbstractImage` or
-               :py:class:`~pyglet.image.Animation`
-        """
+        """Image or animation to display."""
         if self._animation:
             return self._animation
         return self._texture
@@ -772,9 +768,16 @@ class Sprite(event.EventDispatcher):
         efficiently.
         """
         ctx = pyglet.graphics.api.core.current_context
-        self._group.set_state_recursive(ctx)
+        draw_ctx = pyglet.graphics.draw.DrawContext(
+            surface_ctx=ctx,
+            backend_ctx=None,
+            draw_pass=pyglet.graphics.draw.BatchDrawOptions().resolve(ctx),
+            renderer=ctx.renderer,
+        )
+        draw_ctx.begin()
+        self._group.set_state_recursive(draw_ctx)
         self._vertex_list.draw(GeometryMode.POINTS)
-        self._group.unset_state_recursive(ctx)
+        self._group.unset_state_recursive(draw_ctx)
 
     def __del__(self):
         try:

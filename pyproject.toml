@@ -10,7 +10,7 @@ authors = [
 readme = "README.md"
 license = { file = "LICENSE" }
 dynamic = ["version", "description"]
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 
 [project.urls]
 Home = "https://pyglet.org"

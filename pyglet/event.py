@@ -356,8 +356,16 @@ class EventDispatcher:
             if not handler:
                 continue
             if isinstance(handler, WeakMethod):
-                handler = handler()
-                assert handler is not None
+                weak_handler = handler
+                handler = weak_handler()
+                if handler is None:
+                    # Weak handlers can expire before their callback is removed from stack.
+                    # Skip and remove stale handlers
+                    if frame.get(event_type) is weak_handler:
+                        del frame[event_type]
+                        if not frame and frame in self._event_stack:
+                            self._event_stack.remove(frame)
+                    continue
             try:
                 invoked = True
                 if handler(*args):

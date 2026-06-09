@@ -330,15 +330,6 @@ class CocoaWindow(BaseWindow):
         if self.context:
             self.context.set_current()
 
-    def before_draw(self) -> None:
-        if self.context:
-            self.context.before_draw()
-
-    def flip(self) -> None:
-        self.draw_mouse_cursor()
-        if self.context:
-            self.context.flip()
-
     def _poll_app_events(self):
         with AutoReleasePool():
             while True:

@@ -10,7 +10,7 @@ from ctypes import (
     c_uint,
     c_ushort,
 )
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Sequence
 
 import pyglet
 import pyglet.graphics.api.gl.gl as gl
@@ -18,7 +18,13 @@ from pyglet.graphics.api.gl2.buffer import UniformBufferObject  # noqa: F401
 from pyglet.graphics.api.gl.shader import GLDataType
 from pyglet.graphics.api.gl.shader import GLShader
 from pyglet.graphics.api.gl.shader import GLShaderProgram
-from pyglet.graphics.shader import ShaderException, ShaderSource, ShaderType
+from pyglet.graphics import UnsupportedBackendError
+from pyglet.graphics.shader import (
+    _AbstractShaderProgram,
+    ShaderException,
+    ShaderSource,
+    ShaderType,
+)
 
 if TYPE_CHECKING:
     from pyglet.graphics.api.base import NullContext
@@ -64,7 +70,7 @@ class UniformBlock:
         uniforms: dict[int, tuple[str, GLDataType, int, int]],
         uniform_count: int,
     ) -> None:
-        raise NotImplementedError
+        raise UnsupportedBackendError("UniformBlock")
 
 
 # Shader & program classes:
@@ -172,20 +178,69 @@ class ShaderProgram(GLShaderProgram):  # noqa: D101
     _uniform_blocks: None
     __slots__ = '_attributes', '_context', '_id', '_uniform_blocks', '_uniforms'
 
-    def __init__(self, *shaders: Shader) -> None:
-        """Initialize the ShaderProgram using at least two Shader instances."""
-        super().__init__(*shaders)
-
     def _get_uniform_blocks(self) -> None:
         """Return Uniform Block information."""
         return
 
 
-class ComputeShaderProgram:
+class ComputeShaderProgram(_AbstractShaderProgram):
     """OpenGL Compute Shader Program.
 
     Not supported by OpenGL 2.0
     """
 
     def __init__(self, source: str) -> None:
-        raise NotImplementedError
+        super().__init__()
+        raise UnsupportedBackendError("ComputeShaderProgram")
+
+
+class TransformFeedbackShaderProgram(ShaderProgram):
+    """OpenGL Transform Feedback Shader Program.
+
+    Not supported by OpenGL 2.0 / OpenGL ES 2.0.
+    """
+
+    def __init__(
+        self,
+        *shaders: Shader,
+        varyings: Sequence[str],
+        varying_buffer_type: str = "separate",
+    ) -> None:
+        _ = shaders, varyings, varying_buffer_type
+        raise UnsupportedBackendError("TransformFeedbackShaderProgram")
+
+
+_default_vertex_source: str = """#version 110
+    attribute vec3 position;
+    attribute vec4 colors;
+
+    varying vec4 vertex_colors;
+
+    uniform mat4 u_projection;
+    uniform mat4 u_view;
+
+    void main()
+    {
+        gl_Position = u_projection * u_view * vec4(position, 1.0);
+
+        vertex_colors = colors;
+    }
+"""
+
+_default_fragment_source: str = """#version 110
+    varying vec4 vertex_colors;
+
+    void main()
+    {
+        gl_FragColor = vertex_colors;
+    }
+"""
+
+
+def get_default_shader() -> ShaderProgram:
+    """A default basic shader for default batches."""
+    return pyglet.graphics.api.core.get_cached_shader(
+        "default_graphics",
+        (_default_vertex_source, 'vertex'),
+        (_default_fragment_source, 'fragment'),
+    )

@@ -393,3 +393,41 @@ class ParticleManager:
                           batch=self._batch, group=self._group)
         pyglet.clock.schedule_once(self._delete_callback, self.lifespan, emitter)
         return emitter
+
+
+if __name__ == "__main__":
+    window = pyglet.window.Window(960, 540, caption="ParticleManager Demo", resizable=True)
+
+    batch = graphics.Batch()
+
+    label = pyglet.text.Label("Click and drag.", x=5, y=5, batch=batch)
+
+    particle_img = image.SolidColorImagePattern((255, 255, 255, 255)).create_image(8, 8)
+    manager = ParticleManager(
+        particle_img,
+        lifespan=1.0,
+        count=12,
+        velocity=(100.0, 80.0),
+        spread=(0.30, 0.30),
+        color_start=(255, 200, 80, 220),
+        color_end=(255, 40, 20, 0),
+        scale_start=(0.4, 0.4),
+        scale_end=(1.2, 1.2),
+        rotation=0.0,
+        batch=batch,
+    )
+
+    @window.event
+    def on_draw():
+        window.clear()
+        batch.draw()
+
+    @window.event
+    def on_mouse_press(x, y, button, modifiers):
+        manager.create_emitter(x, y)
+
+    @window.event
+    def on_mouse_drag(x, y, dx, dy, buttons, modifiers):
+        manager.create_emitter(x, y)
+
+    pyglet.app.run()

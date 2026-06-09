@@ -17,7 +17,7 @@ from ctypes import (
     cast,
     sizeof,
 )
-from typing import TYPE_CHECKING, Any, Callable, Sequence, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Sequence, Type, Union, overload
 
 import pyglet
 
@@ -33,9 +33,13 @@ from pyglet.graphics.api.webgl.gl import (
     GL_UNIFORM_BUFFER,
 )
 from pyglet.graphics.shader import (
+    _AbstractShader,
+    _AbstractShaderProgram,
     Attribute,
+    MissingAttributeException,
     Shader,
     ShaderException,
+    UnsupportedShaderType,
     UBOBindingManager,
     UniformBlock as BaseUniformBlock,
     UniformArrayBase,
@@ -59,10 +63,8 @@ class GLException(Exception):
 
 
 if TYPE_CHECKING:
-    from _weakref import CallableProxyType
-
     from pyglet.customtypes import CTypesPointer, DataTypes, CType
-    from pyglet.graphics import Batch, Group
+    from pyglet.graphics import Batch, Group, UnsupportedBackendError
     from pyglet.graphics.api.webgl.context import OpenGLSurfaceContext
     from pyglet.graphics.api.webgl.webgl_js import WebGL2RenderingContext, WebGLProgram, WebGLRenderingContext
     from pyglet.graphics.vertexdomain import IndexedVertexList, VertexList, InstanceVertexList, \
@@ -384,7 +386,7 @@ class WebGLUniformBlock(BaseUniformBlock):  # noqa: D101
 
     def __init__(
         self,
-        program: ShaderProgram,
+        program: WebGLShaderProgram,
         name: str,
         index: int,
         size: int,
@@ -400,8 +402,24 @@ class WebGLUniformBlock(BaseUniformBlock):  # noqa: D101
     def _bind_buffer_base(self, binding: int, buffer_id: int) -> None:
         self.ctx.gl.bindBufferBase(GL_UNIFORM_BUFFER, binding, buffer_id)
 
-    def _create_backend_ubo(self, view_class: type[Structure], buffer_size: int, binding: int) -> WebGLUniformBufferObject:
-        return WebGLUniformBufferObject(self.ctx, view_class, buffer_size, binding)
+    def _create_backend_ubo(
+        self,
+        view_class: type[Structure],
+        buffer_size: int,
+        binding: int,
+        alignment: int | None,
+        copies_per_resource: int,
+        strict: bool,
+    ) -> WebGLUniformBufferObject:
+        return WebGLUniformBufferObject(
+            self.ctx,
+            view_class,
+            buffer_size,
+            binding,
+            alignment=alignment,
+            copies_per_resource=copies_per_resource,
+            strict=strict,
+        )
 
     def _set_block_binding(self) -> None:
         self.ctx.gl.uniformBlockBinding(self.program.id, self.index, self.binding)
@@ -481,17 +499,18 @@ def _introspect_attributes(program_id: WebGLProgram) -> dict[str, Attribute]:
     return attributes
 
 
-def _link_program(gl: WebGLRenderingContext, *shaders: Shader) -> WebGLProgram:
-    """Link one or more Shaders into a ShaderProgram.
-
-    Returns:
-        The ID assigned to the linked ShaderProgram.
-    """
+def _create_program(gl: WebGLRenderingContext, *shaders: Shader) -> WebGLProgram:
+    """Create a program and attach one or more Shader objects."""
     program_id = gl.createProgram()
     if not program_id:
         raise ShaderException("Shader program could not be created.")
     for shader in shaders:
         gl.attachShader(program_id, shader.id)
+    return program_id
+
+
+def _link_program(gl: WebGLRenderingContext, program_id: WebGLProgram) -> None:
+    """Link an existing program object and validate link status."""
     gl.linkProgram(program_id)
 
     # Check the link status of program
@@ -501,10 +520,18 @@ def _link_program(gl: WebGLRenderingContext, *shaders: Shader) -> WebGLProgram:
         msg = f"Error linking shader program:\n{log}"
         raise ShaderException(msg)
 
-    # Shader objects no longer needed
+
+def _detach_program_shaders(gl: WebGLRenderingContext, program_id: WebGLProgram, *shaders: Shader) -> None:
+    """Detach Shader objects from an already linked program."""
     for shader in shaders:
         gl.detachShader(program_id, shader.id)
 
+
+def _build_program(gl: WebGLRenderingContext, *shaders: Shader) -> WebGLProgram:
+    """Create, link, and detach one or more Shaders into a ShaderProgram."""
+    program_id = _create_program(gl, *shaders)
+    _link_program(gl, program_id)
+    _detach_program_shaders(gl, program_id, *shaders)
     return program_id
 
 
@@ -550,7 +577,7 @@ def _introspect_uniforms(gl_ctx: WebGLRenderingContext, program_id: WebGLProgram
 
 
 def _introspect_uniform_blocks(
-    ctx: OpenGLSurfaceContext, program: ShaderProgram | WebGLComputeShaderProgram,
+    ctx: OpenGLSurfaceContext, program: WebGLShaderProgram | WebGLComputeShaderProgram,
 ) -> dict[str, WebGLUniformBlock]:
     uniform_blocks = {}
     gl_ctx: WebGL2RenderingContext = ctx.gl
@@ -678,7 +705,7 @@ class GLShaderSource(ShaderSource):
         raise ShaderException(msg)
 
 
-class WebGLShader(Shader):
+class WebGLShader(_AbstractShader):
     """OpenGL shader.
 
     Shader objects are compiled on instantiation.
@@ -803,7 +830,12 @@ class WebGLShaderProgram(ShaderProgram):
         super().__init__(*shaders)
         self._context = pyglet.graphics.api.core.current_context
         self._gl = self._context.gl
-        self._id = _link_program(self._gl, *shaders)
+        self._id = _build_program(self._gl, *shaders)
+
+        self._initialize_program_state()
+
+    def _initialize_program_state(self) -> None:
+        assert self._id is not None
 
         if _debug_api_shaders:
             """Query a ShaderProgram link logs."""
@@ -829,32 +861,10 @@ class WebGLShaderProgram(ShaderProgram):
     def id(self) -> WebGLProgram | None:
         return self._id
 
-    @property
-    def uniforms(self) -> dict[str, Any]:
-        """Uniform metadata dictionary.
-
-        This property returns a dictionary containing metadata of all
-        Uniforms that were introspected in this ShaderProgram. Modifying
-        this dictionary has no effect. To set or get a uniform, the uniform
-        name is used as a key on the ShaderProgram instance. For example::
-
-            my_shader_program[uniform_name] = 123
-            value = my_shader_program[uniform_name]
-
-        """
-        return {n: {'location': u.location, 'length': u.length, 'size': u.size} for n, u in self._uniforms.items()}
-
     def use(self) -> None:
         self._gl.useProgram(self._id)
 
     def stop(self) -> None:
-        self._gl.useProgram(None)
-
-    __enter__ = use
-    bind = use
-    unbind = stop
-
-    def __exit__(self, *_) -> None:  # noqa: ANN002
         self._gl.useProgram(None)
 
     def delete(self) -> None:
@@ -870,46 +880,33 @@ class WebGLShaderProgram(ShaderProgram):
             except (AttributeError, ImportError):
                 pass  # Interpreter is shutting down
 
-    def __setitem__(self, key: str, value: Any) -> None:
-        try:
-            uniform = self._uniforms[key]
-        except KeyError as err:
-            msg = (
-                f"A Uniform with the name `{key}` was not found.\n"
-                f"The spelling may be incorrect or, if not in use, it "
-                f"may have been optimized out by the OpenGL driver."
-            )
-            if _debug_api_shaders:
-                warnings.warn(msg)
-                return
-            raise ShaderException(msg) from err
-        try:
-            uniform.set(value)
-        except GLException as err:
-            raise ShaderException from err
+    @overload
+    def _vertex_list_create(self, count: int, mode: GeometryMode, indices: None = None,
+                            instances: None = None, batch: Batch | None = None, group: Group | None = None,
+                            **data: Any) -> VertexList:
+        ...
 
-    def __getitem__(self, item: str) -> Any:
-        try:
-            uniform = self._uniforms[item]
-        except KeyError as err:
-            msg = (
-                f"A Uniform with the name `{item}` was not found.\n"
-                f"The spelling may be incorrect or, if not in use, it "
-                f"may have been optimized out by the OpenGL driver."
-            )
-            if _debug_api_shaders:
-                warnings.warn(msg)
-                return None
+    @overload
+    def _vertex_list_create(self, count: int, mode: GeometryMode, indices: Sequence[int] = ...,
+                            instances: None = None, batch: Batch | None = None, group: Group | None = None,
+                            **data: Any) -> IndexedVertexList:
+        ...
 
-            raise ShaderException from err
-        try:
-            return uniform.get()
-        except GLException as err:
-            raise ShaderException from err
+    @overload
+    def _vertex_list_create(self, count: int, mode: GeometryMode, indices: None = None,
+                            instances: dict[str, int] = ..., batch: Batch | None = None, group: Group | None = None,
+                            **data: Any) -> InstanceVertexList:
+        ...
 
+    @overload
+    def _vertex_list_create(self, count: int, mode: GeometryMode, indices: Sequence[int] = ...,
+                            instances: dict[str, int] = ..., batch: Batch | None = None, group: Group | None = None,
+                            **data: Any) -> InstanceIndexedVertexList:
+        ...
 
     def _vertex_list_create(self, count: int, mode: GeometryMode, indices: Sequence[int] | None = None,
-                            instances: dict[str, int] | None = None, batch: Batch | None = None, group: Group | None = None,
+                            instances: dict[str, int] | None = None,
+                            batch: Batch | None = None, group: Group | None = None,
                             **data: Any) -> VertexList | InstanceVertexList | IndexedVertexList | InstanceIndexedVertexList:
         assert isinstance(mode, GeometryMode), f"Mode {mode} is not geometry mode."
         attributes = {}
@@ -919,7 +916,11 @@ class WebGLShaderProgram(ShaderProgram):
 
         # Probably just remove all of this?
         for name, fmt in data.items():
-            current_attrib = self._attributes[name]
+            try:
+                current_attrib = self._attributes[name]
+            except KeyError:
+                msg = f"Attribute {name} not found. Existing attributes: {list(self._attributes.keys())}"
+                raise MissingAttributeException(msg) from None
             try:
                 if isinstance(fmt, tuple):
                     fmt, array = fmt  # noqa: PLW2901
@@ -960,91 +961,80 @@ class WebGLShaderProgram(ShaderProgram):
         return vlist
 
 
-    def vertex_list(
-        self, count: int, mode: GeometryMode, batch: Batch | None = None, group: Group | None = None, **data: Any,
-    ) -> VertexList:
-        """Create a VertexList.
+class WebGLTransformFeedbackShaderProgram(WebGLShaderProgram):
+    """WebGL shader program configured for transform feedback capture."""
 
-        Args:
-            count:
-                The number of vertices in the list.
-            mode:
-                OpenGL drawing mode enumeration; for example, one of
-                ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
-                This determines how the list is drawn in the given batch.
-            batch:
-                Batch to add the VertexList to, or ``None`` if a Batch will not be used.
-                Using a Batch is strongly recommended.
-            group:
-                Group to add the VertexList to, or ``None`` if no group is required.
-            data:
-                Attribute formats and initial data for the vertex list.
+    __slots__ = "_varying_buffer_type", "_varyings"
 
-        """
-        return self._vertex_list_create(count, mode, None, None, batch=batch, group=group, **data)
+    def __init__(self, *shaders: WebGLShader, varyings: Sequence[str],
+                 varying_buffer_type: str = "separate") -> None:
+        ShaderProgram.__init__(self, *shaders)
+        self._context = pyglet.graphics.api.core.current_context
+        self._gl = self._context.gl
 
-    def vertex_list_instanced(
-        self,
-        count: int,
-        mode: GeometryMode,
-        instance_attributes: Sequence[str],
-        batch: Batch | None = None,
-        group: Group | None = None,
-        **data: Any,
-    ) -> VertexList:
-        assert len(instance_attributes) > 0, "You must provide at least one attribute name to be instanced."
-        return self._vertex_list_create(count, mode, None, instance_attributes, batch=batch, group=group, **data)
+        self._varyings = tuple(varyings)
+        self._varying_buffer_type = varying_buffer_type
 
-    def vertex_list_indexed(
-        self,
-        count: int,
-        mode: GeometryMode,
-        indices: Sequence[int],
-        batch: Batch | None = None,
-        group: Group | None = None,
-        **data: Any,
-    ) -> IndexedVertexList:
-        """Create a IndexedVertexList.
+        if not self._varyings:
+            msg = "At least one transform feedback varying is required."
+            raise ShaderException(msg)
 
-        Args:
-            count:
-                The number of vertices in the list.
-            mode:
-                OpenGL drawing mode enumeration; for example, one of
-                ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
-                This determines how the list is drawn in the given batch.
-            indices:
-                Sequence of integers giving indices into the vertex list.
-            batch:
-                Batch to add the VertexList to, or ``None`` if a Batch will not be used.
-                Using a Batch is strongly recommended.
-            group:
-                Group to add the VertexList to, or ``None`` if no group is required.
-            data:
-                Attribute formats and initial data for the vertex list.
-        """
-        return self._vertex_list_create(count, mode, indices, None, batch=batch, group=group, **data)
+        self._id = _create_program(self._gl, *shaders)
+        self._set_transform_feedback_varyings()
+        _link_program(self._gl, self._id)
+        _detach_program_shaders(self._gl, self._id, *shaders)
 
-    def vertex_list_instanced_indexed(
-        self,
-        count: int,
-        mode: GeometryMode,
-        indices: Sequence[int],
-        instance_attributes: Sequence[str],
-        batch: Batch | None = None,
-        group: Group | None = None,
-        **data: Any,
-    ) -> IndexedVertexList:
-        assert len(instance_attributes) > 0, "You must provide at least one attribute name to be instanced."
-        return self._vertex_list_create(count, mode, indices, instance_attributes, batch=batch, group=group, **data)
+        self._initialize_program_state()
 
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(id={self.id})"
+    def _set_transform_feedback_varyings(self) -> None:
+        mode = gl.GL_INTERLEAVED_ATTRIBS if self._varying_buffer_type == "interleaved" else gl.GL_SEPARATE_ATTRIBS
+        self._gl.transformFeedbackVaryings(self._id, list(self._varyings), mode)
 
 
-class WebGLComputeShaderProgram:
+class WebGLComputeShaderProgram(_AbstractShaderProgram):
     """OpenGL Compute Shader Program."""
 
     def __init__(self, source: str) -> None:
         """Create an OpenGL ComputeShaderProgram from source."""
-        raise ShaderException("Compute Shaders are not supported in WebGL.")
+        super().__init__()
+        raise UnsupportedBackendError("Compute Shaders are not supported in WebGL.")
+
+
+_default_vertex_source: str = """#version 330 core
+    in vec3 position;
+    in vec4 colors;
+
+    out vec4 vertex_colors;
+
+    uniform WindowBlock
+    {
+        mat4 projection;
+        mat4 view;
+    } window;
+
+    void main()
+    {
+        gl_Position = window.projection * window.view * vec4(position, 1.0);
+
+        vertex_colors = colors;
+    }
+"""
+
+_default_fragment_source: str = """#version 330 core
+    in vec4 vertex_colors;
+    out vec4 final_colors;
+
+    void main()
+    {
+        final_colors = vertex_colors;
+    }
+"""
+
+
+def get_default_shader() -> WebGLShaderProgram:
+    """A default basic shader for default batches."""
+    return pyglet.graphics.api.core.get_cached_shader(
+        "default_graphics",
+        (_default_vertex_source, 'vertex'),
+        (_default_fragment_source, 'fragment'),
+    )

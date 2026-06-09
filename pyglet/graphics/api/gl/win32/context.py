@@ -38,7 +38,7 @@ class _Win32Context(OpenGLSurfaceContext):
             self._context = None
         super().detach()
 
-    def flip(self) -> None:
+    def present(self) -> None:
         _gdi32.SwapBuffers(self.window._dc)  # noqa: SLF001
 
     def get_vsync(self) -> bool:

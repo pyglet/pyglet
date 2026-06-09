@@ -58,6 +58,7 @@ from pyglet.graphics.vertexdomain import (
     IndexedVertexDomain,
     VertexGroupBucket,
     _RunningIndexSupport,
+    _InstancedRunningIndexSupport,
     InstanceIndexedVertexList,
     InstancedIndexedVertexDomain,
     InstancedVertexDomain,
@@ -550,7 +551,7 @@ class WebGLInstancedIndexedVertexDomain(InstancedIndexedVertexDomain):
     _vertex_class = WebGLInstanceIndexedVertexList
 
     def _create_vertex_class(self) -> type:
-        return type(self._vertex_class.__name__, (_RunningIndexSupport, self._vertex_class),
+        return type(self._vertex_class.__name__, (_InstancedRunningIndexSupport, self._vertex_class),
                                       self.vertex_buffers._property_dict)  # noqa: SLF001
 
     def _create_vao(self) -> GLVertexArrayBinding:

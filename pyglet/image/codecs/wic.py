@@ -7,7 +7,7 @@ from typing import BinaryIO, Sequence
 import pyglet
 from pyglet.image import ImageData
 from pyglet.image.codecs import ImageDecodeException, ImageDecoder, ImageEncoder
-from pyglet.image.codecs.wincodec_lib import (
+from pyglet.libs.win32.wincodec import (
     CLSID_WICImagingFactory1,
     CLSID_WICImagingFactory2,
     GUID_ContainerFormatBmp,

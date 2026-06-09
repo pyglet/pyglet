@@ -4,13 +4,13 @@ Tests for events on windows.
 import pytest
 import random
 
+import pyglet
 from pyglet import font
 from pyglet.graphics.api import gl
 from pyglet.window import key, Window
 from pyglet.window.event import WindowEventLogger
 
 from tests.base.interactive import InteractiveTestCase
-from tests.interactive.window import window_util
 
 
 class WindowEventsTestCase(InteractiveTestCase):
@@ -20,11 +20,12 @@ class WindowEventsTestCase(InteractiveTestCase):
     """
 
     # Defaults
-    window_size = 400, 200
+    window_size = 600, 200
     window = None
     question = None
 
     def setUp(self):
+        self.window = None
         self.finished = False
         self.failure = None
         self.label = None
@@ -37,13 +38,17 @@ class WindowEventsTestCase(InteractiveTestCase):
         self.finished = True
 
     def _render_question(self):
-        fnt = font.load('Courier')
-        self.label = font.Text(fnt, text=self.question, x=10, y=self.window_size[1]-20)
+        if self.window:
+            if not self.label:
+                self.label = pyglet.text.Label(self.question, x=10, y=self.window_size[1]-20,
+                                               multiline=True,
+                                               width=self.window_size[0]-10)
+            else:
+                self.label.text = self.question
 
     def _draw(self):
-        gl.glClearColor(0.5, 0, 0, 1)
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT)
-        gl.glLoadIdentity()
+        self.window.clear()
+        self.window.context.set_clear_color(0.5, 0.0, 0.0, 1.0)
         self.label.draw()
         self.window.flip()
 
@@ -141,14 +146,20 @@ class KeyPressWindowEventTestCase(WindowEventsTestCase):
             modifiers.append('<Alt/Option>')
         if self.chosen_modifiers & key.MOD_CTRL:
             modifiers.append('<Ctrl>')
+        test_number = self.checks_passed + 1
 
-        self.question = """Please press and release the following combination of keys.
-Only use <Shift> if explicitly asked to do so.
-
-{} {}
-
-
-Press Esc if test does not pass.""".format(' '.join(modifiers), key.symbol_string(self.chosen_symbol))
+        self.question = (
+            "Key test {} / {}\n\n"
+            "Please press and release the following combination of keys.\n"
+            "Only use <Shift> if explicitly asked to do so.\n\n"
+            "{} {}\n\n\n"
+            "Press Esc if test does not pass."
+        ).format(
+            test_number,
+            self.number_of_checks,
+            ' '.join(modifiers),
+            key.symbol_string(self.chosen_symbol),
+        )
         self._render_question()
 
     def _is_correct_modifier_key(self, symbol):
@@ -261,13 +272,12 @@ class TextWindowEventsTest(WindowEventsTestCase):
         self._update_question()
 
     def _update_question(self):
-        self.question = """Please type the following character exactly.
-Use <Shift> if needed.
-
-{}
-
-
-Press Esc if test does not pass.""".format(self.chosen_text)
+        self.question = (
+            "Please type the following character exactly.\n"
+            "Use <Shift> if needed.\n\n"
+            "{}\n\n\n"
+            "Press Esc if test does not pass."
+        ).format(self.chosen_text)
         self._render_question()
 
     def test_key_text(self):
@@ -308,14 +318,12 @@ class TextMotionWindowEventsTest(WindowEventsTestCase):
         self._update_question()
 
     def _update_question(self):
-        self.question = """Please press:
-
-{} ({})
-
-
-Press the X key if you do not have this motion key.
-Press Esc if test does not pass.""".format(key.motion_string(self.chosen_key),
-                                           key.symbol_string(self.chosen_key))
+        self.question = (
+            "Please press:\n\n"
+            "{} ({})\n\n\n"
+            "Press the X key if you do not have this motion key.\n"
+            "Press Esc if test does not pass."
+        ).format(key.motion_string(self.chosen_key), key.symbol_string(self.chosen_key))
         self._render_question()
 
     def test_key_text_motion(self):
@@ -356,14 +364,12 @@ class TextMotionSelectWindowEventsTest(WindowEventsTestCase):
         self._update_question()
 
     def _update_question(self):
-        self.question = """Please hold <Shift> and press:
-
-{} ({})
-
-
-Press the X key if you do not have this motion key.
-Press Esc if test does not pass.""".format(key.motion_string(self.chosen_key),
-                                           key.symbol_string(self.chosen_key))
+        self.question = (
+            "Please hold <Shift> and press:\n\n"
+            "{} ({})\n\n\n"
+            "Press the X key if you do not have this motion key.\n"
+            "Press Esc if test does not pass."
+        ).format(key.motion_string(self.chosen_key), key.symbol_string(self.chosen_key))
         self._render_question()
 
     def test_key_text_motion_select(self):
@@ -551,8 +557,7 @@ class EVENT_RESIZE(InteractiveTestCase):
 
     Expected behaviour:
         One window will be opened.  Resize the window and ensure that the
-        dimensions printed to the terminal are correct.  You should see
-        a green border inside the window but no red.
+        dimensions printed to the terminal are correct.
 
         Close the window or press ESC to end the test.
     """
@@ -564,7 +569,7 @@ class EVENT_RESIZE(InteractiveTestCase):
         try:
             w.push_handlers(self)
             while not w.has_exit:
-                window_util.draw_client_border(w)
+                w.clear()
                 w.flip()
                 w.dispatch_events()
         finally:

@@ -108,7 +108,7 @@ from pyglet.font.dwrite.dwrite_lib import (
     DWRITE_INFORMATIONAL_STRING_FULL_NAME,
 )
 from pyglet.font.harfbuzz import get_harfbuzz_shaped_glyphs, get_resource_from_dw_font, harfbuzz_available
-from pyglet.image.codecs.wincodec_lib import GUID_WICPixelFormat32bppPBGRA, IWICBitmap
+from pyglet.libs.win32.wincodec import GUID_WICPixelFormat32bppPBGRA, IWICBitmap
 from pyglet.libs.win32 import UINT16, UINT32, UINT64, com
 from pyglet.libs.win32 import _kernel32 as kernel32
 from pyglet.libs.win32.constants import (

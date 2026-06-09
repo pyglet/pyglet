@@ -75,11 +75,12 @@ directory and display it within the window::
 
     window = pyglet.window.Window()
     image = pyglet.resource.image('kitten.jpg')
+    sprite = pyglet.sprite.Sprite(image, x=0, y=0)
 
     @window.event
     def on_draw():
         window.clear()
-        image.blit(0, 0)
+        sprite.draw()
 
     pyglet.app.run()
 
@@ -89,9 +90,9 @@ file (rather than the working directory).  To load an image not bundled with
 the application (for example, specified on the command line), you would use
 :func:`pyglet.image.load`.
 
-The :meth:`~pyglet.image.AbstractImage.blit` method draws the image.  The
-arguments ``(0, 0)`` tell pyglet to draw the image at pixel coordinates 0,
-0 in the window (the lower-left corner).
+The :class:`~pyglet.sprite.Sprite` class wraps an image for drawing. The
+``x=0`` and ``y=0`` arguments tell pyglet to position the sprite at pixel
+coordinates 0, 0 in the window (the lower-left corner).
 
 The complete code for this example is located in
 `examples/programming_guide/image_viewer.py`.

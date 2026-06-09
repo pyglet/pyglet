@@ -170,23 +170,23 @@ object value. In the above example, the name would be ``WindowBlock`` while the 
 
 Normally with OpenGL, you would have to manually assign a global binding point value to each Uniform Block for each Shader Program, as they are created. With Pyglet, the global binding values and assignments are all taken care of internally.
 
-Uniform Blocks can be a convenient way to update uniforms of multiple Shader Programs at once, as their data is shared. This allows you to access the same information from multiple Shader Programs without having to bind every program using it, just to modify the uniform values. This can be achieved through a :py:class:`~pyglet.graphics.shader.UniformBufferObject`.
+Uniform Blocks can be a convenient way to update uniforms of multiple Shader Programs at once, as their data is shared. This allows you to access the same information from multiple Shader Programs without having to bind every program using it, just to modify the uniform values. This can be achieved through a :py:class:`~pyglet.graphics.buffer.UniformBufferObject`.
 
 To modify the uniforms in a :py:class:`~pyglet.graphics.shader.UniformBlock`, you must first create a
-:py:class:`~pyglet.graphics.shader.UniformBufferObject` using the
+:py:class:`~pyglet.graphics.buffer.UniformBufferObject` using the
 :py:meth:`~pyglet.graphics.shader.UniformBlock.create_ubo` method.::
 
     ubo = program.uniform_blocks['WindowBlock'].create_ubo()
 
-The :py:class:`~pyglet.graphics.shader.UniformBufferObject` can then be used as a context manager for easy
+The :py:class:`~pyglet.graphics.buffer.UniformBufferObject` can then be used as a context manager for easy
 access to update its uniforms::
 
         with ubo as window_block:
             window_block.projection[:] = new_matrix
 
-You can also create multiple :py:class:`~pyglet.graphics.shader.UniformBufferObject` instances if you need to swap between different sets of data. Calling :py:meth:`~pyglet.graphics.shader.UniformBufferObject.bind` will bind the buffers data to the associated binding point.
+You can also create multiple :py:class:`~pyglet.graphics.buffer.UniformBufferObject` instances if you need to swap between different sets of data. Calling :py:meth:`~pyglet.graphics.buffer.UniformBufferObject.bind` will bind the buffers data to the associated binding point.
 
-There may come a point where you don't want a specific :py:class:`~pyglet.graphics.shader.ShaderProgram`, or a group of them, to use the same uniform data set as the rest of your shaders. At this point, you will have to modify the binding point of those Uniform Blocks to one that is unused. This can be done through :py:meth:`~pyglet.graphics.shader.UniformBlock.set_binding`. Once the binding has been set, you will have to create a new :py:class:`~pyglet.graphics.shader.UniformBufferObject` using the :py:meth:`~pyglet.graphics.shader.UniformBlock.create_ubo` method again and supply it with your new data set.
+There may come a point where you don't want a specific :py:class:`~pyglet.graphics.shader.ShaderProgram`, or a group of them, to use the same uniform data set as the rest of your shaders. At this point, you will have to modify the binding point of those Uniform Blocks to one that is unused. This can be done through :py:meth:`~pyglet.graphics.shader.UniformBlock.set_binding`. Once the binding has been set, you will have to create a new :py:class:`~pyglet.graphics.buffer.UniformBufferObject` using the :py:meth:`~pyglet.graphics.shader.UniformBlock.create_ubo` method again and supply it with your new data set.
 
 .. warning:: When assigning custom binding points through py:meth:`~pyglet.graphics.shader.UniformBlock.set_binding`, it is recommended to use an unassigned binding point, as unexpected behavior may occur. A warning will be output if such a collision occurs.
 
@@ -194,6 +194,39 @@ There may come a point where you don't want a specific :py:class:`~pyglet.graphi
              higher than the amount of Uniform Blocks in your application to prevent collisions.
 
 .. note:: Binding point 0 cannot be set, as it is used internally for ``WindowBlock``.
+
+Transform Feedback
+^^^^^^^^^^^^^^^^^^
+
+:py:class:`~pyglet.graphics.shader.TransformFeedbackShaderProgram` is a specialized
+ShaderProgram that captures vertex (or geometry) shader outputs into a buffer,
+instead of only rasterizing them to the framebuffer.
+
+This is useful for GPU particle updates, simulation steps, and other workflows
+where one draw pass generates data for later passes.
+
+Create one the same way as a normal ShaderProgram, but provide ``varyings`` when
+linking::
+
+    tf_program = pyglet.graphics.TransformFeedbackShaderProgram(
+        vertex_shader,
+        fragment_shader,
+        varyings=("next_position", "next_velocity"),
+    )
+
+``varyings`` names must match ``out`` variables declared in your shader stage.
+Captured values are written to transform feedback buffer binding points in the
+order provided by ``varyings``.
+
+Use ``varying_buffer_type="separate"`` (default) to write each varying to a
+separate binding point, or ``"interleaved"`` to pack them into one stream.
+
+After linking, bind one or more
+:py:class:`~pyglet.graphics.buffer.TransformFeedbackBuffer` objects with
+``bind_base``/``bind_range`` and run a draw call while transform feedback is
+active.
+
+See ``examples/opengl/transform_shader.py`` for a complete end-to-end example.
 
 
 Creating Vertex Lists
@@ -409,6 +442,22 @@ Example (indexed instancing)::
 
 If you lose track of your instances or wish to get them by index, you can do so via the helper method on the mesh
 vertex list: ``instance = vlist.get_instance_by_index(0)``.
+
+Instanced vertex lists also provide helper APIs for ordering:
+
+* ``vlist.instance_count`` to inspect the number of active instances.
+* ``vlist.get_instance_index(instance)`` to get the current slot for an instance.
+* ``vlist.swap_instances(a, b)`` to swap two instances.
+* ``vlist.move_instance_to_index(instance, index)`` to move one instance to a specific index.
+* ``vlist.move_to_back([inst1, inst2, ...])`` to move a subset to lower indices (drawn earlier).
+* ``vlist.move_to_top([inst1, inst2, ...])`` to move a subset to higher indices (drawn later).
+* ``vlist.set_instance_order([...])`` to set the full exact order of all active instances.
+
+.. note:: Moving instances may involve shifting existing instances around in the buffer, which can be slow.
+
+Groups control draw order between different vertex lists, but not between
+instances inside the same instanced vertex list. Use the ordering helpers above
+when you need explicit ordering among instances of a single mesh.
 
 Resource Management
 ~~~~~~~~~~~~~~~~~~~

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from pyglet.util import CodecRegistry, Decoder, Encoder, DecodeException, EncodeException
 
 if TYPE_CHECKING:
-    from typing import BinaryIO
+    from typing import BinaryIO, TextIO
     from pyglet.model import Model, Scene
 
 
@@ -25,7 +25,7 @@ class ModelEncodeException(EncodeException):
 
 
 class ModelDecoder(Decoder):
-    def decode(self, filename: str, file: BinaryIO | None) -> Scene:
+    def decode(self, filename: str, file: BinaryIO | TextIO | None) -> Scene:
         """Decode the given file object and return a Scene instance.
 
         Throws ModelDecodeException if there is an error. If passing

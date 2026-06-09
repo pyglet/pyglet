@@ -1,18 +1,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Callable, Generator
+from typing import Any, TYPE_CHECKING, Callable, Generator
 
 from pyglet.enums import BlendFactor, BlendOp, CompareOp
 from pyglet.graphics.api.webgl.enums import blend_factor_map, compare_op_map
 from pyglet.graphics.api.webgl.gl import GL_BLEND, GL_DEPTH_TEST, GL_SCISSOR_TEST, GL_TEXTURE0
-from pyglet.graphics.state import State
+from pyglet.graphics.state import State, _BaseScissorState, _BaseViewportState
 
 if TYPE_CHECKING:
-    from pyglet.graphics.api.webgl.webgl_js import WebGLTexture
-    from pyglet.graphics.api.webgl import OpenGLSurfaceContext
-    from pyglet.graphics import Group
+    from pyglet.customtypes import ScissorProtocol
     from pyglet.graphics.api.webgl.shader import ShaderProgram
+    from pyglet.graphics.draw import DrawContext
     from pyglet.graphics.texture import Texture
 
 
@@ -21,12 +20,8 @@ class ActiveTextureState(State):
     binding: int
     sets_state: bool = True
 
-    def set_state(self, ctx: OpenGLSurfaceContext) -> None:
-        ctx.gl.activeTexture(GL_TEXTURE0 + self.binding)
-
-    # Technically not needed since this is a dependent state and will always be called with its parents.
-    # def unset_state(self, ctx: OpenGLSurfaceContext):
-    #    glActiveTexture(GL_TEXTURE0)
+    def set_state(self, ctx: DrawContext) -> None:
+        ctx.surface_ctx.gl.activeTexture(GL_TEXTURE0 + self.binding)
 
 
 @dataclass(frozen=True)
@@ -35,7 +30,7 @@ class TextureState(State):  # noqa: D101
     # WebGL doesn't expose the actual texture ID, so we use the python memory ID instead to consolidate the types
     # as Python doesn't allow the JS Proxy to be hashable.
     # However, the actual WebGL object needs to be passed for the function.
-    webgl_texture: WebGLTexture = field(hash=False, compare=False)
+    webgl_texture: Any = field(hash=False, compare=False)
     binding: int = 0
     set_id: int = 0
 
@@ -49,11 +44,32 @@ class TextureState(State):  # noqa: D101
                    binding=binding,
                    set_id=set_id)
 
-    def set_state(self, ctx: OpenGLSurfaceContext) -> None:
-        ctx.gl.bindTexture(self.texture[0], self.webgl_texture)
+    def set_state(self, ctx: DrawContext) -> None:
+        ctx.surface_ctx.gl.bindTexture(self.texture[0], self.webgl_texture)
 
     def generate_parent_states(self) -> Generator[State, None, None]:
         yield ActiveTextureState(self.binding)
+
+
+@dataclass(frozen=True)
+class MultiTextureSamplerState(State):
+    """Static per-program sampler bindings for multi-texture draws."""
+    program: ShaderProgram
+    uniforms: tuple[tuple[str, int], ...]
+
+    sets_state: bool = True
+
+    @classmethod
+    def from_textures(
+            cls,
+            program: ShaderProgram,
+            textures: dict[str, Texture],
+            first_texture_unit: int = 0) -> MultiTextureSamplerState:
+        return cls(program, tuple((name, idx) for idx, name in enumerate(textures, first_texture_unit)))
+
+    def set_state(self, ctx: DrawContext) -> None:
+        for uniform_name, texture_unit in self.uniforms:
+            self.program[uniform_name] = texture_unit
 
 
 @dataclass(frozen=True)
@@ -61,13 +77,10 @@ class ShaderProgramState(State):
     program: ShaderProgram
 
     sets_state: bool = True
-    #unsets_state: bool = True
 
-    def set_state(self, ctx: OpenGLSurfaceContext) -> None:
+    def set_state(self, ctx: DrawContext) -> None:
         self.program.use()
-
-    #def unset_state(self, ctx: OpenGLSurfaceContext) -> None:
-    #    self.program.stop()l
+        ctx.active_shader_program = self.program
 
 
 @dataclass(frozen=True)
@@ -82,29 +95,16 @@ class RenderAreaState(State):
 
 
 @dataclass(frozen=True)
-class ScissorStateEnable(State):
+class ScissorState(_BaseScissorState):
+    scissor: ScissorProtocol
+    owned_by_camera: bool = False
+
     sets_state: bool = True
     unsets_state: bool = True
+    enforced_state: bool = True
 
-    def set_state(self, ctx: OpenGLSurfaceContext) -> None:
-        ctx.gl.enable(GL_SCISSOR_TEST)
-
-    def unset_state(self, ctx: OpenGLSurfaceContext) -> None:
-        ctx.gl.disable(GL_SCISSOR_TEST)
-
-
-@dataclass(frozen=True)
-class ScissorState(State):
-    group: Group
-
-    sets_state: bool = True
-    parents: bool = True
-
-    def generate_parent_states(self) -> Generator[State, None, None]:
-        yield ScissorStateEnable()
-
-    def set_state(self, ctx: OpenGLSurfaceContext) -> None:
-        ctx.gl.scissor(*self.group.data["scissor"])
+    def apply_to_backend(self, ctx: DrawContext) -> None:
+        ctx.apply_scissor()
 
 
 @dataclass(frozen=True)
@@ -112,11 +112,11 @@ class BlendStateEnable(State):
     sets_state: bool = True
     unsets_state: bool = True
 
-    def set_state(self, ctx: OpenGLSurfaceContext) -> None:
-        ctx.gl.enable(GL_BLEND)
+    def set_state(self, ctx: DrawContext) -> None:
+        ctx.surface_ctx.gl.enable(GL_BLEND)
 
-    def unset_state(self, ctx: OpenGLSurfaceContext) -> None:
-        ctx.gl.disable(GL_BLEND)
+    def unset_state(self, ctx: DrawContext) -> None:
+        ctx.surface_ctx.gl.disable(GL_BLEND)
 
 
 @dataclass(frozen=True)
@@ -130,12 +130,9 @@ class BlendState(State):
 
     def generate_parent_states(self) -> Generator[State, None, None]:
         yield BlendStateEnable()
-        # Do later.
-        # if self.op != BlendOp.ADD:
-        #    yield GLBlendState(blend_factor_map[self.src], self.op)
 
-    def set_state(self, ctx: OpenGLSurfaceContext) -> None:
-        ctx.gl.blendFunc(blend_factor_map[self.src], blend_factor_map[self.dst])
+    def set_state(self, ctx: DrawContext) -> None:
+        ctx.surface_ctx.gl.blendFunc(blend_factor_map[self.src], blend_factor_map[self.dst])
 
 
 @dataclass(frozen=True)
@@ -143,11 +140,11 @@ class DepthTestStateEnable(State):
     sets_state: bool = True
     unsets_state: bool = True
 
-    def set_state(self, ctx: OpenGLSurfaceContext) -> None:
-        ctx.gl.enable(GL_DEPTH_TEST)
+    def set_state(self, ctx: DrawContext) -> None:
+        ctx.surface_ctx.gl.enable(GL_DEPTH_TEST)
 
-    def unset_state(self, ctx: OpenGLSurfaceContext) -> None:
-        ctx.gl.disable(GL_DEPTH_TEST)
+    def unset_state(self, ctx: DrawContext) -> None:
+        ctx.surface_ctx.gl.disable(GL_DEPTH_TEST)
 
 
 @dataclass(frozen=True)
@@ -160,8 +157,8 @@ class DepthBufferComparison(State):
     def generate_parent_states(self) -> Generator[State, None, None]:
         yield DepthTestStateEnable()
 
-    def set_state(self, ctx: OpenGLSurfaceContext) -> None:
-        ctx.gl.depthFunc(compare_op_map[self.func])
+    def set_state(self, ctx: DrawContext) -> None:
+        ctx.surface_ctx.gl.depthFunc(compare_op_map[self.func])
 
 
 @dataclass(frozen=True)
@@ -190,16 +187,18 @@ class PolygonModeState(State):
 
 
 @dataclass(frozen=True)
-class ViewportState(State):
+class ViewportState(_BaseViewportState):
     x: int
     y: int
     width: int
     height: int
 
     sets_state: bool = True
+    unsets_state: bool = True
+    enforced_state: bool = True
 
-    def set_state(self, ctx: OpenGLSurfaceContext) -> None:
-        ctx.gl.viewport(self.x, self.y, self.width, self.height)
+    def apply_to_backend(self, ctx: DrawContext) -> None:
+        ctx.apply_viewport()
 
 
 @dataclass(frozen=True)
@@ -215,7 +214,7 @@ class ShaderUniformState(State):
 
     sets_state: bool = True
 
-    def set_state(self, ctx: OpenGLSurfaceContext) -> None:
+    def set_state(self, ctx: DrawContext) -> None:
         for name, value in self.data.items():
             self.program[name] = value
 
@@ -224,4 +223,3 @@ class ShaderUniformState(State):
 
     def __eq__(self, other: State) -> bool:
         return False
-

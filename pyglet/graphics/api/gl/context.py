@@ -5,10 +5,23 @@ import weakref
 from typing import Callable, TYPE_CHECKING
 
 from pyglet.enums import GraphicsAPI
+from pyglet.graphics import GraphicsAPIError, GraphicsIntegrationError
 from pyglet.graphics.api.gl import gl, gl_info, ObjectSpace
 from pyglet.graphics.api.base import SurfaceContext, NullContext
-from pyglet.graphics.api.gl.gl import GLFunctions, GLuint, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT
-
+from pyglet.graphics.api.gl.gl import (
+    GL_ALREADY_SIGNALED,
+    GL_COLOR_BUFFER_BIT,
+    GL_CONDITION_SATISFIED,
+    GL_DEPTH_BUFFER_BIT,
+    GL_SYNC_GPU_COMMANDS_COMPLETE,
+    GL_TIMEOUT_EXPIRED,
+    GL_WAIT_FAILED,
+    GLFunctions,
+    GLuint,
+    GL_SYNC_FLUSH_COMMANDS_BIT,
+    GL_TIMEOUT_IGNORED,
+)
+from pyglet.graphics.api.gl.renderer import GLRenderer
 
 if TYPE_CHECKING:
     from pyglet.config import SurfaceConfig
@@ -50,10 +63,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
                 A context to share objects with. Use ``None`` to disable sharing.
         """
         self._context = None
-        self.core = core
-        self.window = window
-        self.config = config
-        #super().__init__(core, window, config)
+        super().__init__(core, window, config)
         self.context_share = context_share or None  # Use a real NoneType instead of NullContext
         self.is_current = False
         self._info = gl_info.GLInfo(platform_info)
@@ -69,6 +79,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
             self.object_space = ObjectSpace()
 
         self.cached_programs = weakref.WeakValueDictionary()
+        self.renderer = GLRenderer(self)
 
         # GLES needs an FBO to read pixel data.
         self.gles_pixel_fbo = None
@@ -108,8 +119,36 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
         #     raise RuntimeError(msg)
         self.window = window
 
-    def before_draw(self) -> None:
+    def frame_begin(self) -> None:
         self.set_current()
+        super().frame_begin()
+
+    def create_frame_fence(self) -> object | None:
+        if not (self.info.have_version(3, 2) or self.info.have_extension("GL_ARB_sync")):
+            return None
+        return self.glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0)
+
+    def wait_frame_fence(self, fence) -> None:
+        self.glClientWaitSync(fence, GL_SYNC_FLUSH_COMMANDS_BIT, GL_TIMEOUT_IGNORED)
+
+    def poll_frame_fence(self, fence) -> bool:
+        if fence is None:
+            return True
+
+        result = self.glClientWaitSync(fence, 0, 0)
+        if result in (GL_ALREADY_SIGNALED, GL_CONDITION_SATISFIED):
+            return True
+        if result == GL_TIMEOUT_EXPIRED:
+            return False
+        if result == GL_WAIT_FAILED:
+            raise GraphicsAPIError("glClientWaitSync failed")
+
+        msg = f"Unexpected glClientWaitSync result: {result}"
+        raise GraphicsIntegrationError(msg)
+
+    def delete_frame_fence(self, fence) -> None:
+        if fence is not None:
+            self.glDeleteSync(fence)
 
     def set_current(self) -> None:
         """Make this the active Context.

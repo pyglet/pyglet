@@ -28,7 +28,7 @@ from pyglet.font.dwrite.dwrite_lib import (
     IDWriteTextFormat,
     IDWriteTextLayout,
 )
-from pyglet.image.codecs.wincodec_lib import IWICBitmap, IWICBitmapSource
+from pyglet.libs.win32.wincodec import IWICBitmap, IWICBitmapSource
 from pyglet.libs.win32 import c_void, com
 from pyglet.libs.win32.types import BYTE, UINT32, UINT64
 

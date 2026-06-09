@@ -42,7 +42,7 @@ This widget can also take an optional image for 'hover', but we'll skip that for
     )
 
 We now have a PushButton widget, but it won't yet do anything. It will be drawn on
-screen, however, if included as part of a :py:class:`~pyglet.graphics.Batch` as shown
+screen, however, if included as part of a :py:class:`~pyglet.graphics.draw.Batch` as shown
 above. In order to get the widget to react to the mouse, we need to set it to handle
 events dispatched by the Window::
 

@@ -98,6 +98,30 @@ Instead, to draw an image, create a py:class:`~pyglet.sprite.Sprite` and constru
 Additionally, ``ImageData.get_data`` and ``ImageData.set_data`` have been removed after being deprecated. Use
 ``ImageData.get_bytes`` and ``ImageData.set_bytes`` instead (the same applies to ``ImageDataRegion``).
 
+Removed image buffer APIs
+-------------------------
+The legacy ``pyglet.image`` buffer API has been removed.
+
+The following names have been removed:
+
+* ``pyglet.image.BufferManager``
+* ``pyglet.image.get_buffer_manager``
+* ``pyglet.image.BufferImage``
+* ``pyglet.image.ColorBufferImage``
+* ``pyglet.image.DepthBufferImage``
+* ``pyglet.image.BufferImageMask``
+
+For explicit framebuffer objects, use
+:py:class:`pyglet.graphics.framebuffer.Framebuffer`.
+
+For screenshots, replace this pattern::
+
+    pyglet.image.get_buffer_manager().get_color_buffer().save('screenshot.png')
+
+With::
+
+    pyglet.graphics.framebuffer.get_screenshot().save("screenshot.png")
+
 
 Resource Image and Texture Loading
 ----------------------------------
@@ -123,7 +147,7 @@ Image Grids
 -----------
 The function `pyglet.image.ImageGrid.get_texture_sequence` has been removed. This is no longer recommended,
 as it created it's own texture, further reducing performance. Going forward, it is best to
-use :py:class:`~pyglet.graphics.TextureGrid`. This behaves the same way as :py:class:`~pyglet.image.ImageGrid`, but
+use :py:class:`~pyglet.graphics.texture.TextureGrid`. This behaves the same way as :py:class:`~pyglet.image.ImageGrid`, but
 for textures. This will allow you to use an already existing texture, such as one loaded from an atlas.
 
 

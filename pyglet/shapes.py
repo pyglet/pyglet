@@ -3,7 +3,7 @@
 This module provides classes for a variety of simplistic 2D shapes,
 such as Rectangles, Circles, and Lines. These shapes are made
 internally from OpenGL primitives, and provide excellent performance
-when drawn as part of a :py:class:`~pyglet.graphics.Batch`.
+when drawn as part of a :py:class:`~pyglet.graphics.draw.Batch`.
 Convenience methods are provided for positioning, changing color, opacity,
 and rotation.
 The Python ``in`` operator can be used to check whether a point is inside a shape.
@@ -72,12 +72,14 @@ from typing import TYPE_CHECKING, Sequence, Tuple, Union
 
 import pyglet
 from pyglet.extlibs import earcut
-from pyglet.graphics import Batch, Group, ShaderProgram
+from pyglet.graphics import Group
 from pyglet.enums import BlendFactor, GeometryMode, GraphicsAPI
 from pyglet.math import Vec2
+from pyglet.graphics.draw import DrawContext, BatchDrawOptions
 
 if TYPE_CHECKING:
     from pyglet.graphics.shader import ShaderProgram
+    from pyglet.graphics.draw import Batch
 
 
 if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
@@ -441,13 +443,21 @@ class ShapeBase(ABC):
         .. warning:: Avoid this inefficient method for everyday use!
 
                      Regular drawing should add shapes to a :py:class:`Batch`
-                     and call its :py:meth:`~Batch.draw` method.
+                     and call its :py:meth:`~pyglet.graphics.draw.Batch.draw` method.
 
         """
         ctx = pyglet.graphics.api.core.current_context
-        self._group.set_state_recursive(ctx)
+
+        draw_ctx = DrawContext(
+            surface_ctx=ctx,
+            backend_ctx=None,
+            draw_pass=BatchDrawOptions().resolve(ctx),
+            renderer=ctx.renderer,
+        )
+        draw_ctx.begin()
+        self._group.set_state_recursive(draw_ctx)
         self._vertex_list.draw(self._draw_mode)
-        self._group.unset_state_recursive(ctx)
+        self._group.unset_state_recursive(draw_ctx)
 
     def delete(self) -> None:
         """Force immediate removal of the shape from video memory.
@@ -1740,11 +1750,6 @@ class BorderedRectangle(ShapeBase):
                 The RGB or RGBA fill color of the border, specified
                 as a tuple of 3 or 4 ints in the range of 0-255. RGB
                 colors will be treated as having an opacity of 255.
-
-                The alpha values must match if you pass RGBA values to
-                both this argument and `border_color`. If they do not,
-                a `ValueError` will be raised informing you of the
-                ambiguity.
             blend_src:
                 OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
             blend_dest:
@@ -1767,24 +1772,8 @@ class BorderedRectangle(ShapeBase):
         fill_r, fill_g, fill_b, *fill_a = color
         border_r, border_g, border_b, *border_a = border_color
 
-        # Start with a default alpha value of 255.
-        alpha = 255
-        # Raise Exception if we have conflicting alpha values
-        if fill_a and border_a and fill_a[0] != border_a[0]:
-            raise ValueError("When color and border_color are both RGBA values,"
-                             "they must both have the same opacity")
-
-        # Choose a value to use if there is no conflict
-        if fill_a:
-            alpha = fill_a[0]
-        elif border_a:
-            alpha = border_a[0]
-
-        # Although the shape is only allowed one opacity, the alpha is
-        # stored twice to keep other code concise and reduce cpu usage
-        # from stitching together sequences.
-        self._rgba = fill_r, fill_g, fill_b, alpha
-        self._border_rgba = border_r, border_g, border_b, alpha
+        self._rgba = fill_r, fill_g, fill_b, fill_a[0] if fill_a else 255
+        self._border_rgba = border_r, border_g, border_b, border_a[0] if border_a else 255
 
         super().__init__(8, blend_src, blend_dest, batch, group, program)
 
@@ -1880,8 +1869,8 @@ class BorderedRectangle(ShapeBase):
         * An RGBA tuple of integers ``(red, green, blue, alpha)``
         * An RGB tuple of integers ``(red, green, blue)``
 
-        Setting the alpha on this property will change the alpha of
-        the entire shape, including both the fill and the border.
+        Setting the alpha on this property only changes the border
+        opacity.
 
         Each color component must be in the range 0 (dark) to 255 (saturated).
         """
@@ -1897,10 +1886,9 @@ class BorderedRectangle(ShapeBase):
         if a:
             alpha = a[0]
         else:
-            alpha = self._rgba[3]
+            alpha = self._border_rgba[3]
 
         self._border_rgba = r, g, b, alpha
-        self._rgba = *self._rgba[:3], alpha
 
         self._update_color()
 
@@ -1916,8 +1904,8 @@ class BorderedRectangle(ShapeBase):
         * An RGBA tuple of integers ``(red, green, blue, alpha)``
         * An RGB tuple of integers ``(red, green, blue)``
 
-        Setting the alpha through this property will change the alpha
-        of the entire shape, including both the fill and the border.
+        Setting the alpha through this property only changes the fill
+        opacity.
 
         Each color component must be in the range 0 (dark) to 255
         (saturated).
@@ -1937,7 +1925,6 @@ class BorderedRectangle(ShapeBase):
             alpha = self._rgba[3]
 
         self._rgba = r, g, b, alpha
-        self._border_rgba = *self._border_rgba[:3], alpha
         self._update_color()
 
 

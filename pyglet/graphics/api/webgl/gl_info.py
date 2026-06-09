@@ -69,6 +69,11 @@ class GLInfo(SurfaceInfo):
 
         self.MAX_COMBINED_TEXTURE_IMAGE_UNITS = self._get_parameter(gl, "MAX_COMBINED_TEXTURE_IMAGE_UNITS")
         self.MAX_UNIFORM_BUFFER_BINDINGS = self._get_parameter(gl, "MAX_UNIFORM_BUFFER_BINDINGS")
+        self.MAX_UNIFORM_BUFFER_OFFSET_ALIGNMENT = self._get_parameter(
+            gl,
+            "UNIFORM_BUFFER_OFFSET_ALIGNMENT",
+            default=1,
+        )
         self.MAX_UNIFORM_BLOCK_SIZE = self._get_parameter(gl, "MAX_UNIFORM_BLOCK_SIZE")
         self.MAX_VERTEX_ATTRIBS = self._get_parameter(gl, "MAX_VERTEX_ATTRIBS")
 

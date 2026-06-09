@@ -1,11 +1,9 @@
 """Tests for window settings."""
 import pytest
-import time
 
 from tests.base.interactive import InteractiveTestCase
-from tests.interactive.window import window_util
 
-from pyglet import image
+from pyglet import app, clock, image
 from pyglet.window import key, Window, ImageMouseCursor
 from pyglet.window.event import WindowEventLogger
 
@@ -120,8 +118,8 @@ class WINDOW_SET_FULLSCREEN(InteractiveTestCase):
             self.w.set_fullscreen(False)
 
     def on_expose(self):
-        glClearColor(1, 0, 0, 1)
-        glClear(GL_COLOR_BUFFER_BIT)
+        self.w.context.set_clear_color(1.0, 0.0, 0.0, 1.0)
+        self.w.clear()
         self.w.flip()
 
     def test_set_fullscreen(self):
@@ -239,8 +237,6 @@ class WINDOW_SET_MIN_MAX_SIZE(InteractiveTestCase):
         - press "n" to set the minimum size to be the current size.
         - press "x" to set the maximum size to be the current size.
 
-        You should see a green border inside the window but no red.
-
         Close the window or press ESC to end the test.
     """
     def on_resize(self, width, height):
@@ -261,7 +257,7 @@ class WINDOW_SET_MIN_MAX_SIZE(InteractiveTestCase):
         try:
             w.push_handlers(self)
             while not w.has_exit:
-                window_util.draw_client_border(w)
+                w.clear()
                 w.flip()
                 w.dispatch_events()
         finally:
@@ -287,11 +283,11 @@ class WINDOW_SET_MOUSE_CURSOR(InteractiveTestCase):
         self.w = w = Window(self.width, self.height)
         try:
             img = image.load(self.get_test_data_file('images', 'cursor.png'))
-            w.set_mouse_cursor(ImageMouseCursor(img, 4, 28))
+            w.set_mouse_cursor(ImageMouseCursor(img, 4, 28, acceleration=True))
             w.push_handlers(self)
-            glClearColor(1, 1, 1, 1)
+            w.context.set_clear_color(1.0, 0.0, 0.0, 1.0)
             while not w.has_exit:
-                glClear(GL_COLOR_BUFFER_BIT)
+                w.clear()
                 w.flip()
                 w.dispatch_events()
         finally:
@@ -349,13 +345,13 @@ class WINDOW_SET_MOUSE_PLATFORM_CURSOR(InteractiveTestCase):
 
         return True
 
-    def test_set_visible(self):
+    def test_setting_platform_cursor(self):
         self.width, self.height = 200, 200
         self.w = w = Window(self.width, self.height)
         try:
             w.push_handlers(self)
             while not w.has_exit:
-                glClear(GL_COLOR_BUFFER_BIT)
+                w.clear()
                 w.flip()
                 w.dispatch_events()
         finally:
@@ -377,7 +373,7 @@ class WINDOW_SET_MOUSE_VISIBLE(InteractiveTestCase):
     def on_key_press(self, symbol, modifiers):
         if symbol == key.V:
             visible = (modifiers & key.MOD_SHIFT)
-            self.w.set_cursor_visible(visible)
+            self.w.set_mouse_cursor_visible(visible)
             print('Mouse is now %s' % (visible and 'visible' or 'hidden'))
 
     def on_mouse_motion(self, x, y, dx, dy):
@@ -408,8 +404,6 @@ class WINDOW_SET_SIZE(InteractiveTestCase):
         - press "y" to increase the height
         - press "Y" to decrease the height
 
-        You should see a green border inside the window but no red.
-
         Close the window or press ESC to end the test.
     """
     def on_key_press(self, symbol, modifiers):
@@ -429,7 +423,7 @@ class WINDOW_SET_SIZE(InteractiveTestCase):
         try:
             w.push_handlers(self)
             while not w.has_exit:
-                window_util.draw_client_border(w)
+                w.clear()
                 w.flip()
                 w.dispatch_events()
         finally:
@@ -463,60 +457,60 @@ class WINDOW_SET_VISIBLE(InteractiveTestCase):
         finally:
             w.close()
 
-
-@pytest.mark.requires_user_action
-class WINDOW_SET_VSYNC(InteractiveTestCase):
-    """Test that vsync can be set.
-
-    Expected behaviour:
-        A window will alternate between red and green fill.
-
-        - Press "v" to toggle vsync on/off.  "Tearing" should only be visible
-            when vsync is off (as indicated at the terminal).
-
-        Not all video drivers support vsync.  On Linux, check the output of
-        `tools/info.py`:
-
-        - If GLX_SGI_video_sync extension is present, should work as expected.
-        - If GLX_MESA_swap_control extension is present, should work as expected.
-        - If GLX_SGI_swap_control extension is present, vsync can be enabled,
-            but once enabled, it cannot be switched off (there will be no error
-            message).
-        - If none of these extensions are present, vsync is not supported by
-            your driver, but no error message or warning will be printed.
-
-        Close the window or press ESC to end the test.
-    """
-    colors = [(1, 0, 0, 1), (0, 1, 0, 1)]
-    color_index = 0
-
-    def open_window(self):
-        return Window(200, 200, vsync=False)
-
-    def on_key_press(self, symbol, modifiers):
-        if symbol == key.V:
-            vsync = not self.w1.vsync
-            self.w1.set_vsync(vsync)
-            print('vsync is %r' % self.w1.vsync)
-
-    def draw_window(self, window, colour):
-        window.switch_to()
-        glClearColor(*colour)
-        glClear(GL_COLOR_BUFFER_BIT)
-        window.flip()
-
-    def test_open_window(self):
-        self.w1 = self.open_window()
-        try:
-            self.w1.push_handlers(self)
-            print('vsync is %r' % self.w1.vsync)
-            while not self.w1.has_exit:
-                self.color_index = 1 - self.color_index
-                self.draw_window(self.w1, self.colors[self.color_index])
-                self.w1.dispatch_events()
-        finally:
-            self.w1.close()
-        self.user_verify('Pass test?', take_screenshot=False)
+# Commenting this as seizure inducing.
+# @pytest.mark.requires_user_action
+# class WINDOW_SET_VSYNC(InteractiveTestCase):
+#     """Test that vsync can be set.
+#
+#     Expected behaviour:
+#         A window will alternate between red and green fill.
+#
+#         - Press "v" to toggle vsync on/off.  "Tearing" should only be visible
+#             when vsync is off (as indicated at the terminal).
+#
+#         Not all video drivers support vsync.  On Linux, check the output of
+#         `tools/info.py`:
+#
+#         - If GLX_SGI_video_sync extension is present, should work as expected.
+#         - If GLX_MESA_swap_control extension is present, should work as expected.
+#         - If GLX_SGI_swap_control extension is present, vsync can be enabled,
+#             but once enabled, it cannot be switched off (there will be no error
+#             message).
+#         - If none of these extensions are present, vsync is not supported by
+#             your driver, but no error message or warning will be printed.
+#
+#         Close the window or press ESC to end the test.
+#     """
+#     colors = [(1, 0, 0, 1), (0, 1, 0, 1)]
+#     color_index = 0
+#
+#     def open_window(self):
+#         return Window(200, 200, vsync=False)
+#
+#     def on_key_press(self, symbol, modifiers):
+#         if symbol == key.V:
+#             vsync = not self.w1.vsync
+#             self.w1.set_vsync(vsync)
+#             print('vsync is %r' % self.w1.vsync)
+#
+#     def draw_window(self, window, colour):
+#         window.switch_to()
+#         window.context.set_clear_color(*colour)
+#         window.clear()
+#         window.flip()
+#
+#     def test_open_window(self):
+#         self.w1 = self.open_window()
+#         try:
+#             self.w1.push_handlers(self)
+#             print('vsync is %r' % self.w1.vsync)
+#             while not self.w1.has_exit:
+#                 self.color_index = 1 - self.color_index
+#                 self.draw_window(self.w1, self.colors[self.color_index])
+#                 self.w1.dispatch_events()
+#         finally:
+#             self.w1.close()
+#         self.user_verify('Pass test?', take_screenshot=False)
 
 
 @pytest.mark.requires_user_action
@@ -531,23 +525,36 @@ class WINDOW_SET_CAPTION(InteractiveTestCase):
         Press escape or close either window to finished the test.
     """
     def test_caption(self):
+        w1 = None
+        w2 = None
+        count = 1
+        elapsed = 0.0
+
+        def _update_caption_and_exit(dt):
+            nonlocal count, elapsed
+            if w1.has_exit or w2.has_exit:
+                app.exit()
+                return
+
+            elapsed += dt
+            if elapsed >= 1.0:
+                elapsed -= 1.0
+                count += 1
+                w1.set_caption('Window caption %d' % count)
+
         try:
             w1 = Window(400, 200, resizable=True)
             w2 = Window(400, 200, resizable=True)
-            count = 1
             w1.set_caption('Window caption %d' % count)
             w2.set_caption(u'\u00bfHabla espa\u00f1ol?')
-            last_time = time.time()
-            while not (w1.has_exit or w2.has_exit):
-                if time.time() - last_time > 1:
-                    count += 1
-                    w1.set_caption('Window caption %d' % count)
-                    last_time = time.time()
-                w1.dispatch_events()
-                w2.dispatch_events()
+            clock.schedule_interval(_update_caption_and_exit, 1 / 30)
+            app.run(interval=None)
         finally:
-            w1.close()
-            w2.close()
+            clock.unschedule(_update_caption_and_exit)
+            if w1 is not None:
+                w1.close()
+            if w2 is not None:
+                w2.close()
         self.user_verify('Pass test?', take_screenshot=False)
 
 
@@ -563,8 +570,6 @@ class WINDOW_FIXED_SET_SIZE(InteractiveTestCase):
         - press "X" to decrease the width
         - press "y" to increase the height
         - press "Y" to decrease the height
-
-        You should see a green border inside the window but no red.
 
         Close the window or press ESC to end the test.
     """
@@ -585,7 +590,7 @@ class WINDOW_FIXED_SET_SIZE(InteractiveTestCase):
         try:
             w.push_handlers(self)
             while not w.has_exit:
-                window_util.draw_client_border(w)
+                w.clear()
                 w.flip()
                 w.dispatch_events()
         finally:

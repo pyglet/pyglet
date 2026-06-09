@@ -2,7 +2,7 @@ import pytest
 
 import pyglet
 
-from tests.annotations import skip_graphics_api, GraphicsAPI
+from tests.annotations import skip_graphics_api, GraphicsAPIGroups
 
 _MATRIX_UNIFORMS = (
     ("mat2", 4),
@@ -84,7 +84,7 @@ def _render_program_to_pixel(program) -> bytes:
     return texture.get_image_data().get_bytes('RGBA', 4)
 
 
-@skip_graphics_api(GraphicsAPI.GL2)
+@skip_graphics_api(GraphicsAPIGroups.GL2)
 def test_shader_ubo_data_structure(gl3_context):
     """Test to make sure the Structure that is created is correct for UBO's.
     
@@ -193,7 +193,7 @@ def test_shader_ubo_data_structure(gl3_context):
     assert all(channel == 255 for channel in image_data)
 
 
-@skip_graphics_api(GraphicsAPI.GL2)
+@skip_graphics_api(GraphicsAPIGroups.GL2)
 def test_shader_ubo_matrix_data_structure(gl3_context):
     """Test UBO structure with matrix."""
 
@@ -295,7 +295,7 @@ def test_shader_ubo_matrix_data_structure(gl3_context):
     assert all(channel == 255 for channel in image_data)
 
 
-@skip_graphics_api(GraphicsAPI.GL2)
+@skip_graphics_api(GraphicsAPIGroups.GL2)
 def test_shader_uniform_block_matrix(gl3_context):
     vertex_source: str = """#version 150 core
         in vec3 translate;
@@ -393,7 +393,7 @@ def test_shader_uniform_block_matrix(gl3_context):
     assert all(channel == 255 for channel in image_data)
 
 
-@skip_graphics_api(GraphicsAPI.GL2)
+@skip_graphics_api(GraphicsAPIGroups.GL2)
 def test_shader_uniform_matrix(gl3_context):
     vertex_source: str = """#version 150 core
         in vec3 translate;
@@ -467,7 +467,7 @@ def test_shader_uniform_matrix(gl3_context):
         assert a == pytest.approx(b, abs=1e-06)
 
 
-@skip_graphics_api(GraphicsAPI.GL2)
+@skip_graphics_api(GraphicsAPIGroups.GL2)
 def test_shader_uniform_matrix_array(gl3_context):
     vertex_source: str = """#version 150 core
         in vec3 translate;
@@ -543,7 +543,7 @@ def test_shader_uniform_matrix_array(gl3_context):
         assert a == pytest.approx(b)
 
 
-@skip_graphics_api(GraphicsAPI.GL2)
+@skip_graphics_api(GraphicsAPIGroups.GL2)
 def test_shader_uniform_float_array(gl3_context):
     vertex_source: str = """#version 150 core
         in vec3 translate;
@@ -683,3 +683,45 @@ def test_shader_uniform_matrix_array_types(gl3_context, matrix_type, matrix_leng
     assert len(fetched_data[2]) == matrix_length
     for actual, expected in zip(fetched_data[2], test_data):
         assert actual == pytest.approx(expected, abs=1e-06)
+
+
+@skip_graphics_api(GraphicsAPIGroups.GL2)
+def test_transform_feedback_shader_program_varyings_are_linked(gl3_context):
+    vertex_source = """#version 150 core
+        in vec3 position;
+        out vec3 tf_position;
+
+        void main()
+        {
+            gl_Position = vec4(position, 1.0);
+            tf_position = position;
+        }
+    """
+
+    fragment_source = """#version 150 core
+        out vec4 final_colors;
+
+        void main()
+        {
+            final_colors = vec4(1.0);
+        }
+    """
+
+    program = pyglet.graphics.TransformFeedbackShaderProgram(
+        pyglet.graphics.Shader(vertex_source, "vertex"),
+        pyglet.graphics.Shader(fragment_source, "fragment"),
+        varyings=["tf_position"],
+    )
+
+    from pyglet.graphics.api.gl import gl
+
+    link_status = gl.GLint(0)
+    tf_count = gl.GLint(0)
+    ctx = pyglet.graphics.api.core.current_context
+    ctx.glGetProgramiv(program.id, gl.GL_LINK_STATUS, link_status)
+    ctx.glGetProgramiv(program.id, gl.GL_TRANSFORM_FEEDBACK_VARYINGS, tf_count)
+    link_status = link_status.value
+    tf_count = tf_count.value
+
+    assert link_status == 1
+    assert tf_count == 1

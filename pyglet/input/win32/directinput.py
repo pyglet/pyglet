@@ -268,11 +268,13 @@ class DIDeviceManager(EventDispatcher):
 
     def _unregister_device_events(self) -> None:
         if self.registered:
-            if WM_DEVICECHANGE in self.window._event_handlers:  # noqa: SLF001
+            if self.window is not None and WM_DEVICECHANGE in self.window._event_handlers:  # noqa: SLF001
                 del self.window._event_handlers[WM_DEVICECHANGE]  # noqa: SLF001
             self.registered = False
         if self._devnotify:
-            _user32.UnregisterDeviceNotification(self._devnotify)
+            unregister = getattr(_user32, "UnregisterDeviceNotification", None)
+            if unregister:
+                unregister(self._devnotify)
 
         self._devnotify = None
 
@@ -290,7 +292,12 @@ class DIDeviceManager(EventDispatcher):
         self.window = None
 
     def __del__(self) -> None:
-        self._unregister_device_events()
+        # During interpreter teardown, module globals can already be cleared.
+        # Cleanup in __del__ must be best-effort and never raise.
+        try:
+            self._unregister_device_events()
+        except Exception:
+            pass
 
     def _get_devices(self, display=None):
         """Enumerate all the devices on the system.

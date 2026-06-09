@@ -422,14 +422,11 @@ class Win32Window(BaseWindow):
 
         _user32.SetLayeredWindowAttributes(self._hwnd, 0, 255, constants.LWA_ALPHA)
 
-    def flip(self) -> None:
-        self.draw_mouse_cursor()
-
+    def present(self) -> None:
         if not self._fullscreen and not self._always_dwm and self._dwm_composition_enabled() and self._interval:
             _dwmapi.DwmFlush()
 
-        if self._context:
-            self._context.flip()
+        super().present()
 
     def set_mouse_passthrough(self, state: bool) -> None:
         color_ref = COLORREF()

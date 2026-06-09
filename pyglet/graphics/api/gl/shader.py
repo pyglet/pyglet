@@ -24,7 +24,7 @@ from ctypes import (
     create_string_buffer,
     sizeof, c_void_p,
 )
-from typing import TYPE_CHECKING, Any, Callable, Sequence, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Literal, Sequence, Type, Union, overload
 
 import pyglet
 from pyglet.graphics.api.gl import GLException, gl, OpenGLSurfaceContext
@@ -37,11 +37,12 @@ from pyglet.graphics.api.gl import (
     GL_UNIFORM_BUFFER,
 )
 from pyglet.graphics.shader import (
+    _AbstractShaderProgram,
     Attribute,
     AttributeView,
     _build_uniform_struct_from_uniforms,
     GraphicsAttribute,
-    Shader,
+    _AbstractShader,
     UBOBindingManager,
     UniformArrayBase,
     UniformBase,
@@ -49,6 +50,8 @@ from pyglet.graphics.shader import (
     ShaderProgram,
     ShaderSource,
     ShaderType,
+    MissingAttributeException,
+    UnsupportedShaderType,
 )
 from pyglet.graphics.shader import ShaderException
 
@@ -389,8 +392,24 @@ class GLUniformBlock(BaseUniformBlock):
     def _bind_buffer_base(self, binding: int, buffer_id: int) -> None:
         self._context.glBindBufferBase(GL_UNIFORM_BUFFER, binding, buffer_id)
 
-    def _create_backend_ubo(self, view_class: type[Structure], buffer_size: int, binding: int) -> GLUniformBufferObject:
-        return GLUniformBufferObject(self._context, view_class, buffer_size, binding)
+    def _create_backend_ubo(
+        self,
+        view_class: type[Structure],
+        buffer_size: int,
+        binding: int,
+        alignment: int | None,
+        copies_per_resource: int,
+        strict: bool,
+    ) -> GLUniformBufferObject:
+        return GLUniformBufferObject(
+            self._context,
+            view_class,
+            buffer_size,
+            binding,
+            alignment=alignment,
+            copies_per_resource=copies_per_resource,
+            strict=strict,
+        )
 
     def _set_block_binding(self) -> None:
         self._context.glUniformBlockBinding(self.program.id, self.index, self.binding)
@@ -517,8 +536,8 @@ def _introspect_attributes(ctx, program_id: int) -> dict[str, Attribute]:
     return attributes
 
 
-def _link_program(ctx, *shaders: Shader) -> int:
-    """Link one or more Shaders into a ShaderProgram.
+def _create_program(ctx: OpenGLSurfaceContext, *shaders: GLShader) -> int:
+    """Create a program and attach one or more Shader objects.
 
     Returns:
         The ID assigned to the linked ShaderProgram.
@@ -526,6 +545,11 @@ def _link_program(ctx, *shaders: Shader) -> int:
     program_id = ctx.glCreateProgram()
     for shader in shaders:
         ctx.glAttachShader(program_id, shader.id)
+    return program_id
+
+
+def _link_program(ctx: OpenGLSurfaceContext, program_id: int) -> None:
+    """Link an existing program object and validate link status."""
     ctx.glLinkProgram(program_id)
 
     # Check the link status of program
@@ -539,10 +563,18 @@ def _link_program(ctx, *shaders: Shader) -> int:
         msg = f"Error linking shader program:\n{log.value.decode()}"
         raise ShaderException(msg)
 
-    # Shader objects no longer needed
+
+def _detach_program_shaders(ctx: OpenGLSurfaceContext, program_id: int, *shaders: GLShader) -> None:
+    """Detach Shader objects from an already linked program."""
     for shader in shaders:
         ctx.glDetachShader(program_id, shader.id)
 
+
+def _build_program(ctx: OpenGLSurfaceContext, *shaders: GLShader) -> int:
+    """Create, link, and detach one or more Shaders into a ShaderProgram."""
+    program_id = _create_program(ctx, *shaders)
+    _link_program(ctx, program_id)
+    _detach_program_shaders(ctx, program_id, *shaders)
     return program_id
 
 
@@ -903,7 +935,7 @@ class GLShaderSource(ShaderSource):
         raise ShaderException(msg)
 
 
-class GLShader(Shader):
+class GLShader(_AbstractShader):
     """OpenGL shader.
 
     Shader objects are compiled on instantiation.
@@ -1032,7 +1064,13 @@ class GLShaderProgram(ShaderProgram):
         super().__init__(*shaders)
 
         self._context = pyglet.graphics.api.core.current_context
-        self._id = _link_program(self._context, *shaders)
+        self._id = _build_program(self._context, *shaders)
+
+        self._initialize_program_state()
+
+    def _initialize_program_state(self) -> None:
+        """Initialize debug output and shader introspection state."""
+        assert self._id is not None
 
         if _debug_api_shaders:
             assert _debug_api_shader_print(_get_program_log(self._context, self._id))
@@ -1054,21 +1092,6 @@ class GLShaderProgram(ShaderProgram):
         return self._id
 
     @property
-    def uniforms(self) -> dict[str, Any]:
-        """Uniform metadata dictionary.
-
-        This property returns a dictionary containing metadata of all
-        Uniforms that were introspected in this ShaderProgram. Modifying
-        this dictionary has no effect. To set or get a uniform, the uniform
-        name is used as a key on the ShaderProgram instance. For example::
-
-            my_shader_program[uniform_name] = 123
-            value = my_shader_program[uniform_name]
-
-        """
-        return {n: {'location': u.location, 'length': u.length, 'size': u.size} for n, u in self._uniforms.items()}
-
-    @property
     def shader_storage_blocks(self) -> dict[str, GLShaderStorageBlock]:
         """A dictionary of introspected Shader Storage Blocks."""
         return self._shader_storage_blocks
@@ -1077,13 +1100,6 @@ class GLShaderProgram(ShaderProgram):
         self._context.glUseProgram(self._id)
 
     def stop(self) -> None:
-        self._context.glUseProgram(0)
-
-    __enter__ = use
-    bind = use
-    unbind = stop
-
-    def __exit__(self, *_) -> None:  # noqa: ANN002
         self._context.glUseProgram(0)
 
     def delete(self) -> None:
@@ -1098,43 +1114,33 @@ class GLShaderProgram(ShaderProgram):
             except (AttributeError, ImportError):
                 pass  # Interpreter is shutting down
 
-    def __setitem__(self, key: str, value: Any) -> None:
-        try:
-            uniform = self._uniforms[key]
-        except KeyError as err:
-            msg = (f"A Uniform with the name `{key}` was not found.\n"
-                   f"The spelling may be incorrect or, if not in use, it "
-                   f"may have been optimized out by the OpenGL driver.")
-            if _debug_api_shaders:
-                warnings.warn(msg)
-                return
-            raise ShaderException(msg) from err
-        try:
-            uniform.set(value)
-        except GLException as err:
-            raise ShaderException from err
+    @overload
+    def _vertex_list_create(self, count: int, mode: GeometryMode, indices: None = None,
+                            instances: None = None, batch: Batch | None = None, group: Group | None = None,
+                            **data: Any) -> VertexList:
+        ...
 
-    def __getitem__(self, item: str) -> Any:
-        try:
-            uniform = self._uniforms[item]
-        except KeyError as err:
-            msg = (
-                f"A Uniform with the name `{item}` was not found.\n"
-                f"The spelling may be incorrect or, if not in use, it "
-                f"may have been optimized out by the OpenGL driver."
-            )
-            if _debug_api_shaders:
-                warnings.warn(msg)
-                return None
+    @overload
+    def _vertex_list_create(self, count: int, mode: GeometryMode, indices: Sequence[int] = ...,
+                            instances: None = None, batch: Batch | None = None, group: Group | None = None,
+                            **data: Any) -> IndexedVertexList:
+        ...
 
-            raise ShaderException from err
-        try:
-            return uniform.get()
-        except GLException as err:
-            raise ShaderException from err
+    @overload
+    def _vertex_list_create(self, count: int, mode: GeometryMode, indices: None = None,
+                            instances: dict[str, int] = ..., batch: Batch | None = None, group: Group | None = None,
+                            **data: Any) -> InstanceVertexList:
+        ...
+
+    @overload
+    def _vertex_list_create(self, count: int, mode: GeometryMode, indices: Sequence[int] = ...,
+                            instances: dict[str, int] = ..., batch: Batch | None = None, group: Group | None = None,
+                            **data: Any) -> InstanceIndexedVertexList:
+        ...
 
     def _vertex_list_create(self, count: int, mode: GeometryMode, indices: Sequence[int] | None = None,
-                            instances: dict[str, int] | None = None, batch: Batch | None = None, group: Group | None = None,
+                            instances: dict[str, int] | None = None,
+                            batch: Batch | None = None, group: Group | None = None,
                             **data: Any) -> VertexList | InstanceVertexList | IndexedVertexList | InstanceIndexedVertexList:
         assert isinstance(mode, GeometryMode), f"Mode {mode} is not geometry mode."
         attributes = {}
@@ -1148,7 +1154,7 @@ class GLShaderProgram(ShaderProgram):
                 current_attrib = self._attributes[name]
             except KeyError:
                 msg = f"Attribute {name} not found. Existing attributes: {list(self._attributes.keys())}"
-                raise ShaderException(msg) from None
+                raise MissingAttributeException(msg) from None
             try:
                 if isinstance(fmt, tuple):
                     fmt, array = fmt  # noqa: PLW2901
@@ -1187,68 +1193,46 @@ class GLShaderProgram(ShaderProgram):
 
         return vlist
 
-    def vertex_list(self, count: int, mode: GeometryMode, batch: Batch | None = None, group: Group | None = None,
-                    **data: Any) -> VertexList:
-        """Create a VertexList.
 
-        Args:
-            count:
-                The number of vertices in the list.
-            mode:
-                OpenGL drawing mode enumeration; for example, one of
-                ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
-                This determines how the list is drawn in the given batch.
-            batch:
-                Batch to add the VertexList to, or ``None`` if a Batch will not be used.
-                Using a Batch is strongly recommended.
-            group:
-                Group to add the VertexList to, or ``None`` if no group is required.
-            data:
-                Attribute formats and initial data for the vertex list.
+class GLTransformFeedbackShaderProgram(GLShaderProgram):
+    """OpenGL shader program configured for transform feedback capture."""
 
-        """
-        return self._vertex_list_create(count, mode, None, None, batch=batch, group=group, **data)
+    __slots__ = '_varying_buffer_type', '_varyings'
 
-    def vertex_list_instanced(self, count: int, mode: GeometryMode, instance_attributes: Sequence[str],
-                              batch: Batch | None = None, group: Group | None = None, **data: Any) -> InstanceVertexList:
-        assert len(instance_attributes) > 0, "You must provide at least one attribute name to be instanced."
-        return self._vertex_list_create(count, mode, None, instance_attributes, batch=batch, group=group, **data)
+    def __init__(self, *shaders: GLShader, varyings: Sequence[str],
+                 varying_buffer_type: Literal["interleaved", "separate"] = "separate") -> None:
+        ShaderProgram.__init__(self, *shaders)
+        self._context = pyglet.graphics.api.core.current_context
 
-    def vertex_list_indexed(self, count: int, mode: GeometryMode, indices: Sequence[int],
-                            batch: Batch | None = None, group: Group | None = None, **data: Any) -> IndexedVertexList:
-        """Create a IndexedVertexList.
+        self._varyings = tuple(varyings)
+        self._varying_buffer_type = varying_buffer_type
 
-        Args:
-            count:
-                The number of vertices in the list.
-            mode:
-                OpenGL drawing mode enumeration; for example, one of
-                ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
-                This determines how the list is drawn in the given batch.
-            indices:
-                Sequence of integers giving indices into the vertex list.
-            batch:
-                Batch to add the VertexList to, or ``None`` if a Batch will not be used.
-                Using a Batch is strongly recommended.
-            group:
-                Group to add the VertexList to, or ``None`` if no group is required.
-            data:
-                Attribute formats and initial data for the vertex list.
-        """
-        return self._vertex_list_create(count, mode, indices, None, batch=batch, group=group, **data)
+        if not self._varyings:
+            msg = "At least one transform feedback varying is required."
+            raise ShaderException(msg)
 
-    def vertex_list_instanced_indexed(self, count: int, *, mode: GeometryMode, indices: Sequence[int],
-                                      instance_attributes: Sequence[str],
-                                      batch: Batch | None = None, group: Group | None = None,
-                                      **data: Any) -> IndexedVertexList:
-        assert len(instance_attributes) > 0, "You must provide at least one attribute name to be instanced."
-        return self._vertex_list_create(count, mode, indices, instance_attributes, batch=batch, group=group, **data)
+        self._id = _create_program(self._context, *shaders)
+        self._set_transform_feedback_varyings()
+        _link_program(self._context, self._id)
+        _detach_program_shaders(self._context, self._id, *shaders)
 
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(id={self.id})"
+        self._initialize_program_state()
+
+    def _set_transform_feedback_varyings(self) -> None:
+        c_array = (c_char_p * len(self._varyings))()
+        for i, name in enumerate(self._varyings):
+            c_array[i] = name.encode()
+
+        ptr = cast(c_array, POINTER(POINTER(c_char)))
+        mode = (
+            gl.GL_INTERLEAVED_ATTRIBS
+            if self._varying_buffer_type == "interleaved"
+            else gl.GL_SEPARATE_ATTRIBS
+        )
+        self._context.glTransformFeedbackVaryings(self._id, len(self._varyings), ptr, mode)
 
 
-class GLComputeShaderProgram:
+class GLComputeShaderProgram(_AbstractShaderProgram):
     """OpenGL Compute Shader Program."""
     _context: OpenGLSurfaceContext | NullContext
     _id: int | None
@@ -1263,7 +1247,7 @@ class GLComputeShaderProgram:
 
     def __init__(self, source: str) -> None:
         """Create an OpenGL ComputeShaderProgram from source."""
-        self._id = None
+        super().__init__()
 
         if not (pyglet.graphics.api.have_version(4, 3) or pyglet.graphics.api.have_extension("GL_ARB_compute_shader")):
             msg = (
@@ -1274,7 +1258,7 @@ class GLComputeShaderProgram:
 
         self._shader = GLShader(source, 'compute')
         self._context = pyglet.graphics.api.core.current_context
-        self._id = _link_program(self._context, self._shader)
+        self._id = _build_program(self._context, self._shader)
 
         if _debug_api_shaders:
             assert _debug_api_shader_print(_get_program_log(self._context, self._id))
@@ -1320,10 +1304,6 @@ class GLComputeShaderProgram:
         return self._id
 
     @property
-    def uniforms(self) -> dict[str, dict[str, Any]]:
-        return {n: {'location': u.location, 'length': u.length, 'size': u.size} for n, u in self._uniforms.items()}
-
-    @property
     def uniform_blocks(self) -> dict[str, GLUniformBlock]:
         return self._uniform_blocks
 
@@ -1356,36 +1336,42 @@ class GLComputeShaderProgram:
             except (AttributeError, ImportError):
                 pass  # Interpreter is shutting down
 
-    def __setitem__(self, key: str, value: Any) -> None:
-        try:
-            uniform = self._uniforms[key]
-        except KeyError as err:
-            msg = (f"A Uniform with the name `{key}` was not found.\n"
-                   f"The spelling may be incorrect, or if not in use it "
-                   f"may have been optimized out by the OpenGL driver.")
-            if _debug_api_shaders:
-                warnings.warn(msg)
-                return
 
-            raise ShaderException from err
-        try:
-            uniform.set(value)
-        except GLException as err:
-            raise ShaderException from err
+_default_vertex_source: str = """#version 330 core
+    in vec3 position;
+    in vec4 colors;
 
-    def __getitem__(self, item: str) -> Any:
-        try:
-            uniform = self._uniforms[item]
-        except KeyError as err:
-            msg = (f"A Uniform with the name `{item}` was not found.\n"
-                   f"The spelling may be incorrect, or if not in use it "
-                   f"may have been optimized out by the OpenGL driver.")
-            if _debug_api_shaders:
-                warnings.warn(msg)
-                return None
+    out vec4 vertex_colors;
 
-            raise ShaderException(msg) from err
-        try:
-            return uniform.get()
-        except GLException as err:
-            raise ShaderException from err
+    uniform WindowBlock
+    {
+        mat4 projection;
+        mat4 view;
+    } window;
+
+    void main()
+    {
+        gl_Position = window.projection * window.view * vec4(position, 1.0);
+
+        vertex_colors = colors;
+    }
+"""
+
+_default_fragment_source: str = """#version 330 core
+    in vec4 vertex_colors;
+    out vec4 final_colors;
+
+    void main()
+    {
+        final_colors = vertex_colors;
+    }
+"""
+
+
+def get_default_shader() -> GLShaderProgram:
+    """A default basic shader for default batches."""
+    return pyglet.graphics.api.core.get_cached_shader(
+        "default_graphics",
+        (_default_vertex_source, 'vertex'),
+        (_default_fragment_source, 'fragment'),
+    )

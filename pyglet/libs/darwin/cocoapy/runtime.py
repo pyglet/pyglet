@@ -38,7 +38,7 @@ from contextlib import contextmanager
 
 from ctypes import *
 from ctypes import util
-from typing import Type, TypeVar, Sequence, Any, Callable
+from typing import Type, TypeVar, Sequence, Any, Callable, List
 
 from .cocoatypes import *
 
@@ -832,26 +832,44 @@ def send_super(receiver, selName, *args, superclass_name=None, **kwargs):
 cfunctype_table = {}
 
 
-def parse_type_encoding(encoding: bytes):
-    """Takes a type encoding string and outputs a list of the separated type codes.
-    Currently does not handle unions or bitfields and strips out any field width
-    specifiers or type specifiers from the encoding.  For Python 3.2+, encoding is
-    assumed to be a bytes object and not unicode.
+def parse_type_encoding(encoding: bytes) -> List[bytes]:
+    """Split the bytes of a limited subset of encodings into a list of type codes.
+
+    Type encodings are covered in the Objective-C Runtime Programming Guide:
+    https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html
+
+    Limitations are numerous.
+
+    There is no support for:
+    * unions, e.g. ``b'(value=^v*)'`` for a union of:
+      * a void pointer
+      * a character string
+    * bitfields, e.g. `b'b8'` for an 8-bit bitfield
+
+    The following are removed:
+    * Numerical field widths (``'b'^v16'`` becomes ``[b'^v']``)
+    * Objective-C method encoding specifiers (any of ``b'rnNoORV'``)
 
     Examples:
-    parse_type_encoding('^v16@0:8') --> ['^v', '@', ':']
-    parse_type_encoding('{CGSize=dd}40@0:8{CGSize=dd}16Q32') --> ['{CGSize=dd}', '@', ':', '{CGSize=dd}', 'Q']
+
+    .. code-block:: python
+
+        >>> parse_type_encoding(b'^v16@0:8')
+        [b'^v', b'@', b':']
+        >>> parse_type_encoding(b'{CGSize=dd}40@0:8{CGSize=dd}16Q32')
+        [b'{CGSize=dd}', b'@', b':', b'{CGSize=dd}', b'Q']
+
+    Args:
+        encoding: A bytes object with a type encoding.
+
+    Returns:
+        A list of type encodings stripped of unsupported data (field widths, method encodings, etc).
     """
-    type_encodings = []
+    type_encodings: List[bytes] = []
     brace_count = 0  # number of unclosed curly braces
     bracket_count = 0  # number of unclosed square brackets
     typecode = b''
-    for c in encoding:
-        # In Python 3, c comes out as an integer in the range 0-255.  In Python 2, c is a single character string.
-        # To fix the disparity, we convert c to a bytes object if necessary.
-        if isinstance(c, int):
-            c = bytes([c])
-
+    for c in (encoding[i:i+1] for i in range(len(encoding))):
         if c == b'{':
             # Check if this marked the end of previous type code.
             if typecode and typecode[-1:] != b'^' and brace_count == 0 and bracket_count == 0:
@@ -881,7 +899,9 @@ def parse_type_encoding(encoding: bytes):
             # Ignore field width specifiers for now.
             pass
         elif c in b'rnNoORV':
-            # Also ignore type specifiers.
+            # Also ignore Objective-C method type specifiers.
+            # See Table 6-2 at the bottom of the Objective-C Runtime Programming Guide:
+            # https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html
             pass
         elif c in b'^cislqCISLQfdBv*@#:b?':
             if typecode and typecode[-1:] == b'^':
@@ -1734,3 +1754,4 @@ class ObjCBlock:
 
     def _wrapper(self, _block, *args):
         return self.func(*args)
+

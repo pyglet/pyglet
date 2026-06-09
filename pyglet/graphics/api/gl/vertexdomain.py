@@ -218,8 +218,58 @@ class GLInstanceVertexList(GLVertexList):
     def create_instance(self, **attributes: Any) -> VertexInstance:
         return self.instance_bucket.create_instance(**attributes)
 
+    @property
+    def instance_count(self) -> int:
+        """Number of active instances in this vertex list."""
+        return self.instance_bucket.instance_count
+
     def get_instance_by_index(self, index: int) -> VertexInstance | None:
-        return self.instance_bucket.allocator.slot_to_inst.get(index)
+        """Get an instance by its current slot index."""
+        return self.instance_bucket.get_instance_by_index(index)
+
+    def get_instance_index(self, instance: VertexInstance) -> int | None:
+        """Get the current slot index for an instance."""
+        return self.instance_bucket.get_instance_index(instance)
+
+    def swap_instances(self, first: VertexInstance, second: VertexInstance) -> None:
+        """Swap two instances in-place.
+
+        Useful when changing draw order without rebuilding all instance data.
+        This can still be expensive if instance attributes are large.
+        """
+        self.instance_bucket.swap_instances(first, second)
+
+    def move_instance_to_index(self, instance: VertexInstance, index: int) -> None:
+        """Move one instance to a target slot index.
+
+        Other instances shift as needed to keep slots contiguous.
+
+        This may be expensive when moving across many slots.
+        """
+        self.instance_bucket.move_instance_to_index(instance, index)
+
+    def set_instance_order(self, order: Sequence[VertexInstance]) -> None:
+        """Set the exact full order of all active instances.
+
+        This can be expensive for large lists.
+        """
+        self.instance_bucket.set_instance_order(order)
+
+    def move_to_back(self, instances: Sequence[VertexInstance]) -> None:
+        """Move a subset of instances to the back in the given order.
+
+        Back means lower indices (drawn earlier). Unspecified instances remain
+        after the moved prefix. This can be expensive for large lists.
+        """
+        self.instance_bucket.move_to_back(instances)
+
+    def move_to_top(self, instances: Sequence[VertexInstance]) -> None:
+        """Move a subset of instances to the top in the given order.
+
+        Top means higher indices (drawn later). Unspecified instances remain
+        before the moved suffix. This can be expensive for large lists.
+        """
+        self.instance_bucket.move_to_top(instances)
 
     def set_attribute_data(self, name: str, data: Any) -> None:
         if self.initial_attribs[name].fmt.is_instanced:
@@ -261,7 +311,7 @@ class GLInstanceIndexedVertexList(GLVertexList):
 
     Use :py:meth:`IndexedVertexDomain.create` to construct this list.
     """
-    domain: GLIndexedVertexDomain | GLInstancedIndexedVertexDomain
+    domain: GLInstancedIndexedVertexDomain
     indexed: bool = True
     instanced: bool = True
 
@@ -269,8 +319,9 @@ class GLInstanceIndexedVertexList(GLVertexList):
     index_start: int
 
     instance_bucket: InstanceBucket
+    supports_base_vertex: bool
 
-    def __init__(self, domain: GLIndexedVertexDomain, group: Group, start: int, count: int,
+    def __init__(self, domain: GLInstancedIndexedVertexDomain, group: Group, start: int, count: int,
                  index_start: int, index_count: int, index_type: DataTypes, base_vertex: int,
                  instance_bucket: InstanceBucket) -> None:
         self.index_start = index_start
@@ -283,8 +334,16 @@ class GLInstanceIndexedVertexList(GLVertexList):
 
     def delete(self) -> None:
         """Delete this group."""
+        key = (self.index_start, self.index_count)
+
+        # Invalidate all instance handles associated with this list.
+        for instance in list(self.instance_bucket.allocator.slot_to_inst.values()):
+            instance.slot = -1
+        self.instance_bucket.allocator.clear()
+
         super().delete()
         self.domain.index_stream.dealloc(self.index_start, self.index_count)
+        self.domain._instance_map.pop(key, None)
 
     def migrate(self, domain: GLInstancedIndexedVertexDomain) -> None:
         old_domain = self.domain
@@ -301,8 +360,60 @@ class GLInstanceIndexedVertexList(GLVertexList):
         # Move instance data.
         old_domain.instance_domain.move_all(self.instance_bucket, new_bucket)
 
-    def create_instance(self, **attributes: Any) -> None:
+    def create_instance(self, **attributes: Any) -> VertexInstance:
         return self.instance_bucket.create_instance(**attributes)
+
+    @property
+    def instance_count(self) -> int:
+        """Number of active instances in this vertex list."""
+        return self.instance_bucket.instance_count
+
+    def get_instance_by_index(self, index: int) -> VertexInstance | None:
+        """Get an instance by its current slot index."""
+        return self.instance_bucket.get_instance_by_index(index)
+
+    def get_instance_index(self, instance: VertexInstance) -> int | None:
+        """Get the current slot index for an instance."""
+        return self.instance_bucket.get_instance_index(instance)
+
+    def swap_instances(self, first: VertexInstance, second: VertexInstance) -> None:
+        """Swap two instances in-place.
+
+        Useful when changing draw order without rebuilding all instance data.
+        This can still be expensive if instance attributes are large.
+        """
+        self.instance_bucket.swap_instances(first, second)
+
+    def move_instance_to_index(self, instance: VertexInstance, index: int) -> None:
+        """Move one instance to a target slot index.
+
+        Other instances shift as needed to keep slots contiguous.
+        This may be expensive when moving across many slots.
+        """
+        self.instance_bucket.move_instance_to_index(instance, index)
+
+    def set_instance_order(self, order: Sequence[VertexInstance]) -> None:
+        """Set the exact full order of all active instances.
+
+        This can be expensive for large lists.
+        """
+        self.instance_bucket.set_instance_order(order)
+
+    def move_to_back(self, instances: Sequence[VertexInstance]) -> None:
+        """Move a subset of instances to the back in the given order.
+
+        Back means lower indices (drawn earlier). Unspecified instances remain
+        after the moved prefix. This can be expensive for large lists.
+        """
+        self.instance_bucket.move_to_back(instances)
+
+    def move_to_top(self, instances: Sequence[VertexInstance]) -> None:
+        """Move a subset of instances to the top in the given order.
+
+        Top means higher indices (drawn later). Unspecified instances remain
+        before the moved suffix. This can be expensive for large lists.
+        """
+        self.instance_bucket.move_to_top(instances)
 
     def set_attribute_data(self, name: str, data: Any) -> None:
         if self.initial_attribs[name].fmt.is_instanced:

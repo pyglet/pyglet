@@ -40,8 +40,8 @@ class PulseAudioDriver(AbstractAudioDriver):
     def connect(self, server: Optional[bytes] = None) -> None:
         """Connect to pulseaudio server.
 
-        :Parameters:
-            `server` : bytes
+        Args:
+            server:
                 Server to connect to, or ``None`` for the default local
                 server (which may be spawned as a daemon if no server is
                 found).

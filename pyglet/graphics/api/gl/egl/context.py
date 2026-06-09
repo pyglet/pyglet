@@ -90,7 +90,7 @@ class EGLContext(OpenGLSurfaceContext):
             egl.eglDestroyContext(self.display_connection, self.egl_context)
             self.egl_context = None
 
-    def flip(self) -> None:
+    def present(self) -> None:
         if not self.egl_surface:
             return
 

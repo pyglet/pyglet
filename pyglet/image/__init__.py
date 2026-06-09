@@ -96,12 +96,12 @@ use of the data in this arbitrary format).
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, BinaryIO, Sequence
+from typing import TYPE_CHECKING, BinaryIO
 
 import pyglet
 
 if TYPE_CHECKING:
-    from pyglet.image.base import _AbstractImage
+    from pyglet.customtypes import RGBAColor
 
 from pyglet.image import animation  # noqa: F401
 from pyglet.image.animation import Animation, AnimationFrame  # noqa: F401, TC001
@@ -157,10 +157,10 @@ def load_animation(filename: str, file: BinaryIO | None = None, decoder: ImageDe
     return _codec_registry.decode_animation(filename, file)
 
 
-def create(width: int, height: int, pattern: ImagePattern | None = None) -> _AbstractImage:
+def create(width: int, height: int, pattern: ImagePattern | None = None) -> ImageData:
     """Create an image optionally filled with the given pattern.
 
-    :Parameters:
+    Args:
         width:
             Width of image to create.
         height:
@@ -181,7 +181,7 @@ def create(width: int, height: int, pattern: ImagePattern | None = None) -> _Abs
 class SolidColorImagePattern(ImagePattern):
     """Creates an image filled with a solid RGBA color."""
 
-    def __init__(self, color: Sequence[int, int, int, int] = (0, 0, 0, 0)):
+    def __init__(self, color: RGBAColor = (0, 0, 0, 0)) -> None:
         """Create a solid image pattern with the given color.
 
         Args:
@@ -191,7 +191,7 @@ class SolidColorImagePattern(ImagePattern):
         """
         self.color = _color_as_bytes(color)
 
-    def create_image(self, width: int, height: int) -> _AbstractImage:
+    def create_image(self, width: int, height: int) -> ImageData:
         data = self.color * width * height
         return ImageData(width, height, 'RGBA', data)
 
@@ -201,10 +201,10 @@ class CheckerImagePattern(ImagePattern):
 
     def __init__(
         self,
-        color1: Sequence[int, int, int, int] = (150, 150, 150, 255),
-        color2: Sequence[int, int, int, int] = (200, 200, 200, 255),
-    ):
-        """Initialise with the given colors.
+        color1: RGBAColor = (150, 150, 150, 255),
+        color2: RGBAColor = (200, 200, 200, 255),
+    ) -> None:
+        """Initialize with the given colors.
 
         Args:
             color1:
@@ -219,7 +219,7 @@ class CheckerImagePattern(ImagePattern):
         self.color1 = _color_as_bytes(color1)
         self.color2 = _color_as_bytes(color2)
 
-    def create_image(self, width: int, height: int) -> _AbstractImage:
+    def create_image(self, width: int, height: int) -> ImageData:
         hw = width // 2
         hh = height // 2
         row1 = self.color1 * hw + self.color2 * hw
@@ -228,5 +228,5 @@ class CheckerImagePattern(ImagePattern):
         return ImageData(width, height, 'RGBA', data)
 
 
-# Initialise default codecs
+# Initialize default codecs
 _add_default_codecs()

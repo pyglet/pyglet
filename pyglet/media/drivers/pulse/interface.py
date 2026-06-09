@@ -245,8 +245,8 @@ class PulseAudioContext(PulseAudioMainloopChild):
 
         Will grab the mainloop lock.
 
-        :Parameters:
-            `server` : bytes
+        Args:
+            server:
                 Server to connect to, or ``None`` for the default local
                 server (which may be spawned as a daemon if no server is
                 found).

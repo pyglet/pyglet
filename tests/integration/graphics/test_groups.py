@@ -3,7 +3,8 @@ from dataclasses import dataclass
 from typing import TypedDict
 
 import pyglet
-from pyglet.enums import CompareOp
+from pyglet.enums import CompareOp, GeometryMode
+from pyglet.graphics.draw import _DomainKey
 from pyglet.graphics.state import State
 
 
@@ -28,7 +29,7 @@ class GroupWithUniqueState(pyglet.graphics.Group):
     """
     def __init__(self):
         super().__init__()
-        self.add_state(UniqueState())
+        self.set_state(UniqueState())
 
 
 class GroupWithSimilarState(pyglet.graphics.Group):
@@ -38,7 +39,62 @@ class GroupWithSimilarState(pyglet.graphics.Group):
     """
     def __init__(self):
         super().__init__()
-        self.add_state(SameState())
+        self.set_state(SameState())
+
+@dataclass(frozen=True)
+class TestEnforcedState(State):
+    __test__ = False
+    label: str
+    sets_state = True
+    unsets_state = True
+    enforced_state = True
+
+
+class _FakeBucket:
+    is_empty = False
+
+
+class _FakeDomain:
+    def __init__(self, group_buckets):
+        self.is_empty = False
+        self._vertex_buckets = dict(group_buckets)
+
+    def get_drawable_bucket(self, group):
+        return self._vertex_buckets.get(group)
+
+    def has_bucket(self, group):
+        return group in self._vertex_buckets
+
+    def bind_vao(self):
+        return None
+
+    def draw_buckets(self, _mode_func, _buckets):
+        return None
+
+
+def _get_group_state(group, state_type):
+    return next(state for state in group.states if isinstance(state, state_type))
+
+
+def _build_test_batch(*drawable_groups):
+    batch = pyglet.graphics.Batch()
+    for group in drawable_groups:
+        if group not in batch.group_map:
+            batch._add_group(group)  # noqa: SLF001
+
+    domain = _FakeDomain({group: _FakeBucket() for group in drawable_groups})
+    key = _DomainKey(indexed=False, instanced=False, mode=GeometryMode.TRIANGLES, attributes="test")
+    batch._domain_registry[key] = domain  # noqa: SLF001
+    return batch, domain
+
+
+def _enforced_state_calls(calls):
+    transitions = []
+    for fn in calls:
+        state = getattr(fn, "__self__", None)
+        if isinstance(state, TestEnforcedState):
+            transitions.append((state.label, fn.__name__))
+    return transitions
 
 
 pixels = 4
@@ -98,7 +154,7 @@ def validate_draw_list(batch: pyglet.graphics.Batch) -> DrawListValidation:
 def _validate_state_count(group, *, count: int, expanded_count: int):
     """Makes sure the added state count matches the expected count.
     """
-    assert len(group._states) == count
+    assert len(group.states) == count
     assert len(group._expanded_states) == expanded_count
 
 
@@ -305,14 +361,117 @@ def test_group_custom_state_dataclass_comparison():
 
     custom_state = MyState()
     group1 = pyglet.graphics.Group()
-    group1.add_state(custom_state)
+    group1.set_state(custom_state)
 
     other_custom_state = MyState()
     group2 = pyglet.graphics.Group()
-    group2.add_state(other_custom_state)
+    group2.set_state(other_custom_state)
 
     assert group2 == group1
     assert group2 is not group1
+
+
+def test_enforced_state_inheritance_is_static_after_child_creation():
+    root = pyglet.graphics.Group()
+    root.set_state(TestEnforcedState("root_v1"))
+
+    child = pyglet.graphics.Group(parent=root)
+    assert _get_group_state(child, TestEnforcedState).label == "root_v1"
+
+    root.set_state(TestEnforcedState("root_v2"))
+    late_child = pyglet.graphics.Group(parent=root)
+
+    assert _get_group_state(root, TestEnforcedState).label == "root_v2"
+    assert _get_group_state(child, TestEnforcedState).label == "root_v1"
+    assert _get_group_state(late_child, TestEnforcedState).label == "root_v2"
+
+
+def test_enforced_state_child_override_does_not_affect_siblings():
+    root = pyglet.graphics.Group()
+    root.set_state(TestEnforcedState("root"))
+
+    sibling_a = pyglet.graphics.Group(parent=root)
+    override_child = pyglet.graphics.Group(parent=root)
+    override_child.set_state(TestEnforcedState("override"))
+    sibling_b = pyglet.graphics.Group(parent=root)
+    override_grandchild = pyglet.graphics.Group(parent=override_child)
+
+    assert _get_group_state(sibling_a, TestEnforcedState).label == "root"
+    assert _get_group_state(sibling_b, TestEnforcedState).label == "root"
+    assert _get_group_state(override_child, TestEnforcedState).label == "override"
+    assert _get_group_state(override_grandchild, TestEnforcedState).label == "override"
+
+
+def test_enforced_state_draw_list_reapplies_parent_after_override(gl3_context):
+    root_group = pyglet.graphics.Group()
+    root_group.set_state(TestEnforcedState("root"))
+
+    outer_group = pyglet.graphics.Group(parent=root_group)
+    outer_group.set_state(TestEnforcedState("outer"))
+    sibling_group = pyglet.graphics.Group(parent=root_group)
+
+    batch, domain = _build_test_batch(outer_group, sibling_group)
+    draw_list = batch._create_draw_list()  # noqa: SLF001
+
+    assert draw_list == [
+        (None, "set", root_group),
+        (None, "set", outer_group),
+        (domain, GeometryMode.TRIANGLES, outer_group),
+        (None, "unset", outer_group),
+        (None, "set", sibling_group),
+        (domain, GeometryMode.TRIANGLES, sibling_group),
+        (None, "unset", sibling_group),
+        (None, "unset", root_group),
+    ]
+
+    optimized = batch._optimize_draw_list(draw_list)  # noqa: SLF001
+    assert _enforced_state_calls(optimized) == [
+        ("root", "set_state"),
+        ("root", "unset_state"),
+        ("outer", "set_state"),
+        ("outer", "unset_state"),
+        ("root", "set_state"),
+        ("root", "unset_state"),
+    ]
+
+    function_names = [func.__name__ for func in optimized]
+    assert function_names.count("_bind_vao") == 1
+    assert function_names.count("_draw") == 2
+
+
+def test_enforced_state_optimizer_keeps_shared_parent_state_active(gl3_context):
+    root_group = pyglet.graphics.Group()
+    root_group.set_state(TestEnforcedState("root"))
+
+    left_child = pyglet.graphics.Group(parent=root_group)
+    right_child = pyglet.graphics.Group(parent=root_group)
+    left_child.add_comparison("left")
+    right_child.add_comparison("right")
+
+    batch, domain = _build_test_batch(left_child, right_child)
+    draw_list = batch._create_draw_list()  # noqa: SLF001
+
+    assert draw_list == [
+        (None, "set", root_group),
+        (None, "set", left_child),
+        (domain, GeometryMode.TRIANGLES, left_child),
+        (None, "unset", left_child),
+        (None, "set", right_child),
+        (domain, GeometryMode.TRIANGLES, right_child),
+        (None, "unset", right_child),
+        (None, "unset", root_group),
+    ]
+
+    optimized = batch._optimize_draw_list(draw_list)  # noqa: SLF001
+    assert _enforced_state_calls(optimized) == [
+        ("root", "set_state"),
+        ("root", "unset_state"),
+    ]
+
+    function_names = [func.__name__ for func in optimized]
+    assert function_names.count("_bind_vao") == 1
+    assert function_names.count("_draw") == 1
+
 
 def _test_sprite_deletion(sprite, batch):
     domain = sprite._vertex_list.domain
