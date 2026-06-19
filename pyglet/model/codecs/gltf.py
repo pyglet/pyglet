@@ -324,30 +324,39 @@ class Mesh(BaseMesh):
 
 
 class Node(BaseNode):
-    def __init__(self, data, owner):
+    def __init__(self, data, owner, index):
         self._data = data
         self._owner = owner
+        self.index = index
 
         _mesh_index = data.get('mesh')
         self.mesh = owner.meshes[_mesh_index] if _mesh_index is not None else None
 
+        self.name = data.get('name')
         self.matrix = data.get('matrix')            # Mat4
         self.translation = data.get('translation')  # Vec3
         self.rotation = data.get('rotation')        # Quaternion
         self.scale = data.get('scale')              # Vec3
 
+
         # TODO: handle these:
-        self.skin = None
         self.camera = None
 
         # TODO: handle global and local transforms:
         # https://github.com/KhronosGroup/glTF-Tutorials/blob/master/gltfTutorial/gltfTutorial_004_ScenesNodes.md
 
         self._child_indices = data.get('children', [])
+        self._skin_index = data.get('skin')
 
     @property
     def children(self):
         return [self._owner.nodes[i] for i in self._child_indices]
+
+    @property
+    def skin(self):
+        if self._skin_index is None:
+            return None
+        return self._owner.skins[self._skin_index]
 
 
 class Skin:
@@ -359,6 +368,7 @@ class Skin:
             else None
         joints_indices = data.get('joints', [])
         self.joints = [owner.nodes[i] for i in joints_indices]
+        self.skeleton_index = data.get('skeleton', 0)
         self.extensions = data.get('extensions')
         self.extras = data.get('extras')
 
@@ -440,7 +450,9 @@ class GLTF:
         self.cameras = [Camera(cam['type'], cam[cam['type']]) for cam in gltf_data.get('cameras', [])]
 
         self.meshes = [Mesh(data=data, owner=self) for data in gltf_data['meshes']]
-        self.nodes = [Node(data=data, owner=self) for data in gltf_data['nodes']]
+        self.nodes = [
+            Node(data=data, owner=self, index=idx) for idx, data in enumerate(gltf_data['nodes'])
+        ]
 
         self.skins = [
             Skin(data=data, owner=self) for data in gltf_data.get('skins', [])
