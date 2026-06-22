@@ -368,7 +368,10 @@ class Skin:
             else None
         joints_indices = data.get('joints', [])
         self.joints = [owner.nodes[i] for i in joints_indices]
-        self.skeleton_index = data.get('skeleton', 0)
+        self.skeleton_index = data.get('skeleton')
+        self.skeleton = owner.nodes[self.skeleton_index] if (
+            self.skeleton_index is not None
+        ) else None
         self.extensions = data.get('extensions')
         self.extras = data.get('extras')
 
