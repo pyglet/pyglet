@@ -110,5 +110,5 @@ class FileDragDropApp:
 
 
 if __name__ == '__main__':
-    FileDragDropApp()
+    file_drop = FileDragDropApp()
     pyglet.app.run()
