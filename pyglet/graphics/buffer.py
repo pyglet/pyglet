@@ -13,10 +13,10 @@ from __future__ import annotations
 import abc
 import ctypes
 import struct
+import warnings
 from ctypes import Array
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Sequence, Union
-
-import pyglet
 
 if TYPE_CHECKING:
     from pyglet.customtypes import CType, CTypesPointer, DataTypes
@@ -56,7 +56,6 @@ def _data_type_size(data_type: DataTypes) -> int:
         raise AssertionError(msg) from exc
 
 
-
 def _to_bytes(data: ByteSource | Sequence[int] | CTypesPointer) -> bytes:
     """Convert supported host-side inputs into raw bytes."""
     if hasattr(data, "contents"):
@@ -70,6 +69,13 @@ def _to_bytes(data: ByteSource | Sequence[int] | CTypesPointer) -> bytes:
             "Use bytes-like objects, ctypes arrays, ctypes pointers, or integer sequences."
         )
         raise AssertionError(msg) from exc
+
+
+def _align_to(value: int, alignment: int) -> int:
+    """Align ``value`` to the next ``alignment`` boundary."""
+    assert value >= 0, "Value must be non-negative."
+    assert alignment > 0, "Alignment must be greater than zero."
+    return (value + alignment - 1) // alignment * alignment
 
 
 class AbstractBuffer(abc.ABC):
@@ -139,42 +145,323 @@ class AbstractBuffer(abc.ABC):
         self.set_bytes_region(offset, ctypes.string_at(ptr, length))
 
 
-class UniformBufferObject:
+@dataclass(frozen=True)
+class BufferBindingSlice:
+    offset: int
+    size: int
+
+
+@dataclass
+class BufferRange:
+    offset: int
+    size: int
+    in_use: bool = False
+    frame_use_count: int = 0
+
+class RingBuffer:
+    """Generic ring allocator.
+
+    Range lifetime is tracked by owners such as ``FrameResourceManager`` by
+    setting ``BufferRange.in_use``. This allocator only selects writable ranges.
+    """
+
+    strict: bool
+    alignment: int
+    range_size: int
+    range_stride: int
+    copies_per_resource: int
+    _planned_size: int
+    _next_offset: int
+    _ranges: list[BufferRange]
+    _next_range_index: int
+    _current_slice: BufferBindingSlice | None
+
+    def __init__(
+        self,
+        *,
+        range_size: int,
+        alignment: int = 1,
+        copies_per_resource: int = 3,
+        strict: bool = False,
+        start_offset: int = 0,
+    ) -> None:
+        assert range_size > 0, "Range size must be greater than zero."
+        self.strict = bool(strict)
+        self.alignment = max(1, int(alignment))
+        self.range_size = int(range_size)
+        self.range_stride = _align_to(self.range_size, self.alignment)
+        self.copies_per_resource = max(1, int(copies_per_resource))
+        self._next_offset = _align_to(max(0, int(start_offset)), self.alignment)
+        self._planned_size = self._next_offset
+        self._ranges = []
+        self._next_range_index = 0
+        self._current_slice = None
+
+    @property
+    def planned_size(self) -> int:
+        return self._planned_size
+
+    def reserve_resource_range(
+        self,
+        copies_per_resource: int | None = None,
+    ) -> list[BufferRange]:
+        count = self.copies_per_resource if copies_per_resource is None else max(1, int(copies_per_resource))
+        assert count is not None
+        assert count > 0
+        start = len(self._ranges)
+        for _ in range(count):
+            self._ranges.append(self._allocate_range())
+        return self._ranges[start:]
+
+    def acquire_writable_slice(self) -> tuple[BufferBindingSlice, BufferRange]:
+        if not self._ranges:
+            self.reserve_resource_range()
+
+        range_ = self._ranges[self._next_range_index]
+        self._next_range_index = (self._next_range_index + 1) % len(self._ranges)
+
+        # If not in use, allocate.
+        if not range_.in_use:
+            binding = BufferBindingSlice(offset=range_.offset, size=range_.size)
+            self._current_slice = binding
+            return binding, range_
+
+        if self.strict:
+            raise RuntimeError(
+                "RingBuffer has no writable range. All reserved ranges are still in use. "
+                "Increase initial buffer size or copies_per_resource."
+            )
+        warnings.warn("RingBuffer wrapped while full. Consider growing range capacity to avoid more stalls.")
+        new_range = self._allocate_range()
+        self._ranges.append(new_range)
+        self._on_non_strict_expand(new_range)
+        binding = BufferBindingSlice(offset=new_range.offset, size=new_range.size)
+        self._current_slice = binding
+        return binding, new_range
+
+    def acquire_writable_slice_from_ranges(
+        self,
+        ranges: list[BufferRange],
+        next_range_index: int,
+    ) -> tuple[BufferBindingSlice, BufferRange, int]:
+        if not ranges:
+            ranges.extend(self.reserve_resource_range())
+
+        range_index = next_range_index % len(ranges)
+        for _ in range(len(ranges)):
+            range_ = ranges[range_index]
+            range_index = (range_index + 1) % len(ranges)
+            if not range_.in_use:
+                binding = BufferBindingSlice(offset=range_.offset, size=range_.size)
+                self._current_slice = binding
+                return binding, range_, range_index
+
+        if self.strict:
+            raise RuntimeError(
+                "RingBuffer has no writable range. All reserved ranges are still in use. "
+                "Increase initial buffer size or copies_per_resource."
+            )
+        warnings.warn("RingBuffer wrapped while full. Consider growing range capacity to avoid more stalls.")
+        new_range = self._allocate_range()
+        self._ranges.append(new_range)
+        ranges.append(new_range)
+        self._on_non_strict_expand(new_range)
+        binding = BufferBindingSlice(offset=new_range.offset, size=new_range.size)
+        self._current_slice = binding
+        return binding, new_range, 0
+
+    def delete(self) -> None:
+        for range_ in self._ranges:
+            range_.in_use = False
+            range_.frame_use_count = 0
+        self._ranges.clear()
+        self._current_slice = None
+        self._next_range_index = 0
+
+    def _allocate_range(self) -> BufferRange:
+        offset = _align_to(self._next_offset, self.alignment)
+        self._next_offset = offset + self.range_stride
+        self._planned_size = max(self._planned_size, self._next_offset)
+        return BufferRange(offset=offset, size=self.range_size)
+
+    def _find_range_for_binding(self, binding: BufferBindingSlice) -> BufferRange:
+        for range_ in self._ranges:
+            if range_.offset == binding.offset and range_.size == binding.size:
+                return range_
+        msg = (
+            f"Could not resolve ring range for binding offset={binding.offset}, size={binding.size}. "
+            "The binding may not belong to this resource."
+        )
+        raise RuntimeError(msg)
+
+    def _on_non_strict_expand(self, _new_range: BufferRange) -> None:
+        """Hook for subclasses when strict=False expansion occurs."""
+
+
+
+class UniformBufferObject(RingBuffer):
     """Backend-agnostic Uniform Buffer Object wrapper."""
 
     buffer: AbstractBuffer
+    view_class: type[ctypes.Structure]
     view: ctypes.Structure
     _view_ptr: Any
+    _context: Any
     binding: int
-    __slots__ = "_view_ptr", "binding", "buffer", "view"
+    _storage_committed: bool
+    __slots__ = ("_context", "_storage_committed", "_view_ptr", "binding", "buffer", "view", "view_class")
 
-    def __init__(self, context: Any, view_class: type[ctypes.Structure], buffer_size: int, binding: int) -> None:
+    def __init__(
+        self,
+        context: Any,
+        view_class: type[ctypes.Structure],
+        buffer_size: int,
+        binding: int,
+        *,
+        alignment: int = 1,
+        copies_per_resource: int = 3,
+        strict: bool = False,
+    ) -> None:
+        self._context = context
         self.buffer = self._create_buffer(context, buffer_size)
+        self.view_class = view_class
         self.view = view_class()
         self._view_ptr = ctypes.pointer(self.view)
         self.binding = binding
+        self._storage_committed = False
+        super().__init__(
+            range_size=buffer_size,
+            alignment=alignment,
+            copies_per_resource=copies_per_resource,
+            strict=strict,
+            # Keep [0, range_size) for legacy ``with ubo as block:`` uploads.
+            start_offset=buffer_size,
+        )
 
     @property
     def id(self) -> int:
-        """The buffer ID associated with this UBO."""
         return self.buffer.id
 
+    @property
+    def size(self) -> int:
+        return self.buffer.size
+
+    @property
+    def slice_size(self) -> int:
+        return self.range_size
+
+    @property
+    def slice_stride(self) -> int:
+        return self.range_stride
+
     def read(self) -> bytes:
-        """Read the byte contents of the buffer."""
         return self.buffer.get_data()
 
     def __enter__(self) -> ctypes.Structure:
         return self.view
 
     def __exit__(self, _exc_type, _exc_val, _exc_tb) -> None:  # noqa: ANN001
-        self.buffer.set_data(self._view_ptr)
+        self._ensure_storage_for_commit(self.range_size)
+        view_size = ctypes.sizeof(self.view)
+        self.buffer.set_data_region(self._view_ptr, 0, view_size)
+        self._storage_committed = True
+
+    def get_data_structure(self) -> ctypes.Structure:
+        return self.view_class()
+
+    def upload_to_available_binding(
+        self,
+        resource_data: ctypes.Structure,
+    ) -> BufferBindingSlice:
+        binding, range_ = self.acquire_writable_slice()
+        self._commit_data(range_, resource_data)
+        self._context.frame_resources.allocate_ubo(range_)
+        return binding
+
+    def upload_to_available_binding_from_ranges(
+        self,
+        resource_data: ctypes.Structure,
+        ranges: list[BufferRange],
+        next_range_index: int,
+    ) -> tuple[BufferBindingSlice, BufferRange, int]:
+        binding, range_, next_range_index = self.acquire_writable_slice_from_ranges(ranges, next_range_index)
+        self._commit_data(range_, resource_data)
+        self._context.frame_resources.allocate_ubo(range_)
+        return binding, range_, next_range_index
+
+    def bind_slice(self, binding: BufferBindingSlice, *, binding_index: int | None = None) -> None:
+        index = self.binding if binding_index is None else binding_index
+        assert index >= 0, "Binding index must be non-negative."
+        assert binding.offset >= 0 and binding.size >= 0, "Offset and size must be non-negative."  # noqa: PT018
+        assert binding.offset + binding.size <= self.size, (
+            f"Slice [{binding.offset}, {binding.offset + binding.size}) exceeds UBO size {self.size}."
+        )
+        self._bind_range(index, binding.offset, binding.size)
+
+    def use_range(self, range_: BufferRange) -> None:
+        self._context.frame_resources.use_ubo(range_)
+
+    def delete(self) -> None:
+        super().delete()
+        self.buffer.delete()
 
     @abc.abstractmethod
     def _create_buffer(self, context: Any, buffer_size: int) -> AbstractBuffer:
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def _bind_range(self, binding: int, offset: int, size: int) -> None:
+        raise NotImplementedError
+
+    def _on_non_strict_expand(self, _new_range: BufferRange) -> None:
+        self._ensure_storage_for_commit(self.planned_size, force_double=True)
+
+    def _commit_data(self, range_: BufferRange, resource_data: ctypes.Structure) -> None:
+        if range_.in_use and self._context.frame_active:
+            msg = "Cannot modify a UBO range while it is in use by the active frame."
+            raise RuntimeError(msg)
+
+        data_size = ctypes.sizeof(resource_data)
+        assert data_size <= range_.size, (
+            f"Resource data size {data_size} exceeds reserved range size {range_.size}."
+        )
+        self._ensure_storage_for_commit(range_.offset + range_.size)
+        data_ptr = ctypes.pointer(resource_data)
+        self.buffer.set_data_region(data_ptr, range_.offset, data_size)
+        self._storage_committed = True
+
+    def _ensure_storage_for_commit(self, required_end: int, *, force_double: bool = False) -> None:
+        required_size = max(required_end, self.planned_size)
+        if required_size <= self.size and not force_double:
+            return
+
+        if not self._storage_committed:
+            self.buffer.resize(required_size)
+            return
+
+        if self.strict and required_size > self.size:
+            raise RuntimeError(
+                f"UniformBufferObject backing store full at {self.size} bytes while ranges are in use "
+                "by submitted frames. "
+                "Increase initial buffer size or copies_per_resource."
+            )
+
+        current_size = max(1, self.size)
+        new_size = current_size * 2 if force_double else current_size
+        while new_size < required_size:
+            new_size *= 2
+
+        if new_size != self.size:
+            msg = f"Growing UniformBufferObject({self.id}) storage from {self.size} to {new_size} bytes."
+            warnings.warn(msg)
+            self.buffer.resize(new_size)
+
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(id={self.buffer.id}, binding={self.binding})"
+        return (
+            f"{self.__class__.__name__}(id={self.buffer.id}, binding={self.binding}, size={self.size}, "
+            f"range_size={self.range_size}, range_stride={self.range_stride}, ranges={len(self._ranges)}, "
+            f"strict={self.strict})"
+        )
 
 
 class MappedBufferObject(AbstractBuffer):

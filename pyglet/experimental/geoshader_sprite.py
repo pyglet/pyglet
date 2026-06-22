@@ -768,9 +768,16 @@ class Sprite(event.EventDispatcher):
         efficiently.
         """
         ctx = pyglet.graphics.api.core.current_context
-        self._group.set_state_recursive(ctx)
+        draw_ctx = pyglet.graphics.draw.DrawContext(
+            surface_ctx=ctx,
+            backend_ctx=None,
+            draw_pass=pyglet.graphics.draw.BatchDrawOptions().resolve(ctx),
+            renderer=ctx.renderer,
+        )
+        draw_ctx.begin()
+        self._group.set_state_recursive(draw_ctx)
         self._vertex_list.draw(GeometryMode.POINTS)
-        self._group.unset_state_recursive(ctx)
+        self._group.unset_state_recursive(draw_ctx)
 
     def __del__(self):
         try:

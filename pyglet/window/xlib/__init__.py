@@ -570,16 +570,8 @@ class XlibWindow(BaseWindow):
         if self.context:
             self.context.set_current()
 
-    def before_draw(self) -> None:
-        if self.context:
-            self.context.before_draw()
-
-    def flip(self):
-        self.draw_mouse_cursor()
-
-        # TODO window.flip?
-        if self.context:
-            self.context.flip()
+    def present(self) -> None:
+        super().present()
 
         self._sync_resize()
 

@@ -4,14 +4,19 @@ import atexit
 import os
 import weakref
 from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Protocol, get_type_hints, Sequence, Callable, NoReturn
+
+from pyglet.graphics import GraphicsIntegrationError, GraphicsBackendError
+from pyglet.util import debug_print
 
 if TYPE_CHECKING:
     from pyglet.config import SurfaceConfig
-    from pyglet.math import Mat4
     from pyglet.graphics.api.gl import ObjectSpace
+    from pyglet.graphics.buffer import BufferRange
     from pyglet.window import Window
 
+_debug_print = debug_print("debug_api")
 
 class BackendGlobalObject(ABC):  # Temp name for now.
     """A container for backend resources and information that are required throughout the code.
@@ -35,7 +40,11 @@ class BackendGlobalObject(ABC):  # Temp name for now.
         ...
 
     @abstractmethod
-    def get_surface_context(self, window: Window, config: SurfaceConfig, shared: SurfaceContext | None) -> SurfaceContext:
+    def get_surface_context(
+            self,
+            window: Window,
+            config: SurfaceConfig,
+            shared: SurfaceContext | None) -> SurfaceContext:
         """After a window is created, this will be called.
 
         This must return a BackendWindowObject object.
@@ -46,12 +55,27 @@ class BackendGlobalObject(ABC):  # Temp name for now.
         """Configs to use if none specified."""
 
     @abstractmethod
-    def initialize_matrices(self, window: Window) -> WindowTransformations:
-        """Initialize the global matrices."""
-
-    @abstractmethod
     def set_viewport(self, window, x: int, y: int, width: int, height: int) -> None:
         """Set the global viewport."""
+
+
+class BackendRenderer(ABC):
+    """Backend-specific rendering helpers used by draw-context state transitions."""
+
+    def __init__(self, surface_ctx: SurfaceContext) -> None:
+        self.surface_ctx = surface_ctx
+
+    @abstractmethod
+    def set_viewport(self, x: int, y: int, width: int, height: int) -> None:
+        """Set the active viewport."""
+
+    @abstractmethod
+    def set_scissor(self, scissor: Any | None) -> None:
+        """Set or clear the active scissor rectangle."""
+
+    @abstractmethod
+    def set_clear_color(self, r: float, g: float, b: float, a: float) -> None:
+        """Set the active clear color."""
 
     @staticmethod
     def load_package_shader(package, resource_name):
@@ -72,11 +96,19 @@ class BackendGlobalObject(ABC):  # Temp name for now.
         with open(resource_path, 'rb') as file:
             return file.read()
 
+
+class UnavailableBackendError(GraphicsBackendError):
+    """An exception that occurs when a backend is not yet available."""
+    def __init__(self) -> None:  # noqa: D107
+        super().__init__(
+            "A backend is not currently available. Ensure the backend choice is correct."
+            "If your environment variable is set to no backend, then backend-required resources may have been imported."
+        )
+
+
 class NullBackend(BackendGlobalObject):  # noqa: D101
     def _raise_no_backend(self) -> NoReturn:
-        msg = ("A backend is not currently available. Ensure the backend choice is correct. "
-               "If your environment variable is set to no backend, then backend-required resources may have been imported.")
-        raise RuntimeError(msg)
+        raise UnavailableBackendError
 
     @property
     def object_space(self) -> ObjectSpace:
@@ -87,9 +119,6 @@ class NullBackend(BackendGlobalObject):  # noqa: D101
         self._raise_no_backend()
 
     def get_default_configs(self) -> Sequence:
-        self._raise_no_backend()
-
-    def initialize_matrices(self, window: Window) -> None:
         self._raise_no_backend()
 
     def set_viewport(self, window, x: int, y: int, width: int, height: int) -> None:
@@ -120,6 +149,7 @@ class SurfaceInfo(ABC):
     MAX_TEXTURE_IMAGE_UNITS: int
     MAX_COMBINED_TEXTURE_IMAGE_UNITS: int
     MAX_UNIFORM_BUFFER_BINDINGS: int
+    MAX_UNIFORM_BUFFER_OFFSET_ALIGNMENT: int
     MAX_UNIFORM_BLOCK_SIZE: int
     MAX_VERTEX_ATTRIBS: int
 
@@ -142,6 +172,7 @@ class SurfaceInfo(ABC):
         self.MAX_TEXTURE_IMAGE_UNITS = 0
         self.MAX_COMBINED_TEXTURE_IMAGE_UNITS = 0
         self.MAX_UNIFORM_BUFFER_BINDINGS = 0
+        self.MAX_UNIFORM_BUFFER_OFFSET_ALIGNMENT = 0
         self.MAX_UNIFORM_BLOCK_SIZE = 0
         self.MAX_VERTEX_ATTRIBS = 0
 
@@ -196,17 +227,89 @@ class SurfaceInfo(ABC):
         return self.api
 
 
+@dataclass
+class FrameSlotData:
+    """Resources and fence state for one frame-in-flight slot."""
+
+    fence: Any | None = None
+    ubo_ranges: list[BufferRange] = field(default_factory=list)
+
+
+class FrameResourceManager:
+    """Tracks in-flight GPU-visible resource ranges by frame."""
+
+    def __init__(self, surface_ctx: SurfaceContext, slots: int = 3) -> None:
+        self.surface_ctx = surface_ctx
+        self.slots = [FrameSlotData() for _ in range(max(1, int(slots)))]
+        self._active_slot = self.slots[0]
+
+    @property
+    def active_slot(self) -> FrameSlotData:
+        return self._active_slot
+
+    def _release_slot(self, slot: FrameSlotData) -> None:
+        if slot.fence is not None:
+            self.surface_ctx.delete_frame_fence(slot.fence)
+            slot.fence = None
+        for ubo_range in slot.ubo_ranges:
+            ubo_range.frame_use_count = max(0, ubo_range.frame_use_count - 1)
+            ubo_range.in_use = ubo_range.frame_use_count > 0
+        slot.ubo_ranges.clear()
+
+    def frame_begin(self, frame_index: int) -> None:
+        slot_index = frame_index % len(self.slots)
+        slot = self.slots[slot_index]
+
+        if slot.fence is not None:
+            if not self.surface_ctx.poll_frame_fence(slot.fence):
+                # The frame resources are still in use by the GPU after we've wrapped around.
+                # At this point the CPU has caught up to the GPU. Wait for frame to become available.
+                assert _debug_print(f"CPU caught up to GPU on frame slot: {slot_index}, frame index: {frame_index}.")
+                self.surface_ctx.wait_frame_fence(slot.fence)
+            self._release_slot(slot)
+
+        self._active_slot = slot
+
+    def allocate_ubo(self, ubo_range: BufferRange) -> None:
+        if ubo_range.in_use:
+            msg = "Trying to allocate a UBO range that is already in use by a submitted frame."
+            raise GraphicsIntegrationError(msg)
+
+        self.use_ubo(ubo_range)
+
+    def use_ubo(self, ubo_range: BufferRange) -> None:
+        if any(active_range is ubo_range for active_range in self._active_slot.ubo_ranges):
+            return
+
+        ubo_range.frame_use_count += 1
+        ubo_range.in_use = True
+        self._active_slot.ubo_ranges.append(ubo_range)
+
+    def frame_submit(self) -> None:
+        if not self._active_slot.ubo_ranges:
+            return
+        self._active_slot.fence = self.surface_ctx.create_frame_fence()
+
+    def delete(self) -> None:
+        for slot in self.slots:
+            self._release_slot(slot)
+
+
 class SurfaceContext(ABC):  # Temp name for now.
     """A container for backend resources and information that are tied to a specific Window.
 
     In OpenGL this would be something like an OpenGL Context, or in Vulkan, a Surface.
     """
-    clear_color = (0.2, 0.2, 0.2, 1.0)
+    clear_color = (0.0, 0.0, 0.0, 1.0)
+    renderer: BackendRenderer
 
     def __init__(self, global_ctx: BackendGlobalObject, window: Window, config: Any) -> None:
         self.core = global_ctx
         self.window = window
         self.config = config
+        self.frame_index = 0
+        self._frame_active = False
+        self.frame_resources = FrameResourceManager(self)
 
     @property
     @abstractmethod
@@ -237,17 +340,67 @@ class SurfaceContext(ABC):  # Temp name for now.
         This function is called automatically when the operating system Window has been created.
         """
 
+    @property
+    def frame_active(self) -> bool:
+        return self._frame_active
+
     @abstractmethod
     def destroy(self) -> None:
         """Destroys the graphical context."""
 
+    def frame_begin(self) -> None:
+        """Begin a frame draw/update scope for this context."""
+        self.frame_resources.frame_begin(self.frame_index)
+        self._frame_active = True
+
+    def frame_submit(self) -> None:
+        """Submit queued GPU work for the current frame."""
+        self.frame_resources.frame_submit()
+
+    def create_frame_fence(self) -> Any | None:
+        """Create a backend fence for submitted frame resources."""
+        return None
+
+    def poll_frame_fence(self, fence: Any) -> bool:
+        """Return whether a submitted frame fence has completed."""
+        return True
+
+    def wait_frame_fence(self, fence: Any) -> None:
+        """Waits until a submitted frame fence has completed.
+
+        This is a blocking operation.
+        """
+
+    def delete_frame_fence(self, fence: Any) -> None:
+        """Delete a submitted frame fence."""
+
+    def frame_end(self) -> None:
+        """Finalize the current frame, present, and advance frame index."""
+        if not self._frame_active:
+            return
+        try:
+            self.frame_submit()
+            self.present()
+            self.frame_index += 1
+        finally:
+            self._frame_active = False
+
     @abstractmethod
-    def flip(self) -> None:
-        """Flips the buffers in the graphical context."""
+    def present(self) -> None:
+        """Present rendered frame output."""
 
     @abstractmethod
     def clear(self) -> None:
         """Clears the framebuffer."""
+
+
+class UnavailableContextError(GraphicsBackendError):
+    """An exception that occurs when a backend context is not yet available."""
+    def __init__(self) -> None:  # noqa: D107
+        super().__init__(
+            "A Rendering Context has not yet been created, or has already been deleted. Please ensure "
+            "a context exists (create a Window) before attempting to create objects with GPU resources.",
+        )
 
 
 class NullContext:
@@ -264,9 +417,7 @@ class NullContext:
 
     @staticmethod
     def _raise_no_context() -> NoReturn:
-        msg = ("A rendering Context has not yet been created, or has already been deleted. Please ensure "
-               "a context exists (create a Window) before attempting to perform any GPU related activities.")
-        raise RuntimeError(msg)
+        raise UnavailableContextError
 
     def __getattribute__(self, item):
         object.__getattribute__(self, "_raise_no_context")()
@@ -389,42 +540,6 @@ class GraphicsConfig:
     def user_set_attributes(self) -> set[str]:
         """Return a set of attribute names that were explicitly set by the user."""
         return self._user_set_attributes
-
-
-class WindowTransformations:
-    def __init__(self, window, projection, view, model):
-        self._window = window
-        self._projection = projection
-        self._view = view
-        self._model = model
-
-    @property
-    def projection(self) -> Mat4:
-        return self._projection
-
-    @projection.setter
-    def projection(self, projection: Mat4) -> None:
-        self._projection = projection
-
-    @property
-    def view(self) -> Mat4:
-        return self._view
-
-    @view.setter
-    def view(self, view: Mat4) -> None:
-        self._view = view
-
-    @property
-    def model(self) -> Mat4:
-        return self._model
-
-    @model.setter
-    def model(self, model: Mat4) -> None:
-        self._model = model
-
-
-class UBOMatrixTransformations(WindowTransformations):  # noqa: D101
-    ...
 
 
 class GraphicsResource(Protocol):  # noqa: D101

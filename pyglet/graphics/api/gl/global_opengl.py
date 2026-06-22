@@ -5,13 +5,11 @@ import warnings
 from typing import Sequence, TYPE_CHECKING
 
 import pyglet
-from pyglet.math import Mat4
 from pyglet.enums import GraphicsAPI
 from pyglet.graphics.api.base import (
     BackendGlobalObject,
     SurfaceContext,
     NullContext,
-    UBOMatrixTransformations,
 )
 from pyglet.graphics.shader import Shader, ShaderProgram
 
@@ -23,88 +21,6 @@ if TYPE_CHECKING:
     from pyglet.window import Window
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
-
-
-class OpenGL3_Matrices(UBOMatrixTransformations):
-    # Create a default ShaderProgram, so the Window instance can
-    # update the `WindowBlock` UBO shared by all default shaders.
-    _default_vertex_source = """#version 150 core
-         in vec4 position;
-
-         uniform WindowBlock
-         {
-             mat4 projection;
-             mat4 view;
-         } window;
-
-         void main()
-         {
-             gl_Position = window.projection * window.view * position;
-         }
-     """
-    _default_fragment_source = """#version 150 core
-         out vec4 color;
-
-         void main()
-         {
-             color = vec4(1.0, 0.0, 0.0, 1.0);
-         }
-     """
-
-    def __init__(self, window: Window, backend: OpenGLBackend):
-
-        self._default_program = backend.create_shader_program(
-            backend.create_shader(self._default_vertex_source, 'vertex'),
-            backend.create_shader(self._default_fragment_source, 'fragment'),
-        )
-
-        window_block = self._default_program.uniform_blocks['WindowBlock']
-        self.ubo = window_block.create_ubo()
-        window_block.bind(self.ubo)
-
-        self._viewport = (0, 0, *window.get_framebuffer_size())
-
-        width, height = window.get_size()
-
-        super().__init__(window, Mat4.orthogonal_projection(0, width, 0, height, -255, 255), Mat4(), Mat4())
-
-        with self.ubo as window_block:
-            window_block.view[:] = self._view
-            window_block.projection[:] = self._projection
-            # window_block.model[:] = self._model
-
-    @property
-    def projection(self) -> Mat4:
-        return self._projection
-
-    @projection.setter
-    def projection(self, projection: Mat4):
-        with self.ubo as window_block:
-            window_block.projection[:] = projection
-
-        self._projection = projection
-
-    @property
-    def view(self) -> Mat4:
-        return self._view
-
-    @view.setter
-    def view(self, view: Mat4):
-        with self.ubo as window_block:
-            window_block.view[:] = view
-
-        self._view = view
-
-    @property
-    def model(self) -> Mat4:
-        return self._model
-
-    @model.setter
-    def model(self, model: Mat4):
-        with self.ubo as window_block:
-            window_block.model[:] = model
-
-        self._model = model
 
 
 class OpenGLBackend(BackendGlobalObject):
@@ -227,9 +143,6 @@ class OpenGLBackend(BackendGlobalObject):
             self.current_context.default_batch = pyglet.graphics.Batch()
 
         return self.current_context.default_batch
-
-    def initialize_matrices(self, window: Window) -> OpenGL3_Matrices:
-        return OpenGL3_Matrices(window, self)
 
     def set_viewport(self, window, x: int, y: int, width: int, height: int) -> None:
         self.current_context.glViewport(x, y, width, height)

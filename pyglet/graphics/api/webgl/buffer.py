@@ -451,10 +451,39 @@ class WebGLUniformBufferObject(UniformBufferObject):
     """WebGL Uniform Buffer Object wrapper."""
 
     buffer: WebGLBufferObject
-    __slots__ = ()
+    minimum_alignment: int
+    __slots__ = ("_gl", "minimum_alignment")
+
+    def __init__(
+        self,
+        context: OpenGLSurfaceContext,
+        view_class: type,
+        buffer_size: int,
+        binding: int,
+        *,
+        alignment: int | None = None,
+        copies_per_resource: int = 3,
+        strict: bool = False,
+    ) -> None:
+        self._context = context
+        self._gl = context.gl
+        self.minimum_alignment = max(1, context.info.MAX_UNIFORM_BUFFER_OFFSET_ALIGNMENT)
+        requested_alignment = self.minimum_alignment if alignment is None else max(int(alignment), self.minimum_alignment)
+        super().__init__(
+            context,
+            view_class,
+            buffer_size,
+            binding,
+            alignment=requested_alignment,
+            copies_per_resource=copies_per_resource,
+            strict=strict,
+        )
 
     def _create_buffer(self, context: OpenGLSurfaceContext, buffer_size: int) -> WebGLBufferObject:
         return WebGLBufferObject(context, buffer_size, target=GL_UNIFORM_BUFFER)
+
+    def _bind_range(self, binding: int, offset: int, size: int) -> None:
+        self._gl.bindBufferRange(GL_UNIFORM_BUFFER, binding, self.buffer.id, offset, size)
 
 
 class WebGLPersistentBufferObject(BaseMappedBufferObject):

@@ -246,7 +246,7 @@ class SVG:
         shader_group = ShaderGroup(self.shader)
         self.line_group = Group(parent=shader_group)
         self.line_group.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
-        self.line_group.add_state(LineSmoothState())
+        self.line_group.set_state(LineSmoothState())
 
         dom = xml.dom.minidom.parse(filename)
         svg_tag = dom.documentElement

@@ -91,11 +91,12 @@ from pyglet.event import EVENT_HANDLE_STATE, EventDispatcher
 
 from pyglet.math import Mat4
 from pyglet.window import event, key, dialog
+from pyglet.window.camera import Camera2D
 
 if TYPE_CHECKING:
     import BaseWindow as Window
     from pyglet.config import Config, UserConfig
-    from pyglet.graphics.api.base import VerifiedGraphicsConfig, SurfaceContext, WindowTransformations
+    from pyglet.graphics.api.base import VerifiedGraphicsConfig, SurfaceContext
     from pyglet.display.base import Display, Screen, ScreenMode
     from pyglet.text import Label
 
@@ -370,8 +371,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     _context_share: SurfaceContext | None = None
     _projection_matrix: Mat4 = pyglet.math.Mat4()
     _view_matrix: Mat4 = pyglet.math.Mat4()
-    _viewport: tuple[int, int, int, int] = 0, 0, 0, 0
-    _matrices: WindowTransformations | None = None
+    _default_camera: Camera2D | None = None
 
     # Used to restore window size and position after fullscreen
     _windowed_size: tuple[int, int] | None = None
@@ -576,9 +576,10 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             self._config = self._context.config
 
     def _create_projection(self) -> None:
-        self._matrices = self.context.core.initialize_matrices(self)
+        self._default_camera = self._create_default_camera()
 
-        self._viewport = 0, 0, *self.get_framebuffer_size()
+    def _create_default_camera(self) -> Camera2D:
+        return Camera2D(self)
 
     def __del__(self) -> None:
         # Always try to clean up the window when it is dereferenced.
@@ -673,15 +674,18 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         method to make the GL context current. It then dispatches the
         :py:meth:`~pyglet.window.Window.on_draw` and
         :py:meth:`~pyglet.window.Window.on_refresh`
-        events. Finally, it calls the :py:meth:`~pyglet.window.Window.flip`
-        method to swap the front and back buffers.
+        events. Finally, it finalizes the context frame.
         """
-        self.before_draw()
+        context = self.context
+        if context:
+            context.frame_begin()
         self.dispatch_event('on_draw')
         self.dispatch_event('on_refresh', dt)
-        self.flip()
+        self._draw_mouse_cursor()
+        if context:
+            context.frame_end()
 
-    def draw_mouse_cursor(self) -> None:
+    def _draw_mouse_cursor(self) -> None:
         """Draw the custom mouse cursor.
 
         If the current mouse cursor has ``drawable`` set, this method
@@ -697,8 +701,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             # TODO: consider projection differences
             self._mouse_cursor.draw(self._mouse_x, self._mouse_y)
 
-    @abstractmethod
-    def flip(self) -> None:
+    def present(self) -> None:
         """Swap the front and back buffers.
 
         Call this method on a double-buffered window to update the
@@ -711,6 +714,12 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         calls this method after the window's
         :py:meth:`~pyglet.window.Window.on_draw` event.
         """
+        if self._context:
+            self._context.present()
+
+    def flip(self) -> None:
+        """Legacy alias for :meth:`present`."""
+        self.present()
 
     def get_framebuffer_size(self) -> tuple[int, int]:
         """Return the size in actual pixels of the Window framebuffer.
@@ -838,18 +847,11 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             self.dispatch_event('on_close')
 
     def _on_internal_resize(self, width: int, height: int) -> None:
-        self.viewport = (0, 0, *self.get_framebuffer_size())
         w, h = self.get_size()
-        if self.context:
-            self.projection = Mat4.orthogonal_projection(0, w, 0, h, -8192, 8192)
         self.dispatch_event('on_resize', w, h)
         #self.context.resized(w, h)
 
     def _on_internal_scale(self, scale: float, dpi: int) -> None:
-        self.viewport = (0, 0, *self.get_framebuffer_size())
-        w, h = self.get_size()
-        if self.context:
-            self.projection = Mat4.orthogonal_projection(0, max(w, 1), 0, max(h, 1), -8192, 8192)
         self._mouse_cursor.scaling = self._get_mouse_scale()
         self.dispatch_event('on_scale', scale, dpi)
 
@@ -1169,10 +1171,6 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         required platform-specific state management.
         """
 
-    @abstractmethod
-    def before_draw(self) -> None:
-        ...
-
     # Attributes (sort alphabetically):
     @property
     def caption(self) -> str:
@@ -1280,6 +1278,20 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         return w / h
 
     @property
+    def default_camera(self) -> Camera2D:
+        """The window's default camera.
+
+        Read-only handle. Use its ``projection``, ``view``, and ``viewport``
+        attributes to update the default draw camera state.
+        """
+        if self._default_camera is None:
+            if not self.context:
+                msg = "Window has no context; default camera is not available yet."
+                raise RuntimeError(msg)
+            self._default_camera = self._create_default_camera()
+        return self._default_camera
+
+    @property
     def projection(self) -> Mat4:
         """The window projection matrix. Read-write.
 
@@ -1294,11 +1306,11 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         (2D), but can be changed to any 4x4 matrix desired.
         :see: :py:class:`~pyglet.math.Mat4`.
         """
-        return self._matrices.projection
+        return self.default_camera.projection
 
     @projection.setter
     def projection(self, matrix: Mat4) -> None:
-        self._matrices.projection = matrix
+        self.default_camera.projection = matrix
 
     @property
     def view(self) -> Mat4:
@@ -1311,11 +1323,11 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         :py:class:`~pyglet.math.Mat4` instance can be set.
         Alternatively, you can supply a flat tuple of 16 values.
         """
-        return self._matrices.view
+        return self.default_camera.view_matrix
 
     @view.setter
     def view(self, matrix: Mat4) -> None:
-        self._matrices.view = matrix
+        self.default_camera.view_matrix = matrix
 
     @property
     def viewport(self) -> tuple[int, int, int, int]:
@@ -1323,15 +1335,11 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
 
         The Window viewport, expressed as (x, y, width, height).
         """
-        return self._viewport
+        return self.default_camera.viewport
 
     @viewport.setter
     def viewport(self, values: tuple[int, int, int, int]) -> None:
-        self._viewport = values
-        pr = 1.0
-        x, y, w, h = values
-        if self.context:
-            self.context.core.set_viewport(self, int(x * pr), int(y * pr), int(w * pr), int(h * pr))
+        self.default_camera.viewport = values
 
     # If documenting, show the event methods.  Otherwise, leave them out
     # as they are not really methods.
@@ -1856,8 +1864,14 @@ class FPSDisplay:
         self._time = time
         self._mean = mean
 
-        # Hook into the Window.flip method:
-        self._window_flip, window.flip = window.flip, self._hook_flip
+        if window.context:
+            self._context_present = window.context.present
+            window.context.present = self._hook_present
+            self._window_flip = None
+        else:
+            # Fallback for contexts that are not available yet.
+            self._window_flip, window.flip = window.flip, self._hook_flip
+            self._context_present = None
         self.label = Label('', x=10, y=10, font_size=24, weight="bold", color=color, batch=batch)
 
         self._elapsed = 0.0
@@ -1885,7 +1899,13 @@ class FPSDisplay:
 
     def _hook_flip(self) -> None:
         self.update()
-        self._window_flip()
+        if self._window_flip is not None:
+            self._window_flip()
+
+    def _hook_present(self) -> None:
+        self.update()
+        if self._context_present is not None:
+            self._context_present()
 
 
 if _is_pyglet_doc_run:
