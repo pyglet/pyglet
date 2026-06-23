@@ -364,12 +364,13 @@ class Skin:
         self.name = data.get('name')
         ibm_idx = data.get('inverseBindMatrices')
         ibm_accessor = owner.accessors[ibm_idx] if ibm_idx is not None else None
-        self.inverse_bind_matrices = ibm_accessor.as_array() if ibm_accessor \
-            else None
+        self.inverse_bind_matrices: array | None = (
+            ibm_accessor.as_array() if ibm_accessor else None
+        )
         joints_indices = data.get('joints', [])
-        self.joints = [owner.nodes[i] for i in joints_indices]
-        self.skeleton_index = data.get('skeleton')
-        self.skeleton = owner.nodes[self.skeleton_index] if (
+        self.joints: list[Node] = [owner.nodes[i] for i in joints_indices]
+        self.skeleton_index: int = data.get('skeleton')
+        self.skeleton: Node | None = owner.nodes[self.skeleton_index] if (
             self.skeleton_index is not None
         ) else None
         self.extensions = data.get('extensions')
