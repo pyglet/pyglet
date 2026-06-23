@@ -1461,6 +1461,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                 paths:
                     File path strings currently being dragged.
 
+            .. note:: On Linux (xlib), paths are not available until ``on_file_drop`` due to OS limitations.
+
             .. versionadded:: 3.0
 
             :event:
@@ -1476,6 +1478,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                     Distance in pixels from the bottom edge of the window.
                 paths:
                     File path strings currently being dragged.
+
+            .. note:: On Linux (xlib), paths are not available until ``on_file_drop`` due to OS limitations.
 
             .. versionadded:: 3.0
 
