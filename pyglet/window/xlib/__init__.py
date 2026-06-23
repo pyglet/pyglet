@@ -365,7 +365,8 @@ class XlibWindow(BaseWindow):
                 self._xdnd_version = None
                 self._xdnd_format = None
                 self._xdnd_position = (0, 0)  # For position callback.
-                self._xdnd_drag_active = False
+                self._xdnd_drag_active = False  # Tracking if pointer is over window.
+                self._xdnd_drop_pending = False  # Received a drop, waiting for SelectionNotify.
 
                 _version = c_ulong(int(XDND_VERSION))
                 ptr = pointer(_version)
@@ -1380,8 +1381,14 @@ class XlibWindow(BaseWindow):
     def _event_drag_leave(self) -> None:
         if self._xdnd_drag_active:
             self.dispatch_event('on_file_drag_exit')
-
         self._xdnd_drag_active = False
+
+        if not self._xdnd_drop_pending:
+            self._reset_xdnd_state()
+
+    def _reset_xdnd_state(self):
+        self._xdnd_drag_active = False
+        self._xdnd_drop_pending = False
         self._xdnd_source = None
         self._xdnd_format = None
         self._xdnd_version = None
@@ -1391,6 +1398,8 @@ class XlibWindow(BaseWindow):
             return
 
         time = xlib.CurrentTime
+
+        self._xdnd_drop_pending = True
 
         if self._xdnd_format:
             if self._xdnd_version >= 1:
@@ -1477,6 +1486,7 @@ class XlibWindow(BaseWindow):
         self._xdnd_version = ev.xclient.data.l[1] >> 24
         self._xdnd_format = None
         self._xdnd_drag_active = False
+        self._xdnd_drop_pending = False
 
         if self._xdnd_version > XDND_VERSION:
             return
@@ -1494,6 +1504,28 @@ class XlibWindow(BaseWindow):
             data = ev.xclient.data.l + 2
 
         # Check all of the properties we received from the dropped item and verify it support URI.
+        self._xdnd_source = ev.xclient.data.l[0]
+        self._xdnd_version = ev.xclient.data.l[1] >> 24
+        self._xdnd_format = None
+        self._xdnd_drag_active = False
+        self._xdnd_drop_pending = False
+
+        if self._xdnd_version > XDND_VERSION:
+            return
+
+        three_or_more = ev.xclient.data.l[1] & 1
+
+        # Search all of them (usually 8)
+        if three_or_more:
+            data, count, _ = self.get_single_property(self._xdnd_source, self._xdnd_atoms['XdndTypeList'], XA_ATOM)
+
+            data = cast(data, POINTER(xlib.Atom))
+        else:
+            # Some old versions may only have 3? Needs testing.
+            count = 3
+            data = ev.xclient.data.l + 2
+
+
         for i in range(count):
             if data[i] == self._xdnd_atoms['text/uri-list']:
                 self._xdnd_format = self._xdnd_atoms['text/uri-list']
@@ -1554,6 +1586,8 @@ class XlibWindow(BaseWindow):
 
                 self.dispatch_event('on_file_drop', self._xdnd_position[0], self._height - self._xdnd_position[1],
                                     formatted_paths)
+
+                self._xdnd_drop_pending = False
                 self._event_drag_leave()
 
     @staticmethod
