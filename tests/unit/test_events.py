@@ -218,6 +218,29 @@ def test_weakref_to_instance(dispatcher):
     assert watcher.called
 
 
+@pytest.mark.parametrize(
+    ('push_handler', 'expected_callbacks'),
+    [
+        (lambda dispatcher, handler: dispatcher.push_handlers(handler.mock_event), 1),
+        (lambda dispatcher, handler: dispatcher.push_handlers(handler), 1),
+        (lambda dispatcher, handler: dispatcher.push_handlers(mock_event=handler.mock_event), 1),
+    ],
+)
+def test_weakref_handler_paths_have_no_removal_callbacks(dispatcher, monkeypatch, push_handler, expected_callbacks):
+    dispatcher.register_event_type('mock_event')
+    callbacks = []
+    weak_method = pyglet.event.WeakMethod
+
+    def track_callback(method, callback=None):
+        callbacks.append(callback)
+        return weak_method(method, callback)
+
+    monkeypatch.setattr(pyglet.event, 'WeakMethod', track_callback)
+    push_handler(dispatcher, DummyHandler())
+
+    assert callbacks == [None] * expected_callbacks
+
+
 def test_weakref_deleted_when_instance_is_deleted(dispatcher):
     dispatcher.register_event_type('mock_event')
     handler = DummyHandler()
@@ -238,3 +261,59 @@ def test_dispatch_event_ignores_dead_weak_method_handler(dispatcher):
     result = dispatcher.dispatch_event('mock_event')
     assert result is False
     assert not dispatcher._event_stack
+
+
+def test_remove_handlers_removes_weakref_to_instance_method(dispatcher):
+    dispatcher.register_event_type('mock_event')
+    handler = DummyHandler()
+    dispatcher.push_handlers(handler.mock_event)
+
+    dispatcher.remove_handlers(handler.mock_event)
+
+    result = dispatcher.dispatch_event('mock_event')
+    assert result is False
+
+
+def test_remove_handlers_removes_weakref_to_instance(dispatcher):
+    dispatcher.register_event_type('mock_event')
+    handler = DummyHandler()
+    dispatcher.push_handlers(handler)
+
+    dispatcher.remove_handlers(handler)
+
+    result = dispatcher.dispatch_event('mock_event')
+    assert result is False
+
+
+def test_dispatch_event_removes_dead_weak_handler_and_continues_to_lower_frame(dispatcher):
+    dispatcher.register_event_type('mock_event')
+    lower_handler = mock.Mock(spec=types.FunctionType)
+    lower_handler.__name__ = 'mock_event'
+    lower_handler.return_value = EVENT_HANDLED
+    weak_handler = DummyHandler()
+    dispatcher.push_handlers(lower_handler)
+    dispatcher.push_handlers(weak_handler.mock_event)
+    del weak_handler
+    gc.collect()
+
+    result = dispatcher.dispatch_event('mock_event')
+
+    assert result == EVENT_HANDLED
+    assert lower_handler.called
+    assert dispatcher._event_stack == [{'mock_event': lower_handler}]
+
+
+def test_dispatch_event_removes_dead_weak_handler_from_non_empty_frame(dispatcher):
+    dispatcher.register_event_type('mock_event')
+    dispatcher.register_event_type('mock_event2')
+    handler = ClassInstanceHandler()
+    dispatcher.push_handlers(handler)
+    del handler
+    gc.collect()
+
+    result = dispatcher.dispatch_event('mock_event')
+
+    assert result is False
+    assert len(dispatcher._event_stack) == 1
+    assert 'mock_event' not in dispatcher._event_stack[0]
+    assert 'mock_event2' in dispatcher._event_stack[0]

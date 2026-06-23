@@ -121,7 +121,6 @@ from __future__ import annotations
 import inspect
 import os.path
 
-from functools import partial
 from typing import TYPE_CHECKING, Literal, Union
 from weakref import WeakMethod
 
@@ -193,7 +192,7 @@ class EventDispatcher:
                     msg = f'Unknown event "{name}"'
                     raise EventException(msg)
                 if inspect.ismethod(obj):
-                    yield name, WeakMethod(obj, partial(self._remove_handler, name))
+                    yield name, WeakMethod(obj)
                 else:
                     yield name, obj
             else:
@@ -201,7 +200,7 @@ class EventDispatcher:
                 for name in dir(obj):
                     if name in self.event_types:
                         meth = getattr(obj, name)
-                        yield name, WeakMethod(meth, partial(self._remove_handler, name))
+                        yield name, WeakMethod(meth)
 
         for name, handler in kwargs.items():
             # Function for handling given event (no magic)
@@ -209,7 +208,7 @@ class EventDispatcher:
                 msg = f'Unknown event "{name}"'
                 raise EventException(msg)
             if inspect.ismethod(handler):
-                yield name, WeakMethod(handler, partial(self._remove_handler, name))
+                yield name, WeakMethod(handler)
             else:
                 yield name, handler
 
@@ -302,25 +301,6 @@ class EventDispatcher:
                     break
             except KeyError:
                 pass
-
-    def _remove_handler(self, name: str, handler: Callable) -> None:
-        """Used internally to remove all handler instances for the given event name.
-
-        This is normally called from a dead ``WeakMethod`` to remove itself from the
-        event stack.
-        """
-        # Iterate over a copy as we might mutate the list
-        for frame in list(self._event_stack):
-
-            if name in frame:
-                try:
-                    if frame[name] == handler:
-                        del frame[name]
-                        if not frame:
-                            self._event_stack.remove(frame)
-                except TypeError:
-                    # weakref is already dead
-                    pass
 
     def dispatch_event(self, event_type: str, *args: Any) -> bool | None:
         """Dispatch an event to the attached event handlers.
