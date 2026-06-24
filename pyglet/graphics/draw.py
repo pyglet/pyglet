@@ -161,6 +161,7 @@ class Group:
             set_id:
                 The set that the sampler belongs to. Only applicable in Vulkan.
         """
+        self._state_names.pop(MultiTextureSamplerState.__name__, None)
         self.set_state(TextureState.from_texture(texture, texture_unit, set_id))
 
     def set_textures(
@@ -181,10 +182,8 @@ class Group:
             set_id:
                 The set that the sampler belongs to. Only applicable in Vulkan.
         """
-        for texture_unit, texture in enumerate(textures.values(), first_texture_unit):
-            self.set_texture(texture, texture_unit, set_id)
-
-        self.set_state(MultiTextureSamplerState.from_textures(program, textures, first_texture_unit))
+        self._state_names.pop(TextureState.__name__, None)
+        self.set_state(MultiTextureSamplerState.from_textures(program, textures, first_texture_unit, set_id))
 
     @property
     def order(self) -> int:
