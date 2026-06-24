@@ -23,10 +23,12 @@ from pyglet.graphics.state import (
     ShaderUniformState,
     State,
     TextureState,
+    UniformBufferState,
     ViewportState,
     _expand_states_in_order,
 )
 if TYPE_CHECKING:
+    from pyglet.graphics.buffer import UniformBufferRegion
     from pyglet.window.camera.base import BaseCamera, CameraScissor
     from pyglet.customtypes import ScissorProtocol
     from pyglet.graphics.shader import ShaderProgram
@@ -147,6 +149,18 @@ class Group:
 
     def set_shader_uniforms(self, program: ShaderProgram, uniforms: dict[str, Any]):
         self.set_state(ShaderUniformState(program, uniforms))
+
+    def set_uniform_buffer(self, region: UniformBufferRegion, binding_index: int | None = None) -> None:
+        """Set a Uniform Buffer Object region state.
+
+        Args:
+            region:
+                A region created by ``UniformBlock.create_ubo_region``.
+            binding_index:
+                Optional binding point override. By default, the region uses
+                the binding point assigned to its source uniform block.
+        """
+        self.set_state(UniformBufferState(region, binding_index))
 
     def set_texture(self, texture: Texture, texture_unit: int=0, set_id: int=0) -> None:
         """Set the texture state.

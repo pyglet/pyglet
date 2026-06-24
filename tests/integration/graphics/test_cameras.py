@@ -28,7 +28,7 @@ class RecordingStorage:
         assert draw_context is not None
         self.commit_count += 1
 
-    def bind(self, draw_context) -> None:
+    def bind_camera(self, draw_context) -> None:
         assert draw_context is not None
         self.bind_count += 1
 

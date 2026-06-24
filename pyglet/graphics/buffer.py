@@ -464,6 +464,89 @@ class UniformBufferObject(RingBuffer):
         )
 
 
+class UniformBufferRegion:
+    """UBO region that uploads through a ring-buffered ``UniformBufferObject``.
+
+    The region owns one CPU-side data structure and a set of GPU ranges.
+
+    General practice is to update the data structure, mark it dirty, and then commit when you are done updating
+    for that frame.
+
+    .. warning:: Do not make the CPU-side data dirty after binding/committing during the same frame (for example,
+                 during the ``on_draw`` call), or GPU stalls may occur.
+
+    .. versionadded:: 3.0
+    """
+
+    __slots__ = (
+        "_current_binding",
+        "_current_range",
+        "_dirty",
+        "_next_range_index",
+        "_ranges",
+        "_ubo",
+        "data",
+    )
+
+    def __init__(
+        self,
+        ubo: UniformBufferObject,
+        *,
+        copies_per_resource: int | None = None,
+    ) -> None:
+        self._ubo = ubo
+        self.data = ubo.get_data_structure()
+        self._current_binding: BufferBindingSlice | None = None
+        self._current_range: BufferRange | None = None
+        self._ranges = ubo.reserve_resource_range(copies_per_resource=copies_per_resource)
+        self._next_range_index = 0
+        self._dirty = True
+
+    @property
+    def ubo(self) -> UniformBufferObject:
+        """The underlying ``UniformBufferObject``."""
+        return self._ubo
+
+    @property
+    def dirty(self) -> bool:
+        """Whether the CPU-side data needs to be uploaded before drawing."""
+        return self._dirty
+
+    def __enter__(self) -> ctypes.Structure:
+        return self.data
+
+    def __exit__(self, _exc_type: Any, _exc_val: Any, _exc_tb: Any) -> None:
+        self.mark_dirty()
+
+    def mark_dirty(self) -> None:
+        """Mark the CPU-side data for upload on the next ``bind`` call."""
+        self._dirty = True
+
+    def commit(self) -> None:
+        """Upload dirty CPU-side data to the next writable GPU range."""
+        if not self._dirty:
+            return
+
+        self._current_binding, self._current_range, self._next_range_index = (
+            self._ubo.upload_to_available_binding_from_ranges(
+                self.data,
+                self._ranges,
+                self._next_range_index,
+            )
+        )
+        self._dirty = False
+
+    def bind(self, *, binding_index: int | None = None) -> None:
+        """Upload dirty data if needed, then bind the current GPU range."""
+        self.commit()
+
+        if self._current_binding is None or self._current_range is None:
+            return
+
+        self._ubo.use_range(self._current_range)
+        self._ubo.bind_slice(self._current_binding, binding_index=binding_index)
+
+
 class MappedBufferObject(AbstractBuffer):
     """A GPU buffer that supports map/unmap and range mapping."""
 
