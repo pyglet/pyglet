@@ -53,9 +53,11 @@ class TextureState(State):  # noqa: D101
 
 @dataclass(frozen=True)
 class MultiTextureSamplerState(State):
-    """Static per-program sampler bindings for multi-texture draws."""
+    """Texture bindings and sampler uniforms for multi-texture draws."""
     program: ShaderProgram
+    textures: tuple[tuple[tuple[int, int], int, int], ...]
     uniforms: tuple[tuple[str, int], ...]
+    webgl_textures: tuple[Any, ...] = field(hash=False, compare=False)
 
     sets_state: bool = True
 
@@ -64,10 +66,21 @@ class MultiTextureSamplerState(State):
             cls,
             program: ShaderProgram,
             textures: dict[str, Texture],
-            first_texture_unit: int = 0) -> MultiTextureSamplerState:
-        return cls(program, tuple((name, idx) for idx, name in enumerate(textures, first_texture_unit)))
+            first_texture_unit: int = 0,
+            set_id: int = 0) -> MultiTextureSamplerState:
+        texture_states = tuple(
+            ((texture.target, id(texture.id)), texture_unit, set_id)
+            for texture_unit, texture in enumerate(textures.values(), first_texture_unit)
+        )
+        uniforms = tuple((name, idx) for idx, name in enumerate(textures, first_texture_unit))
+        webgl_textures = tuple(texture.id for texture in textures.values())
+        return cls(program, texture_states, uniforms, webgl_textures)
 
     def set_state(self, ctx: DrawContext) -> None:
+        for (texture, texture_unit, _set_id), webgl_texture in zip(self.textures, self.webgl_textures):
+            ctx.surface_ctx.gl.activeTexture(GL_TEXTURE0 + texture_unit)
+            ctx.surface_ctx.gl.bindTexture(texture[0], webgl_texture)
+
         for uniform_name, texture_unit in self.uniforms:
             self.program[uniform_name] = texture_unit
 
