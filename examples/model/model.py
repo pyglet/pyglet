@@ -1,56 +1,44 @@
 import pyglet
 
-from pyglet.graphics.api.gl import glEnable, GL_DEPTH_TEST, GL_CULL_FACE
-from pyglet.math import Mat4, Vec3
-
+from pyglet.math import Mat4, Vec3, Quaternion
 
 window = pyglet.window.Window(resizable=True)
 batch = pyglet.graphics.Batch()
-time = 0
-
-
-@window.event
-def on_resize(width, height):
-    window.viewport = (0, 0, width, height)
-
-    window.projection = Mat4.perspective_projection(window.aspect_ratio, z_near=0.1, z_far=255)
-    return pyglet.event.EVENT_HANDLED
+camera = pyglet.window.camera.FPSCamera(window, position=Vec3(0.0, 0.0, 5.0), target=Vec3(0.0, 0.0, 0.0))
 
 
 @window.event
 def on_draw():
     window.clear()
-    batch.draw()
+    # Set the camera explicity while drawing the Batch:
+    with batch.draw_with_options() as options:
+        options.camera = camera
 
 
 def animate(dt):
-    global time
-    time += dt
+    animate.elapsed += dt
 
-    rot_x = Mat4.from_rotation(time, Vec3(1, 0, 0))
-    rot_y = Mat4.from_rotation(time/2, Vec3(0, 1, 0))
-    rot_z = Mat4.from_rotation(time/3, Vec3(0, 0, 1))
-    trans = Mat4.from_translation(Vec3(1.25, 0, 2))
-    model_logo.matrix = trans @ rot_x @ rot_y @ rot_z
+    rot_x = Quaternion.from_rotation(animate.elapsed/1, Vec3(1, 0, 0))
+    rot_y = Quaternion.from_rotation(animate.elapsed/2, Vec3(0, 1, 0))
+    rot_z = Quaternion.from_rotation(animate.elapsed/3, Vec3(0, 0, 1))
+    model_logo_instance.rotation = rot_x @ rot_y @ rot_z
 
-    rot_x = Mat4.from_rotation(time, Vec3(1, 0, 0))
-    rot_y = Mat4.from_rotation(time/3, Vec3(0, 1, 0))
-    rot_z = Mat4.from_rotation(time/2, Vec3(0, 0, 1))
-    trans = Mat4.from_translation(Vec3(-1.75, 0, 0))
-    model_box.matrix = trans @ rot_x @ rot_y @ rot_z
+    rot_x = Quaternion.from_rotation(animate.elapsed/1, Vec3(1, 0, 0))
+    rot_y = Quaternion.from_rotation(animate.elapsed/2, Vec3(0, 1, 0))
+    rot_z = Quaternion.from_rotation(animate.elapsed/3, Vec3(0, 0, 1))
+    model_box_instance.rotation = rot_x @ rot_y @ rot_z
 
 
 if __name__ == "__main__":
-    glEnable(GL_DEPTH_TEST)
-    glEnable(GL_CULL_FACE)
-
     logo_scene = pyglet.resource.scene('logo3d.obj')
     box_scene = pyglet.resource.scene('box.obj')
+
     model_logo = logo_scene.create_models(batch=batch)[0]   # only one model in this scene
+    model_logo_instance = model_logo.create_instance(translation=Vec3(1.25, 0.0, 1.0))
+
     model_box = box_scene.create_models(batch=batch)[0]     # only one model in this scene
+    model_box_instance = model_box.create_instance(translation=Vec3(-1.25, 0.0, 0.0))
 
-    # Set the application wide view matrix (camera):
-    window.view = Mat4.look_at(position=Vec3(0, 0, 5), target=Vec3(0, 0, 0), up=Vec3(0, 1, 0))
-
+    animate.elapsed = 0.0
     pyglet.clock.schedule_interval(animate, 1 / 60)
     pyglet.app.run()
