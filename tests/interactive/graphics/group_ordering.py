@@ -13,7 +13,6 @@ A test to spot test camera scissors, views, and hierarchy views
 from __future__ import annotations
 
 import pyglet
-pyglet.options.backend = "gl2"
 from pyglet.window import key
 from pyglet.window.camera import Camera2D, CameraScissor
 

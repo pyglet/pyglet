@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from pyglet.customtypes import ScissorProtocol
     from pyglet.graphics.draw import DrawContext
     from pyglet.graphics.api.gl.shader import ShaderProgram
+    from pyglet.graphics.buffer import UniformBufferRegion
     from pyglet.graphics.texture import Texture
 
 
@@ -227,8 +228,13 @@ class ViewportState(_BaseViewportState):
 
 @dataclass(frozen=True)
 class UniformBufferState(State):
-    name: str
-    binding: int
+    region: UniformBufferRegion
+    binding_index: int | None = None
+
+    sets_state: bool = True
+
+    def set_state(self, ctx: DrawContext) -> None:
+        self.region.bind(binding_index=self.binding_index)
 
 
 @dataclass(frozen=True)

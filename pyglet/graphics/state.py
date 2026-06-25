@@ -8,8 +8,8 @@ import pyglet
 
 from pyglet.enums import GraphicsAPI
 
-
 if TYPE_CHECKING:
+    from pyglet.window.camera.base import _CameraViewBase
     from pyglet.customtypes import ScissorProtocol
     from pyglet.graphics.draw import DrawContext
     from pyglet.window.camera import ViewportType
@@ -62,6 +62,7 @@ class State:
 @runtime_checkable
 class CameraScopeProtocol(Protocol):
     """Protocol for camera objects used by camera scope states."""
+    view: _CameraViewBase
 
     @property
     def viewport(self) -> ViewportType:
@@ -180,6 +181,7 @@ MultiTextureSamplerState: type[State] = _backend_state.MultiTextureSamplerState
 ShaderProgramState: type[State] = _backend_state.ShaderProgramState
 BlendState: type[State] = _backend_state.BlendState
 ShaderUniformState: type[State] = _backend_state.ShaderUniformState
+UniformBufferState: type[State] = _backend_state.UniformBufferState
 DepthBufferComparison: type[State] = _backend_state.DepthBufferComparison
 ScissorState: type[State] = _backend_state.ScissorState
 ViewportState: type[State] = _backend_state.ViewportState
