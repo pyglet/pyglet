@@ -4,24 +4,28 @@ import sys
 import unicodedata
 from ctypes.wintypes import DWORD, HICON, HWND, MSG, POINT, RECT, SIZE, UINT, BOOL, HKEY, LPBYTE
 from functools import lru_cache
-from typing import Callable, Sequence
+from typing import Callable, Sequence, TYPE_CHECKING
 
 from pyglet import compat_platform
-from pyglet.libs.win32 import constants
+from pyglet.libs.win32 import constants, IDropTarget
 from pyglet.libs.win32.types import (
     BITMAPINFOHEADER,
     BYTE,
     COLORREF,
+    FORMATETC,
     HCURSOR,
+    IDataObject,
     HRAWINPUT,
     ICONINFO,
     MINMAXINFO,
     RAWINPUT,
     RAWINPUTHEADER,
+    STGMEDIUM,
     TRACKMOUSEEVENT,
-    WCHAR,
+    WCHAR, IID_IDROPTARGET, IID_IUNKNOWN,
 )
 from pyglet.libs.win32.winkey import chmap, keymap
+from pyglet.libs.win32.context_managers import hresult_context
 
 if compat_platform not in ('cygwin', 'win32'):
     raise ImportError('Not a win32 platform.')
@@ -53,9 +57,11 @@ from pyglet.libs.win32 import (
     _dwmapi,
     _gdi32,
     _kernel32,
+    _ole32,
     _shell32,
     _user32,
     _advapi32,
+    com,
 )
 from pyglet.window import (
     BaseWindow,
@@ -68,6 +74,9 @@ from pyglet.window import (
     key,
     mouse,
 )
+
+if TYPE_CHECKING:
+    from _ctypes import _Pointer
 
 # symbol,ctrl -> motion mapping
 _motion_map: dict[tuple[int, bool], int] = {
@@ -116,6 +125,119 @@ _priority_events = [
 ]
 
 
+class _FileDropTargetManager(com.COMObject):
+    """COM object to manage file dropping into the application.
+
+    When this is not available, falls back to WM_DROPFILES events.
+    """
+    _interfaces_ = (IDropTarget,)
+
+    def __init__(self, window: Win32Window) -> None:
+        super().__init__()
+        self._window = window
+        self._drag_paths: list[str] = []
+        self._has_file_drag = False
+
+    @staticmethod
+    def _set_drop_effect(pdwEffect: _Pointer[DWORD], accepted: bool) -> None:  # noqa: N803
+        if pdwEffect:
+            pdwEffect[0] = constants.DROPEFFECT_COPY if accepted else constants.DROPEFFECT_NONE
+
+    @staticmethod
+    def _extract_paths(data_object: IDataObject) -> list[str]:
+        format_etc = FORMATETC(constants.CF_HDROP, None, constants.DVASPECT_CONTENT, -1, constants.TYMED_HGLOBAL)
+        medium = STGMEDIUM()
+
+        try:
+            with hresult_context() as checker:
+                if not checker.call_succeeded(data_object.QueryGetData, byref(format_etc)):
+                    return []
+
+                if not checker.call_succeeded(data_object.GetData, byref(format_etc), byref(medium)):
+                    return []
+
+            if medium.tymed != constants.TYMED_HGLOBAL or not medium.hGlobal:
+                return []
+
+            file_count = _shell32.DragQueryFileW(medium.hGlobal, 0xFFFFFFFF, None, 0)
+            paths = []
+
+            for i in range(file_count):
+                length = _shell32.DragQueryFileW(medium.hGlobal, i, None, 0)
+                buffer = create_unicode_buffer(length + 1)
+                _shell32.DragQueryFileW(medium.hGlobal, i, buffer, length + 1)
+                paths.append(buffer.value)
+
+            return paths
+        finally:
+            if medium.tymed != constants.TYMED_NULL:
+                _ole32.ReleaseStgMedium(byref(medium))
+
+    def _reset_drag_state(self) -> None:
+        self._drag_paths = []
+        self._has_file_drag = False
+
+    def _dispatch_drag_exit(self) -> None:
+        if self._has_file_drag:
+            self._window.dispatch_event('on_file_drag_exit')
+        self._reset_drag_state()
+
+    def _point_to_client(self, pt: POINT) -> tuple[int, int]:
+        point = POINT(pt.x, pt.y)
+        _user32.ScreenToClient(self._window._view_hwnd, byref(point))
+        return point.x, self._window._height - point.y
+
+    def QueryInterface(self, riid: _Pointer[com.GUID], ppv: c_void_p) -> int:
+        iid = riid.contents
+        ppv_cast = cast(ppv, POINTER(c_void_p))
+
+        if iid in (IID_IUNKNOWN, IID_IDROPTARGET):
+            ppv_cast[0] = cast(self.as_interface(IDropTarget), c_void_p).value
+            self.AddRef()
+            return com.S_OK
+
+        ppv_cast[0] = None
+        return com.E_NOINTERFACE
+
+    def DragEnter(self, p_data_object: IDataObject, _grf_key_state: int, pt: POINT,
+                  pdw_effect: _Pointer[DWORD]) -> int:
+        paths = self._extract_paths(p_data_object) if p_data_object else []
+        self._drag_paths = paths
+        self._has_file_drag = bool(paths)
+        self._set_drop_effect(pdw_effect, self._has_file_drag)
+
+        if self._has_file_drag:
+            x, y = self._point_to_client(pt)
+            self._window.dispatch_event('on_file_drag_enter', x, y, paths)
+
+        return com.S_OK
+
+    def DragOver(self, _grf_key_state: int, pt: POINT, pdw_effect: _Pointer[DWORD]) -> int:
+        self._set_drop_effect(pdw_effect, self._has_file_drag)
+
+        if self._has_file_drag:
+            x, y = self._point_to_client(pt)
+            self._window.dispatch_event('on_file_drag', x, y, self._drag_paths)
+
+        return com.S_OK
+
+    def DragLeave(self) -> int:
+        self._dispatch_drag_exit()
+        return com.S_OK
+
+    def Drop(self, p_data_object: IDataObject, _grf_key_state: int, pt: POINT, pdw_effect: _Pointer[DWORD]) -> int:
+        paths = self._extract_paths(p_data_object) if p_data_object else self._drag_paths
+        accepted = bool(paths)
+        self._set_drop_effect(pdw_effect, accepted)
+
+        if accepted:
+            x, y = self._point_to_client(pt)
+            self._window.dispatch_event('on_file_drop', x, y, paths)
+
+        self._dispatch_drag_exit()
+        return com.S_OK
+
+
 class Win32Window(BaseWindow):
     _window_class = None
     _hwnd = None
@@ -144,6 +266,9 @@ class Win32Window(BaseWindow):
     _ex_ws_style: int = 0
     _minimum_size: tuple[int, int] | None = None
     _maximum_size: tuple[int, int] | None = None
+    _drop_target: _FileDropTargetManager | None = None
+    _ole_initialized_for_file_drops: bool = False
+    _ole_drop_registered: bool = False
 
     def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
         # Bind event handlers
@@ -292,15 +417,7 @@ class Win32Window(BaseWindow):
 
             # Only allow files being dropped if specified.
             if self._file_drops:
-                # Allows UAC to not block the drop files request if low permissions. All 3 must be set.
-                if constants.WINDOWS_7_OR_GREATER:
-                    _user32.ChangeWindowMessageFilterEx(self._hwnd, constants.WM_DROPFILES, constants.MSGFLT_ALLOW,
-                                                        None)
-                    _user32.ChangeWindowMessageFilterEx(self._hwnd, constants.WM_COPYDATA, constants.MSGFLT_ALLOW, None)
-                    _user32.ChangeWindowMessageFilterEx(self._hwnd, constants.WM_COPYGLOBALDATA, constants.MSGFLT_ALLOW,
-                                                        None)
-
-                _shell32.DragAcceptFiles(self._hwnd, True)
+                self._enable_file_drops()
 
             # Set the raw keyboard to handle shift state. This is required as legacy events cannot handle shift states
             # when both keys are used together. View Hwnd as none changes focus to follow keyboard.
@@ -363,12 +480,55 @@ class Win32Window(BaseWindow):
         _user32.SetWindowPos(self._view_hwnd, 0,
                              x, y, width, height, constants.SWP_NOZORDER | constants.SWP_NOOWNERZORDER)
 
+    def _enable_file_drops(self) -> None:
+        # Allows UAC to not block drop files requests if process permissions differ.
+        if constants.WINDOWS_7_OR_GREATER:
+            _user32.ChangeWindowMessageFilterEx(self._hwnd, constants.WM_DROPFILES, constants.MSGFLT_ALLOW, None)
+            _user32.ChangeWindowMessageFilterEx(self._hwnd, constants.WM_COPYDATA, constants.MSGFLT_ALLOW, None)
+            _user32.ChangeWindowMessageFilterEx(self._hwnd, constants.WM_COPYGLOBALDATA, constants.MSGFLT_ALLOW, None)
+
+        with hresult_context() as checker:
+            if not checker.call_succeeded(_ole32.OleInitialize, None):
+                # Fall back to WM_DROPFILES.
+                _shell32.DragAcceptFiles(self._hwnd, True)
+                return
+
+            self._ole_initialized_for_file_drops = True
+
+            self._drop_target = _FileDropTargetManager(self)
+            assert self._drop_target is not None
+            target_interface = cast(self._drop_target.as_interface(IDropTarget), c_void_p)
+            register_result = checker.call(_ole32.RegisterDragDrop, self._hwnd, target_interface)
+
+            if checker.succeeded(register_result):
+                self._ole_drop_registered = True
+                return
+
+            self._drop_target = None
+
+        _shell32.DragAcceptFiles(self._hwnd, True)
+
+    def _disable_file_drops(self) -> None:
+        if self._ole_drop_registered:
+            _ole32.RevokeDragDrop(self._hwnd)
+            self._ole_drop_registered = False
+
+        if self._drop_target is not None:
+            self._drop_target = None
+
+        if self._ole_initialized_for_file_drops:
+            _ole32.OleUninitialize()
+            self._ole_initialized_for_file_drops = False
+
+        _shell32.DragAcceptFiles(self._hwnd, False)
+
     def close(self) -> None:
         if not self._hwnd:
             super().close()
             return
 
         self.set_mouse_cursor_platform_visible(True)
+        self._disable_file_drops()
 
         _user32.DestroyWindow(self._hwnd)
         _user32.UnregisterClassW(self._view_window_class.lpszClassName, 0)
