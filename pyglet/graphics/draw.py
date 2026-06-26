@@ -101,6 +101,7 @@ class Group:
 
         If the state is an enforced state, setting a new state will not update any children.
         """
+        assert not self.batches, "New states cannot be set once a group is in a batch."
         state_type = type(state)
         self._state_names[state_type.__name__] = state
         group_states = self._state_names.values()
@@ -147,7 +148,7 @@ class Group:
     def set_shader_program(self, program: ShaderProgram):
         self.set_state(ShaderProgramState(program))
 
-    def set_shader_uniforms(self, program: ShaderProgram, uniforms: dict[str, Any]):
+    def set_shader_uniforms(self, program: ShaderProgram, uniforms: dict[str, Any]) -> None:
         self.set_state(ShaderUniformState(program, uniforms))
 
     def set_uniform_buffer(self, region: UniformBufferRegion, binding_index: int | None = None) -> None:
