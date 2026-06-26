@@ -382,7 +382,7 @@ def test_group_shader_uniforms_snapshot_after_batching(gl3_context) -> None:
     group.set_shader_uniforms(program, uniforms)
     batch._add_group(group)  # noqa: SLF001
 
-    with pytest.raises(AssertionError, match="New states cannot be added once this group is in a batch."):
+    with pytest.raises(AssertionError, match="New states cannot be set once a group is in a batch."):
         group.set_shader_uniforms(program, {"model": "updated"})
 
 
