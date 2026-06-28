@@ -93,8 +93,9 @@ Attach camera scopes to groups with ``Group.set_camera``::
     pyglet.sprite.Sprite(world_image, batch=batch, group=world_group)
     pyglet.text.Label("HUD", batch=batch, group=ui_group)
 
-``Group.set_camera`` applies camera state at draw entry by calling ``begin()``.
-It does not call ``end()`` during group unsetting.
+
+.. note:: ``Group.set_camera`` applies camera state at draw entry by calling ``begin()``.
+          It does not call ``end()`` during group unsetting.
 
 Viewport
 --------

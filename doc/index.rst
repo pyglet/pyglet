@@ -42,6 +42,7 @@ If you are migrating from an older version of pyglet, please read through
    programming_guide/installation
    programming_guide/quickstart
    programming_guide/windowing
+   programming_guide/camera
    programming_guide/keyboard
    programming_guide/mouse
    programming_guide/input
