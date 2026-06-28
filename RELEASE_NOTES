@@ -1,3 +1,18 @@
+pyglet 2.1.15
+
+Bugfixes
+--------
+linux.fontconfig: Fix incorrect FcFreeTypeQueryFace argument. #1454
+
+Improvements
+------------
+media: Improved support for 32bit audio, and enhanced capability detection and handling. #1415
+docs: Add missing includes for gui.Frame. #1444
+docs: Update paragraph spacing documentation.
+docs: Update details about supported Python versions. #1434
+docs: Add section on drawing VertexLists, and usage examples.
+
+
 pyglet 2.1.14
 
 Bugfixes
