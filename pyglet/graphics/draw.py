@@ -23,10 +23,12 @@ from pyglet.graphics.state import (
     ShaderUniformState,
     State,
     TextureState,
+    UniformBufferState,
     ViewportState,
     _expand_states_in_order,
 )
 if TYPE_CHECKING:
+    from pyglet.graphics.buffer import UniformBufferRegion
     from pyglet.window.camera.base import BaseCamera, CameraScissor
     from pyglet.customtypes import ScissorProtocol
     from pyglet.graphics.shader import ShaderProgram
@@ -99,6 +101,7 @@ class Group:
 
         If the state is an enforced state, setting a new state will not update any children.
         """
+        assert not self.batches, "New states cannot be set once a group is in a batch."
         state_type = type(state)
         self._state_names[state_type.__name__] = state
         group_states = self._state_names.values()
@@ -145,8 +148,20 @@ class Group:
     def set_shader_program(self, program: ShaderProgram):
         self.set_state(ShaderProgramState(program))
 
-    def set_shader_uniforms(self, program: ShaderProgram, uniforms: dict[str, Any]):
+    def set_shader_uniforms(self, program: ShaderProgram, uniforms: dict[str, Any]) -> None:
         self.set_state(ShaderUniformState(program, uniforms))
+
+    def set_uniform_buffer(self, region: UniformBufferRegion, binding_index: int | None = None) -> None:
+        """Set a Uniform Buffer Object region state.
+
+        Args:
+            region:
+                A region created by ``UniformBlock.create_ubo_region``.
+            binding_index:
+                Optional binding point override. By default, the region uses
+                the binding point assigned to its source uniform block.
+        """
+        self.set_state(UniformBufferState(region, binding_index))
 
     def set_texture(self, texture: Texture, texture_unit: int=0, set_id: int=0) -> None:
         """Set the texture state.
@@ -161,6 +176,7 @@ class Group:
             set_id:
                 The set that the sampler belongs to. Only applicable in Vulkan.
         """
+        self._state_names.pop(MultiTextureSamplerState.__name__, None)
         self.set_state(TextureState.from_texture(texture, texture_unit, set_id))
 
     def set_textures(
@@ -181,10 +197,8 @@ class Group:
             set_id:
                 The set that the sampler belongs to. Only applicable in Vulkan.
         """
-        for texture_unit, texture in enumerate(textures.values(), first_texture_unit):
-            self.set_texture(texture, texture_unit, set_id)
-
-        self.set_state(MultiTextureSamplerState.from_textures(program, textures, first_texture_unit))
+        self._state_names.pop(TextureState.__name__, None)
+        self.set_state(MultiTextureSamplerState.from_textures(program, textures, first_texture_unit, set_id))
 
     @property
     def order(self) -> int:

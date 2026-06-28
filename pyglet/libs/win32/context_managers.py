@@ -30,7 +30,7 @@ After::
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import Generator, TYPE_CHECKING
+from typing import Any, Callable, Generator, TYPE_CHECKING
 from ctypes import WinError
 from pyglet.libs.win32 import _user32 as user32
 
@@ -72,3 +72,68 @@ def com_context(com_object: COMObject) -> Generator[COMObject, None, None]:
         yield com_object
     finally:
         com_object.Release()
+
+
+class _HResultManager:
+    """Helper for managing multiple HRESULT ctypes calls.
+
+    Typically, ctypes will output an ``OSError`` when the result < 0.
+    """
+    error: OSError | None
+    last_result: int | None
+
+    def __init__(self) -> None:
+        self.last_result = None
+        self.error = None
+
+    def call(self, callback: Callable[..., int], *args: Any) -> int | None:
+        """Invoke a ctypes callback and capture `OSError` as manager state."""
+        self.error = None
+        try:
+            self.last_result = callback(*args)
+            return self.last_result
+        except OSError as err:
+            self.error = err
+            self.last_result = None
+            return None
+
+    @staticmethod
+    def succeeded(result: int | None, acceptable: tuple[int, ...] = ()) -> bool:
+        """Return success for a HRESULT value.
+
+        Args:
+            result:
+                The value returned from a HRESULT-style API call.
+            acceptable:
+                Extra HRESULT values treated as acceptable for this call.
+        """
+        return result is not None and (result >= 0 or result in acceptable)
+
+    def call_succeeded(self, callback: Callable[..., int], *args: Any, acceptable: tuple[int, ...] = ()) -> bool:
+        """Call and check success in one step.
+
+        Use `self.error` to inspect the captured `OSError` when this returns `False`.
+        """
+        return self.succeeded(self.call(callback, *args), acceptable=acceptable)
+
+    def raise_if_failed(self, result: int | None, acceptable: tuple[int, ...] = ()) -> int:
+        """Raise exception if the result is not successful.
+
+        Raises:
+            OSError:
+                Re-raises captured ctypes `OSError`.
+        """
+        if self.succeeded(result, acceptable=acceptable):
+            return int(result)
+
+        if self.error is not None:
+            raise self.error
+
+        msg = f"HRESULT call failed with result {result}"
+        raise OSError(msg)
+
+
+@contextmanager
+def hresult_context() -> Generator[_HResultManager, None, None]:
+    """Context manager for grouped HRESULT checks."""
+    yield _HResultManager()

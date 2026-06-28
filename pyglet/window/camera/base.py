@@ -7,13 +7,14 @@ from typing import TYPE_CHECKING, Any, Generic, Protocol, TypeVar, overload, run
 
 import pyglet
 from pyglet.enums import GraphicsAPI
+from pyglet.graphics.buffer import UniformBufferRegion
 
 
 if TYPE_CHECKING:
     from pyglet.customtypes import ScissorProtocol
     from pyglet.graphics.draw import DrawContext
     from pyglet.math import Mat4
-    from pyglet.graphics.buffer import BufferBindingSlice, BufferRange, UniformBufferObject
+    from pyglet.graphics.buffer import UniformBufferObject
     from pyglet.graphics.shader import ShaderProgram, UniformBlock
     from pyglet.window import Window
 
@@ -61,7 +62,7 @@ class CameraViewStorage(Protocol):
     def commit(self, draw_context: DrawContext) -> None:
         """Commit staged camera data to GPU-visible state when drawing."""
 
-    def bind(self, draw_context: DrawContext) -> None:
+    def bind_camera(self, draw_context: DrawContext) -> None:
         """Bind or apply committed camera data for drawing."""
 
 
@@ -97,7 +98,7 @@ def _create_default_camera_ubo(
     return window_block.create_ubo(copies_per_resource=copies_per_resource)
 
 
-class UniformBufferCameraRegion:
+class UniformBufferCameraRegion(UniformBufferRegion):
     """Camera storage adapter for UBO-backed data uploads."""
 
     def __init__(
@@ -106,37 +107,20 @@ class UniformBufferCameraRegion:
         *,
         copies_per_resource: int | None = None,
     ) -> None:
-        self._ubo = ubo
+        super().__init__(ubo, copies_per_resource=copies_per_resource)
         self._copies_per_resource = copies_per_resource
-        self._ubo_data = ubo.get_data_structure()
-        self._current_binding: BufferBindingSlice | None = None
-        self._current_range: BufferRange | None = None
-        self._ranges = ubo.reserve_resource_range(copies_per_resource=self._copies_per_resource)
-        self._next_range_index = 0
         self._dirty = False
 
     def apply(self, projection: Mat4, view: Mat4) -> None:
-        self._ubo_data.projection[:] = projection
-        self._ubo_data.view[:] = view
-        self._dirty = True
+        self.data.projection[:] = projection
+        self.data.view[:] = view
+        self.mark_dirty()
 
-    def commit(self, _draw_context: DrawContext) -> None:
-        if not self._dirty:
-            return
+    def commit(self, _draw_context: DrawContext | None = None) -> None:
+        super().commit()
 
-        self._current_binding, self._current_range, self._next_range_index = (
-            self._ubo.upload_to_available_binding_from_ranges(
-                self._ubo_data,
-                self._ranges,
-                self._next_range_index,
-            )
-        )
-        self._dirty = False
-
-    def bind(self, _draw_context: DrawContext) -> None:
-        if self._current_binding is not None and self._current_range is not None:
-            self._ubo.use_range(self._current_range)
-            self._ubo.bind_slice(self._current_binding)
+    def bind_camera(self, _draw_context: DrawContext) -> None:
+        self.bind()
 
     def create_view_storage(self) -> UniformBufferCameraRegion:
         return UniformBufferCameraRegion(
@@ -197,7 +181,7 @@ class UniformSetCameraRegion:
     def commit(self, draw_context: DrawContext) -> None:
         self._dirty = False
 
-    def bind(self, draw_context: DrawContext) -> None:
+    def bind_camera(self, draw_context: DrawContext) -> None:
         if draw_context.active_shader_program is not None:
             self.apply_to_program(draw_context.active_shader_program)
 
@@ -436,7 +420,7 @@ class BaseCamera(Generic[ViewT]):
         self._window = weakref.proxy(window)
 
         if not isinstance(view_storage, CameraViewStorage):
-            msg = "Camera region must implement apply(projection, view) and commit(draw_context)."
+            msg = "Camera region must implement apply(projection, view), commit(draw_context), and bind_camera(draw_context)."
             raise TypeError(msg)
 
         self.view_storage = view_storage
@@ -644,7 +628,7 @@ class BaseCamera(Generic[ViewT]):
         if storage is not None and commit:
             storage.commit(draw_context)
         if storage is not None:
-            storage.bind(draw_context)
+            storage.bind_camera(draw_context)
         if changed:
             self._mark_cpu_data_applied(projection, view_matrix, target_view)
 

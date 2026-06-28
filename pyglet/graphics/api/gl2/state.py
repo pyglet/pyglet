@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pyglet.graphics.state import State
 from typing import TYPE_CHECKING
 from pyglet.graphics.api.gl.state import (TextureState, MultiTextureSamplerState, BlendState, ShaderUniformState,   # noqa: F401
-                                          DepthBufferComparison, ScissorState, ViewportState)
+                                          DepthBufferComparison, ScissorState, UniformBufferState, ViewportState)
 
 
 if TYPE_CHECKING:
@@ -24,6 +24,6 @@ class ShaderProgramState(State):
         ctx.active_shader_program = self.program
 
         if ctx.active_camera and ctx.active_camera.view.storage:
-            ctx.active_camera.view.storage.bind(ctx)
+            ctx.active_camera.view.storage.bind_camera(ctx)
 
 

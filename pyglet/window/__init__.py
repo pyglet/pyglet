@@ -1450,6 +1450,50 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             :event:
             """
 
+        def on_file_drag_enter(self, x: int, y: int, paths: list[str]) -> EVENT_HANDLE_STATE:
+            """File drag entered the window.
+
+            Args:
+                x:
+                    Distance in pixels from the left edge of the window.
+                y:
+                    Distance in pixels from the bottom edge of the window.
+                paths:
+                    File path strings currently being dragged.
+
+            .. note:: On Linux (xlib), paths are not available until ``on_file_drop`` due to OS limitations.
+
+            .. versionadded:: 3.0
+
+            :event:
+            """
+
+        def on_file_drag(self, x: int, y: int, paths: list[str]) -> EVENT_HANDLE_STATE:
+            """File drag moved inside the window.
+
+            Args:
+                x:
+                    Distance in pixels from the left edge of the window.
+                y:
+                    Distance in pixels from the bottom edge of the window.
+                paths:
+                    File path strings currently being dragged.
+
+            .. note:: On Linux (xlib), paths are not available until ``on_file_drop`` due to OS limitations.
+
+            .. versionadded:: 3.0
+
+            :event:
+            """
+
+        def on_file_drag_exit(self) -> EVENT_HANDLE_STATE:
+            """File drag ended or left the window.
+
+            .. versionadded:: 3.0
+
+            :event:
+            """
+
         def on_hide(self) -> EVENT_HANDLE_STATE:
             """The window was hidden.
 
@@ -1762,6 +1806,9 @@ BaseWindow.register_event_type('on_hide')
 BaseWindow.register_event_type('on_context_lost')
 BaseWindow.register_event_type('on_context_state_lost')
 BaseWindow.register_event_type('on_file_drop')
+BaseWindow.register_event_type('on_file_drag_enter')
+BaseWindow.register_event_type('on_file_drag')
+BaseWindow.register_event_type('on_file_drag_exit')
 BaseWindow.register_event_type('on_draw')
 BaseWindow.register_event_type('on_refresh')
 

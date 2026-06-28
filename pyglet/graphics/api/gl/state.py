@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from pyglet.customtypes import ScissorProtocol
     from pyglet.graphics.draw import DrawContext
     from pyglet.graphics.api.gl.shader import ShaderProgram
+    from pyglet.graphics.buffer import UniformBufferRegion
     from pyglet.graphics.texture import Texture
 
 
@@ -50,8 +51,9 @@ class TextureState(State):  # noqa: D101
 
 @dataclass(frozen=True)
 class MultiTextureSamplerState(State):
-    """Static per-program sampler bindings for multi-texture draws."""
+    """Texture bindings and sampler uniforms for multi-texture draws."""
     program: ShaderProgram
+    textures: tuple[tuple[tuple[int, int], int, int], ...]
     uniforms: tuple[tuple[str, int], ...]
 
     sets_state: bool = True
@@ -61,10 +63,20 @@ class MultiTextureSamplerState(State):
             cls,
             program: ShaderProgram,
             textures: dict[str, Texture],
-            first_texture_unit: int = 0) -> MultiTextureSamplerState:
-        return cls(program, tuple((name, idx) for idx, name in enumerate(textures, first_texture_unit)))
+            first_texture_unit: int = 0,
+            set_id: int = 0) -> MultiTextureSamplerState:
+        texture_states = tuple(
+            ((texture.target, texture.id), texture_unit, set_id)
+            for texture_unit, texture in enumerate(textures.values(), first_texture_unit)
+        )
+        uniforms = tuple((name, idx) for idx, name in enumerate(textures, first_texture_unit))
+        return cls(program, texture_states, uniforms)
 
     def set_state(self, ctx: DrawContext) -> None:
+        for texture, texture_unit, _set_id in self.textures:
+            ctx.surface_ctx.glActiveTexture(GL_TEXTURE0 + texture_unit)
+            ctx.surface_ctx.glBindTexture(*texture)
+
         for uniform_name, texture_unit in self.uniforms:
             self.program[uniform_name] = texture_unit
 
@@ -216,8 +228,13 @@ class ViewportState(_BaseViewportState):
 
 @dataclass(frozen=True)
 class UniformBufferState(State):
-    name: str
-    binding: int
+    region: UniformBufferRegion
+    binding_index: int | None = None
+
+    sets_state: bool = True
+
+    def set_state(self, ctx: DrawContext) -> None:
+        self.region.bind(binding_index=self.binding_index)
 
 
 @dataclass(frozen=True)

@@ -9,20 +9,25 @@ import weakref
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Literal, Sequence, Any, TYPE_CHECKING, Callable, Protocol, overload
+from typing import TYPE_CHECKING, Any, Callable, Literal, Protocol, Sequence, overload
 
 import pyglet
 from pyglet.enums import GraphicsAPI
+from pyglet.graphics.buffer import UniformBufferRegion
 
 if TYPE_CHECKING:
-    from pyglet.graphics.buffer import (
-        UniformBufferObject,
-    )
-    from pyglet.customtypes import DataTypes, CType
-    from pyglet.graphics.vertexdomain import IndexedVertexList, VertexList, InstanceIndexedVertexList, InstanceVertexList
-    from pyglet.graphics import Batch, Group
-    from pyglet.enums import GeometryMode
     from _weakref import CallableProxyType
+
+    from pyglet.customtypes import CType, DataTypes
+    from pyglet.enums import GeometryMode
+    from pyglet.graphics import Batch, Group
+    from pyglet.graphics.buffer import UniformBufferObject
+    from pyglet.graphics.vertexdomain import (
+        IndexedVertexList,
+        InstanceIndexedVertexList,
+        InstanceVertexList,
+        VertexList,
+    )
 
 
 class ShaderException(BaseException):
@@ -966,6 +971,22 @@ class UniformBlock:
             copies_per_resource,
             strict,
         )
+
+    def create_ubo_region(
+        self,
+        *,
+        copies_per_resource: int = 3,
+        alignment: int | None = None,
+        strict: bool = False,
+    ) -> UniformBufferRegion:
+        """Create a ring-buffered region for updating and binding this uniform block."""
+
+        ubo = self.create_ubo(
+            copies_per_resource=copies_per_resource,
+            alignment=alignment,
+            strict=strict,
+        )
+        return UniformBufferRegion(ubo, copies_per_resource=copies_per_resource)
 
     def set_binding(self, binding: int) -> None:
         """Rebind the Uniform Block to a new binding index number.

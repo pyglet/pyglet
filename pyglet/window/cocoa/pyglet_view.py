@@ -108,6 +108,37 @@ def getSymbol(nsevent: cocoapy.ObjCInstance) -> str | None:
     return None
 
 
+def _get_drag_position(self: PygletView_Implementation | cocoapy.ObjCInstance,
+                       dragging_info: cocoapy.ObjCInstance) -> tuple[int, int]:
+    position = dragging_info.draggingLocation()
+    position = self.convertPoint_fromView_(position, None)
+    if pyglet.options.dpi_scaling != "stretch":
+        _mouseViewRect.origin.x = position.x
+        _mouseViewRect.origin.y = position.y
+        converted = self.convertRectToBacking_(_mouseViewRect)
+        position = converted.origin
+    return int(position.x), int(position.y)
+
+
+def _get_dragging_paths(dragging_info: cocoapy.ObjCInstance) -> list[str]:
+    pasteboard = dragging_info.draggingPasteboard()
+
+    classes = NSArray.arrayWithObject_(NSURL)
+    options = NSDictionary.dictionaryWithObject_forKey_(
+        NSNumber.numberWithBool_(True), NSPasteboardURLReadingFileURLsOnlyKey,
+    )
+
+    urls = pasteboard.readObjectsForClasses_options_(classes, options)
+    if not urls:
+        return []
+
+    paths = []
+    for i in range(urls.count()):
+        fpath = urls.objectAtIndex_(i).fileSystemRepresentation()
+        paths.append(fpath.decode())
+    return paths
+
+
 class PygletView_Implementation:
     PygletView = cocoapy.ObjCSubclass('NSView', 'PygletView')
 
@@ -125,6 +156,7 @@ class PygletView_Implementation:
 
         # CocoaWindow object.
         self._window = window
+        self._file_drag_active = False
 
         self.associate("_tracking_area", None)
 
@@ -368,29 +400,46 @@ class PygletView_Implementation:
 
     @PygletView.method('Q@')
     def draggingEntered_(self, draginfo: cocoapy.ObjCInstance) -> int:
-        return cocoapy.NSDragOperationGeneric
+        paths = _get_dragging_paths(draginfo)
+        if paths:
+            x, y = _get_drag_position(self, draginfo)
+            if not self._file_drag_active:
+                self._window.dispatch_event('on_file_drag_enter', x, y, paths)
+                self._file_drag_active = True
+            return cocoapy.NSDragOperationGeneric
+        return 0
+
+    @PygletView.method('Q@')
+    def draggingUpdated_(self, draginfo: cocoapy.ObjCInstance) -> int:
+        paths = _get_dragging_paths(draginfo)
+        if paths:
+            x, y = _get_drag_position(self, draginfo)
+            if not self._file_drag_active:
+                self._window.dispatch_event('on_file_drag_enter', x, y, paths)
+                self._file_drag_active = True
+            self._window.dispatch_event('on_file_drag', x, y, paths)
+            return cocoapy.NSDragOperationGeneric
+        if self._file_drag_active:
+            self._window.dispatch_event('on_file_drag_exit')
+            self._file_drag_active = False
+        return 0
+
+    @PygletView.method('v@')
+    def draggingExited_(self, draginfo: cocoapy.ObjCInstance) -> None:
+        if self._file_drag_active:
+            self._window.dispatch_event('on_file_drag_exit')
+            self._file_drag_active = False
 
     @PygletView.method('B@')
-    def performDragOperation_(self, sender: cocoapy.ObjCInstance) -> None:
-        pos = sender.draggingLocation()
-
-        pasteboard = sender.draggingPasteboard()
-
-        classes = NSArray.arrayWithObject_(NSURL)
-
-        options = NSDictionary.dictionaryWithObject_forKey_(
-            NSNumber.numberWithBool_(True), NSPasteboardURLReadingFileURLsOnlyKey,
-        )
-
-        urls = pasteboard.readObjectsForClasses_options_(classes, options)
-
-        url_count = urls.count()
-        paths = []
-        for i in range(url_count):
-            fpath = urls.objectAtIndex_(i).fileSystemRepresentation()
-            paths.append(fpath.decode())
-
-        self._window.dispatch_event('on_file_drop', pos.x, pos.y, paths)
+    def performDragOperation_(self, sender: cocoapy.ObjCInstance) -> bool:
+        x, y = _get_drag_position(self, sender)
+        paths = _get_dragging_paths(sender)
+        if paths:
+            self._window.dispatch_event('on_file_drop', x, y, paths)
+        if self._file_drag_active:
+            self._window.dispatch_event('on_file_drag_exit')
+            self._file_drag_active = False
+        return bool(paths)
 
 
 PygletView = cocoapy.ObjCClass('PygletView')

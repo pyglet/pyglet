@@ -288,6 +288,10 @@ _ole32.CoInitialize.restype = HRESULT
 _ole32.CoInitialize.argtypes = [LPVOID]
 _ole32.CoInitializeEx.restype = HRESULT
 _ole32.CoInitializeEx.argtypes = [LPVOID, DWORD]
+_ole32.OleInitialize.restype = HRESULT
+_ole32.OleInitialize.argtypes = [LPVOID]
+_ole32.OleUninitialize.restype = c_void
+_ole32.OleUninitialize.argtypes = []
 _ole32.CoUninitialize.restype = HRESULT
 _ole32.CoUninitialize.argtypes = []
 _ole32.PropVariantClear.restype = HRESULT
@@ -296,6 +300,12 @@ _ole32.CoCreateInstance.restype = HRESULT
 _ole32.CoCreateInstance.argtypes = [com.REFIID, c_void_p, DWORD, com.REFIID, c_void_p]
 _ole32.CoSetProxyBlanket.restype = HRESULT
 _ole32.CoSetProxyBlanket.argtypes = (c_void_p, DWORD, DWORD, c_void_p, DWORD, DWORD, c_void_p, DWORD)
+_ole32.RegisterDragDrop.restype = HRESULT
+_ole32.RegisterDragDrop.argtypes = [HWND, c_void_p]
+_ole32.RevokeDragDrop.restype = HRESULT
+_ole32.RevokeDragDrop.argtypes = [HWND]
+_ole32.ReleaseStgMedium.restype = c_void
+_ole32.ReleaseStgMedium.argtypes = [POINTER(STGMEDIUM)]
 
 # oleaut32
 _oleaut32.VariantInit.restype = c_void_p

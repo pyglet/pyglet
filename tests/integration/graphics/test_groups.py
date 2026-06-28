@@ -2,6 +2,7 @@ import ctypes
 from dataclasses import dataclass
 from typing import TypedDict
 
+import pytest
 import pyglet
 from pyglet.enums import CompareOp, GeometryMode
 from pyglet.graphics.draw import _DomainKey
@@ -369,6 +370,20 @@ def test_group_custom_state_dataclass_comparison():
 
     assert group2 == group1
     assert group2 is not group1
+
+
+def test_group_shader_uniforms_snapshot_after_batching(gl3_context) -> None:
+    """Changing the state after the group exists in a batch will make the hash unstable."""
+    batch = pyglet.graphics.Batch()
+    group = pyglet.graphics.Group()
+    program = object()
+    uniforms = {"model": "initial"}
+
+    group.set_shader_uniforms(program, uniforms)
+    batch._add_group(group)  # noqa: SLF001
+
+    with pytest.raises(AssertionError, match="New states cannot be set once a group is in a batch."):
+        group.set_shader_uniforms(program, {"model": "updated"})
 
 
 def test_enforced_state_inheritance_is_static_after_child_creation():
