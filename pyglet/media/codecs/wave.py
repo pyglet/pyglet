@@ -76,7 +76,7 @@ class WaveDecoder(MediaDecoder):
     def get_file_extensions(self) -> tuple[str, str, str]:
         return '.wav', '.wave', '.riff'
 
-    def decode(self, filename: str, file: BinaryIO | None, streaming: bool = True):
+    def decode(self, filename: str, file: BinaryIO | None, streaming: bool = True, **kwargs):
         if streaming:
             return WaveSource(filename, file)
         else:

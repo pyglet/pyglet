@@ -57,10 +57,10 @@ class AudioFormatTestCase(unittest.TestCase):
 
     def test_repr(self):
         af1 = AudioFormat(1, 8, 22050)
-        self.assertEqual(repr(af1), 'AudioFormat(channels=1, sample_size=8, sample_rate=22050)')
+        self.assertEqual(repr(af1), 'AudioFormat(channels=1, sample_size=8, sample_rate=22050, sample_type=uint)')
 
         af2 = AudioFormat(2, 16, 44100)
-        self.assertEqual(repr(af2), 'AudioFormat(channels=2, sample_size=16, sample_rate=44100)')
+        self.assertEqual(repr(af2), 'AudioFormat(channels=2, sample_size=16, sample_rate=44100, sample_type=int)')
 
 
 class AudioDataTestCase(unittest.TestCase):

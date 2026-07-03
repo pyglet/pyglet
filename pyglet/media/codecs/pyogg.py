@@ -449,7 +449,7 @@ class PyOggDecoder(MediaDecoder):
     def get_file_extensions(self):
         return PyOggDecoder.exts
 
-    def decode(self, filename, file, streaming=True):
+    def decode(self, filename, file, streaming=True, **kwargs):
         name, ext = os.path.splitext(filename)
         if ext in PyOggDecoder.vorbis_exts:
             source = PyOggVorbisSource

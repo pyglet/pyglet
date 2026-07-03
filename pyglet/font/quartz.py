@@ -813,4 +813,10 @@ class QuartzFont(Font):
             glyphs.append(self.glyphs[c])
             offsets.append(GlyphPosition(0, 0, 0, 0))
 
+            # If the character is over 1 in length, add zero length glyphs in its place.
+            if len(c) > 1:
+                for i in range(len(c) - 1):
+                    glyphs.append(self._zero_glyph)
+                    offsets.append(base.GlyphPosition(0, 0, 0, 0))
+
         return glyphs, offsets

@@ -883,7 +883,7 @@ class WMFDecoder(MediaDecoder):
     def get_media_capabilities(self) -> tuple[MediaTypes, ...]:
         return ("audio",)
 
-    def decode(self, filename, file, streaming=True):
+    def decode(self, filename, file, streaming=True, **kwargs):
         if streaming:
             return WMFSource(filename, file)
         return StaticSource(WMFSource(filename, file))
