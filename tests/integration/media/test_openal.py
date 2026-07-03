@@ -88,11 +88,12 @@ def test_buffer_create_delete(buf):
     assert not buf.is_valid
 
 
-def test_buffer_data(buf):
+def test_buffer_data(buf, context):
     assert buf.is_valid
     audio_source = Silence(1.)
     buf.data(audio_source.get_audio_data(audio_source.audio_format.bytes_per_second),
-             audio_source.audio_format)
+             audio_source.audio_format,
+             context._supported_formats)
     assert buf.is_valid
     buf.delete()
     assert not buf.is_valid
@@ -210,7 +211,8 @@ def filled_buffer(source):
     assert buf.is_valid
     audio_source = Silence(1.)
     buf.data(audio_source.get_audio_data(audio_source.audio_format.bytes_per_second),
-             audio_source.audio_format)
+             audio_source.audio_format,
+             source.context._supported_formats)
     yield buf
     source.buffer_pool.return_buffers((buf,))
 
