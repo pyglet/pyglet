@@ -25,16 +25,23 @@ void main() {
 }
 """
 
+# Make a non-visible Window in order to create a Context:
+window = pyglet.window.Window(visible=False)
+
+
 program = pyglet.graphics.ComputeShaderProgram(compute_src)
 
 # Create an RGBA32F Texture that we can bind to the ShaderProgram.
-out_texture = pyglet.graphics.Texture.create(540, 540, internalformat=GL_RGBA32F)
+# This will be bound to "layout(rgba32f) ..." in the Shader source.
+out_texture = pyglet.graphics.Texture.create(540, 540, internal_format_size=32, internal_format_type='f')
 
 # The image binding unit in the shader needs to be set for the texture.
 # The uniform set for the image can be used. In most cases this will be 0 unless explicitly
 # changed via layout qualifier of layout(binding=X, rgba32f)
-output_binding = program['img_output']
-out_texture.bind_image_texture(unit=output_binding)
+unit, level = program['img_output']
+
+# Bind it to the uniform:
+out_texture.bind_image_texture(unit=unit, level=level, fmt=GL_RGBA32F)
 
 
 with program:
