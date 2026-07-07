@@ -1,5 +1,5 @@
-from pyglet.libs import egl
-from pyglet.libs.egl import (
+import pyglet.libs.linux.egl as egl
+from pyglet.libs.linux.egl import (
     EGL_SINGLE_BUFFER, EGL_BACK_BUFFER, EGL_NONE, EGL_OPENGL_API, EGL_OPENGL_ES_API,
     EGL_SUCCESS, EGL_SURFACE_TYPE, EGL_PBUFFER_BIT, EGL_BLUE_SIZE, EGL_GREEN_SIZE, EGL_RED_SIZE,
     EGL_DEPTH_SIZE, EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT, EGL_NONE, EGL_WIDTH, EGL_HEIGHT,

@@ -6,7 +6,7 @@ import pyglet
 # from pyglet.window import key
 # from pyglet.window import mouse
 from pyglet.event import EventDispatcher
-from pyglet.libs.egl import (
+from pyglet.libs.linux.egl import (
     eglCreatePbufferSurface,
     EGLint,
     EGL_WIDTH,
