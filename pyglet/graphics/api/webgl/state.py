@@ -6,7 +6,7 @@ from typing import Any, TYPE_CHECKING, Callable, Generator
 from pyglet.enums import BlendFactor, BlendOp, CompareOp
 from pyglet.graphics.api.webgl.enums import blend_factor_map, compare_op_map
 from pyglet.graphics.api.webgl.gl import GL_BLEND, GL_DEPTH_TEST, GL_SCISSOR_TEST, GL_TEXTURE0
-from pyglet.graphics.state import State, _BaseScissorState, _BaseViewportState
+from pyglet.graphics.state import State, ViewportProtocol, _BaseScissorState, _BaseViewportState
 
 if TYPE_CHECKING:
     from pyglet.customtypes import ScissorProtocol
@@ -200,12 +200,9 @@ class PolygonModeState(State):
     mode: int
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)
 class ViewportState(_BaseViewportState):
-    x: int
-    y: int
-    width: int
-    height: int
+    viewport: ViewportProtocol
 
     sets_state: bool = True
     unsets_state: bool = True

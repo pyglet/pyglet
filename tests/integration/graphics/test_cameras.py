@@ -4,6 +4,7 @@ import pytest
 
 import pyglet
 from pyglet.math import Mat4, Vec3
+from pyglet.graphics.draw import DrawContext, DrawPass
 from pyglet.window.camera.base import BaseCamera, CameraViewStorageFactory, UniformSetCameraRegion
 from tests.annotations import GraphicsAPIGroups, require_graphics_api
 
@@ -40,6 +41,22 @@ class RecordingStorage:
 
 class DummyDrawContext:
     active_shader_program = None
+
+
+class RecordingRenderer:
+    def __init__(self) -> None:
+        self.viewports: list[tuple[int, int, int, int]] = []
+        self.scissors = []
+        self.clear_colors = []
+
+    def set_viewport(self, x: int, y: int, width: int, height: int) -> None:
+        self.viewports.append((x, y, width, height))
+
+    def set_scissor(self, scissor) -> None:
+        self.scissors.append(scissor)
+
+    def set_clear_color(self, r: float, g: float, b: float, a: float) -> None:
+        self.clear_colors.append((r, g, b, a))
 
 
 def _set_default_view_storage(monkeypatch: pytest.MonkeyPatch, storage: RecordingStorage | UniformSetCameraRegion) -> None:
@@ -170,6 +187,35 @@ def test_camera2d_begin_bind_does_not_commit_changed_storage(gl3_context, monkey
     assert len(storage.applies) == 1
     assert storage.commit_count == 1
     assert storage.bind_count == 2
+
+
+def test_group_camera_viewport_is_applied_to_draw_context_stack(gl3_context, monkeypatch):
+    _set_default_view_storage(monkeypatch, RecordingStorage())
+    camera = pyglet.window.camera.Camera2D(gl3_context)
+    camera.viewport = (10, 20, 300, 200)
+    child = camera.create_view(inherit=True)
+    child.viewport = (30, 40, 160, 90)
+
+    group = pyglet.graphics.Group()
+    group.set_camera(child)
+    renderer = RecordingRenderer()
+    draw_context = DrawContext(
+        surface_ctx=gl3_context.context,
+        backend_ctx=None,
+        draw_pass=DrawPass(
+            framebuffer=None,
+            camera=camera,
+            viewport=camera.viewport,
+            scissor=None,
+            clear_color=(0.0, 0.0, 0.0, 1.0),
+        ),
+        renderer=renderer,
+    )
+
+    group.set_state_all(draw_context)
+
+    assert draw_context.camera_stack[-1] is child
+    assert renderer.viewports[-1] == (30, 40, 160, 90)
 
 
 @require_graphics_api(GraphicsAPIGroups.GL3)

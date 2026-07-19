@@ -60,6 +60,40 @@ class State:
         """
 
 @runtime_checkable
+class ViewportProtocol(Protocol):
+    """Protocol for objects that provide viewport dimensions."""
+
+    x: int
+    y: int
+    width: int
+    height: int
+
+
+@dataclass(eq=False)  # Viewports should not equal each other.
+class Viewport:
+    """Mutable viewport rectangle for group viewport states."""
+
+    x: int
+    y: int
+    width: int
+    height: int
+
+    def __post_init__(self) -> None:
+        self.set(self.x, self.y, self.width, self.height)
+
+    @property
+    def area(self) -> tuple[int, int, int, int]:
+        """Return the viewport rectangle as ``(x, y, width, height)``."""
+        return self.x, self.y, self.width, self.height
+
+    def set(self, x: int, y: int, width: int, height: int) -> None:
+        """Update this viewport rectangle in place."""
+        self.x = int(x)
+        self.y = int(y)
+        self.width = max(0, int(width))
+        self.height = max(0, int(height))
+
+@runtime_checkable
 class CameraScopeProtocol(Protocol):
     """Protocol for camera objects used by camera scope states."""
 
@@ -107,9 +141,38 @@ class CameraScopeState(State):
 
 class _BaseViewportState(State, ABC):
     """State wrapper that applies viewport state at draw scope entry."""
+    viewport: ViewportProtocol
 
     sets_state: bool = True
     unsets_state: bool = True
+
+    @property
+    def x(self) -> int:
+        return self.viewport.x
+
+    @property
+    def y(self) -> int:
+        return self.viewport.y
+
+    @property
+    def width(self) -> int:
+        return self.viewport.width
+
+    @property
+    def height(self) -> int:
+        return self.viewport.height
+
+    @property
+    def area(self) -> tuple[int, int, int, int]:
+        return self.x, self.y, self.width, self.height
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, _BaseViewportState):
+            return NotImplemented
+        return type(self) is type(other) and self.viewport is other.viewport
+
+    def __hash__(self) -> int:
+        return hash((type(self), id(self.viewport)))
 
     @abstractmethod
     def apply_to_backend(self, ctx: DrawContext) -> None:

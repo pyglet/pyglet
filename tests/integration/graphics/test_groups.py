@@ -6,7 +6,7 @@ import pytest
 import pyglet
 from pyglet.enums import CompareOp, GeometryMode
 from pyglet.graphics.draw import _DomainKey
-from pyglet.graphics.state import State
+from pyglet.graphics.state import State, Viewport
 
 
 class UniqueState(State):
@@ -316,12 +316,14 @@ def test_group_texture_same_region(gl3_context):
 
 def test_similar_group_equal_comparison():
     """Ensure groups that are similar will equal each other or rendering may break."""
+    viewport = Viewport(0, 0, 100, 100)
+
     group1 = pyglet.graphics.Group()
-    group1.set_viewport(0, 0, 100, 100)
+    group1.set_viewport(viewport)
     group1.set_depth_test(CompareOp.EQUAL)
 
     group2 = pyglet.graphics.Group()
-    group2.set_viewport(0, 0, 100, 100)
+    group2.set_viewport(viewport)
     group2.set_depth_test(CompareOp.EQUAL)
 
     assert group2 == group1
@@ -338,13 +340,31 @@ def test_similar_group_equal_comparison_inherit():
 def test_different_group_equal_add_comparison():
     """Ensure groups that are different will not equal each other or rendering may break."""
     group1 = pyglet.graphics.Group()
-    group1.set_viewport(0, 0, 200, 200)
+    group1.set_viewport(Viewport(0, 0, 200, 200))
 
     group2 = pyglet.graphics.Group()
-    group2.set_viewport(0, 0, 100, 100)
+    group2.set_viewport(Viewport(0, 0, 100, 100))
 
     assert group2 != group1
     assert group2 is not group1
+
+def test_group_viewport_state_uses_mutable_provider():
+    """Ensure viewport state reads updated values from its provider."""
+    viewport = Viewport(0, 0, 100, 100)
+    group = pyglet.graphics.Group()
+    group.set_viewport(viewport)
+
+    state = group.states[0]
+    group_hash = hash(group)
+    state_hash = hash(state)
+    assert state.area == (0, 0, 100, 100)
+
+    viewport.set(12, 24, 320, 180)
+
+    assert hash(group) == group_hash
+    assert hash(state) == state_hash
+    assert state.area == (12, 24, 320, 180)
+    assert (state.x, state.y, state.width, state.height) == (12, 24, 320, 180)
 
 def test_group_custom_state_comparison():
     """Ensure states that aren't dataclasses will not equal each other or rendering may break."""
