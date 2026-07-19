@@ -17,7 +17,7 @@ window.push_handlers(keys)
 
 # Draw UI with the window default camera so it stays fixed on screen.
 ui_group = pyglet.graphics.Group(order=10)
-ui_group.set_camera(window.default_camera)
+ui_group.set_camera(window.camera)
 
 world_camera = Camera2D(window, scroll_speed=260.0, min_zoom=0.25, max_zoom=4.0)
 world_camera.set_centered_origin(True)

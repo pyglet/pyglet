@@ -15,7 +15,7 @@ keys = key.KeyStateHandler()
 window.push_handlers(keys)
 
 ui_group = pyglet.graphics.Group(order=10)
-ui_group.set_camera(window.default_camera)
+ui_group.set_camera(window.camera)
 
 camera = Camera2D(window, scroll_speed=240.0, min_zoom=0.4, max_zoom=4.0)
 camera.set_centered_origin(True)

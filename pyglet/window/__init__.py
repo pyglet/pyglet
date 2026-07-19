@@ -89,11 +89,11 @@ import pyglet.window.key
 import pyglet.window.mouse
 from pyglet.event import EVENT_HANDLE_STATE, EventDispatcher
 
-from pyglet.math import Mat4
 from pyglet.window import event, key, dialog
 from pyglet.window.camera import Camera2D
 
 if TYPE_CHECKING:
+    from pyglet.math import Mat4
     import BaseWindow as Window
     from pyglet.config import Config, UserConfig
     from pyglet.graphics.api.base import VerifiedGraphicsConfig, SurfaceContext
@@ -371,7 +371,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     _context_share: SurfaceContext | None = None
     _projection_matrix: Mat4 = pyglet.math.Mat4()
     _view_matrix: Mat4 = pyglet.math.Mat4()
-    _default_camera: Camera2D | None = None
+    _camera: Camera2D | None = None
 
     # Used to restore window size and position after fullscreen
     _windowed_size: tuple[int, int] | None = None
@@ -576,7 +576,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             self._config = self._context.config
 
     def _create_projection(self) -> None:
-        self._default_camera = self._create_default_camera()
+        self._camera = self._create_default_camera()
 
     def _create_default_camera(self) -> Camera2D:
         return Camera2D(self)
@@ -1278,18 +1278,18 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         return w / h
 
     @property
-    def default_camera(self) -> Camera2D:
+    def camera(self) -> Camera2D:
         """The window's default camera.
 
         Read-only handle. Use its ``projection``, ``view``, and ``viewport``
         attributes to update the default draw camera state.
         """
-        if self._default_camera is None:
+        if self._camera is None:
             if not self.context:
                 msg = "Window has no context; default camera is not available yet."
                 raise RuntimeError(msg)
-            self._default_camera = self._create_default_camera()
-        return self._default_camera
+            self._camera = self._create_default_camera()
+        return self._camera
 
     @property
     def projection(self) -> Mat4:
@@ -1306,11 +1306,11 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         (2D), but can be changed to any 4x4 matrix desired.
         :see: :py:class:`~pyglet.math.Mat4`.
         """
-        return self.default_camera.projection
+        return self.camera.projection
 
     @projection.setter
     def projection(self, matrix: Mat4) -> None:
-        self.default_camera.projection = matrix
+        self.camera.projection = matrix
 
     @property
     def view(self) -> Mat4:
@@ -1323,11 +1323,11 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         :py:class:`~pyglet.math.Mat4` instance can be set.
         Alternatively, you can supply a flat tuple of 16 values.
         """
-        return self.default_camera.view_matrix
+        return self.camera.view_matrix
 
     @view.setter
     def view(self, matrix: Mat4) -> None:
-        self.default_camera.view_matrix = matrix
+        self.camera.view_matrix = matrix
 
     @property
     def viewport(self) -> tuple[int, int, int, int]:
@@ -1335,11 +1335,11 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
 
         The Window viewport, expressed as (x, y, width, height).
         """
-        return self.default_camera.viewport
+        return self.camera.viewport
 
     @viewport.setter
     def viewport(self, values: tuple[int, int, int, int]) -> None:
-        self.default_camera.viewport = values
+        self.camera.viewport = values
 
     # If documenting, show the event methods.  Otherwise, leave them out
     # as they are not really methods.

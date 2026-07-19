@@ -18,7 +18,7 @@ window.push_handlers(keys)
 # We still want to use the default camera for now, so assign it to a group.
 # Cameras apply the state continuously until changed.
 default_group = pyglet.graphics.Group()
-default_group.set_camera(window.default_camera)
+default_group.set_camera(window.camera)
 
 # If you do not do the above and pass it to your existing objects, those objects may not be shown.
 # Alternatively, the default camera does not have to be used.
