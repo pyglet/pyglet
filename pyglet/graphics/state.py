@@ -62,7 +62,10 @@ class State:
 @runtime_checkable
 class CameraScopeProtocol(Protocol):
     """Protocol for camera objects used by camera scope states."""
-    view: _CameraViewBase
+
+    @property
+    def view(self) -> _CameraViewBase:
+        ...
 
     @property
     def viewport(self) -> ViewportType:
