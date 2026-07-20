@@ -10,9 +10,10 @@ window is created with a 2D camera.
 Default camera behavior
 -----------------------
 
-Every window has a default camera at :py:attr:`pyglet.window.Window.default_camera`.
+Every window has a default camera at :py:attr:`pyglet.window.Window.camera`.
 The :py:attr:`~pyglet.window.Window.projection`, :py:attr:`~pyglet.window.Window.view`,
-and :py:attr:`~pyglet.window.Window.viewport` properties proxy directly to it.
+and :py:attr:`~pyglet.window.Window.viewport` properties proxy directly to the
+camera's root view.
 
 The default camera is initialized with the window context creation and applies itself
 automatically.
@@ -52,8 +53,9 @@ layers, minimaps, and nested local transforms::
     inherited_view = ui_camera.create_view(inherit=True)      # Inherits parent transform chain.
     independent_view = ui_camera.create_view(inherit=False)   # Parented to camera root view.
 
-Views share the camera's viewport/projection behavior and can be used anywhere a camera
-scope is expected.
+Views share the camera's projection behavior and can be used anywhere a camera
+scope is expected. Each view has its own viewport, inherited from its parent view
+unless explicitly overridden.
 
 Views can also be created from other views. For example::
 
@@ -100,13 +102,43 @@ Attach camera scopes to groups with ``Group.set_camera``::
 Viewport
 --------
 
-Each camera has a ``viewport`` in framebuffer coordinates::
+Each camera view has a ``viewport`` in framebuffer coordinates::
 
     world_camera.viewport = (0, 0, window.width // 2, window.height)
 
-By default, viewport follows the full framebuffer and updates on resize/scale events.
-Setting a tuple makes viewport explicit, and will no longer update automatically. In those
-cases you will have to update your viewport coordinates explicitly.
+``camera.viewport`` remains as a convenience proxy for ``camera.view.viewport``.
+Set ``view.viewport`` directly when a child view needs a different viewport::
+
+    minimap_view = world_camera.create_view()
+    minimap_view.viewport = (16, 16, 256, 256)
+
+Viewport belongs to the view because the viewport determines how that specific
+view maps drawn content into framebuffer pixels. Child views can represent split
+screens, minimaps, editor panels, or nested render regions while still sharing
+the same camera projection and storage behavior.
+
+By default, the root view's viewport follows the full framebuffer and updates on
+resize/scale events. A child view inherits its parent viewport until it is given
+an explicit value. Setting a tuple makes that view's viewport explicit, and it
+will no longer update automatically. In those cases you will have to update your
+viewport coordinates explicitly.
+
+Coordinate conversion
+---------------------
+
+Cameras and views provide helpers for moving points through the same coordinate
+spaces used when drawing::
+
+    @window.event
+    def on_mouse_press(x, y, button, modifiers):
+        world_position = world_camera.screen_to_world(x, y)
+        minimap_position = minimap_view.screen_to_world(x, y)
+
+Use the camera methods for the root view, or call the same methods on a child
+view when viewport inheritance or view-local transforms matter. The helpers
+include conversions between screen, viewport, view, and world spaces, such as
+``screen_to_viewport``, ``viewport_to_world``, ``screen_to_world``, and
+``world_to_screen``.
 
 Scissor
 -------

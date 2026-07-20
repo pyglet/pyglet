@@ -14,6 +14,11 @@ def _assert_mat4_close(actual: Mat4, expected: Mat4) -> None:
         assert actual_value == pytest.approx(expected_value, abs=1e-6)
 
 
+def _assert_vec3_close(actual: Vec3, expected: Vec3) -> None:
+    for actual_value, expected_value in zip(actual, expected):
+        assert actual_value == pytest.approx(expected_value, abs=1e-6)
+
+
 class RecordingStorage:
     def __init__(self, label: str = "root") -> None:
         self.label = label
@@ -85,6 +90,32 @@ def test_camera2d_manual_viewport_is_not_overwritten_by_internal_resize(gl3_cont
     camera._on_internal_resize(*window.get_size())
 
     assert camera.viewport == (32, 48, 320, 180)
+
+
+def test_camera2d_root_view_coordinate_conversions(gl3_context, monkeypatch):
+    _set_default_view_storage(monkeypatch, RecordingStorage())
+    camera = pyglet.window.camera.Camera2D(gl3_context)
+    camera.viewport = (10, 20, 200, 100)
+    camera.position = (5.0, 10.0)
+    camera.zoom = 2.0
+
+    _assert_vec3_close(camera.screen_to_viewport(50.0, 60.0), Vec3(40.0, 40.0, 0.0))
+    _assert_vec3_close(camera.viewport_to_screen(40.0, 40.0), Vec3(50.0, 60.0, 0.0))
+    _assert_vec3_close(camera.world_to_screen(25.0, 30.0), Vec3(50.0, 60.0, 0.0))
+    _assert_vec3_close(camera.screen_to_world(50.0, 60.0), Vec3(25.0, 30.0, 0.0))
+
+
+def test_camera2d_child_view_coordinate_conversions_use_child_viewport(gl3_context, monkeypatch):
+    _set_default_view_storage(monkeypatch, RecordingStorage())
+    camera = pyglet.window.camera.Camera2D(gl3_context)
+    camera.viewport = (0, 0, 800, 600)
+
+    child = camera.create_view(inherit=True)
+    child.viewport = (100, 200, 300, 150)
+    child.position = (10.0, 20.0)
+
+    _assert_vec3_close(child.world_to_screen(25.0, 35.0), Vec3(115.0, 215.0, 0.0))
+    _assert_vec3_close(child.screen_to_world(115.0, 215.0), Vec3(25.0, 35.0, 0.0))
 
 
 def test_camera2d_create_view_inheritance_and_storage_creation(gl3_context, monkeypatch):

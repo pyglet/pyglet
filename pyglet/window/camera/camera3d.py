@@ -120,7 +120,7 @@ class Camera3D(BaseCamera[Camera3DView]):
             look_speed:
                 Look-speed scalar for mouse/controller rotation input.
             viewport:
-                Optional fixed viewport override.
+                Optional fixed viewport override for the root view.
             window_block:
                 Optional explicit ``WindowBlock`` used for default UBO storage.
             copies_per_resource:

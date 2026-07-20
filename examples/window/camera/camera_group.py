@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import pyglet
-from pyglet.window import key
+from pyglet.window import key, mouse
 from pyglet.window.camera import Camera2D
 
 
@@ -13,7 +13,8 @@ batch = pyglet.graphics.Batch()
 
 # Key handler for movement
 keys = key.KeyStateHandler()
-window.push_handlers(keys)
+mouse_state = mouse.MouseStateHandler()
+window.push_handlers(keys, mouse_state)
 
 # We still want to use the default camera for now, so assign it to a group.
 # Cameras apply the state continuously until changed.
@@ -82,8 +83,11 @@ def on_update(dt: float) -> None:
         camera.zoom = 1.0
         camera.position = (0.0, 0.0)
 
-    # Update position text label
-    position_text.text = f"pos=({camera.offset_x:.1f}, {camera.offset_y:.1f}) zoom={camera.zoom:.2f}"
+    world = camera.screen_to_world(mouse_state.x, mouse_state.y)
+    position_text.text = (
+        f"pos=({camera.offset_x:.1f}, {camera.offset_y:.1f}) zoom={camera.zoom:.2f}  "
+        f"screen=({mouse_state.x:.0f}, {mouse_state.y:.0f}) world=({world.x:.1f}, {world.y:.1f})"
+    )
 
 # Start the demo
 pyglet.clock.schedule(on_update)

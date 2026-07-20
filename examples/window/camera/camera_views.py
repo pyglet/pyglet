@@ -6,14 +6,15 @@ import math
 import random
 
 import pyglet
-from pyglet.window import key
+from pyglet.window import key, mouse
 from pyglet.window.camera import Camera2D
 
 window = pyglet.window.Window(900, 600, "Camera views", resizable=True)
 batch = pyglet.graphics.Batch()
 shapes = []
 keys = key.KeyStateHandler()
-window.push_handlers(keys)
+mouse_state = mouse.MouseStateHandler()
+window.push_handlers(keys, mouse_state)
 
 # Draw UI with the window default camera so it stays fixed on screen.
 ui_group = pyglet.graphics.Group(order=10)
@@ -75,7 +76,7 @@ help_label = pyglet.text.Label(
     batch=batch,
     group=ui_group,
 )
-status_label = pyglet.text.Label("", x=window.width - 10, y=10, anchor_x="right", batch=batch, group=ui_group)
+status_label = pyglet.text.Label("", x=window.width - 10, y=window.height-16, anchor_x="right", batch=batch, group=ui_group)
 animation_time = 0.0
 
 
@@ -119,7 +120,11 @@ def update(dt: float) -> None:
     parallax_view.offset_x = -world_camera.offset_x * 0.75
     parallax_view.offset_y = -world_camera.offset_y * 0.75
 
-    status_label.text = f"camera=({world_camera.offset_x:.0f}, {world_camera.offset_y:.0f}) zoom={world_camera.zoom:.2f}"
+    world = world_camera.screen_to_world(mouse_state.x, mouse_state.y)
+    status_label.text = (
+        f"camera=({world_camera.offset_x:.0f}, {world_camera.offset_y:.0f}) zoom={world_camera.zoom:.2f}  "
+        f"screen=({mouse_state.x:.0f}, {mouse_state.y:.0f}) world=({world.x:.1f}, {world.y:.1f})"
+    )
 
 
 pyglet.clock.schedule_interval(update, 1 / 60)
