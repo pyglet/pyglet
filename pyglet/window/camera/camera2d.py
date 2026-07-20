@@ -81,6 +81,26 @@ class Camera2DView(_CameraViewBase):
         self.offset_x += camera.scroll_speed * axis_x
         self.offset_y += camera.scroll_speed * axis_y
 
+    def zoom_to_point(self, x: float, y: float, zoom: float) -> None:
+        """Set zoom while keeping a screen-space point fixed in world space.
+
+        This is useful for mouse-wheel zooming: pass the cursor coordinates and
+        the desired new zoom, and the view position will shift so the world
+        point under the cursor stays when zooming.
+        """
+        before = self.screen_to_world(x, y)
+        self.zoom = zoom
+        after = self.screen_to_world(x, y)
+        self.position += before.xy - after.xy
+
+    def zoom_in_to_point(self, x: float, y: float, amount: float) -> None:
+        """Increase zoom while keeping a screen-space point fixed in world space."""
+        self.zoom_to_point(x, y, self.zoom + amount)
+
+    def zoom_out_to_point(self, x: float, y: float, amount: float) -> None:
+        """Decrease zoom while keeping a screen-space point fixed in world space."""
+        self.zoom_to_point(x, y, self.zoom - amount)
+
     def set_scissor_area_relative(self, x: int, y: int, width: int, height: int) -> CameraScissor:
         """Set a view-relative scissor area.
 
@@ -253,6 +273,18 @@ class Camera2D(BaseCamera[Camera2DView]):
 
     def move(self, axis_x: float, axis_y: float) -> None:
         self.view.move(axis_x, axis_y)
+
+    def zoom_to_point(self, x: float, y: float, zoom: float) -> None:
+        """Set zoom while keeping a screen-space point fixed in world space."""
+        self.view.zoom_to_point(x, y, zoom)
+
+    def zoom_in_to_point(self, x: float, y: float, amount: float) -> None:
+        """Increase zoom while keeping a screen-space point fixed in world space."""
+        self.view.zoom_in_to_point(x, y, amount)
+
+    def zoom_out_to_point(self, x: float, y: float, amount: float) -> None:
+        """Decrease zoom while keeping a screen-space point fixed in world space."""
+        self.view.zoom_out_to_point(x, y, amount)
 
     def _build_projection_matrix(self, view: Camera2DView) -> Mat4:  # noqa: ARG002
         if not self._auto_projection:

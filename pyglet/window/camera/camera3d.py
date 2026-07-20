@@ -56,6 +56,16 @@ class Camera3DView(_CameraViewBase):
         camera = self._camera
         self.offset += Vec3(axis_x, axis_y, axis_z) * camera.walk_speed
 
+    def screen_to_world_ray(self, x: float, y: float) -> tuple[Vec3, Vec3]:
+        """Return a world-space ray from a screen-space point.
+
+        The result is ``(origin, direction)``. ``origin`` is on the near clip
+        plane and ``direction`` is normalized toward the far clip plane.
+        """
+        near = self.screen_to_world(x, y, -1.0)
+        far = self.screen_to_world(x, y, 1.0)
+        return near, (far - near).normalize()
+
     def _world_offset_cached(self) -> Vec3:
         if self._world_dirty:
             if self.parent is None:
@@ -262,6 +272,10 @@ class Camera3D(BaseCamera[Camera3DView]):
             self.yaw = degrees(yaw)
             self.pitch = degrees(pitch)
         self.position = position
+
+    def screen_to_world_ray(self, x: float, y: float) -> tuple[Vec3, Vec3]:
+        """Return a world-space ray from a screen-space point for the root view."""
+        return self.view.screen_to_world_ray(x, y)
 
 
 class FPSCamera(Camera3D):

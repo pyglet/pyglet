@@ -348,6 +348,11 @@ class _CameraViewBase:
         viewport_x, viewport_y, _, _ = self._camera._resolve_viewport(self)  # noqa: SLF001
         return Vec3(point.x + viewport_x, point.y + viewport_y, point.z)
 
+    def contains_screen_point(self, x: float, y: float) -> bool:
+        """Return whether a screen-space point is inside this view's viewport."""
+        viewport_x, viewport_y, viewport_width, viewport_height = self._camera._resolve_viewport(self)  # noqa: SLF001
+        return viewport_x <= x <= viewport_x + viewport_width and viewport_y <= y <= viewport_y + viewport_height
+
     def _viewport_to_clip(self, x: float, y: float, z: float = 0.0) -> Vec3:
         point = Vec3(x, y, z)
         _, _, viewport_width, viewport_height = self._camera._resolve_viewport(self)  # noqa: SLF001
@@ -646,6 +651,10 @@ class BaseCamera(Generic[ViewT]):
     def viewport_to_screen(self, x: float, y: float, z: float = 0.0) -> Vec3:
         """Convert root-view viewport coordinates to screen-space coordinates."""
         return self.view.viewport_to_screen(x, y, z)
+
+    def contains_screen_point(self, x: float, y: float) -> bool:
+        """Return whether a screen-space point is inside the root view's viewport."""
+        return self.view.contains_screen_point(x, y)
 
     def view_to_screen(self, x: float, y: float, z: float = 0.0) -> Vec3:
         """Convert root-view view-space coordinates to screen space."""
