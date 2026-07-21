@@ -65,8 +65,12 @@ of the system clock.
 from __future__ import annotations
 
 import time as _time
+import inspect
+import traceback
 
-from typing import Any, Callable
+from collections.abc import Generator, Iterable
+from functools import wraps
+from typing import Any, Callable, Protocol, TypeAlias, TypeVar, cast
 
 from heapq import heappop as _heappop
 from heapq import heappush as _heappush
@@ -74,9 +78,899 @@ from heapq import heappushpop as _heappushpop
 from operator import attrgetter as _attrgetter
 from collections import deque as _deque
 
+from pyglet.event import EVENT_HANDLED, EVENT_UNHANDLED, EventDispatcher
+
+T = TypeVar('T')
+CancelCallback: TypeAlias = Callable[[], None]
+CompleteCallback: TypeAlias = Callable[[Any], None]
+ErrorCallback: TypeAlias = Callable[[BaseException], None]
+
+
+class _StoppedResult:
+    """Sentinel returned by composition helpers for a stopped child chain."""
+
+    def __repr__(self) -> str:
+        return 'STOPPED'
+
+
+STOPPED = _StoppedResult()
+"""Used when something continues after a stop."""
+
+
+class YieldingOperation(Protocol):
+    """A yield instruction that can wake a suspended chain."""
+
+    def start(
+        self,
+        complete: CompleteCallback,
+        fail: ErrorCallback,
+    ) -> CancelCallback | None:
+        ...
+
+
+class YieldInstruction:
+    """Adapt a callback-driven API into a yield instruction."""
+
+    def __init__(
+        self,
+        starter: Callable[
+            [CompleteCallback, ErrorCallback],
+            CancelCallback | None,
+        ],
+    ) -> None:
+        """Initialize the operation with a callback starter."""
+        self._starter = starter
+
+    def start(
+        self,
+        complete: CompleteCallback,
+        fail: ErrorCallback,
+    ) -> CancelCallback | None:
+        return self._starter(complete, fail)
+
+
+class _ChainOperation:
+    """Shared lifecycle behavior for operations composed of child chains."""
+    _finished: bool
+    _running: bool
+    _clock: Clock
+    _chains: tuple[Chain, ...]
+
+    def __init__(
+        self,
+        chains: tuple[Chain, ...],
+        *,
+        clock: Clock | None = None,
+    ) -> None:
+        self._chains = chains
+        self._clock: Clock = clock or _default
+        self._running = False
+        self._finished = False
+
+    def stop(self) -> None:
+        if not self._running:
+            return
+
+        self._running = False
+        for child in self._chains:
+            if not child.done:
+                child.stop()
+
+    def pause(self) -> None:
+        if not self._running:
+            return
+
+        for child in self._chains:
+            child.pause()
+
+    def resume(self) -> None:
+        if not self._running:
+            return
+
+        for child in self._chains:
+            child.resume()
+
+
+class _ParallelOperation(_ChainOperation):
+    """Run several chains concurrently and complete when all are done."""
+    _continue_on_stop: bool
+
+    def __init__(
+        self,
+        chains: tuple[Chain, ...],
+        *,
+        continue_on_stop: bool = False,
+        clock: Clock | None = None,
+    ) -> None:
+        """Initialize the operation with child chains."""
+        super().__init__(chains, clock=clock)
+        self._continue_on_stop = continue_on_stop
+
+    def start(
+        self,
+        complete: CompleteCallback,
+        fail: ErrorCallback,
+    ) -> CancelCallback | None:
+        self._running = True
+        if not self._chains:
+            complete(())
+            self._finished = True
+            self._running = False
+            return None
+
+        remaining = len(self._chains)
+        results: list[Any] = [None] * remaining
+
+        def finish_child(idx: int, result: Any) -> None:
+            nonlocal remaining
+            if not self._running:
+                return
+
+            results[idx] = result
+            remaining -= 1
+            if remaining:
+                return
+
+            self._finished = True
+            self._running = False
+            complete(tuple(results))
+
+        def fail_child(error: BaseException) -> None:
+            if not self._running:
+                return
+
+            # A parallel operation has one failure outcome.  Stop unfinished
+            # siblings before reporting it so they cannot keep changing state.
+            self.stop()
+            self._finished = True
+            fail(error)
+
+        def stop_child(idx: int) -> None:
+            if not self._running:
+                return
+
+            if self._continue_on_stop:
+                finish_child(idx, STOPPED)
+            else:
+                fail_child(RuntimeError("A parallel child chain stopped."))
+
+        for child_index, child in enumerate(self._chains):
+            child.add_callbacks(
+                on_complete=lambda result, current_index=child_index: finish_child(current_index, result),
+                on_error=fail_child,
+                on_stop=lambda current_index=child_index: stop_child(current_index),
+            )
+
+        try:
+            for child in self._chains:
+                child.start()
+        except Exception as exc:  # noqa: BLE001
+            fail_child(exc)
+
+        if self._finished:
+            return None
+
+        return self.stop
+
+class _RaceOperation(_ChainOperation):
+    """Run several chains concurrently and complete with the first result."""
+    def __init__(self, chains: tuple[Chain, ...], *, clock: Clock | None = None) -> None:
+        """Initialize the operation with child chains."""
+        if not chains:
+            raise ValueError("race requires at least one child chain")
+        super().__init__(chains, clock=clock)
+
+    def start(
+        self,
+        complete: CompleteCallback,
+        fail: ErrorCallback,
+    ) -> CancelCallback | None:
+        self._running = True
+        def finish_child(idx: int, result: Any) -> None:
+            if not self._running:
+                return
+
+            self._finished = True
+            self._running = False
+            # A race consumes the first completion, then cancels all others.
+            for child_chain in self._chains:
+                if not child_chain.done:
+                    child_chain.stop()
+            complete((idx, result))
+
+        def fail_child(error: BaseException) -> None:
+            if not self._running:
+                return
+
+            self.stop()
+            self._finished = True
+            fail(error)
+
+        def stop_child() -> None:
+            if self._running:
+                fail_child(RuntimeError("A race child chain stopped"))
+
+        for child_idx, child in enumerate(self._chains):
+            child.add_callbacks(
+                on_complete=lambda result, current_idx=child_idx: finish_child(current_idx, result),
+                on_error=fail_child,
+                on_stop=stop_child,
+            )
+
+        try:
+            for child in self._chains:
+                child.start()
+        except Exception as exc:  # noqa: BLE001
+            fail_child(exc)
+
+        if self._finished:
+            return None
+
+        return self.stop
+
+def from_callback(
+    starter: Callable[
+        [CompleteCallback, ErrorCallback],
+        CancelCallback | None,
+    ],
+) -> YieldInstruction:
+    """Create a yield instruction from a callback-based function."""
+    return YieldInstruction(starter)
+
+
+def wait_for_event(
+    dispatcher: EventDispatcher,
+    event_type: str,
+    *,
+    condition: Callable[..., bool] | None = None,
+    consume: bool = False,
+) -> YieldInstruction:
+    """Create a yield instruction that completes on a dispatcher event.
+
+    The temporary handler is removed when the event matches or when the
+    waiting chain is stopped.
+    """
+    def starter(complete: CompleteCallback, _fail: ErrorCallback) -> CancelCallback:
+        def handler(*args: Any) -> bool | None:
+            if condition is not None and not condition(*args):
+                return EVENT_UNHANDLED
+
+            dispatcher.remove_handlers(**{event_type: handler})
+            if not args:
+                complete(None)
+            elif len(args) == 1:
+                complete(args[0])
+            else:
+                complete(args)
+
+            return EVENT_HANDLED if consume else EVENT_UNHANDLED
+
+        dispatcher.push_handlers(**{event_type: handler})
+        return lambda: dispatcher.remove_handlers(**{event_type: handler})
+
+    return from_callback(starter)
+
+
+def parallel(*chains: Chain, continue_on_stop: bool = False) -> _ParallelOperation:
+    """Run child chains concurrently and resume with their ordered results."""
+    return _ParallelOperation(chains, continue_on_stop=continue_on_stop)
+
+
+def race(*chains: Chain) -> _RaceOperation:
+    """Run child chains concurrently and resume with the first result."""
+    return _RaceOperation(chains)
+
+
+YieldValue: TypeAlias = 'float | int | Chain | YieldingOperation | None'
+ChainGenerator: TypeAlias = Generator[YieldValue, Any, T]
+ChainTag: TypeAlias = str
+_MISSING = object()
+
+
+class Chain(EventDispatcher):
+    """Run generator-based sequences on a pyglet clock.
+
+    Chains yield delays, child chains, callback operations, or ``None``. They can
+    be stopped as a group, and they expose callbacks for completion, stop, and
+    error handling.
+    """
+    def __init__(self, generator: ChainGenerator[Any], clock: Clock | None = None) -> None:
+        """Initialize the chain with a generator."""
+        self._generator = generator
+        self._clock: Clock = clock or _default
+        self._running = False
+        self._paused = False
+        self._finished = False
+        self._stopped = False
+        self._child: Chain | None = None
+        self._operation: YieldingOperation | None = None
+        self._cancel_operation: CancelCallback | None = None
+        self._scheduled_callback: Callable[[float], None] | None = None
+        self._scheduled_remaining: float | None = None
+        self._pending_advance: tuple[Any, BaseException | None] | None = None
+
+        # Stale guard prevents old callbacks from resuming.
+        self._wait_token: object | None = None
+
+        self.result: Any = None
+        self.exception: BaseException | None = None
+
+    @property
+    def running(self) -> bool:
+        return self._running and not self._paused
+
+    @property
+    def paused(self) -> bool:
+        return self._paused
+
+    @property
+    def done(self) -> bool:
+        return self._finished
+
+    @property
+    def completed(self) -> bool:
+        return self._finished and not self._stopped and self.exception is None
+
+    @property
+    def stopped(self) -> bool:
+        return self._stopped
+
+    @property
+    def failed(self) -> bool:
+        return self.exception is not None
+
+    @property
+    def clock(self) -> Clock:
+        return self._clock
+
+    def start(self) -> Chain:
+        if self._finished:
+            raise RuntimeError("A completed or stopped chain cannot be restarted")
+        if not self._running:
+            self._running = True
+            self._advance(0.0)
+        return self
+
+    def _advance(
+        self,
+        _dt: float,
+        value: Any = _MISSING,
+        error: BaseException | None = None,
+    ) -> None:
+        if not self._running:
+            return
+
+        self._scheduled_callback = None
+        self._scheduled_remaining = None
+        self._wait_token = None
+
+        if self._paused:
+            self._pending_advance = (value, error)
+            return
+
+        try:
+            # Resume the generator using the outcome of its previous yield:
+            # a yielded child or operation sends a value, while its failure is
+            # thrown back into the generator for ordinary try/except handling.
+            if error is not None:
+                yielded = self._generator.throw(error)
+            elif value is _MISSING:
+                yielded = next(self._generator)
+            else:
+                yielded = self._generator.send(value)
+        except StopIteration as completed:
+            self._finish(completed.value)
+            return
+        except Exception as exc:  # noqa: BLE001
+            self._fail(exc)
+            return
+
+        if isinstance(yielded, Chain):
+            self._wait_for_child(yielded)
+        elif isinstance(yielded, (int, float)):
+            delay = float(yielded)
+            if delay < 0:
+                self._fail(ValueError("A chain cannot yield a negative delay"))
+            else:
+                self._schedule_advance(delay)
+        elif yielded is None:
+            self._schedule_advance(0.0)
+        elif hasattr(yielded, "start") and callable(yielded.start):
+            self._wait_for_operation(cast("YieldingOperation", yielded))
+        else:
+            self._fail(
+                TypeError(
+                    "A chain must yield a delay, another Chain, "
+                    "a callback operation, or None; "
+                    f"received {yielded}",
+                ),
+            )
+
+    def _wait_for_child(self, child: Chain) -> None:
+        self._child = child
+        token = self._new_wait_token()
+
+        # A child is a dependency and its result resumes this chain,
+        # its error is thrown here, and stopping it also stops its waiting parent.
+        child.add_callbacks(
+            on_complete=lambda result: self._resume_if_current(token, value=result),
+            on_error=lambda error: self._resume_if_current(token, error=error),
+            on_stop=lambda: self.stop() if self._wait_token is token else None,
+        )
+
+        try:
+            child.start()
+        except Exception as exc:  # noqa: BLE001
+            self._resume_if_current(token, error=exc)
+
+    def _wait_for_operation(self, operation: YieldingOperation) -> None:
+        token = self._new_wait_token()
+
+        def complete(result: Any = None) -> None:
+            self._resume_if_current(token, value=result)
+
+        def fail(error: BaseException) -> None:
+            self._resume_if_current(token, error=error)
+
+        try:
+            cancel = operation.start(complete, fail)
+            # A starter may call complete or fail before returning.  Only keep
+            # its cancellation callback if this is still the active wait.
+            if self._wait_token is token:
+                self._operation = operation
+                self._cancel_operation = cancel
+        except Exception as exc:  # noqa: BLE001
+            fail(exc)
+
+    def _new_wait_token(self) -> object:
+        # Callback-based operations can complete after cancellation.
+        # Gives each wait a distinct identity so a late callback cannot resume a chain
+        # that has already advanced, stopped, or started another wait.
+        token = object()
+        self._wait_token = token
+        return token
+
+    def _resume_if_current(
+        self,
+        token: object,
+        *,
+        value: Any = _MISSING,
+        error: BaseException | None = None,
+    ) -> None:
+        # This is the single gate used by child and callback-operation results.
+        if not self._running or self._wait_token is not token:
+            return
+        self._wait_token = None
+        self._cancel_operation = None
+        self._operation = None
+        self._child = None
+        if self._paused:
+            self._pending_advance = (value, error)
+            return
+        self._schedule_advance(0.0, value=value, error=error)
+
+    def _schedule_advance(
+        self,
+        delay: float,
+        *,
+        value: Any = _MISSING,
+        error: BaseException | None = None,
+    ) -> None:
+        if not self._running:
+            return
+
+        def callback(dt: float) -> None:
+            if not self._running:
+                return
+
+            remaining = self._scheduled_remaining
+            if remaining is not None:
+                # Count down using this clock's ticks rather than sampling a
+                # wall-clock timestamp or schedule_interval. Keeps custom clocks and pauses
+                # accurate, and leaves the unscheduled remainder intact.
+                # Not sure if there is a better way?
+                remaining -= dt
+                self._scheduled_remaining = remaining
+                if remaining > 1e-12:
+                    return
+
+            self._clock.unschedule(callback)
+            self._advance(dt, value, error)
+
+        self._scheduled_callback = callback
+        # Schedule on every tick so pause can unschedule this exact callback
+        # and resume can continue with the accumulated remaining duration.
+        self._scheduled_remaining = delay
+        self._clock.schedule(callback)
+
+    def stop(self) -> None:
+        """Stops the chain from running."""
+        if not self._running:
+            return
+
+        self._running = False
+        self._paused = False
+        self._finished = True
+        self._stopped = True
+        self._pending_advance = None
+        self._wait_token = None
+
+        if self._scheduled_callback is not None:
+            self._clock.unschedule(self._scheduled_callback)
+            self._scheduled_callback = None
+            self._scheduled_remaining = None
+
+        if self._child is not None:
+            child, self._child = self._child, None
+            child.stop()
+
+        if self._cancel_operation is not None:
+            cancel, self._cancel_operation = self._cancel_operation, None
+            self._operation = None
+            cancel()
+
+        self._generator.close()
+        self.dispatch_event('on_stop')
+
+    def pause(self) -> Chain:
+        """Pauses the chain, with the intention to either resume or stop in the future.
+
+        Cannot resume if chain was stopped.
+        """
+        if not self._running or self._paused or self._finished:
+            return self
+
+        self._paused = True
+
+        if self._scheduled_callback is not None:
+            self._clock.unschedule(self._scheduled_callback)
+
+        if self._child is not None:
+            self._child.pause()
+        elif self._operation is not None and hasattr(self._operation, 'pause'):
+            self._operation.pause()
+
+        self.dispatch_event('on_pause')
+
+        return self
+
+    def resume(self) -> Chain:
+        """Resumes the chain if it was paused.
+
+        Cannot resume if chain was stopped.
+        """
+        if not self._running or not self._paused or self._finished:
+            return self
+
+        self._paused = False
+
+        if self._child is not None:
+            self._child.resume()
+        elif self._operation is not None and hasattr(self._operation, 'resume'):
+            self._operation.resume()
+        elif self._pending_advance is not None:
+            value, error = self._pending_advance
+            self._pending_advance = None
+            self._schedule_advance(0.0, value=value, error=error)
+        elif self._scheduled_callback is not None:
+            self._clock.schedule(self._scheduled_callback)
+
+        self.dispatch_event('on_resume')
+
+        return self
+
+    def _finish(self, result: Any) -> None:
+        self._running = False
+        self._paused = False
+        self._finished = True
+        self.result = result
+        self.dispatch_event('on_complete', result)
+
+    def _fail(self, error: BaseException) -> None:
+        self._running = False
+        self._paused = False
+        self._finished = True
+        self.exception = error
+        if self.dispatch_event('on_error', error) is False:
+            traceback.print_exception(error)
+
+    def add_callbacks(self, **callbacks: Callable[..., Any]) -> Chain:
+        """Register lifecycle event handlers and return this chain.
+
+        Mostly an alias for ``push_handlers''.
+
+        Accepted names are ``on_complete``, ``on_stop``, ``on_pause``,
+        ``on_resume``, and ``on_error``.
+        """
+        self.push_handlers(**callbacks)
+        return self
+
+
+Chain.register_event_type('on_complete')
+Chain.register_event_type('on_stop')
+Chain.register_event_type('on_pause')
+Chain.register_event_type('on_resume')
+Chain.register_event_type('on_error')
+
+
+class ChainGroup:
+    """Track related chains and child groups for lifecycle control."""
+
+    def __init__(self, clock: Clock | None = None) -> None:
+        """Initialize the group with an optional clock for unbound chains."""
+        self._clock: Clock = clock or _default
+        self._chains: dict[Chain, frozenset[ChainTag]] = {}
+        self._groups: set[ChainGroup] = set()
+        self._paused = False
+
+    @property
+    def clock(self) -> Clock:
+        return self._clock
+
+    @property
+    def paused(self) -> bool:
+        return self._paused
+
+    @property
+    def chains(self) -> tuple[Chain, ...]:
+        return tuple(self._chains)
+
+    @property
+    def groups(self) -> tuple[ChainGroup, ...]:
+        return tuple(self._groups)
+
+    def add_group(self, group: ChainGroup) -> ChainGroup:
+        """Add an existing child group and return it."""
+        if group is self:
+            raise ValueError("A chain group cannot contain itself")
+
+        self._groups.add(group)
+        if self._paused:
+            group.pause()
+        return group
+
+    def create_group(self, clock: Clock | None = None) -> ChainGroup:
+        """Create, add, and return a child group."""
+        return self.add_group(ChainGroup(clock=clock or self._clock))
+
+    def add(
+        self,
+        chain: Chain,
+        *,
+        tag: ChainTag | None = None,
+        tags: Iterable[ChainTag] = (),
+    ) -> Chain:
+        """Track a chain without starting it."""
+        if chain.done:
+            return chain
+
+        chain_tags = self._normalize_tags(tag, tags)
+        self._chains[chain] = chain_tags
+
+        def remove_chain(_result: Any = None) -> None:
+            self._chains.pop(chain, None)
+
+        chain.add_callbacks(
+            on_complete=remove_chain,
+            on_stop=remove_chain,
+            on_error=remove_chain,
+        )
+
+        if self._paused and chain.running:
+            chain.pause()
+
+        return chain
+
+    def start(
+        self,
+        chain: Chain,
+        *,
+        tag: ChainTag | None = None,
+        tags: Iterable[ChainTag] = (),
+    ) -> Chain:
+        """Track and start a chain."""
+        self.add(chain, tag=tag, tags=tags)
+        chain.start()
+        if self._paused and chain.running:
+            chain.pause()
+        return chain
+
+    def clear(
+        self,
+        *,
+        tag: ChainTag | None = None,
+        tags: Iterable[ChainTag] = (),
+    ) -> ChainGroup:
+        """Stop and forget tracked chains, optionally filtered by tag."""
+        tag_filter = self._normalize_tags(tag, tags)
+
+        # Groups form a lifecycle tree.  Apply the same filter to children
+        # before removing this group's unfiltered child-group references.
+        for child_group in tuple(self._groups):
+            child_group.clear(tags=tag_filter)
+
+        for chain, chain_tags in tuple(self._chains.items()):
+            if tag_filter and chain_tags.isdisjoint(tag_filter):
+                continue
+
+            self._chains.pop(chain, None)
+            chain.stop()
+
+        if not tag_filter:
+            self._groups.clear()
+
+        return self
+
+    def stop(
+        self,
+        *,
+        tag: ChainTag | None = None,
+        tags: Iterable[ChainTag] = (),
+    ) -> ChainGroup:
+        """Alias for :py:meth:`clear`."""
+        return self.clear(tag=tag, tags=tags)
+
+    def pause(
+        self,
+        *,
+        tag: ChainTag | None = None,
+        tags: Iterable[ChainTag] = (),
+    ) -> ChainGroup:
+        """Pause tracked chains and child groups, optionally filtered by tag."""
+        tag_filter = self._normalize_tags(tag, tags)
+
+        if not tag_filter:
+            self._paused = True
+
+        for child_group in tuple(self._groups):
+            child_group.pause(tags=tag_filter)
+
+        for chain, chain_tags in tuple(self._chains.items()):
+            if tag_filter and chain_tags.isdisjoint(tag_filter):
+                continue
+            chain.pause()
+
+        return self
+
+    def resume(
+        self,
+        *,
+        tag: ChainTag | None = None,
+        tags: Iterable[ChainTag] = (),
+    ) -> ChainGroup:
+        """Resume tracked chains and child groups, optionally filtered by tag."""
+        tag_filter = self._normalize_tags(tag, tags)
+
+        if not tag_filter:
+            self._paused = False
+
+        for child_group in tuple(self._groups):
+            child_group.resume(tags=tag_filter)
+
+        for chain, chain_tags in tuple(self._chains.items()):
+            if tag_filter and chain_tags.isdisjoint(tag_filter):
+                continue
+            chain.resume()
+
+        return self
+
+    @staticmethod
+    def _normalize_tags(
+        tag: ChainTag | None,
+        tags: Iterable[ChainTag],
+    ) -> frozenset[ChainTag]:
+        normalized = set(tags)
+        if tag is not None:
+            normalized.add(tag)
+        return frozenset(normalized)
+
+def chain(
+    function: Callable[..., ChainGenerator[T]],
+    *,
+    clock: Clock | None = None,
+) -> Callable[..., Chain]:
+    """Decorate a generator function so it returns a ``Chain``."""
+
+    @wraps(function)
+    def wrapper(*args: Any, **kwargs: Any) -> Chain:
+        generator = function(*args, **kwargs)
+        if not inspect.isgenerator(generator):
+            msg = (
+                f"{function.__qualname__} must be a generator function "
+                "and contain at least one yield"
+            )
+            raise TypeError(
+                msg,
+            )
+        return Chain(generator, clock=clock)
+
+    return wrapper
+
+
+def yielding_callback(
+    function: Callable[..., CancelCallback | None],
+) -> Callable[..., YieldInstruction]:
+    """Decorate a callback starter so it can be yielded from a chain."""
+
+    @wraps(function)
+    def wrapper(*args: Any, **kwargs: Any) -> YieldInstruction:
+        def start(
+            complete: CompleteCallback,
+            fail: ErrorCallback,
+        ) -> CancelCallback | None:
+            return function(complete, fail, *args, **kwargs)
+
+        return YieldInstruction(start)
+
+    return wrapper
+
+
+def timeout(delay: float, *, clock: Clock | None = None) -> Chain:
+    """Create a chain that completes after ``delay`` seconds."""
+    if delay < 0:
+        raise ValueError("Timeout delay cannot be negative.")
+
+    def _timeout() -> ChainGenerator[None]:
+        yield delay
+
+    return chain(_timeout, clock=clock)()
+
+
+def repeat(factory: Callable[[], Chain], count: int, *, clock: Clock | None = None) -> Chain:
+    """Create a chain that runs a child-chain factory ``count`` times."""
+    if count < 0:
+        raise ValueError("Repeat count cannot be negative.")
+
+    def _repeat() -> ChainGenerator[tuple[Any, ...]]:
+        results = []
+        for _ in range(count):
+            results.append((yield factory()))  # noqa: PERF401
+        return tuple(results)
+
+    return chain(_repeat, clock=clock)()
+
+
+def repeat_until(
+    factory: Callable[[], Chain],
+    condition: Callable[[], bool],
+    *,
+    clock: Clock | None = None,
+) -> Chain:
+    """Create a chain that repeats child chains until ``condition`` is true."""
+
+    def _repeat_until() -> ChainGenerator[tuple[Any, ...]]:
+        results = []
+        while not condition():
+            results.append((yield factory()))
+        return tuple(results)
+
+    return chain(_repeat_until, clock=clock)()
+
+
+def repeat_duration(factory: Callable[[], Chain], duration: float, *, clock: Clock | None = None) -> Chain:
+    """Create a chain that repeats child chains until ``duration`` elapses.
+
+    If duration is 0, it repeats until stopped.
+    """
+    if duration < 0:
+        raise ValueError("Repeat duration cannot be negative.")
+
+    def _repeat_forever() -> ChainGenerator[None]:
+        while True:
+            yield factory()
+
+    def _repeat_duration() -> ChainGenerator[Any]:
+        winner_index, result = yield race(
+            chain(_repeat_forever, clock=clock)(),
+            timeout(duration, clock=clock),
+        )
+        return result if winner_index == 0 else None
+
+    return chain(_repeat_duration, clock=clock)()
+
 
 class _ScheduledItem:
-    __slots__ = ['func', 'args', 'kwargs']
+    __slots__ = ['args', 'func', 'kwargs']
 
     def __init__(self, func: Callable, args: Any, kwargs: Any) -> None:
         self.func = func
@@ -85,7 +979,7 @@ class _ScheduledItem:
 
 
 class _ScheduledIntervalItem:
-    __slots__ = ['func', 'interval', 'last_ts', 'next_ts', 'args', 'kwargs']
+    __slots__ = ['args', 'func', 'interval', 'kwargs', 'last_ts', 'next_ts']
 
     def __init__(self, func: Callable, interval: float, last_ts: float, next_ts: float, args: Any, kwargs: Any) -> None:
         self.func = func
@@ -100,6 +994,12 @@ class _ScheduledIntervalItem:
 
 
 class Clock:
+    """Schedule callbacks and chains against a single time source.
+
+    Each clock maintains its own scheduled callbacks, chain state, and
+    frequency measurements. Custom clocks can be ticked independently to
+    separate gameplay time, UI time, or other application timelines.
+    """
 
     # List of functions to call every tick.
     _schedule_items: list
@@ -111,7 +1011,7 @@ class Clock:
     _force_sleep: bool = False
 
     def __init__(self, time_function: Callable = _time.perf_counter) -> None:
-        """Initialise a Clock, with optional custom time function.
+        """Initialize a Clock, with optional custom time function.
 
         You can provide a custom time function to return the elapsed
         time of the application, in seconds. Defaults to ``time.perf_counter``,
@@ -130,6 +1030,38 @@ class Clock:
         self._schedule_items = []
         self._schedule_interval_items = []
         self._current_interval_item = None
+
+    def chain(self, function: Callable[..., ChainGenerator[T]]) -> Callable[..., Chain]:
+        """Decorate a generator function so returned chains use this clock."""
+        return chain(function, clock=self)
+
+    def timeout(self, delay: float) -> Chain:
+        """Create a chain on this clock that completes after ``delay`` seconds."""
+        return timeout(delay, clock=self)
+
+    def parallel(self, *chains: Chain, continue_on_stop: bool = False) -> _ParallelOperation:
+        """Run child chains on this clock and resume with their ordered results."""
+        return _ParallelOperation(chains, continue_on_stop=continue_on_stop, clock=self)
+
+    def race(self, *chains: Chain) -> _RaceOperation:
+        """Run child chains on this clock and resume with the first result."""
+        return _RaceOperation(chains, clock=self)
+
+    def repeat(self, factory: Callable[[], Chain], count: int) -> Chain:
+        """Create a repeat chain on this clock."""
+        return repeat(factory, count, clock=self)
+
+    def repeat_until(self, factory: Callable[[], Chain], condition: Callable[[], bool]) -> Chain:
+        """Create a repeat-until chain on this clock."""
+        return repeat_until(factory, condition, clock=self)
+
+    def repeat_duration(self, factory: Callable[[], Chain], duration: float) -> Chain:
+        """Create a duration-limited repeat chain on this clock."""
+        return repeat_duration(factory, duration, clock=self)
+
+    def create_group(self) -> ChainGroup:
+        """Create a chain group bound to this clock."""
+        return ChainGroup(clock=self)
 
     @staticmethod
     def sleep(microseconds: float) -> None:
