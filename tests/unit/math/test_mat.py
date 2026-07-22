@@ -133,6 +133,20 @@ def test_mat3_associative_mul():
     assert v1 == v2 and abs(v1) != 0
 
 
+def test_mat3_translate():
+    # Translating the origin must move it by +(tx, ty), matching Mat4.translate.
+    result = Mat3().translate(10, 20) @ Vec3(0, 0, 1)
+    assert result == Vec3(10, 20, 1)
+    mat4_result = Mat4().translate(Vec3(10, 20, 0)) @ Vec4(0, 0, 0, 1)
+    assert (result.x, result.y) == (mat4_result.x, mat4_result.y)
+
+
+def test_mat3_scale():
+    # Scaling by (sx, sy) must multiply, matching Mat4.scale (not the reciprocal).
+    result = Mat3().scale(2, 3) @ Vec3(1, 1, 1)
+    assert result == Vec3(2, 3, 1)
+
+
 def _invalid_matmul(first, second):
     return first @ second
 
