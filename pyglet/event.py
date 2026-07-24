@@ -102,10 +102,10 @@ the particular class documentation.
 .. note::
 
     In order to prevent issues with garbage collection, the
-    :py:class:`~pyglet.event.EventDispatcher` class only holds weak
-    references to pushed event handlers. That means the following example
-    will not work, because the pushed object will fall out of scope and be
-    collected::
+    :py:class:`~pyglet.event.EventDispatcher` class holds weak references to
+    pushed bound methods when their instance supports weak references. That
+    means the following example will not work, because the pushed object will
+    fall out of scope and be collected::
 
         dispatcher.push_handlers(MyHandlerClass())
 
@@ -114,6 +114,9 @@ the particular class documentation.
 
         my_handler_instance = MyHandlerClass()
         dispatcher.push_handlers(my_handler_instance)
+
+    Bound methods whose instance cannot be weakly referenced, such as
+    ``list.append``, are retained strongly instead.
 
 """
 from __future__ import annotations
@@ -184,6 +187,16 @@ class EventDispatcher:
 
     def _get_handlers(self, args: list, kwargs: dict) -> Generator[tuple[str, Callable], None, None]:
         """Implement handler matching on arguments for set_handlers and remove_handlers."""
+        def weak_method_or_handler(handler: Callable) -> Callable:
+            try:
+                return WeakMethod(handler)
+            except TypeError:
+                # PyPy work around.
+                # It considers some built-in methods (list.append)
+                # to be bound methods even when their instance cannot be weakly
+                # referenced. Keep those handlers strongly instead.
+                return handler
+
         for obj in args:
             if inspect.isroutine(obj):
                 # Single magically named function
@@ -192,7 +205,7 @@ class EventDispatcher:
                     msg = f'Unknown event "{name}"'
                     raise EventException(msg)
                 if inspect.ismethod(obj):
-                    yield name, WeakMethod(obj)
+                    yield name, weak_method_or_handler(obj)
                 else:
                     yield name, obj
             else:
@@ -200,7 +213,7 @@ class EventDispatcher:
                 for name in dir(obj):
                     if name in self.event_types:
                         meth = getattr(obj, name)
-                        yield name, WeakMethod(meth)
+                        yield name, weak_method_or_handler(meth)
 
         for name, handler in kwargs.items():
             # Function for handling given event (no magic)
@@ -208,7 +221,7 @@ class EventDispatcher:
                 msg = f'Unknown event "{name}"'
                 raise EventException(msg)
             if inspect.ismethod(handler):
-                yield name, WeakMethod(handler)
+                yield name, weak_method_or_handler(handler)
             else:
                 yield name, handler
 
