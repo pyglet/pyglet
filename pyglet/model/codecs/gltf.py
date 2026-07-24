@@ -338,7 +338,6 @@ class Node(BaseNode):
         self.rotation = data.get('rotation')        # Quaternion
         self.scale = data.get('scale')              # Vec3
 
-
         # TODO: handle these:
         self.camera = None
 
@@ -353,10 +352,27 @@ class Node(BaseNode):
         return [self._owner.nodes[i] for i in self._child_indices]
 
     @property
+    def parent(self):
+        for node in self._owner.nodes:
+            if self in node.children:
+                return node
+        return None
+
+    @property
     def skin(self):
         if self._skin_index is None:
             return None
         return self._owner.skins[self._skin_index]
+
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}"
+            f"("
+            f"index={self.index}, name={self.name}, "
+            f"mesh={self.mesh}, skin={self.skin}, "
+            f"camera={self.camera}, children={len(self.children)}"
+            f")"
+        )
 
 
 class Skin:
@@ -369,7 +385,7 @@ class Skin:
         )
         joints_indices = data.get('joints', [])
         self.joints: list[Node] = [owner.nodes[i] for i in joints_indices]
-        self.skeleton_index: int = data.get('skeleton')
+        self.skeleton_index: int | None = data.get('skeleton')
         self.skeleton: Node | None = owner.nodes[self.skeleton_index] if (
             self.skeleton_index is not None
         ) else None
