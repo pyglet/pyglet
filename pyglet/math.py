@@ -19,7 +19,9 @@ All objects are immutable and hashable.
 #   on systems without access to compute shaders
 from __future__ import annotations
 
-from math import sin, asin, cos, sqrt, ceil, trunc, atan2, floor, radians, tan, pi
+from math import (
+    acos, sin, asin, cos, sqrt, ceil, trunc, atan2, floor, radians, tan, pi
+)
 
 import typing as _typing
 import warnings as _warnings
@@ -1525,6 +1527,36 @@ class Quaternion(_typing.NamedTuple):
         if m == 0:
             return self
         return Quaternion(self.w / m, self.x / m, self.y / m, self.z / m)
+
+    def slerp(self , other: Quaternion , t: float) -> Quaternion:
+        """
+        Calculate the spherical interpolation between this quaternion and the
+        one given and returns it as a new instance.
+
+        This function uses the equations from the GLTF 2.0 Specification book.
+        https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#interpolation-slerp
+
+        Args:
+            other: The other quaternion
+            t: The parametric variable in the range [0, 1]
+
+        Returns:
+            The quaternion instance obtained from the spherical interpolation
+            between the two given quaternions
+        """
+        dot = self.dot(other)
+
+        abs_dot = min(abs(dot), 0.999)
+        x = acos(abs_dot)
+
+        if x < 0.005:
+            return self * (1 - t) + other * t
+
+        s = dot / abs_dot
+
+        v = self * (sin(x * (1 - t)) / sin(x)) + \
+            other * s * (sin(x * t) / sin(x))
+        return v
 
     def __add__(self, other: Quaternion) -> Quaternion:
         a, b, c, d = self
