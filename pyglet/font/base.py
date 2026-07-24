@@ -257,8 +257,6 @@ class Font:
              pre-calculate how many glyphs can be saved into a single texture atlas. Increase this if you plan to
              support more than this standard scenario. Performance is increased the less textures are used. However,
              it does consume more video memory.
-        default_descriptor:
-            The default Texture description of the atlas and font.
     """
     #: :meta private:
     texture_bin: None | GlyphTextureBin
@@ -276,7 +274,7 @@ class Font:
     optimize_fit: int = True
     glyph_fit: int = 100
 
-    filters = TextureFilter.LINEAR
+    filters = TextureFilter.NEAREST
 
     # These should also be set by subclass when known
     ascent: int = 0
@@ -395,8 +393,6 @@ class Font:
         Args:
             img:
                 The image to write to the font texture.
-            descriptor:
-                Override for the atlas texture's descriptor. None will use default.
         """
         if self.texture_bin is None:
             if self.optimize_fit:
