@@ -20,7 +20,6 @@ from pyglet.libs.win32.constants import (
     WINDOWS_10_CREATORS_UPDATE_OR_GREATER,
     WINDOWS_VISTA_OR_GREATER,
 )
-from pyglet.libs.win32.context_managers import device_context
 from pyglet.libs.win32.types import (
     DEVMODE,
     DISPLAY_DEVICEW,
@@ -35,7 +34,10 @@ from pyglet.libs.win32.types import (
     UINT32,
 )
 
-from .base import Canvas, Display, Screen, ScreenMode
+from .base import Display, Screen, ScreenMode
+
+if TYPE_CHECKING:
+    from ctypes.wintypes import HDC, HMONITOR, LPARAM, LPRECT
 
 if WINDOWS_8_1_OR_GREATER:
     from pyglet.libs.win32 import _shcore
@@ -168,16 +170,6 @@ class Win32Screen(Screen):  # noqa: D101
 
         return "Unknown"
 
-    def get_matching_configs(self, template):
-        with device_context(None) as hdc:
-            canvas = Win32Canvas(self.display, 0, hdc)
-            configs = template.match(canvas)
-            # XXX deprecate config's being screen-specific
-            for config in configs:
-                config.screen = self
-
-        return configs
-
     def _get_monitor_info(self) -> MONITORINFOEX:
         info = MONITORINFOEX()
         info.cbSize = sizeof(MONITORINFOEX)
@@ -260,6 +252,8 @@ _win32_scale_name = {
     1: "center",
     2: "stretch",
 }
+
+
 class Win32ScreenMode(ScreenMode):  # noqa: D101
     def __init__(self, screen: Win32Screen, mode: DEVMODE) -> None:  # noqa: D107
         super().__init__(screen)
@@ -274,8 +268,4 @@ class Win32ScreenMode(ScreenMode):  # noqa: D101
         return (f'{self.__class__.__name__}(width={self.width!r}, height={self.height!r}, depth={self.depth!r},'
                 f'rate={self.rate}, scaling={_win32_scale_name.get(self.scaling)})')
 
-class Win32Canvas(Canvas):  # noqa: D101
-    def __init__(self, display: Win32Display, hwnd: HWND, hdc: HDC) -> None:  # noqa: D107
-        super().__init__(display)
-        self.hwnd = hwnd
-        self.hdc = hdc
+

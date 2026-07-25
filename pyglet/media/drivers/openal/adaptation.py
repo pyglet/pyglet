@@ -9,7 +9,7 @@ from pyglet.media.player_worker_thread import PlayerWorkerThread
 from pyglet.util import debug_print
 
 if TYPE_CHECKING:
-    from pyglet.media import Source, Player
+    from pyglet.media import Source, AudioPlayer
 
 
 _debug = debug_print('debug_media')
@@ -28,7 +28,11 @@ class OpenALDriver(AbstractAudioDriver):
         self.worker = PlayerWorkerThread()
         self.worker.start()
 
-    def create_audio_player(self, source: 'Source', player: 'Player') -> 'OpenALAudioPlayer':
+    @property
+    def sample_formats(self):
+       return self.context._supported_formats
+
+    def create_audio_player(self, source: 'Source', player: 'AudioPlayer') -> 'OpenALAudioPlayer':
         assert self.device is not None, 'Device was closed'
         return OpenALAudioPlayer(self, source, player)
 
@@ -91,7 +95,7 @@ class OpenALListener(AbstractListener):
 
 
 class OpenALAudioPlayer(AbstractAudioPlayer):
-    def __init__(self, driver: 'OpenALDriver', source: 'Source', player: 'Player') -> None:
+    def __init__(self, driver: 'OpenALDriver', source: 'Source', player: 'AudioPlayer') -> None:
         super().__init__(source, player)
         self.driver = driver
         self.alsource = driver.context.create_source()
@@ -218,7 +222,7 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
 
         # Get, fill and queue OpenAL buffer using the entire AudioData
         buf = self.alsource.get_buffer()
-        buf.data(audio_data, self.source.audio_format)
+        buf.data(audio_data, self.source.audio_format, self.driver.sample_formats)
         self.alsource.queue_buffer(buf)
 
         # Adjust the write cursor and memorize buffer length

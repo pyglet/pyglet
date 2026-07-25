@@ -18,8 +18,7 @@ arguments, defaults will be assumed for all parameters::
 The default parameters used are:
 
 * The window will have a size of 960x540, and not be resizable.
-* A default context will be created using template config described in
-  :ref:`guide_glconfig`.
+* A default context will be created using the current backend defaults.
 * The window caption will be the name of the executing Python script
   (i.e., ``sys.argv[0]``).
 
@@ -31,37 +30,52 @@ example shows how to create and display a window in two steps::
     # ... perform some additional initialisation
     window.set_visible()
 
-OpenGL Context configuration
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _guide_window-config:
+
+Graphics context configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The context of a window cannot be changed once created.  There are several
 ways to control the context that is created:
 
-* Supply an already-created :py:class:`~pyglet.gl.Context` using the
-  ``context`` argument::
+* Supply a :py:class:`~pyglet.config.Config` using the ``config`` argument.
+  pyglet selects the backend-specific options that match
+  ``pyglet.options.backend``::
 
-      context = config.create_context(share)
-      window = pyglet.window.Window(context=context)
-
-* Supply a complete :py:class:`~pyglet.gl.Config` obtained from a
-  :py:class:`~pyglet.display.Screen` using the ``config``
-  argument.  The context will be created from this config and will share object
-  space with the most recently created existing context::
-
-      display = pyglet.display.get_display()
-      screen = display.get_default_screen()
-      config = screen.get_best_config(template)
+      config = pyglet.config.Config()
+      config.opengl.alpha_size = 8
+      config.opengl.depth_size = 24
       window = pyglet.window.Window(config=config)
 
-* Supply a template :py:class:`~pyglet.gl.Config` using the ``config``
-  argument. The context will use the best config obtained from the default
-  screen of the default display::
+  You can set options for multiple backends up front, and pyglet will select
+  the matching one at runtime::
 
-      config = gl.Config(double_buffer=True)
+      config = pyglet.config.Config()
+      config.opengl.major_version = 4
+      config.opengl.minor_version = 1
+      config.gl2.double_buffer = True
       window = pyglet.window.Window(config=config)
+
+* Supply multiple :py:class:`~pyglet.config.Config` objects in priority order.
+  The first compatible config is used::
+
+      high_quality = pyglet.config.Config()
+      high_quality.opengl.sample_buffers = 1
+      high_quality.opengl.samples = 4
+
+      fallback = pyglet.config.Config()
+      fallback.opengl.depth_size = 24
+
+      window = pyglet.window.Window(config=[high_quality, fallback])
+
+* Control context sharing using the ``context`` argument::
+
+      primary = pyglet.window.Window()
+      shared = pyglet.window.Window(context=primary.context)
+      isolated = pyglet.window.Window(context=None)
 
 * Specify a :py:class:`~pyglet.display.Screen` using the ``screen`` argument.
-  The context will use a config created from default template configuration
+  The context will use a config created from default backend configuration
   and this screen::
 
       display = pyglet.display.get_display()
@@ -70,15 +84,13 @@ ways to control the context that is created:
 
 * Specify a :py:class:`~pyglet.display.Display` using the ``display`` argument.
   The default screen on this display will be used to obtain a context using
-  the default template configuration::
+  the default backend configuration::
 
       display = platform.get_display(display_name)
       window = pyglet.window.Window(display=display)
 
-If a template :py:class:`~pyglet.gl.Config` is given, a
-:py:class:`~pyglet.display.Screen` or :py:class:`~pyglet.display.Display`
-may also be specified; however any other combination of parameters
-overconstrains the configuration and some parameters will be ignored.
+If no compatible config can be matched, window creation raises
+:py:class:`~pyglet.window.NoSuchConfigException`.
 
 Fullscreen windows
 ^^^^^^^^^^^^^^^^^^
@@ -164,6 +176,71 @@ diagram:
 .. figure:: img/window_location.png
 
     The position and size of the window relative to the desktop.
+
+DPI and scaling
+^^^^^^^^^^^^^^^
+
+One window can have two different sizes:
+
+* ``window.get_size()``: How big the window appears in your app's coordinate
+  system (the size you usually think in for layout).
+* ``window.get_framebuffer_size()``: How many real pixels are available for
+  drawing.
+
+At 100% display scaling, these are usually the same. On high-DPI displays
+(for example Retina, or 125%/150%/200% scaling), the framebuffer size can be
+larger than the window size.
+
+In simple terms:
+
+* Window size controls "how big it looks."
+* Framebuffer size controls "how many pixels it is drawn with."
+
+More framebuffer pixels usually means sharper output, but also more pixels for
+your app to render.
+
+Useful values and APIs:
+
+* :py:meth:`~pyglet.window.Window.get_size`: Logical window size.
+* :py:meth:`~pyglet.window.Window.get_framebuffer_size`: Physical pixel size of the framebuffer.
+* :py:attr:`~pyglet.window.Window.scale`: DPI scale factor for the window.
+* :py:attr:`~pyglet.window.Window.dpi`: Effective DPI value for the window.
+* ``on_scale`` event: Dispatched when DPI/scale changes at runtime.
+
+The global :py:attr:`pyglet.options.dpi_scaling <pyglet.Options.dpi_scaling>`
+option controls how window DPI scaling behaves. For a complete runnable
+example, see ``examples/dpi_scaled_window.py``.
+
+Typical results:
+
+* 100% scaling display: ``(800, 600)`` window and ``(800, 600)`` framebuffer,
+  scale ``1.0``.
+* 200% scaling display (commonly on macOS Retina with ``"platform"``):
+  ``(800, 600)`` window and ``(1600, 1200)`` framebuffer, scale ``2.0``.
+
+Platform note:
+
+* macOS: In ``"platform"`` mode on Retina displays, framebuffer size is often
+  larger than window size.
+* Windows: In ``"platform"`` mode, framebuffer and window size are usually
+  the same (1:1).
+
+The current modes are:
+
+* ``"platform"`` (default):
+  Follows platform-native DPI behavior. This usually gives the sharpest output.
+  However, your code may need to handle different window and framebuffer
+  sizes, especially for custom viewports, render targets, and fixed-size UI.
+
+* ``"stretch"``:
+  Keeps your requested window coordinate space and stretches content to the
+  framebuffer. This can simplify older code that assumes a fixed size.
+  However, stretched output can look blurry.
+
+When targeting multiple platforms or multi-monitor setups, test DPI behavior
+early. Moving a window between monitors can change scale at runtime, so handle
+the ``on_scale`` event when you need to re-layout UI or
+recompute size-dependent resources.
 
 Appearance
 ----------
@@ -310,6 +387,105 @@ will only occur when you manually change the visibility of the window or when
 the window is minimized or restored.  On Mac OS X the user can also hide or
 show the window (affecting visibility) using the Command+H shortcut.
 
+File dialogs
+------------
+
+Use :py:class:`~pyglet.window.dialog.FileOpenDialog` and
+:py:class:`~pyglet.window.dialog.FileSaveDialog` to open native system file
+dialogs from your pyglet application.
+
+These dialogs are non-blocking and dispatch events when the user completes or
+cancels the operation. They only return path information; your code is
+responsible for opening or saving the file data.
+
+Both :py:class:`~pyglet.window.dialog.FileOpenDialog` and :py:class:`~pyglet.window.dialog.FileSaveDialog` accept
+``filetypes`` as a list of ``(label, pattern)`` tuples.
+
+Use wildcard patterns (recommended), and separate multiple extensions in one
+entry with spaces::
+
+    filetypes = [
+        ("PNG Image", "*.png"),
+        ("Images", "*.png *.jpg *.bmp"),
+        ("All Files", "*.*"),
+    ]
+
+Simple extensions (like ``".png"``) are also accepted.
+
+Open file dialog example::
+
+    import pyglet
+    from pyglet.window import key
+    from pyglet.window.dialog import FileOpenDialog
+
+    window = pyglet.window.Window()
+
+    open_dialog = FileOpenDialog(
+        title="Open image(s)",
+        filetypes=[("Images", "*.png *.jpg *.bmp"), ("All Files", "*.*")],
+        multiple=True,
+    )
+
+    @open_dialog.event
+    def on_dialog_open(filenames):
+        if not filenames:
+            return  # User canceled
+        print("Selected files:", filenames)
+
+    @window.event
+    def on_key_press(symbol, modifiers):
+        if symbol == key.O:
+            open_dialog.open()
+
+    pyglet.app.run()
+
+Save file dialog example::
+
+    import pyglet
+    from pyglet.window import key
+    from pyglet.window.dialog import FileSaveDialog
+
+    window = pyglet.window.Window()
+
+    save_dialog = FileSaveDialog(
+        title="Save scene",
+        filetypes=[("Scene Files", "*.json"), ("All Files", "*.*")],
+        default_ext=".json",
+        initial_file="scene",
+    )
+
+    @save_dialog.event
+    def on_dialog_save(filename):
+        if not filename:
+            return  # User canceled
+        print("Save to:", filename)
+
+    @window.event
+    def on_key_press(symbol, modifiers):
+        if symbol == key.S and modifiers & key.MOD_CTRL:
+            save_dialog.open()
+
+    pyglet.app.run()
+
+.. note:: ``initial_file`` is not supported by macOS for
+:py:class:`~pyglet.window.dialog.FileOpenDialog`.
+
+
+Clipboard access
+----------------
+
+Pyglet offers very basic clipboard access.
+
+Use :py:meth:`~pyglet.window.Window.set_clipboard_text` to set the clipboard
+text string and :py:meth:`~pyglet.window.Window.get_clipboard_text` to retrieve
+plain-text to the clipboard.
+
+Clipboard support is text-only through this API. If no text is available,
+:py:meth:`~pyglet.window.Window.get_clipboard_text` returns an empty string.
+
+.. note:: On some Linux distributions, it has been reported that some clipboard managers
+may interfere with the setting or retrieving of clipboard data.
+
 .. _guide_subclassing-window:
 
 Subclassing Window
@@ -320,7 +496,7 @@ each type of window you will display, or as your main application class.  There
 are several benefits:
 
 * You can load font and other resources from the constructor, ensuring the
-  OpenGL context has already been created.
+  rendering context has already been created.
 * You can add event handlers simply by defining them on the class.  The
   :py:meth:`~pyglet.window.Window.on_resize` event will be called as soon as
   the window is created (this
@@ -349,20 +525,28 @@ in :ref:`quickstart`, using a subclass of :py:class:`~pyglet.window.Window`::
 This example program is located in
 ``examples/programming_guide/window_subclass.py``.
 
-Windows and OpenGL contexts
----------------------------
+Windows and rendering contexts
+------------------------------
 
-Every window in pyglet has an associated OpenGL context.
-Specifying the configuration of this context has already been covered in
+Every window in pyglet has an associated rendering context for the active
+backend. Specifying the configuration of this context has already been covered in
 :ref:`guide_creating-a-window`.
-Drawing into the OpenGL context is the only way to draw into the window's
+Drawing into that rendering context is the only way to draw into the window's
 client area.
+
+You can control context sharing explicitly with the ``context`` argument::
+
+    shared_window = pyglet.window.Window()
+    # Shares resources with shared_window:
+    another_shared = pyglet.window.Window(context=shared_window.context)
+    # Creates an isolated context with sharing disabled:
+    isolated = pyglet.window.Window(context=None)
 
 Double-buffering
 ^^^^^^^^^^^^^^^^
 
 If the window is double-buffered (i.e., the configuration specified
-``double_buffer=True``, the default), OpenGL commands are applied to a hidden
+``double_buffer=True``, the default), rendering commands are applied to a hidden
 back buffer. This back buffer can be brought to the front using the `flip`
 method. The previous front buffer then becomes the hidden back buffer
 we render to in the next frame. If you are using the standard `pyglet.app.run`
@@ -371,7 +555,7 @@ automatically after each :py:meth:`~pyglet.window.Window.on_draw` event.
 
 If the window is not double-buffered, the
 :py:meth:`~pyglet.window.Window.flip`  operation is unnecessary,
-and you should remember only to call :py:func:`pyglet.gl.glFlush` to
+and you should remember only to call :py:func:`pyglet.graphics.api.gl.glFlush` to
 ensure buffered commands are executed.
 
 Vertical retrace synchronisation

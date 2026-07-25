@@ -14,10 +14,49 @@ pyglet.media
 
 .. automodule:: pyglet.media
 
+.. py:class:: pyglet.media.AudioPlayer
+   :canonical: pyglet.media.player.AudioPlayer
+
+.. py:class:: pyglet.media.VideoPlayer
+   :canonical: pyglet.media.player.VideoPlayer
+
 Classes
 -------
 
-.. autoclass:: pyglet.media.player.Player
+.. autoclass:: pyglet.media.player.AudioPlayer
+  :members: loop
+
+  .. rubric:: Methods
+
+  .. automethod:: play
+  .. automethod:: pause
+  .. automethod:: queue
+  .. automethod:: seek
+  .. automethod:: next_source
+  .. automethod:: delete
+
+  .. rubric:: Events
+
+  .. automethod:: on_eos
+  .. automethod:: on_player_eos
+  .. automethod:: on_player_next_source
+
+  .. rubric:: Attributes
+
+  .. autoattribute:: cone_inner_angle
+  .. autoattribute:: cone_outer_angle
+  .. autoattribute:: cone_orientation
+  .. autoattribute:: cone_outer_gain
+  .. autoattribute:: min_distance
+  .. autoattribute:: max_distance
+  .. autoattribute:: pitch
+  .. autoattribute:: playing
+  .. autoattribute:: position
+  .. autoattribute:: source
+  .. autoattribute:: time
+  .. autoattribute:: volume
+
+.. autoclass:: pyglet.media.player.VideoPlayer
   :members: loop
 
   .. rubric:: Methods
@@ -27,7 +66,6 @@ Classes
   .. automethod:: queue
   .. automethod:: seek
   .. automethod:: seek_next_frame
-  .. automethod:: get_texture
   .. automethod:: next_source
   .. automethod:: delete
   .. automethod:: update_texture
@@ -96,7 +134,10 @@ Functions
 ---------
 
 .. autofunction:: get_audio_driver
-.. autofunction:: load
+.. autofunction:: load_audio
+.. autofunction:: load_video
+.. autofunction:: play_audio
+.. autofunction:: play_video
 .. autofunction:: have_ffmpeg
 
 Exceptions

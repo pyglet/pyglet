@@ -1,11 +1,18 @@
+from __future__ import annotations
+
 from collections import deque
 import ctypes
 import weakref
 from abc import ABCMeta, abstractmethod
+from typing import TYPE_CHECKING
 
 import pyglet
 from pyglet.media.codecs import AudioData
 from pyglet.util import debug_print, next_or_equal_power_of_two
+
+if TYPE_CHECKING:
+    from pyglet.media.codecs import Source
+    from pyglet.media import AudioPlayer
 
 
 _debug = debug_print('debug_media')
@@ -22,12 +29,12 @@ class SourcePrecisionBuffer:
     events.
     """
 
-    def __init__(self, source):
+    def __init__(self, source: Source) -> None:
         self._source = weakref.proxy(source)
         self._buffer = bytearray()
         self._exhausted = False
 
-    def get_audio_data(self, requested_size):
+    def get_audio_data(self, requested_size: int):
         if self._exhausted:
             return None
 
@@ -71,10 +78,10 @@ class SourcePrecisionBuffer:
         del self._buffer[:requested_size]
         return AudioData(res, len(res))
 
-    def set_source(self, source):
+    def set_source(self, source: Source) -> None:
         self._source = weakref.proxy(source)
 
-    def reset(self):
+    def reset(self) -> None:
         self._buffer.clear()
         self._exhausted = False
 
@@ -92,13 +99,13 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
 
     audio_buffer_length = 0.9
 
-    def __init__(self, source, player):
+    def __init__(self, source: Source, player: AudioPlayer) -> None:
         """Create a new audio player.
 
-        :Parameters:
-            `source` : `Source`
+        Args:
+            source:
                 Source to play from.
-            `player` : `Player`
+            player:
                 Player to receive EOS and video frame sync events.
 
         """
@@ -409,7 +416,7 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
         pass
 
     def set_position(self, position):
-        """See :py:attr:`~pyglet.media.Player.position`."""
+        """See :py:attr:`~pyglet.media.AudioPlayer.position`."""
         pass
 
     def set_min_distance(self, min_distance):
@@ -421,7 +428,7 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
         pass
 
     def set_pitch(self, pitch):
-        """See :py:attr:`~pyglet.media.Player.pitch`."""
+        """See :py:attr:`~pyglet.media.AudioPlayer.pitch`."""
         pass
 
     def set_cone_orientation(self, cone_orientation):
@@ -450,6 +457,12 @@ class AbstractAudioDriver(metaclass=ABCMeta):
     def get_listener(self):
         pass
 
+    @property
+    @abstractmethod
+    def sample_formats(self):
+        """Get list of supported sample formats ("U8", "S16", "S32", "F32")."""
+        pass
+
     @abstractmethod
     def delete(self):
         pass
@@ -459,7 +472,7 @@ class MediaEvent:
     """Representation of a media event.
 
     These events are used internally by some audio driver implementation to
-    communicate events to the :class:`~pyglet.media.player.Player`.
+    communicate events to the :class:`~pyglet.media.player.AudioPlayer`.
     One example is the ``on_eos`` event.
 
     Args:
@@ -468,7 +481,7 @@ class MediaEvent:
         *args: Any required positional argument to go along with this event.
     """
 
-    __slots__ = 'event', 'timestamp', 'args'
+    __slots__ = 'args', 'event', 'timestamp'
 
     def __init__(self, event, timestamp=0.0, *args):
         # Meaning of timestamp is dependent on context; and not seen by application.

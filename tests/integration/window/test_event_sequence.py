@@ -75,15 +75,12 @@ class WindowShowEventSequenceTest(EventSequenceTest, unittest.TestCase):
     last_sequence = 3
 
     def _on_internal_resize(self, width, height):
-        print("ON INTERNAL")
         self.check_sequence(1, 'on_resize')
 
     def on_show(self):
-        print("ON SHOW")
         self.check_sequence(2, 'on_show')
 
     def on_expose(self):
-        print("ON EXPOSE")
         self.check_sequence(3, 'on_expose')
 
     def test_method(self):

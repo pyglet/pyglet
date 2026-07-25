@@ -42,6 +42,7 @@ If you are migrating from an older version of pyglet, please read through
    programming_guide/installation
    programming_guide/quickstart
    programming_guide/windowing
+   programming_guide/camera
    programming_guide/keyboard
    programming_guide/mouse
    programming_guide/input
@@ -51,7 +52,9 @@ If you are migrating from an older version of pyglet, please read through
    programming_guide/shapes
    programming_guide/models
    programming_guide/resources
+   programming_guide/texture
    programming_guide/rendering
+   programming_guide/camera
    programming_guide/events
    programming_guide/gui
    programming_guide/time
@@ -65,6 +68,8 @@ If you are migrating from an older version of pyglet, please read through
    programming_guide/options
    programming_guide/debug
    programming_guide/migration
+   programming_guide/migration2
+   programming_guide/pyodide
 
 .. toctree::
    :maxdepth: 3
@@ -73,11 +78,12 @@ If you are migrating from an older version of pyglet, please read through
    modules/pyglet
    modules/app
    modules/clock
+   modules/config/index
    modules/display
    modules/customtypes
+   modules/enums
    modules/event
-   modules/font
-   modules/gl
+   modules/font/index
    modules/graphics/index
    modules/gui
    modules/image/index
@@ -85,6 +91,7 @@ If you are migrating from an older version of pyglet, please read through
    modules/input
    modules/math
    modules/media
+   modules/models
    modules/resource
    modules/sprite
    modules/shapes

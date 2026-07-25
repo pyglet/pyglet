@@ -77,8 +77,11 @@ functions.
         * - :py:func:`pyglet.image.load_animation`
           - :py:func:`pyglet.resource.animation`
           - :py:class:`~pyglet.image.Animation`
-        * - :py:func:`pyglet.media.load`
-          - :py:func:`pyglet.resource.media`
+        * - :py:func:`pyglet.media.load_audio`
+          - :py:func:`pyglet.resource.audio`
+          - :py:class:`~pyglet.media.Source`
+        * - :py:func:`pyglet.media.load_video`
+          - :py:func:`pyglet.resource.video`
           - :py:class:`~pyglet.media.Source`
         * - | :py:func:`pyglet.text.load`
             | mimetype = ``text/plain``

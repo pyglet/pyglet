@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pyglet.gl import GL_TRIANGLE_STRIP, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
+from pyglet.enums import BlendFactor, GeometryMode
 from pyglet.sprite import Sprite
 
 if TYPE_CHECKING:
-    from pyglet.image import AbstractImage, Animation
+    from pyglet.image import _AbstractImage, Animation
     from pyglet.graphics import Batch, Group
     from pyglet.text.layout import TextLayout
 
@@ -31,11 +31,11 @@ class NinePatch(Sprite):
     """
 
     def __init__(self,
-                 img: AbstractImage | Animation,
+                 img: _AbstractImage | Animation,
                  x: float = 0, y: float = 0, z: float = 0,
                  width: int | None = None, height: int | None = None,
-                 blend_src: int = GL_SRC_ALPHA,
-                 blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
+                 blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
+                 blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
                  batch: Batch | None = None,
                  group: Group | None = None):
         """Create a NinePatch instance.
@@ -71,11 +71,11 @@ class NinePatch(Sprite):
 
     @classmethod
     def create_around_layout(cls,
-                             img: AbstractImage | Animation,
+                             img: _AbstractImage | Animation,
                              layout: TextLayout,
                              border: int = 0,
-                             blend_src: int = GL_SRC_ALPHA,
-                             blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
+                             blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
+                             blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
                              batch: Batch | None = None,
                              group: Group | None = None):
         """Given a Label, create a NinePatch instance sized to surround it.
@@ -137,7 +137,7 @@ class NinePatch(Sprite):
         uvs = [i for v in range(4) for h in range(4) for i in (uv_x + seg_w * h, uv_y + seg_h * v, 0)]
 
         self._vertex_list = self.program.vertex_list_indexed(
-            16, GL_TRIANGLE_STRIP, indices, self._batch, self._group,
+            16, GeometryMode.TRIANGLE_STRIP, indices, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * 16),
             translate=('f', (self._x, self._y, self._z) * 16),

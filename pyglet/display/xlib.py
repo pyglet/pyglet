@@ -2,37 +2,45 @@ from __future__ import annotations
 
 import ctypes
 import warnings
-from ctypes import POINTER, byref, c_buffer, c_char_p, c_int, cast
 from typing import TYPE_CHECKING
+from ctypes import POINTER, byref, c_buffer, c_char_p, c_int, cast
 
 import pyglet
+
 from pyglet import app
-from pyglet.app.xlib import XlibSelectDevice
-from pyglet.libs.x11 import xlib
+from pyglet.app.linux import LinuxSelectDevice
 from pyglet.util import asbytes
 
 from . import xlib_vidmoderestore
-from .base import Canvas, Display, Screen, ScreenMode
+from .base import Display, Screen, ScreenMode
 
+
+# XXX
+# from pyglet.window import NoSuchDisplayException
+class NoSuchDisplayException(Exception):
+    pass
+
+
+from pyglet.libs.linux.x11 import xlib
 if TYPE_CHECKING:
     from pyglet.gl import Config
 
 try:
-    from pyglet.libs.x11 import xinerama
+    from pyglet.libs.linux.x11 import xinerama
 
     _have_xinerama = True
 except:
     _have_xinerama = False
 
 try:
-    from pyglet.libs.x11 import xsync
+    from pyglet.libs.linux.x11 import xsync
 
     _have_xsync = True
 except:
     _have_xsync = False
 
 try:
-    from pyglet.libs.x11 import xf86vmode
+    from pyglet.libs.linux.x11 import xf86vmode
 
     _have_xf86vmode = True
 except:
@@ -59,7 +67,7 @@ def _error_handler(display, event):
     # driver bugs (and so the reports are useless).  Nevertheless, set
     # environment variable PYGLET_DEBUG_X11 to 1 to get dumps of the error
     # and a traceback (execution will continue).
-    if pyglet.options['debug_x11']:
+    if pyglet.options.debug_x11:
         event = event.contents
         buf = c_buffer(1024)
         xlib.XGetErrorText(display, event.error_code, buf, len(buf))
@@ -80,7 +88,7 @@ _error_handler_ptr = xlib.XErrorHandler(_error_handler)
 xlib.XSetErrorHandler(_error_handler_ptr)
 
 
-class XlibDisplay(XlibSelectDevice, Display):
+class XlibDisplay(LinuxSelectDevice, Display):
     _display = None  # POINTER(xlib.Display)
 
     _x_im = None  # X input method
@@ -199,7 +207,7 @@ class XlibDisplay(XlibSelectDevice, Display):
             self._screens = [screen]
         return self._screens
 
-    # XlibSelectDevice interface
+    # LinuxSelectDevice interface
 
     def fileno(self) -> int:
         return self._fileno
@@ -224,6 +232,7 @@ class XlibDisplay(XlibSelectDevice, Display):
 
 class XlibScreen(Screen):
     _initial_mode = None
+    display: XlibDisplay
 
     def __init__(self, display: XlibDisplay, x: int, y: int, width: int, height: int):
         super().__init__(display, x, y, width, height)
@@ -249,15 +258,7 @@ class XlibScreen(Screen):
     def get_scale(self) -> float:
         return self.get_dpi() / 96
 
-    def get_matching_configs(self, template: Config):
-        canvas = XlibCanvas(self.display, None)
-        configs = template.match(canvas)
-        # XXX deprecate
-        for config in configs:
-            config.screen = self
-        return configs
-
-    def get_modes(self) -> list[XlibScreenModeXF86]:
+    def get_modes(self):
         if not _have_xf86vmode:
             return []
 
@@ -345,6 +346,7 @@ class XlibScreenXinerama(XlibScreen):
 
 
 class XlibScreenXrandr(XlibScreen):
+    display: XlibDisplay
     def __init__(
         self,
         display: XlibDisplay,
@@ -490,11 +492,3 @@ class XlibScreenModeXrandr(XlibScreenMode):
 
     def __repr__(self) -> str:
         return f'XlibScreenMode(width={self.width!r}, height={self.height!r}, depth={self.depth!r}, rate={self.rate})'
-
-
-class XlibCanvas(Canvas):  # noqa: D101
-    display: XlibDisplay
-
-    def __init__(self, display: XlibDisplay, x_window: xlib.Window) -> None:  # noqa: D107
-        super().__init__(display)
-        self.x_window = x_window

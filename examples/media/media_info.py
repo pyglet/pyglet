@@ -74,7 +74,10 @@ if __name__ == '__main__':
 
     filename = sys.argv[1]
     try:
-        source = pyglet.media.load(filename, streaming=True)
+        try:
+            source = pyglet.media.load_video(filename, streaming=True)
+        except pyglet.media.codecs.MediaException:
+            source = pyglet.media.load_audio(filename, streaming=True)
         print_source_info(source)
         del source
     except pyglet.media.codecs.MediaException:

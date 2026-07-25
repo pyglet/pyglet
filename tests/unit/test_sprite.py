@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 import pyglet
+from pyglet.graphics.texture import TextureArrayRegion
 
 
 @pytest.fixture(autouse=True)
@@ -43,8 +44,8 @@ def batched_sprite():
     The lack of image data doesn't matter because these tests never touch
     a real GL context which would require it.
     """
-    from pyglet.graphics import Batch
-    sprite = pyglet.sprite.Sprite(MagicMock(), x=1, y=2, z=3, batch=Batch())
+    mocked_batch = MagicMock()
+    sprite = pyglet.sprite.Sprite(MagicMock(), x=1, y=2, z=3, batch=mocked_batch)
     sprite.rotation = 90
 
     return sprite
@@ -90,6 +91,7 @@ def test_color_initially_rgba_white(sprite):
 
 def test_opacity_initially_255(sprite):
     assert sprite.opacity == 255
+
 
 def test_color_changes_opacity_if_set_to_rgba(sprite, new_rgba_color):
     sprite.color = new_rgba_color
@@ -193,7 +195,7 @@ def test_group_setter(request, fixture):
 def test_batch_setter(request, fixture):
     _sprite = request.getfixturevalue(fixture)
     from pyglet.graphics import Batch
-    new_batch = Batch()
+    new_batch = Batch(MagicMock())
     with patch.multiple(_sprite._vertex_list, indexed=True, instanced=False):  # noqa: SLF001
         _sprite.batch = new_batch
         assert _sprite.batch is new_batch
@@ -209,12 +211,95 @@ def test_program_setter(request, fixture):
         assert _sprite.program == program
 
 
-@pytest.mark.parametrize('fixture', ['sprite', 'batched_sprite'])
-def test_blend_setter(request, fixture):
-    _sprite = request.getfixturevalue(fixture)
+def test_init_uses_array_shader_for_texture_array_region(monkeypatch):
+    array_program = MagicMock()
+    default_program = MagicMock()
+    get_array_shader = MagicMock(return_value=array_program)
+    get_default_shader = MagicMock(return_value=default_program)
 
-    blend_mode = (1, 1)
-    with patch.multiple(_sprite._vertex_list, indexed=True, instanced=False):  # noqa: SLF001
-        _sprite.blend_mode = blend_mode
-        assert _sprite._group.blend_src == 1  # noqa: SLF001
-        assert _sprite._group.blend_dest == 1  # noqa: SLF001
+    monkeypatch.setattr("pyglet.sprite.get_default_array_shader", get_array_shader)
+    monkeypatch.setattr("pyglet.sprite.get_default_shader", get_default_shader)
+
+    texture = MagicMock()
+    texture.width = 1
+    texture.height = 1
+    texture.anchor_x = 0
+    texture.anchor_y = 0
+    texture.tex_coords = (0.0,) * 12
+    texture.id = 1
+
+    image = MagicMock(spec=TextureArrayRegion)
+    image.get_texture.return_value = texture
+
+    sprite = pyglet.sprite.Sprite(image)
+    try:
+        assert sprite.program is array_program
+        get_array_shader.assert_called_once_with()
+        get_default_shader.assert_not_called()
+    finally:
+        sprite.delete()
+
+
+def _mock_texture(texture_id: int = 1, width: int = 32, height: int = 32, target: int = 3553):
+    texture = MagicMock()
+    texture.id = texture_id
+    texture.width = width
+    texture.height = height
+    texture.anchor_x = 0
+    texture.anchor_y = 0
+    texture.target = target
+    texture.tex_coords = (0.0,) * 12
+    texture.get_texture.return_value = texture
+    return texture
+
+
+def _mock_image(texture):
+    image = MagicMock()
+    image.get_texture.return_value = texture
+    return image
+
+
+def test_multitexture_init_uses_multitexture_shader_getter(monkeypatch):
+    image_a = _mock_image(_mock_texture(1))
+    image_b = _mock_image(_mock_texture(2))
+
+    multi_program = MagicMock()
+    get_multi_shader = MagicMock(return_value=multi_program)
+    monkeypatch.setattr('pyglet.sprite.get_default_multitexture_shader', get_multi_shader)
+
+    sprite = pyglet.sprite.MultiTextureSprite({'a': image_a, 'b': image_b})
+    try:
+        assert sprite.program is multi_program
+        get_multi_shader.assert_called_once()
+    finally:
+        sprite.delete()
+
+
+def test_multitexture_frame_index_property_not_supported():
+    image_a = _mock_image(_mock_texture(1))
+    image_b = _mock_image(_mock_texture(2))
+
+    sprite = pyglet.sprite.MultiTextureSprite({'a': image_a, 'b': image_b}, program=MagicMock())
+    try:
+        with pytest.raises(NotImplementedError):
+            _ = sprite.frame_index
+        with pytest.raises(NotImplementedError):
+            sprite.frame_index = 1
+    finally:
+        sprite.delete()
+
+
+def test_multitexture_get_set_layer():
+    image_a = _mock_image(_mock_texture(1, width=16, height=16))
+    image_b = _mock_image(_mock_texture(2, width=8, height=8))
+    image_c = _mock_image(_mock_texture(3, width=64, height=64))
+
+    sprite = pyglet.sprite.MultiTextureSprite({'a': image_a, 'b': image_b}, program=MagicMock())
+    try:
+        assert sprite.get_layer('a') is image_a
+        sprite.set_layer('a', image_c)
+        assert sprite.get_layer('a') is image_c
+        assert sprite.width == 64
+        assert sprite.height == 64
+    finally:
+        sprite.delete()

@@ -1,5 +1,6 @@
 """Tests for loading and accessing FreeType font faces."""
 import pytest
+from pyglet.enums import Weight, Style, Stretch
 
 from tests.annotations import Platform, require_platform
 
@@ -13,60 +14,60 @@ except ImportError:
 
 
 @require_platform(Platform.LINUX)
-@pytest.mark.parametrize('font_file_name,font_name,bold,italic', [
-    ('action_man.ttf', 'Action Man', False, False),
-    ('action_man_bold.ttf', 'Action Man', True, False),
-    ('action_man_bold_italic.ttf', 'Action Man', True, True),
-    ('action_man_italic.ttf', 'Action Man', False, True),
-    ])
-def test_face_from_file(test_data, font_file_name, font_name, bold, italic):
+@pytest.mark.parametrize('font_file_name,font_name,weight,style', [
+    ('action_man.ttf', 'Action Man', Weight.NORMAL, Style.NORMAL),
+    ('action_man_bold.ttf', 'Action Man', Weight.BOLD, Style.NORMAL),
+    ('action_man_bold_italic.ttf', 'Action Man', Weight.BOLD, Style.ITALIC),
+    ('action_man_italic.ttf', 'Action Man', Weight.NORMAL, Style.ITALIC),
+])
+def test_face_from_file(test_data, font_file_name, font_name, weight, style):
     """Test loading a font face directly from file."""
     face = FreeTypeFace.from_file(test_data.get_file('fonts', font_file_name))
 
     assert face.name == font_name
     assert face.family_name == font_name
-    assert face.bold == bold
-    assert face.italic == italic
+    assert face.weight == weight
+    assert face.style == style
 
     del face
 
 
 @require_platform(Platform.LINUX)
-@pytest.mark.parametrize('font_name,bold,italic', [
-    ('Arial', False, False),
-    ('Arial', True, False),
-    ('Arial', False, True),
-    ('Arial', True, True),
-    ])
-def test_face_from_fontconfig(font_name, bold, italic):
+@pytest.mark.parametrize('font_name,weight,style', [
+    ('Arial', Weight.NORMAL, Style.NORMAL),
+    ('Arial', Weight.BOLD, Style.NORMAL),
+    ('Arial', Weight.NORMAL, Style.ITALIC),
+    ('Arial', Weight.BOLD, Style.ITALIC),
+])
+def test_face_from_fontconfig(font_name, weight, style):
     """Test loading a font face from the system using font config."""
-    match = get_fontconfig().find_font(font_name, 16, bold, italic)
+    match = get_fontconfig().find_font(font_name, 16, weight, style)
     assert match is not None
 
     face = FreeTypeFace.from_fontconfig(match)
 
-    assert face.bold == bold
-    assert face.italic == italic
+    assert face.weight == weight
+    assert face.style == style
 
     del face
 
 
 @require_platform(Platform.LINUX)
-@pytest.mark.parametrize('font_file_name,font_name,bold,italic', [
-    ('action_man.ttf', 'Action Man', False, False),
-    ('action_man_bold.ttf', 'Action Man', True, False),
-    ('action_man_bold_italic.ttf', 'Action Man', True, True),
-    ('action_man_italic.ttf', 'Action Man', False, True),
-    ])
-def test_memory_face(test_data, font_file_name, font_name, bold, italic):
+@pytest.mark.parametrize('font_file_name,font_name,weight,style', [
+    ('action_man.ttf', 'Action Man', Weight.NORMAL, Style.NORMAL),
+    ('action_man_bold.ttf', 'Action Man', Weight.BOLD, Style.NORMAL),
+    ('action_man_bold_italic.ttf', 'Action Man', Weight.BOLD, Style.ITALIC),
+    ('action_man_italic.ttf', 'Action Man', Weight.NORMAL, Style.ITALIC),
+])
+def test_memory_face(test_data, font_file_name, font_name, weight, style):
     """Test loading a font into memory using FreeTypeMemoryFont."""
     with open(test_data.get_file('fonts', font_file_name), 'rb') as font_file:
         font_data = font_file.read()
     font = FreeTypeMemoryFace(font_data, 0)
 
     assert font.name == font_name
-    assert font.bold == bold
-    assert font.italic == italic
+    assert font.weight == weight
+    assert font.style == style
     assert font.ft_face is not None
 
     del font
@@ -81,7 +82,7 @@ def test_memory_face(test_data, font_file_name, font_name, bold, italic):
 
     # A fixed bitmap size font. Will fail if render size is used. Keep for legacy info.
     # ('courR12-ISO8859-1.pcf', 16, 96, 15, -4),
-    ])
+])
 def test_face_metrics(test_data, font_file_name, size, dpi, ascent, descent):
     """Test a face from file and check the metrics."""
     face = FreeTypeFace.from_file(test_data.get_file('fonts', font_file_name))
@@ -98,7 +99,7 @@ def test_face_metrics(test_data, font_file_name, size, dpi, ascent, descent):
     ('action_man.ttf', '1', 17),
     ('action_man.ttf', '#', 3),
     ('action_man.ttf', 'b', 66),
-    ])
+])
 def test_character_index(test_data, font_file_name, character, index):
     """Test getting the glyph index for a character."""
     face = FreeTypeFace.from_file(test_data.get_file('fonts', font_file_name))
@@ -112,7 +113,7 @@ def test_character_index(test_data, font_file_name, character, index):
     ('action_man.ttf', 17),
     ('action_man.ttf', 3),
     ('action_man.ttf', 66),
-    ])
+])
 def test_get_glyph_slot(test_data, font_file_name, glyph_index):
     """Test getting a glyph slot from the face."""
     face = FreeTypeFace.from_file(test_data.get_file('fonts', font_file_name))
@@ -120,4 +121,3 @@ def test_get_glyph_slot(test_data, font_file_name, glyph_index):
     glyph = face.get_glyph_slot(glyph_index)
 
     assert glyph is not None
-

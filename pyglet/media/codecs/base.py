@@ -3,16 +3,16 @@ from __future__ import annotations
 import ctypes
 import io
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, BinaryIO, List, Optional, Union
+from typing import TYPE_CHECKING, BinaryIO, Optional, Union, ClassVar
 
-from pyglet.media.exceptions import CannotSeekException, MediaException
+from pyglet.media.exceptions import MediaException, CannotSeekException
 
 if TYPE_CHECKING:
-    from pyglet.image import AbstractImage
+    from pyglet.graphics import Texture
     from pyglet.image.animation import Animation
     from pyglet.media.codecs import MediaEncoder
     from pyglet.media.drivers.base import MediaEvent
-    from pyglet.media.player import Player
+    from pyglet.media.player import AudioPlayer
 
 
 class AudioFormat:
@@ -21,20 +21,44 @@ class AudioFormat:
     An instance of this class is provided by sources with audio tracks.  You
     should not modify the fields, as they are used internally to describe the
     format of data provided by the source.
-
-    Args:
-        channels (int): The number of channels: 1 for mono or 2 for stereo
-            (pyglet does not yet support surround-sound sources).
-        sample_size (int): Bits per sample; only 8 or 16 are supported.
-        sample_rate (int): Samples per second (in Hertz).
     """
+    SAMPLE_TYPE_INT = 'int'
+    SAMPLE_TYPE_UINT = 'uint'
+    SAMPLE_TYPE_FLOAT = 'float'
 
-    def __init__(self, channels: int, sample_size: int, sample_rate: int) -> None:
+    _VALID_TYPES = (SAMPLE_TYPE_INT, SAMPLE_TYPE_UINT, SAMPLE_TYPE_FLOAT)
+
+    def __init__(self, channels: int, sample_size: int, sample_rate: int, sample_type: str | None = None) -> None:
+        """Specify the audio format properties.
+
+        Args:
+            channels:
+                The number of channels: 1 for mono or 2 for stereo
+                (pyglet does not yet support surround-sound sources).
+            sample_size:
+                Bits per sample; only 8 or 16 are supported.
+            sample_rate:
+                Samples per second (in Hertz).
+            sample_type:
+                The sample type, such as int, unit, or float.
+        """
         self.channels = channels
         self.sample_size = sample_size
         self.sample_rate = sample_rate
+        if sample_type is None:
+            if self.sample_size == 8:
+                sample_type = self.SAMPLE_TYPE_UINT
+            else:
+                sample_type = self.SAMPLE_TYPE_INT
+        if sample_type not in self._VALID_TYPES:
+            raise ValueError(f"sample_type must be one of {self._VALID_TYPES}")
+        self.sample_type = sample_type
 
         # Convenience
+        prefixes = {self.SAMPLE_TYPE_INT: "S",
+                    self.SAMPLE_TYPE_UINT: "U",
+                    self.SAMPLE_TYPE_FLOAT: "F"}
+        self.sample_format = f"{prefixes[self.sample_type]}{self.sample_size}"
 
         self.bytes_per_frame = (sample_size // 8) * channels
         self.bytes_per_second = self.bytes_per_frame * sample_rate
@@ -71,13 +95,17 @@ class AudioFormat:
         if isinstance(other, AudioFormat):
             return (self.channels == other.channels and
                     self.sample_size == other.sample_size and
-                    self.sample_rate == other.sample_rate)
+                    self.sample_rate == other.sample_rate and
+                    self.sample_type == other.sample_type)
         return NotImplemented
 
     def __repr__(self) -> str:
-        return '%s(channels=%d, sample_size=%d, sample_rate=%d)' % (
-            self.__class__.__name__, self.channels, self.sample_size,
-            self.sample_rate)
+        return (
+            '%s(channels=%d, sample_size=%d, sample_rate=%d, sample_type=%s)'
+            % (self.__class__.__name__, self.channels, self.sample_size,
+               self.sample_rate, self.sample_type)
+        )
+
 
 @dataclass
 class VideoFormat:
@@ -91,12 +119,15 @@ class VideoFormat:
     should be displayed at 1280x480.  It is the responsibility of the
     application to perform this scaling.
 
-    Args:
-        width (int): Width of video image, in pixels.
-        height (int): Height of video image, in pixels.
-        sample_aspect (float): Aspect ratio (width over height) of a single
-            video pixel.
-        frame_rate (float): Frame rate (frames per second) of the video.
+        Args:
+            width:
+                Width of video image, in pixels.
+            height:
+                Height of video image, in pixels.
+            sample_aspect:
+                Aspect ratio (width over height) of a single video pixel.
+            frame_rate:
+                Frame rate (frames per second) of the video or ``None`` if not known.
 
             .. versionadded:: 1.2
     """
@@ -110,29 +141,35 @@ class AudioData:
     """A single packet of audio data.
 
     This class is used internally by pyglet.
-
-    Args:
-        data (bytes, ctypes array, or supporting buffer protocol): Sample data.
-        length (int): Size of sample data, in bytes.
-        timestamp (float): Time of the first sample, in seconds.
-        duration (float): Total data duration, in seconds.
-        events (List[:class:`pyglet.media.drivers.base.MediaEvent`]): List of events
-            contained within this packet. Events are timestamped relative to
-            this audio packet.
-
-    .. deprecated:: 2.0.10
-            `timestamp` and `duration` are unused and will be removed eventually.
     """
 
     __slots__ = 'data', 'duration', 'events', 'length', 'pointer', 'timestamp'
 
-    def __init__(self,
-                 data: bytes | ctypes.Array,
-                 length: int,
-                 timestamp: float = 0.0,
-                 duration: float = 0.0,
-                 events: list[MediaEvent] | None = None) -> None:
+    def __init__(
+        self,
+        data: bytes | ctypes.Array,
+        length: int,
+        timestamp: float = 0.0,
+        duration: float = 0.0,
+        events: list[MediaEvent] | None = None,
+    ) -> None:
+        """Create an audio packet.
 
+        Args:
+            data:
+                (bytes, ctypes array, or supporting buffer protocol): Sample data.
+            length:
+                Size of sample data, in bytes.
+            timestamp:
+                Time of the first sample, in seconds.
+            duration:
+                Total data duration, in seconds.
+            events:
+                List of events contained within this packet. Events are timestamped relative to this audio packet.
+
+        .. deprecated:: 2.0.10
+           `timestamp` and `duration` are unused and will be removed eventually.
+        """
         if isinstance(data, bytes):
             # bytes are treated specially by ctypes and can be cast to a void pointer, get
             # their content's address like this
@@ -200,21 +237,21 @@ class Source:
         is_player_source (bool): Determine if this source is a player
             current source.
 
-            Check on a :py:class:`~pyglet.media.player.Player` if this source
+            Check on a :py:class:`~pyglet.media.player.AudioPlayer` if this source
             is the current source.
     """
 
-    _duration = None
-    _players: List['Player'] = []  # Players created through Source.play
+    _duration: float = 0.0
+    _players: ClassVar[list[AudioPlayer]] = []  # Players created through Source.play
 
-    audio_format = None
-    video_format = None
-    info = None
-    is_player_source = False
+    audio_format: AudioFormat | None = None
+    video_format: VideoFormat | None = None
+    info: SourceInfo | None = None
+    is_player_source: bool = False
 
     @property
     def duration(self) -> float:
-        """float: The length of the source, in seconds.
+        """The length of the source, in seconds.
 
         Not all source durations can be determined; in this case the value
         is ``None``.
@@ -223,7 +260,7 @@ class Source:
         """
         return self._duration
 
-    def play(self) -> 'Player':
+    def play(self) -> AudioPlayer:
         """Play the source.
 
         This is a convenience method which creates a Player for
@@ -232,8 +269,9 @@ class Source:
         Returns:
             :class:`.Player`
         """
-        from pyglet.media.player import Player  # XXX Nasty circular dependency
-        player = Player()
+        from pyglet.media.player import AudioPlayer  # XXX Nasty circular dependency
+
+        player = AudioPlayer()
         player.queue(self)
         player.play()
         Source._players.append(player)
@@ -259,28 +297,25 @@ class Source:
         few seconds.
 
         .. versionadded:: 1.1
-
-        Returns:
-            :class:`pyglet.image.Animation`
         """
         from pyglet.image import Animation, AnimationFrame
+
         if not self.video_format:
             # XXX: This causes an assertion in the constructor of Animation
             return Animation([])
-        else:
-            frames = []
-            last_ts = 0
+        frames = []
+        last_ts = 0
+        next_ts = self.get_next_video_timestamp()
+        while next_ts is not None:
+            image = self.get_next_video_frame()
+            if image is not None:
+                delay = next_ts - last_ts
+                frames.append(AnimationFrame(image, delay))
+                last_ts = next_ts
             next_ts = self.get_next_video_timestamp()
-            while next_ts is not None:
-                image = self.get_next_video_frame()
-                if image is not None:
-                    delay = next_ts - last_ts
-                    frames.append(AnimationFrame(image, delay))
-                    last_ts = next_ts
-                next_ts = self.get_next_video_timestamp()
-            return Animation(frames)
+        return Animation(frames)
 
-    def get_next_video_timestamp(self) -> Optional[float]:
+    def get_next_video_timestamp(self) -> float | None:
         """Get the timestamp of the next video frame.
 
         .. versionadded:: 1.1
@@ -289,33 +324,27 @@ class Source:
             float: The next timestamp, or ``None`` if there are no more video
             frames.
         """
-        pass
 
-    def get_next_video_frame(self) -> Optional['AbstractImage']:
+    def get_next_video_frame(self) -> Texture | None:
         """Get the next video frame.
 
-        .. versionadded:: 1.1
-
         Returns:
-            :class:`pyglet.image.AbstractImage`: The next video frame image,
-            or ``None`` if the video frame could not be decoded or there are
+            The next video frame image, or ``None`` if the video frame could not be decoded or there are
             no more video frames.
-        """
-        pass
 
-    def save(self,
-             filename: str,
-             file: Optional[BinaryIO] = None,
-             encoder: Optional['MediaEncoder'] = None) -> None:
+        .. versionadded:: 1.1
+        """
+
+    def save(self, filename: str, file: BinaryIO | None = None, encoder: MediaEncoder | None = None) -> None:
         """Save this Source to a file.
 
-        :Parameters:
-            `filename` : str
+        Args:
+            filename
                 Used to set the file format, and to open the output file
                 if `file` is unspecified.
-            `file` : file-like object or None
+            file:
                 File to write audio data to.
-            `encoder` : MediaEncoder or None
+            encoder:
                 If unspecified, all encoders matching the filename extension
                 are tried.  If all fail, the exception from the first one
                 attempted is raised.
@@ -323,14 +352,14 @@ class Source:
         """
         if encoder:
             return encoder.encode(self, filename, file)
-        else:
-            import pyglet.media.codecs
-            return pyglet.media.codecs.registry.encode(self, filename, file)
+        import pyglet.media.codecs
+
+        return pyglet.media.codecs.registry.encode(self, filename, file)
 
     # Internal methods that Player calls on the source:
 
     def is_precise(self) -> bool:
-        """bool: Whether this source is considered precise.
+        """Whether this source is considered precise.
 
         ``x`` bytes on source ``s`` are considered aligned if
         ``x % s.audio_format.bytes_per_frame == 0``, so there'd be no partial
@@ -362,8 +391,8 @@ class Source:
         negatively impacted at best and memory access violations occur at
         worst.
 
-        :Returns:
-            bool: Whether the source is precise.
+        Returns:
+            Whether the source is precise.
         """
         return False
 
@@ -376,7 +405,7 @@ class Source:
         """
         raise CannotSeekException()
 
-    def get_queue_source(self) -> 'Source':
+    def get_queue_source(self) -> Source:
         """Return the ``Source`` to be used as the queue source for a player.
 
         Default implementation returns ``self``.
@@ -386,7 +415,7 @@ class Source:
         """
         return self
 
-    def get_audio_data(self, num_bytes: int, compensation_time=0.0) -> Optional[AudioData]:
+    def get_audio_data(self, num_bytes: int, compensation_time=0.0) -> AudioData | None:
         """Get next packet of audio data.
 
         Args:
@@ -409,10 +438,10 @@ class StreamingSource(Source):
     """A source that is decoded as it is being played.
 
     The source can only be played once at a time on any
-    :class:`~pyglet.media.player.Player`.
+    :class:`~pyglet.media.player.AudioPlayer`.
     """
 
-    def get_queue_source(self) -> 'StreamingSource':
+    def get_queue_source(self) -> StreamingSource:
         """Return the ``Source`` to be used as the source for a player.
 
         Default implementation returns self.
@@ -427,7 +456,6 @@ class StreamingSource(Source):
 
     def delete(self) -> None:
         """Release the resources held by this StreamingSource."""
-        pass
 
 
 class StaticSource(Source):
@@ -469,7 +497,7 @@ class StaticSource(Source):
 
         self._duration = len(self._data) / self.audio_format.bytes_per_second
 
-    def get_queue_source(self) -> Optional['StaticMemorySource']:
+    def get_queue_source(self) -> Optional[StaticMemorySource]:
         if self._data is not None:
             return StaticMemorySource(self._data, self.audio_format)
         return None
@@ -478,7 +506,7 @@ class StaticSource(Source):
         """The StaticSource does not provide audio data.
 
         When the StaticSource is queued on a
-        :class:`~pyglet.media.player.Player`, it creates a
+        :class:`~pyglet.media.player.AudioPlayer`, it creates a
         :class:`.StaticMemorySource` containing its internal audio data and
         audio format.
 
@@ -489,8 +517,7 @@ class StaticSource(Source):
 
 
 class StaticMemorySource(StaticSource):
-    """
-    Helper class for default implementation of :class:`.StaticSource`.
+    """Helper class for default implementation of :class:`.StaticSource`.
 
     Do not use directly. This class is used internally by pyglet.
 
@@ -569,14 +596,14 @@ class SourceGroup:
         self.audio_format = self.audio_format or source.audio_format
         self.info = self.info or source.info
         source = source.get_queue_source()
-        assert (source.audio_format == self.audio_format), "Sources must share the same audio format."
+        assert source.audio_format == self.audio_format, "Sources must share the same audio format."
         self._sources.append(source)
         self.duration += source.duration
 
     def has_next(self) -> bool:
         return len(self._sources) > 1
 
-    def get_queue_source(self) -> 'SourceGroup':
+    def get_queue_source(self) -> SourceGroup:
         return self
 
     def _advance(self) -> None:
@@ -592,14 +619,13 @@ class SourceGroup:
     def get_audio_data(self, num_bytes: float, compensation_time=0.0) -> Optional[AudioData]:
         """Get next audio packet.
 
-        :Parameters:
+        Args:
             `num_bytes` : int
                 Hint for preferred size of audio packet; may be ignored.
 
-        :rtype: `AudioData`
-        :return: Audio data, or None if there is no more data.
+        Returns:
+            Audio data, or ``None`` if there is no more data.
         """
-
         if not self._sources:
             return None
 

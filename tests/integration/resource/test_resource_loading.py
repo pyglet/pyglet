@@ -84,6 +84,20 @@ def test_zipfile_subdirs(loader):
     assert loader.file('f9.txt').read().strip() == asbytes('F9')
 
 
+def test_reindex_after_path_change(loader):
+    loader.path = ['dir1']
+    loader.reindex()
+    assert loader.file('f2.txt').read().strip() == asbytes('F2')
+    with pytest.raises(resource.ResourceNotFoundException):
+        loader.file('f6.txt')
+
+    loader.path = ['dir2']
+    loader.reindex()
+    assert loader.file('f6.txt').read().strip() == asbytes('F6')
+    with pytest.raises(resource.ResourceNotFoundException):
+        loader.file('f2.txt')
+
+
 # Expected Failures:
 
 def test_no_path_exception(loader):

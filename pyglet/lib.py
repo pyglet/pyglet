@@ -13,14 +13,14 @@ import ctypes
 import ctypes.util
 
 import pyglet
-from typing import NoReturn, Callable, Any
+from typing import NoReturn, Callable, Any, Iterator
 
-_debug_lib = pyglet.options['debug_lib']
-_debug_trace = pyglet.options['debug_trace']
+_debug_lib = pyglet.options.debug_lib
+_debug_trace = pyglet.options.debug_trace
 
 _is_pyglet_doc_run = getattr(sys, "is_pyglet_doc_run", False)
 
-if pyglet.options['search_local_libs']:
+if pyglet.options.search_local_libs:
     script_path = pyglet.resource.get_script_home()
     cwd = os.getcwd()
     _local_lib_paths = [script_path, os.path.join(script_path, 'lib'), os.path.join(cwd, 'lib')]
@@ -72,6 +72,11 @@ if _is_pyglet_doc_run:
         def __rshift__(self, other: LibraryMock):
             return 0
 
+        def __bool__(self) -> bool:
+            return False
+
+        def __iter__(self) -> Iterator:
+            return iter([])
 
 class LibraryLoader:  # noqa: D101
 

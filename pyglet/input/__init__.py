@@ -55,6 +55,7 @@ import sys
 
 from typing import TYPE_CHECKING
 
+from . import controller
 from .base import Device, Control, RelativeAxis, AbsoluteAxis, ControllerManager
 from .base import Button, Joystick, AppleRemote, Tablet, Controller
 from .base import DeviceException, DeviceOpenException, DeviceExclusiveException
@@ -149,6 +150,13 @@ else:
         from .macos import get_controllers
         from .macos import get_tablets
         from .macos import ControllerManager
+
+    elif compat_platform == "emscripten":
+        from .emscripten import get_devices
+        from .emscripten import get_joysticks
+        from .emscripten import get_controllers
+        from .emscripten import get_tablets
+        from .emscripten import ControllerManager
 
 __all__ = [
     'get_devices',

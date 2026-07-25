@@ -20,8 +20,3 @@ pyglet.text
   :undoc-members:
 
   .. keep the members ordered from lightest to heaviest
-
-  .. autoclass:: Weight
-     :member-order: bysource
-     :members:
-     :undoc-members:

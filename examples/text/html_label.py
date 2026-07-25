@@ -39,5 +39,5 @@ def on_draw():
     label.draw()
 
 
-pyglet.gl.glClearColor(1, 1, 1, 1)
+window.context.set_clear_color(1, 1, 1, 1)
 pyglet.app.run()

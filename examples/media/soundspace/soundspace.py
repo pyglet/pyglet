@@ -39,9 +39,8 @@ import math
 import pyglet
 
 # # Default to OpenAL if available:
-# pyglet.options['audio'] = 'openal', 'pulse', 'directsound', 'silent'
+# pyglet.options.audio = 'openal', 'pulse', 'directsound', 'silent'
 
-from pyglet.gl import glClearColor
 from pyglet.graphics import Group
 from pyglet.math import Mat4, Vec3
 
@@ -131,9 +130,9 @@ class PositionHandle(Handle):
             0, self.radius,
             -self.radius * math.sqrt(3.0) / 2.0, -self.radius / 2.0,
             self.radius * math.sqrt(3.0) / 2.0, -self.radius / 2.0,
-            (255, 0, 0, 255),
-            window.handle_batch,
-            window.hgrp_position)
+            color=(255, 0, 0, 255),
+            batch=window.handle_batch,
+            group=window.hgrp_position)
         self._triangle.anchor_position = 0.0, -self.radius * 0.75
 
     def update_shapes(self):
@@ -308,8 +307,8 @@ class MoreHandle(Handle):
         super().__init__(window, player)
         self._box = pyglet.shapes.BorderedRectangle(0, 0, self.open_width, self.open_height, 1,
                                                     (255, 255, 255), (0, 0, 0),
-                                                    window.handle_batch,
-                                                    Group(0, window.hgrp_label_more_collapsed))
+                                                    batch=window.handle_batch,
+                                                    group=Group(0, window.hgrp_label_more_collapsed))
         # The BorderedRectangle vehemently defends itself from having differing alpha values,
         # but hack them in case we want them
         _bordered_rect_alpha(self._box, 201, 255)
@@ -500,6 +499,8 @@ class SoundSpaceWindow(pyglet.window.Window):
         kwargs.setdefault("resizable", True)
         super().__init__(**kwargs)
 
+        self.context.set_clear_color(.8, .8, .8, 1.0)
+
         # pixels per unit
         self.zoom = 40
         self.tx = self.width/2
@@ -561,9 +562,9 @@ class SoundSpaceWindow(pyglet.window.Window):
             line.delete()
         self._grid.clear()
 
-        for x in range(0, self.width, self.zoom):
+        for x in range(0, self.width, int(self.zoom)):
             self._grid.append(pyglet.shapes.Line(x, 0, x, self.height, batch=self._grid_batch))
-        for y in range(0, self.height, self.zoom):
+        for y in range(0, self.height, int(self.zoom)):
             self._grid.append(pyglet.shapes.Line(0, y, self.width, y, batch=self._grid_batch))
 
     def mouse_transform(self, x, y):
@@ -584,7 +585,6 @@ class SoundSpaceWindow(pyglet.window.Window):
         return None, None
 
     def on_draw(self):
-        glClearColor(.8, .8, .8, 1)
         self.clear()
 
         for handle in self.handles + self.more_handles:

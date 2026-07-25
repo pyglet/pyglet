@@ -1,0 +1,230 @@
+from __future__ import annotations
+from enum import Enum, auto
+
+
+class GraphicsAPI(str, Enum):
+    """Supported graphics backends."""
+    OPENGL = "opengl"
+    OPENGL_2 = "gl2"
+    OPENGL_ES_2 = "gles2"
+    OPENGL_ES_3 = "gles3"
+    WEBGL = "webgl"
+    VULKAN = "vulkan"
+
+    def __str__(self) -> str:
+        return self.value
+
+
+class GeometryMode(Enum):
+    """Primitive drawing modes for geometry."""
+    POINTS = auto()
+    LINES = auto()
+    LINE_STRIP = auto()
+    TRIANGLES = auto()
+    TRIANGLE_STRIP = auto()
+    TRIANGLE_FAN = auto()
+
+
+class BlendFactor(Enum):
+    """Blend factors used for color blending operations."""
+    ZERO = "ZERO"
+    ONE = "ONE"
+    SRC_COLOR = "SRC_COLOR"
+    ONE_MINUS_SRC_COLOR = "ONE_MINUS_SRC_COLOR"
+    DST_COLOR = "DST_COLOR"
+    ONE_MINUS_DST_COLOR = "ONE_MINUS_DST_COLOR"
+    SRC_ALPHA = "SRC_ALPHA"
+    ONE_MINUS_SRC_ALPHA = "ONE_MINUS_SRC_ALPHA"
+    DST_ALPHA = "DST_ALPHA"
+    ONE_MINUS_DST_ALPHA = "ONE_MINUS_DST_ALPHA"
+    CONSTANT_COLOR = "CONSTANT_COLOR"
+    ONE_MINUS_CONSTANT_COLOR = "ONE_MINUS_CONSTANT_COLOR"
+    CONSTANT_ALPHA = "CONSTANT_ALPHA"
+    ONE_MINUS_CONSTANT_ALPHA = "ONE_MINUS_CONSTANT_ALPHA"
+
+
+class BlendOp(Enum):
+    """Blend operations used when combining source and destination colors."""
+    ADD = "ADD"
+    SUBTRACT = "SUBTRACT"
+    REVERSE_SUBTRACT = "REVERSE_SUBTRACT"
+    MIN = "MIN"
+    MAX = "MAX"
+
+
+class TextureFilter(Enum):
+    """Texture minification and magnification filters."""
+    LINEAR = auto()
+    NEAREST = auto()
+
+
+class AddressMode(Enum):
+    """Texture sampling behavior outside the [0, 1] coordinate range."""
+    REPEAT = auto()
+    MIRRORED_REPEAT = auto()
+    CLAMP_TO_EDGE = auto()
+    CLAMP_TO_BORDER = auto()
+
+
+class TextureWrapping(Enum):
+    """Texture wrapping configuration per axis."""
+    WRAP_S = auto()
+    WRAP_T = auto()
+    WRAP_R = auto()
+
+
+class AnimationChannelTargetPath(str, Enum):
+    # Keep the values of the strings as is, to match glTF 2.0 specifications
+    TRANSLATION = "translation"
+    ROTATION = "rotation"
+    SCALE = "scale"
+    WEIGHTS = "weights"
+
+    def __str__(self) -> str:
+        return self.value
+
+
+class AnimationInterpolation(str, Enum):
+    # Keep the values of the strings as is, to match glTF 2.0 specifications
+    LINEAR = "LINEAR"
+    STEP = "STEP"
+    CUBIC_SPLINE = "CUBICSPLINE"
+
+    def __str__(self) -> str:
+        return self.value
+
+
+class ComponentFormat(str, Enum):
+    """Texture component format identifiers."""
+    R = 'R'
+    RG = 'RG'
+    RGB = 'RGB'
+    RGBA = 'RGBA'
+    D = 'D'  # Depth Component
+    DS = 'DS'  # Depth Stencil
+    BGR = 'BGR'
+    BGRA = 'BGRA'
+    L = 'L'  # Luminance (R) - Deprecated
+    LA = 'LA'  # Luminance Alpha (LA) - Deprecated
+
+
+class TextureType(Enum):
+    """Texture target/type identifiers."""
+    TYPE_1D = auto()
+    TYPE_2D = auto()
+    TYPE_3D = auto()
+    TYPE_CUBE_MAP = auto()
+    TYPE_1D_ARRAY = auto()
+    TYPE_2D_ARRAY = auto()
+    TYPE_CUBE_MAP_ARRAY = auto()
+
+
+class CompareOp(Enum):
+    """Comparison operations used for depth or sampler comparisons."""
+    NEVER = auto()
+    LESS = auto()
+    EQUAL = auto()
+    LESS_OR_EQUAL = auto()
+    GREATER = auto()
+    NOT_EQUAL = auto()
+    GREATER_OR_EQUAL = auto()
+    ALWAYS = auto()
+
+
+class FramebufferTarget(Enum):
+    """Framebuffer binding targets."""
+    FRAMEBUFFER = auto()
+    DRAW = auto()
+    READ = auto()
+
+
+class FramebufferAttachment(Enum):
+    """Framebuffer attachment points."""
+    COLOR0 = auto()
+    COLOR1 = auto()
+    COLOR2 = auto()
+    COLOR3 = auto()
+    COLOR4 = auto()
+    COLOR5 = auto()
+    COLOR6 = auto()
+    COLOR7 = auto()
+    COLOR8 = auto()
+    COLOR9 = auto()
+    COLOR10 = auto()
+    COLOR11 = auto()
+    COLOR12 = auto()
+    COLOR13 = auto()
+    COLOR14 = auto()
+    COLOR15 = auto()
+
+    DEPTH = auto()
+    STENCIL = auto()
+    DEPTH_STENCIL = auto()
+
+
+class Weight(str, Enum):
+    """An :py:class:`~enum.Enum` of known cross-platform font weight strings.
+
+    Each value is both an :py:class:`~enum.Enum` and a :py:class:`str`.
+    This is not a built-in Python :py:class:`~enum.StrEnum` to ensure
+    compatibility with Python < 3.11.
+
+    .. important:: Fonts will use the closest match if they lack a weight.
+
+    The values of this enum imitate the string names for font weights
+    as used in CSS and the OpenType specification. Numerical font weights
+    are not supported because:
+
+    * Integer font weight support and behavior varies by back-end
+    * Some font renderers do not support or round :py:class:`float` values
+    * Some font renderers lack support for variable-width fonts
+
+    Additional weight strings may be supported by certain font-rendering
+    back-ends. To learn more, please see your platform's API documentation
+    and the following:
+
+    #. `The MDN article on CSS font weights <https://developer.mozilla.org/en-US/docs/Web/CSS/font-weight>`_
+    #. `The OpenType specification <https://learn.microsoft.com/en-us/typography/opentype/spec/os2#usweightclass>`_
+
+    """
+
+    THIN = 'thin'
+    EXTRALIGHT = 'extralight'
+    LIGHT = 'light'
+    NORMAL = 'normal'
+    """The default weight for a font."""
+    MEDIUM = 'medium'
+    SEMIBOLD = 'semibold'
+    BOLD = 'bold'
+    """The default **bold** style for a font."""
+    EXTRABOLD = 'extrabold'
+    BLACK = 'black'
+    EXTRABLACK = 'extrablack'
+
+    def __str__(self) -> str:
+        return self.value
+
+
+class Stretch(str, Enum):
+    """The stretch or width class of the font."""
+    ULTRACONDENSED = 'ultracondensed'
+    EXTRACONDENSED = 'extracondensed'
+    CONDENSED = 'condensed'
+    SEMICONDENSED = 'semicondensed'
+    NORMAL = 'normal'
+    """The default stretch for a font."""
+    SEMIEXPANDED = 'semiexpanded'
+    EXPANDED = 'expanded'
+    EXTRAEXPANDED = 'extraexpanded'
+    ULTRAEXPANDED = 'ultraexpanded'
+
+    def __str__(self) -> str:
+        return self.value
+
+
+class Style(str, Enum):
+    """The slant style of the font."""
+    NORMAL = 'normal'
+    """The default style for a font."""
+    ITALIC = 'italic'
+    OBLIQUE = 'oblique'

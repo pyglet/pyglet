@@ -17,8 +17,8 @@ from ctypes import c_byte as _c_byte
 import pyglet
 
 from .evdev_constants import *
-from pyglet.app.xlib import XlibSelectDevice
-from pyglet.libs.ioctl import _IOR, _IOR_str, _IOR_len, _IOW
+from pyglet.app.linux import LinuxSelectDevice
+from pyglet.libs.linux.ioctl import _IOR, _IOR_str, _IOR_len, _IOW
 from pyglet.input.base import Device, RelativeAxis, AbsoluteAxis, Button, Joystick, Controller
 from pyglet.input.base import DeviceOpenException, ControllerManager
 from pyglet.input.controller import get_mapping, Relation, create_guid
@@ -273,7 +273,7 @@ event_types = {
 }
 
 
-class EvdevDevice(XlibSelectDevice, Device):
+class EvdevDevice(LinuxSelectDevice, Device):
     _fileno: int | None
 
     def __init__(self, display, filename):
@@ -387,7 +387,7 @@ class EvdevDevice(XlibSelectDevice, Device):
     def ff_upload_effect(self, structure):
         os.write(self._fileno, structure)
 
-    # XlibSelectDevice interface
+    # LinuxSelectDevice interface
 
     def fileno(self):
         return self._fileno
@@ -489,7 +489,7 @@ class FFController(Controller):
         self.device.ff_upload_effect(self._stop_strong_event)
 
 
-class EvdevControllerManager(ControllerManager, XlibSelectDevice):
+class EvdevControllerManager(ControllerManager, LinuxSelectDevice):
 
     def __init__(self, display=None):
         super().__init__()
@@ -622,16 +622,16 @@ def _detect_controller_mapping(device):
 
     for i, control in enumerate(button_controls):
         if name := _aliases.get(control.event_code):
-            mapping[name] = Relation('button', i)
+            mapping[name] = Relation('button', index=i)
 
     for i, control in enumerate(axis_controls):
         if name := _aliases.get(control.event_code):
-            mapping[name] = Relation('axis', i)
+            mapping[name] = Relation('axis', index=i)
 
     for i, control in enumerate(hat_controls):
         if name := _aliases.get(control.event_code):
             index = 1 + i << 1
-            mapping[name] = Relation('hat0', index)
+            mapping[name] = Relation('hat0', index=index)
 
     return mapping
 
@@ -645,9 +645,8 @@ def _create_controller(device) -> Controller | None:
 
     mapping = get_mapping(device.get_guid())
     if not mapping:
-        warnings.warn(f"Warning: {device} (GUID: {device.get_guid()}) "
-                      f"has no controller mappings. Update the mappings in the Controller DB.\n"
-                      f"Auto-detecting as defined by the 'Linux gamepad specification'")
+        warnings.warn(f"\n{device} (GUID: {device.get_guid()}) has no controller mapping.\n"
+                      f"Auto-detecting as defined by the 'Linux gamepad specification'.")
         mapping = _detect_controller_mapping(device)
 
     if FF_RUMBLE in device.ff_types:

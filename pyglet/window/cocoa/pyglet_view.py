@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import ctypes
 from typing import TYPE_CHECKING
 
 import pyglet
@@ -11,12 +10,13 @@ from pyglet.libs.darwin import (
     NSLeftCommandKeyMask,
     NSLeftControlKeyMask,
     NSLeftShiftKeyMask,
+    NSMakeRect,
     NSPasteboardURLReadingFileURLsOnlyKey,
     NSRightAlternateKeyMask,
     NSRightCommandKeyMask,
     NSRightControlKeyMask,
     NSRightShiftKeyMask,
-    cocoapy, NSMakeRect,
+    cocoapy,
 )
 from pyglet.libs.darwin.quartzkey import charmap, keymap
 from pyglet.window import key, mouse
@@ -24,6 +24,7 @@ from pyglet.window import key, mouse
 from .pyglet_textview import PygletTextView
 
 if TYPE_CHECKING:
+    import ctypes
     from . import CocoaWindow
 
 NSTrackingArea = cocoapy.ObjCClass('NSTrackingArea')
@@ -107,6 +108,37 @@ def getSymbol(nsevent: cocoapy.ObjCInstance) -> str | None:
     return None
 
 
+def _get_drag_position(self: PygletView_Implementation | cocoapy.ObjCInstance,
+                       dragging_info: cocoapy.ObjCInstance) -> tuple[int, int]:
+    position = dragging_info.draggingLocation()
+    position = self.convertPoint_fromView_(position, None)
+    if pyglet.options.dpi_scaling != "stretch":
+        _mouseViewRect.origin.x = position.x
+        _mouseViewRect.origin.y = position.y
+        converted = self.convertRectToBacking_(_mouseViewRect)
+        position = converted.origin
+    return int(position.x), int(position.y)
+
+
+def _get_dragging_paths(dragging_info: cocoapy.ObjCInstance) -> list[str]:
+    pasteboard = dragging_info.draggingPasteboard()
+
+    classes = NSArray.arrayWithObject_(NSURL)
+    options = NSDictionary.dictionaryWithObject_forKey_(
+        NSNumber.numberWithBool_(True), NSPasteboardURLReadingFileURLsOnlyKey,
+    )
+
+    urls = pasteboard.readObjectsForClasses_options_(classes, options)
+    if not urls:
+        return []
+
+    paths = []
+    for i in range(urls.count()):
+        fpath = urls.objectAtIndex_(i).fileSystemRepresentation()
+        paths.append(fpath.decode())
+    return paths
+
+
 class PygletView_Implementation:
     PygletView = cocoapy.ObjCSubclass('NSView', 'PygletView')
 
@@ -124,6 +156,7 @@ class PygletView_Implementation:
 
         # CocoaWindow object.
         self._window = window
+        self._file_drag_active = False
 
         self.associate("_tracking_area", None)
 
@@ -171,7 +204,7 @@ class PygletView_Implementation:
         self.associate("_tracking_area", tracking_area)
 
         self.addTrackingArea_(self._tracking_area)
-        cocoapy.send_super(self, 'updateTrackingAreas')
+        cocoapy.send_super(self, 'updateTrackingAreas', superclass_name='NSView')
 
     @PygletView.method('B')
     def canBecomeKeyView(self) -> bool:
@@ -193,18 +226,18 @@ class PygletView_Implementation:
         # This method is called when view is first installed as the
         # contentView of window.  Don't do anything on first call.
         # This also helps ensure correct window creation event ordering.
-        if not self._window.context.canvas or self._window._shadow:
+        if not self._window.context.window or self._window._shadow:  # noqa: SLF001
             return
 
         width, height = int(size.width), int(size.height)
         self._window.switch_to()
-        self._window.context.update_geometry()
+        self._window._update_geometry()
         self._window._width, self._window._height = width, height  # noqa: SLF001
         self._window.dispatch_event('_on_internal_resize', width, height)
         self._window.dispatch_event('on_expose')
         # Can't get app.event_loop.enter_blocking() working with Cocoa, because
         # when mouse clicks on the window's resize control, Cocoa enters into a
-        # mini-event loop that only responds to mouseDragged and mouseUp events.
+        # mini-event loop that only responds to mouseDragged and  mouseUp events.
         # This means that using NSTimer to call idle() won't work.  Our kludge
         # is to override NSWindow's nextEventMatchingMask_etc method and call
         # idle() from there.
@@ -340,7 +373,7 @@ class PygletView_Implementation:
     def mouseEntered_(self, nsevent: cocoapy.ObjCInstance) -> None:
         x, y = getMousePosition(self, nsevent)
         self._window._mouse_in_window = True  # noqa: SLF001
-        # Don't call self._window.set_mouse_platform_visible() from here.
+        # Don't call self._window.set_mouse_cursor_platform_visible() from here.
         # Better to do it from cursorUpdate:
         self._window.dispatch_event('on_mouse_enter', x, y)
 
@@ -349,7 +382,7 @@ class PygletView_Implementation:
         x, y = getMousePosition(self, nsevent)
         self._window._mouse_in_window = False  # noqa: SLF001
         if not self._window._mouse_exclusive:  # noqa: SLF001
-            self._window.set_mouse_platform_visible()
+            self._window.set_mouse_cursor_platform_visible()
         self._window.dispatch_event('on_mouse_leave', x, y)
 
     @PygletView.method('v@')
@@ -363,33 +396,50 @@ class PygletView_Implementation:
         # to the default arrow and screw up our cursor tracking.
         self._window._mouse_in_window = True  # noqa: SLF001
         if not self._window._mouse_exclusive:  # noqa: SLF001
-            self._window.set_mouse_platform_visible()
+            self._window.set_mouse_cursor_platform_visible()
 
     @PygletView.method('Q@')
     def draggingEntered_(self, draginfo: cocoapy.ObjCInstance) -> int:
-        return cocoapy.NSDragOperationGeneric
+        paths = _get_dragging_paths(draginfo)
+        if paths:
+            x, y = _get_drag_position(self, draginfo)
+            if not self._file_drag_active:
+                self._window.dispatch_event('on_file_drag_enter', x, y, paths)
+                self._file_drag_active = True
+            return cocoapy.NSDragOperationGeneric
+        return 0
+
+    @PygletView.method('Q@')
+    def draggingUpdated_(self, draginfo: cocoapy.ObjCInstance) -> int:
+        paths = _get_dragging_paths(draginfo)
+        if paths:
+            x, y = _get_drag_position(self, draginfo)
+            if not self._file_drag_active:
+                self._window.dispatch_event('on_file_drag_enter', x, y, paths)
+                self._file_drag_active = True
+            self._window.dispatch_event('on_file_drag', x, y, paths)
+            return cocoapy.NSDragOperationGeneric
+        if self._file_drag_active:
+            self._window.dispatch_event('on_file_drag_exit')
+            self._file_drag_active = False
+        return 0
+
+    @PygletView.method('v@')
+    def draggingExited_(self, draginfo: cocoapy.ObjCInstance) -> None:
+        if self._file_drag_active:
+            self._window.dispatch_event('on_file_drag_exit')
+            self._file_drag_active = False
 
     @PygletView.method('B@')
-    def performDragOperation_(self, sender: cocoapy.ObjCInstance) -> None:
-        pos = sender.draggingLocation()
-
-        pasteboard = sender.draggingPasteboard()
-
-        classes = NSArray.arrayWithObject_(NSURL)
-
-        options = NSDictionary.dictionaryWithObject_forKey_(
-            NSNumber.numberWithBool_(True), NSPasteboardURLReadingFileURLsOnlyKey,
-        )
-
-        urls = pasteboard.readObjectsForClasses_options_(classes, options)
-
-        url_count = urls.count()
-        paths = []
-        for i in range(url_count):
-            fpath = urls.objectAtIndex_(i).fileSystemRepresentation()
-            paths.append(fpath.decode())
-
-        self._window.dispatch_event('on_file_drop', pos.x, pos.y, paths)
+    def performDragOperation_(self, sender: cocoapy.ObjCInstance) -> bool:
+        x, y = _get_drag_position(self, sender)
+        paths = _get_dragging_paths(sender)
+        if paths:
+            self._window.dispatch_event('on_file_drop', x, y, paths)
+        if self._file_drag_active:
+            self._window.dispatch_event('on_file_drag_exit')
+            self._file_drag_active = False
+        return bool(paths)
 
 
 PygletView = cocoapy.ObjCClass('PygletView')

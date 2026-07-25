@@ -14,7 +14,10 @@ import codecs
 import mmap
 import os
 import struct
+from io import BytesIO
 from typing import Any
+
+from pyglet.font.base import FontException
 
 
 class TruetypeInfo:
@@ -94,6 +97,9 @@ class TruetypeInfo:
 
         self._closed = False
 
+        self._read_tables()
+
+    def _read_tables(self) -> None:
         offsets = _read_offset_table(self._data, 0)
         self._tables = {}
         for table in _read_table_directory_entry.array(self._data, offsets.size, offsets.num_tables):
@@ -107,6 +113,8 @@ class TruetypeInfo:
         self._character_map = None
         self._glyph_map = None
         self._font_selection_flags = None
+        self._weight_class = None
+        self._width_class = None
 
         self.header = _read_head_table(self._data, self._tables["head"].offset)
         self.horizontal_header = _read_horizontal_header(self._data, self._tables["hhea"].offset)
@@ -118,6 +126,18 @@ class TruetypeInfo:
             self._font_selection_flags = OS2_table.fs_selection
         return self._font_selection_flags
 
+    def get_weight_class(self) -> int:
+        if not self._weight_class:
+            OS2_table = _read_OS2_table(self._data, self._tables["OS/2"].offset)
+            self._weight_class = OS2_table.us_weight_class
+        return self._weight_class
+
+    def get_width_class(self) -> int:
+        if not self._width_class:
+            OS2_table = _read_OS2_table(self._data, self._tables["OS/2"].offset)
+            self._width_class = OS2_table.us_width_class
+        return self._width_class
+
     def is_bold(self) -> bool:
         """Returns True iff the font describes itself as bold."""
         return bool(self.get_font_selection_flags() & 0x20)
@@ -126,15 +146,14 @@ class TruetypeInfo:
         """Returns True iff the font describes itself as italic."""
         return bool(self.get_font_selection_flags() & 0x1)
 
-    def get_names(self) -> dict[tuple[int, int], tuple[int, int, str]]:
+    def get_names(self) -> dict[tuple[int, int], tuple[int, int, bytes]]:
         """Returns a dictionary of names defined in the file.
 
         The key of each item is a tuple of ``platform_id``, ``name_id``,
         where each ID is the number as described in the Truetype format.
 
         The value of each item is a tuple of
-        ``encoding_id``, ``language_id``, ``value``, where ``value`` is
-        an encoded string.
+        ``encoding_id``, ``language_id``, ``value``, where ``value`` is an encoded string.
         """
         if self._names:
             return self._names
@@ -415,6 +434,29 @@ class TruetypeInfo:
         if not self._closed:
             self.close()
 
+class TruetypeInfoBytes(TruetypeInfo):
+    """A subclass of TruetypeInfo that uses bytes, not mmap as mmap is not supported in Emscripten."""
+
+    def __init__(self, data: bytes) -> None:  # noqa, noqa: RUF100
+        """Read the given TrueType file.
+
+        Args:
+            data:
+                Bytes data containing a font file.
+
+        An exception will be raised if the data cannot be read.
+        """
+        self._closed = False
+        self._data = data
+
+        try:
+            self._read_tables()
+        except Exception as err:
+            msg = "Failed to read the font tables. Ensure this data contains a TrueType or OpenType Font."
+            raise FontException(msg) from err
+
+    def close(self) -> None:
+        self._closed = True
 
 def _read_table(*entries: str):
     """ Generic table constructor used for table formats listed at

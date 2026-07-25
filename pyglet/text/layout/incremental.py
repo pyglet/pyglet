@@ -17,7 +17,7 @@ from pyglet.text.layout.base import (
     _LayoutContext,
     _Line,
 )
-from pyglet.text.layout.scrolling import ScrollableTextDecorationGroup, ScrollableTextLayoutGroup
+from pyglet.text.layout import ScrollableTextLayoutGroup, ScrollableTextDecorationGroup
 
 if TYPE_CHECKING:
     from pyglet.customtypes import AnchorX, AnchorY
@@ -108,7 +108,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
     def __init__(self, document: AbstractDocument,
                  x: float = 0, y: float = 0, z: float = 0,
-                 width: int = None, height: int = None,
+                 width: int | None = None, height: int | None = None,
                  anchor_x: AnchorX = 'left', anchor_y: AnchorY = 'bottom', rotation: float = 0, multiline: bool = False,
                  dpi: float | None = None, batch: Batch | None = None, group: Group | None = None,
                  program: ShaderProgram | None = None, wrap_lines: bool = True) -> None:
@@ -143,9 +143,9 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         area = (self.left, self.bottom, self._width, self._height)
 
         for group in self.group_cache.values():
-            group.scissor_area = area
-        self.background_decoration_group.scissor_area = area
-        self.foreground_decoration_group.scissor_area = area
+            group.uniforms["scissor_area"] = area
+        self.background_decoration_group.uniforms["scissor_area"] = area
+        self.foreground_decoration_group.uniforms["scissor_area"] = area
 
     def _init_document(self) -> None:
         assert self._document, "Cannot remove document from IncrementalTextLayout"
@@ -235,7 +235,6 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
                                 self._invalid_flow.is_invalid() or
                                 self._invalid_lines.is_invalid())
 
-        len_groups = len(self.group_cache)
         # Special care if there is no text:
         if not self.glyphs:
             for line in self.lines:
@@ -261,8 +260,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
         # Update group cache areas if the count has changed. Usually if it starts with no text.
         # Group cache is only cleared in a regular TextLayout. May need revisiting if that changes.
-        if len_groups != len(self.group_cache):
-            self._update_scissor_area()
+        #if len_groups != len(self.group_cache):
+        self._update_scissor_area()
 
         if trigger_update_event:
             self.dispatch_event("on_layout_update")
@@ -305,7 +304,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
                 self.offsets[start] = GlyphPosition(0, 0, 0, 0)
             else:
                 text = self.document.text[start:end]
-                glyphs, offsets = font.get_glyphs(text)
+                glyphs, offsets = font.get_glyphs(text, self._shaping)
                 self.glyphs[start:end] = glyphs
                 self.offsets[start:end] = offsets
 
@@ -617,10 +616,11 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
             # A line can have no vertex list if it's out of view OR is an empty row.
 
             # Accumulate the X accounting for multiple GlyphBoxes.
-            anchor_x = anchor_left
+            acc_anchor_x = anchor_left
             for box in line.boxes:
-                box.update_anchor(anchor_x, anchor_top)
-                anchor_x += box.advance
+                place_anchor_x = round(acc_anchor_x) if self._rotation == 0 else acc_anchor_x
+                box.update_anchor(place_anchor_x, anchor_top)
+                acc_anchor_x += box.advance
 
     def _get_bottom_anchor(self) -> float:
         """Returns the anchor for the Y axis from the bottom."""
@@ -661,7 +661,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         return self._rotation
 
     @rotation.setter
-    def rotation(self, angle: float) -> None:  # noqa: ARG002
+    def rotation(self, angle: float) -> None:
         msg = "Rotating IncrementalTextLayout's is not supported."
         raise NotImplementedError(msg)
 
@@ -939,7 +939,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         if x <= self.view_x:
             self.view_x = x
 
-        elif x >= self.view_x + self.width or (x >= self.view_x + self.width) and (self._content_width > self.width):
+        elif x >= self.view_x + self.width or ((x >= self.view_x + self.width) and (self._content_width > self.width)):
             self.view_x = x - self.width
 
         elif self.view_x + self.width > self._content_width:

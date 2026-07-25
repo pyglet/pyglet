@@ -4,11 +4,12 @@ from typing import Any, ItemsView, Literal, Sequence
 
 from . import app as app
 from . import clock as clock
+from . import config as config
 from . import customtypes as customtypes
 from . import display as display
+from . import enums as enums
 from . import event as event
 from . import font as font
-from . import gl as gl
 from . import graphics as graphics
 from . import gui as gui
 from . import image as image
@@ -31,17 +32,20 @@ env: str
 value: str
 
 @dataclass
+class PyodideOptions:
+    canvas_id: str
+
+@dataclass
 class Options:
     audio: Sequence[str]
     debug_font: bool
-    debug_gl: bool
-    debug_gl_trace: bool
-    debug_gl_trace_args: bool
-    debug_gl_shaders: bool
+    debug_api: bool
+    debug_api_trace: bool
+    debug_api_trace_args: bool
+    debug_api_shaders: bool
     debug_graphics_batch: bool
     debug_lib: bool
     debug_media: bool
-    debug_texture: bool
     debug_trace: bool
     debug_trace_args: bool
     debug_trace_depth: int
@@ -49,8 +53,8 @@ class Options:
     debug_win32: bool
     debug_input: bool
     debug_x11: bool
+    debug_wayland: bool
     debug_com: bool
-    shadow_window: bool
     vsync: bool | None
     xsync: bool
     xlib_fullscreen_override_redirect: bool
@@ -64,8 +68,13 @@ class Options:
     win32_disable_xinput: bool
     com_mta: bool
     osx_alt_loop: bool
-    dpi_scaling: Literal["real", "scaled", "stretch"]
+    dpi_scaling: Literal["platform", "stretch"]
     shader_bind_management: bool
+    wayland: bool
+    backend: str | None
+    optimize_states: bool
+    opengl_persistent_buffers: bool
+    pyodide: PyodideOptions
 
     def get(self, item: str, default: Any = None) -> Any:
         ...

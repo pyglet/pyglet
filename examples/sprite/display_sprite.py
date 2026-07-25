@@ -7,7 +7,7 @@ pyglet.resource.path = ['../resources']
 pyglet.resource.reindex()
 
 # Load example image from resource path.
-image = pyglet.resource.image("pyglet.png")
+image = pyglet.resource.texture("pyglet.png")
 
 # Anchor point on an image is bottom left corner by default.
 # Set to center point with anchor properties.

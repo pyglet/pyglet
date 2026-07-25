@@ -4,13 +4,20 @@ import json
 import struct
 
 from array import array
+import io
 from urllib.request import urlopen
 
 import pyglet
 
-from pyglet.gl import GL_BYTE, GL_UNSIGNED_BYTE, GL_SHORT, GL_UNSIGNED_SHORT, GL_FLOAT, GL_DOUBLE
-from pyglet.gl import GL_INT, GL_UNSIGNED_INT, GL_ELEMENT_ARRAY_BUFFER, GL_ARRAY_BUFFER
-from pyglet.gl import GL_REPEAT
+# The glTF spec uses constants that match those in OpenGL. Imported here for convenience, but they could be localized:
+from pyglet.graphics.api.gl import GL_BYTE, GL_UNSIGNED_BYTE, GL_SHORT, GL_UNSIGNED_SHORT, GL_FLOAT, GL_DOUBLE
+from pyglet.graphics.api.gl import GL_POINTS, GL_TRIANGLES, GL_LINES, GL_TRIANGLE_STRIP, GL_LINE_STRIP, GL_TRIANGLE_FAN
+from pyglet.graphics.api.gl import GL_INT, GL_UNSIGNED_INT, GL_ELEMENT_ARRAY_BUFFER, GL_ARRAY_BUFFER
+
+from pyglet.enums import (
+    AddressMode, AnimationChannelTargetPath, AnimationInterpolation,
+    GeometryMode
+)
 
 from . import ModelDecodeException, ModelDecoder
 from .base import Scene
@@ -33,7 +40,7 @@ _array_types = {
     GL_DOUBLE: 'd',
 }
 
-_gl_type_sizes = {
+_accessor_type_sizes = {
     GL_BYTE: 1,
     GL_UNSIGNED_BYTE: 1,
     GL_SHORT: 2,
@@ -59,28 +66,46 @@ _targets = {
     GL_ARRAY_BUFFER: "ARRAY_BUFFER",
 }
 
+_geometry_modes = {
+    GL_POINTS: GeometryMode.POINTS,
+    GL_LINES: GeometryMode.LINES,
+    GL_LINE_STRIP: GeometryMode.LINE_STRIP,
+    GL_TRIANGLES: GeometryMode.TRIANGLES,
+    GL_TRIANGLE_STRIP: GeometryMode.TRIANGLE_STRIP,
+    GL_TRIANGLE_FAN: GeometryMode.TRIANGLE_FAN,
+}
+
 
 class Buffer:
     """Abstraction over unstructured bytes."""
-    def __init__(self, data):
+    def __init__(self, data, binary_buffer=None):
         self.length = data['byteLength']
-        self._uri = data['uri']
-
-        if self._uri.startswith('data'):
-            self._response = urlopen(self._uri)
-            self._file = self._response.file
+        if not 'uri' in data:
+            self._binary_buffer = binary_buffer
+            self._uri = None
+            self._file = None
         else:
-            self._file = pyglet.resource.file(self._uri, 'rb')
+            self._uri = data['uri']
+
+            if self._uri.startswith('data'):
+                self._response = urlopen(self._uri)
+                self._file = self._response.file
+            else:
+                self._file = pyglet.resource.file(self._uri, 'rb')
 
     def read(self, offset, nbytes) -> bytes:
+        if not self._uri:
+            return self._binary_buffer[offset:offset+nbytes]
+
         self._file.seek(offset)
         return self._file.read(nbytes)
 
     def __del__(self):
-        try:
-            self._file.close()
-        except AttributeError:
-            pass
+        if self._file:
+            try:
+                self._file.close()
+            except AttributeError:
+                pass
 
     def __repr__(self):
         return f"{self.__class__.__name__}(length={self.length})"
@@ -134,7 +159,7 @@ class Accessor:
 
         # The byte size of the `GL type` multiplied by the length of the GLSL `data type`.
         # For example: a GL_FLOAT is 4 bytes and a VEC3 has 3 values, so 4 * 3 = 12 bytes
-        self._byte_length = _gl_type_sizes[self.component_type] * _accessor_type_counts[self.type]
+        self._byte_length = _accessor_type_sizes[self.component_type] * _accessor_type_counts[self.type]
 
     def read(self) -> bytes:
         return self.buffer_view.read(self.byte_offset, self._byte_length, self.count)
@@ -160,12 +185,13 @@ class Attribute(BaseAttribute):
 class Primitive(BasePrimitive):
     def __init__(self, data, owner):
         attributes = [Attribute(name, index, owner) for name, index in data.get('attributes').items()]
+        assert len(set(a.count for a in attributes)) == 1, "All Attributes must have the same count"
 
         indices_index = data.get('indices')
         indices_accessor = owner.accessors[indices_index] if indices_index is not None else None
         indices = indices_accessor.as_array() if indices_accessor else None
 
-        mode = data.get('mode', 4)     # defaults to TRIANGLES
+        mode = _geometry_modes[data.get('mode', GL_TRIANGLES)]
 
         material_index = data.get('material')
         material = owner.materials[material_index] if material_index is not None else None
@@ -175,39 +201,47 @@ class Primitive(BasePrimitive):
 
 class Material(PBRMaterial):
     def __init__(self, data):
+        self._data = data
         self.name = data.get('name')
-        # self.extensions = data.get('extensions')
-        # self.extras = data.get('extras')
+        self.extensions = data.get('extensions')
+        self.extras = data.get('extras')
 
-        # TODO: parse this:
-        self.pbr_metallic_roughness = data.get('pbrMetallicRoughness')
-
+        self.base_color_texture = data.get('baseColorTexture')
         self.normal_texture = data.get('normalTexture')
         self.occlusion_texture = data.get('occlusionTexture')
         self.emissive_texture = data.get('emissiveTexture')
-        self.base_color_texture = data.get('baseColorTexture')
+
+        self.pbr_metallic_roughness = data.get('pbrMetallicRoughness')
+        self.base_color_factor = self.pbr_metallic_roughness.get('baseColorFactor', (1.0, 1.0, 1.0, 1.0))
+        self.metalic_factor = self.pbr_metallic_roughness.get('metallicFactor', 1.0)
+        self.roughness_factor = self.pbr_metallic_roughness.get('roughnessFactor', 1.0)
+
+        self.base_color_texture = self.pbr_metallic_roughness.get('baseColorTexture', self.base_color_texture)
+        self.metallic_roughness_texture = self.pbr_metallic_roughness.get('metallicRoughnessTexture')
+
+        self.extensions = self.pbr_metallic_roughness.get('extensions', self.extensions)
+        self.extras = self.pbr_metallic_roughness.get('extras', self.extras)
 
         self.emissive_factor = data.get('emissiveFactor', (0.0, 0.0, 0.0))
         self.alpha_mode = data.get('alphaMode', 'OPAQUE')   # Any of: OPAQUE, MASK, BLEND
         self.alpha_cutoff = data.get('alphaCutoff', 0.5)
         self.double_sided = data.get('doubleSided', False)
 
-        # TODO: finish this
+        # TODO: finish this once the base class is ready
         # super().__init__(name, )
 
 
 class Texture:
     def __init__(self, data, owner):
+        self._data = data
         self.name = data.get('name')
         # self.extensions = data.get('extensions')
         # self.extras = data.get('extras')
 
         # TODO: verify how this works. Default sampler?
         self._sampler_index = data.get('sampler')
-        if self._sampler_index:
-            self.sampler = owner.samplers[self._sampler_index]
-        else:
-            self.sampler = Sampler({})
+        self.sampler = owner.samplers[self._sampler_index] if self._sampler_index else Sampler(data={})
+
         self.source = data.get('source')            # technically NOT required
         self.image = owner.images[self.source]
 
@@ -217,6 +251,9 @@ class Texture:
         self.wrap_s = self.sampler.wrap_s
         self.wrap_t = self.sampler.wrap_t
 
+    def __repr__(self):
+        return f"{self.__class__.__name__}(name={self.name}, image={self.image})"
+
 
 class Sampler:
     def __init__(self, data):
@@ -224,8 +261,8 @@ class Sampler:
         self.name = data.get('name')
         self.min_filter = data.get('minFilter')
         self.mag_filter = data.get('magFilter')
-        self.wrap_s = data.get('wrapS', GL_REPEAT)
-        self.wrap_t = data.get('wrapT', GL_REPEAT)
+        self.wrap_s = data.get('wrapS', AddressMode.REPEAT)
+        self.wrap_t = data.get('wrapT', AddressMode.REPEAT)
         # self.extensions = data.get('extensions')
         # self.extras = data.get('extras')
 
@@ -241,11 +278,30 @@ class Image:
         self.extras = data.get('extras')
 
     def read(self):
-        # TODO: load from either URI or bufferview
-        # if self.uri:
-        #     return
-        # else:
+        if self.uri:
+            img = pyglet.resource.image(self.uri)
+            return img
+
+        if self.mime_type:
+            fmt = self.mime_type.split('/')[-1]
+        else:
+            # Use png as the default image format
+            fmt = 'png'
+        if self.buffer_view:
+            # In this case we use a buffer view to get the image data
+            offset = 0
+            length = self.buffer_view.length
+            count = 1
+            image_data_bytes = self.buffer_view.read(offset, length, count)
+            image_stream = io.BytesIO(image_data_bytes)
+            # hardcode a filename
+            filename = f"image.{fmt}"
+            img = pyglet.image.load(filename, file=image_stream)
+            return img
         raise NotImplementedError
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(name={self.name}, uri={self.uri})"
 
 
 class Camera(BaseCamera):
@@ -261,20 +317,16 @@ class Camera(BaseCamera):
         super().__init__(camera_type, aspect_ratio, yfov, xmag, ymag, zfar, znear)
 
 
-class Mesh:
+class Mesh(BaseMesh):
     def __init__(self, data, owner):
-        self.data = data
-        self.primitives = [Primitive(primitive_data, owner) for primitive_data in data.get('primitives')]
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}(primitives={len(self.primitives)})"
+        primitives = [Primitive(primitive_data, owner) for primitive_data in data.get('primitives')]
+        super().__init__(primitives=primitives, name=data.get('name'))
 
 
-class Node:
+class Node(BaseNode):
     def __init__(self, data, owner):
-        self.data = data
+        self._data = data
         self._owner = owner
-        self._child_indices = self.data.get('children', [])
 
         _mesh_index = data.get('mesh')
         self.mesh = owner.meshes[_mesh_index] if _mesh_index is not None else None
@@ -284,49 +336,119 @@ class Node:
         self.rotation = data.get('rotation')        # Quaternion
         self.scale = data.get('scale')              # Vec3
 
+        # TODO: handle these:
+        self.skin = None
+        self.camera = None
+
         # TODO: handle global and local transforms:
         # https://github.com/KhronosGroup/glTF-Tutorials/blob/master/gltfTutorial/gltfTutorial_004_ScenesNodes.md
+
+        self._child_indices = data.get('children', [])
 
     @property
     def children(self):
         return [self._owner.nodes[i] for i in self._child_indices]
 
-    def __iter__(self):
-        yield self
-        for child in self.children:
-            yield child
 
-    def __repr__(self):
-        return f"{self.__class__.__name__}(mesh={self.mesh}, children={self._child_indices})"
+class Skin:
+    def __init__(self, data, owner):
+        self.name = data.get('name')
+        ibm_idx = data.get('inverseBindMatrices')
+        ibm_accessor = owner.accessors[ibm_idx] if ibm_idx is not None else None
+        self.inverse_bind_matrices = ibm_accessor.as_array() if ibm_accessor \
+            else None
+        joints_indices = data.get('joints', [])
+        self.joints = [owner.nodes[i] for i in joints_indices]
+        self.extensions = data.get('extensions')
+        self.extras = data.get('extras')
 
+
+class Animation:
+    def __init__(self, data, owner):
+        self.name = data.get('name')
+        self.samplers = [
+            AnimationSampler(sampler_data, owner) for sampler_data in data.get(
+                'samplers'
+            )
+        ]
+        # SAMPLERS NEED TO BE DEFINED FIRST
+        self.channels = [
+            AnimationChannel(channel_data, owner, self) for channel_data in
+            data.get(
+                'channels'
+            )
+        ]
+
+        self.extensions = data.get('extensions')
+        self.extras = data.get('extras')
+
+
+class AnimationChannel:
+    def __init__(self, data, owner, animation):
+        self.target = AnimationChannelTarget(data.get('target'), owner)
+        sampler_id = data.get('sampler')
+        sampler = animation.samplers[
+            sampler_id
+        ] if sampler_id is not None else None
+        self.sampler = sampler
+        self.extensions = data.get('extensions')
+        self.extras = data.get('extras')
+
+
+class AnimationChannelTarget:
+    def __init__(self, data, owner):
+        node_idx = data.get('node')
+        self.node = owner.nodes[node_idx] if node_idx is not None else None
+        self.path = data.get('path', AnimationChannelTargetPath.ROTATION)
+        self.extensions = data.get('extensions')
+        self.extras = data.get('extras')
+
+
+class AnimationSampler:
+    def __init__(self, data, owner):
+        input_idx = data.get('input')
+        self.input = owner.accessors[input_idx] if input_idx is not None else \
+            None
+        output_idx = data.get('output')
+        self.output = owner.accessors[output_idx] if output_idx is not None \
+            else None
+        interpolation = data.get('interpolation', 'LINEAR')
+        self.interpolation = AnimationInterpolation(interpolation)
+        self.extensions = data.get('extensions')
+        self.extras = data.get('extras')
 
 class GLTF:
     def __init__(self, gltf_data: dict, binary_buffer: bytes | None = None):
         self._gltf_data = gltf_data
-        self.version = self._gltf_data['asset']['version']
-        self.generator = self._gltf_data['asset'].get('generator', 'unknown')
+        self.version = gltf_data['asset']['version']
+        self.generator = gltf_data['asset'].get('generator', 'unknown')
 
-        self.buffers = [Buffer(data=data) for data in gltf_data['buffers']]
+        if binary_buffer:
+            data = gltf_data['buffers'][0]
+            self.buffers = [Buffer(data=data, binary_buffer=binary_buffer)]
+        else:
+            self.buffers = [Buffer(data=data) for data in gltf_data['buffers']]
         self.buffer_views = [BufferView(data=data, owner=self) for data in gltf_data['bufferViews']]
         self.accessors = [Accessor(data=data, owner=self) for data in gltf_data['accessors']]
 
-        if binary_buffer:
-            # TODO: test this, and think of a better way to do it
-            self.buffers[0]._file = binary_buffer
 
         self.images = [Image(data=data, owner=self) for data in gltf_data.get('images', [])]
         self.samplers = [Sampler(data=data) for data in gltf_data.get('samplers', [])]
         self.textures = [Texture(data=data, owner=self) for data in gltf_data.get('textures', [])]
         self.materials = [Material(data) for data in gltf_data.get('materials', [])]
 
-        print(self.images)
-        print(self.samplers)
-        print(self.textures)
+        self.cameras = [Camera(cam['type'], cam[cam['type']]) for cam in gltf_data.get('cameras', [])]
 
         self.meshes = [Mesh(data=data, owner=self) for data in gltf_data['meshes']]
         self.nodes = [Node(data=data, owner=self) for data in gltf_data['nodes']]
 
-        self.cameras = [Camera(cam['type'], cam[cam['type']]) for cam in gltf_data.get('cameras', [])]
+        self.skins = [
+            Skin(data=data, owner=self) for data in gltf_data.get('skins', [])
+        ]
+        self.animations = [
+            Animation(data=data, owner=self) for data in
+            gltf_data.get('animations', [])
+        ]
 
         self.scenes = [Scene(nodes=[self.nodes[i] for i in data['nodes']]) for data in gltf_data['scenes']]
         self.default_scene = self.scenes[gltf_data.get('scene', 0)]
@@ -340,13 +462,12 @@ def load_gltf(filename, file=None) -> GLTF:
     try:
         if file is None:
             file = pyglet.resource.file(filename, 'r')
-        elif file.mode != 'r':
-            file.close()
-            file = pyglet.resource.file(filename, 'r')
     except pyglet.resource.ResourceNotFoundException:
         raise ModelDecodeException
 
     if filename.endswith('glb'):
+        file.close()
+        file = pyglet.resource.file(filename, 'rb')
         # Check header
         magic = file.read(4)
         if magic != b"glTF":

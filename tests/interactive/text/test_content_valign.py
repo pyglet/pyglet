@@ -1,15 +1,12 @@
+from __future__ import annotations
+
 import pytest
 
+import pyglet
+from pyglet import app, text, window
+from pyglet.text import caret, layout
+from pyglet.window import key
 from tests.base.interactive import InteractiveTestCase
-
-from pyglet import app
-from pyglet import gl
-from pyglet import graphics
-from pyglet import text
-from pyglet.text import caret
-from pyglet.text import layout
-from pyglet import window
-from pyglet.window import key, mouse
 
 doctext = """test_content_valign.py test document.
 
@@ -28,7 +25,7 @@ class TestWindow(window.Window):
     def __init__(self, content_valign, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.batch = graphics.Batch()
+        self.batch = pyglet.graphics.Batch()
         self.document = text.decode_text(doctext)
         self.margin = 2
         self.layout = layout.IncrementalTextLayout(self.document,
@@ -41,6 +38,8 @@ class TestWindow(window.Window):
         self.push_handlers(self.caret)
 
         self.set_mouse_cursor(self.get_system_mouse_cursor('text'))
+
+        self.context.set_clear_color(1, 1, 1, 1)
 
     def on_resize(self, width, height):
         super().on_resize(width, height)
@@ -56,7 +55,6 @@ class TestWindow(window.Window):
         self.layout.view_y += scroll_y * 16
 
     def on_draw(self):
-        gl.glClearColor(1, 1, 1, 1)
         self.clear()
         self.batch.draw()
 

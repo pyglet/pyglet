@@ -2,26 +2,30 @@ from __future__ import annotations
 
 import sys
 import unicodedata
-from ctypes.wintypes import DWORD, HICON, HWND, MSG, POINT, RECT, SIZE, UINT
+from ctypes.wintypes import DWORD, HICON, HWND, MSG, POINT, RECT, SIZE, UINT, BOOL, HKEY, LPBYTE
 from functools import lru_cache
-from typing import Callable, Sequence
+from typing import Callable, Sequence, TYPE_CHECKING
 
 from pyglet import compat_platform
-from pyglet.libs.win32 import constants
+from pyglet.libs.win32 import constants, IDropTarget
 from pyglet.libs.win32.types import (
     BITMAPINFOHEADER,
     BYTE,
     COLORREF,
+    FORMATETC,
     HCURSOR,
+    IDataObject,
     HRAWINPUT,
     ICONINFO,
     MINMAXINFO,
     RAWINPUT,
     RAWINPUTHEADER,
+    STGMEDIUM,
     TRACKMOUSEEVENT,
-    WCHAR,
+    WCHAR, IID_IDROPTARGET, IID_IUNKNOWN,
 )
 from pyglet.libs.win32.winkey import chmap, keymap
+from pyglet.libs.win32.context_managers import hresult_context
 
 if compat_platform not in ('cygwin', 'win32'):
     raise ImportError('Not a win32 platform.')
@@ -38,11 +42,10 @@ from ctypes import (
     create_unicode_buffer,
     memmove,
     sizeof,
-    wstring_at,
+    wstring_at, c_ubyte,
 )
 
 import pyglet
-from pyglet.display.win32 import Win32Canvas
 from pyglet.event import EventDispatcher
 from pyglet.libs.win32 import (
     BITMAPV5HEADER,
@@ -54,8 +57,11 @@ from pyglet.libs.win32 import (
     _dwmapi,
     _gdi32,
     _kernel32,
+    _ole32,
     _shell32,
     _user32,
+    _advapi32,
+    com,
 )
 from pyglet.window import (
     BaseWindow,
@@ -68,6 +74,9 @@ from pyglet.window import (
     key,
     mouse,
 )
+
+if TYPE_CHECKING:
+    from _ctypes import _Pointer
 
 # symbol,ctrl -> motion mapping
 _motion_map: dict[tuple[int, bool], int] = {
@@ -91,7 +100,7 @@ _motion_map: dict[tuple[int, bool], int] = {
 
 
 class Win32MouseCursor(MouseCursor):
-    gl_drawable: bool = False
+    api_drawable: bool = False
     hw_drawable: bool = True
 
     def __init__(self, cursor: HCURSOR) -> None:
@@ -114,6 +123,119 @@ _priority_events = [
     constants.WM_DPICHANGED,
     constants.WM_INPUT,
 ]
+
+
+class _FileDropTargetManager(com.COMObject):
+    """COM object to manage file dropping into the application.
+
+    When this is not available, falls back to WM_DROPFILES events.
+    """
+    _interfaces_ = (IDropTarget,)
+
+    def __init__(self, window: Win32Window) -> None:
+        super().__init__()
+        self._window = window
+        self._drag_paths: list[str] = []
+        self._has_file_drag = False
+
+    @staticmethod
+    def _set_drop_effect(pdwEffect: _Pointer[DWORD], accepted: bool) -> None:  # noqa: N803
+        if pdwEffect:
+            pdwEffect[0] = constants.DROPEFFECT_COPY if accepted else constants.DROPEFFECT_NONE
+
+    @staticmethod
+    def _extract_paths(data_object: IDataObject) -> list[str]:
+        format_etc = FORMATETC(constants.CF_HDROP, None, constants.DVASPECT_CONTENT, -1, constants.TYMED_HGLOBAL)
+        medium = STGMEDIUM()
+
+        try:
+            with hresult_context() as checker:
+                if not checker.call_succeeded(data_object.QueryGetData, byref(format_etc)):
+                    return []
+
+                if not checker.call_succeeded(data_object.GetData, byref(format_etc), byref(medium)):
+                    return []
+
+            if medium.tymed != constants.TYMED_HGLOBAL or not medium.hGlobal:
+                return []
+
+            file_count = _shell32.DragQueryFileW(medium.hGlobal, 0xFFFFFFFF, None, 0)
+            paths = []
+
+            for i in range(file_count):
+                length = _shell32.DragQueryFileW(medium.hGlobal, i, None, 0)
+                buffer = create_unicode_buffer(length + 1)
+                _shell32.DragQueryFileW(medium.hGlobal, i, buffer, length + 1)
+                paths.append(buffer.value)
+
+            return paths
+        finally:
+            if medium.tymed != constants.TYMED_NULL:
+                _ole32.ReleaseStgMedium(byref(medium))
+
+    def _reset_drag_state(self) -> None:
+        self._drag_paths = []
+        self._has_file_drag = False
+
+    def _dispatch_drag_exit(self) -> None:
+        if self._has_file_drag:
+            self._window.dispatch_event('on_file_drag_exit')
+        self._reset_drag_state()
+
+    def _point_to_client(self, pt: POINT) -> tuple[int, int]:
+        point = POINT(pt.x, pt.y)
+        _user32.ScreenToClient(self._window._view_hwnd, byref(point))
+        return point.x, self._window._height - point.y
+
+    def QueryInterface(self, riid: _Pointer[com.GUID], ppv: c_void_p) -> int:
+        iid = riid.contents
+        ppv_cast = cast(ppv, POINTER(c_void_p))
+
+        if iid in (IID_IUNKNOWN, IID_IDROPTARGET):
+            ppv_cast[0] = cast(self.as_interface(IDropTarget), c_void_p).value
+            self.AddRef()
+            return com.S_OK
+
+        ppv_cast[0] = None
+        return com.E_NOINTERFACE
+
+    def DragEnter(self, p_data_object: IDataObject, _grf_key_state: int, pt: POINT,
+                  pdw_effect: _Pointer[DWORD]) -> int:
+        paths = self._extract_paths(p_data_object) if p_data_object else []
+        self._drag_paths = paths
+        self._has_file_drag = bool(paths)
+        self._set_drop_effect(pdw_effect, self._has_file_drag)
+
+        if self._has_file_drag:
+            x, y = self._point_to_client(pt)
+            self._window.dispatch_event('on_file_drag_enter', x, y, paths)
+
+        return com.S_OK
+
+    def DragOver(self, _grf_key_state: int, pt: POINT, pdw_effect: _Pointer[DWORD]) -> int:
+        self._set_drop_effect(pdw_effect, self._has_file_drag)
+
+        if self._has_file_drag:
+            x, y = self._point_to_client(pt)
+            self._window.dispatch_event('on_file_drag', x, y, self._drag_paths)
+
+        return com.S_OK
+
+    def DragLeave(self) -> int:
+        self._dispatch_drag_exit()
+        return com.S_OK
+
+    def Drop(self, p_data_object: IDataObject, _grf_key_state: int, pt: POINT, pdw_effect: _Pointer[DWORD]) -> int:
+        paths = self._extract_paths(p_data_object) if p_data_object else self._drag_paths
+        accepted = bool(paths)
+        self._set_drop_effect(pdw_effect, accepted)
+
+        if accepted:
+            x, y = self._point_to_client(pt)
+            self._window.dispatch_event('on_file_drop', x, y, paths)
+
+        self._dispatch_drag_exit()
+        return com.S_OK
 
 
 class Win32Window(BaseWindow):
@@ -144,6 +266,9 @@ class Win32Window(BaseWindow):
     _ex_ws_style: int = 0
     _minimum_size: tuple[int, int] | None = None
     _maximum_size: tuple[int, int] | None = None
+    _drop_target: _FileDropTargetManager | None = None
+    _ole_initialized_for_file_drops: bool = False
+    _ole_drop_registered: bool = False
 
     def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
         # Bind event handlers
@@ -203,13 +328,11 @@ class Win32Window(BaseWindow):
             width = self.screen.width
             height = self.screen.height
         else:
-            if pyglet.options.dpi_scaling in ("scaled", "stretch"):
+            if pyglet.options.dpi_scaling == "stretch":
                 w, h = self.get_requested_size()
                 self._width = int(w * self.scale)
                 self._height = int(h * self.scale)
-
-                if pyglet.options.dpi_scaling == "stretch":
-                    self._mouse_scale = self.scale
+                self._mouse_scale = self.scale
 
             width, height = \
                 self._client_to_window_size(self._width, self._height, self._dpi)
@@ -267,25 +390,34 @@ class Win32Window(BaseWindow):
                 self._view_window_class.lpszClassName,
                 '',
                 constants.WS_CHILD | constants.WS_VISIBLE,
-                0, 0, 0, 0,
+                0,
+                0,
+                0,
+                0,
                 self._hwnd,
                 0,
                 self._view_window_class.hInstance,
-                0)
+                0,
+            )
 
             self._dc = _user32.GetDC(self._view_hwnd)
 
+            if not self._fullscreen and constants.WINDOWS_11_21H2_OR_GREATER:
+                self._update_light_mode(_ShouldSystemUseLightMode())
+
+            # Context must be created after window is created.
+            if pyglet.options.backend and not self._shadow:
+                if "gl" in pyglet.options.backend and not self._wgl_context:
+                    self._assign_config()
+                    self.context.attach(self)
+                    self._wgl_context = self.context._context  # noqa: SLF001
+                else:
+                    self._assign_config()
+                    self.context.attach(self)
+
             # Only allow files being dropped if specified.
             if self._file_drops:
-                # Allows UAC to not block the drop files request if low permissions. All 3 must be set.
-                if constants.WINDOWS_7_OR_GREATER:
-                    _user32.ChangeWindowMessageFilterEx(self._hwnd, constants.WM_DROPFILES, constants.MSGFLT_ALLOW,
-                                                        None)
-                    _user32.ChangeWindowMessageFilterEx(self._hwnd, constants.WM_COPYDATA, constants.MSGFLT_ALLOW, None)
-                    _user32.ChangeWindowMessageFilterEx(self._hwnd, constants.WM_COPYGLOBALDATA, constants.MSGFLT_ALLOW,
-                                                        None)
-
-                _shell32.DragAcceptFiles(self._hwnd, True)
+                self._enable_file_drops()
 
             # Set the raw keyboard to handle shift state. This is required as legacy events cannot handle shift states
             # when both keys are used together. View Hwnd as none changes focus to follow keyboard.
@@ -323,22 +455,21 @@ class Win32Window(BaseWindow):
 
         self._update_view_location(self._width, self._height)
 
-        # Context must be created after window is created.
-        if not self._wgl_context:
-            self.canvas = Win32Canvas(self.display, self._view_hwnd, self._dc)
-            self.context.attach(self.canvas)
-            self._wgl_context = self.context._context  # noqa: SLF001
-
-        self.switch_to()
-
         self.set_caption(self._caption)
-        self.set_vsync(self._vsync)
+
+        if pyglet.options.backend and not self._shadow:
+            self.switch_to()
+            self.set_vsync(self._vsync)
 
         if self._visible:
             self.set_visible()
             # Might need resize event if going from fullscreen to fullscreen
             self.dispatch_event('_on_internal_resize', self._width, self._height)
             self.dispatch_event('on_expose')
+
+    @property
+    def dc(self):
+        return self._dc
 
     def _update_view_location(self, width: int, height: int) -> None:
         if self._fullscreen:
@@ -349,12 +480,55 @@ class Win32Window(BaseWindow):
         _user32.SetWindowPos(self._view_hwnd, 0,
                              x, y, width, height, constants.SWP_NOZORDER | constants.SWP_NOOWNERZORDER)
 
+    def _enable_file_drops(self) -> None:
+        # Allows UAC to not block drop files requests if process permissions differ.
+        if constants.WINDOWS_7_OR_GREATER:
+            _user32.ChangeWindowMessageFilterEx(self._hwnd, constants.WM_DROPFILES, constants.MSGFLT_ALLOW, None)
+            _user32.ChangeWindowMessageFilterEx(self._hwnd, constants.WM_COPYDATA, constants.MSGFLT_ALLOW, None)
+            _user32.ChangeWindowMessageFilterEx(self._hwnd, constants.WM_COPYGLOBALDATA, constants.MSGFLT_ALLOW, None)
+
+        with hresult_context() as checker:
+            if not checker.call_succeeded(_ole32.OleInitialize, None):
+                # Fall back to WM_DROPFILES.
+                _shell32.DragAcceptFiles(self._hwnd, True)
+                return
+
+            self._ole_initialized_for_file_drops = True
+
+            self._drop_target = _FileDropTargetManager(self)
+            assert self._drop_target is not None
+            target_interface = cast(self._drop_target.as_interface(IDropTarget), c_void_p)
+            register_result = checker.call(_ole32.RegisterDragDrop, self._hwnd, target_interface)
+
+            if checker.succeeded(register_result):
+                self._ole_drop_registered = True
+                return
+
+            self._drop_target = None
+
+        _shell32.DragAcceptFiles(self._hwnd, True)
+
+    def _disable_file_drops(self) -> None:
+        if self._ole_drop_registered:
+            _ole32.RevokeDragDrop(self._hwnd)
+            self._ole_drop_registered = False
+
+        if self._drop_target is not None:
+            self._drop_target = None
+
+        if self._ole_initialized_for_file_drops:
+            _ole32.OleUninitialize()
+            self._ole_initialized_for_file_drops = False
+
+        _shell32.DragAcceptFiles(self._hwnd, False)
+
     def close(self) -> None:
         if not self._hwnd:
             super().close()
             return
 
-        self.set_mouse_platform_visible(True)
+        self.set_mouse_cursor_platform_visible(True)
+        self._disable_file_drops()
 
         _user32.DestroyWindow(self._hwnd)
         _user32.UnregisterClassW(self._view_window_class.lpszClassName, 0)
@@ -382,8 +556,8 @@ class Win32Window(BaseWindow):
         return bool(self._interval)
 
     def set_vsync(self, vsync: bool) -> None:
-        if pyglet.options['vsync'] is not None:
-            vsync = pyglet.options['vsync']
+        if pyglet.options.vsync is not None:
+            vsync = pyglet.options.vsync
 
         self._interval = vsync
 
@@ -408,13 +582,34 @@ class Win32Window(BaseWindow):
 
         _user32.SetLayeredWindowAttributes(self._hwnd, 0, 255, constants.LWA_ALPHA)
 
-    def flip(self) -> None:
-        self.draw_mouse_cursor()
-
+    def present(self) -> None:
         if not self._fullscreen and not self._always_dwm and self._dwm_composition_enabled() and self._interval:
             _dwmapi.DwmFlush()
 
-        self.context.flip()
+        super().present()
+
+    def set_mouse_passthrough(self, state: bool) -> None:
+        color_ref = COLORREF()
+        alpha = BYTE()
+        flags = DWORD()
+
+        if self._ex_ws_style & constants.WS_EX_LAYERED:
+            _user32.GetLayeredWindowAttributes(self._hwnd, byref(color_ref), byref(alpha), byref(flags))
+
+        if state:
+            self._ex_ws_style |= (constants.WS_EX_TRANSPARENT | constants.WS_EX_LAYERED)
+        else:
+            self._ex_ws_style &= ~constants.WS_EX_TRANSPARENT
+
+            if self._ex_ws_style & constants.WS_EX_LAYERED and not flags.value & constants.LWA_ALPHA:
+                self._ex_ws_style &= ~constants.WS_EX_LAYERED
+
+        _user32.SetWindowLongW(self._hwnd, constants.GWL_EXSTYLE, self._ex_ws_style)
+
+        if state:
+            _user32.SetLayeredWindowAttributes(self._hwnd, color_ref.value, alpha.value, flags.value)
+
+
 
     def set_mouse_passthrough(self, state: bool) -> None:
         color_ref = COLORREF()
@@ -450,7 +645,7 @@ class Win32Window(BaseWindow):
         return point.x, point.y
 
     def set_size(self, width: int, height: int) -> None:
-        if pyglet.options.dpi_scaling in ("scaled", "stretch"):
+        if pyglet.options.dpi_scaling == "stretch":
             width = int(width * self.scale)
             height = int(height * self.scale)
 
@@ -481,7 +676,7 @@ class Win32Window(BaseWindow):
             _user32.ShowWindow(self._hwnd, constants.SW_HIDE)
             self.dispatch_event('on_hide')
         self._visible = visible
-        self.set_mouse_platform_visible()
+        self.set_mouse_cursor_platform_visible()
 
     def minimize(self) -> None:
         _user32.ShowWindow(self._hwnd, constants.SW_MINIMIZE)
@@ -500,11 +695,11 @@ class Win32Window(BaseWindow):
         self._caption = caption
         _user32.SetWindowTextW(self._hwnd, c_wchar_p(caption))
 
-    def set_mouse_platform_visible(self, platform_visible: bool | None = None) -> None:
+    def set_mouse_cursor_platform_visible(self, platform_visible: bool | None = None) -> None:
         if platform_visible is None:
             platform_visible = (self._mouse_visible and
                                 not self._exclusive_mouse and
-                                (not self._mouse_cursor.gl_drawable or self._mouse_cursor.hw_drawable)) or \
+                                (not self._mouse_cursor.api_drawable or self._mouse_cursor.hw_drawable)) or \
                                (not self._mouse_in_window or
                                 not self._has_focus)
 
@@ -588,7 +783,7 @@ class Win32Window(BaseWindow):
 
         self._exclusive_mouse = exclusive
         self._exclusive_mouse_focus = self._has_focus
-        self.set_mouse_platform_visible(not exclusive)
+        self.set_mouse_cursor_platform_visible(not exclusive)
 
     def set_mouse_position(self, x: int, y: int, absolute: bool = False) -> None:
         if not absolute:
@@ -685,7 +880,7 @@ class Win32Window(BaseWindow):
             _user32.ReleaseDC(None, hdc)
 
             img = img.get_image_data()
-            data = img.get_data(fmt, pitch)
+            data = img.get_bytes(fmt, pitch)
             memmove(dataptr, data, len(data))
 
             mask = _gdi32.CreateBitmap(img.width, img.height, 1, 1, None)
@@ -734,7 +929,7 @@ class Win32Window(BaseWindow):
         _user32.ReleaseDC(None, hdc)
 
         image = image.get_image_data()
-        data = image.get_data(fmt, pitch)
+        data = image.get_bytes(fmt, pitch)
         memmove(dataptr, data, len(data))
 
         mask = _gdi32.CreateBitmap(image.width, image.height, 1, 1, None)
@@ -1070,7 +1265,7 @@ class Win32Window(BaseWindow):
             # to determine when to recreate the tracking structure after
             # re-entering (to track the next WM_MOUSELEAVE).
             self._mouse_in_window = True
-            self.set_mouse_platform_visible()
+            self.set_mouse_cursor_platform_visible()
             self.dispatch_event('on_mouse_enter', x / self._mouse_scale, y / self._mouse_scale)
             self._tracking = True
             track = TRACKMOUSEEVENT()
@@ -1119,7 +1314,7 @@ class Win32Window(BaseWindow):
         y = self._height - point.y
         self._tracking = False
         self._mouse_in_window = False
-        self.set_mouse_platform_visible()
+        self.set_mouse_cursor_platform_visible()
         self.dispatch_event('on_mouse_leave', x / self._mouse_scale, y / self._mouse_scale)
         return 0
 
@@ -1382,7 +1577,7 @@ class Win32Window(BaseWindow):
 
     @Win32EventHandler(constants.WM_GETDPISCALEDSIZE)
     def _event_dpi_scaled_size(self, msg: int, wParam: int, lParam: int) -> int | None:
-        if pyglet.options.dpi_scaling in ("scaled", "stretch"):
+        if pyglet.options.dpi_scaling == "stretch":
             return None
 
         size = cast(lParam, POINTER(SIZE)).contents
@@ -1416,7 +1611,7 @@ class Win32Window(BaseWindow):
         self._dpi = x_dpi
 
         if not self._fullscreen and \
-                (pyglet.options.dpi_scaling != "real" or constants.WINDOWS_10_CREATORS_UPDATE_OR_GREATER):
+                (pyglet.options.dpi_scaling != "stretch" or constants.WINDOWS_10_CREATORS_UPDATE_OR_GREATER):
             suggested_rect = cast(lParam, POINTER(RECT)).contents
 
             x = suggested_rect.left
@@ -1434,6 +1629,54 @@ class Win32Window(BaseWindow):
         self.dispatch_event('_on_internal_scale', scale, x_dpi)
         return 1
 
+    @Win32EventHandler(constants.WM_SETTINGCHANGE)
+    def _event_setting_change(self, msg: int, wParam: int, lParam: int) -> int:
+        if wParam == 0 and lParam != 0 and constants.WINDOWS_11_21H2_OR_GREATER:
+            ptr = cast(lParam, c_wchar_p)
+            if ptr.value == 'ImmersiveColorSet':
+                self._update_light_mode(_ShouldSystemUseLightMode())
 
+    def _update_light_mode(self, is_light_mode: bool) -> None:
+        value = BOOL(not is_light_mode)
+
+        _dwmapi.DwmSetWindowAttribute(self._hwnd, constants.DWMWA_USE_IMMERSIVE_DARK_MODE, byref(value), sizeof(value))
+
+def _ShouldSystemUseLightMode() -> bool:
+    """With Windows 11 there is no stable API to get the current light mode.
+
+    uxtheme.dll does have hidden functions that seemingly work. However, there are many reports it's not stable across
+    versions. The functions (138, which should be `ShouldAppsUseDarkMode`) are also not publicly exposed.
+
+    This was documented over 4 years ago here: https://github.com/microsoft/WindowsAppSDK/issues/41
+
+    With no solution from Microsoft, we have to rely on checking the registry key associated with this.
+    """
+    subkey = r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
+    value_name = "AppsUseLightTheme"
+    hkey = HKEY()
+
+    if _advapi32.RegOpenKeyExW(constants.HKEY_CURRENT_USER, subkey, 0, constants.KEY_READ, byref(hkey)) != 0:
+        return True
+
+    data_type = DWORD()
+    data_value = (c_ubyte * 4)()  # DWORD = 4 bytes
+    data_size = DWORD(sizeof(data_value))
+
+    try:
+        result = _advapi32.RegQueryValueExW(
+            hkey,
+            value_name,
+            None,
+            byref(data_type),
+            cast(data_value, LPBYTE),
+            byref(data_size),
+        )
+        if result == 0 and data_type.value == constants.REG_DWORD:
+            value = int.from_bytes(bytes(data_value), "little")
+            return bool(value)
+    finally:
+        _advapi32.RegCloseKey(hkey)
+
+    return True
 
 __all__ = ['Win32EventHandler', 'Win32Window']

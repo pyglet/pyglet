@@ -10,33 +10,36 @@ the next line segment.
 Note: when working with a single buffer it is always a good idea to
 glFlush() when you've finished your rendering.
 """
+from __future__ import annotations
 
-
-import sys
 import random
+import sys
 
 import pyglet
-from pyglet.gl import (
-    glEnable,
-    glBlendFunc,
-    glFlush,
-    Config,
+from pyglet.config import OpenGLUserConfig
+from pyglet.enums import GeometryMode
+
+from pyglet.graphics.api.gl import (
     GL_BLEND,
     GL_LINE_SMOOTH,
-    GL_LINES,
-    GL_SRC_ALPHA,
     GL_ONE_MINUS_SRC_ALPHA,
+    GL_SRC_ALPHA,
+    glBlendFunc,
+    glEnable,
+    glFlush,
 )
 
 # open a single-buffered window so we can do cheap accumulation
-config = Config(double_buffer=False)
+config = OpenGLUserConfig(double_buffer=False)
 window = pyglet.window.Window(fullscreen='-fs' in sys.argv, config=config)
 
 
 class Line:
     batch = pyglet.graphics.Batch()
     program = pyglet.shapes.get_default_shader()
-    lines = program.vertex_list(100, GL_LINES, batch=batch, colors=('Bn', (255, 255, 255, 255) * 100))
+    lines = program.vertex_list(100, GeometryMode.LINES, batch=batch,
+                                position=('f', (0, 0) * 100),
+                                colors=('Bn', (255, 255, 255, 255) * 100))
     black = pyglet.shapes.Rectangle(0, 0, window.width, window.height, color=(0, 0, 0, 32), batch=batch)
     unallocated = list(range(100))
     active = []

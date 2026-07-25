@@ -57,7 +57,7 @@ class Window(pyglet.window.Window):
             widget.width = width - 110
 
     def on_draw(self):
-        pyglet.gl.glClearColor(1, 1, 1, 1)
+        window.context.set_clear_color(1, 1, 1, 1)
         self.clear()
         self.batch.draw()
 

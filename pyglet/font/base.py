@@ -7,12 +7,23 @@ classes as a documented interface to the concrete classes.
 from __future__ import annotations
 
 import abc
-import unicodedata
 from dataclasses import dataclass
-from typing import Any, BinaryIO, ClassVar
+from typing import Any, BinaryIO, ClassVar, TYPE_CHECKING
 
-from pyglet import image
-from pyglet.gl import GL_LINEAR, GL_RGBA, GL_TEXTURE_2D
+import unicodedata
+
+from pyglet.enums import (
+    TextureFilter,
+    Weight,
+    Stretch,
+    Style,
+)
+from pyglet.graphics import atlas
+from pyglet.graphics.texture import Texture, TextureRegion
+from pyglet.image import ImageData
+
+if TYPE_CHECKING:
+    from pyglet.font import FontManager
 
 _OTHER_GRAPHEME_EXTEND = {
     chr(x) for x in [0x09be, 0x09d7, 0x0be3, 0x0b57, 0x0bbe, 0x0bd7, 0x0cc2,
@@ -114,7 +125,7 @@ class GlyphPosition:
     y_offset: int  # How much the current glyph moves on the Y-axis when drawn. Does not advance.
 
 
-class Glyph(image.TextureRegion):
+class Glyph(TextureRegion):
     """A single glyph located within a larger texture.
 
     Glyphs are drawn most efficiently using the higher level APIs.
@@ -151,42 +162,40 @@ class Glyph(image.TextureRegion):
             -baseline + self.height)
 
 
-class GlyphTexture(image.Texture):
+class GlyphTexture(Texture):
     """A texture containing a glyph."""
     region_class = Glyph
 
 
-class GlyphTextureAtlas(image.atlas.TextureAtlas):
+class GlyphTextureAtlas(atlas.TextureAtlas):
     """A texture atlas containing many glyphs."""
     texture_class = GlyphTexture
 
-    def __init__(self, width: int = 2048, height: int = 2048, fmt: int = GL_RGBA, min_filter: int = GL_LINEAR,  # noqa: D107
-                 mag_filter: int = GL_LINEAR) -> None:
+    def __init__(self, width: int = 2048, height: int = 2048, filters: TextureFilter = TextureFilter.LINEAR) -> None:
         super().__init__(width, height)
-        self.texture = self.texture_class.create(width, height, GL_TEXTURE_2D, fmt, min_filter, mag_filter, fmt=fmt)
-        self.allocator = image.atlas.Allocator(width, height)
+        self.texture = self.texture_class.create(width, height, filters=filters)
+        self.allocator = atlas.Allocator(width, height)
 
-    def add(self, img: image.AbstractImage, border: int = 0) -> Glyph:
+    def add(self, img: ImageData, border: int = 0) -> Glyph:
         return super().add(img, border)
 
 
-class GlyphTextureBin(image.atlas.TextureBin):
+class GlyphTextureBin(atlas.TextureBin):
     """Same as a TextureBin but allows you to specify filter of Glyphs."""
 
-    def add(self, img: image.AbstractImage, fmt: int = GL_RGBA, min_filter: int = GL_LINEAR,
-            mag_filter: int = GL_LINEAR, border: int = 0) -> Glyph:
-        for atlas in list(self.atlases):
+    def add(self, img: ImageData, filters: TextureFilter, border: int = 0) -> Glyph:
+        for glyph_atlas in list(self.atlases):
             try:
-                return atlas.add(img, border)
-            except image.atlas.AllocatorException:  # noqa: PERF203
+                return glyph_atlas.add(img, border)
+            except atlas.AllocatorException:  # noqa: PERF203
                 # Remove atlases that are no longer useful (so that their textures
                 # can later be freed if the images inside them get collected).
                 if img.width < 64 and img.height < 64:
-                    self.atlases.remove(atlas)
+                    self.atlases.remove(glyph_atlas)
 
-        atlas = GlyphTextureAtlas(self.texture_width, self.texture_height, fmt, min_filter, mag_filter)
-        self.atlases.append(atlas)
-        return atlas.add(img, border)
+        glyph_atlas = GlyphTextureAtlas(self.texture_width, self.texture_height, filters)
+        self.atlases.append(glyph_atlas)
+        return glyph_atlas.add(img, border)
 
 
 class GlyphRenderer(abc.ABC):
@@ -217,7 +226,7 @@ class GlyphRenderer(abc.ABC):
 
         This is to fill in for potential substitutions since font system requires 1 glyph per character in a string.
         """
-        image_data = image.ImageData(1, 1, 'RGBA', bytes([0, 0, 0, 0]))
+        image_data = ImageData(1, 1, 'RGBA', bytes([0, 0, 0, 0]))
         glyph = self.font.create_glyph(image_data)
         glyph.set_bearings(-self.font.descent, 0, -1)
         return glyph
@@ -248,15 +257,10 @@ class Font:
              pre-calculate how many glyphs can be saved into a single texture atlas. Increase this if you plan to
              support more than this standard scenario. Performance is increased the less textures are used. However,
              it does consume more video memory.
-        texture_internalformat:
-            Determines how textures are stored in internal format. By default, ``GL_RGBA``.
-        texture_min_filter:
-            The default minification filter for glyph textures. By default, ``GL_LINEAR``. Can be changed to
-            ``GL_NEAREST`` to prevent aliasing with pixelated fonts.
-        texture_mag_filter:
-            The default magnification filter for glyph textures. By default, ``GL_LINEAR``. Can be changed to
-            ``GL_NEAREST`` to prevent aliasing with pixelated fonts.
     """
+    #: :meta private:
+    texture_bin: None | GlyphTextureBin
+
     #: :meta private:
     glyphs: dict[str | int | tuple[Any, int], Glyph]
     # Glyphs can be cached in various ways:
@@ -270,9 +274,7 @@ class Font:
     optimize_fit: int = True
     glyph_fit: int = 100
 
-    texture_internalformat: int = GL_RGBA
-    texture_min_filter: int = GL_LINEAR
-    texture_mag_filter: int = GL_LINEAR
+    filters = TextureFilter.NEAREST
 
     # These should also be set by subclass when known
     ascent: int = 0
@@ -286,9 +288,6 @@ class Font:
     # The default type of texture bins. Should not be overridden by users.
     texture_class: ClassVar[type[GlyphTextureBin]] = GlyphTextureBin
 
-    # A list of fallback fonts to use when an existing glyph is not found.
-    fallbacks: list[Font]
-
     _glyph_renderer: GlyphRenderer | None
     _missing_glyph: Glyph | None
     _zero_glyph: Glyph | None
@@ -296,8 +295,42 @@ class Font:
     # The size of the font in pixels.
     pixel_size: float
 
-    def __init__(self) -> None:
-        """Initialize a font that can be used with Pyglet."""
+    def __init__(self, name: str, size: float, weight: str | Weight, style: str | Style, stretch: str | Stretch,
+                 dpi: int | None) -> None:
+        """Initialize a font that can be used with Pyglet.
+
+        Args:
+            name:
+                Font family, for example, "Times New Roman".  If a list of names
+                is provided, the first one matching a known font is used.  If no
+                font can be matched to the name(s), a default font is used. The default font
+                will be platform dependent.
+            size:
+                Size of the font, in points.  The returned font may be an exact
+                match or the closest available.
+            weight:
+                If set, a specific weight variant is returned if one exists for the given font
+                family and size. The weight is provided as a string. For example: "bold" or "light".
+            style:
+                If True, an italic variant is returned, if one exists for the given family and size. For some Font
+                renderers, italics may have an "oblique" variation which can be specified as a string.
+            stretch:
+                If True, a stretch variant is returned, if one exists for the given family and size.  Currently only
+                supported by Windows through the ``DirectWrite`` font renderer. For example, "condensed" or "expanded".
+            dpi: int
+                The assumed resolution of the display device, for the purposes of
+                determining the pixel size of the font.  Defaults to 96.
+        """
+        self._name = name
+        self.size = size
+        self.weight = weight
+        self.style = style
+        self.stretch = stretch
+        self.dpi = dpi
+
+        # From DPI to DIP (Device Independent Pixels)
+        self.pixel_size = (self.size * self.dpi) // 72
+
         self.texture_bin = None
         self.hb_resource =  None
         self._glyph_renderer = None
@@ -308,7 +341,6 @@ class Font:
         # Represents a zero width glyph.
         self._zero_glyph = None
         self.glyphs = {}
-        self.fallbacks = []
 
     def _initialize_renderer(self) -> None:
         """Initialize the glyph renderer and cache it on the Font.
@@ -320,21 +352,14 @@ class Font:
             self._missing_glyph = self._glyph_renderer.render(" ")
             self._zero_glyph = self._glyph_renderer.create_zero_glyph()
 
-    def add_fallback(self, font: Font) -> None:
-        assert font not in self.fallbacks, "Font is already added."
-        self.fallbacks.append(font)
-
-    def remove_fallback(self, font: Font) -> None:
-        assert font not in self.fallbacks, "Font has not been added."
-        self.fallbacks.remove(font)
-
     @property
-    @abc.abstractmethod
     def name(self) -> str:
         """Return the Family Name of the font as a string."""
+        return self._name
 
     @classmethod
-    def add_font_data(cls: type[Font], data: BinaryIO) -> None:
+    @abc.abstractmethod
+    def add_font_data(cls: type[Font], data: BinaryIO, manager: FontManager) -> None:
         """Add font data to the font loader.
 
         This is a class method and affects all fonts loaded.  Data must be
@@ -347,6 +372,7 @@ class Font:
         """
 
     @classmethod
+    @abc.abstractmethod
     def have_font(cls: type[Font], name: str) -> bool:
         """Determine if a font with the given name is installed.
 
@@ -354,9 +380,8 @@ class Font:
             name:
                 Name of a font to search for.
         """
-        return True
 
-    def create_glyph(self, img: image.AbstractImage, fmt: int | None = None) -> Glyph:
+    def create_glyph(self, img: ImageData) -> Glyph:
         """Create a glyph using the given image.
 
         This is used internally by `Font` subclasses to add glyph data
@@ -368,18 +393,15 @@ class Font:
         Args:
             img:
                 The image to write to the font texture.
-            fmt:
-                Override for the format and internalformat of the atlas texture. None will use default.
         """
         if self.texture_bin is None:
             if self.optimize_fit:
                 self.texture_width, self.texture_height = self._get_optimal_atlas_size(img)
             self.texture_bin = GlyphTextureBin(self.texture_width, self.texture_height)
 
-        return self.texture_bin.add(
-            img, fmt or self.texture_internalformat, self.texture_min_filter, self.texture_mag_filter, border=1)
+        return self.texture_bin.add(img, self.filters, border=1)
 
-    def _get_optimal_atlas_size(self, image_data: image.AbstractImage) -> tuple[int, int]:
+    def _get_optimal_atlas_size(self, image_data: ImageData) -> tuple[int, int]:
         """Retrieves the optimal atlas size to fit ``image_data`` with ``glyph_fit`` number of glyphs."""
         # A texture glyph sheet should be able to handle all standard keyboard characters in one sheet.
         # 26 Alpha upper, 26 lower, 10 numbers, 33 symbols, space = around 96 characters. (Glyph Fit)
@@ -405,7 +427,7 @@ class Font:
 
         return atlas_size
 
-    def get_glyphs(self, text: str) -> tuple[list[Glyph], list[GlyphPosition]]:
+    def get_glyphs(self, text: str, shaping: bool = False) -> tuple[list[Glyph], list[GlyphPosition]]:
         """Create and return a list of Glyphs for `text`.
 
         If any characters do not have a known glyph representation in this
@@ -414,14 +436,16 @@ class Font:
         Args:
             text:
                 Text to render.
+            shaping:
+                If the text will be shaped using the global option. If ``False``, no text shaping will occur and
+                positioning will instead be based on glyph dimensions.
         """
         glyph_renderer = None
 
         glyphs = []  # glyphs that are committed.
         offsets = []
         for c in get_grapheme_clusters(str(text)):
-            # Get the glyph for 'c'.  Hide tabs (Windows and Linux render
-            # boxes)
+            # Get the glyph for 'c'.  Hide tabs (Windows and Linux render boxes)
             if c == "\t":
                 c = " "  # noqa: PLW2901
             if c not in self.glyphs:
@@ -496,4 +520,31 @@ class Font:
         return glyphs
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}('{self.name}')"
+        return f"{self.__class__.__name__}('name={self.name}, size={self.size})')"
+
+
+# Font Table Mappings
+_weight_class_to_weight = {
+    100: Weight.THIN,
+    200: Weight.EXTRALIGHT,  # Ultralight
+    300: Weight.LIGHT,
+    400: Weight.NORMAL,  # REGULAR
+    500: Weight.MEDIUM,
+    600: Weight.SEMIBOLD,  # DEMIBOLD
+    700: Weight.BOLD,
+    800: Weight.EXTRABOLD,  # ULTRABOLD
+    900: Weight.BLACK,  # HEAVY
+    950: Weight.EXTRABLACK,
+}
+
+_width_class_to_stretch = {
+    1: Stretch.ULTRACONDENSED,
+    2: Stretch.EXTRACONDENSED,
+    3: Stretch.CONDENSED,
+    4: Stretch.SEMICONDENSED,
+    5: Stretch.NORMAL,
+    6: Stretch.SEMIEXPANDED,
+    7: Stretch.EXPANDED,
+    8: Stretch.EXTRAEXPANDED,
+    9: Stretch.ULTRAEXPANDED,
+}

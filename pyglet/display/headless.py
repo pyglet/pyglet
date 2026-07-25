@@ -2,15 +2,16 @@ from __future__ import annotations
 
 from typing import Literal
 
-import pyglet
 import warnings
-
-from .base import Display, Screen, ScreenMode, Canvas
-
-
 from ctypes import byref
-from pyglet.libs.egl import egl
-from pyglet.libs.egl import eglext
+
+import pyglet
+
+from .base import Display, Screen
+import pyglet.libs.linux.egl as egl
+from pyglet.util import debug_print
+
+_debug = debug_print('debug_api')
 
 
 class HeadlessDisplay(Display):
@@ -21,21 +22,27 @@ class HeadlessDisplay(Display):
         self._screens = [HeadlessScreen(self, 0, 0, 1920, 1080)]
 
         num_devices = egl.EGLint()
-        eglext.eglQueryDevicesEXT(0, None, byref(num_devices))
-        if num_devices.value > 0:
-            headless_device = pyglet.options['headless_device']
-            if headless_device < 0 or headless_device >= num_devices.value:
-                raise ValueError(f'Invalid EGL device id: {headless_device}')
-            devices = (eglext.EGLDeviceEXT * num_devices.value)()
-            eglext.eglQueryDevicesEXT(num_devices.value, devices, byref(num_devices))
-            self._display_connection = eglext.eglGetPlatformDisplayEXT(
-                eglext.EGL_PLATFORM_DEVICE_EXT, devices[headless_device], None)
-        else:
+        try:
+            egl.eglQueryDevicesEXT(0, None, byref(num_devices))
+        except pyglet.libs.linux.egl.eglext.MissingFunctionException:
             warnings.warn('No device available for EGL device platform. Using native display type.')
             display = egl.EGLNativeDisplayType()
             self._display_connection = egl.eglGetDisplay(display)
 
-        egl.eglInitialize(self._display_connection, None, None)
+        if num_devices.value > 0:
+            headless_device = pyglet.options.headless_device
+            if headless_device < 0 or headless_device >= num_devices.value:
+                raise ValueError(f'Invalid EGL device id: {headless_device}')
+            devices = (egl.EGLDeviceEXT * num_devices.value)()
+            egl.eglQueryDevicesEXT(num_devices.value, devices, byref(num_devices))
+            self._display_connection = egl.eglGetPlatformDisplayEXT(
+                egl.EGL_PLATFORM_DEVICE_EXT, devices[headless_device], None,
+            )
+
+        majorver = egl.EGLint()
+        minorver = egl.EGLint()
+        egl.eglInitialize(self._display_connection, majorver, minorver)
+        assert _debug(f"EGL version: {majorver.value}.{minorver.value}")
 
     def get_screens(self):
         return self._screens
@@ -44,23 +51,9 @@ class HeadlessDisplay(Display):
         egl.eglTerminate(self._display_connection)
 
 
-class HeadlessCanvas(Canvas):
-    def __init__(self, display, egl_surface):
-        super().__init__(display)
-        self.egl_surface = egl_surface
-
-
 class HeadlessScreen(Screen):
     def __init__(self, display, x, y, width, height):
         super().__init__(display, x, y, width, height)
-
-    def get_matching_configs(self, template):
-        canvas = HeadlessCanvas(self.display, None)
-        configs = template.match(canvas)
-        # XXX deprecate
-        for config in configs:
-            config.screen = self
-        return configs
 
     def get_modes(self):
         pass

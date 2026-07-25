@@ -1,0 +1,131 @@
+from __future__ import annotations
+
+import ctypes
+from typing import Any, Callable, NoReturn, Protocol, Sequence
+
+import pyglet
+
+
+_debug_api = pyglet.options.debug_api
+_debug_api_trace = pyglet.options.debug_api_trace
+_debug_api_trace_args = pyglet.options.debug_api_trace_args
+
+
+class MissingFunctionException(Exception):  # noqa: N818
+    def __init__(self, name: str, requires: str | None = None, suggestions: Sequence[str] | None=None) -> None:
+        msg = f'{name} is not exported by the available OpenGL driver.'
+        if requires:
+            msg += f'  {requires} is required for this functionality.'
+        if suggestions:
+            msg += '  Consider alternative(s) {}.'.format(', '.join(suggestions))
+        Exception.__init__(self, msg)
+
+
+def missing_function(name: str, requires: str | None =None, suggestions: Sequence[str] | None=None) -> Callable:
+    def MissingFunction(*_args, **_kwargs) -> NoReturn:  # noqa: ANN002, ANN003, N802
+        raise MissingFunctionException(name, requires, suggestions)
+
+    return MissingFunction
+
+
+_int_types = (ctypes.c_int16, ctypes.c_int32)
+if hasattr(ctypes, 'c_int64'):
+    # Some builds of ctypes apparently do not have c_int64
+    # defined; it's a pretty good bet that these builds do not
+    # have 64-bit pointers.
+    _int_types += (ctypes.c_int64,)
+for t in _int_types:
+    if ctypes.sizeof(t) == ctypes.sizeof(ctypes.c_size_t):
+        c_ptrdiff_t = t
+
+
+class c_void(ctypes.Structure):
+    # c_void_p is a buggy return type, converting to int, so
+    # POINTER(None) == c_void_p is actually written as
+    # POINTER(c_void), so it can be treated as a real pointer.
+    _fields_ = [('dummy', ctypes.c_int)]
+
+
+class GLException(Exception):
+    pass
+
+
+class GLLinkFunction(Protocol):
+    def __call__(
+        self,
+        name: str,
+        restype: Any,
+        argtypes: Any,
+        requires: str | None = None,
+        suggestions: Sequence[str] | None = None,
+    ) -> Callable[..., Any]:
+        ...
+
+
+def errcheck(result: Any, func: Callable, arguments: Sequence) -> Any:
+    if _debug_api_trace:
+        try:
+            name = func.__name__
+        except AttributeError:
+            name = repr(func)
+        if _debug_api_trace_args:
+            trace_args = ', '.join([repr(arg) for arg in arguments])
+            print(f'{name}({trace_args[:255]})')
+        else:
+            print(name)
+
+    from pyglet.graphics.api import core, gl
+    ctx = core.current_context
+    if not ctx:
+        raise GLException('No GL context; create a Window first')
+    error = ctx.glGetError()
+    if error:
+        # These are the 6 possible error codes we can get in opengl core 3.3+
+        error_types = {
+            gl.GL_INVALID_ENUM: "Invalid enum. An unacceptable value is specified for an enumerated argument.",
+            gl.GL_INVALID_VALUE: "Invalid value. A numeric argument is out of range.",
+            gl.GL_INVALID_OPERATION: "Invalid operation. The specified operation is not allowed in the current state.",
+            gl.GL_INVALID_FRAMEBUFFER_OPERATION: "Invalid framebuffer operation. The framebuffer object is not "
+                                                 "complete.",
+            gl.GL_OUT_OF_MEMORY: "Out of memory. There is not enough memory left to execute the command.",
+        }
+        error_msg = error_types.get(error, "Unknown error")
+        msg = f'(0x{error}): {error_msg}'
+        raise GLException(msg)
+    return result
+
+
+def decorate_function(func: Callable, name: str) -> None:
+    if _debug_api and name not in ('glGetError',) and name[:3] not in ('glX', 'agl', 'wgl'):
+        func.errcheck = errcheck
+        func.__name__ = name
+
+
+link_AGL: GLLinkFunction | None = None
+link_GLX: GLLinkFunction | None = None
+link_WGL: GLLinkFunction | None = None
+link_WGL_proxy: GLLinkFunction | None = None
+link_GL: GLLinkFunction
+link_GL_proxy: GLLinkFunction
+
+if pyglet.compat_platform in ('win32', 'cygwin'):
+    from pyglet.libs.win32.lib_wgl import link_GL, link_GL_proxy, link_WGL
+elif pyglet.compat_platform == 'darwin':
+    from pyglet.libs.darwin.lib_agl import link_GL, link_GL_proxy, link_AGL
+elif pyglet.compat_platform.startswith('linux'):
+    from pyglet.libs.linux.glx.lib_glx import link_GL, link_GL_proxy, link_GLX  # noqa: F401
+else:
+    raise Exception("Platform not available.")
+
+
+__all__ = [
+    'GLException',
+    'MissingFunctionException',
+    'decorate_function',
+    'link_AGL',
+    'link_GL',
+    'link_GLX',
+    'link_WGL',
+    'link_WGL_proxy',
+    'missing_function',
+]

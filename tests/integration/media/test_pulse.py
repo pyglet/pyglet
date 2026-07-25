@@ -3,7 +3,7 @@ import pytest
 from threading import Timer
 
 import pyglet
-pyglet.options['debug_media'] = False
+pyglet.options.debug_media = False
 
 from pyglet.media.codecs import AudioFormat
 from pyglet.media.synthesis import Silence
@@ -15,6 +15,29 @@ except ImportError:
 
 
 pytestmark = pytest.mark.skipif(interface is None, reason='requires PulseAudio')
+
+
+@pytest.fixture(scope="module", autouse=True)
+def validate_pulse_audio_driver():
+    """Skip this module if PulseAudio is importable but not actually usable.
+
+    On runners, enabling FFMpeg seems to install and enable pulse, but it errors out with no device.
+    """
+    mainloop = interface.PulseAudioMainloop()
+    context = None
+
+    try:
+        mainloop.start()
+        with mainloop.lock:
+            context = mainloop.create_context()
+            context.connect()
+    except interface.PulseAudioException as exc:
+        pytest.skip(f"PulseAudio driver is unavailable on this runner: {exc}")
+    finally:
+        if context is not None:
+            with mainloop.lock:
+                context.delete()
+        mainloop.delete()
 
 
 @pytest.fixture

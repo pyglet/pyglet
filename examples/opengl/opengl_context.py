@@ -7,6 +7,7 @@ and exits. Note that some GPU drivers may return a newer version than requested,
 at their discretion.
 """
 import pyglet
+pyglet.options.backend = "opengl"
 
 # Specify the OpenGL version explicitly to request 4.2 features
 #
@@ -14,7 +15,7 @@ import pyglet
 #   forward_compatible = True       To request a context without deprecated
 #                                   functionality
 #   debug = True                    To request a debug context
-config = pyglet.gl.Config(major_version=4, minor_version=2)
+config = pyglet.graphics.api.get_config(major_version=4, minor_version=2)
 
 # Create a context matching the above configuration.  Will fail if
 # OpenGL 4.2 is not supported by the driver.

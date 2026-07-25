@@ -38,6 +38,11 @@ from pyglet.libs.win32.types import BYTE, PROPVARIANT
 from pyglet.media import Source
 from pyglet.media.codecs import AudioData, AudioFormat, MediaDecoder, StaticSource, VideoFormat
 from pyglet.util import DecodeException, debug_print
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pyglet.customtypes import MediaTypes
+
 
 _debug = debug_print('debug_media')
 
@@ -875,7 +880,10 @@ class WMFDecoder(MediaDecoder):
     def get_file_extensions(self):
         return self.extensions
 
-    def decode(self, filename, file, streaming=True):
+    def get_media_capabilities(self) -> tuple[MediaTypes, ...]:
+        return ("audio",)
+
+    def decode(self, filename, file, streaming=True, **kwargs):
         if streaming:
             return WMFSource(filename, file)
         return StaticSource(WMFSource(filename, file))

@@ -1,30 +1,21 @@
 """Work in progress HIDRAW device abstraction for Linux"""
 
 import os
-import fcntl
 import ctypes
-import warnings
 
-from ctypes import c_int as _int
 from ctypes import c_uint as _uint
 from ctypes import c_uint8 as _u8
-from ctypes import c_uint16 as _u16
 from ctypes import c_int16 as _s16
 from ctypes import c_uint32 as _u32
-from ctypes import c_int32 as _s32
-from ctypes import c_int64 as _s64
 from ctypes import create_string_buffer
-
-from concurrent.futures import ThreadPoolExecutor
 
 import pyglet
 
-from pyglet.app.xlib import XlibSelectDevice
-from pyglet.libs.ioctl import _IOR, _IOR_str, _IOWR_len
-from pyglet.input.base import Device, RelativeAxis, AbsoluteAxis, Button, Joystick, Controller
-from pyglet.input.base import DeviceOpenException, ControllerManager
+from pyglet.app.linux import LinuxSelectDevice
+from pyglet.libs.linux.ioctl import _IOR, _IOR_str, _IOWR_len
+from pyglet.input.base import Device
+from pyglet.input.base import DeviceOpenException
 from pyglet.input.linux.evdev_constants import *
-from pyglet.input.controller import get_mapping, Relation, create_guid
 
 
 # From /linux/blob/master/include/uapi/linux/hidraw.h
@@ -83,7 +74,7 @@ def get_set_bits(bytestring):
     return bits
 
 
-class HIDRawDevice(XlibSelectDevice, Device):
+class HIDRawDevice(LinuxSelectDevice, Device):
     _fileno = None
 
     def __init__(self, display, filename):
@@ -150,7 +141,7 @@ class HIDRawDevice(XlibSelectDevice, Device):
     # def ff_upload_effect(self, structure):
     #     os.write(self._fileno, structure)
 
-    # XlibSelectDevice interface
+    # LinuxSelectDevice interface
 
     def fileno(self):
         return self._fileno

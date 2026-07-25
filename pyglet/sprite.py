@@ -34,8 +34,8 @@ animations, you can set the ``subpixel`` parameter to ``True`` when creating
 the sprite (:since: pyglet 1.2).
 
 The sprite's positioning, rotation and scaling all honor the original
-image's anchor (:py:attr:`~pyglet.image.AbstractImage.anchor_x`,
-:py:attr:`~pyglet.image.AbstractImage.anchor_y`).
+image's anchor (:py:attr:`~pyglet.image.ImageData.anchor_x`,
+:py:attr:`~pyglet.image.ImageData.anchor_y`).
 
 
 Drawing multiple sprites
@@ -66,126 +66,59 @@ sprites within batches.
 """
 from __future__ import annotations
 
+from dataclasses import dataclass
 import sys
-import warnings
-from typing import TYPE_CHECKING, ClassVar, Literal
+from typing import TYPE_CHECKING, ClassVar
 
 import pyglet
-from pyglet import clock, event, graphics, image
-from pyglet.gl import (
-    GL_BLEND,
-    GL_ONE_MINUS_SRC_ALPHA,
-    GL_SRC_ALPHA,
-    GL_TEXTURE0,
-    GL_TRIANGLES,
-    glActiveTexture,
-    glBindTexture,
-    glBlendFunc,
-    glDisable,
-    glEnable,
-)
+from pyglet import event, clock
+from pyglet.graphics.draw import DrawContext, BatchDrawOptions
+
+if TYPE_CHECKING:
+    from typing import Literal
+    from pyglet.graphics.texture import Texture
+    from pyglet.graphics.draw import Batch
+    from pyglet.graphics.shader import ShaderProgram
+
+from pyglet.graphics import Group
+from pyglet.enums import BlendFactor, GeometryMode, GraphicsAPI
+from pyglet.image.base import Animation, ImageData
+from pyglet.graphics.texture import TextureArrayRegion
+
+
+if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
+    from pyglet.graphics.api.gl.sprite import (
+        get_default_array_shader,
+        get_default_multitexture_shader,
+        get_default_shader,
+    )
+elif pyglet.options.backend in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
+    from pyglet.graphics.api.gl2.sprite import (
+        get_default_array_shader,
+        get_default_multitexture_shader,
+        get_default_shader,
+    )
+elif pyglet.options.backend == GraphicsAPI.WEBGL:
+    from pyglet.graphics.api.webgl.sprite import (
+        get_default_array_shader,
+        get_default_multitexture_shader,
+        get_default_shader,
+    )
+elif pyglet.options.backend == GraphicsAPI.VULKAN:
+    from pyglet.graphics.api.vulkan.sprite import get_default_array_shader, get_default_shader, SpriteGroup
+
+    def get_default_multitexture_shader(_layers) -> ShaderProgram:  # noqa: ANN001
+        """Vulkan placeholder for API parity."""
+        msg = "MultiTextureSprite is unsupported on the Vulkan backend."
+        raise NotImplementedError(msg)
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
-if TYPE_CHECKING:
-    from pyglet.graphics import Batch, Group
-    from pyglet.graphics.shader import ShaderProgram
-    from pyglet.image import AbstractImage, Animation, Texture
 
-vertex_source: str = """#version 150 core
-    in vec3 translate;
-    in vec4 colors;
-    in vec3 tex_coords;
-    in vec2 scale;
-    in vec3 position;
-    in float rotation;
+class SpriteGroup(Group):
+    """Shared Sprite rendering Group."""
 
-    out vec4 vertex_colors;
-    out vec3 texture_coords;
-
-    uniform WindowBlock
-    {
-        mat4 projection;
-        mat4 view;
-    } window;
-
-    mat4 m_scale = mat4(1.0);
-    mat4 m_rotation = mat4(1.0);
-    mat4 m_translate = mat4(1.0);
-
-    void main()
-    {
-        m_scale[0][0] = scale.x;
-        m_scale[1][1] = scale.y;
-        m_translate[3][0] = translate.x;
-        m_translate[3][1] = translate.y;
-        m_translate[3][2] = translate.z;
-        m_rotation[0][0] =  cos(-radians(rotation)); 
-        m_rotation[0][1] =  sin(-radians(rotation));
-        m_rotation[1][0] = -sin(-radians(rotation));
-        m_rotation[1][1] =  cos(-radians(rotation));
-
-        gl_Position = window.projection * window.view * m_translate * m_rotation * m_scale * vec4(position, 1.0);
-
-        vertex_colors = colors;
-        texture_coords = tex_coords;
-    }
-"""
-
-fragment_source: str = """#version 150 core
-    in vec4 vertex_colors;
-    in vec3 texture_coords;
-    out vec4 final_colors;
-
-    uniform sampler2D sprite_texture;
-
-    void main()
-    {
-        final_colors = texture(sprite_texture, texture_coords.xy) * vertex_colors;
-    }
-"""
-
-fragment_array_source: str = """#version 150 core
-    in vec4 vertex_colors;
-    in vec3 texture_coords;
-    out vec4 final_colors;
-
-    uniform sampler2DArray sprite_texture;
-
-    void main()
-    {
-        final_colors = texture(sprite_texture, texture_coords) * vertex_colors;
-    }
-"""
-
-
-def get_default_shader() -> ShaderProgram:
-    """Create and return the default sprite shader.
-
-    This method allows the module to be imported without an OpenGL Context.
-    """
-    return pyglet.gl.current_context.create_program((vertex_source, 'vertex'),
-                                                    (fragment_source, 'fragment'))
-
-
-def get_default_array_shader() -> ShaderProgram:
-    """Create and return the default array sprite shader.
-
-    This method allows the module to be imported without an OpenGL Context.
-    """
-    return pyglet.gl.current_context.create_program((vertex_source, 'vertex'),
-                                                    (fragment_array_source, 'fragment'))
-
-
-class SpriteGroup(graphics.Group):
-    """Shared Sprite rendering Group.
-
-    The Group defines custom ``__eq__`` and ``__hash__`` methods, and so will
-    be automatically coalesced with other Sprite Groups sharing the same parent
-    Group, Texture and blend parameters.
-    """
-
-    def __init__(self, texture: Texture, blend_src: int, blend_dest: int,
+    def __init__(self, texture: Texture, blend_src: BlendFactor, blend_dest: BlendFactor,
                  program: ShaderProgram, parent: Group | None = None) -> None:
         """Create a sprite group.
 
@@ -196,11 +129,9 @@ class SpriteGroup(graphics.Group):
             texture:
                 The (top-level) texture containing the sprite image.
             blend_src:
-                OpenGL blend source mode; for example,
-                ``GL_SRC_ALPHA``.
+                Blend factor source mode; for example: ``SRC_ALPHA``.
             blend_dest:
-                OpenGL blend destination mode; for example,
-                ``GL_ONE_MINUS_SRC_ALPHA``.
+                Blend factor source mode; for example: ``_ONE_MINUS_SRC_ALPHA``.
             program:
                 A custom ShaderProgram.
             parent:
@@ -208,39 +139,9 @@ class SpriteGroup(graphics.Group):
         """
         super().__init__(parent=parent)
         self.texture = texture
-        self.blend_src = blend_src
-        self.blend_dest = blend_dest
-        self.program = program
-
-    def set_state(self) -> None:
-        self.program.use()
-
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(self.texture.target, self.texture.id)
-
-        glEnable(GL_BLEND)
-        glBlendFunc(self.blend_src, self.blend_dest)
-
-    def unset_state(self) -> None:
-        glDisable(GL_BLEND)
-        self.program.stop()
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.texture})"
-
-    def __eq__(self, other: SpriteGroup) -> bool:
-        return (other.__class__ is self.__class__ and
-                self.program is other.program and
-                self.parent == other.parent and
-                self.texture.target == other.texture.target and
-                self.texture.id == other.texture.id and
-                self.blend_src == other.blend_src and
-                self.blend_dest == other.blend_dest)
-
-    def __hash__(self) -> int:
-        return hash((self.program, self.parent,
-                     self.texture.id, self.texture.target,
-                     self.blend_src, self.blend_dest))
+        self.set_shader_program(program)
+        self.set_blend(blend_src, blend_dest)
+        self.set_texture(self.texture, 0)
 
 
 class Sprite(event.EventDispatcher):
@@ -265,10 +166,10 @@ class Sprite(event.EventDispatcher):
     group_class: ClassVar[type[SpriteGroup | Group]] = SpriteGroup
 
     def __init__(self,
-                 img: AbstractImage | Animation,
+                 img: ImageData | Texture | Animation,
                  x: float = 0, y: float = 0, z: float = 0,
-                 blend_src: int = GL_SRC_ALPHA,
-                 blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
+                 blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
+                 blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
                  batch: Batch | None = None,
                  group: Group | None = None,
                  subpixel: bool = False,
@@ -308,7 +209,7 @@ class Sprite(event.EventDispatcher):
         self._y = y
         self._z = z
 
-        if isinstance(img, image.Animation):
+        if isinstance(img, Animation):
             self._animation = img
             self._texture = img.frames[0].image.get_texture()
             self._next_dt = img.frames[0].duration
@@ -318,7 +219,7 @@ class Sprite(event.EventDispatcher):
             self._texture = img.get_texture()
 
         if not program:
-            if isinstance(img, image.TextureArrayRegion):
+            if isinstance(img, TextureArrayRegion):
                 program = get_default_array_shader()
             else:
                 program = get_default_shader()
@@ -368,14 +269,14 @@ class Sprite(event.EventDispatcher):
 
         if frame.duration is not None:
             duration = frame.duration - (self._next_dt - dt)
-            duration = min(max(0, duration), frame.duration)
+            duration = min(max(0.0, duration), frame.duration)
             clock.schedule_once(self._animate, duration)
             self._next_dt = duration
         else:
             self.dispatch_event('on_animation_end')
 
     @property
-    def blend_mode(self) -> tuple[int, int]:
+    def blend_mode(self) -> tuple[BlendFactor, BlendFactor]:
         """The current blend mode applied to this sprite.
 
         .. note:: Changing this can be an expensive operation as it involves a group creation and transfer.
@@ -393,7 +294,7 @@ class Sprite(event.EventDispatcher):
 
         self._group = self.get_sprite_group()
         if self._batch is not None:
-            self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, self._batch)
+            self._batch.migrate(self._vertex_list, GeometryMode.TRIANGLES, self._group, self._batch)
 
     @property
     def program(self) -> ShaderProgram:
@@ -411,7 +312,7 @@ class Sprite(event.EventDispatcher):
         self._group = self.get_sprite_group()
 
         if (self._batch and
-                self._batch.update_shader(self._vertex_list, GL_TRIANGLES, self._group, program)):
+                self._batch.update_shader(self._vertex_list, GeometryMode.TRIANGLES, self._group, program)):
             # Exit early if changing domain is not needed.
             return
 
@@ -420,7 +321,7 @@ class Sprite(event.EventDispatcher):
         self._create_vertex_list()
 
     @property
-    def batch(self) -> Batch:
+    def batch(self) -> Batch | None:
         """Graphics batch.
 
         The sprite can be migrated from one batch to another, or removed from
@@ -436,7 +337,7 @@ class Sprite(event.EventDispatcher):
             return
 
         if batch is not None and self._batch is not None:
-            self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, batch)
+            self._batch.migrate(self._vertex_list, GeometryMode.TRIANGLES, self._group, batch)
             self._batch = batch
         else:
             self._vertex_list.delete()
@@ -460,10 +361,10 @@ class Sprite(event.EventDispatcher):
         self._user_group = group
         self._group = self.get_sprite_group()
         if self._batch is not None:
-            self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, self._batch)
+            self._batch.migrate(self._vertex_list, GeometryMode.TRIANGLES, self._group, self._batch)
 
     @property
-    def image(self) -> AbstractImage | Animation:
+    def image(self) -> Texture | Animation:
         """The Sprite's Image or Animation to display.
 
         .. note:: Changing this can be an expensive operation if the texture is not part of the same texture or atlas.
@@ -473,12 +374,12 @@ class Sprite(event.EventDispatcher):
         return self._texture
 
     @image.setter
-    def image(self, img: AbstractImage | Animation) -> None:
+    def image(self, img: Texture | Animation) -> None:
         if self._animation is not None:
             clock.unschedule(self._animate)
             self._animation = None
 
-        if isinstance(img, image.Animation):
+        if isinstance(img, Animation):
             self._animation = img
             self._frame_index = 0
             self._set_texture(img.frames[0].image.get_texture())
@@ -490,18 +391,23 @@ class Sprite(event.EventDispatcher):
         self._update_position()
 
     def _set_texture(self, texture: Texture) -> None:
-        if texture.id is not self._texture.id:
-            self._vertex_list.delete()
-            self._texture = texture
-            self._group = self.get_sprite_group()
-            self._create_vertex_list()
-        else:
-            self._vertex_list.tex_coords[:] = texture.tex_coords
+        texture_changed = texture.id != self._texture.id
         self._texture = texture
+
+        if texture_changed:
+            self._group = self.get_sprite_group()
+            if self._batch is not None:
+                self._batch.migrate(self._vertex_list, GeometryMode.TRIANGLES, self._group, self._batch)
+            else:
+                self._vertex_list.delete()
+                self._create_vertex_list()
+                return
+
+        self._vertex_list.tex_coords[:] = texture.tex_coords
 
     def _create_vertex_list(self) -> None:
         self._vertex_list = self.program.vertex_list_indexed(
-            4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3], self._batch, self._group,
+            4, GeometryMode.TRIANGLES, [0, 1, 2, 0, 2, 3], self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * 4),
             translate=('f', (self._x, self._y, self._z) * 4),
@@ -844,9 +750,18 @@ class Sprite(event.EventDispatcher):
         See the module documentation for hints on drawing multiple sprites
         efficiently.
         """
-        self._group.set_state_recursive()
-        self._vertex_list.draw(GL_TRIANGLES)
-        self._group.unset_state_recursive()
+        ctx = pyglet.graphics.api.core.current_context
+
+        draw_ctx = DrawContext(
+            surface_ctx=ctx,
+            backend_ctx=None,
+            draw_pass=BatchDrawOptions().resolve(ctx),
+            renderer=ctx.renderer,
+        )
+        draw_ctx.begin()
+        self._group.set_state_recursive(draw_ctx)
+        self._vertex_list.draw(GeometryMode.TRIANGLES)
+        self._group.unset_state_recursive(draw_ctx)
 
     if _is_pyglet_doc_run:
         # Events
@@ -862,4 +777,248 @@ class Sprite(event.EventDispatcher):
             """
 
 
+class MultiTextureSpriteGroup(Group):
+    """Shared Multi-texture Sprite rendering Group."""
+
+    def __init__(self, textures: dict[str, Texture], blend_src: BlendFactor, blend_dest: BlendFactor,
+                 program: ShaderProgram, parent: Group | None = None) -> None:
+        """Create a sprite group that binds multiple textures and sampler uniforms."""
+        super().__init__(parent=parent)
+        self.set_shader_program(program)
+        self.set_blend(blend_src, blend_dest)
+        self.set_textures(textures, program)
+
+
+@dataclass
+class _LayerAnimationState:
+    animation: Animation
+    frame_idx: int = 0
+    next_dt: float | None = None
+
+
+class MultiTextureSprite(Sprite):
+    """Sprite variant that renders and animates multiple texture layers."""
+
+    group_class: ClassVar[type[MultiTextureSpriteGroup]] = MultiTextureSpriteGroup
+
+    def __init__(self,
+                 images: dict[str, ImageData | Texture | Animation],
+                 x: float = 0, y: float = 0, z: float = 0,
+                 blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
+                 blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
+                 batch: Batch | None = None,
+                 group: Group | None = None,
+                 subpixel: bool = False,
+                 program: ShaderProgram | None = None) -> None:
+        """Create a MultiTextureSprite instance.
+
+        Args:
+            images:
+                Dictionary of named Image, Texture, or Animation layers to display.
+                Keys are used as sampler names in the shader.
+            x:
+                X coordinate of the sprite.
+            y:
+                Y coordinate of the sprite.
+            z:
+                Z coordinate of the sprite.
+            blend_src:
+                OpenGL blend source mode.  The default is suitable for
+                compositing sprites drawn from back-to-front.
+            blend_dest:
+                OpenGL blend destination mode.  The default is suitable for
+                compositing sprites drawn from back-to-front.
+            batch:
+                Optional batch to add the sprite to.
+            group:
+                Optional parent group of the sprite.
+            subpixel:
+                Allow floating-point coordinates for the sprite. By default,
+                coordinates are restricted to integer values.
+            program:
+                A specific shader program to initialize the sprite with. By default,
+                a generated multi-texture shader will be chosen based on the layer types passed.
+
+        .. versionadded:: 3.0
+           The MultiTextureSprite class.
+        """
+        if not images:
+            msg = "MultiTextureSprite requires at least one layer."
+            raise ValueError(msg)
+
+        self._textures: dict[str, Texture] = {}
+        self._layers: dict[str, ImageData | Texture | Animation] = {}
+        self._animations: dict[str, _LayerAnimationState] = {}
+        self._texture: Texture | None = None
+
+        for name, img in images.items():
+            self._layers[name] = img
+            if isinstance(img, Animation):
+                texture = img.frames[0].image.get_texture()
+                self._animations[name] = _LayerAnimationState(img, 0, img.frames[0].duration)
+            else:
+                texture = img.get_texture()
+
+            self._textures[name] = texture
+
+            if self._texture is None or (texture.width * texture.height) > (self._texture.width * self._texture.height):
+                self._texture = texture
+
+        assert self._texture is not None
+
+        if program is None:
+            program = get_default_multitexture_shader(self._textures)
+
+        super().__init__(self._texture, x, y, z, blend_src, blend_dest, batch, group, subpixel, program)
+        self._schedule_all_animations()
+
+    def _schedule_all_animations(self) -> None:
+        clock.unschedule(self._animate)
+        if self._paused:
+            return
+
+        for name, layer_animation in self._animations.items():
+            frame = layer_animation.animation.frames[layer_animation.frame_idx]
+            layer_animation.next_dt = frame.duration
+            if layer_animation.next_dt:
+                clock.schedule_once(self._animate, layer_animation.next_dt, name)
+
+    def delete(self) -> None:
+        clock.unschedule(self._animate)
+        super().delete()
+
+    def get_sprite_group(self) -> MultiTextureSpriteGroup:
+        return self.group_class(self._textures, self._blend_src, self._blend_dest, self._program, self._user_group)
+
+    def _animate(self, dt: float, key: str) -> None:
+        layer_animation = self._animations.get(key)
+        if layer_animation is None:
+            return
+
+        frames = layer_animation.animation.frames
+        layer_animation.frame_idx += 1
+
+        if layer_animation.frame_idx >= len(frames):
+            layer_animation.frame_idx = 0
+            self.dispatch_event('on_animation_end')
+            if self._vertex_list is None:
+                return  # deleted in event handler
+
+        frame = frames[layer_animation.frame_idx]
+        self._set_multi_texture(key, frame.image.get_texture())
+
+        if frame.duration is not None:
+            duration = frame.duration - ((layer_animation.next_dt or 0.0) - dt)
+            duration = min(max(0.0, duration), frame.duration)
+            layer_animation.next_dt = duration
+            clock.schedule_once(self._animate, duration, key)
+        else:
+            self.dispatch_event('on_animation_end')
+
+    def _set_multi_texture(self, key: str, new_tex: Texture) -> None:
+        if new_tex.id != self._textures[key].id:
+            # Copy so this instance can diverge from grouped peers on migration.
+            self._textures = self._textures.copy()
+            self._textures[key] = new_tex
+            self._group = self.get_sprite_group()
+            if self._batch is not None:
+                self._batch.migrate(self._vertex_list, GeometryMode.TRIANGLES, self._group, self._batch)
+            else:
+                self._vertex_list.delete()
+                self._create_vertex_list()
+                return
+        else:
+            self._textures[key] = new_tex
+
+        getattr(self._vertex_list, f"{key}_coords")[:] = self._textures[key].tex_coords
+
+    def _create_vertex_list(self) -> None:
+        tex_coords = {}
+        for name, tex in self._textures.items():
+            tex_coords[f"{name}_coords"] = ('f', tex.tex_coords)
+
+        self._vertex_list = self._program.vertex_list_indexed(
+            4, GeometryMode.TRIANGLES, [0, 1, 2, 0, 2, 3], self._batch, self._group,
+            position=('f', self._get_vertices()),
+            colors=('Bn', self._rgba * 4),
+            translate=('f', (self._x, self._y, self._z) * 4),
+            scale=('f', (self._scale * self._scale_x, self._scale * self._scale_y) * 4),
+            rotation=('f', (self._rotation,) * 4),
+            **tex_coords)
+
+    def _get_base_texture(self) -> Texture:
+        return max(self._textures.values(), key=lambda tex: tex.width * tex.height)
+
+    def set_frame_index(self, name: str, frame_idx: int) -> None:
+        """Set the current animation frame for a single layer."""
+        layer_animation = self._animations.get(name)
+        if layer_animation is None:
+            return
+
+        layer_animation.frame_idx = max(0, min(frame_idx, len(layer_animation.animation.frames) - 1))
+        frame = layer_animation.animation.frames[layer_animation.frame_idx]
+        self._set_multi_texture(name, frame.image.get_texture())
+        self._schedule_all_animations()
+
+    def get_frame_index(self, name: str) -> int:
+        """Get the current animation frame for a single layer."""
+        layer_animation = self._animations.get(name)
+        return layer_animation.frame_idx if layer_animation else 0
+
+    def get_layer(self, name: str) -> ImageData | Texture | Animation | None:
+        """Return the source image or animation for a layer."""
+        return self._layers.get(name)
+
+    def set_layer(self, name: str, img: ImageData | Texture | Animation) -> None:
+        """Replace an existing layer image or animation."""
+        if name not in self._textures:
+            return
+
+        self._layers[name] = img
+        self._animations.pop(name, None)
+
+        if isinstance(img, Animation):
+            self._animations[name] = _LayerAnimationState(img, 0, img.frames[0].duration)
+            texture = img.frames[0].image.get_texture()
+        else:
+            texture = img.get_texture()
+
+        self._set_multi_texture(name, texture)
+
+        base_texture = self._get_base_texture()
+        if base_texture.id != self._texture.id:
+            self._texture = base_texture
+            self._update_position()
+
+        self._schedule_all_animations()
+
+    @property
+    def frame_index(self) -> None:
+        raise NotImplementedError("MultiTextureSprite does not support frame_index. Use get_frame_index instead.")
+
+    @frame_index.setter
+    def frame_index(self, _index: int) -> None:
+        raise NotImplementedError("MultiTextureSprite does not support frame_index. Use set_frame_index instead.")
+
+    @property
+    def image(self) -> None:
+        raise NotImplementedError("MultiTextureSprite does not support image. Use get_layer instead.")
+
+    @image.setter
+    def image(self, _img: ImageData | Texture | Animation) -> None:
+        raise NotImplementedError("MultiTextureSprite does not support image. Use set_layer instead.")
+
+    @property
+    def paused(self) -> bool:
+        return self._paused
+
+    @paused.setter
+    def paused(self, pause: bool) -> None:
+        if pause == self._paused:
+            return
+        self._paused = pause
+        self._schedule_all_animations()
+
+
 Sprite.register_event_type('on_animation_end')
+

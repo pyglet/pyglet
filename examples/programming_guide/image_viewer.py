@@ -1,7 +1,7 @@
 import pyglet
 
 window = pyglet.window.Window()
-image = pyglet.resource.image('kitten.jpg')
+image = pyglet.resource.texture('kitten.jpg')
 
 
 @window.event

@@ -7,7 +7,7 @@ import time
 
 import pyglet
 from pyglet import clock, event, graphics, image
-from pyglet.gl import *
+from pyglet.enums import BlendFactor, GeometryMode
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -176,48 +176,28 @@ fragment_source = """#version 150
 
 
 def get_default_shader():
-    return pyglet.gl.current_context.create_program((vertex_source, 'vertex'),
-                                                    (geometry_source, 'geometry'),
-                                                    (fragment_source, 'fragment'))
+    return pyglet.graphics.api.get_cached_shader(
+        "default_particles",
+        (vertex_source, 'vertex'),
+        (geometry_source, 'geometry'),
+        (fragment_source, 'fragment'),
+    )
 
 
 class EmitterGroup(graphics.Group):
+    blend_src: BlendFactor
+    blend_dest: BlendFactor
+
     def __init__(self, texture, blend_src, blend_dest, program, parent=None):
         super().__init__(parent=parent)
         self.texture = texture
-        self.blend_src = blend_src
-        self.blend_dest = blend_dest
+        self.set_shader_program(program)
+        self.set_texture(texture)
+        self.set_blend(blend_src, blend_dest)
         self.program = program
 
-    def set_state(self):
-        self.program.use()
-
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(self.texture.target, self.texture.id)
-
-        glEnable(GL_BLEND)
-        glBlendFunc(self.blend_src, self.blend_dest)
-
-    def unset_state(self):
-        glDisable(GL_BLEND)
-        self.program.stop()
-
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.texture})"
-
-    def __eq__(self, other):
-        return (other.__class__ is self.__class__ and
-                self.program is other.program and
-                self.parent == other.parent and
-                self.texture.target == other.texture.target and
-                self.texture.id == other.texture.id and
-                self.blend_src == other.blend_src and
-                self.blend_dest == other.blend_dest)
-
-    def __hash__(self):
-        return hash((self.program, self.parent,
-                     self.texture.id, self.texture.target,
-                     self.blend_src, self.blend_dest))
 
 
 class Emitter(event.EventDispatcher):
@@ -225,15 +205,14 @@ class Emitter(event.EventDispatcher):
     _animation = None
     _frame_index = 0
     _paused = False
-    _rotation = 0
     _visible = True
     _vertex_list = None
     group_class = EmitterGroup
 
     def __init__(self, img, x, y, z, count, velocity, spread,
                  color_start=(255, 255, 255, 255), color_end=(255, 255, 255, 255),
-                 scale_start=(1.0, 1.0), scale_end=(1.0, 1.0),
-                 blend_src=GL_SRC_ALPHA, blend_dest=GL_ONE_MINUS_SRC_ALPHA,
+                 scale_start=(1.0, 1.0), scale_end=(1.0, 1.0), rotation=0.0,
+                 blend_src=BlendFactor.SRC_ALPHA, blend_dest=BlendFactor.ONE_MINUS_SRC_ALPHA,
                  batch=None, group=None, program=None):
 
         self._img = img
@@ -247,6 +226,7 @@ class Emitter(event.EventDispatcher):
         self._color_end = color_end
         self._scale_start = scale_start
         self._scale_end = scale_end
+        self._rotation = rotation
 
         if isinstance(img, image.Animation):
             self._animation = img
@@ -267,7 +247,7 @@ class Emitter(event.EventDispatcher):
         texture = self._texture
         count = self._count
         self._vertex_list = self.program.vertex_list(
-            count, GL_POINTS, self._batch, self._group,
+            count, GeometryMode.POINTS, self._batch, self._group,
             position=('f', (self._x, self._y, self._z) * count),
 
             size=('f', (texture.width, texture.height, texture.anchor_x, texture.anchor_y) * count),
@@ -296,7 +276,7 @@ class Emitter(event.EventDispatcher):
                                        program,
                                        self._user_group)
         if (self._batch and
-                self._batch.update_shader(self._vertex_list, GL_POINTS, self._group, program)):
+                self._batch.update_shader(self._vertex_list, GeometryMode.POINTS, self._group, program)):
             # Exit early if changing domain is not needed.
             return
 
@@ -312,7 +292,8 @@ class Emitter(event.EventDispatcher):
         """
         if self._animation:
             clock.unschedule(self._animate)
-        self._vertex_list.delete()
+        if self._vertex_list:
+            self._vertex_list.delete()
         self._vertex_list = None
         self._texture = None
         self._group = None
@@ -379,47 +360,74 @@ class ParticleManager:
     def __init__(self, img, lifespan, count, velocity,
                  spread=(10.0, 10.0),
                  color_start=(255, 255, 255, 255), color_end=(255, 255, 255, 255),
-                 scale_start=(1.0, 1.0), scale_end=(1.0, 1.0),
+                 scale_start=(1.0, 1.0), scale_end=(1.0, 1.0), rotation=0.0,
                  batch=None, group=None):
 
         self._img = img
-        self._lifespan = lifespan
-        self._count = count
-        self._velocity = velocity
-        self._spread = spread
-        self._color_start = color_start
-        self._color_end = color_end
-        self._scale_start = scale_start
-        self._scale_end = scale_end
+        self.lifespan = lifespan
+        self.count = count
+        self.velocity = velocity
+        self.spread = spread
+        self.color_start = color_start
+        self.color_end = color_end
+        self.scale_start = scale_start
+        self.scale_end = scale_end
+        self.rotation = rotation
 
         self._batch = batch
         self._group = group
         self._program = get_default_shader()
         clock.schedule_interval(self._update_shader_time, 1 / 60)
 
-        # TODO: remove debug
-        self.total_number = 0
-        self.total_label = pyglet.text.Label("particles: 0", 10, 10, dpi=256, color=(10, 200, 10), batch=batch)
-
     def _update_shader_time(self, dt):
         self._program['time'] = time.perf_counter()
 
-    def _delete_callback(self, dt, emitter):
+    @staticmethod
+    def _delete_callback(dt, emitter):
         emitter.delete()
 
-        # TODO: remove debug
-        self.total_number -= 1
-        self.total_label.text = f"particles: {self.total_number * self._count * 8!s}"
-
     def create_emitter(self, x, y, z=0):
-        emitter = Emitter(self._img, x, y, z, self._count, self._velocity, self._spread,
-                          color_start=self._color_start, color_end=self._color_end,
-                          scale_start=self._scale_start, scale_end=self._scale_end,
+        emitter = Emitter(self._img, x, y, z, self.count, self.velocity, self.spread,
+                          color_start=self.color_start, color_end=self.color_end,
+                          scale_start=self.scale_start, scale_end=self.scale_end, rotation=self.rotation,
                           batch=self._batch, group=self._group)
-        pyglet.clock.schedule_once(self._delete_callback, self._lifespan, emitter)
-
-        # TODO: remove debug
-        self.total_number += 1
-        self.total_label.text = f"particles: {self.total_number * self._count * 8!s}"
-
+        pyglet.clock.schedule_once(self._delete_callback, self.lifespan, emitter)
         return emitter
+
+
+if __name__ == "__main__":
+    window = pyglet.window.Window(960, 540, caption="ParticleManager Demo", resizable=True)
+
+    batch = graphics.Batch()
+
+    label = pyglet.text.Label("Click and drag.", x=5, y=5, batch=batch)
+
+    particle_img = image.SolidColorImagePattern((255, 255, 255, 255)).create_image(8, 8)
+    manager = ParticleManager(
+        particle_img,
+        lifespan=1.0,
+        count=12,
+        velocity=(100.0, 80.0),
+        spread=(0.30, 0.30),
+        color_start=(255, 200, 80, 220),
+        color_end=(255, 40, 20, 0),
+        scale_start=(0.4, 0.4),
+        scale_end=(1.2, 1.2),
+        rotation=0.0,
+        batch=batch,
+    )
+
+    @window.event
+    def on_draw():
+        window.clear()
+        batch.draw()
+
+    @window.event
+    def on_mouse_press(x, y, button, modifiers):
+        manager.create_emitter(x, y)
+
+    @window.event
+    def on_mouse_drag(x, y, dx, dy, buttons, modifiers):
+        manager.create_emitter(x, y)
+
+    pyglet.app.run()

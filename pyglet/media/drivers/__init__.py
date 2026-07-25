@@ -5,7 +5,7 @@ import atexit
 
 import pyglet
 
-_debug = pyglet.options['debug_media']
+_debug = pyglet.options.debug_media
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 
@@ -15,7 +15,7 @@ if _is_pyglet_doc_run:
 
 else:
 
-    for driver_name in pyglet.options['audio']:
+    for driver_name in pyglet.options.audio:
         try:
             if driver_name == 'pulse':
                 from . import pulse
@@ -55,8 +55,13 @@ else:
                 traceback.print_exc()
 
     else:
-        from . import silent
-        _audio_driver = silent.create_audio_driver()
+        if pyglet.compat_platform == "emscripten":
+            from . import pyodide_js
+
+            _audio_driver = pyodide_js.create_audio_driver()
+        else:
+            from . import silent
+            _audio_driver = silent.create_audio_driver()
 
 
 def get_audio_driver():

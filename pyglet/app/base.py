@@ -3,6 +3,7 @@ from __future__ import annotations
 import queue
 import sys
 import threading
+from queue import Queue
 from typing import TYPE_CHECKING, Any, Callable
 
 from pyglet import app, clock, event
@@ -19,6 +20,8 @@ class PlatformEventLoop:
 
     .. versionadded:: 1.2
     """
+    _event_queue: Queue[tuple[EventDispatcher, str, Any]]
+
     def __init__(self) -> None:  # noqa: D107
         self._event_queue = queue.Queue()
         self._is_running = threading.Event()
@@ -96,8 +99,8 @@ class EventLoop(event.EventDispatcher):
     this method contains platform-specific code that ensures the application
     remains responsive to the user while keeping CPU usage to a minimum.
     """
-
-    _has_exit_condition = None
+    _interval: float | None
+    _has_exit_condition: threading.Condition
     _has_exit = False
 
     def __init__(self) -> None:  # noqa: D107
@@ -152,7 +155,7 @@ class EventLoop(event.EventDispatcher):
 
         # Dispatch pending events
         for window in app.windows:
-            window.switch_to()
+            #window.switch_to()
             window.dispatch_pending_events()
 
         platform_event_loop = app.platform_event_loop
@@ -264,6 +267,7 @@ class EventLoop(event.EventDispatcher):
         interrupted (see :py:meth:`sleep`).
         """
         self.has_exit = True
+        self.clock.unschedule(self._redraw_windows)
         app.platform_event_loop.notify()
 
     def sleep(self, timeout: float) -> bool:

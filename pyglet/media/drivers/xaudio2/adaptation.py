@@ -11,7 +11,7 @@ from . import interface
 
 if TYPE_CHECKING:
     from pyglet.media.codecs import AudioData, AudioFormat, Source
-    from pyglet.media.player import Player
+    from pyglet.media.player import AudioPlayer
 
 
 _debug = debug_print('debug_media')
@@ -31,11 +31,15 @@ class XAudio2Driver(AbstractAudioDriver):
         self.worker = PlayerWorkerThread()
         self.worker.start()
 
+    @property
+    def sample_formats(self):
+        return tuple(interface.SAMPLE_FORMATS.keys())
+
     def get_performance(self) -> interface.lib.XAUDIO2_PERFORMANCE_DATA:
         assert self._xa2_driver is not None
         return self._xa2_driver.get_performance()
 
-    def create_audio_player(self, source: 'Source', player: 'Player') -> 'XAudio2AudioPlayer':
+    def create_audio_player(self, source: 'Source', player: 'AudioPlayer') -> 'XAudio2AudioPlayer':
         assert self._xa2_driver is not None
         return XAudio2AudioPlayer(self, source, player)
 
@@ -79,7 +83,7 @@ class XAudio2Listener(AbstractListener):
 
 
 class XAudio2AudioPlayer(AbstractAudioPlayer):
-    def __init__(self, driver: 'XAudio2Driver', source: 'Source', player: 'Player') -> None:
+    def __init__(self, driver: 'XAudio2Driver', source: 'Source', player: 'AudioPlayer') -> None:
         super().__init__(source, player)
         # We keep here a strong reference because the AudioDriver is anyway
         # a singleton object which will only be deleted when the application

@@ -4,27 +4,31 @@ import os
 
 import pyglet
 
-from pyglet.gl import GL_TRIANGLES
 from pyglet.util import asstr
 
 from . import ModelDecodeException, ModelDecoder
 from .base import SimpleMaterial, Mesh, Primitive, Attribute, Node, Scene
-from .. import Model, MaterialGroup, TexturedMaterialGroup
-from ...graphics import Batch, Group
+from pyglet.model import Model, MaterialGroup, TexturedMaterialGroup
+from pyglet.graphics import Batch, Group
+from pyglet.enums import GeometryMode
+from pyglet.math import Vec3, Quaternion
 
 
 def _new_mesh(name, material):
-    # The three primitive types used in .obj files:
-    attributes = [Attribute('POSITION', 'f', 'VEC3', 0, []),
-                  Attribute('NORMAL', 'f', 'VEC3', 0, []),
-                  Attribute('TEXCOORD_0', 'f', 'VEC3', 0, [])]
-    primitive = Primitive(attributes=attributes, indices=None, material=material, mode=GL_TRIANGLES)
-    mesh = Mesh(primitives=[primitive], name=name)
-    return mesh
+    # The pre-defined attributes types used in .obj files:
+    attributes = [
+        Attribute('POSITION', 'f', 'VEC3', 0, []),
+        Attribute('NORMAL', 'f', 'VEC3', 0, []),
+        Attribute('TEXCOORD_0', 'f', 'VEC2', 0, []),
+        Attribute('COLOR_0', 'f', 'VEC4', 0, [])
+    ]
+
+    primitive = Primitive(attributes=attributes, indices=None, material=material, mode=GeometryMode.TRIANGLES)
+    return Mesh(primitives=[primitive], name=name)
 
 
 def load_material_library(filename):
-    file = open(filename, 'r')
+    file = open(filename)
 
     name = None
     diffuse = [1.0, 1.0, 1.0]
@@ -49,7 +53,7 @@ def load_material_library(filename):
                 # save previous material
                 for item in (diffuse, ambient, specular, emission):
                     item.append(opacity)
-                matlib[name] = SimpleMaterial(name, diffuse, ambient, specular, emission, shininess, texture_name)
+                matlib[name] = SimpleMaterial(name, tuple(diffuse), tuple(ambient), tuple(specular), tuple(emission), shininess, texture_name)
             name = values[1]
 
         elif name is None:
@@ -69,18 +73,19 @@ def load_material_library(filename):
                 shininess = (shininess * 128) / 1000    # Normalize to 1~128 for OpenGL
             elif values[0] == 'd':
                 opacity = float(values[1])
+
             elif values[0] == 'map_Kd':
                 texture_name = values[1]
 
         except BaseException as ex:
-            raise ModelDecodeException('Parsing error in {0}.'.format((filename, ex)))
+            raise ModelDecodeException(f'Parsing error in {(filename, ex)}.')
 
     file.close()
 
     for item in (diffuse, ambient, specular, emission):
-        item.append(opacity)
+        item += [opacity]
 
-    matlib[name] = SimpleMaterial(name, diffuse, ambient, specular, emission, shininess, texture_name)
+    matlib[name] = SimpleMaterial(name, tuple(diffuse), tuple(ambient), tuple(specular), tuple(emission), shininess, texture_name)
 
     return matlib
 
@@ -93,7 +98,7 @@ def parse_obj_file(filename, file=None) -> list[Mesh]:
 
     try:
         if file is None:
-            with open(filename, 'r') as f:
+            with open(filename) as f:
                 file_contents = f.read()
         else:
             file_contents = asstr(file.read())
@@ -105,12 +110,12 @@ def parse_obj_file(filename, file=None) -> list[Mesh]:
 
     normals = [[0., 0., 0.]]
     tex_coords = [[0., 0.]]
-    vertices = [[0., 0., 0.]]
+    positions = [[0., 0., 0.]]
 
-    diffuse = [1.0, 1.0, 1.0, 1.0]
-    ambient = [1.0, 1.0, 1.0, 1.0]
-    specular = [1.0, 1.0, 1.0, 1.0]
-    emission = [0.0, 0.0, 0.0, 1.0]
+    diffuse = (1.0, 1.0, 1.0, 1.0)
+    ambient = (1.0, 1.0, 1.0, 1.0)
+    specular = (1.0, 1.0, 1.0, 1.0)
+    emission = (0.0, 0.0, 0.0, 1.0)
     shininess = 100.0
 
     default_material = SimpleMaterial("Default", diffuse, ambient, specular, emission, shininess)
@@ -124,7 +129,7 @@ def parse_obj_file(filename, file=None) -> list[Mesh]:
             continue
 
         if values[0] == 'v':
-            vertices.append(list(map(float, values[1:4])))
+            positions.append(list(map(float, values[1:4])))
         elif values[0] == 'vn':
             normals.append(list(map(float, values[1:4])))
         elif values[0] == 'vt':
@@ -132,7 +137,7 @@ def parse_obj_file(filename, file=None) -> list[Mesh]:
 
         elif values[0] == 'mtllib':
             material_abspath = os.path.join(location, values[1])
-            materials = load_material_library(filename=material_abspath)            
+            materials = load_material_library(filename=material_abspath)
 
         elif values[0] in ('usemtl', 'usemat'):
             material = materials.get(values[1])
@@ -140,54 +145,82 @@ def parse_obj_file(filename, file=None) -> list[Mesh]:
                 mesh.primitives[0].material = material
 
         elif values[0] == 'o':
-            mesh = _new_mesh(name=values[1], material=default_material)
+            mesh = _new_mesh(values[1], material=default_material)
             meshes.append(mesh)
 
         elif values[0] == 'f':
+            # --- FACES
+
             if material is None:
                 material = SimpleMaterial()
             if mesh is None:
                 mesh = _new_mesh(name='unknown', material=material)
                 meshes.append(mesh)
 
-            # For fan triangulation, remember first and latest vertices
-            n1 = None
-            nlast = None
-            t1 = None
-            tlast = None
-            v1 = None
-            vlast = None
+            primitive = mesh.primitives[0]
 
-            for i, v in enumerate(values[1:]):
-                v_i, t_i, n_i = (list(map(int, [j or 0 for j in v.split('/')])) + [0, 0])[:3]
+            pos_attr = primitive.attributes[0]
+            normal_attr = primitive.attributes[1]
+            tex_uv_attr = primitive.attributes[2]
+            color_attr = primitive.attributes[3]
+
+            face_positions = []
+            for v in values[1:]:
+                parts = v.split('/')
+
+                # vertex index (should not be empty, raise error instead?)
+                v_i = int(parts[0]) if parts[0] else 0
+
+                # texcoord index (optional)
+                t_i = 0
+                if len(parts) >= 2 and parts[1]:
+                    t_i = int(parts[1])
+
+                # normal index (optional)
+                n_i = 0
+                if len(parts) == 3 and parts[2]:
+                    n_i = int(parts[2])
+
+                # handle negative indices
                 if v_i < 0:
-                    v_i += len(vertices) - 1
+                    v_i = len(positions) + v_i
                 if t_i < 0:
-                    t_i += len(tex_coords) - 1
+                    t_i = len(tex_coords) + t_i
                 if n_i < 0:
-                    n_i += len(normals) - 1
+                    n_i = len(normals) + n_i
 
-                mesh.primitives[0].attributes[0].array += vertices[v_i]
-                mesh.primitives[0].attributes[1].array += normals[n_i]
-                mesh.primitives[0].attributes[2].array += tex_coords[t_i]
+                face_positions.append((v_i, t_i, n_i))
 
-                if i >= 3:
-                    mesh.primitives[0].attributes[0].array += v1 + vlast
-                    mesh.primitives[0].attributes[1].array += n1 + nlast
-                    mesh.primitives[0].attributes[2].array += t1 + tlast
+            # For fan triangulation, remember first and latest position
+            for i in range(2, len(face_positions)):
+                for idx in (0, i - 1, i):
+                    v_i, t_i, n_i = face_positions[idx]
 
-                if i == 0:
-                    n1 = normals[n_i]
-                    t1 = tex_coords[t_i]
-                    v1 = vertices[v_i]
-                nlast = normals[n_i]
-                tlast = tex_coords[t_i]
-                vlast = vertices[v_i]
+                    pos_attr.array += positions[v_i]
 
-        for mesh in meshes:
-            for primitive in mesh.primitives:
-                for attribute in primitive.attributes:
-                    attribute.count = len(attribute.array) // 3
+                    if n_i != 0:
+                        primitive.has_normals = True
+                        normal_attr.array += normals[n_i]
+                    else:
+                        normal_attr.array += [0.0, 0.0, 1.0]
+
+                    if t_i != 0:
+                        primitive.has_tex_coords = True
+                        tex_uv_attr.array += tex_coords[t_i]
+                    else:
+                        tex_uv_attr.array += [0.0, 0.0]
+
+    for mesh in meshes:
+        for primitive in mesh.primitives:
+            pos_attr = primitive.attributes[0]
+            normal_attr = primitive.attributes[1]
+            tex_uv_attr = primitive.attributes[2]
+            color_attr = primitive.attributes[3]
+            color_attr.array = material.diffuse * (len(pos_attr.array) // 3)
+
+            for attribute in (pos_attr, normal_attr, tex_uv_attr, color_attr):
+                count = {'VEC2': 2, 'VEC3': 3, 'VEC4': 4}[attribute.type]
+                attribute.count = len(attribute.array) // count
 
     return meshes
 
@@ -198,23 +231,28 @@ class OBJScene(Scene):
         vertex_lists = []
         groups = []
         for node in self.nodes:
-            for mesh in node.meshes:
-                material = mesh.primitives[0].material
-                count = mesh.primitives[0].attributes[0].count
+            mesh = node.mesh
+
+            for primitive in mesh.primitives:
+                material = primitive.material
+                count = primitive.attributes[0].count
 
                 if material.texture_name:
+                    _texture = pyglet.resource.texture(material.texture_name, atlas=False)
                     program = pyglet.model.get_default_textured_shader()
-                    texture = pyglet.resource.texture(material.texture_name)
-                    matgroup = TexturedMaterialGroup(material, program, texture, parent=group)
+                    matgroup = TexturedMaterialGroup(material, program, _texture, parent=group)
                 else:
                     program = pyglet.model.get_default_shader()
                     matgroup = MaterialGroup(material, program, parent=group)
 
-                data = {a.name: (a.fmt, a.array) for a in mesh.primitives[0].attributes}
-                # Add additional material data:
-                data['COLOR_0'] = 'f', material.diffuse * count
+                data = {a.name: (a.fmt, a.array) for a in primitive.attributes if a.name in program.attributes}
+                data |= {'TRANSLATION': ('f', Vec3()), 'ROTATION': ('f', Quaternion()), 'SCALE': ('f', Vec3(1.0, 1.0, 1.0))}
+                vertex_list = program.vertex_list_instanced(count=count,
+                                                            mode=GeometryMode.TRIANGLES,
+                                                            instance_attributes={'TRANSLATION': 1, 'ROTATION': 1, 'SCALE': 1},
+                                                            batch=batch, group=matgroup, **data)
 
-                vertex_lists.append(program.vertex_list(count, GL_TRIANGLES, batch, matgroup, **data))
+                vertex_lists.append(vertex_list)
                 groups.append(matgroup)
 
         return [Model(vertex_lists=vertex_lists, groups=groups, batch=batch)]
@@ -229,9 +267,8 @@ class OBJModelDecoder(ModelDecoder):
         return ['.obj']
 
     def decode(self, filename, file):
-
         mesh_list = parse_obj_file(filename=filename, file=file)
-        return OBJScene(nodes=[Node(meshes=mesh_list)])
+        return OBJScene(nodes=[Node(mesh=mesh) for mesh in mesh_list])
 
 
 def get_decoders():

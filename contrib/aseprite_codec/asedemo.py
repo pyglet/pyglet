@@ -1,8 +1,13 @@
-import pyglet
-
 # Import the new codec
+from __future__ import annotations
+
 import aseprite
 
+import pyglet
+from pyglet.enums import TextureFilter
+
+# Use nearest filter to avoid blurry texture.
+pyglet.graphics.Texture.default_filters = TextureFilter.NEAREST
 
 window = pyglet.window.Window()
 batch = pyglet.graphics.Batch()

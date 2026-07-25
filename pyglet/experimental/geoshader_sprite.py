@@ -4,7 +4,8 @@ import sys
 
 import pyglet
 from pyglet import clock, event, graphics, image
-from pyglet.gl import *
+from pyglet.enums import GeometryMode
+from pyglet.graphics.api.gl import *
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -147,15 +148,15 @@ fragment_array_source = """#version 150 core
 
 
 def get_default_shader():
-    return pyglet.gl.current_context.create_program((vertex_source, 'vertex'),
-                                                    (geometry_source, 'geometry'),
-                                                    (fragment_source, 'fragment'))
+    return pyglet.graphics.api.core.current_context.create_program((vertex_source, 'vertex'),
+                                                                   (geometry_source, 'geometry'),
+                                                                   (fragment_source, 'fragment'))
 
 
 def get_default_array_shader():
-    return pyglet.gl.current_context.create_program((vertex_source, 'vertex'),
-                                                    (geometry_source, 'geometry'),
-                                                    (fragment_array_source, 'fragment'))
+    return pyglet.graphics.api.core.current_context.create_program((vertex_source, 'vertex'),
+                                                                   (geometry_source, 'geometry'),
+                                                                   (fragment_array_source, 'fragment'))
 
 
 class SpriteGroup(graphics.Group):
@@ -172,7 +173,7 @@ class SpriteGroup(graphics.Group):
         is created; applications usually do not need to explicitly create it.
 
         :Parameters:
-            `texture` : `~pyglet.image.Texture`
+            `texture` : `~pyglet.graphics.Texture`
                 The (top-level) texture containing the sprite image.
             `blend_src` : int
                 OpenGL blend source mode; for example,
@@ -180,7 +181,7 @@ class SpriteGroup(graphics.Group):
             `blend_dest` : int
                 OpenGL blend destination mode; for example,
                 ``GL_ONE_MINUS_SRC_ALPHA``.
-            `program` : `~pyglet.graphics.shader.ShaderProgram`
+            `program` : `~pyglet.graphics.ShaderProgram`
                 A custom ShaderProgram.
             `order` : int
                 Change the order to render above or below other Groups.
@@ -244,7 +245,7 @@ class Sprite(event.EventDispatcher):
         """Create a sprite.
 
         :Parameters:
-            `img` : `~pyglet.image.AbstractImage` or `~pyglet.image.Animation`
+            `img` :
                 Image or animation to display.
             `x` : int
                 X coordinate of the sprite.
@@ -265,7 +266,7 @@ class Sprite(event.EventDispatcher):
             `subpixel` : bool
                 Allow floating-point coordinates for the sprite. By default,
                 coordinates are restricted to integer values.
-            `program` : `~pyglet.graphics.shader.ShaderProgram`
+            `program` : `~pyglet.graphics.ShaderProgram`
                 A custom shader to use. This shader program must contain the
                 exact same attribute names and types as the default shader.
                 The class methods and properties depend on this, and will
@@ -417,11 +418,7 @@ class Sprite(event.EventDispatcher):
 
     @property
     def image(self):
-        """Image or animation to display.
-
-        :type: :py:class:`~pyglet.image.AbstractImage` or
-               :py:class:`~pyglet.image.Animation`
-        """
+        """Image or animation to display."""
         if self._animation:
             return self._animation
         return self._texture
@@ -770,9 +767,17 @@ class Sprite(event.EventDispatcher):
         See the module documentation for hints on drawing multiple sprites
         efficiently.
         """
-        self._group.set_state_recursive()
-        self._vertex_list.draw(GL_POINTS)
-        self._group.unset_state_recursive()
+        ctx = pyglet.graphics.api.core.current_context
+        draw_ctx = pyglet.graphics.draw.DrawContext(
+            surface_ctx=ctx,
+            backend_ctx=None,
+            draw_pass=pyglet.graphics.draw.BatchDrawOptions().resolve(ctx),
+            renderer=ctx.renderer,
+        )
+        draw_ctx.begin()
+        self._group.set_state_recursive(draw_ctx)
+        self._vertex_list.draw(GeometryMode.POINTS)
+        self._group.unset_state_recursive(draw_ctx)
 
     def __del__(self):
         try:

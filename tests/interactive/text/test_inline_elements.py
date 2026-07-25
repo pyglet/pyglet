@@ -1,14 +1,15 @@
+from __future__ import annotations
+
 from typing import Tuple
 
 import pytest
 
-import pyglet.text.layout
-from tests.base.interactive import InteractiveTestCase
-
 import pyglet
+import pyglet.text.layout
+from pyglet.enums import GeometryMode
 from pyglet.text import caret, document
 from pyglet.text.layout import IncrementalTextLayout
-
+from tests.base.interactive import InteractiveTestCase
 
 doctext = """ELEMENT.py test document.
 
@@ -86,14 +87,15 @@ class TestElement(document.InlineElement):
         x2 = line_x + self.advance
         y2 = line_y + self.ascent - self.descent
 
-        self.vertex_list = program.vertex_list_indexed(4, pyglet.gl.GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
+        self.vertex_list = program.vertex_list_indexed(4, GeometryMode.TRIANGLES, [0, 1, 2, 0, 2, 3],
                                                   layout.batch, group,
                                                   position=('f', (x1, y1, z, x2, y1, z, x2, y2, z, x1, y2, z)),
                                                   colors=('Bn', (200, 200, 200, 255) * 4),
                                                   translation=('f', (x, y, z) * 4),
                                                   visible=('f', (visible,) * 4),
                                                   rotation=('f', (rotation,) * 4),
-                                                  anchor=('f', (anchor_x, anchor_y) * 4)
+                                                  anchor=('f', (anchor_x, anchor_y) * 4),
+                                                  view_translation=("f", (0, 0, 0) * 4),
                                                   )
     def update_translation(self, x: float, y: float, z: float):
         self.vertex_list.translation[:] = (x, y, z) * self.vertex_list.count
@@ -133,6 +135,8 @@ class BaseTestWindow(pyglet.window.Window):
 
         self.set_mouse_cursor(self.get_system_mouse_cursor('text'))
 
+        self.context.set_clear_color(1, 1, 1, 1)
+
     def on_resize(self, width, height):
         super().on_resize(width, height)
         self.layout.begin_update()
@@ -147,7 +151,6 @@ class BaseTestWindow(pyglet.window.Window):
         self.layout.view_y += scroll_y * 16
 
     def on_draw(self):
-        pyglet.gl.glClearColor(1, 1, 1, 1)
         self.clear()
         self.batch.draw()
 

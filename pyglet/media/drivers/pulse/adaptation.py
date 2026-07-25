@@ -10,11 +10,11 @@ from pyglet.media.player_worker_thread import PlayerWorkerThread
 from pyglet.util import debug_print
 
 from . import lib_pulseaudio as pa
-from .interface import PulseAudioMainloop
+from .interface import PulseAudioMainloop, SAMPLE_FORMATS
 
 if TYPE_CHECKING:
     from pyglet.media.codecs import AudioData, AudioFormat, Source
-    from pyglet.media.player import Player
+    from pyglet.media.player import AudioPlayer
 
 
 _debug = debug_print('debug_media')
@@ -31,7 +31,11 @@ class PulseAudioDriver(AbstractAudioDriver):
         self._players = weakref.WeakSet()
         self._listener = PulseAudioListener(self)
 
-    def create_audio_player(self, source: 'Source', player: 'Player') -> 'PulseAudioPlayer':
+    @property
+    def sample_formats(self):
+        return tuple(SAMPLE_FORMATS.keys())
+
+    def create_audio_player(self, source: 'Source', player: 'AudioPlayer') -> 'PulseAudioPlayer':
         assert self.context is not None
         player = PulseAudioPlayer(source, player, self)
         self._players.add(player)
@@ -40,8 +44,8 @@ class PulseAudioDriver(AbstractAudioDriver):
     def connect(self, server: Optional[bytes] = None) -> None:
         """Connect to pulseaudio server.
 
-        :Parameters:
-            `server` : bytes
+        Args:
+            server:
                 Server to connect to, or ``None`` for the default local
                 server (which may be spawned as a daemon if no server is
                 found).
@@ -148,7 +152,7 @@ class _AudioDataBuffer:
 
 
 class PulseAudioPlayer(AbstractAudioPlayer):
-    def __init__(self, source: 'Source', player: 'Player', driver: 'PulseAudioDriver') -> None:
+    def __init__(self, source: 'Source', player: 'AudioPlayer', driver: 'PulseAudioDriver') -> None:
         super().__init__(source, player)
         self.driver = driver
 

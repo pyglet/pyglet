@@ -13,21 +13,9 @@ The code shown here illustrates:
 """
 import pyglet
 
-from pyglet.gl import (
-    glActiveTexture,
-    glBindTexture,
-    glEnable,
-    glBlendFunc,
-    glDisable,
-    GL_TEXTURE0,
-    GL_TRIANGLES,
-    GL_BLEND,
-    GL_SRC_ALPHA,
-    GL_ONE_MINUS_SRC_ALPHA,
-)
-from pyglet.graphics import Group
-from pyglet.graphics.shader import Shader, ShaderProgram
-
+from pyglet.enums import BlendFactor, GeometryMode
+from pyglet.graphics import Shader, ShaderProgram, Group
+from pyglet.graphics.texture import Texture
 
 ###################################
 # Create a Window, and render Batch
@@ -91,43 +79,23 @@ class RenderGroup(Group):
     RenderGroups are equal if their Texture and ShaderProgram
     are equal.
     """
-    def __init__(self, texture, program, order=0, parent=None):
+    def __init__(self, texture: Texture, program: ShaderProgram, order: int = 0, parent: Group | None = None) -> None:
         """Create a RenderGroup.
 
-        :Parameters:
-            `texture` : `~pyglet.image.Texture`
+        Args:
+            texture:
                 Texture to bind.
-            `program` : `~pyglet.graphics.shader.ShaderProgram`
+            program:
                 ShaderProgram to use.
-            `order` : int
+            order:
                 Change the order to render above or below other Groups.
-            `parent` : `~pyglet.graphics.Group`
+            parent:
                 Parent group.
         """
         super().__init__(order, parent)
-        self.texture = texture
-        self.program = program
-
-    def set_state(self):
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(self.texture.target, self.texture.id)
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        self.program.use()
-
-    def unset_state(self):
-        glDisable(GL_BLEND)
-
-    def __hash__(self):
-        return hash((self.texture.target, self.texture.id, self.order, self.parent, self.program))
-
-    def __eq__(self, other):
-        return (self.__class__ is other.__class__ and
-                self.texture.target == other.texture.target and
-                self.texture.id == other.texture.id and
-                self.order == other.order and
-                self.program == other.program and
-                self.parent == other.parent)
+        self.set_shader_program(program)
+        self.set_texture(texture)
+        self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
 
 
 #########################################################
@@ -148,7 +116,7 @@ indices = (0, 1, 2, 0, 2, 3)
 vertex_positions = create_quad(576, 296, tex)
 
 # count, mode, indices, batch, group, *data
-vertex_list = shader_program.vertex_list_indexed(4, GL_TRIANGLES, indices, batch, group,
+vertex_list = shader_program.vertex_list_indexed(4, GeometryMode.TRIANGLES, indices, batch, group,
                                                  position=('f', vertex_positions),
                                                  tex_coords=('f', tex.tex_coords))
 

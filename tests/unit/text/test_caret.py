@@ -1,10 +1,7 @@
 from collections import UserList
-from unittest.mock import Mock, NonCallableMock
+from unittest.mock import Mock, NonCallableMock, MagicMock
 
 import pytest
-
-from pyglet.graphics.shader import ShaderProgram
-from pyglet.graphics.vertexdomain import IndexedVertexList
 from pyglet.text import layout, caret
 
 
@@ -24,24 +21,28 @@ class ListSlicesAsTuple(UserList):
 
 @pytest.fixture(autouse=True)
 def disable_automatic_caret_blinking(monkeypatch):
-    monkeypatch.setattr(caret, 'clock', Mock(spec=caret.clock))
+    mock_clock = Mock(spec=['schedule', 'unschedule', 'schedule_interval'])
+    monkeypatch.setattr(caret, 'clock', mock_clock)
 
 
 # Brittle tangle of mocks due to tightly coupled Caret/Layout design
 @pytest.fixture
 def mock_layout():
+    from pyglet.graphics.shader import ShaderProgram
+    from pyglet.graphics.vertexdomain import IndexedVertexList
 
     # Create layout mock
     _layout = NonCallableMock(spec=layout.TextLayout)
     _layout.foreground_decoration_group = NonCallableMock()
     _layout.attach_mock(Mock(), 'push_handlers')
+    _layout.attach_mock(Mock(), 'batch')
 
     # Create mock shader program for it
     program = NonCallableMock(spec=ShaderProgram)
     _layout.foreground_decoration_group.attach_mock(program, 'program')
 
     # Allow the shader program to create a mock vertex list on demand
-    def _fake_vertex_list_method(count, mode, batch=None, group=None, colors=None, visible=None):
+    def _fake_vertex_list_method(count, mode, batch=None, group=None, colors=None, **kwargs):
         vertex_list = NonCallableMock(spec=IndexedVertexList)
         vertex_list.colors = ListSlicesAsTuple(colors[1])
         vertex_list.visible = (1, 1)

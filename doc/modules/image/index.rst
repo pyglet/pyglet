@@ -6,9 +6,7 @@ pyglet.image
 .. toctree::
    :maxdepth: 1
 
-   atlas
    animation
-   buffer
 
 .. rubric:: Details
 
@@ -17,44 +15,20 @@ pyglet.image
 Classes
 -------
 
-Images
-^^^^^^
+Data
+^^^^
 
-.. autoclass:: AbstractImage
-  :members:
-  :undoc-members:
-
-.. autoclass:: BufferImage
+.. autoclass:: ImageData
   :members:
   :undoc-members:
   :show-inheritance:
 
-.. autoclass:: BufferImageMask
+.. autoclass:: ImageDataRegion
   :members:
   :undoc-members:
   :show-inheritance:
 
-.. autoclass:: ColorBufferImage
-  :members:
-  :undoc-members:
-  :show-inheritance:
-
-.. autoclass:: DepthBufferImage
-  :members:
-  :undoc-members:
-  :show-inheritance:
-
-.. autoclass:: Texture
-  :members:
-  :undoc-members:
-  :show-inheritance:
-
-.. autoclass:: TextureRegion
-  :members:
-  :undoc-members:
-  :show-inheritance:
-
-.. autoclass:: TileableTexture
+.. autoclass:: CompressedImageData
   :members:
   :undoc-members:
   :show-inheritance:
@@ -62,29 +36,9 @@ Images
 Image Sequences
 ^^^^^^^^^^^^^^^
 
-.. autoclass:: AbstractImageSequence
+.. autoclass:: ImageGrid
   :members:
   :undoc-members:
-
-.. autoclass:: TextureSequence
-  :members:
-  :undoc-members:
-  :show-inheritance:
-
-.. autoclass:: UniformTextureSequence
-  :members:
-  :undoc-members:
-  :show-inheritance:
-
-.. autoclass:: TextureGrid
-  :members:
-  :undoc-members:
-  :show-inheritance:
-
-.. autoclass:: Texture3D
-  :members:
-  :undoc-members:
-  :show-inheritance:
 
 Patterns
 ^^^^^^^^
@@ -103,44 +57,14 @@ Patterns
   :undoc-members:
   :show-inheritance:
 
-Data
-^^^^
 
-.. autoclass:: ImageData
-  :members:
-  :undoc-members:
-  :show-inheritance:
-
-.. autoclass:: CompressedImageData
-  :members:
-  :undoc-members:
-  :show-inheritance:
-
-.. autoclass:: ImageDataRegion
-  :members:
-  :undoc-members:
-  :show-inheritance:
-
-Other Classes
-^^^^^^^^^^^^^
-
-.. autoclass:: BufferManager
-  :members:
-  :undoc-members:
-
-.. autoclass:: ImageGrid
-  :members:
-  :undoc-members:
-  :show-inheritance:
 
 Functions
 ---------
 
 .. autofunction:: create
-.. autofunction:: get_buffer_manager
 .. autofunction:: load
 .. autofunction:: load_animation
-.. autofunction:: get_max_texture_size
 
 Exceptions
 ----------

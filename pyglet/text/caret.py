@@ -17,8 +17,10 @@ import time
 from typing import TYPE_CHECKING, Any, Pattern
 
 from pyglet import clock, event
+from pyglet.customtypes import RGBColor, RGBAColor
 from pyglet.window import key
 from pyglet.event import EventDispatcher
+from pyglet.enums import GeometryMode
 
 if TYPE_CHECKING:
     from pyglet.graphics import Batch
@@ -74,24 +76,23 @@ class Caret(EventDispatcher):
     _next_attributes: dict[str, Any]
 
     def __init__(self, layout: IncrementalTextLayout, batch: Batch | None = None,
-                 color: tuple[int, int, int, int] = (0, 0, 0, 255), window: Window | None = None) -> None:
+                 color: RGBColor | RGBAColor = (0, 0, 0, 255), window: Window | None = None) -> None:
         """Create a caret for a layout.
 
         By default the layout's batch is used, so the caret does not need to
         be drawn explicitly.
 
-        :Parameters:
-            `layout` : `~pyglet.text.layout.IncrementalTextLayout`
+        Args:
+            layout:
                 Layout to control.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Graphics batch to add vertices to.
-            `color` : (int, int, int, int)
+            color:
                 An RGBA or RGB tuple with components in the range [0, 255].
                 RGB colors will be treated as having an opacity of 255.
-            `window` : `~pyglet.window.Window`
+            window:
                 For the clipboard feature to work, a window object is needed to be passed in to access and set clipboard content.
         """
-        from pyglet import gl
         self._layout = layout
 
         self._custom_batch = batch is not None
@@ -106,9 +107,15 @@ class Caret(EventDispatcher):
 
         colors = r, g, b, self._visible_alpha, r, g, b, self._visible_alpha
 
-        self._list = self._group.program.vertex_list(2, gl.GL_LINES, self._batch, self._group,
-                                                     colors=("Bn", colors),
-                                                     visible=("f", (1, 1)))
+        self._list = self._group.program.vertex_list(2, GeometryMode.LINES, self._batch, self._group,
+                                                        position=('f', (0, 0, 0) * 2),
+                                                        translation=('f', (0, 0, 0) * 2),
+                                                        view_translation=('f', (0, 0, 0) * 2),
+                                                        anchor=('f', (0, 0) * 2),
+                                                        rotation=('f', (0, 0)),
+                                                        visible=('f', (1, 1)),
+                                                        colors=("Bn", colors))
+
         self._ideal_x = None
         self._ideal_line = None
         self._next_attributes = {}
@@ -124,14 +131,13 @@ class Caret(EventDispatcher):
 
     @layout.setter
     def layout(self, layout: IncrementalTextLayout) -> None:
-        if self._layout == layout and self._group == layout.group:
+        if self._layout == layout and self._group == layout.foreground_decoration_group:
             return
 
-        from pyglet.gl import GL_LINES
         self._layout = layout
         batch = self._batch if self._custom_batch else layout.batch
         self._group = layout.foreground_decoration_group
-        self._batch.migrate(self._list, GL_LINES, self._group, batch)
+        self._batch.migrate(self._list, GeometryMode.LINES, self._group, batch)
 
     def delete(self) -> None:
         """Remove the caret from its batch.

@@ -1,8 +1,9 @@
+from __future__ import annotations
 import atexit
 import struct
 import warnings
 from ctypes import HRESULT
-from ctypes.wintypes import ATOM, HFONT, HGDIOBJ, HGLOBAL, HMENU, HMODULE, INT, LPVOID, PUINT
+from ctypes.wintypes import ATOM, HFONT, HGDIOBJ, HGLOBAL, HMENU, HMODULE, INT, LPVOID, PUINT, HKEY, LPBYTE, LPCVOID
 
 import pyglet
 
@@ -11,7 +12,7 @@ from .types import *
 
 IS64 = struct.calcsize("P") == 8
 
-_debug_win32 = pyglet.options['debug_win32']
+_debug_win32 = pyglet.options.debug_win32
 
 DebugLibrary = lambda lib: ctypes.WinDLL(lib, use_last_error=True if _debug_win32 else False)
 
@@ -22,6 +23,8 @@ _dwmapi = DebugLibrary('dwmapi')
 _shell32 = DebugLibrary('shell32')
 _ole32 = DebugLibrary('ole32')
 _oleaut32 = DebugLibrary('oleaut32')
+_advapi32 = DebugLibrary("advapi32")
+_comdlg32 = DebugLibrary("comdlg32")
 
 if constants.WINDOWS_8_1_OR_GREATER:
     _shcore = DebugLibrary('shcore')
@@ -261,8 +264,13 @@ _dwmapi.DwmFlush.restype = c_int
 _dwmapi.DwmFlush.argtypes = []
 _dwmapi.DwmGetColorizationColor.restype = HRESULT
 _dwmapi.DwmGetColorizationColor.argtypes = [POINTER(DWORD), POINTER(BOOL)]
+_dwmapi.DwmGetWindowAttribute.restype = HRESULT
+_dwmapi.DwmGetWindowAttribute.argtypes = [HWND, DWORD, PVOID, DWORD]
 _dwmapi.DwmEnableBlurBehindWindow.restype = HRESULT
 _dwmapi.DwmEnableBlurBehindWindow.argtypes = [HWND, POINTER(DWM_BLURBEHIND)]
+_dwmapi.DwmSetWindowAttribute.restype = HRESULT
+_dwmapi.DwmSetWindowAttribute.argtypes = [HWND, DWORD, LPCVOID, DWORD]
+
 
 # _shell32
 _shell32.DragAcceptFiles.restype = c_void
@@ -280,6 +288,10 @@ _ole32.CoInitialize.restype = HRESULT
 _ole32.CoInitialize.argtypes = [LPVOID]
 _ole32.CoInitializeEx.restype = HRESULT
 _ole32.CoInitializeEx.argtypes = [LPVOID, DWORD]
+_ole32.OleInitialize.restype = HRESULT
+_ole32.OleInitialize.argtypes = [LPVOID]
+_ole32.OleUninitialize.restype = c_void
+_ole32.OleUninitialize.argtypes = []
 _ole32.CoUninitialize.restype = HRESULT
 _ole32.CoUninitialize.argtypes = []
 _ole32.PropVariantClear.restype = HRESULT
@@ -288,6 +300,12 @@ _ole32.CoCreateInstance.restype = HRESULT
 _ole32.CoCreateInstance.argtypes = [com.REFIID, c_void_p, DWORD, com.REFIID, c_void_p]
 _ole32.CoSetProxyBlanket.restype = HRESULT
 _ole32.CoSetProxyBlanket.argtypes = (c_void_p, DWORD, DWORD, c_void_p, DWORD, DWORD, c_void_p, DWORD)
+_ole32.RegisterDragDrop.restype = HRESULT
+_ole32.RegisterDragDrop.argtypes = [HWND, c_void_p]
+_ole32.RevokeDragDrop.restype = HRESULT
+_ole32.RevokeDragDrop.argtypes = [HWND]
+_ole32.ReleaseStgMedium.restype = c_void
+_ole32.ReleaseStgMedium.argtypes = [POINTER(STGMEDIUM)]
 
 # oleaut32
 _oleaut32.VariantInit.restype = c_void_p
@@ -302,6 +320,21 @@ if constants.WINDOWS_8_1_OR_GREATER:
     _shcore.GetDpiForMonitor.argtypes = [HMONITOR, MONITOR_DPI_TYPE, POINTER(UINT), POINTER(UINT)]
     _shcore.GetDpiForMonitor.restype = HRESULT
 
+# _advapi32
+_advapi32.RegCloseKey.argtypes = [HKEY]
+_advapi32.RegCloseKey.restype = LONG
+_advapi32.RegOpenKeyExW.argtypes = [HKEY, LPCWSTR, DWORD, REGSAM, POINTER(HKEY)]
+_advapi32.RegOpenKeyExW.restype = LONG
+_advapi32.RegQueryValueExW.argtypes = [HKEY,LPCWSTR,LPVOID, POINTER(DWORD), LPBYTE, POINTER(DWORD)]
+_advapi32.RegQueryValueExW.restype = LONG
+
+# _comdlg32
+_comdlg32.GetOpenFileNameW.argtypes = [POINTER(OPENFILENAMEW)]
+_comdlg32.GetOpenFileNameW.restype = BOOL
+_comdlg32.GetSaveFileNameW.argtypes = [POINTER(OPENFILENAMEW)]
+_comdlg32.GetSaveFileNameW.restype = BOOL
+
+
 if _debug_win32:
     import traceback
 
@@ -311,8 +344,7 @@ if _debug_win32:
     def win32_errcheck(result, func, args):
         last_err = ctypes.get_last_error()
         if last_err != 0:  # If the result is not success and last error is invalid.
-            for entry in traceback.format_list(traceback.extract_stack()[:-1]):
-                _log_win32.write(entry)
+            _log_win32.writelines(traceback.format_list(traceback.extract_stack()[:-1]))
             print(f"[Result {result}] Error #{last_err} - {ctypes.FormatError(last_err)}", file=_log_win32)
         return args
 
@@ -335,7 +367,7 @@ if _debug_win32:
 
 # Initialize COM. Required for: WIC (DirectWrite), WMF, and XInput
 try:
-    if pyglet.options["com_mta"] is True:
+    if pyglet.options.com_mta is True:
         _ole32.CoInitializeEx(None, constants.COINIT_MULTITHREADED)
     else:
         _ole32.CoInitializeEx(None, constants.COINIT_APARTMENTTHREADED)

@@ -1,5 +1,6 @@
 import pytest
 
+
 from tests.base.interactive import InteractiveTestCase
 
 import pyglet
@@ -211,6 +212,8 @@ class TestWindow(pyglet.window.Window):
 
         self.set_mouse_cursor(self.get_system_mouse_cursor('text'))
 
+        self.context.set_clear_color(1, 1, 1, 1)
+
     def on_resize(self, width, height):
         super().on_resize(width, height)
         self.layout.begin_update()
@@ -225,7 +228,6 @@ class TestWindow(pyglet.window.Window):
         self.layout.view_y += scroll_y * 16
 
     def on_draw(self):
-        pyglet.gl.glClearColor(1, 1, 1, 1)
         self.clear()
         self.batch.draw()
 

@@ -1,13 +1,13 @@
 import math
 from pyglet.window import key
-from . import physicalobject, resources
+from . import physicalobject, util
 
 
 class Player(physicalobject.PhysicalObject):
     """Physical object that responds to user input"""
 
     def __init__(self, *args, **kwargs):
-        super().__init__(img=resources.player_image, *args, **kwargs)
+        super().__init__(img=util.load_centered('player.png'), *args, **kwargs)
 
         # Set some easy-to-tweak constants
         self.thrust = 300.0

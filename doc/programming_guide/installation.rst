@@ -26,6 +26,19 @@ To play video, or a wide selection of compressed audio, pyglet can optionally
 use `FFmpeg <https://www.ffmpeg.org/download.html>`_.
 
 
+Python Version Support
+----------------------
+
+pyglet aims to support all non-End-Of-Life (non-EOL) Python versions.
+Support isn't necessarily dropped as soon as a Python version enters EOL,
+but support might be dropped, so it is best practice to use a non-EOL Python
+version when developing with pyglet.
+
+To find out which versions of Python are currently supported and which are
+EOL you can reference
+`the Status of Python Versions in the Python Developer's Guide <https://devguide.python.org/versions/>`_.
+
+
 Running the examples
 --------------------
 

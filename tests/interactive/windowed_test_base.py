@@ -2,7 +2,7 @@
 
 from inspect import cleandoc
 
-from pyglet import gl
+from pyglet.graphics.api import gl
 from pyglet.window import Window
 
 from tests.base.interactive import InteractiveTestCase

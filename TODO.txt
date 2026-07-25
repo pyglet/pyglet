@@ -1,0 +1,57 @@
+Goals
+- Allow Pyglet to be used as pure windowing/events/audio without the need for a graphics backend.
+
+- Create backend agnostic API setups to support multiple backends.
+
+- Trying to backport fixes for platform/python bugs, removals, and deprecations can be a large task for the older
+  versions of pyglet/OpenGL. By all backends using the same windowing, it is easier to maintain. Also allows room for
+  old versions of OpenGL to be a separate backend.
+
+- Convert pyglet's OpenGL usage to use top left coordinates.
+  Since Vulkan is top left and other engines do this, we should also adopt it since this is the direction of the
+  industry. Also makes transitioning from things like pygame much easier.
+  (Should it be configurable if someone wants to use OpenGL bottom left themselves?)
+
+
+Image
+- Convert get_regions to use top left, as well as ImageGrids.
+- Separate GPU side of image -> pyglet.graphics.texture.
+- Remove mipmap, blit, and other GPU related functions on image data.
+- Tying ImageData instances to a texture.
+
+
+Shader
+- Change ShaderProgram ID's to be unique.
+  - Allow creation of new ShaderProgram instances with different attribute data types.
+  - Remove attribute data type from vertex list creation.
+- Uniform Blocks could potentially store their UBO's. Index ID? You can have two UBO's that will
+  have the same binding, but different data. In some cases, you may want to have two different buffers with different
+  data, and just change the binding. This way you can keep two sets of data for different situations without having to
+  constantly change data to the buffer.
+
+Groups
+- Finish common group states for each backend.
+- Optimize state setting during draw list creation.
+- Faster sorting of groups by using vertex lists.
+
+Vulkan
+- Figure out way to GC Textures and Samplers on close. Importing it to the global context  causes circular imports.
+- ComputeShader support for Vulkan
+- Test Multi-window support.
+- Finish group setting for descriptors.
+- Utilize secondary command buffers.
+- Better way to handle the global WindowBlock UBO.
+- Test other texture types such as Texture Arrays.
+- Allow getting data from a texture to save.
+- Add backed/persistent buffers.
+
+Unifying Backends
+- Figure out how to handle window.clear between backends. Vulkan doesn't need it, so it's a waste of a CPU call, while OpenGL does.
+- Figure out a way to allow binding textures and resources between backends without running into engine specific issues like set numbers or binding numbers.
+(Example: OpenGL has active texture to 0 by default, but in Vulkan, Uniform Blocks and Samplers share the same
+binding number pool [within the sets], so binding 0 or 1 would be incompatible to be used across both backends)
+
+General
+- Lots of other cleanup.
+- Remove a lot of TO-DO's around the code.
+- Have to redo and fix a lot of tests.

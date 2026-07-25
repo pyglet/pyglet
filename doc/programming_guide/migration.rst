@@ -1,402 +1,308 @@
 .. _migration:
 
-Migrating from pyglet 2.0
-=========================
-This page will help you upgrade your project from pyglet 2.0.
+Migrating from pyglet 2.1 to pyglet 3.0
+=======================================
+This page will help you upgrade your project from pyglet 2.x to pyglet 3.0.
 
-Some of pyglet 2.1's improvements required small breaking changes,
-including:
 
-* Arguments for text, UI, and game controller handling
-* Locations and names for features
-* Data types and annotations
-* Changes to math classes
+.. contents::
+    :depth: 3
 
-To report a missing change or a bug, please use `GitHub Issues`_ or
+Introduction
+^^^^^^^^^^^^
+
+A major focus for pyglet 3.0 has been clearing up ambiguity in the APIs, and working towards future proofing
+the library. You should find that the vast majority of the high-level API (sprites, text, audio) is mostly
+the same as before, but much of the lower level and internal modules have changed. We hope that this page
+will make upgrading to pyglet v3.0 relatively straight-forward.
+
+Some of the major changes include::
+
+* Refactored location of graphics libraries (OpenGL).
+* Removal of image.blit, and some other legacy patterns.
+* Separation of Audio and Video media Players.
+* Changes to Groups, including how custom Groups are made.
+* Resource image loading improvements.
+* Clearer separation of raw ImageData and Textures.
+
+
+The sections below should hopefully cover all of the changes that you will need to migrate a project. If you
+find any missing changes or bugs, please use `GitHub Issues`_ or
 another :ref:`contributor communication <contributor-communication>`
-channel.
+channel to let us know about it.
 
 .. _GitHub Issues: https://github.com/pyglet/pyglet/issues
 
 .. _migration-options:
 
-Setting pyglet Options
-----------------------
 
-The :py:attr:`pyglet.options` attribute is now a :py:class:`pyglet.Options` instance.
-
-The Options Object
-^^^^^^^^^^^^^^^^^^
-Although :py:class:`~pyglet.Options` is a :py:func:`dataclass <dataclasses.dataclass>`,
-you can get and set its attribute values directly via either approach below::
-
-    # "New" 2.1 attribute-style works with type checkers
-    pyglet.options.dpi_scaling = 'real'
-
-    # "Old" dict-style access is backward-compatible to help with porting
-    pyglet.options['dpi_scaling'] = 'real'
-
-
-Window "HiDPI" support
-^^^^^^^^^^^^^^^^^^^^^^
-In 2.1, :py:attr:`pyglet.options.dpi_scaling <pyglet.Options.dpi_scaling>`
-accepts strings to configure fine-grained 'HiDPI' behavior.
-
-What is HiDPI?
-""""""""""""""
-Some systems require scaled drawing due to pixel density, settings, or both.
-
-.. note:: HiDPI stands for High Dots Per *(Square)* Inch.
-
-In practice, this usually means:
-
-* Apple's "retina" displays on Macs
-* Non-Mac displays branded as 4K, 8K, etc
-* Other displays with non-100% zoom or scaling
-
-Scaling Modes
-"""""""""""""
-The pyglet :py:attr:`~pyglet.Options.dpi_scaling` option supports multiple
-scaling modes.
-
-Each has pros and cons for different platforms and hardware. For example,
-the default ``"real"`` mode matches the window, rendering, and input to a
-computer display's "real" physical pixels.
-
-On a HiDPI screen, this could mean:
-
-* projects with the right art styles can look crisply detailed
-* other projects may look tiny or poorly-scaled
-
-In the latter case, other scaling modes may help. You will need to
-experiment to find the best one(s) for your specific needs. Please
-see the following to get started:
-
-* :py:attr:`pyglet.options.dpi_scaling <pyglet.Options.dpi_scaling>`
-* :py:attr:`pyglet.Options`
-* :py:attr:`Window.dpi <pyglet.window.Window.dpi>`
-* :py:attr:`Window.scale <pyglet.window.Window.scale>`
-
-Labels & Text Layouts
----------------------
-
-Argument Consistency
-^^^^^^^^^^^^^^^^^^^^
-
-The positional arguments for creating :py:class:`pyglet.text` layouts
-and labels now all *start* with similar argument orders. This helps
-you:
-
-* switch between labels and layouts
-* create custom subclasses
-
-The order *after* the initial arguments may differ. Please see any
-relevant API documentation to learn more.
-
-Layout Arguments
-""""""""""""""""
-All :py:mod:`pyglet.text.layout` types now *start* with the same positional
-argument order::
-
-    TextLayout(document, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
-    ScrollableTextLayout(document, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
-    IncrementalTextLayout(document, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
-
-These types all take a concrete instance of an
-:py:class:`~pyglet.text.layout.AbstractDocument` subclass as their
-first argument. Subsequent arguments may differ.
-
-Please see the following to learn more:
-
-* :py:class:`pyglet.text.layout.TextLayout`
-* :py:class:`pyglet.text.layout.ScrollableTextLayout`
-* :py:class:`pyglet.text.layout.IncrementalTextLayout`
-
-Label Arguments
-"""""""""""""""
-The label classes now also share similar early argument orders.
-
-Only :py:class:`~pyglet.text.DocumentLabel` is identical to layouts in
-its initial arguments. The others both take a string ``text`` argument
-as their first argument::
-
-    DocumentLabel(document, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
-    Label(text, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
-    HTMLLabel(text, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
-
-As with layouts, the subsequent arguments may vary. Please see the following
-to learn more:
-
-* :py:class:`pyglet.text.DocumentLabel`
-* :py:class:`pyglet.text.Label`
-* :py:class:`pyglet.text.HTMLLabel`
-
-
-Replace Bold With Weight
+pyglet.gl reorganization
 ^^^^^^^^^^^^^^^^^^^^^^^^
+Historically pyglet has been based on OpenGL, and much of the internal APIs were tightly intertwined.
+With version 3.0, to support multiple backends and a more flexible rendering architecture, the graphics backend
+is now decoupled from the high-level APIs. The `pyglet.gl` module has therefore been reorganized under
+``pyglet.graphics.api.gl``. If you used OpenGL directly, you will need to update these imports.
+However, with the new backend agnostic changes, this should no longer be needed unless you are directly interacting
+with OpenGL. We understand people still may use pyglet just for OpenGL usage, so this capability will still be
+possible. Due to changes in groups (see below), you may no longer need direct OpenGL calls in many cases.
 
-The string ``weight`` argument is more flexible than the ``bold`` argument it replaces.
+Enum-based graphics constants
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Many GL constants that were previously passed around in higher-level APIs
+now have pyglet-owned enums under :py:mod:`pyglet.enums`. This keeps the API
+backend-agnostic and avoids relying on raw ``GL_*`` values in user code.
 
-.. note:: This does not apply to :py:class:`~pyglet.text.HTMLLabel`.
+Common migrations:
 
-For :py:class:`pyglet.text.Label` and :py:class:`pyglet.text.DocumentLabel`,
-their ``weight`` argument now allows choosing a desired font weight. This assumes
-your specific font and weight combination is:
+* Geometry modes:
 
-#. Loaded
-#. Supported by the font
-#. Supported by the rendering back-end
+  ``pyglet.gl.GL_TRIANGLES`` -> ``pyglet.enums.GeometryMode.TRIANGLES``
 
-For known cross-platform ``weight`` strings, please see :py:class:`pyglet.text.Weight`.
+* Texture filtering:
 
-* Constant names and values mimic OpenType and CSS (``"bold"``, ``"thin"``, ``"extrabold"``, etc)
-* Some rendering back-ends *may* support additional weight string values
+  ``pyglet.gl.GL_NEAREST`` -> ``pyglet.enums.TextureFilter.NEAREST``
+  ``pyglet.gl.GL_LINEAR`` -> ``pyglet.enums.TextureFilter.LINEAR``
 
-Shapes
-------
-For consistency with the rest of the library, it was decided to represent
-all angles in degrees instead of radians. Previously we had a mix of both,
-which lead to some confusion. Using degrees also makes the API consistent
-with Sprites and other rotatable objects, which have long used degrees.
+* Framebuffer attachments:
 
-The arguments for :py:class:`~pyglet.shapes.Line` have changed slightly.
-Instead of "width", we now use "thickness". This matches with other shapes
-that are made up of line segments. For example the :py:class:`~pyglet.shapes.Box`
-shape, which already uses "width" (and height) to mean it's overall size.
-Going forward, any shape that is made up of lines should use `thickness`
-for the thickness/width of those lines.
+  ``pyglet.gl.GL_COLOR_ATTACHMENT0`` -> ``pyglet.enums.FramebufferAttachment.COLOR0``
+  ``pyglet.gl.GL_DEPTH_ATTACHMENT`` -> ``pyglet.enums.FramebufferAttachment.DEPTH``
 
-.. _migration-controllers:
+* Blend factors:
 
-Controllers
+  ``pyglet.gl.GL_SRC_ALPHA`` -> ``pyglet.enums.BlendFactor.SRC_ALPHA``
+  ``pyglet.gl.GL_ONE_MINUS_SRC_ALPHA`` -> ``pyglet.enums.BlendFactor.ONE_MINUS_SRC_ALPHA``
+
+If you still use raw OpenGL calls directly, you can continue to use ``GL_*``
+constants from ``pyglet.graphics.api.gl``. But for pyglet's high-level APIs
+and new rendering helpers, refer to the enums.
+
+
+Image changes and removal of image.blit
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Many classes have been moved out of the ``pyglet.image`` to ``pyglet.graphics.texture``. These changes
+were done because the distinction between CPU-side image representations and GPU-side rendering operations
+was somewhat blurred until now. ``ImageData`` is intended to represent raw pixel data stored in system CPU memory,
+while ``Texture`` objects represent data stored on the GPU. Keeping everything in the same module led to ambiguous
+behavior and inconsistent expectations.
+
+With those changes in mind, ``ImageData.blit`` has also been removed, as this is no longer consistent with
+that separation.
+
+Instead, to draw an image, create a py:class:`~pyglet.sprite.Sprite` and construct it with either a ``Texture`` or
+``ImageData``.
+
+.. note:: It is still recommended to use batching when creating objects such as sprites, as it produces large
+          performance gains. See :ref:`guide_graphics`
+
+Additionally, ``ImageData.get_data`` and ``ImageData.set_data`` have been removed after being deprecated. Use
+``ImageData.get_bytes`` and ``ImageData.set_bytes`` instead (the same applies to ``ImageDataRegion``).
+
+Removed image buffer APIs
+-------------------------
+The legacy ``pyglet.image`` buffer API has been removed.
+
+The following names have been removed:
+
+* ``pyglet.image.BufferManager``
+* ``pyglet.image.get_buffer_manager``
+* ``pyglet.image.BufferImage``
+* ``pyglet.image.ColorBufferImage``
+* ``pyglet.image.DepthBufferImage``
+* ``pyglet.image.BufferImageMask``
+
+For explicit framebuffer objects, use
+:py:class:`pyglet.graphics.framebuffer.Framebuffer`.
+
+For screenshots, replace this pattern::
+
+    pyglet.image.get_buffer_manager().get_color_buffer().save('screenshot.png')
+
+With::
+
+    pyglet.graphics.framebuffer.get_screenshot().save("screenshot.png")
+
+
+Resource Image and Texture Loading
+----------------------------------
+:py:meth:`~pyglet.resource.image` previously loaded an image into a texture atlas. However, this was not named
+consistently in the same way :py:meth:`~pyglet.image.load` was, causing confusion. The latter returned
+:py:class:`~pyglet.image.ImageData` instances while the :py:meth:`~pyglet.resource.image` returned a ``Texture``. With the
+decisions explained in the previous section, the behavior of this function has been changed.
+
+With these changes being needed, the :py:meth:`~pyglet.resource.texture` was also updated to correct this ambiguity. In
+previous versions  _only_ returned a standalone ``Texture`` instance - there was no automatic texture atlas support.
+With v3.0, :py:meth:`~pyglet.resource.texture` now supports automatically adding to an atlas, mimicking how
+:py:meth:`~pyglet.resource.image` previously behaved.
+
+.. note:: You can still opt to get a standalone ``Texture`` by passing the ``atlas=False`` argument, if you wish.
+
+In summary, going forward, migrate your code to instead use :py:meth:`~pyglet.resource.texture` as it will give the
+previous behavior of loading into a texture atlas.
+
+.. note:: While using :py:meth:`~pyglet.resource.image` will still work, you may experience significant performance
+          penalties in doing so. Please update your functions to this new usage.
+
+Image Grids
 -----------
-
-Events from analog sticks and directional pads (d-pads) now pass
-:py:class:`~pyglet.math.Vec2` instances to handler functions.
-
-Vectors offer helper methods in addition to common math operators (`+`, `-`, `*`,
-etc). Since this makes many tasks easier, we'll cover the most common ones below.
+The function `pyglet.image.ImageGrid.get_texture_sequence` has been removed. This is no longer recommended,
+as it created it's own texture, further reducing performance. Going forward, it is best to
+use :py:class:`~pyglet.graphics.texture.TextureGrid`. This behaves the same way as :py:class:`~pyglet.image.ImageGrid`, but
+for textures. This will allow you to use an already existing texture, such as one loaded from an atlas.
 
 
-Handling Diagonals with the D-Pad
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-:py:class:`Vec2.normalize() <pyglet.math.Vec2.normalize>` makes it easy to
-handle diagonal movement:
-
-.. code-block:: python
-
-    # In pyglet 2.1, this handles diagonals
-    @controller.event
-    def on_dpad_motion(controller, vector):
-        # Multiplying a vector by an integer or float multiplies all components
-        player_position += vector.normalize() * PLAYER_SPEED
-
-Without vectors, pre-2.1 code was more verbose:
-
-.. code-block:: python
-
-    @controller.event
-    def on_dpad_motion(controller, dpleft, dpright, dpup, dpdown):
-        if dpleft:
-            # move left
-        if dpright:
-            # move right
-        if dpright and dpdown:
-            # move diagonally, but you have to normalize the values by yourself
-
-
-Getting D-Pad Booleans
-""""""""""""""""""""""
-If you need boolean data, you can quickly convert from a :py:class:`~pyglet.math.Vec2`
-like this::
-
-    dpleft, dpright, dpup, dpdown = vector.x < 0, vector.x > 0, vector.y > 0, vector.y < 0
-
-Handling Analog Stick Drift
+Separation of Media Players
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Analog sticks can "drift" when near zero, but vectors can help.
+The former ``pyglet.media.Player` class has been split into two dedicated classes: :py:class:`~pyglet.media.AudioPlayer`
+and :py:class:`~pyglet.media.VideoPlayer`. This separation makes the API clearer by distinguishing pure audio playback
+from video playback, which requires GPU-accelerated rendering and integration with the graphics system.
 
-Circular Dead Zones
-"""""""""""""""""""
-The simplest approach to drift is a circular "dead zone" which ignores input
-with a :py:meth:`~pyglet.math.Vec2.length` beneath a certain threshold::
+Video playback has always needed FFmpeg integration, but did not need it for more common audio playback. The new
+:py:class:`~pyglet.media.VideoPlayer` will enforce a check for FFmpeg to make sure it is loaded.
 
-    @controller.event
-    def on_stick_motion(controller, name, vector):
-        if vector.length() <= DEADZONE_RADIUS:
-            return
-        elif name == "leftstick":
-            # Do something with the 2D vector
-        elif name == "rightstick":
-            # Do something with the 2D vector
+By decoupling these responsibilities, pyglet can provide more focused, maintainable implementations
+while avoiding unnecessary dependencies for applications that only need audio or only need video.
 
-Non-Circular Sticks
-"""""""""""""""""""
-:py:meth:`Vec2.normalize <pyglet.math.Vec2.normalize` can also help when
-an unusual analog stick input could exceed ``1.0`` in length.
-
-For example, a :py:class:`~pyglet.input.Controller` for a device with a non-circular
-input range could return a value with a combined :py:meth:`~pyglet.math.Vec2.length`
-greater than ``1.0``. Normalizating allows concisely clamping the input to ``1.0``::
-
-            # Avoid a "cheating" / bugged controller for movement
-            vector = min(vector, vector.normalize())
-            player.position += vector * PLAYER_SPEED
-
-
-Accessing Vector Components
-""""""""""""""""""""""""""
-You can directly access  individual :py:attr:`~pyglet.math.Vec2.x` and
-:py:attr:`~pyglet.math.Vec2.y` attributes or unpack a vector:
-
-.. code-block:: python
-
-   # Direct access
-   x = vector2.x
-   y = vector2.y
-
-   # Unpacking-style access
-   x, y = vector2
-
-Please see the following to learn more about vectors in pyglet 2.1:
-
-* The :ref:`migration-math` section of this page
-* :py:class:`pyglet.math.Vec2`
-
-Gui
----
-
-Widget Event Dispatching
-^^^^^^^^^^^^^^^^^^^^^^^^
-All widget events now dispatch the widget instance itself as the first argument.
-
-This is similar to how Controller/Joystick events are implemented. It allows
-you to reuse a single handler functions across multiple widgets without "forgetting"
-which widget dispatched an event.
-
-Button Argument Names
-^^^^^^^^^^^^^^^^^^^^^
-
-The :py:class:`~pyglet.gui.widgets.ToggleButton` and :py:class:`~pyglet.gui.widgets.PushButton`
-widgets now use ``pressed`` and ``unpressed`` for their image arguments.
-
-.. _migration-math:
-
-Math
-----
-The :py:mod:`~pyglet.math` module includes a number of performance and
-usability changes.
-
-Immutable Vectors and Matrices
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-All :py:mod:`~pyglet.math` datatypes are now :py:class:`typing.NamedTuple`
-subclasses. This provides multiple benefits:
-
-* More consistent creation syntax
-* Vectors and matrices are now hashable
-
-  * They can be :py:class:`dict` keys or :py:class:`set` members
-  * Combine with ``/``, ``//``, :py:func:`round` or :py:func:`math.floor` for easy spatial hashing
-
-* Cleaner controller code (see :ref:`migration-controllers`)
-
-.. important:: The mypy typechecker is incompatible with :py:mod:`pyglet.math`.
-
-               When typechecking, it is a good idea to:
-
-               1. exclude :py:mod:`pyglet.math` from mypy checks
-               2. use pyright instead (pylance in VS Code)
-
-Vector Changes
-^^^^^^^^^^^^^^
-
-The syntax for the Vec types has changed in several ways.
-Some of these changes are due to becoming :py:class:`typing.NamedTuple` subclasses, while others
-were done for general usability. Where possible, we adopt the behavior of GLM/GLSL for most operations,
-for a more familiar experience for computer graphics programmers.
-
-* The arguments for ``Vec2.from_polar`` have been reversed for consistency. The ``length`` argument also now defaults
-  to 1.0. This will fail silently, so take care to correct this if you are using this method in your code::
-
-    Vec2.from_polar(angle: 'float', length: 'float' = 1.0)
-
-* Vector length is now obtained from the new :py:meth:`~pyglet.math.Vec2.length` method. Previously ``len`` or ``abs``
-  could be used, but this is no longer the case. The ``len`` function will now give you the number of items in the
-  vector (ie: 2, 3, or 4), not the vector length. The ``abs`` function will give you a new vector with absolute values::
-
-    >>> vec = Vec2(1, 9)
-    >>> vec.length()
-    9.055385138137417
-    >>> len(vec)
-    2
-    >>>
-    >>> vec = Vec2(-10, 5)
-    >>> abs(vec)
-    Vec2(x=10, y=5)
-
-* The vector ``heading`` property has been replace with the :py:meth:`~pyglet.math.Vec2.heading` function. This is to
-  better indicate that this is a calculation, not a static attribute. The function call is also marginally faster.
-
-* The ``mag`` property has been removed. The :py:meth:`~pyglet.math.Vec2.length` function should be used in it's place.
-
-* The ``Vec2.from_magnitude`` function has been removed. For creating a new vector of a certain magnitude, you can
-  simply multiply a normalized vector by the desired length. For example::
-
-    >>> vec = Vec2(1, 9)
-    >>> vec.normalize()
-    Vec2(x=0.11043152607484653, y=0.9938837346736188)
-    >>> vec.normalize() * 2
-    Vec2(x=0.22086305214969307, y=1.9877674693472376)
-
-
-Matrix Creation Syntax
-^^^^^^^^^^^^^^^^^^^^^^
-
-:py:class:`~pyglet.math.Mat3` and :py:mod:`pyglet.math.Mat4` now accept arguments
-directly instead of an iterable.
-
-If you create your matrices via the helper methods, nothing changes. If you
-create matrices directly, pyglet 2.1 allows more efficient code:
-
-.. code-block:: python
-
-    # pyglet 2.1 requires passing the elements directly
-    my_mat4 = pyglet.math.Mat4(1, 2, 3, 4, 5, ...)
-
-    # pyglet 2.0 required an intermediate iterable like a list
-    my_mat4 = pyglet.math.Mat4([1, 2, 3, 4, 5, ...])
-
-If your pre-existing code has an ``intermediate_iterable``, you can use
-``*`` unpacking as a quick fix:
-
-.. code-block:: python
-
-    # Use * unpacking to unpack the pre-allocated intermediate_iterable
-    my_mat4 = pyglet.math.Mat4(*intermediate_iterable)
-
-
-Models
-------
-The :py:mod:`~pyglet.model` module has seen some changes. This is an undocumented
-WIP module for pyglet 2.0, and it remains so pyglet 2.1. That said, it's in a more
-usable state now. The first change is that :py:meth:`~pyglet.model.load` now returns
-a ``Scene`` object instead of a ``Model`` object. The Scene is a new, "pure data"
-intermediate representation of a 3D scene, that closely mimics the layout of the glTF
-format. The :py:meth:`~pyglet.model.Scene.create_models` method can be used to create
-``Model`` instances from the Scene, but the Scene data can also be manually iterated
-over for more advanced use cases.
-
-Canvas module
+Media Loading
 -------------
-The ``pyglet.canvas`` module has been renamed to ``pyglet.display``. The "canvas"
-concept was a work-in-progress in legacy pyglet, and was never fully fleshed out.
-It appears to have been meant to allow arbitrary renderable areas, but this type
-of functionality can now be easily accomplished with Framebuffers. The name ``display``
-is a more accurate representation of what the code in the module actually relates to.
-The usage is the same, with just the name change::
+Along with the split to the media players, media loading functions have also been split into explicit audio/video calls.
 
-    my_display = pyglet.canvas.get_display()     # old pyglet 2.0
-    my_display = pyglet.display.get_display()    # new pyglet 2.1
+Here are the following API changes:
 
+* ``pyglet.media.load`` -> ``pyglet.media.load_audio`` or ``pyglet.media.load_video``
+* ``pyglet.resource.media`` -> ``pyglet.resource.audio`` or ``pyglet.resource.video``
+
+The behavior and signature has been kept the same.
+
+Loading resources before Window creation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In previous versions of pyglet, a "shadow window" with its own context was something enabled by
+default. This created a hidden 1x1 window that had it's own context that could be shared with other
+windows. This allowed users to load resources and access OpenGL functions before the "real" window was made
+visible.
+
+This caused problems in certain hardware and certain configurations. For example, sometimes
+you could ask for an OpenGL ES context, but because of the shadow window, the driver would upgrade it
+to a full context. Some drivers are also more strict when it comes to sharing behavior. Many downstream
+libraries that depend on pyglet have long disabled the "shadow window" to work around such issues. Due to these many
+factors, we have opted to remove this going forward. This will increase compatibility between backends, while reducing
+the amount of driver related bugs and exceptions.
+
+This change should only affect you if you attempt to load resources before a Window is created.
+
+If your application still needs this behavior, it can still be done by creating your own hidden window, and
+assigning the new window the same graphical context as the shadow window.::
+
+    shadow_window = pyglet.window.Window(1, 1, visible=False)
+    actual_window = pyglet.window.Window(800, 600, context=shadow_window.context)
+
+
+pyglet.graphics.Group changes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+One of the most significant changes will be with Groups. There were three driving reasons:
+
+1) To make groups easier to use: This was a common pitfall for users creating their own groups.
+2) To better support multiple backends: Less need for direct backend (GL) calls for users.
+3) To optimize the draw list for better performance: Now that groups are state aware, we can remove
+   duplicate function calls.
+
+To better understand Groups, please visit the rendering section here: (see :ref:`guide_graphics`) as the next section
+will have an assumed knowledge of Groups.
+
+Starting with Pyglet 3.0, the new ``pyglet.graphics.State`` object has been added.
+Since a Group is a collection of states, this new object will help by giving a clearer perspective on
+how a Group works and how states are applied.
+
+Previously to apply a state, your group might look like this::
+
+    class TextureEnableGroup(pyglet.graphics.Group):
+        def set_state(self):
+            glActiveTexture(GL_TEXTURE0)
+
+        def unset_state(self):
+            # not necessary
+
+
+    texture_enable_group = TextureEnableGroup()
+
+
+    class TextureBindGroup(pyglet.graphics.Group):
+        def __init__(self, texture):
+            super().__init__(parent=texture_enable_group)
+            assert texture.target = GL_TEXTURE_2D
+            self.texture = texture
+
+        def set_state(self):
+            glBindTexture(GL_TEXTURE_2D, self.texture.id)
+
+        def unset_state(self):
+            # not required
+
+        def __eq__(self, other):
+            return (self.__class__ is other.__class__ and
+                    self.texture.id == other.texture.id and
+                    self.texture.target == other.texture.target and
+                    self.parent == other.parent)
+
+        def __hash__(self):
+            return hash((self.texture.id, self.texture.target))
+
+That same group with Pyglet 3.0 look like this::
+
+    class TextureGroup(pyglet.graphics.Group):
+        def __init__(self, texture):
+            self.set_texture(texture, binding=0)
+
+    group = TextureGroup(texture)
+
+Or just as valid::
+
+    class TextureGroup(pyglet.graphics.Group):
+        ...
+
+    group = TextureGroup()
+    group.set_texture(texture)
+
+We have added many built in and common states to pyglet to make Groups easier to define and use. This also reduces the
+need for you to use direct API related calls (such as OpenGL).
+
+This change should only affect you if you utilize any sort of custom groups in your code.
+
+You will notice in the above example there is no longer a ``set_state`` or ``unset_state`` method on the Group itself;
+These methods have have been moved into the ``State`` object. Refer to the rendering guide section: "Creating a custom
+state" to learn the new way to do this.
+
+Other notable API changes
+^^^^^^^^^^^^^^^^^^^^^^^^^
+Additional changes not covered above:
+
+* ``pyglet.config`` and ``pyglet.window.Window(config=...)``:
+  The old ``pyglet.gl.Config`` flow was replaced by ``pyglet.config.Config``.
+  Configure backend-specific options on ``config.opengl``, ``config.gl2``,
+  ``config.gles2``, ``config.gles3``, or ``config.webgl``. You can pass one
+  ``Config`` or multiple ``Config`` objects (in priority order) to
+  ``Window(config=...)``. See :ref:`guide_window-config`.
+
+* ``pyglet.graphics.Texture``:
+  ``Texture.blit_into`` was renamed to ``Texture.upload`` and
+  ``Texture.get_image_data`` was renamed to ``Texture.fetch`` to better reflect that these involve GPU requests.
+
+* Fonts and text:
+  ``pyglet.font.manager`` now supports custom font-name callbacks,
+  ``pyglet.font.get_custom_font_names`` was added, and ``pyglet.font.FontGroup``
+  allows grouped font fallbacks. ``Label.font_name`` now returns the resolved
+  font family name, not the style string passed in.
+
+* ``pyglet.window``:
+  ``Window.set_mouse_visible`` was renamed to
+  ``Window.set_mouse_cursor_visible``, and ``Window.set_mouse_platform_visible``
+  was renamed to ``Window.set_mouse_cursor_platform_visible``.
+
+* ``pyglet.input``:
+  Controllers now dispatch separate events for left/right sticks and
+  left/right triggers.
+
+* ``pyglet.window``:
+  As mentioned above in the shadow window section. The ``context`` keyword argument in Pyglet window
+  creation has been changed take an existing context. This context will share resources with the
+  newly created window.

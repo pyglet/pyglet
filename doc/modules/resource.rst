@@ -3,7 +3,6 @@ pyglet.resource
 
 .. automodule:: pyglet.resource
   :members:
-  :noindex:
   :undoc-members:
 
 
@@ -17,8 +16,8 @@ Functions
 .. autofunction:: image
 .. autofunction:: animation
 .. autofunction:: texture
-.. autofunction:: media
-.. autofunction:: model
+.. autofunction:: audio
+.. autofunction:: video
 .. autofunction:: shader
 .. autofunction:: html
 .. autofunction:: attributed

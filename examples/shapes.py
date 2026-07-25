@@ -43,7 +43,8 @@ class ShapesDemo(pyglet.window.Window):
 
         self.polygon = shapes.Polygon([400, 100], [500, 10], [600, 100], [550, 175], [450, 150], batch=self.batch)
 
-        self.box = shapes.Box(60, 40, 200, 100, thickness=2, color=(244, 55, 55), batch=self.batch)
+        self.box = shapes.Box(60, 40, 200, 100, thickness=2, color=(55, 55, 55), batch=self.batch)
+        self.box.color = (244, 55, 55)
 
         coordinates = [[450, 400], [475, 450], [525, 450], [550, 400]]
         self.multiLine = shapes.MultiLine(*coordinates, closed=True, batch=self.batch)

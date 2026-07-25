@@ -4,6 +4,8 @@ pytest hooks for interactive test cases.
 import inspect
 import pytest
 
+from ..base.event_loop import event_loop  # noqa: TID252
+
 
 def pytest_collection_modifyitems(items, config):
     """Determine whether test should be skipped based on command-line options."""

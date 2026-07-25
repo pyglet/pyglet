@@ -1,7 +1,6 @@
 import unittest
 
-from pyglet.image import *
-from pyglet.window import *
+from pyglet.image import ImageData, ImageGrid
 
 
 def colorbyte(color):
@@ -9,83 +8,77 @@ def colorbyte(color):
 
 
 class ImageGridTestCase(unittest.TestCase):
-    """Test the ImageGrid for textures."""
+    """Test ImageGrid indexing and slicing over image regions."""
 
-    def set_grid_image(self, itemwidth, itemheight, rows, cols, rowpad, colpad):
+    def set_grid_image(self, item_width: int, item_height: int, rows: int, cols: int, rowpad: int, colpad: int):
         data = b''
         color = 1
-        width = itemwidth * cols + colpad * (cols - 1)
-        height = itemheight * rows + rowpad * (rows - 1)
+        width = item_width * cols + colpad * (cols - 1)
+        height = item_height * rows + rowpad * (rows - 1)
         for row in range(rows):
             rowdata = b''
             for col in range(cols):
-                rowdata += colorbyte(color) * itemwidth
+                rowdata += colorbyte(color) * item_width
                 if col < cols - 1:
                     rowdata += b'\0' * colpad
                 color += 1
 
-            data += rowdata * itemheight
+            data += rowdata * item_height
             if row < rows - 1:
                 data += (width * b'\0') * rowpad
         assert len(data) == width * height
         self.image = ImageData(width, height, 'R', data)
-        self.grid = ImageGrid(self.image, rows, cols,
-                              itemwidth, itemheight, rowpad, colpad).get_texture_sequence()
+        self.grid = ImageGrid(
+            self.image,
+            rows,
+            cols,
+            item_width,
+            item_height,
+            rowpad,
+            colpad,
+        )
 
-    def check_cell(self, cellimage, cellindex):
-        self.assertTrue(cellimage.width == self.grid.item_width)
-        self.assertTrue(cellimage.height == self.grid.item_height)
+    def check_cell(self, cell_image, cellindex):
+        self.assertTrue(cell_image.width == self.grid.item_width)
+        self.assertTrue(cell_image.height == self.grid.item_height)
 
         color = colorbyte(cellindex + 1)
-        cellimage = cellimage.get_image_data()
-        data = cellimage.get_data('R', cellimage.width)
+        data = cell_image.get_bytes('R', cell_image.width)
         self.assertTrue(data == color * len(data))
 
-    def setUp(self):
-        self.w = Window(visible=False)
-
-    def tearDown(self) -> None:
-        self.w.close()
-
-    def testSquare(self):
-        # Test a 3x3 grid with no padding and 4x4 images
+    def test_square(self):
         rows = cols = 3
         self.set_grid_image(4, 4, rows, cols, 0, 0)
         for i in range(rows * cols):
             self.check_cell(self.grid[i], i)
 
-    def testRect(self):
-        # Test a 2x5 grid with no padding and 3x8 images
+    def test_rect(self):
         rows, cols = 2, 5
         self.set_grid_image(3, 8, rows, cols, 0, 0)
         for i in range(rows * cols):
             self.check_cell(self.grid[i], i)
 
-    def testPad(self):
-        # Test a 5x3 grid with rowpad=3 and colpad=7 and 10x9 images
+    def test_pad(self):
         rows, cols = 5, 3
         self.set_grid_image(10, 9, rows, cols, 3, 7)
         for i in range(rows * cols):
             self.check_cell(self.grid[i], i)
 
-    def testTuple(self):
-        # Test tuple access
+    def test_tuple(self):
         rows, cols = 3, 4
         self.set_grid_image(5, 5, rows, cols, 0, 0)
         for row in range(rows):
             for col in range(cols):
                 self.check_cell(self.grid[(row, col)], row * cols + col)
 
-    def testRange(self):
-        # Test range access
+    def test_range(self):
         rows, cols = 4, 3
         self.set_grid_image(10, 1, rows, cols, 0, 0)
         images = self.grid[4:8]
         for i, image in enumerate(images):
             self.check_cell(image, i + 4)
 
-    def testTupleRange(self):
-        # Test range over tuples
+    def test_tuple_range(self):
         rows, cols = 10, 10
         self.set_grid_image(4, 4, rows, cols, 0, 0)
         images = self.grid[(3, 2):(6, 5)]

@@ -19,7 +19,7 @@ if len(sys.argv) > 1:
 
 window = pyglet.window.Window(640, 480)
 
-sound = pyglet.resource.media(BALL_SOUND, streaming=False)
+sound = pyglet.resource.audio(BALL_SOUND, streaming=False)
 balls_batch = pyglet.graphics.Batch()
 balls = []
 label = pyglet.text.Label('Press space to add a ball, backspace to remove',
@@ -29,7 +29,7 @@ label = pyglet.text.Label('Press space to add a ball, backspace to remove',
 
 
 class Ball(pyglet.sprite.Sprite):
-    ball_image = pyglet.resource.image(BALL_IMAGE)
+    ball_image = pyglet.resource.texture(BALL_IMAGE)
     width = ball_image.width
     height = ball_image.height
 

@@ -11,12 +11,12 @@ Options can be set directly on the dictionary before any other modules
 are imported::
 
     import pyglet
-    pyglet.options['debug_gl'] = False
+    pyglet.options['debug_api'] = False
 
 They can also be set with environment variables before pyglet is imported.
 The corresponding environment variable for each option is the string
 ``PYGLET_`` prefixed to the uppercase option key.  For example, the
-environment variable for ``debug_gl`` is ``PYGLET_DEBUG_GL``.  Boolean options
+environment variable for ``debug_api`` is ``PYGLET_DEBUG_API``.  Boolean options
 are set or unset with ``1`` and ``0`` values.
 
 A summary of the debug environment variables appears in the table below.
@@ -30,14 +30,14 @@ A summary of the debug environment variables appears in the table below.
         * - ``debug_font``
           - ``PYGLET_DEBUG_FONT``
           - bool
-        * - ``debug_gl``
-          - ``PYGLET_DEBUG_GL``
+        * - ``debug_api``
+          - ``PYGLET_DEBUG_API``
           - bool
-        * - ``debug_gl_trace``
-          - ``PYGLET_DEBUG_GL_TRACE``
+        * - ``debug_api_trace``
+          - ``PYGLET_debug_api_trace``
           - bool
-        * - ``debug_gl_trace_args``
-          - ``PYGLET_DEBUG_GL_TRACE_ARGS``
+        * - ``debug_api_trace_args``
+          - ``PYGLET_debug_api_trace_ARGS``
           - bool
         * - ``debug_graphics_batch``
           - ``PYGLET_DEBUG_GRAPHICS_BATCH``
@@ -84,7 +84,7 @@ applications making use of :py:class:`~pyglet.graphics.Group` and
 Error checking
 ^^^^^^^^^^^^^^
 
-The ``debug_gl`` option intercepts most OpenGL calls and calls ``glGetError``
+The ``debug_api`` option intercepts most OpenGL calls and calls ``glGetError``
 afterwards (it only does this where such a call would be legal).  If an error
 is reported, an exception is raised immediately.
 
@@ -95,8 +95,8 @@ package.
 Tracing
 ^^^^^^^
 
-The ``debug_gl_trace`` option causes all OpenGL functions called to be dumped
-to standard out.  When combined with ``debug_gl_trace_args``, the arguments
+The ``debug_api_trace`` option causes all OpenGL functions called to be dumped
+to standard out.  When combined with ``debug_api_trace_args``, the arguments
 given to each function are also printed (they are abbreviated if necessary to
 avoid dumping large amounts of buffer data).
 

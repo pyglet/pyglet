@@ -24,3 +24,20 @@ def test_window_caption_from_argv():
         window = pyglet.window.Window()
         assert window.caption == test_caption
         window.close()
+
+
+def test_window_caption_setter():
+    window = pyglet.window.Window(caption="initial")
+    window.set_caption("updated")
+    assert window.caption == "updated"
+    window.close()
+
+
+def test_window_visibility_toggle():
+    window = pyglet.window.Window(visible=False)
+    assert window.visible is False
+    window.set_visible(True)
+    assert window.visible is True
+    window.set_visible(False)
+    assert window.visible is False
+    window.close()

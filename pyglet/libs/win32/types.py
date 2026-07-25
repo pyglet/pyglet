@@ -1,3 +1,4 @@
+from __future__ import annotations
 import ctypes
 import sys
 from ctypes import (
@@ -47,6 +48,7 @@ from ctypes.wintypes import (
     LPARAM,
     LPCWSTR,
     LPOLESTR,
+    LPVOID,
     LPWSTR,
     MSG,
     POINT,
@@ -92,8 +94,7 @@ def POINTER_(obj):
         def from_param(cls, x):
             if x is None:
                 return cls()
-            else:
-                return x
+            return x
 
         p.from_param = classmethod(from_param)
 
@@ -159,6 +160,8 @@ MONITOR_DEFAULTTONEAREST = 0
 MONITOR_DEFAULTTONULL = 1
 MONITOR_DEFAULTTOPRIMARY = 2
 
+REGSAM = DWORD
+
 def MAKEINTRESOURCE(i):
     return cast(ctypes.c_void_p(i & 0xFFFF), c_wchar_p)
 
@@ -174,7 +177,7 @@ class WNDCLASS(Structure):
         ('hCursor', HCURSOR),
         ('hbrBackground', HBRUSH),
         ('lpszMenuName', c_char_p),
-        ('lpszClassName', c_wchar_p)
+        ('lpszClassName', c_wchar_p),
     ]
 
 
@@ -182,7 +185,7 @@ class SECURITY_ATTRIBUTES(Structure):
     _fields_ = [
         ("nLength", DWORD),
         ("lpSecurityDescriptor", c_void_p),
-        ("bInheritHandle", BOOL)
+        ("bInheritHandle", BOOL),
     ]
     __slots__ = [f[0] for f in _fields_]
 
@@ -214,7 +217,7 @@ class PIXELFORMATDESCRIPTOR(Structure):
         ('bReserved', BYTE),
         ('dwLayerMask', DWORD),
         ('dwVisibleMask', DWORD),
-        ('dwDamageMask', DWORD)
+        ('dwDamageMask', DWORD),
     ]
 
 
@@ -294,7 +297,7 @@ class BITMAPV5HEADER(Structure):
 class BITMAPINFO(Structure):
     _fields_ = [
         ('bmiHeader', BITMAPINFOHEADER),
-        ('bmiColors', RGBQUAD * 1)
+        ('bmiColors', RGBQUAD * 1),
     ]
     __slots__ = [f[0] for f in _fields_]
 
@@ -314,7 +317,7 @@ class LOGFONT(Structure):
         ('lfClipPrecision', BYTE),
         ('lfQuality', BYTE),
         ('lfPitchAndFamily', BYTE),
-        ('lfFaceName', (c_char * LF_FACESIZE))  # Use ASCII
+        ('lfFaceName', (c_char * LF_FACESIZE)),  # Use ASCII
     ]
 
 
@@ -334,7 +337,7 @@ class LOGFONTW(Structure):
         ('lfClipPrecision', BYTE),
         ('lfQuality', BYTE),
         ('lfPitchAndFamily', BYTE),
-        ('lfFaceName', (WCHAR * LF_FACESIZE))
+        ('lfFaceName', (WCHAR * LF_FACESIZE)),
     ]
 
 
@@ -343,7 +346,7 @@ class TRACKMOUSEEVENT(Structure):
         ('cbSize', DWORD),
         ('dwFlags', DWORD),
         ('hwndTrack', HWND),
-        ('dwHoverTime', DWORD)
+        ('dwHoverTime', DWORD),
     ]
     __slots__ = [f[0] for f in _fields_]
 
@@ -354,7 +357,7 @@ class MINMAXINFO(Structure):
         ('ptMaxSize', POINT),
         ('ptMaxPosition', POINT),
         ('ptMinTrackSize', POINT),
-        ('ptMaxTrackSize', POINT)
+        ('ptMaxTrackSize', POINT),
     ]
     __slots__ = [f[0] for f in _fields_]
 
@@ -363,7 +366,7 @@ class ABC(Structure):
     _fields_ = [
         ('abcA', c_int),
         ('abcB', c_uint),
-        ('abcC', c_int)
+        ('abcC', c_int),
     ]
     __slots__ = [f[0] for f in _fields_]
 
@@ -389,7 +392,7 @@ class TEXTMETRIC(Structure):
         ('tmUnderlined', c_byte),
         ('tmStruckOut', c_byte),
         ('tmPitchAndFamily', c_byte),
-        ('tmCharSet', c_byte)
+        ('tmCharSet', c_byte),
     ]
     __slots__ = [f[0] for f in _fields_]
 
@@ -400,7 +403,7 @@ class MONITORINFOEX(Structure):
         ('rcMonitor', RECT),
         ('rcWork', RECT),
         ('dwFlags', DWORD),
-        ('szDevice', WCHAR * CCHDEVICENAME)
+        ('szDevice', WCHAR * CCHDEVICENAME),
     ]
     __slots__ = [f[0] for f in _fields_]
 
@@ -422,7 +425,7 @@ class _DUMMYSTRUCTNAME2(Structure):
     _fields_ = [
         ('dmPosition', POINTL),
         ('dmDisplayOrientation', DWORD),
-        ('dmDisplayFixedOutput', DWORD)
+        ('dmDisplayFixedOutput', DWORD),
     ]
 
 
@@ -475,7 +478,7 @@ class ICONINFO(Structure):
         ('xHotspot', DWORD),
         ('yHotspot', DWORD),
         ('hbmMask', HBITMAP),
-        ('hbmColor', HBITMAP)
+        ('hbmColor', HBITMAP),
     ]
     __slots__ = [f[0] for f in _fields_]
 
@@ -485,7 +488,7 @@ class RAWINPUTDEVICE(Structure):
         ('usUsagePage', USHORT),
         ('usUsage', USHORT),
         ('dwFlags', DWORD),
-        ('hwndTarget', HWND)
+        ('hwndTarget', HWND),
     ]
 
 
@@ -568,7 +571,7 @@ class _VarTable(Union):
     """Must be in an anonymous union or values will not work across various VT's."""
     _fields_ = [
         ('llVal', ctypes.c_longlong),
-        ('pwszVal', LPWSTR)
+        ('pwszVal', LPWSTR),
     ]
 
 
@@ -580,14 +583,14 @@ class PROPVARIANT(Structure):
         ('wReserved1', ctypes.c_ubyte),
         ('wReserved2', ctypes.c_ubyte),
         ('wReserved3', ctypes.c_ulong),
-        ('union', _VarTable)
+        ('union', _VarTable),
     ]
 
 
 class _VarTableVariant(Union):
     """Must be in an anonymous union or values will not work across various VT's."""
     _fields_ = [
-        ('bstrVal', LPCWSTR)
+        ('bstrVal', LPCWSTR),
     ]
 
 
@@ -599,7 +602,39 @@ class VARIANT(Structure):
         ('wReserved1', WORD),
         ('wReserved2', WORD),
         ('wReserved3', WORD),
-        ('union', _VarTableVariant)
+        ('union', _VarTableVariant),
+    ]
+
+
+class FORMATETC(Structure):
+    _fields_ = [
+        ('cfFormat', WORD),
+        ('ptd', c_void_p),
+        ('dwAspect', DWORD),
+        ('lindex', LONG),
+        ('tymed', DWORD),
+    ]
+
+
+class _STGMEDIUM_UNION(Union):
+    _fields_ = [
+        ('hBitmap', HANDLE),
+        ('hMetaFilePict', HANDLE),
+        ('hEnhMetaFile', HANDLE),
+        ('hGlobal', HANDLE),
+        ('lpszFileName', LPOLESTR),
+        ('pstm', LPSTREAM),
+        ('pstg', c_void_p),
+    ]
+
+
+class STGMEDIUM(Structure):
+    _anonymous_ = ['union']
+
+    _fields_ = [
+        ('tymed', DWORD),
+        ('union', _STGMEDIUM_UNION),
+        ('pUnkForRelease', com.pIUnknown),
     ]
 
 
@@ -660,6 +695,45 @@ class IStream(com.pIUnknown):
     ]
 
 
+class IDataObject(com.pIUnknown):
+    _methods_ = [
+        ('GetData',
+         com.STDMETHOD(POINTER(FORMATETC), POINTER(STGMEDIUM))),
+        ('GetDataHere',
+         com.STDMETHOD(POINTER(FORMATETC), POINTER(STGMEDIUM))),
+        ('QueryGetData',
+         com.STDMETHOD(POINTER(FORMATETC))),
+        ('GetCanonicalFormatEtc',
+         com.STDMETHOD(POINTER(FORMATETC), POINTER(FORMATETC))),
+        ('SetData',
+         com.STDMETHOD(POINTER(FORMATETC), POINTER(STGMEDIUM), BOOL)),
+        ('EnumFormatEtc',
+         com.STDMETHOD(DWORD, c_void_p)),
+        ('DAdvise',
+         com.STDMETHOD(POINTER(FORMATETC), DWORD, c_void_p, POINTER(DWORD))),
+        ('DUnadvise',
+         com.STDMETHOD(DWORD)),
+        ('EnumDAdvise',
+         com.STDMETHOD(c_void_p)),
+    ]
+
+
+IID_IUNKNOWN = com.GUID(0x00000000, 0x0000, 0x0000, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46)
+IID_IDROPTARGET = com.GUID(0x00000122, 0x0000, 0x0000, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46)
+
+class IDropTarget(com.IUnknown):
+    _methods_ = [
+        ('DragEnter',
+         com.STDMETHOD(IDataObject, DWORD, POINT, POINTER(DWORD))),
+        ('DragOver',
+         com.STDMETHOD(DWORD, POINT, POINTER(DWORD))),
+        ('DragLeave',
+         com.STDMETHOD()),
+        ('Drop',
+         com.STDMETHOD(IDataObject, DWORD, POINT, POINTER(DWORD))),
+    ]
+
+
 class DEV_BROADCAST_HDR(Structure):
     _fields_ = (
         ('dbch_size', DWORD),
@@ -674,7 +748,7 @@ class DEV_BROADCAST_DEVICEINTERFACE(Structure):
         ('dbcc_devicetype', DWORD),
         ('dbcc_reserved', DWORD),
         ('dbcc_classguid', com.GUID),
-        ('dbcc_name', ctypes.c_wchar * 256)
+        ('dbcc_name', ctypes.c_wchar * 256),
     )
 
 
@@ -751,14 +825,14 @@ class DISPLAYCONFIG_DEVICE_INFO_HEADER(ctypes.Structure):
     _fields_ = [('type', UINT32),
                 ('size', UINT32),
                 ('adapterId', LUID),
-                ('id', UINT32)
+                ('id', UINT32),
                 ]
 
 
 class DISPLAYCONFIG_SOURCE_DEVICE_NAME(ctypes.Structure):
     _fields_ = [
         ('header', DISPLAYCONFIG_DEVICE_INFO_HEADER),
-        ('viewGdiDeviceName', WCHAR * 32)
+        ('viewGdiDeviceName', WCHAR * 32),
     ]
 
 
@@ -772,4 +846,36 @@ class DISPLAYCONFIG_TARGET_DEVICE_NAME(ctypes.Structure):
         ('connectorInstance', UINT32),
         ('monitorFriendlyDeviceName', WCHAR * 64),
         ('monitorDevicePath', WCHAR * 128),
+    ]
+
+
+LPOFNHOOKPROC = ctypes.WINFUNCTYPE(UINT, HWND,  UINT,WPARAM, LPARAM)
+
+LPEDITMENU = ctypes.c_void_p
+
+class OPENFILENAMEW(Structure):
+    _fields_ = [
+        ("lStructSize", DWORD),
+        ("hwndOwner", HWND),
+        ("hInstance", HINSTANCE),
+        ("lpstrFilter", LPCWSTR),
+        ("lpstrCustomFilter", LPWSTR),
+        ("nMaxCustFilter", DWORD),
+        ("nFilterIndex", DWORD),
+        ("lpstrFile", LPWSTR),
+        ("nMaxFile", DWORD),
+        ("lpstrFileTitle", LPWSTR),
+        ("nMaxFileTitle", DWORD),
+        ("lpstrInitialDir", LPCWSTR),
+        ("lpstrTitle", LPCWSTR),
+        ("Flags", DWORD),
+        ("nFileOffset", WORD),
+        ("nFileExtension", WORD),
+        ("lpstrDefExt", LPCWSTR),
+        ("lCustData", LPARAM),
+        ("lpfnHook", LPOFNHOOKPROC),
+        ("lpTemplateName", LPCWSTR),
+        ("pvReserved", LPVOID),
+        ("dwReserved", DWORD),
+        ("FlagsEx", DWORD),
     ]

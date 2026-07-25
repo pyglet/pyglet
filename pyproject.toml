@@ -10,10 +10,13 @@ authors = [
 readme = "README.md"
 license = { file = "LICENSE" }
 dynamic = ["version", "description"]
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 
 [project.urls]
 Home = "https://pyglet.org"
+
+[tool.mypy]
+exclude = "pyglet.experimental.*"
 
 [[tool.mypy.overrides]]
 # mypy incorrectly reports issues everywhere in pyglet.math because:
@@ -59,7 +62,7 @@ ignore = [
     "B028",  # No explicit stack level in warn
     "FIX002",  # Fixme
     "TD003",  # Missing issue link on the line following this TODO"
-    "T201",   # allow writing print
+    "I001",  # remove after refactors.
 ]
 
 [tool.ruff.lint.isort]
@@ -91,7 +94,6 @@ indent-style = "space"
 "pyglet/gui/*" = ["ARG002"]
 "pyglet/libs/*" = ["RUF012", "D", "N", "ARG"]
 "pyglet/lib.py" = ["ANN", "ARG002", "T201"]
-"pyglet/gl/*" = ["N816", "I001", "N801", "E501", "D"]
 "pyglet/__init__.py" = ["PGH003"]
 "examples/*" = [
     "I",
@@ -111,4 +113,5 @@ indent-style = "space"
     "F405",
 ]
 "tests/*" = ["I", "E", "F", "D", "B", "W", "S", "ANN", "ARG"]
+"pyglet/graphics/api/vulkan/vulkan_lib/vulkan_core.py" = ["ALL"]
 "*_lib.py" = ["RUF012", "D", "N", "ARG"]

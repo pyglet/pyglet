@@ -1,0 +1,735 @@
+"""OpenGL Buffer Objects."""
+
+from __future__ import annotations
+
+import ctypes
+import sys
+from functools import lru_cache
+from typing import TYPE_CHECKING, Sequence
+
+from pyglet.enums import GraphicsAPI
+from pyglet.graphics.api.gl import (
+    GL_ARRAY_BUFFER,
+    GL_DRAW_INDIRECT_BUFFER,
+    GL_DYNAMIC_DRAW,
+    GL_ELEMENT_ARRAY_BUFFER,
+    GL_MAP_READ_BIT,
+    GL_MAP_WRITE_BIT,
+    GL_READ_ONLY,
+    GL_READ_WRITE,
+    GL_MAP_COHERENT_BIT,
+    GL_MAP_PERSISTENT_BIT,
+    GL_PIXEL_PACK_BUFFER,
+    GL_PIXEL_UNPACK_BUFFER,
+    GL_TEXTURE_BUFFER,
+    GL_TRANSFORM_FEEDBACK_BUFFER,
+    GL_UNIFORM_BUFFER,
+    GL_WRITE_ONLY,
+    GLubyte,
+    GLuint,
+    OpenGLSurfaceContext,
+)
+from pyglet.graphics.buffer import (
+    AbstractBuffer,
+    BackedBufferObject as BaseBackedBufferObject,
+    BufferDataStore,
+    CTypeDataStore,
+    DrawIndirectBuffer,
+    MappedBufferObject as BaseMappedBufferObject,
+    PixelBuffer,
+    PixelPackBuffer,
+    PixelUnpackBuffer,
+    TextureBuffer,
+    TransformFeedbackBuffer,
+    UniformBufferObject,
+    _data_type_size,
+)
+
+if TYPE_CHECKING:
+    from pyglet.customtypes import CTypesPointer, DataTypes
+    from pyglet.graphics.shader import GraphicsAttribute
+
+
+class GLBufferObject(AbstractBuffer):
+    """Lightweight OpenGL buffer object.
+
+    This class intentionally treats data as bytes for GPU transfer.
+    """
+
+    id: int | None
+    usage: int
+    target: int
+
+    # If the buffer data has been allocated yet.
+    _allocated: bool
+
+    # Even if it's allocated, there may be garbage in there. Mark when actual data exists.
+    _data_uploaded: bool
+    _context: OpenGLSurfaceContext
+
+    def __init__(
+        self,
+        context: OpenGLSurfaceContext,
+        size: int,
+        target: int = GL_ARRAY_BUFFER,
+        usage: int = GL_DYNAMIC_DRAW,
+    ) -> None:
+        super().__init__(size)
+        self.usage = usage
+        self.target = target
+        self._context = context
+
+        buffer_id = GLuint()
+        self._context.glGenBuffers(1, buffer_id)
+        self.id = buffer_id.value
+        self._allocated = False
+        self._data_uploaded = False
+
+    def _validate_byte_range(self, offset: int, length: int) -> None:
+        assert offset >= 0 and length >= 0, "Offset and length must be non-negative."  # noqa: PT018
+        assert offset + length <= self.size, (
+            f"Byte range [{offset}, {offset + length}) exceeds buffer size {self.size}."
+        )
+
+    def bind(self) -> None:
+        self._context.glBindBuffer(self.target, self.id)
+
+    def unbind(self) -> None:
+        self._context.glBindBuffer(self.target, 0)
+
+    def _ensure_allocated(self) -> None:
+        if self._allocated:
+            return
+        self.bind()
+        self._context.glBufferData(self.target, self.size, None, self.usage)
+        self._allocated = True
+
+    def _require_uploaded_data(self) -> None:
+        assert self._data_uploaded, (
+            "Buffer data has not been uploaded yet. "
+            "Call set_bytes/set_bytes_region, commit, or write through a mapped pointer first."
+        )
+
+    def _set_data_uploaded(self) -> None:
+        self._allocated = True
+        self._data_uploaded = True
+
+    def get_bytes(self) -> bytes:
+        self._require_uploaded_data()
+        self.bind()
+        ptr = self._context.glMapBufferRange(self.target, 0, self.size, GL_MAP_READ_BIT)
+        data = ctypes.string_at(ptr, self.size)
+        self._context.glUnmapBuffer(self.target)
+        return data
+
+    def get_bytes_region(self, offset: int, length: int) -> bytes:
+        self._require_uploaded_data()
+        self._validate_byte_range(offset, length)
+        self.bind()
+        ptr = self._context.glMapBufferRange(self.target, offset, length, GL_MAP_READ_BIT)
+        data = ctypes.string_at(ptr, length)
+        self._context.glUnmapBuffer(self.target)
+        return data
+
+    def set_bytes(self, data: bytes | bytearray | memoryview) -> None:
+        raw = bytes(data)
+        assert len(raw) == self.size, f"Expected {self.size} bytes for full upload, got {len(raw)}."
+        self.bind()
+        self._context.glBufferData(self.target, self.size, raw, self.usage)
+        self._set_data_uploaded()
+
+    def set_bytes_region(self, offset: int, data: bytes | bytearray | memoryview) -> None:
+        # BufferObject updates are whole-buffer by design. Patch the local
+        # bytes and re-upload the full content.
+        raw = bytes(data)
+        self._validate_byte_range(offset, len(raw))
+        whole = bytearray(self.get_bytes()) if self._data_uploaded else bytearray(self.size)
+        whole[offset:offset + len(raw)] = raw
+        self.set_bytes(whole)
+
+    def invalidate(self) -> None:
+        self.bind()
+        self._context.glBufferData(self.target, self.size, None, self.usage)
+        self._allocated = True
+        self._data_uploaded = False
+
+    def delete(self) -> None:
+        if self.id is None:
+            return
+        self._context.glDeleteBuffers(1, GLuint(self.id))
+        self.id = None
+        self._allocated = False
+        self._data_uploaded = False
+
+    def __del__(self) -> None:
+        if self.id is not None:
+            try:
+                self._context.delete_buffer(self.id)
+                self.id = None
+            except (AttributeError, ImportError):
+                pass  # Interpreter is shutting down
+
+    def resize(self, size: int) -> None:
+        assert size >= 0, "Size must be non-negative."
+        if size == self.size:
+            return
+        if not self._allocated:
+            self.size = size
+            self._data_uploaded = False
+            return
+
+        old_size = self.size
+        copy_size = min(size, old_size) if self._data_uploaded else 0
+        temp = (ctypes.c_byte * max(size, 1))() if self._data_uploaded and size > 0 else None
+        self.bind()
+        if copy_size > 0 and temp is not None:
+            data = self._context.glMapBufferRange(self.target, 0, copy_size, GL_MAP_READ_BIT)
+            ctypes.memmove(temp, data, copy_size)
+            self._context.glUnmapBuffer(self.target)
+        self.size = size
+        if temp is None:
+            self._context.glBufferData(self.target, self.size, None, self.usage)
+            self._data_uploaded = False
+        else:
+            self._context.glBufferData(self.target, self.size, temp, self.usage)
+            self._data_uploaded = True
+        self._allocated = True
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(id={self.id}, size={self.size})"
+
+
+class GLMappedBufferObject(GLBufferObject, BaseMappedBufferObject):
+    """OpenGL buffer with map/unmap support."""
+
+    def __init__(self, context: OpenGLSurfaceContext, size: int, target: int = GL_ARRAY_BUFFER,
+                 usage: int = GL_DYNAMIC_DRAW) -> None:
+        super().__init__(context, size, target, usage)
+        # GLES3 only supports mapping a range.
+        self._supports_range_only = self._context.info.get_opengl_api() == GraphicsAPI.OPENGL_ES_3
+
+        # Mapping doesn't necessarily mean it wrote something... try to track if it wrote something.
+        self._last_map_includes_write = False
+
+    @staticmethod
+    def _to_map_range_bits(bits: int) -> int:
+        if bits == GL_WRITE_ONLY:
+            return GL_MAP_WRITE_BIT
+        if bits == GL_READ_ONLY:
+            return GL_MAP_READ_BIT
+        if bits == GL_READ_WRITE:
+            return GL_MAP_READ_BIT | GL_MAP_WRITE_BIT
+        return bits
+
+    def map(self, bits: int = GL_WRITE_ONLY) -> CTypesPointer[ctypes.c_byte]:
+        self._ensure_allocated()
+        self.bind()
+        if self._supports_range_only:
+            range_bits = self._to_map_range_bits(bits)
+            self._last_map_includes_write = (range_bits & GL_MAP_WRITE_BIT) != 0
+            ptr = self._context.glMapBufferRange(self.target, 0, self.size, range_bits)
+        else:
+            self._last_map_includes_write = bits in (GL_WRITE_ONLY, GL_READ_WRITE)
+            ptr = self._context.glMapBuffer(self.target, bits)
+        return ctypes.cast(ptr, ctypes.POINTER(ctypes.c_byte * self.size)).contents
+
+    def map_range(
+        self,
+        start: int,
+        size: int,
+        ptr_type: type[CTypesPointer],
+        bits: int = GL_MAP_WRITE_BIT,
+    ) -> CTypesPointer:
+        self._validate_byte_range(start, size)
+        self._ensure_allocated()
+        self.bind()
+        self._last_map_includes_write = (bits & GL_MAP_WRITE_BIT) != 0
+        return ctypes.cast(self._context.glMapBufferRange(self.target, start, size, bits), ptr_type).contents
+
+    def unmap(self) -> None:
+        self._context.glUnmapBuffer(self.target)
+        if self._last_map_includes_write:
+            self._set_data_uploaded()
+        self._last_map_includes_write = False
+
+
+class GLBackedBufferObject(BaseBackedBufferObject, GLBufferObject):
+    """Buffer with host-side mirrored store and deferred GPU commit."""
+
+    data: object
+    data_ptr: int | None
+    _dirty_min: int
+    _dirty_max: int
+    _dirty: bool
+
+    def __init__(
+        self,
+        context: OpenGLSurfaceContext,
+        size: int,
+        data_type: DataTypes,
+        stride: int,
+        element_count: int,
+        usage: int = GL_DYNAMIC_DRAW,
+        target: int = GL_ARRAY_BUFFER,
+        store: BufferDataStore | None = None,
+    ) -> None:
+        GLBufferObject.__init__(self, context, size, target=target, usage=usage)
+
+        store = store or CTypeDataStore(size, data_type, stride, element_count)
+        assert store.size == size and store.stride == stride and store.element_count == element_count, (
+            "Store layout mismatch. "
+            f"Expected size={size}, stride={stride}, element_count={element_count}; "
+            f"got size={store.size}, stride={store.stride}, element_count={store.element_count}."
+        )
+        BaseBackedBufferObject.__init__(self, size, store)
+
+        self._dirty_min = sys.maxsize
+        self._dirty_max = 0
+        self._dirty = False
+
+    def _mark_dirty_bytes(self, byte_start: int, byte_end: int) -> None:
+        if byte_start < self._dirty_min:
+            self._dirty_min = byte_start
+        if byte_end > self._dirty_max:
+            self._dirty_max = byte_end
+        self._dirty = True
+
+    def set_bytes(self, data: bytes | bytearray | memoryview) -> None:
+        raw = bytes(data)
+        assert len(raw) == self.size, f"Expected {self.size} bytes for full upload, got {len(raw)}."
+        self.store.set_bytes(0, raw)
+        self._mark_dirty_bytes(0, self.size)
+
+    def set_bytes_region(self, offset: int, data: bytes | bytearray | memoryview) -> None:
+        assert 0 <= offset <= self.size and offset + len(data) <= self.size, (
+            f"Byte range [{offset}, {offset + len(data)}) exceeds buffer size {self.size}."
+        )
+        self.store.set_bytes(offset, data)
+        self._mark_dirty_bytes(offset, offset + len(data))
+
+    def commit(self) -> None:
+        """Commits all saved changes to the underlying buffer before drawing.
+
+        Allows submitting multiple changes at once, rather than having to call glBufferSubData for every change.
+        """
+        if not self._dirty:
+            return
+
+        self.bind()
+        size = self._dirty_max - self._dirty_min
+        if not self._allocated or not self._data_uploaded or size == self.size:
+            self._context.glBufferData(self.target, self.size, self.store.get_bytes(), self.usage)
+        else:
+            self._context.glBufferSubData(
+                self.target,
+                self._dirty_min,
+                size,
+                self.store.get_bytes(self._dirty_min, size),
+            )
+        self._set_data_uploaded()
+
+        self._dirty_min = sys.maxsize
+        self._dirty_max = 0
+        self._dirty = False
+
+    @lru_cache(maxsize=None)  # noqa: B019
+    def get_region(self, start: int, count: int):
+        return self.store.get_region(start, count)
+
+    def set_region(self, start: int, count: int, data: Sequence[float | int]) -> None:
+        self.store.set_region(start, count, data)
+        self.invalidate_region(start, count)
+
+    def copy_region(self, dst: int, src: int, count: int) -> None:
+        self.store.copy_region(dst, src, count)
+        self.invalidate_region(dst, count)
+
+    def resize(self, size: int) -> None:
+        self.resize_store(size)
+
+        self._dirty_min = 0
+        self._dirty_max = self.size
+        self._dirty = True
+        self.get_region.cache_clear()
+
+
+class GLAttributeBufferObject(GLBackedBufferObject):
+    """A backed buffer used for shader attributes."""
+
+    def __init__(
+        self,
+        context: OpenGLSurfaceContext,
+        size: int,
+        graphics_attr: GraphicsAttribute,
+        store: BufferDataStore | None = None,
+    ) -> None:
+        super().__init__(
+            context,
+            size,
+            graphics_attr.attribute.fmt.data_type,
+            graphics_attr.view.stride,
+            graphics_attr.attribute.fmt.components,
+            store=store,
+        )
+
+
+class GLIndexedBufferObject(GLBackedBufferObject):
+    """A backed buffer used for indices."""
+
+    def __init__(
+        self,
+        context: OpenGLSurfaceContext,
+        size: int,
+        data_type: DataTypes,
+        stride: int,
+        count: int,
+        usage: int = GL_DYNAMIC_DRAW,
+        store: BufferDataStore | None = None,
+    ) -> None:
+        super().__init__(
+            context,
+            size,
+            data_type,
+            stride,
+            count,
+            usage,
+            target=GL_ELEMENT_ARRAY_BUFFER,
+            store=store,
+        )
+
+    def bind_to_index_buffer(self) -> None:
+        self._context.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.id)
+
+
+class GLPixelBufferObject(GLBufferObject, PixelBuffer):
+    """OpenGL pixel transfer buffer object (PBO)."""
+
+    def __init__(
+        self,
+        context: OpenGLSurfaceContext,
+        size: int,
+        *,
+        pack: bool = False,
+        usage: int = GL_DYNAMIC_DRAW,
+    ) -> None:
+        target = GL_PIXEL_PACK_BUFFER if pack else GL_PIXEL_UNPACK_BUFFER
+        super().__init__(context, size, target=target, usage=usage)
+
+
+class GLPixelPackBufferObject(GLPixelBufferObject, PixelPackBuffer):
+    """OpenGL pixel pack buffer object (readback path)."""
+
+    def __init__(self, context: OpenGLSurfaceContext, size: int, usage: int = GL_DYNAMIC_DRAW) -> None:
+        super().__init__(context, size, pack=True, usage=usage)
+
+
+class GLPixelUnpackBufferObject(GLPixelBufferObject, PixelUnpackBuffer):
+    """OpenGL pixel unpack buffer object (upload path)."""
+
+    def __init__(self, context: OpenGLSurfaceContext, size: int, usage: int = GL_DYNAMIC_DRAW) -> None:
+        super().__init__(context, size, pack=False, usage=usage)
+
+
+class GLTransformFeedbackBufferObject(GLBufferObject, TransformFeedbackBuffer):
+    """OpenGL transform feedback buffer object."""
+
+    def __init__(
+        self,
+        context: OpenGLSurfaceContext,
+        size: int,
+        usage: int = GL_DYNAMIC_DRAW,
+        data_type: DataTypes = "b",
+    ) -> None:
+        """Create an OpenGL transform feedback buffer.
+
+        Args:
+            context:
+                Active OpenGL surface context.
+            size:
+                Buffer size in bytes.
+            usage:
+                OpenGL usage hint.
+            data_type:
+                Preferred scalar format for :meth:`get_data`. The helper always
+                returns a ctypes array of this scalar type.
+        """
+        element_size = _data_type_size(data_type)
+        assert size % element_size == 0, (
+            f"Buffer size {size} is not aligned to element size {element_size} "
+            f"for data type '{data_type}'."
+        )
+        super().__init__(context, size, target=GL_TRANSFORM_FEEDBACK_BUFFER, usage=usage)
+        TransformFeedbackBuffer.__init__(self, size=size, data_type=data_type)
+
+    def bind_base(self, index: int) -> None:
+        self._ensure_allocated()
+        self._context.glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, index, self.id)
+        self._data_uploaded = True
+
+    def bind_range(self, index: int, offset: int, size: int) -> None:
+        self._validate_byte_range(offset, size)
+        self._ensure_allocated()
+        self._context.glBindBufferRange(GL_TRANSFORM_FEEDBACK_BUFFER, index, self.id, offset, size)
+        self._data_uploaded = True
+
+
+class GLTextureBufferObject(GLBufferObject, TextureBuffer):
+    """OpenGL texture buffer object (TBO)."""
+
+    def __init__(self, context: OpenGLSurfaceContext, size: int, usage: int = GL_DYNAMIC_DRAW) -> None:
+        super().__init__(context, size, target=GL_TEXTURE_BUFFER, usage=usage)
+
+
+class GLDrawIndirectBufferObject(GLBufferObject, DrawIndirectBuffer):
+    """OpenGL draw indirect buffer object."""
+
+    def __init__(self, context: OpenGLSurfaceContext, size: int, usage: int = GL_DYNAMIC_DRAW) -> None:
+        super().__init__(context, size, target=GL_DRAW_INDIRECT_BUFFER, usage=usage)
+
+
+class GLUniformBufferObject(UniformBufferObject):
+    """OpenGL Uniform Buffer Object wrapper."""
+
+    buffer: GLBufferObject
+    minimum_alignment: int
+    __slots__ = ("minimum_alignment",)
+
+    def __init__(
+        self,
+        context: OpenGLSurfaceContext,
+        view_class: type[ctypes.Structure],
+        buffer_size: int,
+        binding: int,
+        *,
+        alignment: int | None = None,
+        copies_per_resource: int = 3,
+        strict: bool = False,
+    ) -> None:
+        self._context = context
+        self.minimum_alignment = max(1, context.info.MAX_UNIFORM_BUFFER_OFFSET_ALIGNMENT)
+        requested_alignment = (
+            self.minimum_alignment if alignment is None else max(int(alignment), self.minimum_alignment)
+        )
+        super().__init__(
+            context,
+            view_class,
+            buffer_size,
+            binding,
+            alignment=requested_alignment,
+            copies_per_resource=copies_per_resource,
+            strict=strict,
+        )
+
+    def _create_buffer(self, context: OpenGLSurfaceContext, buffer_size: int) -> GLBufferObject:
+        return GLBufferObject(context, buffer_size, target=GL_UNIFORM_BUFFER)
+
+    def _bind_range(self, binding: int, offset: int, size: int) -> None:
+        self._context.glBindBufferRange(GL_UNIFORM_BUFFER, binding, self.buffer.id, offset, size)
+
+class PersistentBufferObject(BaseMappedBufferObject):
+    """A persistently mapped OpenGL buffer.
+
+    Available in OpenGL 4.4+ contexts. The buffer is mapped once on creation
+    and remains mapped for the buffer lifetime.
+    """
+
+    id: int | None
+    target: int
+    usage: int
+    flags: int
+    stride: int
+    element_count: int
+    data_type: DataTypes
+    store: CTypeDataStore | None
+    _mapped: object | None
+    _mapped_ptr: int
+    _storage_size: int
+    _context: OpenGLSurfaceContext
+
+    def __init__(
+        self,
+        context: OpenGLSurfaceContext,
+        size: int,
+        graphics_attr: GraphicsAttribute,
+        target: int = GL_ARRAY_BUFFER,
+        usage: int = GL_DYNAMIC_DRAW,
+    ) -> None:
+        super().__init__(size)
+
+        self.target = target
+        self.usage = usage
+        self._context = context
+        self.stride = graphics_attr.view.stride
+        self.element_count = graphics_attr.attribute.fmt.components
+        self.data_type = graphics_attr.attribute.fmt.data_type
+        self.flags = GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT
+
+        self.id = None
+        self.store = None
+        self._mapped = None
+        self._mapped_ptr = 0
+        self._storage_size = 0
+        self._recreate(size)
+
+    def _validate_byte_range(self, offset: int, length: int) -> None:
+        assert offset >= 0 and length >= 0, "Offset and length must be non-negative."
+        assert offset + length <= self.size, (
+            f"Byte range [{offset}, {offset + length}) exceeds buffer size {self.size}."
+        )
+
+    def _create_storage(self, size: int) -> tuple[int, object, int, int]:
+        storage_size = max(size, 1)
+        buffer_id = GLuint()
+        self._context.glGenBuffers(1, buffer_id)
+        new_id = buffer_id.value
+
+        self._context.glBindBuffer(self.target, new_id)
+        data = (GLubyte * storage_size)()
+        self._context.glBufferStorage(self.target, storage_size, data, self.flags)
+
+        ptr_type = ctypes.POINTER(ctypes.c_byte * storage_size)
+        mapped = ctypes.cast(
+            self._context.glMapBufferRange(self.target, 0, storage_size, self.flags),
+            ptr_type,
+        ).contents
+        mapped_ptr = ctypes.addressof(mapped)
+        return new_id, mapped, mapped_ptr, storage_size
+
+    def _recreate(self, size: int, preserve: bytes = b"") -> None:
+        new_id, new_mapped, new_ptr, storage_size = self._create_storage(size)
+        if preserve:
+            ctypes.memmove(new_ptr, preserve, len(preserve))
+
+        old_id = self.id
+        self.id = new_id
+        self.size = size
+        self._mapped = new_mapped
+        self._mapped_ptr = new_ptr
+        self._storage_size = storage_size
+        if self.store is None:
+            self.store = CTypeDataStore(
+                size,
+                self.data_type,
+                self.stride,
+                self.element_count,
+                data_ptr=new_ptr,
+            )
+        else:
+            self.store.rebind_external(size, new_ptr)
+        self.get_region.cache_clear()
+
+        if old_id is not None:
+            self._context.glDeleteBuffers(1, GLuint(old_id))
+
+    def _require_mapped_ptr(self) -> int:
+        assert self._mapped_ptr != 0, "PersistentBufferObject is not mapped."
+        return self._mapped_ptr
+
+    def _require_store(self) -> CTypeDataStore:
+        self._require_mapped_ptr()
+        assert self.store is not None, "PersistentBufferObject store is not initialized."
+        return self.store
+
+    @property
+    def data(self):
+        return self._require_store().data
+
+    @property
+    def data_ptr(self) -> int:
+        return self._require_store().data_ptr
+
+    @property
+    def element_size(self) -> int:
+        return self._require_store().element_size
+
+    def bind(self) -> None:
+        self._context.glBindBuffer(self.target, self.id)
+
+    def unbind(self) -> None:
+        self._context.glBindBuffer(self.target, 0)
+
+    def get_bytes(self) -> bytes:
+        return self._require_store().get_bytes()
+
+    def get_bytes_region(self, offset: int, length: int) -> bytes:
+        self._validate_byte_range(offset, length)
+        return self._require_store().get_bytes(offset, length)
+
+    def set_bytes(self, data: bytes | bytearray | memoryview) -> None:
+        raw = bytes(data)
+        assert len(raw) == self.size, f"Expected {self.size} bytes for full upload, got {len(raw)}."
+        self._require_store().set_bytes(0, raw)
+
+    def set_bytes_region(self, offset: int, data: bytes | bytearray | memoryview) -> None:
+        raw = bytes(data)
+        self._validate_byte_range(offset, len(raw))
+        self._require_store().set_bytes(offset, raw)
+
+    def map(self, bits: int = GL_WRITE_ONLY) -> CTypesPointer[ctypes.c_byte]:  # noqa: ARG002
+        ptr_type = ctypes.POINTER(ctypes.c_byte * self.size)
+        return ctypes.cast(self._require_mapped_ptr(), ptr_type).contents
+
+    def map_range(
+        self,
+        start: int,
+        size: int,
+        ptr_type: type[CTypesPointer],
+        bits: int = GL_MAP_WRITE_BIT,  # noqa: ARG002
+    ) -> CTypesPointer:
+        self._validate_byte_range(start, size)
+        return ctypes.cast(self._require_mapped_ptr() + start, ptr_type).contents
+
+    def unmap(self) -> None:
+        # Persistent storage stays mapped for the buffer lifetime.
+        return
+
+    def delete(self) -> None:
+        if self.id is None:
+            return
+        self._context.glDeleteBuffers(1, GLuint(self.id))
+        self.id = None
+        self._mapped = None
+        self._mapped_ptr = 0
+        self._storage_size = 0
+        self.get_region.cache_clear()
+
+    def __del__(self) -> None:
+        if self.id is not None:
+            try:
+                self._context.delete_buffer(self.id)
+                self.id = None
+            except (AttributeError, ImportError):
+                pass  # Interpreter is shutting down
+
+    @lru_cache(maxsize=None)
+    def get_region(self, start: int, count: int):
+        assert start >= 0 and count >= 0, "Start and count must be non-negative."  # noqa: PT018
+        byte_start = self.stride * start
+        byte_size = self.stride * count
+        self._validate_byte_range(byte_start, byte_size)
+
+        return self._require_store().get_region(start, count)
+
+    def set_region(self, start: int, count: int, data: Sequence[float | int]) -> None:
+        assert start >= 0 and count >= 0, "Start and count must be non-negative."  # noqa: PT018
+        self._require_store().set_region(start, count, data)
+
+    def resize(self, size: int) -> None:
+        assert size >= 0, "Size must be non-negative."
+        if size == self.size:
+            return
+        copy_size = min(self.size, size)
+        preserved = self.get_bytes_region(0, copy_size) if copy_size > 0 else b""
+        self._recreate(size, preserved)
+
+    def commit(self) -> None:
+        # Not needed for persistent mapping.
+        return
+
+    def invalidate(self) -> None:
+        # Not needed for persistent mapping.
+        return
+
+    def invalidate_region(self, start: int, count: int) -> None:  # noqa: ARG002
+        # Not needed for persistent mapping.
+        return

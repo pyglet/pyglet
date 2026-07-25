@@ -4,9 +4,10 @@ import os
 from ctypes import byref, memmove
 from typing import BinaryIO, Sequence
 
+import pyglet
 from pyglet.image import ImageData
 from pyglet.image.codecs import ImageDecodeException, ImageDecoder, ImageEncoder
-from pyglet.image.codecs.wincodec_lib import (
+from pyglet.libs.win32.wincodec import (
     CLSID_WICImagingFactory1,
     CLSID_WICImagingFactory2,
     GUID_ContainerFormatBmp,
@@ -16,6 +17,7 @@ from pyglet.image.codecs.wincodec_lib import (
     GUID_ContainerFormatWmp,
     GUID_WICPixelFormat24bppBGR,
     GUID_WICPixelFormat32bppBGRA,
+    GUID_WICPixelFormat32bppRGBA,
     IID_IWICImagingFactory1,
     IID_IWICImagingFactory2,
     IPropertyBag2,
@@ -112,6 +114,12 @@ def extract_image_data(bitmap: IWICBitmap, target_fmt: com.GUID = GUID_WICPixelF
 
     .. note:: ``bitmap`` is released before this function returns.
     """
+    if "es" in pyglet.options.backend:
+        target_fmt = GUID_WICPixelFormat32bppRGBA
+        fmt = "RGBA"
+    else:
+        fmt = "BGRA"
+
     width = UINT()
     height = UINT()
 
@@ -124,7 +132,6 @@ def extract_image_data(bitmap: IWICBitmap, target_fmt: com.GUID = GUID_WICPixelF
     pf = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
     bitmap.GetPixelFormat(byref(pf))
 
-    fmt = 'BGRA'
     # If target format is not what we want (32bit BGRA) convert it.
     if pf != target_fmt:
         converter = IWICFormatConverter()
@@ -136,6 +143,8 @@ def extract_image_data(bitmap: IWICBitmap, target_fmt: com.GUID = GUID_WICPixelF
         # 99% of the time conversion will be possible to default.
         # However, we check to be safe and fallback to 24 bit BGR if not possible.
         if not conversion_possible:
+            if "es" in pyglet.options.backend:
+                    raise Exception("Could not convert image to proper format.")
             target_fmt = GUID_WICPixelFormat24bppBGR
             fmt = 'BGR'
 
@@ -286,7 +295,7 @@ class WICEncoder(ImageEncoder):  # noqa: D101
 
         pitch = image.width * len(fmt)
 
-        image_data = image.get_data(fmt, -pitch)
+        image_data = image.get_bytes(fmt, -pitch)
 
         size = pitch * image.height
 

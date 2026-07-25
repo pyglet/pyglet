@@ -3,10 +3,9 @@ from __future__ import annotations
 import abc
 from typing import TYPE_CHECKING, Literal
 
-from pyglet import app, display, gl, window
+from pyglet import app, display
 
 if TYPE_CHECKING:
-    from pyglet.gl import Config
     from pyglet.window import BaseWindow
 
 
@@ -19,15 +18,15 @@ class Display:
     x_screen: int = None
     """The X11 screen number of this display, if applicable."""
 
-    def __init__(self, name: str = None, x_screen: int = None) -> None:
+    def __init__(self, name: str | None = None, x_screen: int | None = None) -> None:
         """Create a display connection for the given name and screen.
 
         On X11, :attr:`name` is of the form ``"hostname:display"``, where the
         default is usually ``":1"``.  On X11, :attr:`x_screen` gives the X 
         screen number to use with this display.  A pyglet display can only be 
         used with one X screen; open multiple display connections to access
-        multiple X screens.  
-        
+        multiple X screens.
+
         Note that TwinView, Xinerama, xrandr and other extensions present
         multiple monitors on a single X screen; this is usually the preferred
         mechanism for working with multiple monitors under X11 and allows each
@@ -99,52 +98,6 @@ class Screen(abc.ABC):
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(x={self.x}, y={self.y}, width={self.width}, height={self.height})"
-
-    def get_best_config(self, template: Config = None) -> Config:
-        """Get the best available GL config.
-
-        Any required attributes can be specified in ``template``.  If
-        no configuration matches the template,
-        :class:`~pyglet.window.NoSuchConfigException` will be raised.
-        A configuration supported by the platform that best fulfils
-        the needs described by the template.
-
-        :deprecated: Use :meth:`pyglet.gl.Config.match`.
-
-        Args:
-            template:
-                A configuration with desired attributes filled in.
-        """
-        configs = None
-        if template is None:
-            for template_config in [gl.Config(double_buffer=True, depth_size=24, major_version=3, minor_version=3),
-                                    gl.Config(double_buffer=True, depth_size=16, major_version=3, minor_version=3),
-                                    None]:
-                try:
-                    configs = self.get_matching_configs(template_config)
-                    break
-                except window.NoSuchConfigException:
-                    pass
-        else:
-            configs = self.get_matching_configs(template)
-        if not configs:
-            raise window.NoSuchConfigException()
-        return configs[0]
-
-    def get_matching_configs(self, template: Config) -> list[Config]:
-        """Get a list of configs that match a specification.
-
-        Any attributes specified in `template` will have values equal
-        to or greater in each returned config.  If no configs satisfy
-        the template, an empty list is returned.
-
-        :deprecated: Use :meth:`pyglet.gl.Config.match`.
-
-        Args:
-            template:
-                A configuration with desired attributes filled in.
-        """
-        raise NotImplementedError('abstract')
 
     def get_modes(self) -> list[ScreenMode]:
         """Get a list of screen modes supported by this screen.
@@ -273,16 +226,3 @@ class ScreenMode:
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}(width={self.width!r}, height={self.height!r}, depth={self.depth!r}, rate={self.rate})'
 
-
-class Canvas:
-    """Abstract drawing area.
-
-    Canvases are used internally by pyglet to represent drawing areas --
-    either within a window or full-screen.
-
-    .. versionadded:: 1.2
-    """
-
-    def __init__(self, display: Display) -> None:
-        self.display = display
-        """Display this canvas was created on."""

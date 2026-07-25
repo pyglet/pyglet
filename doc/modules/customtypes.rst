@@ -2,8 +2,6 @@ pyglet.customtypes
 ==================
 
 .. automodule:: pyglet.customtypes
-  :members:
-  :undoc-members:
 
 .. autodata:: Buffer
 
@@ -14,3 +12,5 @@ pyglet.customtypes
 .. autodata:: AnchorY
 
 .. autodata:: ContentVAlign
+
+.. autodata:: DataTypes

@@ -4,19 +4,17 @@ ctypes Wrapper Generation
 The following modules in pyglet are entirely (or mostly) generated from one or
 more C header files:
 
-* pyglet.gl.gl
-* pyglet.gl.gl_compat
-* pyglet.gl.agl
-* pyglet.gl.glext_abi
-* pyglet.gl.glext_nv
-* pyglet.gl.glx
-* pyglet.gl.glxext_abi
-* pyglet.gl.glxext_nv
-* pyglet.gl.wgl
-* pyglet.gl.wglext_abi
-* pyglet.gl.wglext_nv
-* pyglet.window.xlib.xlib
-* pyglet.window.xlib.xinerama
+* pyglet.graphics.api.gl.gl
+* pyglet.graphics.api.gl1.gl_compat
+* pyglet.libs.darwin.agl
+* pyglet.libs.linux.glx.glx
+* pyglet.libs.linux.glx.glxext_arb
+* pyglet.libs.linux.glx.glxext_nv
+* pyglet.libs.linux.glx.glxext_mesa
+* pyglet.libs.win32.wgl
+* pyglet.libs.win32.wglext_arb
+* pyglet.libs.linux.x11.xlib
+* pyglet.libs.linux.x11.xinerama
 
 The wrapping framework is in ``tools/wraptypes``, and pyglet-specialised batch
 scripts are ``tools/genwrappers.py`` (generates xlib wrappers) and
@@ -27,10 +25,10 @@ Generating GL wrappers (new version)
 
 The new ``gengl.py`` script only generates the following modules:
 
-* ``gl.py``: OpenGL 4.6 core profile enums and functions. All deprecated
-  enums and functions are not included.
-* ``gl_compat.py``: OpenGL 4.6 compatibility profile with all enums and
-  functions all the way back to OpenGL 1.0.
+* ``pyglet/graphics/api/gl/gl.py``: OpenGL 4.6 core profile enums and functions.
+  All deprecated enums and functions are not included.
+* ``pyglet/graphics/api/gl1/gl_compat.py``: OpenGL 4.6 compatibility profile
+  with all enums and functions all the way back to OpenGL 1.0.
 
 Running the script:
 
@@ -58,32 +56,29 @@ merely caches header files so they don't need to be repeatedly downloaded (but
 you'd prefer to use the most recent uncached copies if you're reading this,
 presumably).
 
-On Linux, generate ``pyglet.gl.gl``, ``pyglet.gl.glext_abi`` and
-``pyglet.gl.glext_nv`` (the complete user-visible GL
+On Linux, generate ``pyglet.graphics.api.gl.gl`` and
+``pyglet.graphics.api.gl1.gl_compat`` (the complete user-visible GL
 package)::
 
-    python tools/gengl.py gl glext_abi glext_nv
+    python tools/gengl.py
 
-The header files for ``pyglet.gl.gl`` are located in
+The header files for ``pyglet.graphics.api.gl.gl`` are located in
 ``/usr/include/GL``.  Ensure your Linux distribution has recent versions
 of these files (unfortunately they do not seem to be accessible outside of a
 distribution or OS).
 
-The header files for ``pyglet.glext_abi`` and ``pyglet.glext_nv`` are
-downloaded from http://www.opengl.org and http://developer.nvidia.com,
-respectively.
+On Linux still, generate ``pyglet.libs.linux.glx.glx``,
+``pyglet.libs.linux.glx.glxext_arb``, ``pyglet.libs.linux.glx.glxext_nv``
+and ``pyglet.libs.linux.glx.glxext_mesa``::
 
-On Linux still, generate ``pyglet.gl.glx``, ``pyglet.gl.glxext_abi`` and
-``pyglet.gl.glxext_nv``::
+    python tools/gengl.py glx glxext_arb glxext_nv glxext_mesa
 
-    python tools/gengl.py glx glxext_abi glxext_nv
-
-The header file for ``pyglet.gl.glx`` is in ``/usr/include/GL``, and
+The header file for ``pyglet.libs.linux.glx.glx`` is in ``/usr/include/GL``, and
 is expected to depend on X11 header files from ``/usr/include/X11``.
-``glext_abi`` and ``glext_nv`` header files are downloaded from the above
+``glxext_arb``, ``glxext_nv`` and ``glxext_mesa`` header files are downloaded from the above
 websites.
 
-On OS X, generate ``pyglet.gl.agl``::
+On OS X, generate ``pyglet.libs.darwin.agl``::
 
     python tools/gengl.py agl
 
@@ -91,20 +86,20 @@ Watch a movie while you wait -- it uses virtually every header file on the
 system.  Expect to see one syntax error in ``PictUtils.h`` line 67, it is
 unimportant.
 
-On Windows XP, generate ``pyglet.gl.wgl``, ``pyglet.gl.wglext_abi`` and
-``pyglet.gl.wglext_nv``::
+On Windows, generate ``pyglet.libs.win32.wgl`` and
+``pyglet.libs.win32.wglext_arb``::
 
-    python tools/gengl.py wgl wglext_abi wglext_nv
+    python tools/gengl.py wgl wglext_arb
 
 You do not need to have a development environment installed on Windows.
-``pyglet.gl.wgl`` is generated from ``tools/wgl.h``, which is a hand-coded
+``pyglet.libs.win32.wgl`` is generated from ``tools/wgl.h``, which is a hand-coded
 header file containing the prototypes and constants for WGL and its
 dependencies.  In a real development environment you would find these mostly
 in ``WinGDI.h``, but wraptypes is not quite sophisticated enough to parse
 Windows system headers (see below for what needs implementing).  It is
 extremely unlikely this header will ever need to change (excepting a bug fix).
 
-The headers for ``pyglet.gl.wglext_abi`` and ``pyglet.gl.wglext_nv`` are
+The headers for ``pyglet.libs.win32.wglext_arb`` are
 downloaded from the same websites as for GL and GLX.
 
 Generated GL wrappers
@@ -130,11 +125,11 @@ just available), run::
 
     python tools/genwrappers.py
 
-This generates ``pyglet.window.xlib.xlib`` and
-``pyglet.window.xlib.xinerama``.
+This generates ``pyglet.libs.linux.x11.xlib`` and
+``pyglet.libs.linux.x11.xinerama``.
 
 Note that this process, as well as the generated modules, depend on
-``pyglet.gl.glx``.  So, you should always run this `after` the above GL
+``pyglet.libs.linux.glx.glx``.  So, you should always run this `after` the above GL
 generation.
 
 

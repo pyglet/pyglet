@@ -9,6 +9,7 @@ import enum
 import warnings
 
 from typing import TYPE_CHECKING, Literal
+from dataclasses import dataclass
 
 from pyglet.math import Vec2
 from pyglet.event import EventDispatcher
@@ -16,7 +17,6 @@ from pyglet.event import EventDispatcher
 if TYPE_CHECKING:
     from pyglet.window import BaseWindow
     from pyglet.display.base import Display
-    from pyglet.input.controller import Relation
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -40,12 +40,19 @@ class Sign(enum.Enum):
     DEFAULT = enum.auto()
 
 
+@dataclass
+class Relation:
+    control_type: str
+    index: int
+    sign: Sign = Sign.DEFAULT
+
+
 class Device:
     """Low level input device."""
 
     connected: bool
 
-    def __init__(self, display: Display, name: str) -> None:
+    def __init__(self, display: Display | None, name: str) -> None:
         """Create a Device to receive input from.
 
         Args:
@@ -70,19 +77,19 @@ class Device:
 
         Args:
             window:
-                Optional window to associate with the device.  The behaviour
+                Optional window to associate with the device. The behavior
                 of this parameter is device and operating system dependent.
                 It can usually be omitted for most devices.
             exclusive:
                 If ``True`` the device will be opened exclusively so that no
-                other application can use it.
+                other application can use it. Note that not all device types
+                support being opened exclusively.
 
         Raises:
             DeviceOpenException:
                 If the device cannot be opened in exclusive mode, usually
                 due to being opened exclusively by another application.
         """
-
         if self._is_open:
             raise DeviceOpenException('Device is already open.')
 
@@ -121,7 +128,7 @@ class Control(EventDispatcher):
     device; in some cases the control's value will be outside this range.
     """
 
-    def __init__(self, name: None | str, raw_name: None | str = None, inverted: bool = False):
+    def __init__(self, name: None | str, raw_name: None | str = None, inverted: bool = False) -> None:
         """Create a Control to receive input.
 
         Args:
@@ -151,7 +158,7 @@ class Control(EventDispatcher):
         return self._value
 
     @value.setter
-    def value(self, newvalue: float):
+    def value(self, newvalue: float) -> None:
         if newvalue == self._value:
             return
         self._value = newvalue
@@ -160,12 +167,10 @@ class Control(EventDispatcher):
     def __repr__(self) -> str:
         if self.name:
             return f"{self.__class__.__name__}(name={self.name}, raw_name={self.raw_name})"
-        else:
-            return f"{self.__class__.__name__}(raw_name={self.raw_name})"
+        return f"{self.__class__.__name__}(raw_name={self.raw_name})"
 
     # Events
-
-    def on_change(self, value) -> float:
+    def on_change(self, value: float) -> bool:
         """The value changed."""
 
 
@@ -192,7 +197,7 @@ class RelativeAxis(Control):
         return self._value
 
     @value.setter
-    def value(self, value: float):
+    def value(self, value: float) -> None:
         self._value = value
         self.dispatch_event('on_change', value)
 
@@ -213,21 +218,21 @@ class AbsoluteAxis(Control):
     HAT_X: str = 'hat_x'
     HAT_Y: str = 'hat_y'
 
-    def __init__(self, name: str, minimum: float, maximum: float, raw_name: None | str = None, inverted: bool = False):
+    def __init__(self, name: str, minimum: float, maximum: float, raw_name: None | str = None, inverted: bool = False) -> None:  # noqa: D107
         super().__init__(name, raw_name, inverted)
         self.min = minimum
         self.max = maximum
 
 
 class Button(Control):
-    """A control whose value is boolean. """
+    """A control whose value is boolean."""
 
     @property
     def value(self) -> bool:
         return bool(self._value)
 
     @value.setter
-    def value(self, newvalue: bool | int):
+    def value(self, newvalue: bool | int) -> None:
         if newvalue == self._value:
             return
         self._value = newvalue
@@ -252,8 +257,9 @@ Button.register_event_type('on_release')
 
 
 class Joystick(EventDispatcher):
-    """High-level interface for joystick-like devices.  This includes a wide
-    range of analog and digital joysticks, gamepads, controllers, and possibly
+    """High-level interface for joystick-like devices.
+
+    This includes a wide range of analog and digital joysticks, gamepads, controllers, and possibly
     even steering wheels and other input devices. There is unfortunately no
     easy way to distinguish between most of these different device types.
 
@@ -263,7 +269,7 @@ class Joystick(EventDispatcher):
 
     To use a joystick, first call `open`, then in your game loop examine
     the values of `x`, `y`, and so on.  These values are normalized to the
-    range [-1.0, 1.0]. 
+    range [-1.0, 1.0].
 
     To receive events when the value of an axis changes, attach an
     on_joyaxis_motion event handler to the joystick. The :py:class:`~pyglet.input.Joystick`
@@ -275,7 +281,7 @@ class Joystick(EventDispatcher):
 
     Alternately, you may attach event handlers to each individual button in 
     `button_controls` to receive on_press or on_release events.
-    
+
     To use the hat switch, attach an on_joyhat_motion event handler to the joystick.
     The handler will be called with both the hat_x and hat_y values whenever the value
     of the hat switch changes.
@@ -356,7 +362,7 @@ class Joystick(EventDispatcher):
         self.hat_y_control = None
         self.button_controls = []
 
-        def add_axis(control: AbsoluteAxis):
+        def add_axis(control: AbsoluteAxis) -> None:
             if not (control.min or control.max):
                 warnings.warn(f"Control('{control.name}') min & max values are both 0. Skipping.")
                 return
@@ -374,7 +380,7 @@ class Joystick(EventDispatcher):
                 setattr(self, name, normalized_value)
                 self.dispatch_event('on_joyaxis_motion', self, name, normalized_value)
 
-        def add_button(control: Button):
+        def add_button(control: Button) -> None:
             i = len(self.buttons)
             self.buttons.append(False)
             self.button_controls.append(control)
@@ -391,7 +397,7 @@ class Joystick(EventDispatcher):
             def on_release():
                 self.dispatch_event('on_joybutton_release', self, i)
 
-        def add_hat(control: AbsoluteAxis):
+        def add_hat(control: AbsoluteAxis) -> None:
             # 8-directional hat encoded as a single control (Windows/Mac)
             self.hat_x_control = control
             self.hat_y_control = control
@@ -415,11 +421,11 @@ class Joystick(EventDispatcher):
                 add_button(ctrl)
 
     def open(self, window: BaseWindow | None = None, exclusive: bool = False) -> None:
-        """Open the joystick device.  See `Device.open`. """
+        """Open the joystick device.  See `Device.open`."""
         self.device.open(window, exclusive)
 
     def close(self) -> None:
-        """Close the joystick device.  See `Device.close`. """
+        """Close the joystick device.  See `Device.close`."""
         self.device.close()
 
     # Events
@@ -491,7 +497,7 @@ class Controller(EventDispatcher):
     To use a Controller, you must first call ``open``. Controllers will then
     dispatch various events whenever the inputs change. They can also be polled
     manually at any time to find the current value of any inputs. Analog stick
-    inputs are normalized to the range [-1.0, 1.0], and triggers are normalized
+    axis are normalized to the range [-1.0, 1.0], and triggers are normalized
     to the range [0.0, 1.0]. All other inputs are digital.
 
     Note: A running application event loop is required
@@ -499,11 +505,62 @@ class Controller(EventDispatcher):
     The following event types are dispatched:
         `on_button_press`
         `on_button_release`
-        `on_stick_motion`
+        `on_leftstick_motion`
+        `on_rightstick_motion`
         `on_dpad_motion`
-        `on_trigger_motion`
+        `on_lefttrigger_motion`
+        `on_righttrigger_motion`
 
     """
+    #: :The underlying device used by this Controller interface.
+    device: Device
+    #: The logical device name
+    name: str
+    #: The unique guid for this Device
+    guid: str
+
+    #: :The "south" face button.
+    a: bool
+    #: :The "east" face button.
+    b: bool
+    #: :The "west" fast button.
+    x: bool
+    #: :The "north" face button.
+    y: bool
+    #: :Sometimes called "share" or "select".
+    back: bool
+    #: :Sometimes called "options" or "menu".
+    start: bool
+    #: :The home button on the device.
+    guide: bool
+    #: :The top left bumper.
+    leftshoulder: bool
+    #: :The top right bumper.
+    rightshoulder: bool
+    #: :Pushing in on the left analog stick.
+    leftthumb: bool
+    #: :Pushing in on the right analog stick.
+    rightthumb: bool
+    #: :Left analog trigger.
+    lefttrigger: float
+    #: :Right analog trigger.
+    righttrigger: float
+    #: :The direction pad, as a 2D vector.
+    dpad: Vec2
+    #: :The left analog stick.
+    leftstick: Vec2
+    #: :The right analog stick.
+    rightstick: Vec2
+
+    #: :A list of all Button Controls exposed by the underlying device,
+    #: :regardless of whether they are bound to the Controller layout.
+    button_controls: list[Button]
+    #: :A list of all RelativeAxis Controls exposed by the underlying device,
+    #: :regardless of whether they are bound to the Controller layout.
+    relative_axis_controls: list[RelativeAxis]
+    #: :A list of all AbsoluteAxis Controls exposed by the underlying device,
+    #: :regardless of whether they are bound to the Controller layout.
+    absolute_axis_controls: list[AbsoluteAxis]
 
     def __init__(self, device: Device, mapping: dict):
         """Create a Controller instance mapped to a Device.
@@ -514,13 +571,10 @@ class Controller(EventDispatcher):
         #: The underlying Device:
         self.device: Device = device
         self._mapping = mapping
-
-        #: The logical device name
         self.name: str = mapping.get('name')
-        #: The unique guid for this Device
         self.guid: str = mapping.get('guid')
 
-        # Pollable
+        # Pollable attributes
         self.a: bool = False
         self.b: bool = False
         self.x: bool = False
@@ -530,27 +584,27 @@ class Controller(EventDispatcher):
         self.guide: bool = False
         self.leftshoulder: bool = False
         self.rightshoulder: bool = False
-        self.leftstick: bool = False          # stick press button
-        self.rightstick: bool = False         # stick press button
-
+        self.leftthumb: bool = False
+        self.rightthumb: bool = False
         self.lefttrigger: float = 0.0
         self.righttrigger: float = 0.0
         self.dpad: Vec2 = Vec2()
-        self.leftanalog: Vec2 = Vec2()
-        self.rightanalog: Vec2 = Vec2()
+        self.leftstick: Vec2 = Vec2()
+        self.rightstick: Vec2 = Vec2()
 
-        self.leftx: float = 0.0
-        self.lefty: float = 0.0
-        self.rightx: float = 0.0
-        self.righty: float = 0.0
-        self.dpadx: float = 0.0
-        self.dpady: float = 0.0
+        # internal temp values that may be used when
+        # consolidating to the above final attributes
+        self._leftx: float = 0.0
+        self._lefty: float = 0.0
+        self._rightx: float = 0.0
+        self._righty: float = 0.0
+        self._dpadx: float = 0.0
+        self._dpady: float = 0.0
 
-        self._button_controls: list = []
-        self._axis_controls: list = []
-        self._hat_control: Control | None = None
-        self._hat_x_control: Control | None = None
-        self._hat_y_control: Control | None = None
+        # ALL Controls this device exposes, whether they are mapped to the default layout or not:
+        self.button_controls = [c for c in self.device.get_controls() if isinstance(c, Button)]
+        self.relative_axis_controls = [c for c in self.device.get_controls() if isinstance(c, RelativeAxis)]
+        self.absolute_axis_controls = [c for c in self.device.get_controls() if isinstance(c, AbsoluteAxis)]
 
         self._initialize_controls()
 
@@ -597,7 +651,7 @@ class Controller(EventDispatcher):
 
         return 'GENERIC'
 
-    def _bind_axis_control(self, relation: Relation, control: AbsoluteAxis, axis_name: str) -> None:
+    def _bind_axis_control(self, control: AbsoluteAxis, axis_name: str, sign_type: Sign) -> None:
         if not (control.min or control.max):
             warnings.warn(f"Control('{control.name}') min & max values are both 0. Skipping.")
             return
@@ -614,59 +668,74 @@ class Controller(EventDispatcher):
         dpad_defaults = {'dpup': Sign.POSITIVE, 'dpdown': Sign.NEGATIVE,
                          'dpleft': Sign.NEGATIVE, 'dpright': Sign.POSITIVE}
 
-        # If the sign is not DEFAULT, it must be inverted:
-        if relation.sign not in (Sign.DEFAULT, dpad_defaults.get(axis_name)):
+        # If the sign is it's DEFAULT, it must be inverted:
+        if sign_type not in (Sign.DEFAULT, dpad_defaults.get(axis_name)):
             sign = -1.0
 
         if axis_name in ("dpup", "dpdown"):
             @control.event
             def on_change(value):
-                self.dpady = round(value * scale + bias) * sign    # normalized
-                self.dpad = Vec2(self.dpadx, self.dpady)
-                self.dispatch_event('on_dpad_motion', self, Vec2(self.dpadx, self.dpady))
+                self._dpady = round(value * scale + bias) * sign    # normalized
+                self.dpad = Vec2(self._dpadx, self._dpady)
+                self.dispatch_event('on_dpad_motion', self, Vec2(self._dpadx, self._dpady))
 
         elif axis_name in ("dpleft", "dpright"):
             @control.event
             def on_change(value):
-                self.dpadx = round(value * scale + bias) * sign     # normalized
-                self.dpad = Vec2(self.dpadx, self.dpady)
-                self.dispatch_event('on_dpad_motion', self, Vec2(self.dpadx, self.dpady))
+                self._dpadx = round(value * scale + bias) * sign     # normalized
+                self.dpad = Vec2(self._dpadx, self._dpady)
+                self.dispatch_event('on_dpad_motion', self, Vec2(self._dpadx, self._dpady))
 
-        elif axis_name in ("lefttrigger", "righttrigger"):
+        elif axis_name == "lefttrigger":
             @control.event
             def on_change(value):
                 normalized_value = value * tscale
                 setattr(self, axis_name, normalized_value)
-                self.dispatch_event('on_trigger_motion', self, axis_name, normalized_value)
+                self.dispatch_event(f'on_lefttrigger_motion', self, normalized_value)
+
+        elif axis_name == "righttrigger":
+            @control.event
+            def on_change(value):
+                normalized_value = value * tscale
+                setattr(self, axis_name, normalized_value)
+                self.dispatch_event(f'on_righttrigger_motion', self, normalized_value)
 
         elif axis_name in ("leftx", "lefty"):
+            attrname = f"_{axis_name}"
+
             @control.event
             def on_change(value):
-                normalized_value = value * scale + bias
-                setattr(self, axis_name, normalized_value)
-                self.left_analog = Vec2(self.leftx, -self.lefty)
-                self.dispatch_event('on_stick_motion', self, "leftstick", self.left_analog)
+                setattr(self, attrname, value * scale + bias)   # normalized value
+                self.leftstick = Vec2(self._leftx, -self._lefty)
+                self.dispatch_event('on_leftstick_motion', self, self.leftstick)
 
         elif axis_name in ("rightx", "righty"):
+            attrname = f"_{axis_name}"
+
             @control.event
             def on_change(value):
-                normalized_value = value * scale + bias
-                setattr(self, axis_name, normalized_value)
-                self.right_analog = Vec2(self.rightx, -self.righty)
-                self.dispatch_event('on_stick_motion', self, "rightstick", self.right_analog)
+                setattr(self, attrname, value * scale + bias)   # normalized value
+                self.right_analog = Vec2(self._rightx, -self._righty)
+                self.dispatch_event('on_rightstick_motion', self, self.right_analog)
 
-    def _bind_button_control(self, relation: Relation, control: Button, button_name: str) -> None:
+    def _bind_button_control(self, control: Button, button_name: str) -> None:
         if button_name in ("dpleft", "dpright", "dpup", "dpdown"):
-            defaults = {'dpleft': ('dpadx', -1.0), 'dpright': ('dpadx', 1.0),
-                        'dpdown': ('dpady', -1.0), 'dpup': ('dpady', 1.0)}
+            # This is a button that is mapped to a dpad direction:
+
+            # mapping of   {button_name: (_scratch_attr, axis_value)}
+            name_to_axis = {'dpleft': ('_dpadx', -1.0), 'dpright': ('_dpadx', 1.0),
+                            'dpdown': ('_dpady', -1.0), 'dpup': ('_dpady', 1.0)}
 
             @control.event
             def on_change(value):
-                target, bias = defaults[button_name]
-                setattr(self, target, bias * value)
-                self.dpad = Vec2(self.dpadx, self.dpady)
+                attrname, bias = name_to_axis[button_name]
+                setattr(self, attrname, bias * value)
+                self.dpad = Vec2(self._dpadx, self._dpady)
                 self.dispatch_event('on_dpad_motion', self, self.dpad)
+
         else:
+            # This is a regular button:
+
             @control.event
             def on_change(value):
                 setattr(self, button_name, value)
@@ -679,7 +748,7 @@ class Controller(EventDispatcher):
             def on_release():
                 self.dispatch_event('on_button_release', self, button_name)
 
-    def _bind_dedicated_hat(self, relation: Relation, control: AbsoluteAxis) -> None:
+    def _bind_dedicated_hat(self, control: AbsoluteAxis) -> None:
         # 8-directional hat encoded as a single control (Windows/Mac)
         _vecs = (Vec2(0.0, 1.0), Vec2(1.0, 1.0), Vec2(1.0, 0.0), Vec2(1.0, -1.0),       # n, ne, e, se
                  Vec2(0.0, -1.0), Vec2(-1.0, -1.0), Vec2(-1.0, 0.0), Vec2(-1.0, 1.0))   # s, sw, w, nw
@@ -690,9 +759,8 @@ class Controller(EventDispatcher):
 
         @control.event
         def on_change(value):
-            vector = _input_map.get(value // _scale, Vec2(0.0, 0.0))
-            self.dpad = vector
-            self.dispatch_event('on_dpad_motion', self, vector)
+            self.dpad = _input_map.get(value // _scale, Vec2(0.0, 0.0))
+            self.dispatch_event('on_dpad_motion', self, self.dpad)
 
     def _initialize_controls(self) -> None:
         """Initialize and bind the Device Controls
@@ -701,44 +769,33 @@ class Controller(EventDispatcher):
         then binds them to the appropriate "virtual" controls
         as defined in the mapped relations.
         """
-
-        for ctrl in self.device.get_controls():
-            # Categorize the various control types
-            if isinstance(ctrl, Button):
-                self._button_controls.append(ctrl)
-
-            elif isinstance(ctrl, AbsoluteAxis):
-                if ctrl.name == "hat_x":
-                    self._hat_x_control = ctrl
-                elif ctrl.name == "hat_y":
-                    self._hat_y_control = ctrl
-                elif ctrl.name == "hat":
-                    self._hat_control = ctrl
-                else:
-                    self._axis_controls.append(ctrl)
+        hat_control = next((c for c in self.absolute_axis_controls if c.name == 'hat'), None)
+        hat_x_control = next((c for c in self.absolute_axis_controls if c.name == 'hat_x'), None)
+        hat_y_control = next((c for c in self.absolute_axis_controls if c.name == 'hat_y'), None)
 
         for name, relation in self._mapping.items():
-
-            if relation is None or isinstance(relation, str):
+            if not isinstance(relation, Relation):
                 continue
 
             try:
                 if relation.control_type == "button":
-                    self._bind_button_control(relation, self._button_controls[relation.index], name)
+                    self._bind_button_control(self.button_controls[relation.index], name)
 
                 elif relation.control_type == "axis":
-                    self._bind_axis_control(relation, self._axis_controls[relation.index], name)
+                    self._bind_axis_control(self.absolute_axis_controls[relation.index], name, relation.sign)
 
                 elif relation.control_type == "hat0":
-                    if self._hat_control:
-                        self._bind_dedicated_hat(relation, self._hat_control)
-                    else:
-                        control, dpname = {1: (self._hat_y_control, 'dpup'),
-                                           2: (self._hat_x_control, 'dpright'),
-                                           4: (self._hat_y_control, 'dpdown'),
-                                           8: (self._hat_x_control, 'dpleft')}[relation.index]
+                    if hat_control:
+                        self._bind_dedicated_hat(hat_control)
+                        continue
 
-                        self._bind_axis_control(relation, control, dpname)
+                    elif hat_x_control and hat_y_control:
+                        control, dpname = {1: (hat_y_control, 'dpup'),
+                                           2: (hat_x_control, 'dpright'),
+                                           4: (hat_y_control, 'dpdown'),
+                                           8: (hat_x_control, 'dpleft')}[relation.index]
+
+                        self._bind_axis_control(control, dpname, relation.sign)
 
             except (IndexError, AttributeError, KeyError):
                 warnings.warn(f"Could not map physical Control '{relation}' to '{name}'")
@@ -842,9 +899,11 @@ class Controller(EventDispatcher):
 
 Controller.register_event_type('on_button_press')
 Controller.register_event_type('on_button_release')
-Controller.register_event_type('on_stick_motion')
+Controller.register_event_type('on_leftstick_motion')
+Controller.register_event_type('on_rightstick_motion')
 Controller.register_event_type('on_dpad_motion')
-Controller.register_event_type('on_trigger_motion')
+Controller.register_event_type('on_lefttrigger_motion')
+Controller.register_event_type('on_righttrigger_motion')
 
 
 class AppleRemote(EventDispatcher):

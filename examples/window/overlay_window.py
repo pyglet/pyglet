@@ -7,9 +7,9 @@ from pyglet.graphics import Batch
 from pyglet.window import Window
 
 
+window = Window(500, 500, caption="Overlay Window", style=Window.WINDOW_STYLE_OVERLAY)
+
 batch = Batch()
-window = Window(500, 500, style=Window.WINDOW_STYLE_OVERLAY)
-window.set_caption("Overlay Window")
 
 circle = pyglet.shapes.Circle(250, 250, 100, color=(255, 255, 0), batch=batch)
 

@@ -383,6 +383,8 @@ BAR           = 0x07c
 BRACERIGHT    = 0x07d
 ASCIITILDE    = 0x07e
 
+
+
 _key_names = {}
 _motion_names = {}
 for _name, _value in locals().copy().items():

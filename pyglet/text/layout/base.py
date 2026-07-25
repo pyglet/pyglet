@@ -14,26 +14,12 @@ from typing import (
 )
 
 import pyglet
+
 from pyglet import graphics
-from pyglet.font.base import GlyphPosition
-from pyglet.gl import (
-    GL_BLEND,
-    GL_DEPTH_ATTACHMENT,
-    GL_DEPTH_COMPONENT,
-    GL_LINES,
-    GL_NEAREST,
-    GL_ONE_MINUS_SRC_ALPHA,
-    GL_SRC_ALPHA,
-    GL_TEXTURE0,
-    GL_TRIANGLES,
-    glActiveTexture,
-    glBindTexture,
-    glBlendFunc,
-    glDisable,
-    glEnable,
-)
-from pyglet.graphics import Group
+from pyglet.enums import BlendFactor, GeometryMode, GraphicsAPI
+from pyglet.graphics import Group, ShaderProgram
 from pyglet.text import runlist
+from pyglet.font.base import GlyphPosition
 
 if TYPE_CHECKING:
     from pyglet.customtypes import AnchorX, AnchorY, ContentVAlign, HorizontalAlign
@@ -41,161 +27,135 @@ if TYPE_CHECKING:
     from pyglet.graphics import Batch
     from pyglet.graphics.shader import ShaderProgram
     from pyglet.graphics.vertexdomain import VertexList
-    from pyglet.image import Texture
+    from pyglet.graphics import Texture
     from pyglet.text.document import AbstractDocument, InlineElement
     from pyglet.text.runlist import AbstractRunIterator, RunIterator
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
-layout_vertex_source = """#version 330 core
-    in vec3 position;
-    in vec4 colors;
-    in vec3 tex_coords;
-    in vec3 translation;
-    in vec3 view_translation;
-    in vec2 anchor;
-    in float rotation;
-    in float visible;
+if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
+    from pyglet.graphics.api.gl.text import (
+        get_default_decoration_shader,
+        get_default_image_layout_shader,
+        get_default_layout_shader,
+    )
+elif pyglet.options.backend in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
+    from pyglet.graphics.api.gl2.text import (
+        get_default_decoration_shader,
+        get_default_image_layout_shader,
+        get_default_layout_shader,
+    )
+elif pyglet.options.backend == GraphicsAPI.WEBGL:
+    from pyglet.graphics.api.webgl.text import (
+        get_default_decoration_shader,
+        get_default_image_layout_shader,  # noqa: F401
+        get_default_layout_shader,
+    )
+elif pyglet.options.backend == GraphicsAPI.VULKAN:
+    from pyglet.graphics.api.vulkan.text import (
+        get_default_decoration_shader,
+        get_default_layout_shader,
+    )
 
-    out vec4 text_colors;
-    out vec2 texture_coords;
-    out vec4 vert_position;
 
-    uniform WindowBlock
-    {
-        mat4 projection;
-        mat4 view;
-    } window;
+class TextLayoutGroup(Group):
+    """Create a text layout rendering group.
 
-    void main()
-    {
-        mat4 m_rotation = mat4(1.0);
-        vec3 v_anchor = vec3(anchor.x, anchor.y, 0);
-        mat4 m_anchor = mat4(1.0);
-        mat4 m_translate = mat4(1.0);
+    The group is created internally when a :py:class:`~pyglet.text.Label`
+    is created; applications usually do not need to explicitly create it.
+    """
 
-        m_translate[3][0] = translation.x;
-        m_translate[3][1] = translation.y;
-        m_translate[3][2] = translation.z;
+    def __init__(self, texture: Texture, program: ShaderProgram, order: int = 1,  # noqa: D107
+                 parent: Group | None = None) -> None:
+        super().__init__(order=order, parent=parent)
+        self.uniforms = {"scissor": False}
+        self.texture = texture
+        self.set_shader_program(program)
+        self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
+        self.set_texture(texture, 0)
+        self.set_shader_uniforms(program, self.uniforms)
 
-        m_rotation[0][0] =  cos(-radians(rotation));
-        m_rotation[0][1] =  sin(-radians(rotation));
-        m_rotation[1][0] = -sin(-radians(rotation));
-        m_rotation[1][1] =  cos(-radians(rotation));
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.texture})"
 
-        gl_Position = window.projection * window.view * m_translate * m_anchor * m_rotation * vec4(position + view_translation + v_anchor, 1.0) * visible;
 
-        vert_position = vec4(position + translation + view_translation + v_anchor, 1.0);
-        text_colors = colors;
-        texture_coords = tex_coords.xy;
-    }
-"""  # noqa: E501
-layout_fragment_source = """#version 330 core
-    in vec4 text_colors;
-    in vec2 texture_coords;
-    in vec4 vert_position;
+class TextDecorationGroup(Group):
+    """Create a text decoration rendering group.
 
-    out vec4 final_colors;
+    The group is created internally when a :py:class:`~pyglet.text.Label`
+    is created; applications usually do not need to explicitly create it.
+    """
 
-    uniform sampler2D text;
-    uniform bool scissor;
-    uniform vec4 scissor_area;
+    def __init__(self, program: ShaderProgram, order: int = 0,  # noqa: D107
+                 parent: Group | None = None) -> None:
+        super().__init__(order=order, parent=parent)
+        self.uniforms = {"scissor": False}
+        self.set_shader_program(program)
+        self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
+        self.set_shader_uniforms(program, self.uniforms)
 
-    void main()
-    {
-        final_colors = texture(text, texture_coords) * text_colors;
-        if (scissor == true) {
-            if (vert_position.x < scissor_area[0]) discard;                     // left
-            if (vert_position.y < scissor_area[1]) discard;                     // bottom
-            if (vert_position.x > scissor_area[0] + scissor_area[2]) discard;   // right
-            if (vert_position.y > scissor_area[1] + scissor_area[3]) discard;   // top
+
+class ScrollableTextLayoutGroup(Group):
+    """Default rendering group for :py:class:`~pyglet.text.layout.ScrollableTextLayout`.
+
+    The group maintains internal state for specifying the viewable
+    area, and for scrolling. Because the group has internal state
+    specific to the text layout, the group is never shared.
+    """
+    scissor_area: ClassVar[tuple[int, int, int, int]] = 0, 0, 0, 0
+
+    def __init__(self, texture: Texture, program: ShaderProgram, order: int = 1,  # noqa: D107
+                 parent: Group | None = None) -> None:
+
+        super().__init__(order=order, parent=parent)
+        self.texture = texture
+        self.uniforms = {
+            "scissor": True,
+            "scissor_area": self.scissor_area,
         }
-    }
-"""
-layout_fragment_image_source = """#version 330 core
-    in vec4 text_colors;
-    in vec2 texture_coords;
-    in vec4 vert_position;
+        self.set_shader_program(program)
+        self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
+        self.set_texture(texture, 0)
+        self.set_shader_uniforms(program, self.uniforms)
 
-    uniform sampler2D image_texture;
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.texture})"
 
-    out vec4 final_colors;
+    def __eq__(self, other: object) -> bool:
+        return self is other
 
-    uniform sampler2D text;
-    uniform bool scissor;
-    uniform vec4 scissor_area;
+    def __hash__(self) -> int:
+        return id(self)
 
-    void main()
-    {
-        final_colors = texture(image_texture, texture_coords.xy);
-        if (scissor == true) {
-            if (vert_position.x < scissor_area[0]) discard;                     // left
-            if (vert_position.y < scissor_area[1]) discard;                     // bottom
-            if (vert_position.x > scissor_area[0] + scissor_area[2]) discard;   // right
-            if (vert_position.y > scissor_area[1] + scissor_area[3]) discard;   // top
+
+class ScrollableTextDecorationGroup(Group):
+    """Create a text decoration rendering group.
+
+    The group is created internally when a :py:class:`~pyglet.text.Label`
+    is created; applications usually do not need to explicitly create it.
+    """
+
+    scissor_area: ClassVar[tuple[int, int, int, int]] = 0, 0, 0, 0
+
+    def __init__(self, program: ShaderProgram, order: int = 0, parent: Group | None = None) -> None:  # noqa: D107
+        super().__init__(order=order, parent=parent)
+        self.program = program
+        self.set_shader_program(program)
+        self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
+        self.uniforms = {
+            "scissor": True,
+            "scissor_area": self.scissor_area,
         }
-    }
-"""
-decoration_vertex_source = """#version 330 core
-    in vec3 position;
-    in vec4 colors;
-    in vec3 translation;
-    in vec3 view_translation;
-    in vec2 anchor;
-    in float rotation;
-    in float visible;
+        self.set_shader_uniforms(program, self.uniforms)
 
-    out vec4 vert_colors;
-    out vec4 vert_position;
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(scissor={self.scissor_area})"
 
-    uniform WindowBlock
-    {
-        mat4 projection;
-        mat4 view;
-    } window;
+    def __eq__(self, other: object) -> bool:
+        return self is other
 
-    void main()
-    {
-        mat4 m_rotation = mat4(1.0);
-        vec3 v_anchor = vec3(anchor.x, anchor.y, 0);
-        mat4 m_anchor = mat4(1.0);
-        mat4 m_translate = mat4(1.0);
-
-        m_translate[3][0] = translation.x;
-        m_translate[3][1] = translation.y;
-        m_translate[3][2] = translation.z;
-
-        m_rotation[0][0] =  cos(-radians(rotation));
-        m_rotation[0][1] =  sin(-radians(rotation));
-        m_rotation[1][0] = -sin(-radians(rotation));
-        m_rotation[1][1] =  cos(-radians(rotation));
-
-        gl_Position = window.projection * window.view * m_translate * m_anchor * m_rotation * vec4(position + view_translation + v_anchor, 1.0) * visible;
-
-        vert_position = vec4(position + translation + view_translation + v_anchor, 1.0);
-        vert_colors = colors;
-    }
-"""  # noqa: E501
-decoration_fragment_source = """#version 330 core
-    in vec4 vert_colors;
-    in vec4 vert_position;
-
-    out vec4 final_colors;
-
-    uniform bool scissor;
-    uniform vec4 scissor_area;
-
-    void main()
-    {
-        final_colors = vert_colors;
-        if (scissor == true) {
-            if (vert_position.x < scissor_area[0]) discard;                     // left
-            if (vert_position.y < scissor_area[1]) discard;                     // bottom
-            if (vert_position.x > scissor_area[0] + scissor_area[2]) discard;   // right
-            if (vert_position.y > scissor_area[1] + scissor_area[3]) discard;   // top
-        }
-    }
-"""
+    def __hash__(self) -> int:
+        return id(self)
 
 
 class _LayoutVertexList(Protocol):
@@ -210,24 +170,6 @@ class _LayoutVertexList(Protocol):
     count: int
 
     def delete(self) -> None: ...
-
-
-def get_default_layout_shader() -> ShaderProgram:
-    """The default shader used for all glyphs in the layout."""
-    return pyglet.gl.current_context.create_program((layout_vertex_source, "vertex"),
-                                                    (layout_fragment_source, "fragment"))
-
-
-def get_default_image_layout_shader() -> ShaderProgram:
-    """The default shader used for an InlineElement image. Used for HTML Labels that insert images via <img> tag."""
-    return pyglet.gl.current_context.create_program((layout_vertex_source, "vertex"),
-                                                    (layout_fragment_image_source, "fragment"))
-
-
-def get_default_decoration_shader() -> ShaderProgram:
-    """The default shader for underline and background decoration effects in the layout."""
-    return pyglet.gl.current_context.create_program((decoration_vertex_source, "vertex"),
-                                                    (decoration_fragment_source, "fragment"))
 
 
 _distance_re: Pattern[str] = re.compile(r"([-0-9.]+)([a-zA-Z]+)")
@@ -461,23 +403,25 @@ class _GlyphBox(_AbstractBox):
         vertices = []
         tex_coords = []
         baseline = 0
-        x1 = line_x
+        x1 = round(line_x)
         for start, end, baseline_ in context.baseline_iter.ranges(i, i + n_glyphs):
             baseline = layout._parse_distance(baseline_)  # noqa: SLF001
             assert len(self.glyphs[start - i:end - i]) == end - start
-            for (kern, glyph, glyph_pos) in self.glyphs[start - i:end - i]:
-                x1 += kern
+            y1 = round(line_y + baseline)
+            for kern, glyph, glyph_pos in self.glyphs[start - i:end - i]:
+                x1 += round(kern)
                 v0, v1, v2, v3 = glyph.vertices
-                v0 += x1 + glyph_pos.x_offset
-                v2 += x1 + glyph_pos.x_offset
-                v1 += line_y + baseline + glyph_pos.y_offset
-                v3 += line_y + baseline + glyph_pos.y_offset
-                vertices.extend(map(round, [v0, v1, 0, v2, v1, 0, v2, v3, 0, v0, v3, 0]))
-                t = glyph.tex_coords
-                tex_coords.extend(t)
-                x1 += glyph.advance + glyph_pos.x_advance
-                v1 += glyph_pos.y_advance
-                v3 += glyph_pos.y_advance
+                # Translate the whole glyph as a block. Rounding v0/v1/v2/v3 can distort vertices.
+                gx = x1 + round(glyph_pos.x_offset)
+                gy = y1 + round(glyph_pos.y_offset)
+                vertices.extend([
+                    v0 + gx, v1 + gy, 0,
+                    v2 + gx, v1 + gy, 0,
+                    v2 + gx, v3 + gy, 0,
+                    v0 + gx, v3 + gy, 0,
+                ])
+                tex_coords.extend(glyph.tex_coords)
+                x1 += round(glyph.advance + glyph_pos.x_advance)
 
         # Text color
         colors = []
@@ -496,10 +440,12 @@ class _GlyphBox(_AbstractBox):
 
         t_position = (x, y, z)
 
-        vertex_list = layout.program.vertex_list_indexed(n_glyphs * 4, GL_TRIANGLES, indices, layout.batch, group,
+        vertex_list = layout.program.vertex_list_indexed(n_glyphs * 4, GeometryMode.TRIANGLES, indices, layout.batch,
+                                                         group,
                                                          position=("f", vertices),
                                                          translation=("f", t_position * 4 * n_glyphs),
                                                          colors=("Bn", colors),
+                                                         view_translation=('f', ((0, 0, 0) * 4 * n_glyphs)),
                                                          tex_coords=("f", tex_coords),
                                                          rotation=("f", ((rotation,) * 4) * n_glyphs),
                                                          visible=("f", ((visible,) * 4) * n_glyphs),
@@ -548,10 +494,12 @@ class _GlyphBox(_AbstractBox):
             bg_count = len(background_vertices) // 3
             background_indices = [(0, 1, 2, 0, 2, 3)[i % 6] for i in range(bg_count * 3)]
             decoration_program = get_default_decoration_shader()
-            background_list = decoration_program.vertex_list_indexed(bg_count, GL_TRIANGLES, background_indices,
+            background_list = decoration_program.vertex_list_indexed(bg_count, GeometryMode.TRIANGLES,
+                                                                     background_indices,
                                                                      layout.batch, layout.background_decoration_group,
                                                                      position=("f", background_vertices),
                                                                      translation=("f", t_position * bg_count),
+                                                                     view_translation=('f', (0, 0, 0) * bg_count),
                                                                      colors=("Bn", background_colors),
                                                                      rotation=("f", (rotation,) * bg_count),
                                                                      visible=("f", (visible,) * bg_count),
@@ -561,10 +509,11 @@ class _GlyphBox(_AbstractBox):
         if underline_vertices:
             ul_count = len(underline_vertices) // 3
             decoration_program = get_default_decoration_shader()
-            underline_list = decoration_program.vertex_list(ul_count, GL_LINES,
+            underline_list = decoration_program.vertex_list(ul_count, GeometryMode.LINES,
                                                             layout.batch, layout.foreground_decoration_group,
                                                             position=("f", underline_vertices),
                                                             translation=("f", t_position * ul_count),
+                                                            view_translation=('f', (0, 0, 0) * ul_count),
                                                             colors=("Bn", underline_colors),
                                                             rotation=("f", (rotation,) * ul_count),
                                                             visible=("f", (visible,) * ul_count),
@@ -657,7 +606,7 @@ class _InlineElementBox(_AbstractBox):
         # Determines if the box is visible.
         self.placed = False
 
-    def place(self, layout: TextLayout, i: int, x: float, y: float, z: float, line_x: float, line_y: float,  # noqa: ARG002
+    def place(self, layout: TextLayout, i: int, x: float, y: float, z: float, line_x: float, line_y: float,
               rotation: float, visible: bool, anchor_x: float, anchor_y: float,
               context: _LayoutContext) -> None:  # noqa: ARG002
         self.element.place(layout, x, y, z, line_x, line_y, rotation, visible, anchor_x, anchor_y)
@@ -751,74 +700,10 @@ class _InvalidRange:
         return self.end > self.start
 
 
-class TextLayoutGroup(graphics.Group):
-    """Create a text layout rendering group.
-
-    The group is created internally when a :py:class:`~pyglet.text.Label`
-    is created; applications usually do not need to explicitly create it.
-    """
-
-    def __init__(self, texture: Texture, program: ShaderProgram, order: int = 1,  # noqa: D107
-                 parent: graphics.Group | None = None) -> None:
-        super().__init__(order=order, parent=parent)
-        self.texture = texture
-        self.program = program
-
-    def set_state(self) -> None:
-        self.program.use()
-        self.program["scissor"] = False
-
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(self.texture.target, self.texture.id)
-
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-    def unset_state(self) -> None:
-        glDisable(GL_BLEND)
-        self.program.stop()
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.texture})"
-
-    def __eq__(self, other: object) -> bool:
-        return (other.__class__ is self.__class__ and
-                self.parent is other.parent and
-                self.program.id is other.program.id and
-                self.order == other.order and
-                self.texture.target == other.texture.target and
-                self.texture.id == other.texture.id)
-
-    def __hash__(self) -> int:
-        return hash((id(self.parent), self.program.id, self.order, self.texture.target, self.texture.id))
-
-
-class TextDecorationGroup(Group):
-    """Create a text decoration rendering group.
-
-    The group is created internally when a :py:class:`~pyglet.text.Label`
-    is created; applications usually do not need to explicitly create it.
-    """
-
-    def __init__(self, program: ShaderProgram, order: int = 0,  # noqa: D107
-                 parent: graphics.Group | None = None) -> None:
-        super().__init__(order=order, parent=parent)
-        self.program = program
-
-    def set_state(self) -> None:
-        self.program.use()
-        self.program["scissor"] = False
-
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-    def unset_state(self) -> None:
-        glDisable(GL_BLEND)
-        self.program.stop()
-
 
 # Just have one object for empty positions in layout. It won't be modified.
 _empty_pos = GlyphPosition(0, 0, 0, 0)
+
 
 class TextLayout:
     """Lay out and display documents.
@@ -873,7 +758,7 @@ class TextLayout:
                  anchor_x: AnchorX = 'left', anchor_y: AnchorY = 'bottom', rotation: float = 0,
                  multiline: bool = False, dpi: float | None = None, batch: Batch | None = None,
                  group: graphics.Group | None = None, program: ShaderProgram | None = None,
-                 wrap_lines: bool = True, init_document: bool = True) -> None:
+                 wrap_lines: bool = True, shaping: bool = True, init_document: bool = True) -> None:
         """Create a text layout.
 
         Args:
@@ -913,6 +798,9 @@ class TextLayout:
                 Optional graphics shader to use. Will affect all glyphs in the layout.
             wrap_lines:
                 If True and `multiline` is True, the text is word-wrapped using the specified width.
+            shaping:
+                If the text should use proper positioning and typography according to the font and global
+                ``pyglet.options.text_shaping`` option. If ``False``, metrics will instead be tied to the glyph sizes.
             init_document:
                 If True the document will be initialized. If subclassing then
                 you may want to avoid duplicate initializations by changing to False.
@@ -927,6 +815,7 @@ class TextLayout:
         self._rotation = rotation
         self._multiline = multiline
         self._dpi = dpi or 96
+        self._shaping = shaping
 
         self._content_width = 0
         self._content_height = 0
@@ -947,7 +836,8 @@ class TextLayout:
         self._initialize_groups()
 
         if batch is None:
-            batch = graphics.Batch()
+            batch = pyglet.graphics.Batch()
+            # Create a batch as some text elements may require being drawn together.
             self._own_batch = True
         self._batch = batch
 
@@ -1022,7 +912,7 @@ class TextLayout:
             return
 
         if batch is None:
-            self._batch = graphics.Batch()
+            self._batch = pyglet.graphics.Batch()
             self._own_batch = True
             self._update()
         elif batch is not None:
@@ -1143,7 +1033,8 @@ class TextLayout:
         for line in self._lines:
             acc_anchor_x = self._anchor_left
             for box in line.boxes:
-                box.update_anchor(acc_anchor_x, anchor_y)
+                place_anchor_x = round(acc_anchor_x) if self._rotation == 0 else acc_anchor_x
+                box.update_anchor(place_anchor_x, anchor_y)
                 acc_anchor_x += box.advance
 
     @property
@@ -1391,7 +1282,7 @@ class TextLayout:
         self._vertex_lists.clear()
         self._boxes.clear()
 
-    def get_as_texture(self, min_filter: int=GL_NEAREST, mag_filter: int=GL_NEAREST) -> Texture:
+    def get_as_texture(self) -> Texture:
         """Utilizes a :py:class:`~pyglet.image.framebuffer.Framebuffer` to draw the current layout into a texture.
 
         .. warning:: Usage is recommended only if you understand how texture generation affects your application.
@@ -1404,22 +1295,23 @@ class TextLayout:
 
         .. versionadded:: 2.0.11
         """
-        framebuffer = pyglet.image.Framebuffer()
-        temp_pos = self.position
-        width = int(round(self._content_width))
-        height = int(round(self._content_height))
-        texture = pyglet.image.Texture.create(width, height, min_filter=min_filter, mag_filter=mag_filter)
-        depth_buffer = pyglet.image.buffer.Renderbuffer(width, height, GL_DEPTH_COMPONENT)
-        framebuffer.attach_texture(texture)
-        framebuffer.attach_renderbuffer(depth_buffer, attachment=GL_DEPTH_ATTACHMENT)
-
-        self.position = (0 - self._anchor_left, 0 - self._anchor_bottom, 0)
-        framebuffer.bind()
-        self.draw()
-        framebuffer.unbind()
-
-        self.position = temp_pos
-        return texture
+        raise NotImplementedError
+        # framebuffer = pyglet.image.Framebuffer()
+        # temp_pos = self.position
+        # width = int(round(self._content_width))
+        # height = int(round(self._content_height))
+        # texture = pyglet.graphics.Texture.create(width, height, texture_desc)
+        # depth_buffer = pyglet.image.buffer.Renderbuffer(width, height, GL_DEPTH_COMPONENT)
+        # framebuffer.attach_texture(texture)
+        # framebuffer.attach_renderbuffer(depth_buffer, attachment=GL_DEPTH_ATTACHMENT)
+        #
+        # self.position = (0 - self._anchor_left, 0 - self._anchor_bottom, 0)
+        # framebuffer.bind()
+        # self.draw()
+        # framebuffer.unbind()
+        #
+        # self.position = temp_pos
+        # return texture
 
     def draw(self) -> None:
         """Draw this text layout.
@@ -1457,6 +1349,7 @@ class TextLayout:
         self._boxes.clear()
         self._lines.clear()
         self.group_cache.clear()
+        #self.group_cache.clear()
 
         if not self._document or not self._document.text:
             self._ascent = 0
@@ -1633,7 +1526,7 @@ class TextLayout:
                 glyphs.append(_InlineElementBox(element))
                 offsets.append(_empty_pos)
             else:
-                char_glyphs, char_offsets = font.get_glyphs(text[start:end])
+                char_glyphs, char_offsets = font.get_glyphs(text[start:end], self._shaping)
                 glyphs.extend(char_glyphs)
                 offsets.extend(char_offsets)
 
@@ -2001,7 +1894,8 @@ class TextLayout:
         acc_anchor_x = anchor_x
         # GlyphBoxes (boxes) are collection of Glyphs/Inline Elements. A line can have multiple GlyphBoxes.
         for box in boxes:
-            box.place(self, i, self._x, self._y, self._z, line_x, line_y, self._rotation, self._visible, acc_anchor_x,
+            place_anchor_x = round(acc_anchor_x) if self._rotation == 0 else acc_anchor_x
+            box.place(self, i, self._x, self._y, self._z, line_x, line_y, self._rotation, self._visible, place_anchor_x,
                       anchor_y, context)
             i += box.length
             acc_anchor_x += box.advance
@@ -2009,3 +1903,4 @@ class TextLayout:
     def get_line_count(self) -> int:
         """Get the number of lines in the text layout."""
         return self._line_count
+

@@ -7,15 +7,18 @@ from __future__ import annotations
 import os
 import sys
 import warnings
-from collections.abc import Sequence
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Literal, Sequence
+
+from .enums import GraphicsAPI
+
 if TYPE_CHECKING:
     from types import FrameType
     from typing import Any, Callable, ItemsView, Sized
 
 #: The release version
-version = '2.1.13'
+version = '3.0.dev6'
 __version__ = version
 
 MIN_PYTHON_VERSION = 3, 8
@@ -43,6 +46,18 @@ if compat_platform == "cygwin":
 
 
 @dataclass
+class PyodideOptions:
+    """Dataclass for Pyodide related options."""
+
+    canvas_id: str = "pygletCanvas"
+    """Pyglet will need to target a specific canvas ID to use for javascript canvas detection.
+
+    If the ID is not detected, a canvas will be created with the above. If you have a canvas already embedded in your
+    page, and do not want to alter your code, then modify this option.
+    """
+
+
+@dataclass
 class Options:
     """Dataclass for global pyglet options."""
 
@@ -65,7 +80,7 @@ class Options:
     debug_font: bool = False
     """If ``True``, will print more verbose information when :py:class:`~pyglet.font.base.Font`'s are loaded."""
 
-    debug_gl: bool = True
+    debug_api: bool = True
     """If ``True``, all calls to OpenGL functions are checked afterwards for
      errors using ``glGetError``.  This will severely impact performance,
      but provides useful exceptions at the point of failure.  By default,
@@ -73,22 +88,22 @@ class Options:
      with the -O option).  It is disabled by default when pyglet is "frozen", such as
      within pyinstaller or nuitka."""
 
-    debug_gl_trace: bool = False
+    debug_api_trace: bool = False
     """If ``True``, will print the names of OpenGL calls being executed. For example, ``glBlendFunc``"""
 
-    debug_gl_trace_args: bool = False
+    debug_api_trace_args: bool = False
     """If ``True``, in addition to printing the names of OpenGL calls, it will also print the arguments passed
     into those calls. For example, ``glBlendFunc(770, 771)``
 
-    .. note:: Requires ``debug_gl_trace`` to be enabled."""
+    .. note:: Requires ``debug_api_trace`` to be enabled."""
 
-    debug_gl_shaders: bool = False
+    debug_api_shaders: bool = False
     """If ``True``, prints shader compilation information such as creation and deletion of shader's. Also includes
     information on shader ID's, attributes, and uniforms."""
 
     debug_graphics_batch: bool = False
     """If ``True``, prints batch information being drawn, including :py:class:`~pyglet.graphics.Group`'s, VertexDomains,
-    and :py:class:`~pyglet.image.Texture` information. This can be useful to see how many Group's are being
+    and :py:class:`~pyglet.graphics.texture.Texture` information. This can be useful to see how many Group's are being
     consolidated."""
 
     debug_lib: bool = False
@@ -97,18 +112,10 @@ class Options:
     debug_media: bool = False
     """If ``True``, prints more detailed media information for audio codecs and drivers. Will be very verbose."""
 
-    debug_texture: bool = False
-    """If ``True``, prints information on :py:class:`~pyglet.image.Texture` size (in bytes) when they are allocated and
-    deleted."""
-
     debug_trace: bool = False
     debug_trace_args: bool = False
     debug_trace_depth: int = 1
     debug_trace_flush: bool = True
-
-    debug_com: bool = False
-    """If ``True``, prints information on COM calls. This can potentially help narrow down issues with certain libraries
-    that utilize COM calls. Only applies to the Windows platform."""
 
     debug_win32: bool = False
     """If ``True``, prints error messages related to Windows library calls. Usually gets information from
@@ -121,21 +128,12 @@ class Options:
     """If ``True``, prints information related to Linux X11 calls. This can potentially help narrow down driver or
     operating system issues."""
 
-    shadow_window: bool = True
-    """By default, pyglet creates a hidden window with a GL context when
-     pyglet.gl is imported.  This allows resources to be loaded before
-     the application window is created, and permits GL objects to be
-     shared between windows even after they've been closed.  You can
-     disable the creation of the shadow window by setting this option to
-     False.
+    debug_wayland: bool = False
+    """If ``True``, prints information related to communications with the Wayland compositor."""
 
-     Some OpenGL driver implementations may not support shared OpenGL
-     contexts and may require disabling the shadow window (and all resources
-     must be loaded after the window using them was created).  Recommended
-     for advanced developers only.
-
-     .. versionadded:: 1.1
-     """
+    debug_com: bool = False
+    """If ``True``, prints information on COM calls. This can potentially help narrow down issues with certain libraries
+    that utilize COM calls. Only applies to the Windows platform."""
 
     vsync: bool | None = None
     """If set, the `pyglet.window.Window.vsync` property is ignored, and
@@ -187,7 +185,7 @@ class Options:
     """
 
     headless_device: int = 0
-    """If using ``headless`` mode (``pyglet.options['headless'] = True``), this option allows you to set which
+    """If using ``headless`` mode (``pyglet.options.headless = True``), this option allows you to set which
     GPU to use. This is only useful on multi-GPU systems.
     """
 
@@ -255,47 +253,62 @@ class Options:
 
     .. versionadded:: 2.0.5"""
 
-    dpi_scaling: Literal["real", "scaled", "stretch", "platform"] = "platform"
+    dpi_scaling: Literal["platform", "stretch"] = "platform"
     """For 'HiDPI' displays, Window behavior can differ between operating systems. Defaults to `'platform'`.
 
     The current options are an attempt to create consistent behavior across all of the operating systems.
 
-    `'real'` (default): Provides a 1:1 pixel for Window frame size and framebuffer. Primarily used for game applications
-    to ensure you are getting the exact pixels for the resolution. If you provide an 800x600 window, you can ensure it
-    will be 800x600 pixels when the user chooses it.
+    `'platform'`: A DPI aware window is created. Framebuffer and window sizes are dictated by the platform the window
+    was created on. In most systems, the window size will be in DIPs (Device Independent Pixels). It is up to the user
+    to make any further adjustments to the framebuffer or window size for their application.
 
-    `'scaled'`: Window size is scaled based on the DPI ratio. Window size and content (projection) size matches the full
-    framebuffer. Primarily used for any applications that wish to become DPI aware. You must rescale and reposition your
-    content to take advantage of the larger framebuffer. An 800x600 with a 150% DPI scaling would be changed to
-    1200x900 for both `window.get_size` and `window.get_framebuffer_size()`.
+    On Windows and X11, the framebuffer and the requested window size will always match 1:1. On MacOS, depending
+    on a Hi-DPI display, you may get a larger sized framebuffer than the window size.
 
-    Keep in mind that pyglet objects may not be scaled proportionately, so this is left up to the developer.
-    The :py:attr:`~pyglet.window.Window.scale` & :py:attr:`~pyglet.window.Window.dpi` attributes can be queried as a
-    reference when determining object creation.
-
-    `'stretch'`:  Window is scaled based on the DPI ratio. However, content size matches original requested size of the
-    window, and is stretched to fit the full framebuffer. This mimics behavior of having no DPI scaling at all. No
-    rescaling and repositioning of content will be necessary, but at the cost of blurry content depending on the extent
-    of the stretch. For example, 800x600 at 150% DPI will be 800x600 for `window.get_size()` and 1200x900 for
+    `'stretch'`:  This mimics behavior of having no DPI scaling at all. Window is scaled based on the DPI ratio.
+    However, content size matches original requested size of the window, and is stretched to fit the full framebuffer.
+    No rescaling and repositioning of content will be necessary, but at the cost of blurry content depending on the
+    extent of the stretch. For example, 800x600 at 150% DPI will be 800x600 for `window.get_size()` and 1200x900 for
     `window.get_framebuffer_size()`.
-
-    `'platform'`: A DPI aware window is created, however window sizing and framebuffer sizing is not interfered with
-    by Pyglet. Final sizes are dictated by the platform the window was created on. It is up to the user to make any
-    platform adjustments themselves such as sizing on a platform, mouse coordinate adjustments, or framebuffer size
-    handling. On Windows and X11, the framebuffer and the requested window size will always match in pixels 1:1. On
-    MacOS, depending on a Hi-DPI display, you may get a different sized framebuffer than the window size. This option
-    does allow `window.dpi` and `window.scale` to return their respective values.
     """
 
     shader_bind_management: bool = True
     """If ``True``, this will enable internal management of Uniform Block bindings for
-     :py:class:`~pyglet.graphics.shader.ShaderProgram`'s.
+     :py:class:`~pyglet.graphics.ShaderProgram`'s.
 
     If ``False``, bindings will not be managed by Pyglet. The user will be responsible for either setting the binding
     points through GLSL layouts (4.2 required) or manually through ``UniformBlock.set_binding``.
 
     .. versionadded:: 2.0.16
     """
+
+    wayland: bool = False
+    """If ``True``, use Wayland instead of Xlib on Linux.
+
+    .. versionadded:: 3.0.0
+    """
+
+    backend: Literal["opengl", "gl2", "gles3", "gles2", "webgl"] | GraphicsAPI = GraphicsAPI.OPENGL
+    """Specify the graphics API backend."""
+
+    opengl_persistent_buffers: bool = False
+    """If ``True``, the OpenGL backend uses persistent mapped vertex buffers when supported.
+
+    Requires OpenGL 4.4 or the ``GL_ARB_buffer_storage`` extension. If unavailable or ``False``, pyglet
+    falls back to normal backed buffer objects.
+    """
+
+    optimize_states: bool = True
+    """Runs a second pass on the draw list to remove any redundant states.
+
+    This option is mostly meant for debugging, as this should not significantly impact the draw list creation time
+    or impact drawing states.
+
+    .. versionadded:: 3.0.0
+    """
+
+    pyodide: PyodideOptions = field(default_factory=PyodideOptions)
+    """Pyodide specific options."""
 
     def get(self, item: str, default: Any = None) -> Any:
         return self.__dict__.get(item, default)
@@ -323,7 +336,7 @@ for _option_name, _type_str in options.__annotations__.items():
             setattr(options, _option_name, _value in ("true", "TRUE", "True", "1"))
         elif 'int' in _type_str:
             setattr(options, _option_name, int(_value))
-        elif 'Literal' in _type_str and _value in _type_str:
+        elif 'str' in _type_str or ('Literal' in _type_str and _value in _type_str):
             setattr(options, _option_name, _value)
         else:
             warnings.warn(f"Invalid value '{_value}' for {_option_name}. Expecting {_type_str}")
@@ -434,7 +447,7 @@ class _ModuleProxy:
     def __init__(self, name: str) -> None:
         self.__dict__["_module_name"] = name
 
-    def __getattr__(self, name: str): # noqa: ANN204
+    def __getattr__(self, name: str):  # noqa: ANN204
         try:
             return getattr(self._module, name)
         except AttributeError:
@@ -468,11 +481,12 @@ if TYPE_CHECKING:
     from . import (
         app,
         clock,
+        config,
         customtypes,
         display,
+        enums,
         event,
         font,
-        gl,
         graphics,
         gui,
         image,
@@ -489,12 +503,13 @@ if TYPE_CHECKING:
     )
 else:
     app = _ModuleProxy("app")  # type: ignore
+    config = _ModuleProxy("config")  # type: ignore
     clock = _ModuleProxy("clock")  # type: ignore
     customtypes = _ModuleProxy("customtypes")  # type: ignore
     display = _ModuleProxy("display")  # type: ignore
+    enums = _ModuleProxy("enums")   # type: ignore
     event = _ModuleProxy("event")  # type: ignore
     font = _ModuleProxy("font")  # type: ignore
-    gl = _ModuleProxy("gl")  # type: ignore
     graphics = _ModuleProxy("graphics")  # type: ignore
     gui = _ModuleProxy("gui")  # type: ignore
     image = _ModuleProxy("image")  # type: ignore

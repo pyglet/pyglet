@@ -1,0 +1,30 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+import pyglet
+
+from pyglet.enums import GraphicsAPI
+
+if TYPE_CHECKING:
+    from pyglet.image import ImageData
+
+
+def get_screenshot() -> ImageData:
+    """Read the pixel data from the default color buffer into ImageData.
+
+    This provides a simplistic screenshot of the default frame buffer.
+
+    This may be inaccurate if you utilize multiple frame buffers in your program.
+
+    .. versionadded:: 3.0
+    """
+    raise NotImplementedError
+
+
+if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2, GraphicsAPI.OPENGL_ES_3):
+    from pyglet.graphics.api.gl.framebuffer import GLFramebuffer as Framebuffer, GLRenderbuffer as Renderbuffer
+    from pyglet.graphics.api.gl.framebuffer import get_screenshot
+elif pyglet.options.backend == GraphicsAPI.WEBGL:
+    from pyglet.graphics.api.webgl.framebuffer import WebGLFramebuffer as Framebuffer, WebGLRenderbuffer as Renderbuffer  # noqa: F401
+    from pyglet.graphics.api.webgl.framebuffer import get_screenshot
