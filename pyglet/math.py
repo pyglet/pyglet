@@ -1256,11 +1256,7 @@ class Mat4(_typing.NamedTuple):
 
     def scale(self, vector: Vec3) -> Mat4:
         """Get a scale Matrix on x, y, or z axis."""
-        temp = list(self)
-        temp[0] *= vector[0]
-        temp[5] *= vector[1]
-        temp[10] *= vector[2]
-        return Mat4(*temp)
+        return self @ Mat4(vector[0], 0, 0, 0, 0, vector[1], 0, 0, 0, 0, vector[2], 0, 0, 0, 0, 1)
 
     def translate(self, vector: Vec3) -> Mat4:
         """Get a translation Matrix along x, y, and z axis."""

@@ -147,6 +147,19 @@ def test_mat3_scale():
     assert result == Vec3(2, 3, 1)
 
 
+def test_mat4_scale():
+    # scale() must be equivalent to post-multiplying by a scale matrix, not just
+    # multiplying the diagonal of `self`. The two only agree when `self` is
+    # already diagonal, so use a rotated matrix to catch the difference.
+    matrix = Mat4().rotate(0.5, Vec3(0, 0, 1))
+    vector = Vec3(2, 3, 4)
+
+    scale_matrix = Mat4(vector.x, 0, 0, 0, 0, vector.y, 0, 0, 0, 0, vector.z, 0, 0, 0, 0, 1)
+    expected = matrix @ scale_matrix
+
+    assert round(matrix.scale(vector), 9) == round(expected, 9)
+
+
 def _invalid_matmul(first, second):
     return first @ second
 
