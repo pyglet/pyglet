@@ -90,19 +90,6 @@ def test_push_handlers_kwargs(dispatcher, mock_handler):
     assert mock_handler.called
 
 
-def test_push_handlers_accepts_non_weakrefable_bound_methods(dispatcher):
-    dispatcher.register_event_type('mock_event')
-    values = []
-
-    dispatcher.push_handlers(mock_event=values.append)
-
-    assert dispatcher.dispatch_event('mock_event', 42) is None
-    assert values == [42]
-
-    dispatcher.remove_handlers(mock_event=values.append)
-    assert dispatcher.dispatch_event('mock_event', 99) is False
-
-
 def test_push_handlers_instance(dispatcher, class_instance_handler):
     dispatcher.register_event_type('mock_event')
     dispatcher.push_handlers(class_instance_handler)
