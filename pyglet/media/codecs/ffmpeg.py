@@ -13,10 +13,10 @@ from ctypes import (
     addressof,
     byref,
     c_char_p,
+    c_double,
     c_int,
     c_int32,
     c_uint8,
-    c_double,
     cast,
     create_string_buffer,
     memmove,
@@ -45,8 +45,14 @@ from .ffmpeg_lib import (
     libavutil,
     swscale,
 )
-from .ffmpeg_lib.libavformat import AVCodecContext, AVFormatContext, avformat, avformat_version, get_input_extensions, \
-    AVERROR_EOF
+from .ffmpeg_lib.libavformat import (
+    AVERROR_EOF,
+    AVCodecContext,
+    AVFormatContext,
+    avformat,
+    avformat_version,
+    get_input_extensions,
+)
 from .ffmpeg_lib.libavutil import (
     AV_NOPTS_VALUE,
     AV_PIX_FMT_RGBA,

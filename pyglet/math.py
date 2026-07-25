@@ -977,10 +977,10 @@ class Mat3(_typing.NamedTuple):
     i: float = 1.0
 
     def scale(self, sx: float, sy: float) -> Mat3:
-        return self @ Mat3(1.0 / sx, 0.0, 0.0, 0.0, 1.0 / sy, 0.0, 0.0, 0.0, 1.0)
+        return self @ Mat3(sx, 0.0, 0.0, 0.0, sy, 0.0, 0.0, 0.0, 1.0)
 
     def translate(self, tx: float, ty: float) -> Mat3:
-        return self @ Mat3(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, -tx, ty, 1.0)
+        return self @ Mat3(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, tx, ty, 1.0)
 
     def rotate(self, phi: float) -> Mat3:
         s = sin(radians(phi))
@@ -1257,11 +1257,7 @@ class Mat4(_typing.NamedTuple):
 
     def scale(self, vector: Vec3) -> Mat4:
         """Get a scale Matrix on x, y, or z axis."""
-        temp = list(self)
-        temp[0] *= vector[0]
-        temp[5] *= vector[1]
-        temp[10] *= vector[2]
-        return Mat4(*temp)
+        return self @ Mat4(vector[0], 0, 0, 0, 0, vector[1], 0, 0, 0, 0, vector[2], 0, 0, 0, 0, 1)
 
     def translate(self, vector: Vec3) -> Mat4:
         """Get a translation Matrix along x, y, and z axis."""
