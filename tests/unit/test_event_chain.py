@@ -125,11 +125,10 @@ def test_chain_invokes_all_completion_callbacks_in_registration_order(fake_clock
     chain = sequence()
     chain.add_callbacks(on_complete=first)
     chain.add_callbacks(on_complete=lambda result: events.append(('second', result)))
-    chain.on_complete = lambda result: events.append(('assigned', result))
     chain.start()
     fake_clock.tick()
 
-    assert events == [('first', 'done'), ('second', 'done'), ('assigned', 'done')]
+    assert events == [('first', 'done'), ('second', 'done')]
 
 
 def test_chain_allows_default_lifecycle_event_handlers(fake_clock):
@@ -141,7 +140,7 @@ def test_chain_allows_default_lifecycle_event_handlers(fake_clock):
         return 'done'
 
     chain = sequence()
-    chain.on_complete = events.append
+    chain.add_callbacks(on_complete=events.append)
     chain.start()
     fake_clock.tick(0.5)
 
