@@ -84,7 +84,7 @@ class NotificationDevice(LinuxSelectDevice):
         eventfd_write(self.fd, 1)
 
 
-class TimerDevice(XlibSelectDevice):
+class TimerDevice(LinuxSelectDevice):
     def __init__(self):
         self.fd = timerfd_create(CLOCK_MONOTONIC)
 
@@ -127,7 +127,7 @@ class LinuxEventLoop(PlatformEventLoop):
 
         # More precise than epoll.poll(timeout):
         if timeout:
-            self._timer_device.set_timer(timeout * 0.9)
+            self._timer_device.set_timer(timeout)
 
         # At least one event will be returned (a real event, or the timer event)
         for fd, _ in self.epoll.poll(timeout):
