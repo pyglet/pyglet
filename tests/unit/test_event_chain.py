@@ -73,7 +73,22 @@ def test_chain_yields_delay_and_completes(fake_clock):
     assert events == ['started', 'finished', 'done']
 
 
-def test_chain_dispatches_lifecycle_events(fake_clock):
+def test_chain_callbacks_support_builtin_bound_methods(fake_clock):
+    # Should pass on normal pythons to may pypy happy.
+    events = []
+
+    @pyglet.clock.chain
+    def sequence():
+        yield 0
+        return 'done'
+
+    sequence().add_callbacks(on_complete=events.append).start()
+    fake_clock.tick()
+
+    assert events == ['done']
+
+
+def test_chain_invokes_lifecycle_callbacks(fake_clock):
     events = []
 
     @pyglet.clock.chain
@@ -82,7 +97,7 @@ def test_chain_dispatches_lifecycle_events(fake_clock):
         return 'done'
 
     chain = sequence()
-    chain.push_handlers(
+    chain.add_callbacks(
         on_pause=lambda: events.append('paused'),
         on_resume=lambda: events.append('resumed'),
         on_complete=lambda result: events.append(result),
@@ -93,6 +108,28 @@ def test_chain_dispatches_lifecycle_events(fake_clock):
     fake_clock.tick(0.5)
 
     assert events == ['paused', 'resumed', 'done']
+
+
+def test_chain_invokes_all_completion_callbacks_in_registration_order(fake_clock):
+    events = []
+
+    @pyglet.clock.chain
+    def sequence():
+        yield 0
+        return 'done'
+
+    def first(result):
+        events.append(('first', result))
+        return True
+
+    chain = sequence()
+    chain.add_callbacks(on_complete=first)
+    chain.add_callbacks(on_complete=lambda result: events.append(('second', result)))
+    chain.on_complete = lambda result: events.append(('assigned', result))
+    chain.start()
+    fake_clock.tick()
+
+    assert events == [('first', 'done'), ('second', 'done'), ('assigned', 'done')]
 
 
 def test_chain_allows_default_lifecycle_event_handlers(fake_clock):
@@ -109,25 +146,6 @@ def test_chain_allows_default_lifecycle_event_handlers(fake_clock):
     fake_clock.tick(0.5)
 
     assert events == ['done']
-
-
-def test_chain_lifecycle_event_can_be_waited_for(fake_clock):
-    @pyglet.clock.chain
-    def child():
-        yield 0.5
-        return 'child result'
-
-    child_chain = child().start()
-
-    @pyglet.clock.chain
-    def observer():
-        return (yield pyglet.clock.wait_for_event(child_chain, 'on_complete'))
-
-    observer_chain = observer().start()
-    fake_clock.tick(0.5)
-    fake_clock.tick()
-
-    assert observer_chain.result == 'child result'
 
 
 def test_chain_can_be_created_for_explicit_clock(fake_clock):

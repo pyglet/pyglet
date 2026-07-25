@@ -316,38 +316,6 @@ important because completed chains cannot be restarted::
     yield pyglet.clock.repeat_duration(blink_once, 3.0)
 
 
-Chain lifecycle events
-----------------------
-
-``Chain`` is an :py:class:`~pyglet.event.EventDispatcher`. It dispatches
-``on_complete(result)``, ``on_stop()``, ``on_pause()``, ``on_resume()``, and
-``on_error(error)`` when its lifecycle changes. This allows chains to use the
-same handler APIs as other pyglet event sources like a Window::
-
-    sequence.add_callbacks(
-        on_complete=lambda result: print('finished:', result),
-        on_error=lambda error: print('failed:', error),
-    )
-
-
-Because lifecycle changes are ordinary events, another chain can wait for one.
-For example, this performs follow-up work only after an independently started
-fade completes::
-
-    fade = fade_out().start()
-
-    @pyglet.clock.chain
-    def destroy_after_fade():
-        yield pyglet.clock.wait_for_event(fade, 'on_complete')
-        sprite.delete()
-
-    destroy_after_fade().start()
-
-Lifecycle event handlers follow normal pyglet dispatch rules. In particular,
-returning ``EVENT_HANDLED`` prevents lower-priority handlers from receiving the
-same lifecycle event.
-
-
 Waiting for events and callbacks
 --------------------------------
 

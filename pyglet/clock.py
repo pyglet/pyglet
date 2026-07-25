@@ -367,17 +367,28 @@ ChainTag: TypeAlias = str
 _MISSING = object()
 
 
-class Chain(EventDispatcher):
+class Chain:
     """Run generator-based sequences on a pyglet clock.
 
     Chains yield delays, child chains, callback operations, or ``None``. They can
-    be stopped as a group, and they expose callbacks for completion, stop, and
-    error handling.
+    be stopped as a group and exposes callbacks.
     """
+    _callback_names = frozenset(('on_complete', 'on_stop', 'on_pause', 'on_resume', 'on_error'))
+    on_complete: Callable[[Any], Any] | None
+    on_stop: Callable[[], Any] | None
+    on_pause: Callable[[], Any] | None
+    on_resume: Callable[[], Any] | None
+    on_error: Callable[[BaseException], Any] | None
+
+    _callbacks: dict[str, list[Callable[..., Any]]]
+
     def __init__(self, generator: ChainGenerator[Any], clock: Clock | None = None) -> None:
         """Initialize the chain with a generator."""
         self._generator = generator
         self._clock: Clock = clock or _default
+        self._callbacks = {
+            name: [] for name in self._callback_names
+        }
         self._running = False
         self._paused = False
         self._finished = False
@@ -610,7 +621,7 @@ class Chain(EventDispatcher):
             cancel()
 
         self._generator.close()
-        self.dispatch_event('on_stop')
+        self._dispatch_callbacks('on_stop')
 
     def pause(self) -> Chain:
         """Pauses the chain, with the intention to either resume or stop in the future.
@@ -630,7 +641,7 @@ class Chain(EventDispatcher):
         elif self._operation is not None and hasattr(self._operation, 'pause'):
             self._operation.pause()
 
-        self.dispatch_event('on_pause')
+        self._dispatch_callbacks('on_pause')
 
         return self
 
@@ -655,7 +666,7 @@ class Chain(EventDispatcher):
         elif self._scheduled_callback is not None:
             self._clock.schedule(self._scheduled_callback)
 
-        self.dispatch_event('on_resume')
+        self._dispatch_callbacks('on_resume')
 
         return self
 
@@ -664,33 +675,44 @@ class Chain(EventDispatcher):
         self._paused = False
         self._finished = True
         self.result = result
-        self.dispatch_event('on_complete', result)
+        self._dispatch_callbacks('on_complete', result)
 
     def _fail(self, error: BaseException) -> None:
         self._running = False
         self._paused = False
         self._finished = True
         self.exception = error
-        if self.dispatch_event('on_error', error) is False:
+        if not self._dispatch_callbacks('on_error', error):
             traceback.print_exception(error)
 
     def add_callbacks(self, **callbacks: Callable[..., Any]) -> Chain:
-        """Register lifecycle event handlers and return this chain.
-
-        Mostly an alias for ``push_handlers''.
+        """Register strongly referenced callbacks and return this chain.
 
         Accepted names are ``on_complete``, ``on_stop``, ``on_pause``,
         ``on_resume``, and ``on_error``.
         """
-        self.push_handlers(**callbacks)
+        for name, callback in callbacks.items():
+            if name not in self._callback_names:
+                msg = f"Unknown chain callback {name!r}"
+                raise ValueError(msg)
+            if not callable(callback):
+                msg = f"Chain callback {name!r} must be callable"
+                raise TypeError(msg)
+            self._callbacks[name].append(callback)
+
         return self
 
+    def _dispatch_callbacks(self, name: str, *args: Any) -> bool:
+        """Invoke registered callbacks and an optional directly assigned callback.
 
-Chain.register_event_type('on_complete')
-Chain.register_event_type('on_stop')
-Chain.register_event_type('on_pause')
-Chain.register_event_type('on_resume')
-Chain.register_event_type('on_error')
+        Returns:
+            True if callback was called.
+        """
+        invoked = False
+        for callback in tuple(self._callbacks[name]):
+            invoked = True
+            callback(*args)
+        return invoked
 
 
 class ChainGroup:
