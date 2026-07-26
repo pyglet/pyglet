@@ -11,6 +11,7 @@ pytestmark = require_platform(Platform.OSX)
 if pyglet.compat_platform in ("darwin",):
     from pyglet.libs.darwin import AutoReleasePool, ObjCSubclass, ObjCClass
     from pyglet.libs.darwin.cocoapy.runtime import get_cached_instances, send_super
+    from pyglet.app.cocoa import CocoaPlatformEventLoop
 
     NSObject = ObjCClass('NSObject')
 
@@ -112,3 +113,24 @@ class ObjCIntegrationTest(unittest.TestCase):
             gc.collect()
 
         self.assertIsNone(data_ref())
+
+    def test_safe_event_type_swallows_missing_type_selector(self):
+        """Regression test for #1465: macOS can hand nextEventMatchingMask...
+        a native object that isn't a real NSEvent (observed as a private
+        GameController framework object, e.g. _GCControllerAxisButtonInput,
+        right when a controller disconnects). Such objects don't respond to
+        'type', which must not crash the run loop.
+        """
+        class FakeEventWithoutType_Implementation:
+            FakeEventWithoutType = ObjCSubclass("NSObject", "FakeEventWithoutType")
+
+        FakeEventWithoutType = ObjCClass('FakeEventWithoutType')
+        fake_event = FakeEventWithoutType.alloc().init()
+
+        try:
+            with self.assertWarns(UserWarning):
+                result = CocoaPlatformEventLoop._safe_event_type(fake_event)
+
+            self.assertIsNone(result)
+        finally:
+            fake_event.release()

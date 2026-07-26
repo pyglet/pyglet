@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import signal
 import time
+import warnings
 
 from pyglet import app
 from pyglet.app.base import PlatformEventLoop, EventLoop
@@ -241,6 +242,28 @@ class CocoaPlatformEventLoop(PlatformEventLoop):
             self._timer.invalidate()
             self._timer = None
 
+    @staticmethod
+    def _safe_event_type(event):
+        """Return ``event.type()``, or ``None`` if ``event`` doesn't behave like a normal NSEvent.
+
+        ``nextEventMatchingMask_untilDate_inMode_dequeue_`` is documented to only ever
+        return an NSEvent (or None), but macOS has been observed handing back a native
+        object that isn't a real NSEvent -- for example a private GameController
+        framework object such as ``_GCControllerAxisButtonInput`` right as a controller
+        disconnects. Such objects don't respond to ``type``, and calling it raises an
+        AttributeError from the ctypes/Objective-C bridge. Treat that as "nothing useful
+        to dispatch" instead of letting it crash the whole application.
+        See: https://github.com/pyglet/pyglet/issues/1465
+        """
+        try:
+            return event.type()
+        except AttributeError:
+            warnings.warn(
+                f"Ignored a native event without a usable 'type' (got {event!r}); "
+                f"this can happen around controller connect/disconnect on macOS."
+            )
+            return None
+
     def step(self, timeout=None):
         with AutoReleasePool():
             self.dispatch_posted_events()
@@ -264,8 +287,8 @@ class CocoaPlatformEventLoop(PlatformEventLoop):
 
             # Dispatch the event (if any).
             if event is not None:
-                event_type = event.type()
-                if event_type != cocoapy.NSApplicationDefined:
+                event_type = self._safe_event_type(event)
+                if event_type is not None and event_type != cocoapy.NSApplicationDefined:
                     self.NSApp.sendEvent_(event)
 
                 self.NSApp.updateWindows()
