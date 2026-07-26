@@ -127,3 +127,62 @@ def test_blend_setter(shape_keywords_only):
     shape.blend_mode = blend_mode
     assert shape._group.blend_src == 1  # noqa: SLF001
     assert shape._group.blend_dest == 1  # noqa: SLF001
+
+
+# Regression tests for #887: Arc.__contains__ raised NotImplementedError,
+# and Arc's rotation was applied twice (see also the fix to
+# Arc._get_vertices, which removed a leftover manual rotation term).
+class TestArcContains:
+
+    def test_point_on_the_ring_is_contained(self):
+        arc = Arc(0, 0, radius=10, thickness=1.0, angle=360.0)
+        assert (10, 0) in arc
+
+    def test_point_in_the_hole_is_not_contained(self):
+        arc = Arc(0, 0, radius=10, thickness=1.0, angle=360.0)
+        assert (0, 0) not in arc
+
+    def test_point_far_outside_is_not_contained(self):
+        arc = Arc(0, 0, radius=10, thickness=1.0, angle=360.0)
+        assert (100, 100) not in arc
+
+    def test_point_within_half_thickness_of_the_ring_is_contained(self):
+        arc = Arc(0, 0, radius=10, thickness=1.0, angle=360.0)
+        assert (9.6, 0) in arc
+
+    def test_point_beyond_half_thickness_of_the_ring_is_not_contained(self):
+        arc = Arc(0, 0, radius=10, thickness=1.0, angle=360.0)
+        assert (9.0, 0) not in arc
+
+    def test_point_inside_the_swept_angle_is_contained(self):
+        arc = Arc(0, 0, radius=10, thickness=1.0, angle=90.0, start_angle=0.0)
+        assert (7.0710678, 7.0710678) in arc  # 45 degrees, within [0, 90]
+
+    def test_point_outside_the_swept_angle_is_not_contained(self):
+        arc = Arc(0, 0, radius=10, thickness=1.0, angle=90.0, start_angle=0.0)
+        assert (-10, 0) not in arc  # 180 degrees, outside [0, 90]
+
+    def test_contains_tracks_a_single_rotation_like_other_shapes(self):
+        """Rotating an Arc by 90 degrees should move its swept wedge by
+        exactly 90 degrees (matching Sector's convention), not by 180
+        degrees in the opposite direction as it did before this fix.
+        """
+        arc = Arc(0, 0, radius=10, thickness=1.0, angle=90.0, start_angle=0.0)
+        arc.rotation = 90
+        # The [0, 90] wedge, rotated -90 degrees, now covers [-90, 0].
+        assert (0, -10) in arc   # -90 degrees: new start of the wedge
+        assert (10, 0) in arc    # 0 degrees: new end of the wedge
+        assert (0, 10) not in arc  # 90 degrees: outside the rotated wedge
+
+    def test_local_vertices_do_not_depend_on_rotation(self):
+        """Arc._get_vertices() computes local-space geometry; rotation is
+        applied entirely by the shared shader-based rotation (like every
+        other shape). Before this fix, Arc uniquely also subtracted
+        self._rotation while building local vertices, applying rotation
+        twice: once here, and again in the shader.
+        """
+        arc = Arc(0, 0, radius=10, thickness=1.0, angle=90.0, start_angle=30.0)
+        unrotated = arc._get_vertices()  # noqa: SLF001
+        arc.rotation = 45
+        rotated = arc._get_vertices()  # noqa: SLF001
+        assert rotated == unrotated
