@@ -226,3 +226,44 @@ def test_weakref_deleted_when_instance_is_deleted(dispatcher):
     gc.collect()    # ensure references are cleared
     result = dispatcher.dispatch_event('mock_event')
     assert result is False
+
+
+def test_set_handler_weak_reference_to_bound_method(dispatcher):
+    """Regression test for #869: set_handler should not keep a bound
+    method's instance alive forever, matching push_handlers/set_handlers.
+    """
+    import weakref
+    dispatcher.register_event_type('mock_event')
+    handler = DummyHandler()
+    watcher = mock.Mock()
+    weakref.finalize(handler, watcher)
+    dispatcher.set_handler('mock_event', handler.mock_event)
+    del handler
+    gc.collect()    # ensure references are cleared
+    assert watcher.called
+
+
+def test_remove_handler_finds_handler_set_via_push_handlers(dispatcher):
+    """Regression test for #869: remove_handler (singular) must be able to
+    remove a handler that was registered via push_handlers (plural), even
+    though push_handlers stores it wrapped in a WeakMethod.
+    """
+    dispatcher.register_event_type('mock_event')
+    handler = DummyHandler()
+    dispatcher.push_handlers(handler)
+    dispatcher.remove_handler('mock_event', handler.mock_event)
+    result = dispatcher.dispatch_event('mock_event')
+    assert result is False
+
+
+def test_remove_handlers_finds_handler_set_via_set_handler(dispatcher):
+    """Regression test for #869: remove_handlers (plural) must be able to
+    remove a bound-method handler that was registered via set_handler
+    (singular), even though set_handler now also wraps it in a WeakMethod.
+    """
+    dispatcher.register_event_type('mock_event')
+    handler = DummyHandler()
+    dispatcher.set_handler('mock_event', handler.mock_event)
+    dispatcher.remove_handlers(handler)
+    result = dispatcher.dispatch_event('mock_event')
+    assert result is False

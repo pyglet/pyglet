@@ -137,6 +137,31 @@ EVENT_UNHANDLED = None
 EVENT_HANDLE_STATE = Union[Literal[True], None]
 
 
+def _deref_handler(handler: Callable | WeakMethod) -> Callable | None:
+    """Resolve a stored handler to the callable it actually represents.
+
+    ``handler`` may be a plain callable, or a :py:class:`~weakref.WeakMethod`
+    wrapping a bound method (as used internally for methods, so that holding
+    a handler doesn't keep its instance alive forever). Dereferencing here
+    lets callers compare two handlers for equality without caring which form
+    either one is currently in.
+    """
+    if isinstance(handler, WeakMethod):
+        return handler()
+    return handler
+
+
+def _handlers_equal(handler_a: Callable | WeakMethod, handler_b: Callable | WeakMethod) -> bool:
+    """Compare two handlers, transparently dereferencing either side if it's a WeakMethod.
+
+    This is what allows a handler registered through one API (for example
+    :py:meth:`~EventDispatcher.set_handler`) to be found and removed through
+    another (for example :py:meth:`~EventDispatcher.remove_handlers`), and
+    vice versa, as long as it's the same underlying bound method.
+    """
+    return _deref_handler(handler_a) == _deref_handler(handler_b)
+
+
 class EventException(Exception):  # noqa: N818
     """An exception raised when an event handler could not be attached."""
 
@@ -227,10 +252,23 @@ class EventDispatcher:
             self.set_handler(name, handler)
 
     def set_handler(self, name: str, handler: Callable) -> None:
-        """Attach a single event handler."""
+        """Attach a single event handler.
+
+        If ``handler`` is a bound method, it is stored as a
+        :py:class:`~weakref.WeakMethod`, matching the behavior of
+        :py:meth:`~EventDispatcher.set_handlers` and
+        :py:meth:`~EventDispatcher.push_handlers`. This means the handler
+        does not keep its instance alive, and is transparently found by
+        :py:meth:`~EventDispatcher.remove_handler` or
+        :py:meth:`~EventDispatcher.remove_handlers` regardless of which
+        method was used to attach it.
+        """
         # Create event stack if necessary
         if type(self._event_stack) is tuple:
             self._event_stack = [{}]
+
+        if inspect.ismethod(handler):
+            handler = WeakMethod(handler, partial(self._remove_handler, name))
 
         self._event_stack[0][name] = handler
 
@@ -262,7 +300,7 @@ class EventDispatcher:
                 for _name, _handler in handlers:
                     if _name not in _frame:
                         continue
-                    if _frame[_name] == _handler:
+                    if _handlers_equal(_frame[_name], _handler):
                         return _frame
             return None
 
@@ -275,7 +313,7 @@ class EventDispatcher:
         # Remove each handler from the frame.
         for name, handler in handlers:
             try:
-                if frame[name] == handler:
+                if _handlers_equal(frame[name], handler):
                     del frame[name]
             except KeyError:  # noqa: PERF203
                 pass
@@ -288,16 +326,19 @@ class EventDispatcher:
         """Remove a single event handler.
 
         The given event handler is removed from the first handler stack frame
-        it appears in.  The handler must be the exact same callable as passed
-        to `set_handler`, `set_handlers` or
+        it appears in.  The handler must be the same underlying callable as
+        was passed to `set_handler`, `set_handlers` or
         :py:meth:`~pyglet.event.EventDispatcher.push_handlers`; and the name
-        must match the event type it is bound to.
+        must match the event type it is bound to. This works regardless of
+        which of those methods was used to attach it, since bound methods are
+        compared by the object and function they refer to, not by identity of
+        the (possibly weakref-wrapped) stored value.
 
         No error is raised if the event handler is not set.
         """
         for frame in self._event_stack:
             try:
-                if frame[name] == handler:
+                if _handlers_equal(frame[name], handler):
                     del frame[name]
                     break
             except KeyError:
