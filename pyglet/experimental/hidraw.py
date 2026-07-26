@@ -11,7 +11,7 @@ from ctypes import create_string_buffer
 
 import pyglet
 
-from pyglet.app.linux import LinuxSelectDevice
+from pyglet.app.linux import LinuxPollDevice
 from pyglet.libs.linux.ioctl import _IOR, _IOR_str, _IOWR_len
 from pyglet.input.base import Device
 from pyglet.input.base import DeviceOpenException
@@ -74,7 +74,7 @@ def get_set_bits(bytestring):
     return bits
 
 
-class HIDRawDevice(LinuxSelectDevice, Device):
+class HIDRawDevice(LinuxPollDevice, Device):
     _fileno = None
 
     def __init__(self, display, filename):
@@ -146,7 +146,7 @@ class HIDRawDevice(LinuxSelectDevice, Device):
     def fileno(self):
         return self._fileno
 
-    def select(self):
+    def process(self):
         if not self._fileno:
             return
 

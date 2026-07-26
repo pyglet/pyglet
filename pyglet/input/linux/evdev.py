@@ -17,7 +17,7 @@ from ctypes import c_byte as _c_byte
 import pyglet
 
 from .evdev_constants import *
-from pyglet.app.linux import LinuxSelectDevice
+from pyglet.app.linux import LinuxPollDevice
 from pyglet.libs.linux.ioctl import _IOR, _IOR_str, _IOR_len, _IOW
 from pyglet.input.base import Device, RelativeAxis, AbsoluteAxis, Button, Joystick, Controller
 from pyglet.input.base import DeviceOpenException, ControllerManager
@@ -273,7 +273,7 @@ event_types = {
 }
 
 
-class EvdevDevice(LinuxSelectDevice, Device):
+class EvdevDevice(LinuxPollDevice, Device):
     _fileno: int | None
 
     def __init__(self, display, filename):
@@ -392,7 +392,7 @@ class EvdevDevice(LinuxSelectDevice, Device):
     def fileno(self):
         return self._fileno
 
-    def select(self):
+    def process(self):
         """When the file descriptor is ready, read and process InputEvents.
 
         This method has the following behavior:
@@ -489,7 +489,7 @@ class FFController(Controller):
         self.device.ff_upload_effect(self._stop_strong_event)
 
 
-class EvdevControllerManager(ControllerManager, LinuxSelectDevice):
+class EvdevControllerManager(ControllerManager, LinuxPollDevice):
 
     def __init__(self, display=None):
         super().__init__()
@@ -537,7 +537,7 @@ class EvdevControllerManager(ControllerManager, LinuxSelectDevice):
             # Post the event in the main thread:
             self.post_event('on_connect', controller)
 
-    def select(self):
+    def process(self):
         """Triggered whenever the devices_file changes."""
         new_device_files = self._get_device_names()
         appeared = new_device_files - self._device_names

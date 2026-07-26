@@ -1,19 +1,18 @@
 import ctypes
-import select
 
 from os import read as os_read
+from os import EFD_SEMAPHORE, eventfd, eventfd_read, eventfd_write
+
 from time import CLOCK_MONOTONIC
-from select import POLLIN
+from select import POLLIN, epoll
 
 from pyglet import app, lib
 from pyglet.app.base import PlatformEventLoop
 
-# TODO: remove timerfd fallbacks once Python 3.12 is EOL
 try:
     from os import timerfd_create, timerfd_settime, timerfd_gettime
-    from os import EFD_SEMAPHORE, eventfd, eventfd_read, eventfd_write
 except ImportError:
-    EFD_SEMAPHORE = 1
+    # TODO: remove timerfd fallbacks once Python 3.12 is EOL
 
     class Timespec(ctypes.Structure):
         _fields_ = [('tv_sec', ctypes.c_long), ('tv_nsec', ctypes.c_long)]
@@ -52,7 +51,8 @@ except ImportError:
         return time_until_expiry, interval
 
 
-class LinuxSelectDevice:
+class LinuxPollDevice:
+
     def fileno(self):
         """Get the file handle for ``select()`` for this device.
 
@@ -60,7 +60,7 @@ class LinuxSelectDevice:
         """
         raise NotImplementedError('abstract')
 
-    def select(self):
+    def process(self):
         """Perform event processing on the device.
 
         Called when ``select()`` returns this device in its list of active
@@ -69,14 +69,14 @@ class LinuxSelectDevice:
         raise NotImplementedError('abstract')
 
 
-class NotificationDevice(LinuxSelectDevice):
+class NotificationDevice(LinuxPollDevice):
     def __init__(self):
         self.fd = eventfd(1, EFD_SEMAPHORE)
 
     def fileno(self):
         return self.fd
 
-    def select(self):
+    def process(self):
         eventfd_read(self.fd)
         app.platform_event_loop.dispatch_posted_events()
 
@@ -84,14 +84,14 @@ class NotificationDevice(LinuxSelectDevice):
         eventfd_write(self.fd, 1)
 
 
-class TimerDevice(LinuxSelectDevice):
+class TimerDevice(LinuxPollDevice):
     def __init__(self):
         self.fd = timerfd_create(CLOCK_MONOTONIC)
 
     def fileno(self):
         return self.fd
 
-    def select(self):
+    def process(self):
         os_read(self.fd, 8)
 
     def set_timer(self, value):
@@ -102,7 +102,7 @@ class LinuxEventLoop(PlatformEventLoop):
     def __init__(self):
         super().__init__()
         self.monitored_devices = {}
-        self.epoll = select.epoll()
+        self.epoll = epoll()
 
         self._notification_device = NotificationDevice()
         self._timer_device = TimerDevice()
@@ -130,8 +130,8 @@ class LinuxEventLoop(PlatformEventLoop):
             self._timer_device.set_timer(timeout)
 
         # At least one event will be returned (a real event, or the timer event)
-        for fd, _ in self.epoll.poll(timeout):
-            self.monitored_devices[fd].select()
+        for fd, _ in self.epoll.poll(None):
+            self.monitored_devices[fd].process()
 
         # Check the remaining time left on the timer_device.
         # If the timer_device has expired and woke the poll, this will be 0.0 (returning False).

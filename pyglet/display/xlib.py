@@ -8,7 +8,7 @@ from ctypes import POINTER, byref, c_buffer, c_char_p, c_int, cast
 import pyglet
 
 from pyglet import app
-from pyglet.app.linux import LinuxSelectDevice
+from pyglet.app.linux import LinuxPollDevice
 from pyglet.util import asbytes
 
 from . import xlib_vidmoderestore
@@ -88,7 +88,7 @@ _error_handler_ptr = xlib.XErrorHandler(_error_handler)
 xlib.XSetErrorHandler(_error_handler_ptr)
 
 
-class XlibDisplay(LinuxSelectDevice, Display):
+class XlibDisplay(LinuxPollDevice, Display):
     _display = None  # POINTER(xlib.Display)
 
     _x_im = None  # X input method
@@ -212,7 +212,7 @@ class XlibDisplay(LinuxSelectDevice, Display):
     def fileno(self) -> int:
         return self._fileno
 
-    def select(self) -> None:
+    def process(self) -> None:
         e = xlib.XEvent()
         while xlib.XPending(self._display):
             xlib.XNextEvent(self._display, e)
