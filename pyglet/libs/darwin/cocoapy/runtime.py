@@ -1352,9 +1352,19 @@ class ObjCInstance:
         # Store new object in the dictionary of cached objects, keyed
         # by the (integer) memory address pointed to by the object_ptr.
         cls._cached_objects[object_ptr.value] = objc_instance
+
+        # Tagged pointers are value-encoded Objective-C objects, not heap
+        # allocations.  They do not receive normal dealloc messages, so a
+        # retained dealloc observer would never be released.  The weak Python
+        # cache is enough for them.
+        if not _is_objc_tagged_pointer(object_ptr):
+            _set_cache_dealloc_observer(objc_instance)
         return objc_instance
 
     def release(self):
+        if not self.is_valid:
+            return
+
         self._retained = False
         send_message(self, "release")
 
@@ -1375,8 +1385,22 @@ class ObjCInstance:
 
         If we are retaining an allocation, release it.
         """
-        if self._retained:
+        if self._retained and self.is_valid:
             send_message(self, "release")
+
+    @property
+    def is_valid(self) -> bool:
+        """Return True if this wrapper still represents the current native object."""
+        return self._cached_objects.get(self.ptr.value) is self
+
+    def matches_native_class(self) -> bool:
+        """Return True if the pointer's current ObjC class matches this wrapper.
+
+        This is a diagnostic helper.  It calls ``object_getClass`` and should
+        not be used in hot paths.
+        """
+        native_class = c_void_p(objc.object_getClass(self.ptr))
+        return native_class.value == self.objc_class.ptr.value
 
     def associate(self, name: str, obj: Any):
         """Associate a Python object to the Objective-C instance with the given name.
@@ -1387,6 +1411,9 @@ class ObjCInstance:
         _set_dealloc_observer(self, name, obj)
 
     def __repr__(self):
+        if not self.is_valid:
+            return "<ObjCInstance %#x: deallocated %s at %s>" % (id(self), self.objc_class.name, str(self.ptr.value))
+
         if self.objc_class.name == b'NSCFString':
             # Display contents of NSString objects
             from .cocoalibs import cfstring_to_string
@@ -1400,6 +1427,10 @@ class ObjCInstance:
 
         This is only called when the name doesn't exist in __dict__.
         """
+        if not self.is_valid:
+            msg = f'Cannot access {name!r} on deallocated Objective-C object {self!r}'
+            raise ReferenceError(msg)
+
         # Search for named instance method in the class object and if it
         # exists, return callable object with self as hidden argument.
         # Note: you should give self and not self.ptr as a parameter to
@@ -1611,15 +1642,19 @@ class ObjCSubclass:
 ######################################################################
 
 _dealloc_argtype = [c_void_p]  # Just to prevent list creation every call.
+_cache_dealloc_argtypes = [c_void_p, c_void_p]
 
 # Cache Python objects we want to keep when associating with an instance.
 _python_objects = {}
 
-# Instances of DeallocationObserver are associated with every
-# Objective-C object that gets wrapped inside an ObjCInstance.
-# Their sole purpose is to watch for when the Objective-C object
-# is deallocated, and then remove the object from the dictionary
-# of cached ObjCInstance objects kept by the ObjCInstance class.
+# DeallocationObserver is used in two places:
+# - ObjCInstance cache observer: stores only the native ObjC pointer address
+#   in cached_object.  It does not pin any Python object; it only removes the
+#   stale address from ObjCInstance._cached_objects when Objective-C deallocs.
+# - ObjCInstance.associate observer: stores id(python_obj) in observed_object
+#   and keeps python_obj alive in _python_objects until the association is
+#   replaced or the native object is deallocated.  The value may be any Python
+#   object, not just a pointer-like object.
 #
 # The methods of the class defined below are decorated with
 # rawmethod() instead of method() because DeallocationObservers
@@ -1630,21 +1665,34 @@ _python_objects = {}
 class DeallocationObserver_Implementation:
     DeallocationObserver = ObjCSubclass('NSObject', 'DeallocationObserver', register=False)
     DeallocationObserver.add_ivar('observed_object', c_void_p)
+    DeallocationObserver.add_ivar('cached_object', c_void_p)
     DeallocationObserver.register()
 
     @DeallocationObserver.rawmethod('@@')
-    def initWithObjectId_(self, cmd, objc_ptr):
+    def initWithObjectId_(self, cmd, python_obj_id):
+        return DeallocationObserver_Implementation.initWithObjectId_cachedObject_(self, cmd, python_obj_id, 0)
+
+    @DeallocationObserver.rawmethod('@@@')
+    def initWithObjectId_cachedObject_(self, cmd, python_obj_id, cached_objc_ptr):
         self = send_super(self, 'init')
         if self is not None:
-            py_obj = cast(objc_ptr, py_object)
-            _python_objects[(self.value, objc_ptr)] = py_obj.value
-            set_instance_variable(self, 'observed_object', objc_ptr, c_void_p)
+            # python_obj_id is id(python_obj) passed as an opaque pointer-sized
+            # value.  Keeping the actual object in _python_objects is what
+            # prevents it from being garbage collected while associated.
+            if python_obj_id:
+                py_obj = cast(python_obj_id, py_object)
+                _python_objects[(self.value, python_obj_id)] = py_obj.value
+                set_instance_variable(self, 'observed_object', python_obj_id, c_void_p)
+
+            # cached_objc_ptr is the native ObjC object's address.  It is used
+            # only to remove stale wrappers from ObjCInstance._cached_objects
+            # when Objective-C deallocates the native object.
+            set_instance_variable(self, 'cached_object', cached_objc_ptr, c_void_p)
         return self.value
 
     @DeallocationObserver.rawmethod('v')
     def dealloc(self, cmd):
-        if objc_ptr := get_instance_variable(self, 'observed_object', c_void_p):
-            del _python_objects[(self, objc_ptr)]
+        _dealloc_observer_cleanup(self)
 
         send_super(self, "dealloc")
 
@@ -1655,32 +1703,67 @@ class DeallocationObserver_Implementation:
         # objc_startCollectorThread(), so probably not too much reason
         # to have this here, but I guess it can't hurt.)
         # _obj_observer_dealloc(self, 'finalize')
-        if objc_ptr := get_instance_variable(self, 'observed_object', c_void_p):
-            del _python_objects[(self, objc_ptr.value)]
+        _dealloc_observer_cleanup(self)
 
         send_super(self, 'finalize')
 
-def _obj_observer_dealloc(objc_obs, selector_name):
-    """Removes any cached ObjCInstances in Python to prevent memory leaks.
-    Manually break association as it's not implicitly mentioned that dealloc would break an association,
-    although we do not use the object after.
-    """
-    objc_ptr = get_instance_variable(objc_obs, 'observed_object', c_void_p)
-    if objc_ptr:
-        objc.objc_setAssociatedObject(objc_ptr, objc_obs, None, OBJC_ASSOCIATION_ASSIGN)
-        ObjCInstance._cached_objects.pop(objc_ptr, None)
 
-    send_super(objc_obs, selector_name)
+def _dealloc_observer_cleanup(observer):
+    if python_obj_id := get_instance_variable(observer, 'observed_object', c_void_p):
+        _python_objects.pop((observer, python_obj_id), None)
+
+    if cached_objc_ptr := get_instance_variable(observer, 'cached_object', c_void_p):
+        ObjCInstance._cached_objects.pop(cached_objc_ptr, None)
+
 
 def _assigned_internal_name(name: str):
     key = f'_internal.assign.{name}'
     return get_selector(key)
 
+
+def _cache_observer_internal_name():
+    return get_selector('_internal.objc_instance.dealloc_observer')
+
+
+def _is_objc_tagged_pointer(object_ptr):
+    """Return True for Objective-C tagged pointers.
+
+    Tagged pointers store small values directly in the pointer bits instead of
+    pointing to heap allocations.  Foundation commonly uses them for small
+    NSNumber and NSString values.  They are still valid Objective-C objects for
+    message sends, but they are not deallocated like normal objects.
+
+    Source: Apple objc4 runtime's objc-internal.h documents
+    _objc_isTaggedPointer and _OBJC_TAG_MASK:
+    https://github.com/apple-oss-distributions/objc4/blob/main/runtime/objc-internal.h
+    """
+    ptr = object_ptr.value if isinstance(object_ptr, c_void_p) else object_ptr
+    return bool(ptr and ((ptr & 1) or (__arm64__ and ptr & (1 << 63))))
+
+
+def _set_cache_dealloc_observer(self: ObjCInstance):
+    """Stop reusing this Python wrapper after Objective-C frees its object."""
+    observer_key = _cache_observer_internal_name()
+    if objc.objc_getAssociatedObject(self, observer_key):
+        return
+
+    observer = send_message('DeallocationObserver', 'alloc')
+    observer = send_message(
+        observer,
+        'initWithObjectId:cachedObject:',
+        0,
+        self.ptr.value,
+        argtypes=_cache_dealloc_argtypes,
+    )
+
+    objc.objc_setAssociatedObject(self, observer_key, observer, OBJC_ASSOCIATION_RETAIN)
+    send_message(observer, 'release')
+
+
 def _set_dealloc_observer(self, name, python_obj):
-    # Create a DeallocationObserver and associate it with this object.
-    # When the Objective-C object is deallocated, the observer will remove
-    # the ObjCInstance corresponding to the object from the cached objects
-    # dictionary, effectively destroying the ObjCInstance.
+    # Create a DeallocationObserver and associate it with this object.  The
+    # observer keeps the Python object alive until this association is replaced
+    # or the Objective-C object is deallocated.
     observer = send_message('DeallocationObserver', 'alloc')
     observer = send_message(observer, 'initWithObjectId:', id(python_obj), argtypes=_dealloc_argtype)
 
@@ -1691,11 +1774,6 @@ def _set_dealloc_observer(self, name, python_obj):
     # object is deallocated.
     send_message(observer, 'release')
     return observer
-
-
-def _remove_dealloc_observer(objc_ptr):
-    observer = objc_ptr._observer
-    objc.objc_setAssociatedObject(objc_ptr, observer, None, OBJC_ASSOCIATION_RETAIN)
 
 
 @contextmanager
@@ -1754,4 +1832,3 @@ class ObjCBlock:
 
     def _wrapper(self, _block, *args):
         return self.func(*args)
-
