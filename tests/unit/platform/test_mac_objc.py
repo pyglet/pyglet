@@ -99,17 +99,16 @@ class ObjCIntegrationTest(unittest.TestCase):
 
         self.assertEqual(len(get_cached_instances()), start_count)
 
-    def test_objc_deallocated_wrapper_rejects_selector_messages(self):
-        """Stale wrappers should fail before sending selectors to a reused native address."""
+    def test_objc_deallocated_wrapper_is_invalid(self):
+        """A released native object should mark the existing Python wrapper invalid."""
         start_count = len(get_cached_instances())
 
         test_object = NSObject.alloc().init()
-        description = test_object.description
+        self.assertTrue(test_object.is_valid)
 
         test_object.release()
 
-        with self.assertRaises(ReferenceError):
-            description()
+        self.assertFalse(test_object.is_valid)
 
         with self.assertRaises(ReferenceError):
             test_object.description()

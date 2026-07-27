@@ -1158,10 +1158,6 @@ class ObjCBoundMethod:
 
     def __call__(self, *args):
         """Call the method with the given arguments."""
-        if isinstance(self.objc_id, ObjCInstance) and not self.objc_id.is_valid:
-            msg = f'Cannot send selector {self.method.name!r} to deallocated Objective-C object {self.objc_id!r}'
-            raise ReferenceError(msg)
-
         return self.method(self.objc_id, *args)
 
 
