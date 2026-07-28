@@ -8,25 +8,39 @@ import pyglet.event
 
 class FakeClock:
     def __init__(self):
+        self.now = 0.0
         self.scheduled = []
         self.scheduled_once = []
 
     def schedule_once(self, func, delay):
-        self.scheduled_once.append((func, delay))
+        self.scheduled_once.append([func, delay])
 
     def schedule(self, func):
         self.scheduled.append(func)
 
     def unschedule(self, func):
         self.scheduled = [callback for callback in self.scheduled if callback != func]
-        self.scheduled_once = [(callback, delay) for callback, delay in self.scheduled_once if callback != func]
+        self.scheduled_once = [item for item in self.scheduled_once if item[0] != func]
+
+    def time(self):
+        return self.now
 
     def tick(self, dt=0.0):
+        pending_once = list(self.scheduled_once)
+        self.now += dt
         for callback in list(self.scheduled):
             callback(dt)
+        for item in pending_once:
+            if item not in self.scheduled_once:
+                continue
+            item[1] -= dt
+            if item[1] <= 1e-12:
+                self.scheduled_once.remove(item)
+                item[0](dt)
 
     def run_once(self):
         callback, delay = self.scheduled_once.pop(0)
+        self.now += delay
         callback(delay)
 
 
@@ -57,6 +71,8 @@ def test_chain_yields_delay_and_completes(fake_clock):
     assert chain.running
     assert not chain.done
     assert events == ['started']
+    assert fake_clock.scheduled == []
+    assert len(fake_clock.scheduled_once) == 1
 
     fake_clock.tick(0.24)
 
@@ -400,6 +416,26 @@ def test_chain_yields_none_to_resume_on_next_clock_tick(fake_clock):
     assert events == ['started', 'resumed']
 
 
+def test_consecutive_zero_delays_each_resume_on_a_separate_tick(fake_clock):
+    events = []
+
+    @pyglet.clock.chain
+    def sequence():
+        events.append(0)
+        yield None
+        events.append(1)
+        yield 0
+        events.append(2)
+
+    sequence().start()
+
+    fake_clock.tick()
+    assert events == [0, 1]
+
+    fake_clock.tick()
+    assert events == [0, 1, 2]
+
+
 def test_chain_stop_unschedules_pending_work_and_closes_generator(fake_clock):
     events = []
 
@@ -531,8 +567,11 @@ def test_chain_pause_unschedules_and_resume_continues_remaining_delay(fake_clock
     assert chain.paused
     assert not chain.running
     assert fake_clock.scheduled == []
+    assert fake_clock.scheduled_once == []
     assert events == ['started', 'paused']
 
+    # Time spent paused must not consume the delay.
+    fake_clock.tick(5.0)
     chain.resume()
 
     assert chain.running

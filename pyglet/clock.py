@@ -398,6 +398,7 @@ class Chain:
         self._cancel_operation: CancelCallback | None = None
         self._scheduled_callback: Callable[[float], None] | None = None
         self._scheduled_remaining: float | None = None
+        self._scheduled_started_at: float | None = None
         self._pending_advance: tuple[Any, BaseException | None] | None = None
 
         # Stale guard prevents old callbacks from resuming.
@@ -453,6 +454,7 @@ class Chain:
 
         self._scheduled_callback = None
         self._scheduled_remaining = None
+        self._scheduled_started_at = None
         self._wait_token = None
 
         if self._paused:
@@ -574,25 +576,21 @@ class Chain:
             if not self._running:
                 return
 
-            remaining = self._scheduled_remaining
-            if remaining is not None:
-                # Count down using this clock's ticks rather than sampling a
-                # wall-clock timestamp or schedule_interval. Keeps custom clocks and pauses
-                # accurate, and leaves the unscheduled remainder intact.
-                # Not sure if there is a better way?
-                remaining -= dt
-                self._scheduled_remaining = remaining
-                if remaining > 1e-12:
-                    return
-
-            self._clock.unschedule(callback)
+            # Zero-delay advances use ``schedule`` to preserve next-tick
+            # behavior, so they must remove themselves. Positive delays are
+            # one-shot items and have already been removed by the scheduler.
+            if self._scheduled_started_at is None:
+                self._clock.unschedule(callback)
             self._advance(dt, value, error)
 
         self._scheduled_callback = callback
-        # Schedule on every tick so pause can unschedule this exact callback
-        # and resume can continue with the accumulated remaining duration.
         self._scheduled_remaining = delay
-        self._clock.schedule(callback)
+        if delay > 0.0:
+            self._scheduled_started_at = self._clock.time()
+            self._clock.schedule_once(callback, delay)
+        else:
+            self._scheduled_started_at = None
+            self._clock.schedule(callback)
 
     def stop(self) -> None:
         """Stops the chain from running."""
@@ -610,6 +608,7 @@ class Chain:
             self._clock.unschedule(self._scheduled_callback)
             self._scheduled_callback = None
             self._scheduled_remaining = None
+            self._scheduled_started_at = None
 
         if self._child is not None:
             child, self._child = self._child, None
@@ -634,7 +633,12 @@ class Chain:
         self._paused = True
 
         if self._scheduled_callback is not None:
+            # Calculate remaining for when unpausing.
+            if self._scheduled_started_at is not None and self._scheduled_remaining is not None:
+                elapsed = max(self._clock.time() - self._scheduled_started_at, 0.0)
+                self._scheduled_remaining = max(self._scheduled_remaining - elapsed, 0.0)
             self._clock.unschedule(self._scheduled_callback)
+            self._scheduled_started_at = None
 
         if self._child is not None:
             self._child.pause()
@@ -664,7 +668,12 @@ class Chain:
             self._pending_advance = None
             self._schedule_advance(0.0, value=value, error=error)
         elif self._scheduled_callback is not None:
-            self._clock.schedule(self._scheduled_callback)
+            remaining = self._scheduled_remaining or 0.0
+            if remaining > 0.0:
+                self._scheduled_started_at = self._clock.time()
+                self._clock.schedule_once(self._scheduled_callback, remaining)
+            else:
+                self._clock.schedule(self._scheduled_callback)
 
         self._dispatch_callbacks('on_resume')
 
