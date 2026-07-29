@@ -45,7 +45,6 @@ if TYPE_CHECKING:
 
 _ERROR_SUCCESS = 0
 _ERROR_INSUFFICIENT_BUFFER = 122
-_QUERY_DISPLAY_CONFIG_RETRIES = 3
 
 
 def set_dpi_awareness() -> None:
@@ -107,7 +106,7 @@ class Win32Screen(Screen):  # noqa: D101
 
     def _get_display_config_path(self) -> DISPLAYCONFIG_PATH_INFO | None:
         """Get the active Display Configuration path for this screen."""
-        for _ in range(_QUERY_DISPLAY_CONFIG_RETRIES):
+        while True:
             path_count = UINT32()
             mode_count = UINT32()
 
@@ -153,7 +152,6 @@ class Win32Screen(Screen):  # noqa: D101
                     return path
 
             return None
-        return None
 
     def _get_friendly_name_display_config_api(self) -> str:
         """Get the friendly name of a monitor using the newer Display Configuration API.
