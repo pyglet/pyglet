@@ -86,9 +86,7 @@ _clear_bit_map = {
 def get_viewport() -> tuple:
     """Get the current OpenGL viewport dimensions (left, bottom, right, top)."""
     ctx = pyglet.graphics.api.core.current_context
-    viewport = (gl.GLint * 4)()
-    ctx.glGetIntegerv(gl.GL_VIEWPORT, viewport)
-    return tuple(viewport)
+    return tuple(ctx.gl.getParameter(gl.GL_VIEWPORT).to_py())
 
 
 def get_screenshot() -> ImageData:
@@ -211,6 +209,7 @@ class WebGLFramebuffer:
         self._gl_attachment_types = []
         self._width = 0
         self._height = 0
+        self._binding_stack: list[tuple[WebGLFramebufferObject | None, ...]] = []
         self.target = target
         self._gl_target = _gl_target_map[target]
 
@@ -245,12 +244,44 @@ class WebGLFramebuffer:
         """
         self._gl.bindFramebuffer(self._gl_target, None)
 
-    def clear(self) -> None:
-        """Clear the attachments."""
-        if self._clear_bits:
+    def __enter__(self) -> WebGLFramebuffer:  # noqa: PYI034
+        if self.target == FramebufferTarget.FRAMEBUFFER:
+            self._binding_stack.append((
+                self._gl.getParameter(gl.GL_DRAW_FRAMEBUFFER_BINDING),
+                self._gl.getParameter(gl.GL_READ_FRAMEBUFFER_BINDING),
+            ))
             self.bind()
-            self._gl.clear(self._clear_bits)
-            self.unbind()
+            return self
+
+        binding_enum = {
+            FramebufferTarget.DRAW: gl.GL_DRAW_FRAMEBUFFER_BINDING,
+            FramebufferTarget.READ: gl.GL_READ_FRAMEBUFFER_BINDING,
+        }[self.target]
+        self._binding_stack.append((self._gl.getParameter(binding_enum),))
+        self.bind()
+        return self
+
+    def __exit__(self, *_args: object) -> None:
+        bindings = self._binding_stack.pop()
+        if len(bindings) == 2:
+            self._gl.bindFramebuffer(gl.GL_DRAW_FRAMEBUFFER, bindings[0])
+            self._gl.bindFramebuffer(gl.GL_READ_FRAMEBUFFER, bindings[1])
+        else:
+            self._gl.bindFramebuffer(self._gl_target, bindings[0])
+
+    def clear(self, color: tuple[float, float, float, float] | None = None) -> None:
+        """Clear the attachments, optionally using a temporary clear color."""
+        if self._clear_bits:
+            previous_color = None
+            if color is not None:
+                previous_color = tuple(self._gl.getParameter(gl.GL_COLOR_CLEAR_VALUE).to_py())
+                self._gl.clearColor(*color)
+            try:
+                with self:
+                    self._gl.clear(self._clear_bits)
+            finally:
+                if previous_color is not None:
+                    self._gl.clearColor(*previous_color)
 
     def delete(self) -> None:
         """Explicitly delete the Framebuffer."""

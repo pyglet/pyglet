@@ -2,7 +2,7 @@ from ctypes import byref
 
 import pyglet
 
-from pyglet.enums import ComponentFormat, FramebufferAttachment
+from pyglet.enums import ComponentFormat, FramebufferAttachment, FramebufferTarget
 from pyglet.graphics.api.gl import gl
 from tests.annotations import skip_graphics_api, GraphicsAPIGroups
 
@@ -13,7 +13,6 @@ def _get_bound_framebuffer_id() -> int:
     return binding.value
 
 
-@skip_graphics_api(GraphicsAPIGroups.GL2)
 def test_framebuffer_creation_and_binding(gl3_context):
     gl3_context.switch_to()
 
@@ -32,7 +31,6 @@ def test_framebuffer_creation_and_binding(gl3_context):
         framebuffer.delete()
 
 
-@skip_graphics_api(GraphicsAPIGroups.GL2)
 def test_framebuffer_attach_texture_and_readback(gl3_context):
     gl3_context.switch_to()
 
@@ -64,7 +62,6 @@ def test_framebuffer_attach_texture_and_readback(gl3_context):
         texture.delete()
 
 
-@skip_graphics_api(GraphicsAPIGroups.GL2)
 def test_framebuffer_attach_depth_renderbuffer(gl3_context):
     gl3_context.switch_to()
 
@@ -94,3 +91,36 @@ def test_framebuffer_attach_depth_renderbuffer(gl3_context):
         framebuffer.delete()
         depth_buffer.delete()
         texture.delete()
+
+
+@skip_graphics_api(GraphicsAPIGroups.GL2)
+def test_framebuffer_context_restores_separate_draw_and_read_bindings(gl3_context):
+    gl3_context.switch_to()
+    target = pyglet.graphics.Framebuffer(context=gl3_context.context)
+    draw_framebuffer = pyglet.graphics.Framebuffer(
+        target=FramebufferTarget.DRAW,
+        context=gl3_context.context,
+    )
+    read_framebuffer = pyglet.graphics.Framebuffer(
+        target=FramebufferTarget.READ,
+        context=gl3_context.context,
+    )
+
+    try:
+        draw_framebuffer.bind()
+        read_framebuffer.bind()
+
+        with target:
+            assert _get_bound_framebuffer_id() == target.id
+
+        draw_binding = gl.GLint()
+        read_binding = gl.GLint()
+        gl.glGetIntegerv(gl.GL_DRAW_FRAMEBUFFER_BINDING, byref(draw_binding))
+        gl.glGetIntegerv(gl.GL_READ_FRAMEBUFFER_BINDING, byref(read_binding))
+        assert draw_binding.value == draw_framebuffer.id
+        assert read_binding.value == read_framebuffer.id
+    finally:
+        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
+        target.delete()
+        draw_framebuffer.delete()
+        read_framebuffer.delete()

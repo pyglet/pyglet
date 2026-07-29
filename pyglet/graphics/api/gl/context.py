@@ -169,8 +169,14 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
             self.uniform_getters, self.uniform_setters = self._get_uniform_func_tables()
             self._info.query(self)
             if self.info.get_opengl_api() in (GraphicsAPI.OPENGL_ES_2, GraphicsAPI.OPENGL_ES_3):
-                from pyglet.graphics.api.gl.framebuffer import GLFramebuffer
-                self.gles_pixel_fbo = GLFramebuffer(context=self)
+                if self.info.get_opengl_api() == GraphicsAPI.OPENGL_ES_2:
+                    from pyglet.graphics.api.gl2.framebuffer import GL2Framebuffer
+
+                    self.gles_pixel_fbo = GL2Framebuffer(context=self)
+                else:
+                    from pyglet.graphics.api.gl.framebuffer import GLFramebuffer
+
+                    self.gles_pixel_fbo = GLFramebuffer(context=self)
 
         if self.object_space.doomed_textures:
             self._delete_objects(self.object_space.doomed_textures, self.glDeleteTextures)

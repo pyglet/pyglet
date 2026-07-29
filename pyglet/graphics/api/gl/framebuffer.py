@@ -26,7 +26,7 @@ import pyglet
 from typing import TYPE_CHECKING
 
 from pyglet.customtypes import DataTypes
-from pyglet.enums import FramebufferTarget, FramebufferAttachment, ComponentFormat
+from pyglet.enums import ComponentFormat, FramebufferAttachment, FramebufferTarget
 from pyglet.graphics.api.gl import gl, GL_RGBA, GL_UNSIGNED_BYTE, GLuint
 from pyglet.image.base import ImageData
 from pyglet.graphics.api.gl.texture import _get_internal_format
@@ -197,6 +197,7 @@ class GLFramebuffer:
         self._clear_bits = 0
         self._width = 0
         self._height = 0
+        self._binding_stack: list[tuple[int, ...]] = []
         self.target = target
         self._gl_target = _gl_target_map[target]
 
@@ -231,12 +232,49 @@ class GLFramebuffer:
         """
         self._context.glBindFramebuffer(self._gl_target, 0)
 
-    def clear(self) -> None:
-        """Clear the attachments."""
-        if self._clear_bits:
+    def __enter__(self) -> GLFramebuffer:  # noqa: PYI034
+        if self.target == FramebufferTarget.FRAMEBUFFER:
+            draw_binding = gl.GLint()
+            read_binding = gl.GLint()
+            self._context.glGetIntegerv(gl.GL_DRAW_FRAMEBUFFER_BINDING, draw_binding)
+            self._context.glGetIntegerv(gl.GL_READ_FRAMEBUFFER_BINDING, read_binding)
+            self._binding_stack.append((draw_binding.value, read_binding.value))
             self.bind()
-            self._context.glClear(self._clear_bits)
-            self.unbind()
+            return self
+
+        binding_enum = {
+            FramebufferTarget.FRAMEBUFFER: gl.GL_FRAMEBUFFER_BINDING,
+            FramebufferTarget.DRAW: gl.GL_DRAW_FRAMEBUFFER_BINDING,
+            FramebufferTarget.READ: gl.GL_READ_FRAMEBUFFER_BINDING,
+        }[self.target]
+        binding = gl.GLint()
+        self._context.glGetIntegerv(binding_enum, binding)
+        self._binding_stack.append((binding.value,))
+        self.bind()
+        return self
+
+    def __exit__(self, *_args: object) -> None:
+        bindings = self._binding_stack.pop()
+        if len(bindings) == 2:
+            self._context.glBindFramebuffer(gl.GL_DRAW_FRAMEBUFFER, bindings[0])
+            self._context.glBindFramebuffer(gl.GL_READ_FRAMEBUFFER, bindings[1])
+        else:
+            self._context.glBindFramebuffer(self._gl_target, bindings[0])
+
+    def clear(self, color: tuple[float, float, float, float] | None = None) -> None:
+        """Clear the attachments, optionally using a temporary clear color."""
+        if self._clear_bits:
+            previous_color = None
+            if color is not None:
+                previous_color = (gl.GLfloat * 4)()
+                self._context.glGetFloatv(gl.GL_COLOR_CLEAR_VALUE, previous_color)
+                self._context.glClearColor(*color)
+            try:
+                with self:
+                    self._context.glClear(self._clear_bits)
+            finally:
+                if previous_color is not None:
+                    self._context.glClearColor(*previous_color)
 
     def delete(self) -> None:
         """Explicitly delete the Framebuffer."""

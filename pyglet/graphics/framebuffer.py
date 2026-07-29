@@ -1,3 +1,5 @@
+"""Framebuffer render targets and utilities."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -22,9 +24,15 @@ def get_screenshot() -> ImageData:
     raise NotImplementedError
 
 
-if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2, GraphicsAPI.OPENGL_ES_3):
+if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
     from pyglet.graphics.api.gl.framebuffer import GLFramebuffer as Framebuffer, GLRenderbuffer as Renderbuffer
     from pyglet.graphics.api.gl.framebuffer import get_screenshot
+elif pyglet.options.backend in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
+    from pyglet.graphics.api.gl2.framebuffer import GL2Framebuffer as Framebuffer, GLRenderbuffer as Renderbuffer
+    from pyglet.graphics.api.gl2.framebuffer import get_screenshot
 elif pyglet.options.backend == GraphicsAPI.WEBGL:
-    from pyglet.graphics.api.webgl.framebuffer import WebGLFramebuffer as Framebuffer, WebGLRenderbuffer as Renderbuffer  # noqa: F401
-    from pyglet.graphics.api.webgl.framebuffer import get_screenshot
+    from pyglet.graphics.api.webgl.framebuffer import (
+        WebGLFramebuffer as Framebuffer,
+        WebGLRenderbuffer as Renderbuffer,
+        get_screenshot,  # noqa: F401
+    )
