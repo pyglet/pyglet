@@ -169,8 +169,8 @@ Error reporting
 Event chains do not silently hide uncaught exceptions. If a chain raises an
 exception, or if a yielded instruction calls ``fail(error)``, the error is
 thrown into the waiting chain. If your chain does not catch it, the chain stops,
-stores the exception on ``Chain.exception``, and calls any callbacks
-registered with :py:meth:`~pyglet.clock.Chain.add_callbacks`::
+stores the exception on ``Chain.exception``, finishes as failed, and calls any
+callbacks registered with :py:meth:`~pyglet.clock.Chain.add_callbacks`::
 
     @pyglet.clock.chain
     def failing_sequence():
@@ -205,6 +205,33 @@ small reusable event flows::
         profile = yield load_profile('Ada')
         print(profile['name'])
 
+
+Stopping child chains
+---------------------
+
+Calling :py:meth:`~pyglet.clock.Chain.stop` on a parent stops its active child
+chains as well. This is immediate cancellation: the parent generator is closed,
+its ``finally`` blocks run, and its ``on_stop`` callbacks are called.
+
+If a child is stopped independently while a parent is waiting for it, pyglet
+throws :py:exc:`~pyglet.clock.ChainStopped` at the parent's ``yield``. The
+parent can catch this signal and choose how to recover::
+
+    @pyglet.clock.chain
+    def load_scene():
+        try:
+            assets = yield download_assets()
+        except pyglet.clock.ChainStopped:
+            assets = load_cached_assets()
+
+        yield display_scene(assets)
+
+If the parent does not catch ``ChainStopped``, the parent stops too. It calls
+``on_stop``, not ``on_error``, and ``Chain.exception`` remains ``None``. This
+keeps cancellation separate from failure while still allowing a parent to
+handle child cancellation deliberately.
+
+
 Parallel work
 -------------
 
@@ -229,10 +256,13 @@ the same time and the parent should continue after all of them finish::
         )
         print(music, level)
 
-By default, if one child chain stops, the parallel group stops the remaining
-children and the parent receives an error. If a stopped child should be treated
-as missing work and the other children should continue, pass
-``continue_on_stop=True``. The stopped child contributes
+By default, if one child chain stops independently, the parallel group stops
+the remaining children and throws :py:exc:`~pyglet.clock.ChainStopped` at the
+parent's ``yield``. The parent may catch it; otherwise the parent stops as
+described above.
+
+If a stopped child should be treated as missing work and the other children
+should continue, pass ``continue_on_stop=True``. The stopped child contributes
 :py:data:`~pyglet.clock.STOPPED` to the result tuple, which keeps cancellation
 separate from a child that completed with ``return`` or ``return None``::
 
@@ -252,6 +282,11 @@ Race and timeout
 :py:func:`~pyglet.clock.race` resumes when the first child chain completes. It
 returns ``(index, result)``, where ``index`` is the winning child position. The
 remaining children are stopped.
+
+If a race child stops independently before there is a winner, the other
+children are stopped and the parent receives
+:py:exc:`~pyglet.clock.ChainStopped`. As with a directly yielded child, the
+parent may catch the signal; otherwise it stops.
 
 :py:func:`~pyglet.clock.timeout` is a small chain that completes after a delay.
 It is most useful when combined with ``race`` to bound how long a flow can wait
@@ -311,6 +346,9 @@ important because completed chains cannot be restarted::
 
     # Run until a condition becomes true.
     yield pyglet.clock.repeat_until(blink_once, lambda: game_over)
+
+    # Run until this chain is stopped.
+    yield pyglet.clock.repeat_forever(blink_once)
 
     # Run for a fixed duration.
     yield pyglet.clock.repeat_duration(blink_once, 3.0)

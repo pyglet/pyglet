@@ -126,6 +126,10 @@ STOPPED = _StoppedResult()
 """Used when something continues after a stop."""
 
 
+class ChainStopped(Exception):  # noqa: N818
+    """Raised in a waiting chain when one of its child chains stops."""
+
+
 class YieldingOperation(Protocol):
     """A yield instruction that can wake a suspended chain."""
 
@@ -261,7 +265,7 @@ class _ParallelOperation(_ChainOperation):
             if self._continue_on_stop:
                 finish_child(idx, STOPPED)
             else:
-                fail_child(RuntimeError("A parallel child chain stopped."))
+                fail_child(ChainStopped("A parallel child chain stopped."))
 
         for child_index, child in enumerate(self._chains):
             child.add_callbacks(
@@ -271,8 +275,13 @@ class _ParallelOperation(_ChainOperation):
             )
 
         try:
-            for child in self._chains:
-                child.start()
+            for child_index, child in enumerate(self._chains):
+                if child.stopped:
+                    stop_child(child_index)
+                else:
+                    child.start()
+                if not self._running:
+                    break
         except Exception as exc:  # noqa: BLE001
             fail_child(exc)
 
@@ -317,7 +326,7 @@ class _RaceOperation(_ChainOperation):
 
         def stop_child() -> None:
             if self._running:
-                fail_child(RuntimeError("A race child chain stopped"))
+                fail_child(ChainStopped("A race child chain stopped."))
 
         for child_idx, child in enumerate(self._chains):
             child.add_callbacks(
@@ -328,7 +337,12 @@ class _RaceOperation(_ChainOperation):
 
         try:
             for child in self._chains:
-                child.start()
+                if child.stopped:
+                    stop_child()
+                else:
+                    child.start()
+                if not self._running:
+                    break
         except Exception as exc:  # noqa: BLE001
             fail_child(exc)
 
@@ -656,6 +670,9 @@ class Chain:
         except StopIteration as completed:
             self._finish(completed.value)
             return
+        except ChainStopped:
+            self.stop()
+            return
         except Exception as exc:  # noqa: BLE001
             self._fail(exc)
             return
@@ -685,13 +702,21 @@ class Chain:
         self._child = child
         token = self._new_wait_token()
 
-        # A child is a dependency and its result resumes this chain,
-        # its error is thrown here, and stopping it also stops its waiting parent.
+        # Child results and errors resume this chain. A stopped child throws a
+        # catchable ChainStopped signal into the generator; if it remains
+        # unhandled, _advance stops this waiting parent.
         child.add_callbacks(
             on_complete=lambda result: self._resume_if_current(token, value=result),
             on_error=lambda error: self._resume_if_current(token, error=error),
-            on_stop=lambda: self.stop() if self._wait_token is token else None,
+            on_stop=lambda: self._resume_if_current(
+                token,
+                error=ChainStopped("A child chain stopped."),
+            ),
         )
+
+        if child.stopped:
+            self._resume_if_current(token, error=ChainStopped("A child chain stopped."))
+            return
 
         try:
             child.start()
@@ -1177,21 +1202,24 @@ def repeat_until(
     return chain(_repeat_until, clock=clock)()
 
 
-def repeat_duration(factory: Callable[[], Chain], duration: float, *, clock: Clock | None = None) -> Chain:
-    """Create a chain that repeats child chains until ``duration`` elapses.
-
-    If duration is 0, it repeats until stopped.
-    """
-    if duration < 0:
-        raise ValueError("Repeat duration cannot be negative.")
+def repeat_forever(factory: Callable[[], Chain], *, clock: Clock | None = None) -> Chain:
+    """Create a chain that repeats child chains until stopped."""
 
     def _repeat_forever() -> ChainGenerator[None]:
         while True:
             yield factory()
 
+    return chain(_repeat_forever, clock=clock)()
+
+
+def repeat_duration(factory: Callable[[], Chain], duration: float, *, clock: Clock | None = None) -> Chain:
+    """Create a chain that repeats child chains until ``duration`` elapses."""
+    if duration < 0:
+        raise ValueError("Repeat duration cannot be negative.")
+
     def _repeat_duration() -> ChainGenerator[Any]:
         winner_index, result = yield race(
-            chain(_repeat_forever, clock=clock)(),
+            repeat_forever(factory, clock=clock),
             timeout(duration, clock=clock),
         )
         return result if winner_index == 0 else None
@@ -1285,6 +1313,10 @@ class Clock:
     def repeat_until(self, factory: Callable[[], Chain], condition: Callable[[], bool]) -> Chain:
         """Create a repeat-until chain on this clock."""
         return repeat_until(factory, condition, clock=self)
+
+    def repeat_forever(self, factory: Callable[[], Chain]) -> Chain:
+        """Create an indefinite repeat chain on this clock."""
+        return repeat_forever(factory, clock=self)
 
     def repeat_duration(self, factory: Callable[[], Chain], duration: float) -> Chain:
         """Create a duration-limited repeat chain on this clock."""

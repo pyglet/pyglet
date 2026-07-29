@@ -639,6 +639,78 @@ def test_chain_waits_for_child_chain_result(fake_clock):
     assert chain.result == 42
 
 
+def test_stopped_child_stops_waiting_parent(fake_clock):
+    events = []
+
+    @pyglet.clock.chain
+    def child():
+        yield 1.0
+
+    child_chain = child()
+
+    @pyglet.clock.chain
+    def parent():
+        yield child_chain
+
+    chain = parent().add_callbacks(on_stop=lambda: events.append('parent stopped')).start()
+
+    child_chain.stop()
+    fake_clock.tick()
+
+    assert chain.stopped
+    assert not chain.failed
+    assert events == ['parent stopped']
+
+
+def test_parent_can_catch_stopped_child(fake_clock):
+    events = []
+
+    @pyglet.clock.chain
+    def child():
+        yield 1.0
+
+    child_chain = child()
+
+    @pyglet.clock.chain
+    def parent():
+        try:
+            yield child_chain
+        except pyglet.clock.ChainStopped as exc:
+            events.append(str(exc))
+        return 'recovered'
+
+    chain = parent().start()
+
+    child_chain.stop()
+    fake_clock.tick()
+
+    assert chain.completed
+    assert chain.result == 'recovered'
+    assert events == ['A child chain stopped.']
+
+
+def test_parent_can_catch_child_stopped_before_yield(fake_clock):
+    @pyglet.clock.chain
+    def child():
+        yield 1.0
+
+    child_chain = child().start()
+    child_chain.stop()
+
+    @pyglet.clock.chain
+    def parent():
+        try:
+            yield child_chain
+        except pyglet.clock.ChainStopped:
+            return 'recovered'
+
+    chain = parent().start()
+    fake_clock.tick()
+
+    assert chain.completed
+    assert chain.result == 'recovered'
+
+
 def test_pause_and_resume_propagates_to_child_chain(fake_clock):
     events = []
 
@@ -732,9 +804,8 @@ def test_parallel_stop_stops_running_child_chains(fake_clock):
     assert events == ['first stopped', 'second stopped']
 
 
-def test_parallel_child_stop_stops_remaining_children_by_default(fake_clock):
+def test_parallel_child_stop_stops_remaining_children_and_parent_by_default(fake_clock):
     events = []
-    captured = []
 
     @pyglet.clock.chain
     def child(name):
@@ -750,7 +821,7 @@ def test_parallel_child_stop_stops_remaining_children_by_default(fake_clock):
     def parent():
         yield pyglet.clock.parallel(first, second)
 
-    chain = parent().add_callbacks(on_error=captured.append).start()
+    chain = parent().add_callbacks(on_stop=lambda: events.append('parent stopped')).start()
 
     first.stop()
 
@@ -759,10 +830,41 @@ def test_parallel_child_stop_stops_remaining_children_by_default(fake_clock):
     fake_clock.tick()
 
     assert chain.done
-    assert isinstance(chain.exception, RuntimeError)
-    assert captured == [chain.exception]
+    assert chain.stopped
+    assert not chain.failed
     assert fake_clock.scheduled == []
-    assert events == ['first stopped', 'second stopped']
+    assert events == ['first stopped', 'second stopped', 'parent stopped']
+
+
+def test_parallel_child_stop_can_be_caught_by_parent(fake_clock):
+    events = []
+
+    @pyglet.clock.chain
+    def child(name):
+        try:
+            yield 1.0
+        finally:
+            events.append(f'{name} stopped')
+
+    first = child('first')
+    second = child('second')
+
+    @pyglet.clock.chain
+    def parent():
+        try:
+            yield pyglet.clock.parallel(first, second)
+        except pyglet.clock.ChainStopped:
+            events.append('recovered')
+        return 'done'
+
+    chain = parent().start()
+
+    first.stop()
+    fake_clock.tick()
+
+    assert chain.completed
+    assert chain.result == 'done'
+    assert events == ['first stopped', 'second stopped', 'recovered']
 
 
 def test_parallel_can_continue_when_child_chain_stops(fake_clock):
@@ -901,6 +1003,34 @@ def test_race_completes_with_first_child_result_and_stops_losers(fake_clock):
     assert events == ['first stopped', 'second stopped', (0, 'first')]
 
 
+def test_race_child_stop_stops_remaining_children_and_parent(fake_clock):
+    events = []
+
+    @pyglet.clock.chain
+    def child(name):
+        try:
+            yield 1.0
+        finally:
+            events.append(f'{name} stopped')
+
+    first = child('first')
+    second = child('second')
+
+    @pyglet.clock.chain
+    def parent():
+        yield pyglet.clock.race(first, second)
+
+    chain = parent().add_callbacks(on_stop=lambda: events.append('parent stopped')).start()
+
+    first.stop()
+    fake_clock.tick()
+
+    assert chain.stopped
+    assert not chain.failed
+    assert fake_clock.scheduled == []
+    assert events == ['first stopped', 'second stopped', 'parent stopped']
+
+
 def test_race_child_error_stops_losers_and_errors_parent(fake_clock):
     error = ValueError('race failed')
     events = []
@@ -989,6 +1119,47 @@ def test_repeat_until_runs_until_condition_is_true(fake_clock):
     assert chain.result == (1, 2)
 
 
+def test_repeat_forever_runs_until_stopped(fake_clock):
+    events = []
+
+    @pyglet.clock.chain
+    def child():
+        try:
+            events.append('started')
+            yield 0.1
+            events.append('finished')
+        finally:
+            events.append('stopped')
+
+    chain = pyglet.clock.repeat_forever(child).start()
+
+    for _ in range(3):
+        fake_clock.tick(0.1)
+        fake_clock.tick()
+
+    chain.stop()
+
+    assert chain.stopped
+    assert events == [
+        'started', 'finished', 'stopped',
+        'started', 'finished', 'stopped',
+        'started', 'finished', 'stopped',
+        'started', 'stopped',
+    ]
+
+
+def test_clock_repeat_forever_uses_clock_instance():
+    clock = pyglet.clock.Clock(time_function=lambda: 0.0)
+
+    @clock.chain
+    def child():
+        yield 0.1
+
+    chain = clock.repeat_forever(child)
+
+    assert chain.clock is clock
+
+
 def test_repeat_duration_stops_repeating_when_duration_elapses(fake_clock):
     events = []
 
@@ -1012,6 +1183,23 @@ def test_repeat_duration_stops_repeating_when_duration_elapses(fake_clock):
 
     assert chain.done
     assert events == ['started', 'finished', 'stopped', 'started', 'finished', 'stopped', 'started', 'stopped']
+
+
+def test_repeat_duration_zero_completes_without_repeating(fake_clock):
+    events = []
+
+    @pyglet.clock.chain
+    def child():
+        events.append('started')
+        yield 0.1
+
+    chain = pyglet.clock.repeat_duration(child, 0).start()
+
+    fake_clock.tick()
+    fake_clock.tick()
+
+    assert chain.done
+    assert events == ['started']
 
 
 def test_chain_waits_for_callback_operation(fake_clock):
