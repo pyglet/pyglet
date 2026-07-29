@@ -22,6 +22,7 @@ Some of the major changes include::
 * Removal of image.blit, and some other legacy patterns.
 * Separation of Audio and Video media Players.
 * Changes to Groups, including how custom Groups are made.
+* Built-in 2D and 3D cameras with managed shader state.
 * Resource image loading improvements.
 * Clearer separation of raw ImageData and Textures.
 
@@ -153,7 +154,7 @@ for textures. This will allow you to use an already existing texture, such as on
 
 Separation of Media Players
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The former ``pyglet.media.Player` class has been split into two dedicated classes: :py:class:`~pyglet.media.AudioPlayer`
+The former ``pyglet.media.Player`` class has been split into two dedicated classes: :py:class:`~pyglet.media.AudioPlayer`
 and :py:class:`~pyglet.media.VideoPlayer`. This separation makes the API clearer by distinguishing pure audio playback
 from video playback, which requires GPU-accelerated rendering and integration with the graphics system.
 
@@ -190,11 +191,139 @@ the amount of driver related bugs and exceptions.
 
 This change should only affect you if you attempt to load resources before a Window is created.
 
-If your application still needs this behavior, it can still be done by creating your own hidden window, and
-assigning the new window the same graphical context as the shadow window.::
+If your application needs to load resources before showing its window, the simplest approach is to
+create the *actual* window hidden, load the resources while its context is current, then show that
+same window.::
+
+    window = pyglet.window.Window(800, 600, visible=False)
+    window.switch_to()
+    batch = pyglet.graphics.Batch()
+    # Load textures and create other resources here.
+    window.set_visible(True)
+
+Alternatively, a hidden window can still be used as a shadow context for assets that OpenGL permits
+contexts to share, such as textures, buffers, shaders, and programs. Passing its context when
+creating the visible window creates a new context in the same sharing group; it does not make both
+windows use one context. Explicitly switch to the visible window before creating context-local
+objects such as :class:`~pyglet.graphics.Batch` data and vertex array objects (VAOs).::
 
     shadow_window = pyglet.window.Window(1, 1, visible=False)
+    shadow_window.switch_to()
+    texture = pyglet.resource.texture("player.png")  # A shareable resource.
+
     actual_window = pyglet.window.Window(800, 600, context=shadow_window.context)
+    actual_window.switch_to()
+    batch = pyglet.graphics.Batch()  # Bound to actual_window's context.
+
+VAOs are not shared between OpenGL contexts. A batch created while ``shadow_window`` is current
+therefore cannot safely be drawn through ``actual_window``, even though the two contexts share
+textures and other shareable resources. The same separation applies to other context-local OpenGL
+objects.
+
+
+Migrating custom cameras
+^^^^^^^^^^^^^^^^^^^^^^^^
+pyglet 2.x did not provide a public camera component, so applications commonly implemented one by
+constructing projection and view matrices, assigning ``window.projection`` or ``window.view``, and
+restoring those matrices around each draw. Older camera examples followed similar patterns. In
+pyglet 3.0, use the cameras in :py:mod:`pyglet.window.camera` instead. Every window has a default
+:py:class:`~pyglet.window.camera.Camera2D` available as
+:py:attr:`~pyglet.window.Window.camera`, and additional 2D or 3D cameras can be created for world,
+UI, split-screen, minimap, and render-pass views.
+
+This is more than a convenience wrapper around matrix calculations. Modern pyglet shaders receive
+projection and view matrices through uniform-buffer storage. A camera stages matrix changes, uploads
+only changed data, selects a safe ring-buffer region, and binds the correct region when its draw scope
+begins. Managing that storage directly can overwrite data that the GPU is still reading, introduce
+synchronization stalls, or leave a later batch or render pass using the wrong matrices. The camera
+API handles these details at the point where each camera scope is drawn.
+
+Custom vertex shaders on modern graphics backends should expose the same camera block used by
+pyglet's built-in shaders::
+
+    uniform WindowBlock
+    {
+        mat4 projection;
+        mat4 view;
+    } window;
+
+    // In main():
+    gl_Position = window.projection * window.view * vec4(position, 1.0);
+
+pyglet assigns and updates this block when the camera scope is applied. Applications can create as
+many :class:`~pyglet.window.camera.Camera2D` and :class:`~pyglet.window.camera.Camera3D` instances
+as needed; each camera and camera view has managed matrix storage. The part application code should
+avoid is manually replacing or uploading the ``WindowBlock`` data used by a camera-scoped draw,
+because that bypasses pyglet's per-camera storage and draw-time binding.
+
+For example, a typical custom 2D camera previously changed global window matrices around a batch
+draw::
+
+    # Typical pyglet 2.x application pattern:
+    camera.apply(window)
+    world_batch.draw()
+    camera.reset(window)
+    ui_batch.draw()
+
+Replace that matrix/state management with a :class:`~pyglet.window.camera.Camera2D` and select it
+for the batch draw::
+
+    from pyglet.window.camera import Camera2D
+
+    world_camera = Camera2D(
+        window,
+        scroll_speed=400.0,
+        min_zoom=0.25,
+        max_zoom=4.0,
+    )
+    world_camera.position = (camera_x, camera_y)
+    world_camera.zoom = zoom
+
+    @window.event
+    def on_draw():
+        window.clear()
+        with world_batch.draw_with_options() as options:
+            options.camera = world_camera
+        ui_batch.draw()  # Uses window.camera by default.
+
+If world and UI objects share one batch, attach cameras to groups instead::
+
+    world_group = pyglet.graphics.Group(order=0)
+    world_group.set_camera(world_camera)
+
+    ui_group = pyglet.graphics.Group(order=1)
+    ui_group.set_camera(window.camera)
+
+    world_sprite = pyglet.sprite.Sprite(image, batch=batch, group=world_group)
+    ui_label = pyglet.text.Label("Score: 0", batch=batch, group=ui_group)
+
+Camera views can be created with ``camera.create_view()`` for parallax layers, nested transforms, minimaps, and
+independent viewports without manually swapping global matrices.
+
+Simple existing code that assigns :py:attr:`~pyglet.window.Window.projection`,
+:py:attr:`~pyglet.window.Window.view`, or :py:attr:`~pyglet.window.Window.viewport` remains valid.
+These properties now proxy the root view of ``window.camera``. They are useful when an application
+must preserve custom matrices. Prefer camera position, zoom, orientation, viewport, and view APIs
+whenever possible so matrix storage is committed at the correct point in the draw operation. See
+:ref:`guide_camera` for camera views, coordinate conversion, scoped drawing, viewport, and scissor
+examples.
+
+OpenGL 2 and OpenGL ES 2
+------------------------
+The OpenGL 2 and OpenGL ES 2 backends do not use the ``WindowBlock`` uniform-buffer path described
+above. On these backends, cameras update ordinary ``u_projection`` and ``u_view`` matrix uniforms on
+the active shader program. A custom shader intended for these backends should declare those uniforms
+instead::
+
+    uniform mat4 u_projection;
+    uniform mat4 u_view;
+
+    // In main():
+    gl_Position = u_projection * u_view * vec4(position, 1.0);
+
+If a shader already uses different uniform names, pass them through the ``projection_uniform`` and
+``view_uniform`` arguments when creating the camera. The rest of the camera API and the batch/group
+selection patterns are the same, so camera movement code does not need a separate GL2 implementation.
 
 
 pyglet.graphics.Group changes
