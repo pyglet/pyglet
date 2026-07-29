@@ -67,6 +67,7 @@ from __future__ import annotations
 import time as _time
 
 from bisect import bisect_left as _bisect_left
+from bisect import insort_right as _insort_right
 from typing import Any, Callable
 
 from heapq import heappop as _heappop
@@ -100,6 +101,12 @@ class _ScheduledIntervalItem:
 
 
 class Clock:
+    """Schedule callbacks against a single time source.
+
+    Each clock maintains its own scheduled callbacks and frequency
+    measurements. Custom clocks can be ticked independently to separate
+    gameplay time, UI time, or other application timelines.
+    """
 
     # List of functions to call every tick.
     _schedule_items: list
@@ -107,11 +114,15 @@ class Clock:
     # List of schedule interval items kept in sort order.
     _schedule_interval_items: list
 
+    # Lazily-built sorted deadline cache used by the soft scheduler.
+    # Creation of soft schedule and recovery of timers is faster.
+    _schedule_interval_timestamps: list[float] | None
+
     # If True, a sleep(0) is inserted on every tick.
     _force_sleep: bool = False
 
     def __init__(self, time_function: Callable = _time.perf_counter) -> None:
-        """Initialise a Clock, with optional custom time function.
+        """Initialize a Clock, with optional custom time function.
 
         You can provide a custom time function to return the elapsed
         time of the application, in seconds. Defaults to ``time.perf_counter``,
@@ -129,6 +140,7 @@ class Clock:
 
         self._schedule_items = []
         self._schedule_interval_items = []
+        self._schedule_interval_timestamps = None
         self._current_interval_item = None
 
     @staticmethod
@@ -190,6 +202,11 @@ class Clock:
             # The interval_items list is empty
             return result
 
+        # Ordinary heap dispatch does not need the soft scheduler's sorted
+        # deadline view. Invalidate it up front; a recovery batch will rebuild
+        # it once and keep it synchronized for the rest of that batch.
+        self._schedule_interval_timestamps = None
+
         # NOTE: there is no special handling required to manage things
         #       that are scheduled during this loop, due to the heap
         self._current_interval_item = item = None
@@ -201,8 +218,15 @@ class Clock:
             # to push and pop the heap at once rather than two operations
             if item is None:
                 item = _heappop(interval_items)
+                timestamps = self._schedule_interval_timestamps
+                if timestamps is not None:
+                    index = _bisect_left(timestamps, item.next_ts)
+                    timestamps.pop(index)
             else:
-                item = _heappushpop(interval_items, item)
+                if self._schedule_interval_timestamps is None:
+                    item = _heappushpop(interval_items, item)
+                else:
+                    item = self._pushpop_interval_item(item)
 
             # a scheduled function may try to unschedule itself,
             # so we need to keep a reference to the current
@@ -213,38 +237,26 @@ class Clock:
             if item.next_ts > now:
                 break
 
-            # execute the callback
+            scheduled_ts = item.next_ts
+            # Phase-based callbacks share the clock tick's timestamp.
             item.func(now - item.last_ts, *item.args, **item.kwargs)
-
             if item.interval:
-
-                # Try to keep timing regular, even if overslept this time;
-                # but don't schedule in the past (which could lead to
-                # infinitely-worsening error).
-                item.next_ts = item.last_ts + item.interval
                 item.last_ts = now
-
-                # test the schedule for the next execution
+                # Preserve the requested phase while the following period
+                # is still in the future. If at least one complete period
+                # was missed, coalesce it and spread recovery deadlines.
+                item.next_ts = scheduled_ts + item.interval
                 if item.next_ts <= now:
-                    # the scheduled time of this item has already
-                    # passed, so it must be rescheduled
-                    if now - item.next_ts < 0.05:
-                        # missed execution time by 'reasonable' amount, so
-                        # reschedule at normal interval
-                        item.next_ts = now + item.interval
-                    else:
-                        # missed by significant amount, now many events have
-                        # likely missed execution. do a soft re-schedule to
-                        # avoid lumping many events together.
-                        # in this case, the next dt will not be accurate
-                        item.next_ts = get_soft_next_ts(now, item.interval)
-                        item.last_ts = item.next_ts - item.interval
+                    item.next_ts = get_soft_next_ts(now, item.interval)
             else:
-                # not an interval, so this item will not be rescheduled
+                # The callback unscheduled itself while it was executing.
                 self._current_interval_item = item = None
 
         if item is not None:
-            _heappush(interval_items, item)
+            if self._schedule_interval_timestamps is None:
+                _heappush(interval_items, item)
+            else:
+                self._push_interval_item(item, preserve_timestamps=True)
 
         return True
 
@@ -322,12 +334,35 @@ class Clock:
             return ts
         return last_ts
 
+    def _push_interval_item(
+        self,
+        item: _ScheduledIntervalItem,
+        *,
+        preserve_timestamps: bool = False,
+    ) -> None:
+        """Push an interval item and update or invalidate the timestamp cache."""
+        _heappush(self._schedule_interval_items, item)
+        if preserve_timestamps and self._schedule_interval_timestamps is not None:
+            _insort_right(self._schedule_interval_timestamps, item.next_ts)
+        else:
+            self._schedule_interval_timestamps = None
+
+    def _pushpop_interval_item(self, item: _ScheduledIntervalItem) -> _ScheduledIntervalItem:
+        """Push and pop an interval item while keeping a timestamp cache synchronized."""
+        timestamps = self._schedule_interval_timestamps
+        if timestamps is not None:
+            _insort_right(timestamps, item.next_ts)
+        popped_item = _heappushpop(self._schedule_interval_items, item)
+        if timestamps is not None:
+            index = _bisect_left(timestamps, popped_item.next_ts)
+            timestamps.pop(index)
+        return popped_item
+
     def _get_soft_next_ts(self, last_ts: float, interval: float) -> float:
-        # ``taken`` is evaluated repeatedly below.  Prior to this, it sorted the
-        # scheduler heap in place, then scanned it for every query.
-        # Keep the heap untouched and use this sorted timestamp snapshot so
-        # each range check can use a binary search instead. Generally 30% faster.
-        timestamps = sorted(item.next_ts for item in self._schedule_interval_items)
+        timestamps = self._schedule_interval_timestamps
+        if timestamps is None:
+            timestamps = sorted(item.next_ts for item in self._schedule_interval_items)
+            self._schedule_interval_timestamps = timestamps
 
         def taken(ts: float, e: float) -> bool:
             """Check if `ts` has already got an item scheduled nearby."""
@@ -400,14 +435,19 @@ class Clock:
         next_ts = last_ts + delay
         item = _ScheduledIntervalItem(func, 0, last_ts, next_ts, args, kwargs)
         _heappush(self._schedule_interval_items, item)
+        if self._schedule_interval_timestamps is not None:
+            self._schedule_interval_timestamps = None
 
     def schedule_interval(self, func: Callable, interval: float, *args: Any, **kwargs: Any) -> None:
         """Schedule a function to be called every ``interval`` seconds.
 
         To schedule a function to be called at 60Hz (60fps), you would use ``1/60``
-        for the interval, and so on. If pyglet is unable to call the function on
-        time, the schedule will be skipped (not accumulated). This can occur if the
-        main thread is overloaded, or other hard blocking calls taking place.
+        for the interval, and so on. The schedule remains aligned with its original
+        phase when a callback is called late. If pyglet misses one or more complete
+        periods, those calls are skipped (not accumulated) and the schedule is
+        moved out of phase with other overdue schedules during recovery. This can
+        occur if the main thread is overloaded, or other hard blocking calls take
+        place.
 
         The callback function prototype is the same as for
         :py:meth:`~pyglet.clock.Clock.schedule`.
@@ -420,6 +460,8 @@ class Clock:
         next_ts = last_ts + interval
         item = _ScheduledIntervalItem(func, interval, last_ts, next_ts, args, kwargs)
         _heappush(self._schedule_interval_items, item)
+        if self._schedule_interval_timestamps is not None:
+            self._schedule_interval_timestamps = None
 
     def schedule_interval_for_duration(self, func: Callable, interval: float,
                                        duration: float, *args: Any, **kwargs: Any) -> None:
@@ -470,7 +512,7 @@ class Clock:
         next_ts = self._get_soft_next_ts(self._get_nearest_ts(), interval)
         last_ts = next_ts - interval
         item = _ScheduledIntervalItem(func, interval, last_ts, next_ts, args, kwargs)
-        _heappush(self._schedule_interval_items, item)
+        self._push_interval_item(item, preserve_timestamps=True)
 
     def unschedule(self, func: Callable) -> None:
         """Remove a function from the schedule.
