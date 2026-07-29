@@ -1006,8 +1006,11 @@ class ChainGroup:
         tag: ChainTag | None = None,
         tags: Iterable[ChainTag] = (),
     ) -> Chain:
-        """Track and start a chain."""
+        """Track and start a chain, or return it unchanged if already done."""
         self.add(chain, tag=tag, tags=tags)
+        if chain.done:
+            return chain
+
         chain.start()
         if self._paused and chain.running:
             chain.pause()

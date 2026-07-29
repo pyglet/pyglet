@@ -257,6 +257,29 @@ def test_chain_group_tracks_and_removes_completed_chains(fake_clock):
     assert events == ['finished']
 
 
+def test_chain_group_start_ignores_already_done_chains(fake_clock):
+    group = pyglet.clock.ChainGroup()
+
+    @pyglet.clock.chain
+    def completes_immediately():
+        if False:
+            yield
+
+    @pyglet.clock.chain
+    def waits():
+        yield 1.0
+
+    completed = completes_immediately().start()
+    stopped = waits().start()
+    stopped.stop()
+
+    assert group.start(completed) is completed
+    assert group.start(stopped) is stopped
+    assert group.chains == ()
+    assert fake_clock.scheduled == []
+    assert fake_clock.scheduled_once == []
+
+
 def test_chain_group_clear_stops_tracked_chains(fake_clock):
     events = []
     group = pyglet.clock.ChainGroup()
