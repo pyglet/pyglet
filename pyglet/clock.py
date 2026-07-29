@@ -84,6 +84,35 @@ T = TypeVar('T')
 CancelCallback: TypeAlias = Callable[[], None]
 CompleteCallback: TypeAlias = Callable[[Any], None]
 ErrorCallback: TypeAlias = Callable[[BaseException], None]
+EasingFunction: TypeAlias = Callable[[float], float]
+TweenUpdateFunction: TypeAlias = Callable[[float], Any]
+
+
+def linear(progress: float) -> float:
+    """Return unchanged progress for constant-speed interpolation."""
+    return progress
+
+
+def ease_in(progress: float) -> float:
+    """Accelerate from rest using quadratic easing."""
+    return progress * progress
+
+
+def ease_out(progress: float) -> float:
+    """Decelerate to rest using quadratic easing."""
+    return 1.0 - (1.0 - progress) ** 2
+
+
+def ease_in_out(progress: float) -> float:
+    """Accelerate and then decelerate using quadratic easing."""
+    if progress < 0.5:
+        return 2.0 * progress * progress
+    return 1.0 - ((-2.0 * progress + 2.0) ** 2) / 2.0
+
+
+def smoothstep(progress: float) -> float:
+    """Interpolate with zero first derivatives at both endpoints."""
+    return progress * progress * (3.0 - 2.0 * progress)
 
 
 class _StoppedResult:
@@ -307,6 +336,159 @@ class _RaceOperation(_ChainOperation):
             return None
 
         return self.stop
+
+
+class _TweenManager:
+    """Update every tween on one clock from a single scheduled callback.
+
+    This is mostly for improved performance, since unscheduling rebuilds
+    the scheduler list.
+    """
+
+    def __init__(self, clock: Clock) -> None:
+        self._clock = clock
+        self._operations: dict[_TweenOperation, None] = {}
+
+    def add(self, operation: _TweenOperation) -> None:
+        if not self._operations:
+            self._clock.schedule(self._tick)
+        self._operations[operation] = None
+
+    def remove(self, operation: _TweenOperation) -> None:
+        self._operations.pop(operation, None)
+        if not self._operations:
+            self._clock.unschedule(self._tick)
+
+    def _tick(self, _dt: float) -> None:
+        now = self._clock.time()
+        for operation in tuple(self._operations):
+            operation._tick(now)  # noqa: SLF001
+
+
+class _TweenOperation:
+    """Drive an update callback with eased progress over a duration."""
+
+    def __init__(
+        self,
+        duration: float,
+        update: TweenUpdateFunction,
+        *,
+        easing: EasingFunction = linear,
+        clock: Clock | None = None,
+    ) -> None:
+        """Initialize a tween with its duration, update, easing, and clock."""
+        if duration < 0:
+            raise ValueError("Tween duration cannot be negative.")
+        if not callable(update):
+            raise TypeError("Tween update must be callable.")
+        if not callable(easing):
+            raise TypeError("Tween easing must be callable.")
+
+        self.duration = float(duration)
+        self.update = update
+        self.easing = easing
+        self._clock: Clock = clock or _default
+        self._manager = self._clock._get_tween_manager()  # noqa: SLF001
+        self._elapsed = 0.0
+        self._last_time: float | None = None
+        self._running = False
+        self._paused = False
+        self._finished = False
+        self._complete: CompleteCallback | None = None
+        self._fail: ErrorCallback | None = None
+
+    def start(
+        self,
+        complete: CompleteCallback,
+        fail: ErrorCallback,
+    ) -> CancelCallback | None:
+        """Start updating and return a callback that cancels the tween."""
+        if self._running or self._finished:
+            raise RuntimeError("A tween operation can only be started once.")
+
+        self._running = True
+        self._complete = complete
+        self._fail = fail
+
+        if self.duration == 0.0:
+            if self._apply(1.0):
+                self._finish()
+            return None
+
+        if not self._apply(0.0):
+            return None
+
+        self._last_time = self._clock.time()
+        self._manager.add(self)
+        return self.stop
+
+    def _tick(self, now: float) -> None:
+        if not self._running or self._paused or self._last_time is None:
+            return
+
+        self._elapsed += max(now - self._last_time, 0.0)
+        self._last_time = now
+        progress = min(self._elapsed / self.duration, 1.0)
+        if not self._apply(progress):
+            return
+        if progress >= 1.0:
+            self._finish()
+
+    def _apply(self, progress: float) -> bool:
+        try:
+            self.update(self.easing(progress))
+        except Exception as exc:  # noqa: BLE001
+            self._finish(exc)
+            return False
+        return True
+
+    def _finish(self, error: BaseException | None = None) -> None:
+        self._manager.remove(self)
+        self._running = False
+        self._paused = False
+        self._finished = True
+        self._last_time = None
+
+        complete, fail = self._complete, self._fail
+        self._complete = None
+        self._fail = None
+        if error is None:
+            if complete is not None:
+                complete(None)
+        elif fail is not None:
+            fail(error)
+
+    def stop(self) -> None:
+        """Cancel the tween without completing its waiting chain."""
+        if not self._running:
+            return
+
+        self._manager.remove(self)
+        self._running = False
+        self._paused = False
+        self._finished = True
+        self._last_time = None
+        self._complete = None
+        self._fail = None
+
+    def pause(self) -> None:
+        """Pause the tween without consuming clock time."""
+        if not self._running or self._paused:
+            return
+
+        self._paused = True
+        self._last_time = None
+        self._manager.remove(self)
+
+    def resume(self) -> None:
+        """Resume a paused tween from its current progress."""
+        if not self._running or not self._paused:
+            return
+
+        self._paused = False
+        self._last_time = self._clock.time()
+        self._manager.add(self)
+
 
 def from_callback(
     starter: Callable[
@@ -918,6 +1100,23 @@ def chain(
     return wrapper
 
 
+def tween(
+    duration: float,
+    update: TweenUpdateFunction,
+    *,
+    easing: EasingFunction = linear,
+    clock: Clock | None = None,
+) -> Chain:
+    """Create a tween chain that updates eased progress over a duration."""
+    bound_clock = clock or _default
+    operation = _TweenOperation(duration, update, easing=easing, clock=bound_clock)
+
+    def _tween() -> ChainGenerator[None]:
+        yield operation
+
+    return Chain(_tween(), clock=bound_clock)
+
+
 def yielding_callback(
     function: Callable[..., CancelCallback | None],
 ) -> Callable[..., YieldInstruction]:
@@ -1061,6 +1260,7 @@ class Clock:
         self._schedule_items = []
         self._schedule_interval_items = []
         self._current_interval_item = None
+        self._tween_manager: _TweenManager | None = None
 
     def chain(self, function: Callable[..., ChainGenerator[T]]) -> Callable[..., Chain]:
         """Decorate a generator function so returned chains use this clock."""
@@ -1089,6 +1289,21 @@ class Clock:
     def repeat_duration(self, factory: Callable[[], Chain], duration: float) -> Chain:
         """Create a duration-limited repeat chain on this clock."""
         return repeat_duration(factory, duration, clock=self)
+
+    def tween(
+        self,
+        duration: float,
+        update: TweenUpdateFunction,
+        *,
+        easing: EasingFunction = linear,
+    ) -> Chain:
+        """Create a tween chain driven by this clock."""
+        return tween(duration, update, easing=easing, clock=self)
+
+    def _get_tween_manager(self) -> _TweenManager:
+        if self._tween_manager is None:
+            self._tween_manager = _TweenManager(self)
+        return self._tween_manager
 
     def create_group(self) -> ChainGroup:
         """Create a chain group bound to this clock."""

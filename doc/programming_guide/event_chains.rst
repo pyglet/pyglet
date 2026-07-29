@@ -476,3 +476,81 @@ running::
         def destroy(self):
             self.chains.clear()
 
+
+Tweening values
+---------------
+
+Tweens update a value gradually over time. They are useful for visual changes
+such as fading, movement, scaling, or rotation, as well as audio levels,
+gameplay parameters, and any other state that changes smoothly. Yielding a
+tween keeps the update logic separate from the sequence that should continue
+after it finishes.
+
+:py:func:`~pyglet.clock.tween` drives an update callable with normalized
+progress over a duration. The callable receives one ``float`` argument. It
+can be a function, a lambda, a bound method, or any callable object. The tween
+returns a chain that can be yielded like any other child chain::
+
+    class FadeOut:
+        def __init__(self, target):
+            self.target = target
+            self.start_opacity = target.opacity
+
+        def update(self, progress):
+            self.target.opacity = self.start_opacity * (1.0 - progress)
+
+    @pyglet.clock.chain
+    def remove_sprite(sprite):
+        yield pyglet.clock.tween(0.5, FadeOut(sprite).update)
+        sprite.delete()
+
+For a one-off update, define a local function instead::
+
+    start_opacity = sprite.opacity
+
+    def update(progress):
+        sprite.opacity = start_opacity * (1.0 - progress)
+
+    yield pyglet.clock.tween(0.5, update)
+
+For a compact one-off update, a lambda works too. Capture the starting value
+before creating the lambda so that each update is based on the same value::
+
+    start_opacity = sprite.opacity
+    yield pyglet.clock.tween(
+        0.5,
+        lambda progress: setattr(sprite, 'opacity', start_opacity * (1.0 - progress)),
+    )
+
+With the default linear easing, the update callable receives ``0.0`` when the
+tween starts and ``1.0`` when it finishes. A zero-duration tween applies only
+the eased final value. Tweens are chains themselves, so they can be started
+directly or composed with :py:func:`~pyglet.clock.parallel` and
+:py:func:`~pyglet.clock.race`. They pause, resume, and stop like any other
+chain::
+
+    yield pyglet.clock.parallel(
+        pyglet.clock.tween(0.5, FadeOut(sprite).update),
+        pyglet.clock.tween(0.5, update_position),
+    )
+
+Pass an easing function to transform the linear progress. Easing functions
+receive a value from ``0.0`` through ``1.0``. Their result is not clamped,
+which permits curves that intentionally overshoot::
+
+    yield pyglet.clock.tween(
+        0.5,
+        FadeOut(sprite).update,
+        easing=pyglet.clock.ease_in_out,
+    )
+
+The built-in curves are :py:func:`~pyglet.clock.linear`,
+:py:func:`~pyglet.clock.ease_in`, :py:func:`~pyglet.clock.ease_out`,
+:py:func:`~pyglet.clock.ease_in_out`, and
+:py:func:`~pyglet.clock.smoothstep`. Any callable with the same ``float ->
+float`` shape can be supplied instead.
+
+Use :py:meth:`~pyglet.clock.Clock.tween` to bind the tween to a custom clock::
+
+    yield game_clock.tween(1.0, update_position, easing=my_easing)
+

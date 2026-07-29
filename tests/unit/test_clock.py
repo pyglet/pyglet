@@ -1,5 +1,11 @@
+from __future__ import annotations
+
 import unittest
+
+import pytest
+
 from tests import mock
+
 import pyglet.clock
 
 
@@ -351,3 +357,244 @@ class ClockTestCase(unittest.TestCase):
         items = sorted(i.next_ts for i in self.clock._schedule_interval_items)
 
         self.assertEqual(items, expected)
+
+
+@pytest.fixture
+def tween_clock():
+    now = [0.0]
+    instance = pyglet.clock.Clock(lambda: now[0])
+    instance.tick(poll=True)
+    return instance, now
+
+
+def test_easing_functions():
+    assert pyglet.clock.linear(0.25) == pytest.approx(0.25)
+    assert pyglet.clock.ease_in(0.5) == pytest.approx(0.25)
+    assert pyglet.clock.ease_out(0.5) == pytest.approx(0.75)
+    assert pyglet.clock.ease_in_out(0.25) == pytest.approx(0.125)
+    assert pyglet.clock.ease_in_out(0.75) == pytest.approx(0.875)
+    assert pyglet.clock.smoothstep(0.0) == pytest.approx(0.0)
+    assert pyglet.clock.smoothstep(0.5) == pytest.approx(0.5)
+    assert pyglet.clock.smoothstep(1.0) == pytest.approx(1.0)
+
+
+@pytest.mark.parametrize(
+    ('kwargs', 'exception'),
+    [
+        ({'duration': -1.0, 'update': lambda _progress: None}, ValueError),
+        ({'duration': 1.0, 'update': None}, TypeError),
+        ({'duration': 1.0, 'update': lambda _progress: None, 'easing': None}, TypeError),
+    ],
+)
+def test_tween_validates_arguments(kwargs, exception):
+    with pytest.raises(exception):
+        pyglet.clock.tween(**kwargs)
+
+
+def test_tween_updates_from_zero_to_one_and_completes(tween_clock):
+    instance, now = tween_clock
+    values = []
+    completed = []
+
+    tween = instance.tween(1.0, values.append)
+    tween.add_callbacks(on_complete=completed.append, on_error=pytest.fail).start()
+
+    assert values == [0.0]
+
+    now[0] = 0.25
+    instance.tick(poll=True)
+    now[0] = 1.0
+    instance.tick(poll=True)
+    instance.tick(poll=True)
+
+    assert values == [0.0, 0.25, 1.0]
+    assert completed == [None]
+    assert instance.get_sleep_time(True) is None
+
+
+def test_zero_duration_tween_completes_immediately(tween_clock):
+    instance, _now = tween_clock
+    values = []
+    completed = []
+
+    tween = instance.tween(0.0, values.append)
+    tween.add_callbacks(on_complete=completed.append, on_error=pytest.fail).start()
+
+    assert values == [1.0]
+    instance.tick(poll=True)
+    assert completed == [None]
+    assert instance.get_sleep_time(True) is None
+
+
+def test_tween_pause_excludes_paused_time(tween_clock):
+    instance, now = tween_clock
+    values = []
+    tween = instance.tween(1.0, values.append).start()
+
+    now[0] = 0.25
+    instance.tick(poll=True)
+    tween.pause()
+
+    now[0] = 10.0
+    instance.tick(poll=True)
+    assert values == [0.0, 0.25]
+
+    tween.resume()
+    now[0] = 10.25
+    instance.tick(poll=True)
+    assert values == [0.0, 0.25, 0.5]
+
+
+def test_tween_failure_is_reported(tween_clock):
+    instance, now = tween_clock
+    error = RuntimeError('update failed')
+    failures = []
+
+    def update(progress):
+        if progress:
+            raise error
+
+    tween = instance.tween(1.0, update)
+    tween.add_callbacks(
+        on_complete=lambda _result: pytest.fail('completed unexpectedly'),
+        on_error=failures.append,
+    ).start()
+
+    now[0] = 0.5
+    instance.tick(poll=True)
+    instance.tick(poll=True)
+    instance.tick(poll=True)
+
+    assert failures == [error]
+    assert instance.get_sleep_time(True) is None
+
+
+def test_chain_can_yield_module_clock_tween(tween_clock):
+    instance, now = tween_clock
+    default = pyglet.clock.get_default()
+    pyglet.clock.set_default(instance)
+
+    class Sprite:
+        opacity = 255.0
+        deleted = False
+
+        def delete(self):
+            self.deleted = True
+
+    class FadeOut:
+        def __init__(self, target):
+            self.target = target
+            self.start_opacity = target.opacity
+
+        def __call__(self, progress):
+            self.target.opacity = self.start_opacity * (1.0 - progress)
+
+    @pyglet.clock.chain
+    def remove_sprite(sprite):
+        yield pyglet.clock.tween(0.5, FadeOut(sprite))
+        sprite.delete()
+
+    try:
+        sprite = Sprite()
+        chain = remove_sprite(sprite).start()
+        now[0] = 0.25
+        instance.tick(poll=True)
+        assert sprite.opacity == pytest.approx(127.5)
+        assert not sprite.deleted
+
+        now[0] = 0.5
+        instance.tick(poll=True)
+        instance.tick(poll=True)
+        instance.tick(poll=True)
+    finally:
+        pyglet.clock.set_default(default)
+
+    assert chain.done
+    assert sprite.opacity == pytest.approx(0.0)
+    assert sprite.deleted
+
+
+def test_tweens_can_run_in_parallel(tween_clock):
+    instance, now = tween_clock
+    first_values = []
+    second_values = []
+
+    @instance.chain
+    def sequence():
+        return (
+            yield instance.parallel(
+                instance.tween(0.5, first_values.append),
+                instance.tween(1.0, second_values.append),
+            )
+        )
+
+    chain = sequence().start()
+    now[0] = 0.5
+    instance.tick(poll=True)
+    instance.tick(poll=True)
+    now[0] = 1.0
+    instance.tick(poll=True)
+    instance.tick(poll=True)
+    instance.tick(poll=True)
+
+    assert chain.done
+    assert chain.result == (None, None)
+    assert first_values[-1] == pytest.approx(1.0)
+    assert second_values[-1] == pytest.approx(1.0)
+
+
+def test_tweens_can_race(tween_clock):
+    instance, now = tween_clock
+    slow_values = []
+
+    @instance.chain
+    def sequence():
+        return (
+            yield instance.race(
+                instance.tween(0.5, lambda _progress: None),
+                instance.tween(1.0, slow_values.append),
+            )
+        )
+
+    chain = sequence().start()
+    now[0] = 0.5
+    instance.tick(poll=True)
+    instance.tick(poll=True)
+    instance.tick(poll=True)
+
+    assert chain.done
+    assert chain.result == (0, None)
+    assert slow_values[-1] == pytest.approx(0.5)
+    assert instance.get_sleep_time(True) is None
+
+
+def test_stopping_chain_cancels_its_tween(tween_clock):
+    instance, now = tween_clock
+    values = []
+
+    @instance.chain
+    def sequence():
+        yield instance.tween(1.0, values.append)
+
+    chain = sequence().start()
+    now[0] = 0.25
+    instance.tick(poll=True)
+    chain.stop()
+
+    now[0] = 1.0
+    instance.tick(poll=True)
+    assert values == [0.0, 0.25]
+    assert instance.get_sleep_time(True) is None
+
+
+def test_clock_uses_one_scheduled_callback_for_multiple_tweens(tween_clock):
+    instance, _now = tween_clock
+
+    first = instance.tween(1.0, lambda _progress: None).start()
+    second = instance.tween(1.0, lambda _progress: None).start()
+
+    assert len(instance._schedule_items) == 1  # noqa: SLF001
+
+    first.stop()
+    second.stop()
+    assert instance.get_sleep_time(True) is None
