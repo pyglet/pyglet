@@ -183,7 +183,7 @@ def test_get_modes_applies_precise_rate_only_to_current_mode(monkeypatch):
     screen = _screen()
     precise_rate = 120_000 / 1_001
     monkeypatch.setattr(screen, 'get_device_name', lambda: screen._device_name)
-    monkeypatch.setattr(screen, '_get_current_mode', lambda: (current, precise_rate))
+    monkeypatch.setattr(screen, 'get_mode', lambda: win32.Win32ScreenMode(screen, current, precise_rate))
     monkeypatch.setattr(win32._user32, 'EnumDisplaySettingsW', enum_display_settings)
 
     found = screen.get_modes()

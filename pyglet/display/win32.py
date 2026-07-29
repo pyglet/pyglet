@@ -162,19 +162,53 @@ class Win32Screen(Screen):  # noqa: D101
 
         Requires Windows Vista or higher.
         """
-        path = self._get_display_config_path()
-        if path is None:
+        path_count = UINT32()
+        mode_count = UINT32()
+
+        result = _user32.GetDisplayConfigBufferSizes(
+            QDC_ONLY_ACTIVE_PATHS, ctypes.byref(path_count), ctypes.byref(mode_count),
+        )
+        if result != 0:
             return "Unknown"
 
-        target_name = DISPLAYCONFIG_TARGET_DEVICE_NAME()
+        paths = (DISPLAYCONFIG_PATH_INFO * path_count.value)()
+        modes = ctypes.create_string_buffer(64 * mode_count.value)  # dummy buffer
 
-        target_name.header.adapterId = path.targetInfo.adapterId
-        target_name.header.id = path.targetInfo.id
-        target_name.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME
-        target_name.header.size = ctypes.sizeof(target_name)
+        result = _user32.QueryDisplayConfig(
+            QDC_ONLY_ACTIVE_PATHS, ctypes.byref(path_count), paths, ctypes.byref(mode_count), modes, 0,
+        )
+        if result != 0:
+            return "Unknown"
 
-        if _user32.DisplayConfigGetDeviceInfo(ctypes.byref(target_name.header)) == _ERROR_SUCCESS:
-            return target_name.monitorFriendlyDeviceName
+        for i in range(path_count.value):
+            path = paths[i]
+
+            source_name = DISPLAYCONFIG_SOURCE_DEVICE_NAME()
+            source_name.header.adapterId = path.sourceInfo.adapterId
+            source_name.header.id = path.sourceInfo.id
+            source_name.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME
+            source_name.header.size = ctypes.sizeof(source_name)
+
+            result = _user32.DisplayConfigGetDeviceInfo(ctypes.byref(source_name.header))
+            if result != 0:
+                continue
+
+            if source_name.viewGdiDeviceName != self._device_name:
+                continue
+
+            if not path.targetInfo.targetAvailable:
+                  continue
+
+            target_name = DISPLAYCONFIG_TARGET_DEVICE_NAME()
+
+            target_name.header.adapterId = path.targetInfo.adapterId
+            target_name.header.id = path.targetInfo.id
+            target_name.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME
+            target_name.header.size = ctypes.sizeof(target_name)
+
+            if _user32.DisplayConfigGetDeviceInfo(ctypes.byref(target_name.header)) == 0:
+                return target_name.monitorFriendlyDeviceName
+
         return "Unknown"
 
     def _get_refresh_rate_display_config_api(self) -> float | None:
@@ -248,7 +282,7 @@ class Win32Screen(Screen):  # noqa: D101
 
     def get_modes(self) -> list[Win32ScreenMode]:
         device_name = self.get_device_name()
-        current_mode, current_rate = self._get_current_mode()
+        current_mode = self.get_mode()
         i = 0
         modes = []
         while True:
@@ -258,23 +292,20 @@ class Win32Screen(Screen):  # noqa: D101
             if not r:
                 break
 
-            rate = current_rate if self._same_mode(mode, current_mode) else None
+            rate = current_mode.rate if self._same_mode(mode, current_mode._mode) else None
             modes.append(Win32ScreenMode(self, mode, rate))
             i += 1
 
         return modes
 
     def get_mode(self) -> Win32ScreenMode:
-        mode, rate = self._get_current_mode()
-        return Win32ScreenMode(self, mode, rate)
-
-    def _get_current_mode(self) -> tuple[DEVMODE, float | None]:
-        """Get the current legacy display mode and precise active-path rate."""
         mode = DEVMODE()
         mode.dmSize = sizeof(DEVMODE)
-        _user32.EnumDisplaySettingsW(self.get_device_name(), ENUM_CURRENT_SETTINGS, byref(mode))
+        _user32.EnumDisplaySettingsW(self.get_device_name(),
+                                     ENUM_CURRENT_SETTINGS,
+                                     byref(mode))
         rate = self._get_refresh_rate_display_config_api() if WINDOWS_VISTA_OR_GREATER else None
-        return mode, rate
+        return Win32ScreenMode(self, mode, rate)
 
     @staticmethod
     def _same_mode(first: DEVMODE, second: DEVMODE) -> bool:
@@ -310,8 +341,6 @@ _win32_scale_name = {
     1: "center",
     2: "stretch",
 }
-
-
 class Win32ScreenMode(ScreenMode):  # noqa: D101
     def __init__(self, screen: Win32Screen, mode: DEVMODE, rate: float | None = None) -> None:  # noqa: D107
         super().__init__(screen)
