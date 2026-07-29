@@ -47,14 +47,15 @@ def test_framebuffer_attach_texture_and_readback(gl3_context):
         try:
             assert framebuffer.is_complete
             assert framebuffer.get_status() == "Framebuffer is complete."
-
-            gl.glViewport(0, 0, 2, 2)
-            gl.glDisable(gl.GL_DEPTH_TEST)
-            gl.glDisable(gl.GL_BLEND)
-            gl.glClearColor(1.0, 0.0, 0.0, 1.0)
-            gl.glClear(gl.GL_COLOR_BUFFER_BIT)
         finally:
             framebuffer.unbind()
+
+        gl.glViewport(0, 0, 2, 2)
+        gl.glDisable(gl.GL_DEPTH_TEST)
+        gl.glDisable(gl.GL_BLEND)
+        gl.glClearColor(1.0, 0.0, 0.0, 1.0)
+        framebuffer.clear()
+        assert gl.glGetError() == gl.GL_NO_ERROR
 
         data = bytes(texture.get_image_data().get_bytes("RGBA", 8))
         assert data == bytes([255, 0, 0, 255]) * 4

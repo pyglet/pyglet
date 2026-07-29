@@ -66,6 +66,22 @@ _gl_attachment_map = {
     FramebufferAttachment.DEPTH_STENCIL: gl.GL_DEPTH_STENCIL_ATTACHMENT,
 }
 
+_clear_bit_map = {
+    **dict.fromkeys((
+        FramebufferAttachment.COLOR0, FramebufferAttachment.COLOR1,
+        FramebufferAttachment.COLOR2, FramebufferAttachment.COLOR3,
+        FramebufferAttachment.COLOR4, FramebufferAttachment.COLOR5,
+        FramebufferAttachment.COLOR6, FramebufferAttachment.COLOR7,
+        FramebufferAttachment.COLOR8, FramebufferAttachment.COLOR9,
+        FramebufferAttachment.COLOR10, FramebufferAttachment.COLOR11,
+        FramebufferAttachment.COLOR12, FramebufferAttachment.COLOR13,
+        FramebufferAttachment.COLOR14, FramebufferAttachment.COLOR15,
+    ), gl.GL_COLOR_BUFFER_BIT),
+    FramebufferAttachment.DEPTH: gl.GL_DEPTH_BUFFER_BIT,
+    FramebufferAttachment.STENCIL: gl.GL_STENCIL_BUFFER_BIT,
+    FramebufferAttachment.DEPTH_STENCIL: gl.GL_DEPTH_BUFFER_BIT | gl.GL_STENCIL_BUFFER_BIT,
+}
+
 
 def get_viewport() -> tuple:
     """Get the current OpenGL viewport dimensions (left, bottom, right, top)."""
@@ -283,12 +299,7 @@ class WebGLFramebuffer:
             texture.id,
             level,
         )
-        if "COLOR" in attachment.name:
-            self._clear_bits |= gl.GL_COLOR_BUFFER_BIT
-        elif "DEPTH" in attachment.name:
-            self._clear_bits |= gl.GL_DEPTH_BUFFER_BIT
-        elif "STENCIL" in attachment.name:
-            self._clear_bits |= gl.GL_STENCIL_BUFFER_BIT
+        self._clear_bits |= _clear_bit_map[attachment]
         self._gl_attachment_types.append(gl_attachment)
         self._width = max(texture.width, self._width)
         self._height = max(texture.height, self._height)
@@ -318,8 +329,7 @@ class WebGLFramebuffer:
             level,
             layer,
         )
-        if "COLOR" in attachment.name:
-            self._clear_bits |= gl.GL_COLOR_BUFFER_BIT
+        self._clear_bits |= _clear_bit_map[attachment]
         self._gl_attachment_types.append(gl_attachment)
         self._width = max(texture.width, self._width)
         self._height = max(texture.height, self._height)
@@ -345,10 +355,7 @@ class WebGLFramebuffer:
             renderbuffer.id,
         )
         self._gl_attachment_types.append(gl_attachment)
-        if "DEPTH" in attachment.name:
-            self._clear_bits |= gl.GL_DEPTH_BUFFER_BIT
-        elif "STENCIL" in attachment.name:
-            self._clear_bits |= gl.GL_STENCIL_BUFFER_BIT
+        self._clear_bits |= _clear_bit_map[attachment]
         self._width = max(renderbuffer.width, self._width)
         self._height = max(renderbuffer.height, self._height)
         self.unbind()

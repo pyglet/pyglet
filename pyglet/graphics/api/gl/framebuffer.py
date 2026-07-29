@@ -64,6 +64,22 @@ _gl_attachment_map = {
     FramebufferAttachment.DEPTH_STENCIL: gl.GL_DEPTH_STENCIL_ATTACHMENT,
 }
 
+_clear_bit_map = {
+    **dict.fromkeys((
+        FramebufferAttachment.COLOR0, FramebufferAttachment.COLOR1,
+        FramebufferAttachment.COLOR2, FramebufferAttachment.COLOR3,
+        FramebufferAttachment.COLOR4, FramebufferAttachment.COLOR5,
+        FramebufferAttachment.COLOR6, FramebufferAttachment.COLOR7,
+        FramebufferAttachment.COLOR8, FramebufferAttachment.COLOR9,
+        FramebufferAttachment.COLOR10, FramebufferAttachment.COLOR11,
+        FramebufferAttachment.COLOR12, FramebufferAttachment.COLOR13,
+        FramebufferAttachment.COLOR14, FramebufferAttachment.COLOR15,
+    ), gl.GL_COLOR_BUFFER_BIT),
+    FramebufferAttachment.DEPTH: gl.GL_DEPTH_BUFFER_BIT,
+    FramebufferAttachment.STENCIL: gl.GL_STENCIL_BUFFER_BIT,
+    FramebufferAttachment.DEPTH_STENCIL: gl.GL_DEPTH_BUFFER_BIT | gl.GL_STENCIL_BUFFER_BIT,
+}
+
 
 def get_viewport() -> tuple:
     """Get the current OpenGL viewport dimensions (left, bottom, right, top)."""
@@ -178,7 +194,7 @@ class GLFramebuffer:
         self._context = context or pyglet.graphics.api.core.current_context
         self._id = GLuint()
         self._context.glGenFramebuffers(1, self._id)
-        self._attachment_types = 0
+        self._clear_bits = 0
         self._width = 0
         self._height = 0
         self.target = target
@@ -217,9 +233,9 @@ class GLFramebuffer:
 
     def clear(self) -> None:
         """Clear the attachments."""
-        if self._attachment_types:
+        if self._clear_bits:
             self.bind()
-            self._context.glClear(self._attachment_types)
+            self._context.glClear(self._clear_bits)
             self.unbind()
 
     def delete(self) -> None:
@@ -267,7 +283,7 @@ class GLFramebuffer:
         self.bind()
         gl_attachment = _gl_attachment_map[attachment]
         self._context.glFramebufferTexture(self._gl_target, gl_attachment, texture.id, level)
-        self._attachment_types |= gl_attachment
+        self._clear_bits |= _clear_bit_map[attachment]
         self._width = max(texture.width, self._width)
         self._height = max(texture.height, self._height)
         self.unbind()
@@ -290,7 +306,7 @@ class GLFramebuffer:
         self.bind()
         gl_attachment = _gl_attachment_map[attachment]
         self._context.glFramebufferTextureLayer(self._gl_target, gl_attachment, texture.id, level, layer)
-        self._attachment_types |= gl_attachment
+        self._clear_bits |= _clear_bit_map[attachment]
         self._width = max(texture.width, self._width)
         self._height = max(texture.height, self._height)
         self.unbind()
@@ -309,7 +325,7 @@ class GLFramebuffer:
         self.bind()
         gl_attachment = _gl_attachment_map[attachment]
         self._context.glFramebufferRenderbuffer(self._gl_target, gl_attachment, gl.GL_RENDERBUFFER, renderbuffer.id)
-        self._attachment_types |= gl_attachment
+        self._clear_bits |= _clear_bit_map[attachment]
         self._width = max(renderbuffer.width, self._width)
         self._height = max(renderbuffer.height, self._height)
         self.unbind()
