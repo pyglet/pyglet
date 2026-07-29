@@ -167,6 +167,7 @@ class Camera2D(BaseCamera[Camera2DView]):
         max_zoom: float = 4.0,
         zoom_speed: float = 1.0,
         viewport: ViewportType | None = None,
+        register_handlers: bool = True,
         window_block: UniformBlock | None = None,
         copies_per_resource: int = 3,
         projection_uniform: str = "u_projection",
@@ -194,6 +195,9 @@ class Camera2D(BaseCamera[Camera2DView]):
             viewport:
                 Optional fixed root viewport as ``(x, y, width, height)`` in
                 framebuffer coordinates. ``None`` tracks the full framebuffer.
+            register_handlers:
+                If ``True``, register for window resize and scale events.
+                Disable this for fixed-size offscreen cameras.
             window_block:
                 Optional shader ``WindowBlock`` used to create the camera's
                 uniform-buffer storage on modern graphics backends. By default,
@@ -218,6 +222,7 @@ class Camera2D(BaseCamera[Camera2DView]):
             window,
             view_storage,
             viewport=viewport,
+            register_handlers=register_handlers,
         )
 
         self.scroll_speed = scroll_speed

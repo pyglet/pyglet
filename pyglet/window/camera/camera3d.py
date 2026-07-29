@@ -118,6 +118,7 @@ class Camera3D(BaseCamera[Camera3DView]):
         walk_speed: float = 10.0,
         look_speed: float = 10.0,
         viewport: ViewportType | None = None,
+        register_handlers: bool = True,
         window_block: UniformBlock | None = None,
         copies_per_resource: int = 3,
         projection_uniform: str = "u_projection",
@@ -152,6 +153,9 @@ class Camera3D(BaseCamera[Camera3DView]):
             viewport:
                 Optional fixed root viewport as ``(x, y, width, height)`` in
                 framebuffer coordinates. ``None`` tracks the full framebuffer.
+            register_handlers:
+                If ``True``, register for window resize and scale events.
+                Disable this for fixed-size offscreen cameras.
             window_block:
                 Optional shader ``WindowBlock`` used to create the camera's
                 uniform-buffer storage on modern graphics backends. By default,
@@ -174,6 +178,7 @@ class Camera3D(BaseCamera[Camera3DView]):
             window,
             view_storage,
             viewport=viewport,
+            register_handlers=register_handlers,
         )
         assert self.view_storage is not None
         self._position = position or Vec3()
