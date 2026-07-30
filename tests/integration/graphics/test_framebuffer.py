@@ -1,6 +1,7 @@
 from ctypes import byref
 
 import pyglet
+import pytest
 
 from pyglet.enums import ComponentFormat, FramebufferAttachment, FramebufferTarget
 from pyglet.graphics.api.gl import gl
@@ -124,3 +125,95 @@ def test_framebuffer_context_restores_separate_draw_and_read_bindings(gl3_contex
         target.delete()
         draw_framebuffer.delete()
         read_framebuffer.delete()
+
+
+def test_render_texture_context_draws_clears_and_restores_state(gl3_context):
+    gl3_context.switch_to()
+    original_camera = gl3_context.camera
+    viewport_type = gl.GLint * 4
+    original_viewport_values = viewport_type()
+    gl.glGetIntegerv(gl.GL_VIEWPORT, original_viewport_values)
+    original_viewport = tuple(original_viewport_values)
+    handler_count = len(gl3_context._event_stack)  # noqa: SLF001
+    target = pyglet.graphics.RenderTexture(32, 16)
+    assert len(gl3_context._event_stack) == handler_count  # noqa: SLF001
+    rectangle = pyglet.shapes.Rectangle(4, 3, 12, 8, color=(255, 0, 0))
+
+    try:
+        with target:
+            assert gl3_context.camera is target.camera
+            assert _get_bound_framebuffer_id() == target.framebuffer.id
+            rectangle.draw()
+
+        assert gl3_context.camera is original_camera
+        assert _get_bound_framebuffer_id() == 0
+        actual_viewport = viewport_type()
+        gl.glGetIntegerv(gl.GL_VIEWPORT, actual_viewport)
+        assert tuple(actual_viewport) == original_viewport
+
+        pixels = bytes(target.texture.fetch().get_bytes("RGBA", target.width * 4))
+        rgba = list(zip(*(iter(pixels),) * 4))
+        assert any(red > 0 and alpha > 0 for red, _, _, alpha in rgba)
+        assert any(alpha == 0 for _, _, _, alpha in rgba)
+
+        with target:
+            pass
+        assert bytes(target.texture.fetch().get_bytes("RGBA", target.width * 4)) == bytes(target.width * target.height * 4)
+
+        with pytest.raises(RuntimeError, match="test restoration"), target:
+            raise RuntimeError("test restoration")
+        assert gl3_context.camera is original_camera
+        assert _get_bound_framebuffer_id() == 0
+    finally:
+        rectangle.delete()
+        target.delete()
+        assert target.texture.id is not None
+        target.texture.delete()
+
+
+def test_render_texture_restores_custom_camera_auto_viewport(gl3_context):
+    gl3_context.switch_to()
+    camera = pyglet.window.camera.Camera2D(gl3_context)
+    original_viewport = camera.viewport
+    assert camera.view._auto_viewport  # noqa: SLF001
+    target = pyglet.graphics.RenderTexture(24, 12, camera=camera, depth=True)
+
+    try:
+        assert target.depth_buffer is not None
+        with target:
+            assert camera.viewport == (0, 0, 24, 12)
+        assert camera.viewport == original_viewport
+        assert camera.view._auto_viewport  # noqa: SLF001
+    finally:
+        target.delete(delete_texture=True)
+        gl3_context.remove_handlers(camera)
+
+
+def test_render_texture_contexts_can_be_nested(gl3_context):
+    gl3_context.switch_to()
+    original_camera = gl3_context.camera
+    outer = pyglet.graphics.RenderTexture(32, 16)
+    inner = None
+
+    try:
+        with outer:
+            assert gl3_context.camera is outer.camera
+            assert _get_bound_framebuffer_id() == outer.framebuffer.id
+
+            # Construction must preserve an already-bound render target too.
+            inner = pyglet.graphics.RenderTexture(8, 4)
+            assert _get_bound_framebuffer_id() == outer.framebuffer.id
+
+            with inner:
+                assert gl3_context.camera is inner.camera
+                assert _get_bound_framebuffer_id() == inner.framebuffer.id
+
+            assert gl3_context.camera is outer.camera
+            assert _get_bound_framebuffer_id() == outer.framebuffer.id
+
+        assert gl3_context.camera is original_camera
+        assert _get_bound_framebuffer_id() == 0
+    finally:
+        if inner is not None:
+            inner.delete(delete_texture=True)
+        outer.delete(delete_texture=True)
