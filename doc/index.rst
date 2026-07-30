@@ -56,6 +56,7 @@ If you are migrating from an older version of pyglet, please read through
    programming_guide/rendering
    programming_guide/camera
    programming_guide/events
+   programming_guide/event_chains
    programming_guide/gui
    programming_guide/time
    programming_guide/context

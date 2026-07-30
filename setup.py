@@ -11,7 +11,7 @@ with open('pyglet/__init__.py') as f:
             break
 
 
-setup_info = dict(
+setup_info = dict(  # noqa: C408
     name='pyglet',
     version=info['version'],
     author='Alex Holkner',
@@ -38,19 +38,20 @@ setup_info = dict(
         'Operating System :: Microsoft :: Windows',
         'Operating System :: POSIX :: Linux',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
+        'Programming Language :: Python :: 3.14',
         'Topic :: Games/Entertainment',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
-
     # Package info
     packages=['pyglet'] + ['pyglet.' + pkg for pkg in find_packages('pyglet')],
-
     # Add _ prefix to the names of temporary build dirs
-    options={'build': {'build_base': '_build'}, },
+    options={
+        'build': {'build_base': '_build'},
+    },
     zip_safe=True,
 )
 
