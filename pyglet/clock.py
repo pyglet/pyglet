@@ -100,6 +100,12 @@ class _ScheduledIntervalItem:
         return self.next_ts < other.next_ts
 
 
+class _ScheduledFixedDelayItem(_ScheduledIntervalItem):
+    """Marker type for intervals rescheduled from callback completion."""
+
+    __slots__ = ()
+
+
 class Clock:
     """Schedule callbacks against a single time source.
 
@@ -238,19 +244,33 @@ class Clock:
                 break
 
             scheduled_ts = item.next_ts
-            # Phase-based callbacks share the clock tick's timestamp.
-            item.func(now - item.last_ts, *item.args, **item.kwargs)
-            if item.interval:
-                item.last_ts = now
-                # Preserve the requested phase while the following period
-                # is still in the future. If at least one complete period
-                # was missed, coalesce it and spread recovery deadlines.
-                item.next_ts = scheduled_ts + item.interval
-                if item.next_ts <= now:
-                    item.next_ts = get_soft_next_ts(now, item.interval)
+            if isinstance(item, _ScheduledFixedDelayItem):
+                # Fixed-delay callbacks use their actual start and completion
+                # timestamps. Eligibility remains bounded by ``now`` above, so
+                # callback runtime cannot pull more timers into this dispatch.
+                callback_ts = self.time()
+                item.func(callback_ts - item.last_ts, *item.args, **item.kwargs)
+                finished_ts = self.time()
+                if item.interval:
+                    item.last_ts = callback_ts
+                    item.next_ts = finished_ts + item.interval
+                else:
+                    # The callback unscheduled itself while it was executing.
+                    self._current_interval_item = item = None
             else:
-                # The callback unscheduled itself while it was executing.
-                self._current_interval_item = item = None
+                # Phase-based callbacks share the clock tick's timestamp.
+                item.func(now - item.last_ts, *item.args, **item.kwargs)
+                if item.interval:
+                    item.last_ts = now
+                    # Preserve the requested phase while the following period
+                    # is still in the future. If at least one complete period
+                    # was missed, coalesce it and spread recovery deadlines.
+                    item.next_ts = scheduled_ts + item.interval
+                    if item.next_ts <= now:
+                        item.next_ts = get_soft_next_ts(now, item.interval)
+                else:
+                    # The callback unscheduled itself while it was executing.
+                    self._current_interval_item = item = None
 
         if item is not None:
             if self._schedule_interval_timestamps is None:
@@ -463,6 +483,47 @@ class Clock:
         if self._schedule_interval_timestamps is not None:
             self._schedule_interval_timestamps = None
 
+    def schedule_interval_fixed_delay(
+        self,
+        func: Callable,
+        interval: float,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
+        """Schedule a function with a fixed delay after each completed call.
+
+        Unlike :py:meth:`~pyglet.clock.Clock.schedule_interval`, the next
+        deadline is calculated from the time the callback finishes. This
+        prevents a long-running callback from immediately becoming due again
+        and naturally moves equal-deadline callbacks out of phase.
+
+        The time from the start of one call to the next is approximately the
+        callback's runtime plus ``interval``. Missed calls are never accumulated,
+        and callback runtime does not expand the set of callbacks eligible in
+        the current clock tick.
+
+        This is useful for polling and maintenance work where the delay between
+        completed operations matters more than alignment to an original phase.
+
+        .. note:: Specifying an interval of ``0`` will prevent the function from
+                  being called again.
+
+        .. note:: This is not a fixed time step implementation.
+        """
+        last_ts = self._get_nearest_ts()
+        next_ts = last_ts + interval
+        item = _ScheduledFixedDelayItem(
+            func,
+            interval,
+            last_ts,
+            next_ts,
+            args,
+            kwargs,
+        )
+        _heappush(self._schedule_interval_items, item)
+        if self._schedule_interval_timestamps is not None:
+            self._schedule_interval_timestamps = None
+
     def schedule_interval_for_duration(self, func: Callable, interval: float,
                                        duration: float, *args: Any, **kwargs: Any) -> None:
         """Temporarily schedule a function to be called every ``interval`` seconds.
@@ -580,6 +641,11 @@ def schedule(func: Callable, *args: Any, **kwargs: Any) -> None:
 def schedule_interval(func: Callable, interval: float, *args: Any, **kwargs: Any) -> None:
     """:see: :py:meth:`~pyglet.clock.Clock.schedule_interval`."""
     _default.schedule_interval(func, interval, *args, **kwargs)
+
+
+def schedule_interval_fixed_delay(func: Callable, interval: float, *args: Any, **kwargs: Any) -> None:
+    """:see: :py:meth:`~pyglet.clock.Clock.schedule_interval_fixed_delay`."""
+    _default.schedule_interval_fixed_delay(func, interval, *args, **kwargs)
 
 
 def schedule_interval_for_duration(func: Callable, interval: float, duration: float, *args, **kwargs) -> None:
