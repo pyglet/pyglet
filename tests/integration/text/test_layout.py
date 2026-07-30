@@ -46,6 +46,24 @@ def test_layout_creation_positional(gl3_context, doctype, layouttype):
     assert _layout.position == (X, Y, Z)
 
 
+def test_layout_get_as_texture(gl3_context):
+    gl3_context.switch_to()
+    text_layout = layout.TextLayout(document.UnformattedDocument("Render texture"), x=100, y=50)
+    original_position = text_layout.position
+    texture = text_layout.get_as_texture()
+
+    try:
+        assert texture.width == round(text_layout.content_width)
+        assert texture.height == round(text_layout.content_height)
+        assert text_layout.position == original_position
+
+        pixels = bytes(texture.fetch().get_bytes("RGBA", texture.width * 4))
+        assert any(alpha > 0 for alpha in pixels[3::4])
+    finally:
+        texture.delete()
+        text_layout.delete()
+
+
 class TestIssues(unittest.TestCase):
 
     def test_issue471(self):
