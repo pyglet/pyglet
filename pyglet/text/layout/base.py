@@ -1300,8 +1300,12 @@ class TextLayout:
         Every returned texture is independent and owned by the caller. Delete
         each texture when it is no longer needed.
 
-        .. warning:: Usage is recommended only if you understand how texture generation affects your application.
-            Improper use will cause texture memory leaks and performance degradation.
+        .. warning::
+            This allocates a GPU texture and renders the layout on the GPU.
+            Generating many textures, especially every frame, can be slow.
+            Reusing a render target reduces setup overhead but does not remove
+            the texture allocation or rendering cost. The caller must delete
+            returned textures to avoid GPU memory leaks.
 
         .. note:: Does not include InlineElements.
 

@@ -219,6 +219,10 @@ class RenderTexture(_TextureRenderTargetBase):
     The generated ``texture`` remains owned by the caller after :meth:`delete`
     releases the framebuffer and optional depth buffer.
 
+    Creating the target allocates GPU resources, and drawing into it submits
+    GPU work. Avoid repeatedly creating short-lived targets in performance
+    sensitive code.
+
     This class is useful for a persistent off-screen surface, such as a
     minimap, post-processing input, or dynamically updated sprite texture::
 
@@ -320,6 +324,10 @@ class TextureRenderTarget(_TextureRenderTargetBase):
     Use :meth:`render_to_texture` for each output. The framebuffer, camera, and
     same-sized depth buffer are retained between calls, while each successful
     scope yields a new caller-owned texture.
+
+    Reuse avoids repeated framebuffer and camera setup, but every output still
+    allocates a texture and performs GPU rendering. Generating many textures,
+    especially every frame, can remain expensive.
 
     This avoids repeatedly constructing target state when generating many
     textures, while still allocating a distinct texture for every result::

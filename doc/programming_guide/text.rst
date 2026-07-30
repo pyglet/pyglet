@@ -170,6 +170,29 @@ Like labels, layouts are positioned through their `x`, `y`,
 The `anchor` properties accept a string such as ``"bottom"`` or ``"center"`` instead of a
 numeric displacement.
 
+Rendering layouts to textures
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:py:meth:`~pyglet.text.layout.TextLayout.get_as_texture` draws a layout into a
+new caller-owned GPU texture. Texture allocation and rendering can be slow when
+performed in bulk or every frame. For an occasional conversion, no additional
+setup is needed::
+
+    texture = layout.get_as_texture()
+
+When converting many layouts, pass a
+:py:class:`~pyglet.graphics.framebuffer.TextureRenderTarget` to reuse its
+framebuffer and camera. This reduces setup overhead, but each result still
+requires a new texture allocation and GPU render::
+
+    target = pyglet.graphics.TextureRenderTarget()
+    textures = [layout.get_as_texture(target) for layout in layouts]
+    target.delete()
+
+Deleting the target does not delete the returned textures. Delete each texture
+when it is no longer needed. See :ref:`guide_drawing-into-a-texture` for render
+target lifecycle and ownership details.
+
 .. _guide_formatted-text:
 
 Formatted text
