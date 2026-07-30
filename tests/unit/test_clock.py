@@ -64,17 +64,97 @@ class ClockTestCase(unittest.TestCase):
         self.assertEqual(self.callback_a.call_count, 2)
         self.assertEqual(self.callback_b.call_count, 2)
 
+    def test_schedule_interval_preserves_phase_when_dispatch_is_late(self):
+        """A slightly late callback should retain its original schedule instead of drifting from dispatch time."""
+        self.clock.schedule_interval(self.callback_a, 1)
+
+        self.time = 1.1
+        self.clock.tick()
+
+        item, = self.clock._schedule_interval_items
+        self.assertEqual(item.next_ts, 2)
+
+    def test_schedule_interval_uses_relative_missed_period_recovery(self):
+        """Recovery should depend on missed periods, not an absolute lateness threshold."""
+        self.clock.schedule_interval(self.callback_a, 0.01)
+        self.clock.schedule_interval(self.callback_b, 0.01)
+
+        # This is under the old fixed 50 ms threshold, but more than two
+        # complete periods late. Recovery should spread the next deadlines.
+        self.time = 0.035
+        self.clock.tick()
+
+        next_timestamps = {item.next_ts for item in self.clock._schedule_interval_items}
+        self.assertEqual(len(next_timestamps), 2)
+
+    def test_schedule_interval_does_not_recover_for_small_fractional_lateness(self):
+        """A long interval should retain its phase until an entire following period has been missed."""
+        self.clock.schedule_interval(self.callback_a, 3600)
+        self.clock.schedule_interval(self.callback_b, 3600)
+
+        # This exceeds the old fixed 50 ms threshold, but has not missed the
+        # following hourly period. Both timers should retain their phase.
+        self.time = 3600.1
+        self.clock.tick()
+
+        next_timestamps = {item.next_ts for item in self.clock._schedule_interval_items}
+        self.assertEqual(next_timestamps, {7200})
+
+    def test_schedule_interval_coalesces_missed_executions(self):
+        """Missed executions should become one callback per tick rather than a replayed catch-up batch."""
+        self.clock.schedule_interval(self.callback_a, 0.01)
+
+        # Each tick is 100 intervals late. Only one callback should run; missed
+        # executions must not be replayed as a catch-up batch.
+        for expected_calls, timestamp in enumerate((1.0, 2.0, 3.0), start=1):
+            self.time = timestamp
+            self.clock.tick()
+
+            self.assertEqual(self.callback_a.call_count, expected_calls)
+            self.assertEqual(len(self.clock._schedule_interval_items), 1)
+            self.assertGreater(self.clock._schedule_interval_items[0].next_ts, timestamp)
+
+            # Ticking again without advancing time must not drain a backlog.
+            self.clock.tick()
+            self.assertEqual(self.callback_a.call_count, expected_calls)
+
+    def test_schedule_interval_overload_does_not_accumulate_calls(self):
+        """A callback slower than its interval must not create an increasing same-tick catch-up backlog."""
+        calls_per_tick = {}
+        current_tick = [0]
+
+        def slow_callback(dt):
+            tick = current_tick[0]
+            calls_per_tick[tick] = calls_per_tick.get(tick, 0) + 1
+            self.time += 0.025
+            if calls_per_tick[tick] > 1:
+                # Prevent a regression from hanging the test in an infinite
+                # same-tick catch-up loop.
+                self.clock.unschedule(slow_callback)
+
+        self.clock.schedule_interval(slow_callback, 0.01)
+        self.time = 0.01
+
+        # The callback takes longer than its interval and is overdue again by
+        # the next event-loop tick. Calls must remain bounded to one per tick,
+        # rather than growing as missed intervals accumulate.
+        for tick in range(1, 11):
+            current_tick[0] = tick
+            self.clock.tick()
+            self.assertEqual(calls_per_tick[tick], 1)
+            self.assertEqual(len(self.clock._schedule_interval_items), 1)
+
     def test_schedule_interval_soft(self):
         self.clock.schedule_interval_soft(self.callback_a, 1)
         self.advance_clock(2)
         self.assertEqual(self.callback_a.call_count, 2)
 
-    @unittest.skip('Requires changes to the clock')
-    def test_schedule_interval_soft_multiple(self):
+    def test_schedule_interval_soft_avoids_existing_deadlines(self):
+        """Soft scheduling should give overlapping callbacks distinct deadlines to spread their work."""
         self.clock.schedule_interval(self.callback_a, 1)
         self.clock.schedule_interval_soft(self.callback_b, 1)
         self.clock.schedule_interval_soft(self.callback_b, 1)
-        next_ts = set(i.next_ts for i in self.clock._scheduled_items)
+        next_ts = {item.next_ts for item in self.clock._schedule_interval_items}
         self.assertEqual(len(next_ts), 3)
         self.advance_clock()
         self.assertEqual(self.callback_a.call_count, 1)
@@ -103,6 +183,57 @@ class ClockTestCase(unittest.TestCase):
         self.clock.unschedule(self.callback_a)
         self.advance_clock()
         self.assertEqual(self.callback_a.call_count, 0)
+
+    def test_schedule_interval_fixed_delay_unschedule(self):
+        """Fixed-delay callbacks should be removable through the same public unschedule API."""
+        self.clock.schedule_interval_fixed_delay(self.callback_a, 1)
+        self.clock.unschedule(self.callback_a)
+        self.advance_clock()
+        self.assertEqual(self.callback_a.call_count, 0)
+
+    def test_unhashable_callback_unschedule(self):
+        """Unscheduling must continue to support callable objects that cannot be dictionary keys."""
+        class UnhashableCallback:
+            __hash__ = None
+
+            def __init__(self):
+                self.call_count = 0
+
+            def __call__(self, dt):
+                self.call_count += 1
+
+        callback = UnhashableCallback()
+        self.clock.schedule_interval(callback, 1)
+        self.clock.unschedule(callback)
+        self.advance_clock()
+        self.assertEqual(callback.call_count, 0)
+
+    def test_bound_method_unschedule_uses_equivalent_method_object(self):
+        """A newly accessed but equivalent bound method should match the originally scheduled callback."""
+        class Handler:
+            def __init__(self):
+                self.call_count = 0
+
+            def callback(self, dt):
+                self.call_count += 1
+
+        handler = Handler()
+        self.clock.schedule_interval(handler.callback, 1)
+        self.clock.unschedule(handler.callback)
+        self.advance_clock()
+        self.assertEqual(handler.call_count, 0)
+
+    def test_module_schedule_interval_fixed_delay(self):
+        """The module-level fixed-delay helper should delegate to the active default clock."""
+        default_clock = pyglet.clock.get_default()
+        pyglet.clock.set_default(self.clock)
+        try:
+            pyglet.clock.schedule_interval_fixed_delay(self.callback_a, 1)
+            self.advance_clock()
+        finally:
+            pyglet.clock.set_default(default_clock)
+
+        self.assertEqual(self.callback_a.call_count, 1)
 
     def test_unschedule_removes_all(self):
         self.clock.schedule(self.callback_a)
@@ -159,49 +290,42 @@ class ClockTestCase(unittest.TestCase):
         self.clock.schedule(self.callback_a)
         self.assertTrue(self.clock.call_scheduled_functions(0))
 
-    @unittest.skip('Requires changes to the clock')
-    def test_call_sched_return_True_if_called_functions_interval(self):
+    def test_call_scheduled_functions_returns_true_for_due_interval(self):
+        """The dispatch result should indicate whether a timed callback was actually called."""
         self.clock.schedule_once(self.callback_a, 1)
         self.assertFalse(self.clock.call_scheduled_functions(0))
-        self.clock.set_time(1)
+        self.time = 1
         self.assertTrue(self.clock.call_scheduled_functions(0))
 
     def test_call_sched_return_False_if_no_called_functions(self):
         self.assertFalse(self.clock.call_scheduled_functions(0))
 
-    def test_tick_return_last_delta(self):
-        self.assertEqual(self.clock.tick(), 0)
-        self.time = 1
-        self.assertEqual(self.clock.tick(), 1)
-        self.time = 3
-        self.assertEqual(self.clock.tick(), 2)
+    def test_get_sleep_time_is_none_when_idle(self):
+        """An idle clock may sleep indefinitely when the event loop permits idle sleeping."""
+        self.assertIsNone(self.clock.get_sleep_time(True))
 
-    @unittest.skip('Requires changes to the clock')
-    def test_get_sleep_time_None_if_no_items(self):
-        self.assertIsNone(self.clock.get_sleep_time())
-
-    @unittest.skip('Requires changes to the clock')
-    def test_get_sleep_time_can_sleep(self):
+    def test_get_sleep_time_tracks_next_deadline(self):
+        """Sleep time should always point to the nearest outstanding timed callback."""
         self.clock.schedule_once(self.callback_a, 3)
         self.clock.schedule_once(self.callback_b, 1)
         self.clock.schedule_once(self.callback_c, 6)
         self.clock.schedule_once(self.callback_d, 7)
-        self.assertEqual(self.clock.get_sleep_time(), 1)
+        self.assertEqual(self.clock.get_sleep_time(True), 1)
         self.advance_clock()
-        self.assertEqual(self.clock.get_sleep_time(), 2)
+        self.assertEqual(self.clock.get_sleep_time(True), 2)
         self.advance_clock(2)
-        self.assertEqual(self.clock.get_sleep_time(), 3)
+        self.assertEqual(self.clock.get_sleep_time(True), 3)
         self.advance_clock(3)
-        self.assertEqual(self.clock.get_sleep_time(), 1)
+        self.assertEqual(self.clock.get_sleep_time(True), 1)
 
-    @unittest.skip('Requires changes to the clock')
-    def test_get_sleep_time_cannot_sleep(self):
+    def test_get_sleep_time_is_zero_for_every_tick_callback(self):
+        """A callback scheduled for every tick should prevent the event loop from sleeping."""
         self.clock.schedule(self.callback_a)
         self.clock.schedule_once(self.callback_b, 1)
-        self.assertEqual(self.clock.get_sleep_time(), 0)
+        self.assertEqual(self.clock.get_sleep_time(True), 0)
 
-    @unittest.skip
-    def test_schedule_item_during_tick(self):
+    def test_scheduling_every_tick_callback_during_tick_is_deferred(self):
+        """Callbacks added during dispatch should start on the following tick, not the active iteration."""
         def replicating_event(dt):
             self.clock.schedule(replicating_event)
             counter()
@@ -234,8 +358,8 @@ class ClockTestCase(unittest.TestCase):
         self.advance_clock()
         self.assertEqual(counter.call_count, 1)
 
-    @unittest.skip
-    def test_schedule_interval_item_during_tick(self):
+    def test_scheduling_interval_callback_during_tick_is_deferred(self):
+        """Timed callbacks added during dispatch should enter the heap safely for their future deadline."""
         def replicating_event(dt):
             self.clock.schedule_interval(replicating_event, 1)
             counter()
@@ -327,12 +451,6 @@ class ClockTestCase(unittest.TestCase):
         # with a good clock, this would be 3
         self.assertEqual(self.callback_c.call_count, 2)
         self.assertEqual(self.callback_d.call_count, 2)
-
-    @unittest.skip('Requires changes to the clock')
-    def test_get_interval(self):
-        self.assertEqual(self.clock.get_interval(), 0)
-        self.advance_clock(100)
-        self.assertEqual(round(self.clock.get_interval(), 10), self.interval)
 
     def test_soft_scheduling_stress_test(self):
         """test that the soft scheduler is able to correctly soft-schedule

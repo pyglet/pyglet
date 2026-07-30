@@ -12,18 +12,21 @@ def timed_clock():
 
 
 def test_first_tick_has_zero_delta(timed_clock):
+    """The first tick establishes the time baseline and therefore has no elapsed delta."""
     clock, _ = timed_clock
 
     assert clock.tick() == 0
 
 
 def test_frequency_starts_at_zero(timed_clock):
+    """Frequency should remain zero until the clock has collected an elapsed-time sample."""
     clock, _ = timed_clock
 
     assert clock.get_frequency() == 0
 
 
 def test_tick_returns_elapsed_time(timed_clock):
+    """Each tick should return the exact elapsed time supplied by the clock's time source."""
     clock, now = timed_clock
     clock.tick()
 
@@ -35,6 +38,7 @@ def test_tick_returns_elapsed_time(timed_clock):
 
 
 def test_compute_frequency(timed_clock):
+    """Frequency should report the average tick rate from the clock's recent deterministic samples."""
     clock, now = timed_clock
     expected_frequency = 60
     seconds_per_tick = 1 / expected_frequency
