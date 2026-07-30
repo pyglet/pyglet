@@ -645,20 +645,53 @@ provide a font family name::
         font_size=18,
     )
 
-HarfBuzz shaping
-----------------
+Font shaping
+------------
 
-Some platforms like Linux do not have any text shaping capability to provide advanced features
-such as ligatures, substitutions, cluster-aware glyph placement, etc. To provide
-a more cross-platform solution, pyglet can utilize HarfBuzz. To enable it, set
+Font shaping applies kerning, ligatures, substitutions, and complex-script
+glyph placement. The ``pyglet.options.text_shaping`` option selects the
+application-wide shaping backend and defaults to ``"platform"``. Platform
+shaping is available through DirectWrite on Windows and CoreText on macOS.
+Linux does not provide a platform shaper, so the default platform mode uses
+unshaped glyph metrics there.
+
+Shaping is enabled by default on ``Label``, ``HTMLLabel``, ``DocumentLabel``,
+and text layouts. A frequently updated label that does not need these
+typographic features can disable it. Bypassing the shaping process reduces the
+work needed to create and regenerate the label. Doing so can improve performance
+for text such as FPS counters, timers, scores, and damage numbers::
+
+    fps_label = pyglet.text.Label("FPS: 0", shaping=False)
+
+For longer or typographically complex text, shaping produces more accurate
+glyph selection and placement. Rich text does not require shaping merely
+because it uses HTML, but an ``HTMLLabel`` containing paragraphs, mixed styles,
+ligatures, or complex scripts will generally benefit from it::
+
+    paragraph = pyglet.text.HTMLLabel(
+        "<p>Typography-aware paragraph text.</p>",
+        width=400,
+        multiline=True,
+        shaping=True,
+    )
+
+HarfBuzz
+^^^^^^^^
+
+Some platforms, including Linux, do not provide native text shaping. For a
+cross-platform shaping solution, pyglet can use HarfBuzz. HarfBuzz is an
+explicit opt-in rather than being selected automatically when installed. This
+keeps existing text metrics stable and avoids making an optional native
+dependency affect an application unexpectedly. To enable it, set
 ``pyglet.options.text_shaping`` to ``"harfbuzz"`` before loading fonts or
 creating text layouts::
 
     import pyglet
     pyglet.options.text_shaping = "harfbuzz"
 
-If HarfBuzz is not available in your environment, pyglet falls back to
-platform shaping.
+If HarfBuzz is not available in your environment, pyglet falls back to the
+platform behavior. On a platform without a native shaper, this uses unshaped
+glyph metrics.
 
 Visit the harfbuzz website on installation instructions:: https://harfbuzz.github.io/install-harfbuzz.html
 

@@ -799,11 +799,14 @@ class TextLayout:
             wrap_lines:
                 If True and `multiline` is True, the text is word-wrapped using the specified width.
             shaping:
-                If the text should use proper positioning and typography according to the font and global
-                ``pyglet.options.text_shaping`` option. If ``False``, metrics will instead be tied to the glyph sizes.
+                Whether this layout should use text shaping. The shaping backend is selected globally with
+                ``pyglet.options.text_shaping``. If ``False``, glyph positions are based on their unshaped metrics.
             init_document:
                 If True the document will be initialized. If subclassing then
                 you may want to avoid duplicate initializations by changing to False.
+
+        .. versionchanged:: 3.0
+            Added the *shaping* parameter.
         """
         self._x = x
         self._y = y
