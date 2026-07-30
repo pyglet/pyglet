@@ -262,9 +262,9 @@ class Clock:
                 item.func(now - item.last_ts, *item.args, **item.kwargs)
                 if item.interval:
                     item.last_ts = now
-                    # Preserve the requested phase while the following period
-                    # is still in the future. If at least one complete period
-                    # was missed, coalesce it and spread recovery deadlines.
+                    # Keep the requested series of deadlines while the next
+                    # one is still in the future. If a complete call was
+                    # missed, coalesce it and spread recovery deadlines.
                     item.next_ts = scheduled_ts + item.interval
                     if item.next_ts <= now:
                         item.next_ts = get_soft_next_ts(now, item.interval)
@@ -462,12 +462,15 @@ class Clock:
         """Schedule a function to be called every ``interval`` seconds.
 
         To schedule a function to be called at 60Hz (60fps), you would use ``1/60``
-        for the interval, and so on. The schedule remains aligned with its original
-        phase when a callback is called late. If pyglet misses one or more complete
-        periods, those calls are skipped (not accumulated) and the schedule is
-        moved out of phase with other overdue schedules during recovery. This can
-        occur if the main thread is overloaded, or other hard blocking calls take
-        place.
+        for the interval, and so on. The clock follows the requested series of
+        times. If a callback is late but its following time has not passed, that
+        following time is kept. A late callback can therefore be followed by a
+        shorter gap.
+
+        If pyglet misses one or more complete calls, those calls are skipped
+        rather than replayed. The next times of callbacks that are overdue
+        together are spread apart to avoid a burst of catch-up work. Delays can
+        occur when the main thread is overloaded or blocked.
 
         The callback function prototype is the same as for
         :py:meth:`~pyglet.clock.Clock.schedule`.
@@ -494,8 +497,9 @@ class Clock:
 
         Unlike :py:meth:`~pyglet.clock.Clock.schedule_interval`, the next
         deadline is calculated from the time the callback finishes. This
-        prevents a long-running callback from immediately becoming due again
-        and naturally moves equal-deadline callbacks out of phase.
+        prevents a long-running callback from immediately becoming due again.
+        Callbacks initially due together can acquire different next times
+        according to when each one finishes.
 
         The time from the start of one call to the next is approximately the
         callback's runtime plus ``interval``. Missed calls are never accumulated,
@@ -503,7 +507,8 @@ class Clock:
         the current clock tick.
 
         This is useful for polling and maintenance work where the delay between
-        completed operations matters more than alignment to an original phase.
+        completed operations matters more than maintaining the original series
+        of requested times.
 
         .. note:: Specifying an interval of ``0`` will prevent the function from
                   being called again.
@@ -554,7 +559,7 @@ class Clock:
         """Schedule a function to be called approximately every ``interval`` seconds.
 
         This method is similar to :py:meth:`~pyglet.clock.Clock.schedule_interval`,
-        except that the clock will move the interval out of phase with other
+        except that the clock chooses a different starting time from nearby
         scheduled functions in order to distribute CPU load more evenly.
 
         This is useful for functions that need to be called regularly,
@@ -566,9 +571,9 @@ class Clock:
         CPU is excessive for those intervals but idle outside.  Using
         the soft interval scheduling, the load is more evenly distributed.
 
-        Soft interval scheduling can also be used as an easy way to schedule
-        graphics animations out of phase; for example, multiple flags
-        waving in the wind.
+        Soft interval scheduling can also start repeating animations at
+        different points in their cycles; for example, multiple flags waving
+        in the wind.
         """
         next_ts = self._get_soft_next_ts(self._get_nearest_ts(), interval)
         last_ts = next_ts - interval
