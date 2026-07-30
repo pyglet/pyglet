@@ -190,16 +190,20 @@ class Options:
     """
 
     text_shaping: Literal["platform", "harfbuzz", False] = 'platform'
-    """Determines how text is processed and displayed based on features of the font.
+    """Selects the text-shaping backend used by layouts and labels that enable shaping.
+
+    Individual :class:`~pyglet.text.Label`, :class:`~pyglet.text.HTMLLabel`, and
+    :class:`~pyglet.text.DocumentLabel` instances can opt out with ``shaping=False``.
+    This option selects the backend; it does not force shaping on every label.
 
     Valid option names are:
 
-     * ``False``, Disables the shaping process for text. This may increase performance as it reduces the amount
-        of calls during rendering. If your font is simple, monospaced, or you require no advanced OpenType features,
-        this option may be useful.
-     * ``'platform'``, Uses platform's font system for shaping. Supported by Windows (DirectWrite) and Mac (CoreText).
-     * ``'harfbuzz'``, Utilize the harfbuzz library for font shaping. This requires an optional dependency, if not
-     found, it will fallback to platform shaping.
+     * ``False``, Disables shaping for every layout and label. Prefer ``shaping=False`` on individual labels when
+        only frequently-updated text, such as an FPS counter, does not need advanced typography.
+     * ``'platform'``, Uses the platform font system for shaping. Supported by Windows (DirectWrite) and Mac
+        (CoreText); other platforms use unshaped glyph metrics.
+     * ``'harfbuzz'``, Uses the HarfBuzz library for shaping. This is an explicit opt-in because it is an optional
+        dependency and can change text metrics. If it is unavailable, pyglet falls back to platform behavior.
 
     .. versionadded:: 2.0
     """

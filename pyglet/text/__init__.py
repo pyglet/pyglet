@@ -228,12 +228,15 @@ class DocumentLabel(layout.TextLayout):
             group: Optional graphics group to use.
             program: Optional graphics shader to use. Will affect all glyphs.
             shaping:
-                If the text should use proper positioning and typography according to the font and global
-                ``pyglet.options.text_shaping`` option. If ``False``, metrics will instead be tied to the glyph sizes.
+                Whether this label should use text shaping. The shaping backend is selected globally with
+                ``pyglet.options.text_shaping``. If ``False``, glyph positions are based on their unshaped metrics.
             init_document:
                 If ``True``, the document will be initialized. If you
                 are passing an already-initialized document, then you can
                 avoid duplicating work by setting this to ``False``.
+
+        .. versionchanged:: 3.0
+            Added the *shaping* parameter.
         """
         super().__init__(document, x, y, z, width, height, anchor_x, anchor_y, rotation,
                          multiline, dpi, batch, group, program, shaping=shaping, init_document=init_document)
@@ -387,9 +390,9 @@ class Label(DocumentLabel):
             weight: str = "normal", style: str = "normal", stretch: str = "normal",
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
             align: HorizontalAlign = "left",
-            shaping: bool = True,
             batch: Batch | None = None, group: Group | None = None,
             program: ShaderProgram | None = None,
+            shaping: bool = True,
     ) -> None:
         """Create a plain text label.
 
@@ -441,22 +444,25 @@ class Label(DocumentLabel):
                 Horizontal alignment of text on a line, only applies if
                 a width is supplied. One of ``"left"``, ``"center"``
                 or ``"right"``.
-            shaping:
-                If the text should use proper positioning and typography according to the font and global
-                ``pyglet.options.text_shaping`` option. If ``False``, metrics will instead be tied to the glyph sizes.
             batch:
                 Optional graphics batch to add the label to.
             group:
                 Optional graphics group to use.
             program:
                 Optional graphics shader to use. Will affect all glyphs.
+            shaping:
+                Whether this label should use text shaping. The shaping backend is selected globally with
+                ``pyglet.options.text_shaping``. If ``False``, glyph positions are based on their unshaped metrics.
+
+        .. versionchanged:: 3.0
+            Added the *shaping* parameter.
         """
         doc = decode_text(text)
         r, g, b, *a = color
         rgba = r, g, b, a[0] if a else 255
 
         super().__init__(doc, x, y, z, width, height, anchor_x, anchor_y, rotation,
-                         multiline, dpi, batch, group, program, init_document=False)
+                         multiline, dpi, batch, group, program, shaping=shaping, init_document=False)
 
         self.document.set_style(0, len(self.document.text), {
             "font_name": font_name,
@@ -482,7 +488,8 @@ class HTMLLabel(DocumentLabel):
                  multiline: bool = False, dpi: float | None = None,
                  location: Location | None = None,
                  batch: Batch | None = None, group: Group | None = None,
-                 program: ShaderProgram | None = None) -> None:
+                 program: ShaderProgram | None = None,
+                 shaping: bool = True) -> None:
         """Create a label with an HTML string.
 
         Args:
@@ -522,13 +529,18 @@ class HTMLLabel(DocumentLabel):
                 Optional graphics group to use.
             program:
                 Optional graphics shader to use. Will affect all glyphs.
+            shaping:
+                Whether this label should use text shaping. The shaping backend is selected globally with
+                ``pyglet.options.text_shaping``. If ``False``, glyph positions are based on their unshaped metrics.
 
+        .. versionchanged:: 3.0
+            Added the *shaping* parameter.
         """
         self._text = text
         self._location = location
         doc = decode_html(text, location)
         super().__init__(doc, x, y, z, width, height, anchor_x, anchor_y, rotation,
-                         multiline, dpi, batch, group, program, init_document=True)
+                         multiline, dpi, batch, group, program, shaping=shaping, init_document=True)
 
     @property
     def text(self) -> str:

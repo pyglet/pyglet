@@ -4,6 +4,7 @@ from typing import TypedDict
 
 import pytest
 import pyglet
+import pyglet.graphics.draw as graphics_draw
 from pyglet.enums import CompareOp, GeometryMode
 from pyglet.graphics.draw import _DomainKey
 from pyglet.graphics.state import State, Viewport
@@ -41,6 +42,44 @@ class GroupWithSimilarState(pyglet.graphics.Group):
     def __init__(self):
         super().__init__()
         self.set_state(SameState())
+
+
+@dataclass(frozen=True)
+class OtherSameState(State):
+    sets_state = True
+
+
+@dataclass(frozen=True)
+class CollidingState(State):
+    value: int
+    sets_state = True
+
+    def __hash__(self):
+        return 1
+
+
+class IdentityHashGroup(pyglet.graphics.Group):
+    def __eq__(self, other):
+        return self is other
+
+    def __hash__(self):
+        return id(self)
+
+
+class EagerReferenceGroup(pyglet.graphics.Group):
+    """Reference implementation of the state-cache behavior before deferral."""
+
+    def set_state(self, state):
+        assert not self.batches
+        self._state_names[type(state).__name__] = state  # noqa: SLF001
+        group_states = self._state_names.values()  # noqa: SLF001
+        self._expanded_states = graphics_draw._expand_states_in_order(group_states)  # noqa: SLF001
+        if state.enforced_state:
+            self._enforced_states.append(state)  # noqa: SLF001
+        self._hashable_states = tuple({item for item in group_states if item.group_hash is True})  # noqa: SLF001
+        self._hash = hash((self._order, self.parent, self._hashable_states))  # noqa: SLF001
+        self._state_cache_dirty = False  # noqa: SLF001
+
 
 @dataclass(frozen=True)
 class TestEnforcedState(State):
@@ -336,6 +375,138 @@ def test_similar_group_equal_comparison_inherit():
 
     assert group2 == group1
     assert group2 is not group1
+
+
+def test_group_state_cache_is_built_once_on_first_hash(monkeypatch):
+    calls = 0
+    expand_states = graphics_draw._expand_states_in_order
+
+    def counted_expand_states(states):
+        nonlocal calls
+        calls += 1
+        return expand_states(states)
+
+    monkeypatch.setattr(graphics_draw, "_expand_states_in_order", counted_expand_states)
+
+    group = pyglet.graphics.Group()
+    group.set_state(SameState())
+    group.set_state(OtherSameState())
+    group.set_state(SameState())
+
+    assert calls == 0
+    assert group._state_cache_dirty  # noqa: SLF001
+
+    first_hash = hash(group)
+
+    assert calls == 1
+    assert not group._state_cache_dirty  # noqa: SLF001
+    assert len(group._expanded_states) == 2  # noqa: SLF001
+    assert hash(group) == first_hash
+    assert calls == 1
+
+
+def test_group_state_cache_finalizes_at_batch_assignment(gl3_context):
+    group = pyglet.graphics.Group()
+    group.set_state(SameState())
+    group.set_state(OtherSameState())
+
+    assert group._state_cache_dirty  # noqa: SLF001
+    assert group._expanded_states == []  # noqa: SLF001
+
+    batch = pyglet.graphics.Batch()
+    batch._add_group(group)  # noqa: SLF001
+
+    assert not group._state_cache_dirty  # noqa: SLF001
+    assert len(group._expanded_states) == 2  # noqa: SLF001
+
+    with pytest.raises(AssertionError, match="New states cannot be set once a group is in a batch."):
+        group.set_state(SameState())
+
+
+def test_deferred_cache_matches_eager_reference_representation():
+    states = (SameState(), OtherSameState(), SameState())
+    eager = EagerReferenceGroup()
+    deferred = pyglet.graphics.Group()
+
+    for state in states:
+        eager.set_state(state)
+        deferred.set_state(state)
+
+    assert hash(deferred) == hash(eager)
+    assert deferred._state_names == eager._state_names  # noqa: SLF001
+    assert deferred._expanded_states == eager._expanded_states  # noqa: SLF001
+    assert deferred._hashable_states == eager._hashable_states  # noqa: SLF001
+
+
+def test_group_hash_collisions_preserve_consolidation_correctness():
+    first = pyglet.graphics.Group()
+    first.set_state(CollidingState(1))
+    same_as_first = pyglet.graphics.Group()
+    same_as_first.set_state(CollidingState(1))
+    different = pyglet.graphics.Group()
+    different.set_state(CollidingState(2))
+
+    consolidated = dict.fromkeys((first, same_as_first, different))
+
+    assert len(consolidated) == 2
+    assert first == same_as_first
+    assert first != different
+
+
+def test_identity_hashed_group_finalizes_when_added_to_batch(gl3_context):
+    group = IdentityHashGroup()
+    state = SameState()
+    group.set_state(state)
+
+    assert group._state_cache_dirty  # noqa: SLF001
+
+    batch, _domain = _build_test_batch(group)
+    draw_list = batch._create_draw_list()  # noqa: SLF001
+    optimized = batch._optimize_draw_list(draw_list)  # noqa: SLF001
+
+    assert not group._state_cache_dirty  # noqa: SLF001
+    assert state.set_state in optimized
+
+
+def test_identity_hashed_parent_finalizes_when_added_recursively(gl3_context):
+    parent = IdentityHashGroup()
+    parent.set_state(SameState())
+    child = pyglet.graphics.Group(parent=parent)
+
+    _build_test_batch(child)
+
+    assert not parent._state_cache_dirty  # noqa: SLF001
+    assert len(parent._expanded_states) == 1  # noqa: SLF001
+
+
+def test_direct_group_render_finalizes_state_cache():
+    group = pyglet.graphics.Group()
+    group.set_state(SameState())
+
+    group.set_state_all(None)
+
+    assert not group._state_cache_dirty  # noqa: SLF001
+    assert len(group._expanded_states) == 1  # noqa: SLF001
+
+
+def test_draw_list_optimizer_does_not_copy_list_tails(gl3_context):
+    class NoSliceList(list):
+        def __getitem__(self, item):
+            if isinstance(item, slice):
+                raise AssertionError("Draw-list tail was copied")
+            return super().__getitem__(item)
+
+    first = pyglet.graphics.Group()
+    first.set_state(CollidingState(1))
+    second = pyglet.graphics.Group()
+    second.set_state(CollidingState(2))
+    batch, _domain = _build_test_batch(first, second)
+    draw_list = NoSliceList(batch._create_draw_list())  # noqa: SLF001
+
+    optimized = batch._optimize_draw_list(draw_list)  # noqa: SLF001
+
+    assert optimized
+
 
 def test_different_group_equal_add_comparison():
     """Ensure groups that are different will not equal each other or rendering may break."""

@@ -9,6 +9,13 @@ def test_font_create_default(gl3_context, test_data):
     assert ft.name is not None
 
 
+def test_default_font_get_text_size(gl3_context):
+    font = pyglet.font.load()
+    width, height = font.get_text_size("Backend text")
+    assert width > 0
+    assert height > 0
+
+
 def test_default_platform_font():
     """Ensure the platform has a default font from the manager."""
     assert pyglet.font.manager.get_platform_default_name() is not None
@@ -68,55 +75,32 @@ def test_font_load_callback(test_data):
     file = test_data.get_file('fonts', 'action_man_bold.ttf')
     pyglet.font.add_file(file)
 
-@require_platform(Platform.WINDOWS)  # Same as above, but Linux runner uses DejaVu Sans.
-def test_load_gdi(gl3_context, test_data):
-    # Invalidate all font caches.
-    pyglet.font.manager._invalidate()
 
-    # Switch to GDI Font.
-    pyglet.options.win32_gdi_font = True
-    pyglet.font._system_font_class = pyglet.font._get_system_font_class()
+def test_font_group_routes_ranges_and_measures_text(gl3_context, test_data):
+    pyglet.font.add_file(test_data.get_file("fonts", "action_man.ttf"))
+    default_family = pyglet.font.manager.get_platform_default_name()
+    group = pyglet.font.FontGroup("font-group-638593")
+    group.add("Action Man", "A", "M")
+    group.add(default_family, "N", "Z")
+    pyglet.font.add_group(group)
 
-    myfont = pyglet.font.load(["Action Man", "Segoe UI"], size=12, dpi=96)
+    font = pyglet.font.load(group.name, size=12, dpi=96)
+    assert pyglet.font.load(group.name, size=12, dpi=96) is font
+    assert font.name.startswith(group.name)
 
-    from pyglet.font.win32 import GDIPlusFont
-    assert isinstance(myfont, GDIPlusFont)
+    glyphs, _ = font.get_glyphs("AN?", shaping=False)
+    action_font = font._child_cache["Action Man"]  # noqa: SLF001
+    default_font = font._child_cache[default_family]  # noqa: SLF001
+    assert glyphs[0] is action_font.get_glyphs("A", shaping=False)[0][0]
+    assert glyphs[1] is default_font.get_glyphs("N", shaping=False)[0][0]
+    assert glyphs[2] is action_font.get_glyphs("?", shaping=False)[0][0]
 
-    assert myfont.name == "Segoe UI"
-    # Make sure name resolves to an actual found font.
-    assert pyglet.font.manager.get_resolved_name(["Action Man", "Segoe UI"]) == 'Segoe UI'
-
-    # Reset and cleanup again.
-    pyglet.font.manager._invalidate()
-    pyglet.options.win32_gdi_font = False
-    pyglet.font._system_font_class = pyglet.font._get_system_font_class()
-
-@require_platform(Platform.WINDOWS)  # Same as above, but Linux runner uses DejaVu Sans.
-def test_load_no_custom_from_list_gdi(gl3_context, test_data):
-    # Invalidate all font caches.
-    pyglet.font.manager._invalidate()
-
-    # Switch to GDI Font.
-    pyglet.options.win32_gdi_font = True
-    pyglet.font._system_font_class = pyglet.font._get_system_font_class()
-
-    myfont = pyglet.font.load(["Action Man", "Segoe UI"], size=12, dpi=96)
-
-    from pyglet.font.win32 import GDIPlusFont
-    assert isinstance(myfont, GDIPlusFont)
-
-    assert myfont.name == "Segoe UI"
-    # Make sure name resolves to an actual found font.
-    assert pyglet.font.manager.get_resolved_name(["Action Man", "Segoe UI"]) == 'Segoe UI'
-
-    file = test_data.get_file('fonts', 'action_man.ttf')
-    pyglet.font.add_file(file)
-    assert pyglet.font.have_font("Action Man") == True
-
-    # Reset and cleanup again.
-    pyglet.font.manager._invalidate()
-    pyglet.options.win32_gdi_font = False
-    pyglet.font._system_font_class = pyglet.font._get_system_font_class()
+    width, height = font.get_text_size("AN?")
+    action_a_width, action_a_height = action_font.get_text_size("A")
+    action_fallback_width, action_fallback_height = action_font.get_text_size("?")
+    default_width, default_height = default_font.get_text_size("N")
+    assert width == action_a_width + default_width + action_fallback_width
+    assert height == max(action_a_height, default_height, action_fallback_height)
 
 def test_user_font(gl3_context, test_data):
     bitmap_image = test_data.get_file('fonts', 'action_man_atlas.png')
@@ -164,6 +148,9 @@ def test_user_font(gl3_context, test_data):
     assert len(result) == 2  # Should be a tuple of Glyph, GlyphPosition
     assert isinstance(result[0][0], pyglet.font.base.Glyph)
     assert isinstance(result[1][0], pyglet.font.base.GlyphPosition)
+    width, height = action_man_font.get_text_size("ABC")
+    assert width > 0
+    assert height > 0
 
 @pytest.mark.skipif(not harfbuzz_available(), reason="HarfBuzz library is unavailable.")
 def test_load_privatefont_harfbuzz_integration(gl3_context, test_data):

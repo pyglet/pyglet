@@ -170,6 +170,29 @@ Like labels, layouts are positioned through their `x`, `y`,
 The `anchor` properties accept a string such as ``"bottom"`` or ``"center"`` instead of a
 numeric displacement.
 
+Rendering layouts to textures
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:py:meth:`~pyglet.text.layout.TextLayout.get_as_texture` draws a layout into a
+new caller-owned GPU texture. Texture allocation and rendering can be slow when
+performed in bulk or every frame. For an occasional conversion, no additional
+setup is needed::
+
+    texture = layout.get_as_texture()
+
+When converting many layouts, pass a
+:py:class:`~pyglet.graphics.framebuffer.TextureRenderTarget` to reuse its
+framebuffer and camera. This reduces setup overhead, but each result still
+requires a new texture allocation and GPU render::
+
+    target = pyglet.graphics.TextureRenderTarget()
+    textures = [layout.get_as_texture(target) for layout in layouts]
+    target.delete()
+
+Deleting the target does not delete the returned textures. Delete each texture
+when it is no longer needed. See :ref:`guide_drawing-into-a-texture` for render
+target lifecycle and ownership details.
+
 .. _guide_formatted-text:
 
 Formatted text
@@ -622,20 +645,53 @@ provide a font family name::
         font_size=18,
     )
 
-HarfBuzz shaping
-----------------
+Font shaping
+------------
 
-Some platforms like Linux do not have any text shaping capability to provide advanced features
-such as ligatures, substitutions, cluster-aware glyph placement, etc. To provide
-a more cross-platform solution, pyglet can utilize HarfBuzz. To enable it, set
+Font shaping applies kerning, ligatures, substitutions, and complex-script
+glyph placement. The ``pyglet.options.text_shaping`` option selects the
+application-wide shaping backend and defaults to ``"platform"``. Platform
+shaping is available through DirectWrite on Windows and CoreText on macOS.
+Linux does not provide a platform shaper, so the default platform mode uses
+unshaped glyph metrics there.
+
+Shaping is enabled by default on ``Label``, ``HTMLLabel``, ``DocumentLabel``,
+and text layouts. A frequently updated label that does not need these
+typographic features can disable it. Bypassing the shaping process reduces the
+work needed to create and regenerate the label. Doing so can improve performance
+for text such as FPS counters, timers, scores, and damage numbers::
+
+    fps_label = pyglet.text.Label("FPS: 0", shaping=False)
+
+For longer or typographically complex text, shaping produces more accurate
+glyph selection and placement. Rich text does not require shaping merely
+because it uses HTML, but an ``HTMLLabel`` containing paragraphs, mixed styles,
+ligatures, or complex scripts will generally benefit from it::
+
+    paragraph = pyglet.text.HTMLLabel(
+        "<p>Typography-aware paragraph text.</p>",
+        width=400,
+        multiline=True,
+        shaping=True,
+    )
+
+HarfBuzz
+^^^^^^^^
+
+Some platforms, including Linux, do not provide native text shaping. For a
+cross-platform shaping solution, pyglet can use HarfBuzz. HarfBuzz is an
+explicit opt-in rather than being selected automatically when installed. This
+keeps existing text metrics stable and avoids making an optional native
+dependency affect an application unexpectedly. To enable it, set
 ``pyglet.options.text_shaping`` to ``"harfbuzz"`` before loading fonts or
 creating text layouts::
 
     import pyglet
     pyglet.options.text_shaping = "harfbuzz"
 
-If HarfBuzz is not available in your environment, pyglet falls back to
-platform shaping.
+If HarfBuzz is not available in your environment, pyglet falls back to the
+platform behavior. On a platform without a native shaper, this uses unshaped
+glyph metrics.
 
 Visit the harfbuzz website on installation instructions:: https://harfbuzz.github.io/install-harfbuzz.html
 

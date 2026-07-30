@@ -90,7 +90,7 @@ Classes
   .. autoattribute:: context
   .. autoattribute:: display
   .. autoattribute:: dpi
-  .. autoattribute:: default_camera
+  .. autoattribute:: camera
   .. autoattribute:: fullscreen
   .. autoattribute:: has_exit
   .. autoattribute:: height
