@@ -231,30 +231,12 @@ pyglet 3.0, use the cameras in :py:mod:`pyglet.window.camera` instead. Every win
 :py:attr:`~pyglet.window.Window.camera`, and additional 2D or 3D cameras can be created for world,
 UI, split-screen, minimap, and render-pass views.
 
-This is more than a convenience wrapper around matrix calculations. Modern pyglet shaders receive
-projection and view matrices through uniform-buffer storage. A camera stages matrix changes, uploads
-only changed data, selects a safe ring-buffer region, and binds the correct region when its draw scope
-begins. Managing that storage directly can overwrite data that the GPU is still reading, introduce
-synchronization stalls, or leave a later batch or render pass using the wrong matrices. The camera
-API handles these details at the point where each camera scope is drawn.
-
-Custom vertex shaders on modern graphics backends should expose the same camera block used by
-pyglet's built-in shaders::
-
-    uniform WindowBlock
-    {
-        mat4 projection;
-        mat4 view;
-    } window;
-
-    // In main():
-    gl_Position = window.projection * window.view * vec4(position, 1.0);
-
-pyglet assigns and updates this block when the camera scope is applied. Applications can create as
-many :class:`~pyglet.window.camera.Camera2D` and :class:`~pyglet.window.camera.Camera3D` instances
-as needed; each camera and camera view has managed matrix storage. The part application code should
-avoid is manually replacing or uploading the ``WindowBlock`` data used by a camera-scoped draw,
-because that bypasses pyglet's per-camera storage and draw-time binding.
+This is more than a convenience wrapper around matrix calculations. A camera owns the per-camera
+matrix state and applies it at the correct point in a draw, preventing one view or render pass from
+overwriting data still needed by another. Managing that storage directly can overwrite data that the
+GPU is still reading, introduce synchronization stalls, or leave a later batch using the wrong matrices.
+Applications should therefore select a camera for a draw rather than manually managing the matrix state
+around it. See :ref:`guide_camera` for the shader integration and other camera implementation details.
 
 For example, a typical custom 2D camera previously changed global window matrices around a batch
 draw::
@@ -307,24 +289,6 @@ must preserve custom matrices. Prefer camera position, zoom, orientation, viewpo
 whenever possible so matrix storage is committed at the correct point in the draw operation. See
 :ref:`guide_camera` for camera views, coordinate conversion, scoped drawing, viewport, and scissor
 examples.
-
-OpenGL 2 and OpenGL ES 2
-------------------------
-The OpenGL 2 and OpenGL ES 2 backends do not use the ``WindowBlock`` uniform-buffer path described
-above. On these backends, cameras update ordinary ``u_projection`` and ``u_view`` matrix uniforms on
-the active shader program. A custom shader intended for these backends should declare those uniforms
-instead::
-
-    uniform mat4 u_projection;
-    uniform mat4 u_view;
-
-    // In main():
-    gl_Position = u_projection * u_view * vec4(position, 1.0);
-
-If a shader already uses different uniform names, pass them through the ``projection_uniform`` and
-``view_uniform`` arguments when creating the camera. The rest of the camera API and the batch/group
-selection patterns are the same, so camera movement code does not need a separate GL2 implementation.
-
 
 pyglet.graphics.Group changes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
