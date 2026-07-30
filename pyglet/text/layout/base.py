@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from pyglet.graphics import Batch
     from pyglet.graphics.shader import ShaderProgram
     from pyglet.graphics.vertexdomain import VertexList
-    from pyglet.graphics import Texture
+    from pyglet.graphics import Texture, TextureRenderTarget
     from pyglet.text.document import AbstractDocument, InlineElement
     from pyglet.text.runlist import AbstractRunIterator, RunIterator
 
@@ -1282,13 +1282,33 @@ class TextLayout:
         self._vertex_lists.clear()
         self._boxes.clear()
 
-    def get_as_texture(self) -> Texture:
+    def get_as_texture(self, render_target: TextureRenderTarget | None = None) -> Texture:
         """Draw the current layout into a new texture.
+
+        When generating one texture, omit ``render_target`` and the temporary
+        framebuffer and camera will be cleaned up automatically::
+
+            texture = layout.get_as_texture()
+
+        Reuse a :class:`~pyglet.graphics.framebuffer.TextureRenderTarget` when
+        converting many layouts to avoid recreating that target state::
+
+            target = pyglet.graphics.TextureRenderTarget()
+            textures = [layout.get_as_texture(target) for layout in layouts]
+            target.delete()
+
+        Every returned texture is independent and owned by the caller. Delete
+        each texture when it is no longer needed.
 
         .. warning:: Usage is recommended only if you understand how texture generation affects your application.
             Improper use will cause texture memory leaks and performance degradation.
 
         .. note:: Does not include InlineElements.
+
+        Args:
+            render_target:
+                Optional reusable texture render target. When omitted, a temporary
+                target is created and deleted for this operation.
 
         Returns:
             A new texture with the layout drawn into it.
@@ -1297,22 +1317,21 @@ class TextLayout:
         """
         width = round(self._content_width)
         height = round(self._content_height)
-        render_target = pyglet.graphics.RenderTexture(width, height)
+        owns_render_target = render_target is None
+        render_target = render_target or pyglet.graphics.TextureRenderTarget()
         original_position = self.position
 
         try:
             self.position = -self._anchor_left, -self._anchor_bottom, 0
-            with render_target:
+            with render_target.render_to_texture(width, height) as texture:
                 self.draw()
-        # Clean up on failure
-        except Exception:  # noqa: BLE001
-            render_target.delete(delete_texture=True)
-            raise
-        else:
-            render_target.delete()
-            return render_target.texture
+            return texture
         finally:
-            self.position = original_position
+            try:
+                self.position = original_position
+            finally:
+                if owns_render_target:
+                    render_target.delete()
 
     def draw(self) -> None:
         """Draw this text layout.

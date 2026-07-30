@@ -41,7 +41,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.draw import get_default_batch  # noqa: F401
     from pyglet.graphics.texture import Texture, TextureGrid, Texture3D, TextureArray  # noqa: F401
     from pyglet.graphics.atlas import TextureBin, TextureArrayBin, TextureAtlas  # noqa: F401
-    from pyglet.graphics.framebuffer import Framebuffer, RenderTexture, Renderbuffer  # noqa: F401
+    from pyglet.graphics.framebuffer import Framebuffer, RenderTexture, Renderbuffer, TextureRenderTarget  # noqa: F401
 else:
     from pyglet.graphics import api  # noqa: F401
     from pyglet.graphics.draw import Group, ShaderGroup, Batch, get_default_batch  # noqa: F401
@@ -57,4 +57,4 @@ else:
     from pyglet.graphics.buffer import UniformBufferRegion  # noqa: F401
     from pyglet.graphics.texture import Texture, TextureGrid, Texture3D, TextureArray  # noqa: F401
     from pyglet.graphics.atlas import TextureBin, TextureArrayBin, TextureAtlas  # noqa: F401
-    from pyglet.graphics.framebuffer import Framebuffer, RenderTexture, Renderbuffer  # noqa: F401
+    from pyglet.graphics.framebuffer import Framebuffer, RenderTexture, Renderbuffer, TextureRenderTarget  # noqa: F401
