@@ -1283,7 +1283,7 @@ class TextLayout:
         self._boxes.clear()
 
     def get_as_texture(self) -> Texture:
-        """Utilizes a :py:class:`~pyglet.image.framebuffer.Framebuffer` to draw the current layout into a texture.
+        """Draw the current layout into a new texture.
 
         .. warning:: Usage is recommended only if you understand how texture generation affects your application.
             Improper use will cause texture memory leaks and performance degradation.
@@ -1295,23 +1295,24 @@ class TextLayout:
 
         .. versionadded:: 2.0.11
         """
-        raise NotImplementedError
-        # framebuffer = pyglet.image.Framebuffer()
-        # temp_pos = self.position
-        # width = int(round(self._content_width))
-        # height = int(round(self._content_height))
-        # texture = pyglet.graphics.Texture.create(width, height, texture_desc)
-        # depth_buffer = pyglet.image.buffer.Renderbuffer(width, height, GL_DEPTH_COMPONENT)
-        # framebuffer.attach_texture(texture)
-        # framebuffer.attach_renderbuffer(depth_buffer, attachment=GL_DEPTH_ATTACHMENT)
-        #
-        # self.position = (0 - self._anchor_left, 0 - self._anchor_bottom, 0)
-        # framebuffer.bind()
-        # self.draw()
-        # framebuffer.unbind()
-        #
-        # self.position = temp_pos
-        # return texture
+        width = round(self._content_width)
+        height = round(self._content_height)
+        render_target = pyglet.graphics.RenderTexture(width, height)
+        original_position = self.position
+
+        try:
+            self.position = -self._anchor_left, -self._anchor_bottom, 0
+            with render_target:
+                self.draw()
+        # Clean up on failure
+        except Exception:  # noqa: BLE001
+            render_target.delete(delete_texture=True)
+            raise
+        else:
+            render_target.delete()
+            return render_target.texture
+        finally:
+            self.position = original_position
 
     def draw(self) -> None:
         """Draw this text layout.
