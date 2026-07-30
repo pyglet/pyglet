@@ -217,3 +217,43 @@ def test_render_texture_contexts_can_be_nested(gl3_context):
         if inner is not None:
             inner.delete(delete_texture=True)
         outer.delete(delete_texture=True)
+
+
+def test_texture_render_target_reuses_framebuffer_and_camera(gl3_context):
+    gl3_context.switch_to()
+    target = pyglet.graphics.TextureRenderTarget()
+    framebuffer = target.framebuffer
+    camera = target.camera
+    rectangle = pyglet.shapes.Rectangle(1, 1, 4, 4, color=(255, 0, 0))
+    textures = []
+
+    try:
+        failed_texture = None
+        with pytest.raises(RuntimeError, match="failed render"), target.render_to_texture(4, 4) as failed_texture:
+            raise RuntimeError("failed render")
+        assert failed_texture.id is None
+        assert target.texture is None
+
+        for width, height in ((16, 8), (32, 12)):
+            with target.render_to_texture(width, height) as texture:
+                textures.append(texture)
+                assert target.texture is texture
+                assert target.width == width
+                assert target.height == height
+                rectangle.draw()
+
+            assert target.texture is None
+            assert target.framebuffer is framebuffer
+            assert target.camera is camera
+
+        assert textures[0].id != textures[1].id
+        assert (textures[0].width, textures[0].height) == (16, 8)
+        assert (textures[1].width, textures[1].height) == (32, 12)
+        for texture in textures:
+            pixels = bytes(texture.fetch().get_bytes("RGBA", texture.width * 4))
+            assert any(alpha > 0 for alpha in pixels[3::4])
+    finally:
+        rectangle.delete()
+        target.delete()
+        for texture in textures:
+            texture.delete()
