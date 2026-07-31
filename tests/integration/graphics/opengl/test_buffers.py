@@ -2,23 +2,13 @@ import ctypes
 
 import pyglet
 import pytest
+from pyglet.graphics.api.gl.buffer import GLBufferObject, GLIndexedBufferObject, GLMappedBufferObject
 from pyglet.graphics.buffer import CTypeDataStore
 from pyglet.graphics.shader import Attribute
 from tests.annotations import GraphicsAPIGroups, require_graphics_api, skip_graphics_api
 
-if pyglet.options.backend in GraphicsAPIGroups.GL3:
-    from pyglet.graphics.api.gl.buffer import GLBufferObject, GLIndexedBufferObject, GLMappedBufferObject
-elif pyglet.options.backend in GraphicsAPIGroups.GL2:
-    from pyglet.graphics.api.gl2.buffer import (
-        GL2BufferObject as GLBufferObject,
-        GL2IndexedBufferObject as GLIndexedBufferObject,
-        GL2MappedBufferObject as GLMappedBufferObject
-    )
-else:
-    pytest.skip(f"Unsupported graphics backend for buffer tests: {pyglet.options.backend}", allow_module_level=True)
 
-
-
+pytestmark = require_graphics_api(GraphicsAPIGroups.GL3)
 
 def test_ctype_data_store_assertions():
     with pytest.raises(AssertionError):

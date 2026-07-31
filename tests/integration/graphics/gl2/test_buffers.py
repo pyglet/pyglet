@@ -1,10 +1,185 @@
 from __future__ import annotations
 
+import ctypes
+
 import pyglet
+import pytest
 from pyglet.enums import GeometryMode
 from pyglet.graphics.api.gl import GL_ELEMENT_ARRAY_BUFFER_BINDING, GLint
+from pyglet.graphics.api.gl2.buffer import GL2BufferObject, GL2IndexedBufferObject
+from pyglet.graphics.buffer import CTypeDataStore
 
 from tests.annotations import GraphicsAPIGroups, require_graphics_api
+
+
+pytestmark = require_graphics_api(GraphicsAPIGroups.GL2)
+
+
+def test_ctype_data_store_assertions():
+    with pytest.raises(AssertionError):
+        CTypeDataStore(size=3, data_type="I", stride=4, element_count=1)
+
+    store = CTypeDataStore(size=8, data_type="I", stride=4, element_count=1)
+    with pytest.raises(AssertionError):
+        store.set_bytes(7, b"\x00\x01")
+
+
+def test_buffer_object_create_resize_and_delete(window):
+    window.switch_to()
+    buffer = GL2BufferObject(window.context, 16)
+
+    assert buffer.size == 16
+    with pytest.raises(AssertionError):
+        buffer.get_bytes()
+
+    payload = bytes(range(16))
+    buffer.set_bytes(payload)
+    assert buffer.get_bytes() == payload
+
+    buffer.set_bytes_region(4, b"\xaa\xbb\xcc\xdd")
+    expected = bytearray(payload)
+    expected[4:8] = b"\xaa\xbb\xcc\xdd"
+    assert buffer.get_bytes() == bytes(expected)
+
+    buffer.resize(24)
+    resized = buffer.get_bytes()
+    assert buffer.size == 24
+    assert resized[:16] == bytes(expected)
+
+    buffer.resize(8)
+    assert buffer.get_bytes() == bytes(expected[:8])
+
+    buffer.delete()
+    assert buffer.id is None
+    buffer.delete()
+
+
+def test_buffer_object_assertions(window):
+    window.switch_to()
+    buffer = GL2BufferObject(window.context, 8)
+
+    with pytest.raises(AssertionError):
+        buffer.set_bytes(b"\x00")
+    with pytest.raises(AssertionError):
+        buffer.get_bytes()
+    with pytest.raises(AssertionError):
+        buffer.get_bytes_region(-1, 1)
+    with pytest.raises(AssertionError):
+        buffer.set_bytes_region(7, b"\x00\x01")
+
+    buffer.delete()
+
+
+def test_backed_index_buffer_commit_resize_and_delete(window):
+    window.switch_to()
+    buffer = GL2IndexedBufferObject(window.context, size=8, data_type="I", stride=4, count=1)
+
+    buffer.set_region(0, 2, [5, 9])
+    buffer.commit()
+
+    cpu_data = buffer.get_bytes()
+    gpu_data = GL2BufferObject.get_bytes(buffer)
+    assert gpu_data == cpu_data
+
+    values = (ctypes.c_uint32 * 2).from_buffer_copy(gpu_data)
+    assert tuple(values) == (5, 9)
+
+    buffer.resize(16)
+    buffer.set_region(2, 2, [12, 13])
+    buffer.commit()
+
+    cpu_data_resized = buffer.get_bytes()
+    gpu_data_resized = GL2BufferObject.get_bytes(buffer)
+    assert gpu_data_resized == cpu_data_resized
+
+    values_resized = (ctypes.c_uint32 * 4).from_buffer_copy(gpu_data_resized)
+    assert tuple(values_resized[:2]) == (5, 9)
+    assert tuple(values_resized[2:4]) == (12, 13)
+
+    buffer.delete()
+    assert buffer.id is None
+    buffer.delete()
+
+
+def test_backed_index_buffer_first_partial_commit_allocates_and_uploads(window):
+    window.switch_to()
+    buffer = GL2IndexedBufferObject(window.context, size=16, data_type="I", stride=4, count=1)
+
+    buffer.set_data_region([7], start=0, length=4)
+    buffer.commit()
+
+    gpu_data = GL2BufferObject.get_bytes(buffer)
+    typed_gpu = (ctypes.c_uint32 * 4).from_buffer_copy(gpu_data)
+    assert tuple(typed_gpu) == (7, 0, 0, 0)
+
+    buffer.delete()
+
+
+def test_backed_index_buffer_set_data_with_ctypes_array(window):
+    window.switch_to()
+    buffer = GL2IndexedBufferObject(window.context, size=16, data_type="I", stride=4, count=1)
+
+    initial_values = (ctypes.c_uint32 * 4)(11, 22, 33, 44)
+    buffer.set_data(initial_values)
+    buffer.commit()
+
+    gpu_data = GL2BufferObject.get_bytes(buffer)
+    typed_gpu = (ctypes.c_uint32 * 4).from_buffer_copy(gpu_data)
+    assert tuple(typed_gpu) == (11, 22, 33, 44)
+
+    buffer.delete()
+
+
+def test_backed_index_buffer_set_data_with_python_list(window):
+    window.switch_to()
+    buffer = GL2IndexedBufferObject(window.context, size=16, data_type="I", stride=4, count=1)
+
+    buffer.set_data([11, 22, 33, 44])
+    buffer.commit()
+
+    gpu_data = GL2BufferObject.get_bytes(buffer)
+    typed_gpu = (ctypes.c_uint32 * 4).from_buffer_copy(gpu_data)
+    assert tuple(typed_gpu) == (11, 22, 33, 44)
+
+    buffer.delete()
+
+
+def test_backed_index_buffer_set_data_region_with_python_list(window):
+    window.switch_to()
+    buffer = GL2IndexedBufferObject(window.context, size=16, data_type="I", stride=4, count=1)
+
+    initial_values = (ctypes.c_uint32 * 4)(11, 22, 33, 44)
+    buffer.set_data(initial_values)
+    buffer.commit()
+
+    buffer.set_data_region([99, 100], start=8, length=8)
+    buffer.commit()
+
+    gpu_data = GL2BufferObject.get_bytes(buffer)
+    typed_gpu = (ctypes.c_uint32 * 4).from_buffer_copy(gpu_data)
+    assert tuple(typed_gpu) == (11, 22, 99, 100)
+
+    buffer.delete()
+
+
+def test_backed_index_buffer_set_data_ptr_with_ctypes_pointer(window):
+    window.switch_to()
+    buffer = GL2IndexedBufferObject(window.context, size=16, data_type="I", stride=4, count=1)
+
+    initial_values = (ctypes.c_uint32 * 4)(11, 22, 33, 44)
+    buffer.set_data(initial_values)
+    buffer.commit()
+
+    ptr_values = (ctypes.c_uint32 * 2)(7, 8)
+    ptr = ctypes.cast(ptr_values, ctypes.POINTER(ctypes.c_ubyte))
+    buffer.set_data_ptr(0, 8, ptr)
+    buffer.commit()
+
+    gpu_data = GL2BufferObject.get_bytes(buffer)
+    typed_gpu = (ctypes.c_uint32 * 4).from_buffer_copy(gpu_data)
+    assert tuple(typed_gpu) == (7, 8, 33, 44)
+
+    buffer.delete()
 
 
 def _create_quad_vertices(x: float, y: float, z: float, width: float, height: float) -> tuple[float, ...]:
@@ -16,7 +191,6 @@ def _create_quad_vertices(x: float, y: float, z: float, width: float, height: fl
     )
 
 
-@require_graphics_api(GraphicsAPIGroups.GL2)
 def test_gl2_indexed_batch_draw_keeps_element_buffer_bound(window) -> None:
     """Ensure GL2 indexed draws bind EBO every draw, even when index buffer is not dirty."""
     window.switch_to()
