@@ -701,7 +701,7 @@ class WebGLTexture(Texture):
         if self._gl.checkFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE:
             raise Exception("Framebuffer is incomplete.")
 
-        pixel_buf = js.Uint8Array(buffer_size)
+        pixel_buf = js.Uint8Array.new(buffer_size)
         self._gl.readPixels(0, 0, self.width, self.height, gl_format, GL_UNSIGNED_BYTE, pixel_buf)
         self._gl.bindFramebuffer(GL_FRAMEBUFFER, None)
         self._gl.deleteFramebuffer(fbo)
