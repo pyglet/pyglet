@@ -2,7 +2,7 @@ import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodi
 
 async function main() {
     const params = new URLSearchParams(window.location.search);
-    const scriptName = params.get("script") || "main";
+    const scriptName = params.get("script") || "example";
     const scriptPath = `/${scriptName}.py`;
     let pyodide = await loadPyodide();
     console.log("Pyodide Loaded.");

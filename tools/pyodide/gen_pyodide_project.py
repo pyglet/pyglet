@@ -1,7 +1,7 @@
-"""Helper script to create a simple pyodide output for testing.
+"""Build a browser-runnable project from the Pyodide user example.
 
 This zips the pyglet source directory and selected resource files, then writes them to
-the output folder used by the browser test page.
+a browser-ready output folder.
 """
 from __future__ import annotations
 
@@ -12,21 +12,26 @@ import socket
 import webbrowser
 import zipfile
 from pathlib import Path
+from typing import Sequence
 
 # ==== Edit the below options
-SCRIPT_PATH = "."
+PYODIDE_DIR = Path(__file__).resolve().parent
+REPO_ROOT = PYODIDE_DIR.parents[1]
+USER_EXAMPLE_DIR = PYODIDE_DIR / "user_example"
+
+SCRIPT_PATH = USER_EXAMPLE_DIR
 SCRIPT_FILENAME = "example.py"
 
 # Resources you want to include with your script (relative from script_path)
 RESOURCE_LIST = [
-    '../../examples/resources/pyglet.png',
+    str(REPO_ROOT / "examples/resources/pyglet.png"),
 ]
 
 # The target path of the pyglet directory.
-PYGLET_FOLDER = "../../pyglet"
+PYGLET_FOLDER = REPO_ROOT / "pyglet"
 
 # The folder with your pyodide output.
-PYODIDE_FOLDER = "../../../pyodide"
+PYODIDE_FOLDER = USER_EXAMPLE_DIR / ".build"
 
 # Port to use for HTTP (by default, 8000)
 PORT = 8000
@@ -39,7 +44,7 @@ LAUNCH_BROWSER_AFTER = True
 ZIP_FILENAME = "pyglet.zip"
 ZIP_RESOURCE_FILENAME = "resources.zip"
 SOURCE_FILES = ("index.html", "script.js", "dev_style.css")
-TEMPLATE_DIR = Path(__file__).resolve().parent
+TEMPLATE_DIR = USER_EXAMPLE_DIR
 
 
 def _resolve(path: str | Path, base: Path) -> Path:
@@ -83,9 +88,13 @@ def copy_script(script_path: Path, script_filename: str, output_folder: Path) ->
     print(f"{script_filename} copied to {dst}")
 
 
-def copy_support_files(output_folder: Path) -> None:
-    for name in SOURCE_FILES:
-        src = TEMPLATE_DIR / name
+def copy_support_files(
+        output_folder: Path,
+        source_files: Sequence[str] = SOURCE_FILES,
+        source_dir: Path = TEMPLATE_DIR,
+) -> None:
+    for name in source_files:
+        src = source_dir / name
         dst = output_folder / name
         shutil.copyfile(src, dst)
         print(f"{name} copied to {dst}")
@@ -112,11 +121,14 @@ def generate_pyodide_project(
         launch_browser_after: bool = LAUNCH_BROWSER_AFTER,
         port: int = PORT,
         clean: bool = False,
+        support_files: Sequence[str] = SOURCE_FILES,
+        support_dir: str | Path = TEMPLATE_DIR,
 ) -> Path:
     cwd = Path.cwd()
     script_path_obj = _resolve(script_path, cwd).resolve()
     pyglet_folder_obj = _resolve(pyglet_folder, cwd).resolve()
     pyodide_folder_obj = _resolve(pyodide_folder, cwd).resolve()
+    support_dir_obj = _resolve(support_dir, cwd).resolve()
 
     if not script_path_obj.exists():
         raise FileNotFoundError(f"Script path not found: {script_path_obj}")
@@ -132,7 +144,7 @@ def generate_pyodide_project(
     zip_folder(pyglet_folder_obj, pyodide_folder_obj / ZIP_FILENAME)
     zip_list(resources, pyodide_folder_obj / ZIP_RESOURCE_FILENAME, script_path_obj)
     copy_script(script_path_obj, script_filename, pyodide_folder_obj)
-    copy_support_files(pyodide_folder_obj)
+    copy_support_files(pyodide_folder_obj, support_files, support_dir_obj)
 
     if port > 0:
         if not is_server_running(port):
@@ -149,7 +161,7 @@ def generate_pyodide_project(
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Generate a browser-runnable pyodide test project.")
+    parser = argparse.ArgumentParser(description="Generate the browser-runnable Pyodide user example.")
     parser.add_argument("--script-path", default=SCRIPT_PATH, help="Directory containing the Python script.")
     parser.add_argument("--script-filename", default=SCRIPT_FILENAME, help="Python script to copy into output.")
     parser.add_argument(
