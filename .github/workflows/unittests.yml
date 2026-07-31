@@ -187,4 +187,4 @@ jobs:
           python -m playwright install --with-deps chromium
       - name: Run Pyodide tests
         run: |
-          python tools/pyodide/test_runner/run_pyodide_tests.py --clean --timeout-seconds 300
+          python tests/pyodide/run_pyodide_tests.py --clean --timeout-seconds 300

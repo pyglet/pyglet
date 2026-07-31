@@ -1,38 +1,8 @@
-# Pyodide tooling
+# Automated Pyodide tests
 
-This directory has two intentionally separate uses:
-
-```text
-tools/pyodide/
-├── user_example/   # Small example intended for pyglet users
-└── test_runner/    # Automated Playwright and pytest infrastructure
-```
-
-`gen_pyodide_project.py` is the shared packaging helper. It copies the selected
-Python entry point and HTML/JavaScript support files into a browser-runnable
-build directory.
-
-## User example
-
-The files in `user_example/` demonstrate how to load pyglet and an application
-into Pyodide. They contain no pytest or CI behavior.
-
-From the repository root, generate the example and serve it locally:
-
-```console
-python tools/pyodide/gen_pyodide_project.py --clean --no-launch-browser
-python -m http.server 8000 --directory tools/pyodide/user_example/.build
-```
-
-Then open <http://localhost:8000/>. Edit `user_example/example.py` to experiment
-with another pyglet application. Additional resource files can be included by
-passing `--resource` once for each file.
-
-## Automated Pyodide tests
-
-The files in `test_runner/` are internal test infrastructure. They copy the
+This directory contains the internal browser-test infrastructure. It copies the
 normal `tests/` package, including `tests/data`, into a temporary browser
-project and run pytest inside Pyodide with a real WebGL2 canvas in headless
+project and runs pytest inside Pyodide with a real WebGL2 canvas in headless
 Chromium. The selected suite includes:
 
 - Backend-agnostic tests from `tests/unit/`.
@@ -62,7 +32,7 @@ python -m playwright install chromium
 Run the Pyodide suite from the repository root:
 
 ```console
-python tools/pyodide/test_runner/run_pyodide_tests.py --clean
+python tests/pyodide/run_pyodide_tests.py --clean
 ```
 
 Use `--test-dir` to point at another complete pyglet tests directory.

@@ -46,6 +46,8 @@ website/dist
 tools/*tab.py
 tools/pyodide/.*_build/
 tools/pyodide/**/.build/
+tests/pyodide/**/.build/
+.pyodide_test_build/
 exprtab.py
 parser.out
 parsetab.py

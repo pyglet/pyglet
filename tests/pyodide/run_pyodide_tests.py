@@ -2,16 +2,13 @@
 from __future__ import annotations
 
 import argparse
-import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
-from gen_pyodide_project import generate_pyodide_project, zip_folder
 from browser_harness import resolve_path, run_webgl_check, serve_directory
+from project_builder import build_pyodide_project, zip_folder
 
 DEFAULT_TEST_DIR = "tests"
-DEFAULT_OUTPUT_DIR = "tools/pyodide/test_runner/.build"
+DEFAULT_OUTPUT_DIR = ".pyodide_test_build"
 DEFAULT_PYGLET_FOLDER = "pyglet"
 TEST_SUPPORT_FILES = ("index.html", "script.js")
 
@@ -33,7 +30,8 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    repo_root = Path(__file__).resolve().parents[3]
+    runner_dir = Path(__file__).resolve().parent
+    repo_root = runner_dir.parents[1]
     test_dir = resolve_path(args.test_dir, repo_root).resolve()
     output_dir = resolve_path(args.output_dir, repo_root).resolve()
     pyglet_folder = resolve_path(args.pyglet_folder, repo_root).resolve()
@@ -42,19 +40,24 @@ def main() -> None:
     if not test_dir.is_dir():
         raise FileNotFoundError(f"Test directory not found: {test_dir}")
 
-    generate_pyodide_project(
+    build_pyodide_project(
         script_path=runner.parent,
         script_filename=runner.name,
         resource_list=[],
         pyglet_folder=pyglet_folder,
-        pyodide_folder=output_dir,
-        launch_browser_after=False,
-        port=args.port,
+        output_dir=output_dir,
         clean=args.clean,
         support_files=TEST_SUPPORT_FILES,
         support_dir=runner.parent,
     )
-    zip_folder(test_dir, output_dir / "tests.zip")
+    zip_folder(
+        test_dir,
+        output_dir / "tests.zip",
+        exclude_paths=(
+            output_dir,
+            runner_dir,
+        ),
+    )
 
     with serve_directory(output_dir, args.host, args.port) as server:
         selected_port = server.server_address[1]
