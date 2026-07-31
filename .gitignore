@@ -44,6 +44,8 @@ doc/api
 doc/internal/build.rst
 website/dist
 tools/*tab.py
+tools/pyodide/.*_build/
+tools/pyodide/**/.build/
 exprtab.py
 parser.out
 parsetab.py
