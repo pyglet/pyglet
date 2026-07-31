@@ -17,10 +17,10 @@ def _create_quad_vertices(x: float, y: float, z: float, width: float, height: fl
 
 
 @require_graphics_api(GraphicsAPIGroups.GL2)
-def test_gl2_indexed_batch_draw_keeps_element_buffer_bound(gl3_context) -> None:
+def test_gl2_indexed_batch_draw_keeps_element_buffer_bound(window) -> None:
     """Ensure GL2 indexed draws bind EBO every draw, even when index buffer is not dirty."""
-    gl3_context.switch_to()
-    ctx = gl3_context.context
+    window.switch_to()
+    ctx = window.context
     program = pyglet.graphics.api.get_default_shader()
     batch = pyglet.graphics.Batch()
 

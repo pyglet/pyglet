@@ -28,7 +28,7 @@ def _gdi_backend() -> Iterator[None]:
         pyglet.font._system_font_class = pyglet.font._get_system_font_class()  # noqa: SLF001
 
 
-def test_gdi_supports_text_size_and_non_binary_weights(gl3_context):
+def test_gdi_supports_text_size_and_non_binary_weights(window):
     with _gdi_backend():
         light = pyglet.font.load("Arial", 24, weight="light", dpi=96)
         black = pyglet.font.load("Arial", 24, weight="black", dpi=96)
@@ -40,7 +40,7 @@ def test_gdi_supports_text_size_and_non_binary_weights(gl3_context):
         assert height > 0
 
 
-def test_gdi_does_not_crop_supplementary_characters(gl3_context):
+def test_gdi_does_not_crop_supplementary_characters(window):
     with _gdi_backend():
         font = pyglet.font.load("Segoe UI Emoji", 24, dpi=96)
         glyphs, positions = font.get_glyphs("\N{GRINNING FACE}", shaping=False)
@@ -51,7 +51,7 @@ def test_gdi_does_not_crop_supplementary_characters(gl3_context):
         assert any(glyphs[0].get_image_data().get_bytes("RGBA")[3::4])
 
 
-def test_load_gdi(gl3_context):
+def test_load_gdi(window):
     with _gdi_backend():
         myfont = pyglet.font.load(["Action Man", "Segoe UI"], size=12, dpi=96)
 
@@ -62,7 +62,7 @@ def test_load_gdi(gl3_context):
         assert pyglet.font.manager.get_resolved_name(["Action Man", "Segoe UI"]) == "Segoe UI"
 
 
-def test_load_no_custom_from_list_gdi(gl3_context, test_data):
+def test_load_no_custom_from_list_gdi(window, test_data):
     with _gdi_backend():
         myfont = pyglet.font.load(["Action Man", "Segoe UI"], size=12, dpi=96)
 

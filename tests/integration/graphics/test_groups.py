@@ -198,7 +198,7 @@ def _validate_state_count(group, *, count: int, expanded_count: int):
     assert len(group._expanded_states) == expanded_count
 
 
-def test_group_parent_no_state(gl3_context):
+def test_group_parent_no_state(window):
     # Make sure a parent state is optimized out if it has no state.
     batch = pyglet.graphics.Batch()
 
@@ -222,7 +222,7 @@ def test_group_parent_no_state(gl3_context):
     assert vdl["opt_binds"] == 1
 
 
-def test_group_parent_with_state(gl3_context):
+def test_group_parent_with_state(window):
     """State should be kept of parent."""
     batch = pyglet.graphics.Batch()
 
@@ -246,7 +246,7 @@ def test_group_parent_with_state(gl3_context):
     assert vdl["opt_binds"] == 1
 
 
-def test_group_no_parent(gl3_context):
+def test_group_no_parent(window):
     """Make sure parent state exists if a child changes it."""
     batch = pyglet.graphics.Batch()
 
@@ -266,7 +266,7 @@ def test_group_no_parent(gl3_context):
     assert vdl["opt_draws"] == 1
     assert vdl["opt_binds"] == 1
 
-def test_group_ordering(gl3_context):
+def test_group_ordering(window):
     # Make sure groups are ordered by ordering number.
     batch = pyglet.graphics.Batch()
 
@@ -286,7 +286,7 @@ def test_group_ordering(gl3_context):
     assert ordered == [low_group, high_group]
 
 
-def test_group_consolidation(gl3_context):
+def test_group_consolidation(window):
     """Make sure the same groups consolidate properly."""
     batch = pyglet.graphics.Batch()
 
@@ -308,7 +308,7 @@ def test_group_consolidation(gl3_context):
     assert vdl["opt_draws"] == 1
     assert vdl["opt_binds"] == 1
 
-def test_group_differing_textures(gl3_context):
+def test_group_differing_textures(window):
     batch = pyglet.graphics.Batch()
 
     sprite = pyglet.sprite.Sprite(test_image, x=0, y=0, batch=batch)
@@ -330,7 +330,7 @@ def test_group_differing_textures(gl3_context):
     assert vdl["opt_draws"] == 2
     assert vdl["opt_binds"] == 1
 
-def test_group_texture_same_region(gl3_context):
+def test_group_texture_same_region(window):
     batch = pyglet.graphics.Batch()
 
     texture = test_image.get_texture()
@@ -405,7 +405,7 @@ def test_group_state_cache_is_built_once_on_first_hash(monkeypatch):
     assert calls == 1
 
 
-def test_group_state_cache_finalizes_at_batch_assignment(gl3_context):
+def test_group_state_cache_finalizes_at_batch_assignment(window):
     group = pyglet.graphics.Group()
     group.set_state(SameState())
     group.set_state(OtherSameState())
@@ -453,7 +453,7 @@ def test_group_hash_collisions_preserve_consolidation_correctness():
     assert first != different
 
 
-def test_identity_hashed_group_finalizes_when_added_to_batch(gl3_context):
+def test_identity_hashed_group_finalizes_when_added_to_batch(window):
     group = IdentityHashGroup()
     state = SameState()
     group.set_state(state)
@@ -468,7 +468,7 @@ def test_identity_hashed_group_finalizes_when_added_to_batch(gl3_context):
     assert state.set_state in optimized
 
 
-def test_identity_hashed_parent_finalizes_when_added_recursively(gl3_context):
+def test_identity_hashed_parent_finalizes_when_added_recursively(window):
     parent = IdentityHashGroup()
     parent.set_state(SameState())
     child = pyglet.graphics.Group(parent=parent)
@@ -489,7 +489,7 @@ def test_direct_group_render_finalizes_state_cache():
     assert len(group._expanded_states) == 1  # noqa: SLF001
 
 
-def test_draw_list_optimizer_does_not_copy_list_tails(gl3_context):
+def test_draw_list_optimizer_does_not_copy_list_tails(window):
     class NoSliceList(list):
         def __getitem__(self, item):
             if isinstance(item, slice):
@@ -563,7 +563,7 @@ def test_group_custom_state_dataclass_comparison():
     assert group2 is not group1
 
 
-def test_group_shader_uniforms_snapshot_after_batching(gl3_context) -> None:
+def test_group_shader_uniforms_snapshot_after_batching(window) -> None:
     """Changing the state after the group exists in a batch will make the hash unstable."""
     batch = pyglet.graphics.Batch()
     group = pyglet.graphics.Group()
@@ -608,7 +608,7 @@ def test_enforced_state_child_override_does_not_affect_siblings():
     assert _get_group_state(override_grandchild, TestEnforcedState).label == "override"
 
 
-def test_enforced_state_draw_list_reapplies_parent_after_override(gl3_context):
+def test_enforced_state_draw_list_reapplies_parent_after_override(window):
     root_group = pyglet.graphics.Group()
     root_group.set_state(TestEnforcedState("root"))
 
@@ -645,7 +645,7 @@ def test_enforced_state_draw_list_reapplies_parent_after_override(gl3_context):
     assert function_names.count("_draw") == 2
 
 
-def test_enforced_state_optimizer_keeps_shared_parent_state_active(gl3_context):
+def test_enforced_state_optimizer_keeps_shared_parent_state_active(window):
     root_group = pyglet.graphics.Group()
     root_group.set_state(TestEnforcedState("root"))
 
@@ -694,7 +694,7 @@ def _test_sprite_deletion(sprite, batch):
     assert domain.has_bucket(group) == True
     assert group in domain._vertex_buckets
 
-def test_single_group_deletion(gl3_context):
+def test_single_group_deletion(window):
     """Make sure groups are freed from the domain and their buckets when removed."""
     batch = pyglet.graphics.Batch()
 
@@ -715,7 +715,7 @@ def test_single_group_deletion(gl3_context):
     assert domain.has_bucket(group) == False
 
 
-def test_group_persistence_deletion(gl3_context):
+def test_group_persistence_deletion(window):
     """Creates two sprites and deletes one to ensure resources still exist for the other."""
     batch = pyglet.graphics.Batch()
 

@@ -4,12 +4,12 @@ from pyglet.font.harfbuzz import harfbuzz_available
 from tests.annotations import skip_platform, require_platform, Platform
 
 
-def test_font_create_default(gl3_context, test_data):
+def test_font_create_default(window, test_data):
     ft = pyglet.font.load()
     assert ft.name is not None
 
 
-def test_default_font_get_text_size(gl3_context):
+def test_default_font_get_text_size(window):
     font = pyglet.font.load()
     width, height = font.get_text_size("Backend text")
     assert width > 0
@@ -40,7 +40,7 @@ def test_load_no_custom_from_list(test_data):
     # Make sure name resolves to an actual found font.
     assert pyglet.font.manager.get_resolved_name(["Action Man", "DejaVu Sans"]) == 'DejaVu Sans'
 
-def test_load_privatefont(gl3_context, test_data):
+def test_load_privatefont(window, test_data):
     file = test_data.get_file('fonts', 'action_man.ttf')
     pyglet.font.add_file(file)
     assert pyglet.font.have_font("Action Man") == True
@@ -48,7 +48,7 @@ def test_load_privatefont(gl3_context, test_data):
     assert myfont.name == "Action Man"
 
 
-def test_load_privatefont_from_list(gl3_context, test_data):
+def test_load_privatefont_from_list(window, test_data):
     file = test_data.get_file('fonts', 'action_man.ttf')
     pyglet.font.add_file(file)
     assert pyglet.font.have_font("Action Man") == True
@@ -75,8 +75,7 @@ def test_font_load_callback(test_data):
     file = test_data.get_file('fonts', 'action_man_bold.ttf')
     pyglet.font.add_file(file)
 
-
-def test_font_group_routes_ranges_and_measures_text(gl3_context, test_data):
+def test_font_group_routes_ranges_and_measures_text(window, test_data):
     pyglet.font.add_file(test_data.get_file("fonts", "action_man.ttf"))
     default_family = pyglet.font.manager.get_platform_default_name()
     group = pyglet.font.FontGroup("font-group-638593")
@@ -102,7 +101,7 @@ def test_font_group_routes_ranges_and_measures_text(gl3_context, test_data):
     assert width == action_a_width + default_width + action_fallback_width
     assert height == max(action_a_height, default_height, action_fallback_height)
 
-def test_user_font(gl3_context, test_data):
+def test_user_font(window, test_data):
     bitmap_image = test_data.get_file('fonts', 'action_man_atlas.png')
 
     atlas_image = pyglet.image.load(bitmap_image)
@@ -153,7 +152,7 @@ def test_user_font(gl3_context, test_data):
     assert height > 0
 
 @pytest.mark.skipif(not harfbuzz_available(), reason="HarfBuzz library is unavailable.")
-def test_load_privatefont_harfbuzz_integration(gl3_context, test_data):
+def test_load_privatefont_harfbuzz_integration(window, test_data):
     previous_shaping = pyglet.options.text_shaping
     file = test_data.get_file('fonts', 'action_man.ttf')
 

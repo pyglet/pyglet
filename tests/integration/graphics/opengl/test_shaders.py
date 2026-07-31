@@ -17,22 +17,22 @@ _MATRIX_UNIFORMS = (
 )
 
 
-def _is_gles2_context(gl3_context) -> bool:
+def _is_gles2_context(window) -> bool:
     if pyglet.options.backend == "gles2":
         return True
 
-    info = gl3_context.context.get_info()
+    info = window.context.get_info()
     return info.get_opengl_api() == "gles2" and not info.have_version(3, 0)
 
 
-def _skip_unsupported_matrix_uniform(gl3_context, matrix_type: str) -> None:
+def _skip_unsupported_matrix_uniform(window, matrix_type: str) -> None:
     # GLSL ES 1.00 (GLES2) supports only square matrices.
-    if _is_gles2_context(gl3_context) and matrix_type not in {"mat2", "mat3", "mat4"}:
+    if _is_gles2_context(window) and matrix_type not in {"mat2", "mat3", "mat4"}:
         pytest.skip(f"{matrix_type} uniform requires GLES 3.0+.")
 
 
-def _build_matrix_fragment_source(gl3_context, matrix_decl: str, value_expr: str) -> str:
-    if _is_gles2_context(gl3_context):
+def _build_matrix_fragment_source(window, matrix_decl: str, value_expr: str) -> str:
+    if _is_gles2_context(window):
         return f"""#version 150 core
         {matrix_decl}
 
@@ -85,7 +85,7 @@ def _render_program_to_pixel(program) -> bytes:
 
 
 @skip_graphics_api(GraphicsAPIGroups.GL2)
-def test_shader_ubo_data_structure(gl3_context):
+def test_shader_ubo_data_structure(window):
     """Test to make sure the Structure that is created is correct for UBO's.
     
     Includes nested structure and structure array.
@@ -187,14 +187,14 @@ def test_shader_ubo_data_structure(gl3_context):
     assert tuple(verified_structure.data[0].color[1][:]) == test_data
 
     # Write to a FB to confirm the shader is actually modifying the right data.
-    gl3_context.switch_to()
+    window.switch_to()
     image_data = _render_program_to_pixel(program)
     # The image should now be white. (y is 1.0)
     assert all(channel == 255 for channel in image_data)
 
 
 @skip_graphics_api(GraphicsAPIGroups.GL2)
-def test_shader_ubo_matrix_data_structure(gl3_context):
+def test_shader_ubo_matrix_data_structure(window):
     """Test UBO structure with matrix."""
 
     vertex_source: str = """#version 150 core
@@ -289,14 +289,14 @@ def test_shader_ubo_matrix_data_structure(gl3_context):
         assert a == pytest.approx(b)
 
     # Write to a FB to confirm the shader is actually modifying the right data.
-    gl3_context.switch_to()
+    window.switch_to()
     image_data = _render_program_to_pixel(program)
     # The image should now be white. (projection[1][0] is 1.0)
     assert all(channel == 255 for channel in image_data)
 
 
 @skip_graphics_api(GraphicsAPIGroups.GL2)
-def test_shader_uniform_block_matrix(gl3_context):
+def test_shader_uniform_block_matrix(window):
     vertex_source: str = """#version 150 core
         in vec3 translate;
         in vec4 colors;
@@ -387,14 +387,14 @@ def test_shader_uniform_block_matrix(gl3_context):
         assert a == pytest.approx(b)
 
     # Write to a FB to confirm the shader is actually modifying the right data.
-    gl3_context.switch_to()
+    window.switch_to()
     image_data = _render_program_to_pixel(program)
     # The image should now be white. (projection[1][0] is 1.0)
     assert all(channel == 255 for channel in image_data)
 
 
 @skip_graphics_api(GraphicsAPIGroups.GL2)
-def test_shader_uniform_matrix(gl3_context):
+def test_shader_uniform_matrix(window):
     vertex_source: str = """#version 150 core
         in vec3 translate;
         in vec4 colors;
@@ -468,7 +468,7 @@ def test_shader_uniform_matrix(gl3_context):
 
 
 @skip_graphics_api(GraphicsAPIGroups.GL2)
-def test_shader_uniform_matrix_array(gl3_context):
+def test_shader_uniform_matrix_array(window):
     vertex_source: str = """#version 150 core
         in vec3 translate;
         in vec4 colors;
@@ -544,7 +544,7 @@ def test_shader_uniform_matrix_array(gl3_context):
 
 
 @skip_graphics_api(GraphicsAPIGroups.GL2)
-def test_shader_uniform_float_array(gl3_context):
+def test_shader_uniform_float_array(window):
     vertex_source: str = """#version 150 core
         in vec3 translate;
         in vec4 colors;
@@ -618,9 +618,9 @@ def test_shader_uniform_float_array(gl3_context):
 
 
 @pytest.mark.parametrize(("matrix_type", "matrix_length"), _MATRIX_UNIFORMS)
-def test_shader_uniform_matrix_types(gl3_context, matrix_type, matrix_length):
-    gl3_context.switch_to()
-    _skip_unsupported_matrix_uniform(gl3_context, matrix_type)
+def test_shader_uniform_matrix_types(window, matrix_type, matrix_length):
+    window.switch_to()
+    _skip_unsupported_matrix_uniform(window, matrix_type)
 
     vertex_source: str = """#version 150 core
         void main()
@@ -630,7 +630,7 @@ def test_shader_uniform_matrix_types(gl3_context, matrix_type, matrix_length):
     """
 
     fragment_source: str = _build_matrix_fragment_source(
-        gl3_context,
+        window,
         f"uniform {matrix_type} matrix_uniform;",
         "matrix_uniform[0][0]",
     )
@@ -652,9 +652,9 @@ def test_shader_uniform_matrix_types(gl3_context, matrix_type, matrix_length):
 
 
 @pytest.mark.parametrize(("matrix_type", "matrix_length"), _MATRIX_UNIFORMS)
-def test_shader_uniform_matrix_array_types(gl3_context, matrix_type, matrix_length):
-    gl3_context.switch_to()
-    _skip_unsupported_matrix_uniform(gl3_context, matrix_type)
+def test_shader_uniform_matrix_array_types(window, matrix_type, matrix_length):
+    window.switch_to()
+    _skip_unsupported_matrix_uniform(window, matrix_type)
 
     vertex_source: str = """#version 150 core
         void main()
@@ -664,7 +664,7 @@ def test_shader_uniform_matrix_array_types(gl3_context, matrix_type, matrix_leng
     """
 
     fragment_source: str = _build_matrix_fragment_source(
-        gl3_context,
+        window,
         f"uniform {matrix_type} matrix_uniform[4];",
         "matrix_uniform[2][0][0]",
     )
@@ -686,7 +686,7 @@ def test_shader_uniform_matrix_array_types(gl3_context, matrix_type, matrix_leng
 
 
 @skip_graphics_api(GraphicsAPIGroups.GL2)
-def test_transform_feedback_shader_program_varyings_are_linked(gl3_context):
+def test_transform_feedback_shader_program_varyings_are_linked(window):
     vertex_source = """#version 150 core
         in vec3 position;
         out vec3 tf_position;
