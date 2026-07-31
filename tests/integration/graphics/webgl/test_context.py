@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from js import document
+from js import document  # noqa: F821
 
 import pyglet
 

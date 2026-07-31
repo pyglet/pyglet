@@ -11,7 +11,7 @@ async function main() {
         ["pytest_runner.py", "/pytest_runner.py"],
     ];
 
-    console.log("Loading WebGL test files.");
+    console.log("Loading Pyodide test files.");
     for (const [url, path] of filesToLoad) {
         const response = await fetch(url);
         if (!response.ok) {
@@ -28,7 +28,7 @@ sys.path.append("/")
 with zipfile.ZipFile("/pyglet.zip") as archive:
     archive.extractall("/")
 with zipfile.ZipFile("/tests.zip") as archive:
-    archive.extractall("/tests/")
+    archive.extractall("/")
 exec(open("/pytest_runner.py").read())
         `);
 

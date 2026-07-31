@@ -170,10 +170,10 @@ jobs:
             pytest tests/integration/graphics
           done
 
-  webgl-tests:
+  pyodide-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    name: Pyodide WebGL Tests
+    name: Pyodide Tests
     steps:
       - uses: actions/checkout@v7
       - name: Setup python
@@ -185,6 +185,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install playwright
           python -m playwright install --with-deps chromium
-      - name: Run WebGL tests
+      - name: Run Pyodide tests
         run: |
-          python tools/pyodide/test_runner/run_webgl_tests.py --clean --timeout-seconds 300
+          python tools/pyodide/test_runner/run_pyodide_tests.py --clean --timeout-seconds 300

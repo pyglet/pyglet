@@ -2,6 +2,7 @@ import pyglet
 
 from pyglet.shapes import Circle
 from pyglet.graphics import Group, Batch
+from tests.annotations import Platform, skip_platform
 
 
 def test_batch_migration(window):
@@ -27,6 +28,8 @@ def test_group_migration(window):
     shape.group = new_group
     assert shape.group == new_group
 
+# Doesn't really support a hidden window/multiple "windows".
+@skip_platform(Platform.EMSCRIPTEN)
 def test_batch_can_be_created_on_the_hidden_final_window():
     """Resources created before a window is shown stay with that window's context."""
     window = pyglet.window.Window(visible=False)

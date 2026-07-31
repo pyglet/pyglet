@@ -28,11 +28,22 @@ Then open <http://localhost:8000/>. Edit `user_example/example.py` to experiment
 with another pyglet application. Additional resource files can be included by
 passing `--resource` once for each file.
 
-## Automated WebGL tests
+## Automated Pyodide tests
 
-The files in `test_runner/` are internal test infrastructure. They copy
-`tests/webgl/test_*.py` into a temporary browser project and run pytest inside
-Pyodide against a real WebGL2 canvas in headless Chromium.
+The files in `test_runner/` are internal test infrastructure. They copy the
+normal `tests/` package, including `tests/data`, into a temporary browser
+project and run pytest inside Pyodide with a real WebGL2 canvas in headless
+Chromium. The selected suite includes:
+
+- Backend-agnostic tests from `tests/unit/`.
+- Backend-agnostic top-level tests from `tests/integration/graphics/`.
+- WebGL-specific tests from `tests/integration/graphics/webgl/`.
+- Browser-platform tests from `tests/integration/platform/pyodide/`.
+
+Backend-specific OpenGL and GL2 subdirectories, native OS integration tests,
+and application/event-loop integration tests are not selected in the Pyodide
+run. The browser owns Pyodide's asynchronous event loop, so repeatedly starting
+and stopping it is intentionally outside this suite's current scope.
 
 Pyodide 0.27.7 includes
 [`pytest` as a loadable package](https://pyodide.org/en/0.27.7/usage/packages-in-pyodide.html).
@@ -48,16 +59,17 @@ python -m pip install playwright
 python -m playwright install chromium
 ```
 
-Run the WebGL suite from the repository root:
+Run the Pyodide suite from the repository root:
 
 ```console
-python tools/pyodide/test_runner/run_webgl_tests.py --clean
+python tools/pyodide/test_runner/run_pyodide_tests.py --clean
 ```
 
-Use `--test-dir` to point at another directory containing `test_*.py` files.
+Use `--test-dir` to point at another complete pyglet tests directory.
 The first run needs network access to download Pyodide and its `pillow` and
 `pytest` packages. Browser output is forwarded to the terminal, and a non-zero
 pytest exit code fails the command.
 
-The normal `pytest tests` command does not collect `tests/webgl`; those modules
-depend on the browser-only `js` module.
+The normal `pytest tests` command does not collect directories named `webgl`;
+those modules depend on the browser-only `js` module. Pyodide platform tests
+are selected explicitly by the browser runner.
