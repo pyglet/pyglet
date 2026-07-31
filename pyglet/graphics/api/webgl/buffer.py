@@ -6,8 +6,8 @@ import sys
 from functools import lru_cache
 from typing import TYPE_CHECKING, Sequence
 
-import js
-import pyodide.ffi
+import js  # noqa: F821
+import pyodide.ffi  # noqa: F821
 
 from pyglet.graphics.api.webgl.gl import (
     GL_ARRAY_BUFFER,

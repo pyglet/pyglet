@@ -8,8 +8,8 @@ from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.drivers.listener import AbstractListener
 
 try:
-    import js
-    from pyodide.ffi import create_proxy
+    import js  # noqa: F821
+    from pyodide.ffi import create_proxy  # noqa: F821
 except ImportError:
     raise ImportError('Pyodide not available.')
 

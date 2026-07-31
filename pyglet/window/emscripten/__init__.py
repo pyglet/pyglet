@@ -3,8 +3,8 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import TYPE_CHECKING, Callable
 
-import js
-from pyodide.ffi import create_proxy
+import js  # noqa: F821
+from pyodide.ffi import create_proxy  # noqa: F821
 
 import pyglet.app
 from pyglet.window import BaseWindow, DefaultMouseCursor, ImageMouseCursor, MouseCursor, key, mouse

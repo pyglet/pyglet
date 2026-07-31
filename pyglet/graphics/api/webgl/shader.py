@@ -53,7 +53,7 @@ from pyglet.graphics.shader import (
 )
 
 try:
-    import js
+    import js  # noqa: F821
 except ImportError:
     pass
 
