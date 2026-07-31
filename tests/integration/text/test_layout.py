@@ -3,6 +3,7 @@ import random
 import itertools
 import unittest
 
+import pyglet
 import pytest
 
 from pyglet.text import document, decode_text, decode_attributed
@@ -22,7 +23,7 @@ all_combinations = list(itertools.product(document_classes, layout_classes))
 
 
 @pytest.mark.parametrize('doctype, layouttype', all_combinations)
-def test_layout_creation_keyword(gl3_context, doctype, layouttype):
+def test_layout_creation_keyword(test_window, doctype, layouttype):
     _doc = doctype("This is a test")
     _layout = layouttype(document=_doc, x=X, y=Y, z=Z, width=WIDTH, height=HEIGHT)
     assert _layout.x == X
@@ -34,7 +35,7 @@ def test_layout_creation_keyword(gl3_context, doctype, layouttype):
 
 
 @pytest.mark.parametrize('doctype, layouttype', all_combinations)
-def test_layout_creation_positional(gl3_context, doctype, layouttype):
+def test_layout_creation_positional(test_window, doctype, layouttype):
     _doc = doctype("This is a test")
     _layout = layouttype(_doc, X, Y, Z, WIDTH, HEIGHT)
     # Make sure the arguments were in order:
@@ -46,8 +47,8 @@ def test_layout_creation_positional(gl3_context, doctype, layouttype):
     assert _layout.position == (X, Y, Z)
 
 
-def test_layout_get_as_texture(gl3_context):
-    gl3_context.switch_to()
+def test_layout_get_as_texture(test_window):
+    test_window.switch_to()
     text_layout = layout.TextLayout(document.UnformattedDocument("Render texture"), x=100, y=50)
     original_position = text_layout.position
     texture = text_layout.get_as_texture()
@@ -62,6 +63,34 @@ def test_layout_get_as_texture(gl3_context):
     finally:
         texture.delete()
         text_layout.delete()
+
+
+def test_layout_get_as_texture_with_reusable_target(test_window):
+    test_window.switch_to()
+    render_target = pyglet.graphics.TextureRenderTarget()
+    layouts = [
+        layout.TextLayout(document.UnformattedDocument("First")),
+        layout.TextLayout(document.UnformattedDocument("A different sized label")),
+    ]
+    framebuffer = render_target.framebuffer
+    camera = render_target.camera
+    textures = []
+
+    try:
+        for text_layout in layouts:
+            textures.append(text_layout.get_as_texture(render_target))
+            assert render_target.framebuffer is framebuffer
+            assert render_target.camera is camera
+            assert render_target.texture is None
+
+        assert textures[0].id != textures[1].id
+        assert textures[0].width != textures[1].width
+    finally:
+        render_target.delete()
+        for texture in textures:
+            texture.delete()
+        for text_layout in layouts:
+            text_layout.delete()
 
 
 class TestIssues(unittest.TestCase):
@@ -108,7 +137,7 @@ class TestIssues(unittest.TestCase):
         incremental_layout = layout.IncrementalTextLayout(doc2, 100, 10, width=500, height=100)
         incremental_layout.document.delete_text(0, len(incremental_layout.document.text))
 
-def test_incrementallayout_get_position_on_line_before_start_of_text(gl3_context):
+def test_incrementallayout_get_position_on_line_before_start_of_text(test_window):
     single_line_text = "This is a single line of text."
     doc = document.UnformattedDocument(single_line_text)
     font = doc.get_font()

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Literal
 
 from pyglet.display.base import Display, Screen
-import js
+import js  # noqa: F821
 
 class EmscriptenDisplay(Display):
 

@@ -31,8 +31,8 @@ void main() {
 
 
 @skip_graphics_api(GraphicsAPIGroups.GL2)
-def test_compute_shader_program_creation(gl3_context):
-    gl3_context.switch_to()
+def test_compute_shader_program_creation(test_window):
+    test_window.switch_to()
     backend = pyglet.options.backend
 
     if backend == "gles3":

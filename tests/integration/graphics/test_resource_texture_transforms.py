@@ -19,7 +19,7 @@ TEST_RESOURCE_DIR = Path(__file__).resolve().parents[1] / 'resource'
     (dict(rotate=270), (3, 0, 1, 2)),
     (dict(rotate=-90), (3, 0, 1, 2)),
 ])
-def test_resource_texture_loading(gl3_context, event_loop, transforms, tex_order):
+def test_resource_texture_loading(test_window, event_loop, transforms, tex_order):
     """Test loading an image resource with possible transformations."""
     resource.path = [str(TEST_RESOURCE_DIR)]
     resource.reindex()

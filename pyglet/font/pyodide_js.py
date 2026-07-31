@@ -16,8 +16,8 @@ from pyglet.image import ImageData
 _debug = pyglet.options.debug_font
 
 try:
-    import js
-    import pyodide.ffi
+    import js  # noqa: F821
+    import pyodide.ffi  # noqa: F821
 except ImportError:
     raise ImportError
 

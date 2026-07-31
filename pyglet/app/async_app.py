@@ -13,8 +13,8 @@ if TYPE_CHECKING:
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 try:
-    from js import requestAnimationFrame, performance
-    from pyodide.ffi import create_proxy
+    from js import requestAnimationFrame, performance  # noqa: F821
+    from pyodide.ffi import create_proxy  # noqa: F821
 except ImportError:
     raise ImportError('Pyodide not available.')
 

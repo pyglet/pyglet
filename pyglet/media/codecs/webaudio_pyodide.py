@@ -11,8 +11,8 @@ from .base import AudioFormat, Source, StaticSource
 _debug = pyglet.options.debug_media
 
 try:
-    import js
-    import pyodide.ffi
+    import js  # noqa: F821
+    import pyodide.ffi  # noqa: F821
 except ImportError:
     raise ImportError("Pyodide not found.")
 

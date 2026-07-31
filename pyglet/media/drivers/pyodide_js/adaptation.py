@@ -8,8 +8,8 @@ from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.drivers.listener import AbstractListener
 
 try:
-    import js
-    from pyodide.ffi import create_proxy
+    import js  # noqa: F821
+    from pyodide.ffi import create_proxy  # noqa: F821
 except ImportError:
     raise ImportError('Pyodide not available.')
 
@@ -26,6 +26,10 @@ class JSAudioDriver(AbstractAudioDriver):
         self.ctx = js.window.AudioContext.new()
         self._audio_state_proxy = create_proxy(self._update_button_state)
         self.ctx.onstatechange = self._audio_state_proxy
+
+    @property
+    def sample_formats(self) -> tuple[str, ...]:
+        return ("S16",)
 
     def _update_button_state(self, event=None):
         state = self.ctx.state

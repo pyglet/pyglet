@@ -4,7 +4,7 @@ import sys
 import warnings
 from typing import TYPE_CHECKING, Sequence, cast
 
-import js
+import js  # noqa: F821
 
 import pyglet
 from pyglet.graphics.api.webgl.context import OpenGLSurfaceContext

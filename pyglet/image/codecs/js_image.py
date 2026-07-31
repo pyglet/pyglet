@@ -7,8 +7,8 @@ from pyglet.image import ImageData
 from pyglet.image.codecs import ImageDecodeException
 
 try:
-    import js
-    import pyodide.ffi
+    import js  # noqa: F821
+    import pyodide.ffi  # noqa: F821
 except ImportError:
     raise ImportError
 

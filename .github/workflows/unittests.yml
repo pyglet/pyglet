@@ -5,6 +5,7 @@ on: [push, pull_request]
 jobs:
   linux:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     strategy:
       matrix:
         python-version: [ '3.10', '3.11', '3.12', '3.13', '3.14', 'pypy-3.10' ]
@@ -56,6 +57,7 @@ jobs:
 
   osx:
     runs-on: macos-latest
+    timeout-minutes: 10
     strategy:
       matrix:
         python-version: [ '3.10', '3.11', '3.12', '3.13', '3.14']
@@ -76,6 +78,7 @@ jobs:
 
   windows:
     runs-on: windows-latest
+    timeout-minutes: 10
     strategy:
       matrix:
         python-version: [ '3.10', '3.11', '3.12', '3.13', '3.14']
@@ -125,6 +128,7 @@ jobs:
 
   headless:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     strategy:
       matrix:
         python-version: [ '3.12', '3.13', '3.14', 'pypy-3.10' ]
@@ -170,10 +174,10 @@ jobs:
             pytest tests/integration/graphics
           done
 
-  webgl-smoke:
+  pyodide-tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    name: Pyodide WebGL Test
+    timeout-minutes: 10
+    name: Pyodide Tests
     steps:
       - uses: actions/checkout@v7
       - name: Setup python
@@ -185,6 +189,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install playwright
           python -m playwright install --with-deps chromium
-      - name: Run WebGL test
+      - name: Run Pyodide tests
         run: |
-          python tools/pyodide/run_webgl_smoke.py --clean --timeout-seconds 300
+          python tests/pyodide/run_pyodide_tests.py --clean --timeout-seconds 300

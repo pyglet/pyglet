@@ -2,23 +2,13 @@ import ctypes
 
 import pyglet
 import pytest
+from pyglet.graphics.api.gl.buffer import GLBufferObject, GLIndexedBufferObject, GLMappedBufferObject
 from pyglet.graphics.buffer import CTypeDataStore
 from pyglet.graphics.shader import Attribute
 from tests.annotations import GraphicsAPIGroups, require_graphics_api, skip_graphics_api
 
-if pyglet.options.backend in GraphicsAPIGroups.GL3:
-    from pyglet.graphics.api.gl.buffer import GLBufferObject, GLIndexedBufferObject, GLMappedBufferObject
-elif pyglet.options.backend in GraphicsAPIGroups.GL2:
-    from pyglet.graphics.api.gl2.buffer import (
-        GL2BufferObject as GLBufferObject,
-        GL2IndexedBufferObject as GLIndexedBufferObject,
-        GL2MappedBufferObject as GLMappedBufferObject
-    )
-else:
-    pytest.skip(f"Unsupported graphics backend for buffer tests: {pyglet.options.backend}", allow_module_level=True)
 
-
-
+pytestmark = require_graphics_api(GraphicsAPIGroups.GL3)
 
 def test_ctype_data_store_assertions():
     with pytest.raises(AssertionError):
@@ -29,9 +19,9 @@ def test_ctype_data_store_assertions():
         store.set_bytes(7, b"\x00\x01")
 
 
-def test_buffer_object_create_resize_and_delete(gl3_context):
-    gl3_context.switch_to()
-    ctx = gl3_context.context
+def test_buffer_object_create_resize_and_delete(test_window):
+    test_window.switch_to()
+    ctx = test_window.context
 
     buffer = GLBufferObject(ctx, 16)
     assert buffer.size == 16
@@ -61,12 +51,12 @@ def test_buffer_object_create_resize_and_delete(gl3_context):
 
 
 @require_graphics_api(GraphicsAPIGroups.GL3)
-def test_index_buffer_creation_vao_element_buffer(gl3_context):
+def test_index_buffer_creation_vao_element_buffer(test_window):
     """This makes sure creating an index buffer does not overwrite the existing VAO's bound index buffer."""
     from pyglet.graphics.api.gl import GL_ELEMENT_ARRAY_BUFFER, GL_ELEMENT_ARRAY_BUFFER_BINDING, GLint, GLuint
 
-    gl3_context.switch_to()
-    ctx = gl3_context.context
+    test_window.switch_to()
+    ctx = test_window.context
 
     vao = GLuint()
     ctx.glGenVertexArrays(1, vao)
@@ -94,9 +84,9 @@ def test_index_buffer_creation_vao_element_buffer(gl3_context):
         ctx.glDeleteVertexArrays(1, vao)
 
 
-def test_buffer_object_assertions(gl3_context):
-    gl3_context.switch_to()
-    ctx = gl3_context.context
+def test_buffer_object_assertions(test_window):
+    test_window.switch_to()
+    ctx = test_window.context
     buffer = GLBufferObject(ctx, 8)
 
     with pytest.raises(AssertionError):
@@ -111,10 +101,10 @@ def test_buffer_object_assertions(gl3_context):
     buffer.delete()
 
 @require_graphics_api(GraphicsAPIGroups.GL3)
-def test_mapped_buffer_region_updates(gl3_context):
+def test_mapped_buffer_region_updates(test_window):
     # Mapped buffers aren't supported by GLES2.
-    gl3_context.switch_to()
-    ctx = gl3_context.context
+    test_window.switch_to()
+    ctx = test_window.context
 
     buffer = GLMappedBufferObject(ctx, 16)
 
@@ -136,9 +126,9 @@ def test_mapped_buffer_region_updates(gl3_context):
     assert buffer.id is None
 
 
-def test_backed_index_buffer_commit_resize_and_delete(gl3_context):
-    gl3_context.switch_to()
-    ctx = gl3_context.context
+def test_backed_index_buffer_commit_resize_and_delete(test_window):
+    test_window.switch_to()
+    ctx = test_window.context
 
     buffer = GLIndexedBufferObject(ctx, size=8, data_type="I", stride=4, count=1)
 
@@ -169,9 +159,9 @@ def test_backed_index_buffer_commit_resize_and_delete(gl3_context):
     buffer.delete()
 
 
-def test_backed_index_buffer_first_partial_commit_allocates_and_uploads(gl3_context):
-    gl3_context.switch_to()
-    ctx = gl3_context.context
+def test_backed_index_buffer_first_partial_commit_allocates_and_uploads(test_window):
+    test_window.switch_to()
+    ctx = test_window.context
 
     buffer = GLIndexedBufferObject(ctx, size=16, data_type="I", stride=4, count=1)
 
@@ -185,9 +175,9 @@ def test_backed_index_buffer_first_partial_commit_allocates_and_uploads(gl3_cont
     buffer.delete()
 
 
-def test_backed_index_buffer_set_data_with_ctypes_array(gl3_context):
-    gl3_context.switch_to()
-    ctx = gl3_context.context
+def test_backed_index_buffer_set_data_with_ctypes_array(test_window):
+    test_window.switch_to()
+    ctx = test_window.context
 
     buffer = GLIndexedBufferObject(ctx, size=16, data_type="I", stride=4, count=1)
 
@@ -202,9 +192,9 @@ def test_backed_index_buffer_set_data_with_ctypes_array(gl3_context):
     buffer.delete()
 
 
-def test_backed_index_buffer_set_data_with_python_list(gl3_context):
-    gl3_context.switch_to()
-    ctx = gl3_context.context
+def test_backed_index_buffer_set_data_with_python_list(test_window):
+    test_window.switch_to()
+    ctx = test_window.context
 
     buffer = GLIndexedBufferObject(ctx, size=16, data_type="I", stride=4, count=1)
 
@@ -218,9 +208,9 @@ def test_backed_index_buffer_set_data_with_python_list(gl3_context):
     buffer.delete()
 
 
-def test_backed_index_buffer_set_data_region_with_python_list(gl3_context):
-    gl3_context.switch_to()
-    ctx = gl3_context.context
+def test_backed_index_buffer_set_data_region_with_python_list(test_window):
+    test_window.switch_to()
+    ctx = test_window.context
 
     buffer = GLIndexedBufferObject(ctx, size=16, data_type="I", stride=4, count=1)
 
@@ -238,9 +228,9 @@ def test_backed_index_buffer_set_data_region_with_python_list(gl3_context):
     buffer.delete()
 
 
-def test_backed_index_buffer_set_data_ptr_with_ctypes_pointer(gl3_context):
-    gl3_context.switch_to()
-    ctx = gl3_context.context
+def test_backed_index_buffer_set_data_ptr_with_ctypes_pointer(test_window):
+    test_window.switch_to()
+    ctx = test_window.context
 
     buffer = GLIndexedBufferObject(ctx, size=16, data_type="I", stride=4, count=1)
 
@@ -260,13 +250,13 @@ def test_backed_index_buffer_set_data_ptr_with_ctypes_pointer(gl3_context):
     buffer.delete()
 
 @require_graphics_api(GraphicsAPIGroups.DESKTOP_GL)
-def test_gl_vertex_stream_persistent_resize_rebinds_vao(gl3_context):
+def test_gl_vertex_stream_persistent_resize_rebinds_vao(test_window):
     from pyglet.graphics.api.gl import GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING, GLint
     from pyglet.graphics.api.gl.buffer import PersistentBufferObject
     from pyglet.graphics.api.gl.vertexdomain import GLVertexArrayBinding, GLVertexStream
 
-    gl3_context.switch_to()
-    ctx = gl3_context.context
+    test_window.switch_to()
+    ctx = test_window.context
     info = ctx.get_info()
 
     if info.get_opengl_api() != "opengl":
@@ -307,9 +297,9 @@ def test_gl_vertex_stream_persistent_resize_rebinds_vao(gl3_context):
 
 
 @require_graphics_api(GraphicsAPIGroups.GL3)
-def test_uniform_buffer_reserves_resource_ranges_and_grows(gl3_context):
-    gl3_context.switch_to()
-    ctx = gl3_context.context
+def test_uniform_buffer_reserves_resource_ranges_and_grows(test_window):
+    test_window.switch_to()
+    ctx = test_window.context
 
     program = pyglet.graphics.get_default_shader()
     window_block = program.uniform_blocks["WindowBlock"]
@@ -334,8 +324,8 @@ def test_uniform_buffer_reserves_resource_ranges_and_grows(gl3_context):
 
 
 @require_graphics_api(GraphicsAPIGroups.GL3)
-def test_uniform_buffer_upload_lazily_reserves_resource_ranges(gl3_context):
-    gl3_context.switch_to()
+def test_uniform_buffer_upload_lazily_reserves_resource_ranges(test_window):
+    test_window.switch_to()
 
     program = pyglet.graphics.get_default_shader()
     window_block = program.uniform_blocks["WindowBlock"]
@@ -357,9 +347,9 @@ def test_uniform_buffer_upload_lazily_reserves_resource_ranges(gl3_context):
 
 
 @require_graphics_api(GraphicsAPIGroups.GL3)
-def test_uniform_buffer_ranges_are_released_by_frame_resources(gl3_context, monkeypatch):
-    gl3_context.switch_to()
-    ctx = gl3_context.context
+def test_uniform_buffer_ranges_are_released_by_frame_resources(test_window, monkeypatch):
+    test_window.switch_to()
+    ctx = test_window.context
     ctx.frame_resources.delete()
     ctx.frame_resources.frame_begin(0)
 
@@ -395,9 +385,9 @@ def test_uniform_buffer_ranges_are_released_by_frame_resources(gl3_context, monk
 
 
 @require_graphics_api(GraphicsAPIGroups.GL3)
-def test_uniform_buffer_range_can_be_modified_outside_active_frame(gl3_context, monkeypatch):
-    gl3_context.switch_to()
-    ctx = gl3_context.context
+def test_uniform_buffer_range_can_be_modified_outside_active_frame(test_window, monkeypatch):
+    test_window.switch_to()
+    ctx = test_window.context
     ctx.frame_resources.delete()
 
     monkeypatch.setattr(ctx, "create_frame_fence", object)
@@ -425,9 +415,9 @@ def test_uniform_buffer_range_can_be_modified_outside_active_frame(gl3_context, 
 
 
 @require_graphics_api(GraphicsAPIGroups.GL3)
-def test_rebound_uniform_buffer_range_stays_in_use_until_all_frame_slots_release(gl3_context, monkeypatch):
-    gl3_context.switch_to()
-    ctx = gl3_context.context
+def test_rebound_uniform_buffer_range_stays_in_use_until_all_frame_slots_release(test_window, monkeypatch):
+    test_window.switch_to()
+    ctx = test_window.context
     ctx.frame_resources.delete()
 
     monkeypatch.setattr(ctx, "create_frame_fence", object)
@@ -476,11 +466,11 @@ def test_rebound_uniform_buffer_range_stays_in_use_until_all_frame_slots_release
 
 
 @require_graphics_api(GraphicsAPIGroups.GL3)
-def test_uniform_buffer_bind_slice_uses_slice_offset_and_size(gl3_context):
+def test_uniform_buffer_bind_slice_uses_slice_offset_and_size(test_window):
     from pyglet.graphics.api.gl import gl
 
-    gl3_context.switch_to()
-    ctx = gl3_context.context
+    test_window.switch_to()
+    ctx = test_window.context
 
     program = pyglet.graphics.get_default_shader()
     window_block = program.uniform_blocks["WindowBlock"]
@@ -509,9 +499,9 @@ def test_uniform_buffer_bind_slice_uses_slice_offset_and_size(gl3_context):
 
 
 @require_graphics_api(GraphicsAPIGroups.GL3)
-def test_uniform_buffer_bound_range_cannot_be_modified(gl3_context):
-    gl3_context.switch_to()
-    ctx = gl3_context.context
+def test_uniform_buffer_bound_range_cannot_be_modified(test_window):
+    test_window.switch_to()
+    ctx = test_window.context
     ctx.frame_resources.delete()
     ctx.frame_begin()
 
@@ -538,11 +528,11 @@ def test_uniform_buffer_bound_range_cannot_be_modified(gl3_context):
 
 
 @skip_graphics_api(GraphicsAPIGroups.GL2)
-def test_ubo_resource_ranges_stay_valid_across_multiple_resizes(gl3_context):
+def test_ubo_resource_ranges_stay_valid_across_multiple_resizes(test_window):
     from pyglet.graphics.api.gl import gl
 
-    gl3_context.switch_to()
-    ctx = gl3_context.context
+    test_window.switch_to()
+    ctx = test_window.context
 
     program = pyglet.graphics.get_default_shader()
     window_block = program.uniform_blocks["WindowBlock"]
@@ -595,8 +585,8 @@ def test_ubo_resource_ranges_stay_valid_across_multiple_resizes(gl3_context):
 
 
 @require_graphics_api(GraphicsAPIGroups.GL3)
-def test_ubo_ring_buffer_strict_mode_errors_when_all_ranges_are_in_use(gl3_context):
-    gl3_context.switch_to()
+def test_ubo_ring_buffer_strict_mode_errors_when_all_ranges_are_in_use(test_window):
+    test_window.switch_to()
 
     program = pyglet.graphics.get_default_shader()
     window_block = program.uniform_blocks["WindowBlock"]
@@ -613,8 +603,8 @@ def test_ubo_ring_buffer_strict_mode_errors_when_all_ranges_are_in_use(gl3_conte
 
 
 @require_graphics_api(GraphicsAPIGroups.GL3)
-def test_ubo_ring_buffer_non_strict_mode_expands_when_all_ranges_are_in_use(gl3_context):
-    gl3_context.switch_to()
+def test_ubo_ring_buffer_non_strict_mode_expands_when_all_ranges_are_in_use(test_window):
+    test_window.switch_to()
 
     program = pyglet.graphics.get_default_shader()
     window_block = program.uniform_blocks["WindowBlock"]

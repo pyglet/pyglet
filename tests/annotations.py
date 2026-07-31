@@ -22,6 +22,9 @@ class Platform:
     OSX = ('darwin',)
     """Mac OS X platforms"""
 
+    EMSCRIPTEN = ('emscripten',)
+    """Pyodide browser platform"""
+
 
 class GraphicsAPIGroups:
     GL3 = ("opengl", "gles3")

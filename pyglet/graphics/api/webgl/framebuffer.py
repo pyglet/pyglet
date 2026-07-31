@@ -23,7 +23,7 @@ from __future__ import annotations
 
 
 import pyglet
-import js
+import js  # noqa: F821
 from typing import TYPE_CHECKING
 
 from pyglet.enums import FramebufferTarget, FramebufferAttachment, ComponentFormat
