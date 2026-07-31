@@ -208,7 +208,7 @@ The steps for creating an event dispatcher are:
 1. Subclass :py:class:`~pyglet.event.EventDispatcher`
 2. Call the :py:meth:`~pyglet.event.EventDispatcher.register_event_type`
    class method on your subclass for each event your subclass will recognise.
-3. Call :py:meth:`~pyglet.event.EventDispatcher. dispatch_event` to create and
+3. Call :py:meth:`~pyglet.event.EventDispatcher.dispatch_event` to create and
    dispatch an event as needed.
 
 In the following example, a hypothetical GUI widget provides several events::
@@ -300,3 +300,7 @@ The two clock objects will be notified whenever the timer is "ticked", though
 neither the timer nor the clocks needed prior knowledge of the other.  During
 object construction any relationships between subjects and observers can be
 created.
+
+
+Event chains provide a higher-level way to write timed and callback-driven
+event flows. See :doc:`event_chains` for details and examples.

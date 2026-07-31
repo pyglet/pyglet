@@ -208,8 +208,112 @@ For explicit framebuffer objects, use ``Framebuffer`` and ``Renderbuffer`` in
 Drawing into a texture
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Use a framebuffer with a texture attachment when you want to render *into* a
-texture (for post-processing, compositing, dynamic texture generation, etc.).
+Use a texture render target when you want to render *into* a texture, for
+example for post-processing, compositing, minimaps, or dynamic texture
+generation.
+
+.. warning::
+    Render targets allocate GPU resources and drawing into them submits GPU
+    work. Creating targets or generating many textures every frame can be slow.
+    Reuse can reduce setup overhead, but it does not eliminate texture
+    allocation or rendering costs.
+
+Persistent render textures
+""""""""""""""""""""""""""
+
+:py:class:`~pyglet.graphics.framebuffer.RenderTexture` owns a fixed color
+texture and the framebuffer and camera used to draw into it. It is useful when
+the same texture is updated repeatedly::
+
+    import pyglet
+
+    window = pyglet.window.Window(800, 600)
+    scene_batch = pyglet.graphics.Batch()
+
+    target = pyglet.graphics.RenderTexture(512, 512)
+
+    with target:
+        scene_batch.draw()
+
+    # Use the result like any other texture.
+    result_sprite = pyglet.sprite.Sprite(target.texture)
+
+Entering the target clears it and temporarily installs a camera and viewport
+matching its dimensions. On exit, the previous framebuffer, camera, viewport,
+and scissor state are restored.
+
+Deleting the target releases its framebuffer, camera-related state, and
+optional depth buffer, but retains the color texture by default::
+
+    texture = target.texture
+    target.delete()
+
+    # The texture is still valid.
+    result_sprite = pyglet.sprite.Sprite(texture)
+
+    # Delete it explicitly when it is no longer needed.
+    texture.delete()
+
+Pass ``delete_texture=True`` to
+:py:meth:`~pyglet.graphics.framebuffer.RenderTexture.delete` when the color
+texture should be deleted with the target.
+
+Generating independent textures efficiently
+""""""""""""""""""""""""""""""""""""""""""""
+
+Each output must have its own texture if several results need to remain valid,
+but the framebuffer and camera do not need to be recreated for every output.
+:py:class:`~pyglet.graphics.framebuffer.TextureRenderTarget` keeps that target
+state and attaches a fresh texture for each render scope::
+
+    target = pyglet.graphics.TextureRenderTarget()
+    textures = []
+
+    for batch, width, height in jobs:
+        with target.render_to_texture(width, height) as texture:
+            batch.draw()
+        textures.append(texture)
+
+    # This does not delete any successfully returned textures.
+    target.delete()
+
+    for texture in textures:
+        texture.delete()
+
+The reusable target updates its camera and viewport for each output size. If
+depth buffering is enabled, a same-sized depth buffer is reused and is
+recreated only when the dimensions change. If drawing raises an exception, the
+incomplete output texture is deleted and the target remains reusable.
+
+Only the framebuffer, camera, and compatible depth buffer are reused. Every
+successful call still allocates and renders into a new GPU texture so that
+previous results remain independent.
+
+Text layouts accept a reusable target through
+:py:meth:`~pyglet.text.layout.TextLayout.get_as_texture`::
+
+    target = pyglet.graphics.TextureRenderTarget()
+    textures = [label.get_as_texture(target) for label in labels]
+    target.delete()
+
+Without an argument, ``get_as_texture`` creates and deletes a temporary target,
+which is convenient for a single conversion::
+
+    texture = label.get_as_texture()
+
+The returned textures are always caller-owned and must eventually be deleted.
+
+.. note::
+    Render targets follow the same context rules as other graphics resources.
+    They do not switch windows automatically. In a multi-window application,
+    call ``window.switch_to()`` before constructing or using a target belonging
+    to that window.
+
+Low-level framebuffer usage
+"""""""""""""""""""""""""""
+
+For direct control, create a framebuffer and attach textures and renderbuffers
+manually.
 
 ::
 

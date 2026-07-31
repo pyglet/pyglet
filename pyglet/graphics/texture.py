@@ -1014,9 +1014,34 @@ class CompressedTexture(_AbstractImage):
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 if not _is_pyglet_doc_run:
-    if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2, GraphicsAPI.OPENGL_ES_3):
+    if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
         from pyglet.graphics.api.gl.framebuffer import (  # noqa: F401
             GLFramebuffer as Framebuffer,
+            GLRenderbuffer as Renderbuffer,
+            get_max_color_attachments,
+            get_screenshot,
+        )
+        from pyglet.graphics.api.gl.texture import (
+            GLCompressedTexture,
+            GLCompressedTexture as CompressedTexture,  # noqa: F401
+            GLTexture,
+            GLTexture as Texture,  # noqa: F401
+            GLTextureRegion,
+            GLTextureRegion as TextureRegion,  # noqa: F401
+            GLTexture3D,
+            GLTexture3D as Texture3D,  # noqa: F401
+            GLTextureArray,
+            GLTextureArray as TextureArray,  # noqa: F401
+            GLTextureArrayRegion,
+            GLTextureArrayRegion as TextureArrayRegion,  # noqa: F401
+            GLTextureGrid,
+            GLTextureGrid as TextureGrid,  # noqa: F401
+            get_max_texture_size,
+            get_max_array_texture_layers,
+        )
+    elif pyglet.options.backend in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
+        from pyglet.graphics.api.gl2.framebuffer import (  # noqa: F401
+            GL2Framebuffer as Framebuffer,
             GLRenderbuffer as Renderbuffer,
             get_max_color_attachments,
             get_screenshot,

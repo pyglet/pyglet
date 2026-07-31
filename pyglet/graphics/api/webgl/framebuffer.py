@@ -66,13 +66,27 @@ _gl_attachment_map = {
     FramebufferAttachment.DEPTH_STENCIL: gl.GL_DEPTH_STENCIL_ATTACHMENT,
 }
 
+_clear_bit_map = {
+    **dict.fromkeys((
+        FramebufferAttachment.COLOR0, FramebufferAttachment.COLOR1,
+        FramebufferAttachment.COLOR2, FramebufferAttachment.COLOR3,
+        FramebufferAttachment.COLOR4, FramebufferAttachment.COLOR5,
+        FramebufferAttachment.COLOR6, FramebufferAttachment.COLOR7,
+        FramebufferAttachment.COLOR8, FramebufferAttachment.COLOR9,
+        FramebufferAttachment.COLOR10, FramebufferAttachment.COLOR11,
+        FramebufferAttachment.COLOR12, FramebufferAttachment.COLOR13,
+        FramebufferAttachment.COLOR14, FramebufferAttachment.COLOR15,
+    ), gl.GL_COLOR_BUFFER_BIT),
+    FramebufferAttachment.DEPTH: gl.GL_DEPTH_BUFFER_BIT,
+    FramebufferAttachment.STENCIL: gl.GL_STENCIL_BUFFER_BIT,
+    FramebufferAttachment.DEPTH_STENCIL: gl.GL_DEPTH_BUFFER_BIT | gl.GL_STENCIL_BUFFER_BIT,
+}
+
 
 def get_viewport() -> tuple:
     """Get the current OpenGL viewport dimensions (left, bottom, right, top)."""
     ctx = pyglet.graphics.api.core.current_context
-    viewport = (gl.GLint * 4)()
-    ctx.glGetIntegerv(gl.GL_VIEWPORT, viewport)
-    return tuple(viewport)
+    return tuple(ctx.gl.getParameter(gl.GL_VIEWPORT).to_py())
 
 
 def get_screenshot() -> ImageData:
@@ -195,6 +209,7 @@ class WebGLFramebuffer:
         self._gl_attachment_types = []
         self._width = 0
         self._height = 0
+        self._binding_stack: list[tuple[WebGLFramebufferObject | None, ...]] = []
         self.target = target
         self._gl_target = _gl_target_map[target]
 
@@ -229,12 +244,44 @@ class WebGLFramebuffer:
         """
         self._gl.bindFramebuffer(self._gl_target, None)
 
-    def clear(self) -> None:
-        """Clear the attachments."""
-        if self._clear_bits:
+    def __enter__(self) -> WebGLFramebuffer:  # noqa: PYI034
+        if self.target == FramebufferTarget.FRAMEBUFFER:
+            self._binding_stack.append((
+                self._gl.getParameter(gl.GL_DRAW_FRAMEBUFFER_BINDING),
+                self._gl.getParameter(gl.GL_READ_FRAMEBUFFER_BINDING),
+            ))
             self.bind()
-            self._gl.clear(self._clear_bits)
-            self.unbind()
+            return self
+
+        binding_enum = {
+            FramebufferTarget.DRAW: gl.GL_DRAW_FRAMEBUFFER_BINDING,
+            FramebufferTarget.READ: gl.GL_READ_FRAMEBUFFER_BINDING,
+        }[self.target]
+        self._binding_stack.append((self._gl.getParameter(binding_enum),))
+        self.bind()
+        return self
+
+    def __exit__(self, *_args: object) -> None:
+        bindings = self._binding_stack.pop()
+        if len(bindings) == 2:
+            self._gl.bindFramebuffer(gl.GL_DRAW_FRAMEBUFFER, bindings[0])
+            self._gl.bindFramebuffer(gl.GL_READ_FRAMEBUFFER, bindings[1])
+        else:
+            self._gl.bindFramebuffer(self._gl_target, bindings[0])
+
+    def clear(self, color: tuple[float, float, float, float] | None = None) -> None:
+        """Clear the attachments, optionally using a temporary clear color."""
+        if self._clear_bits:
+            previous_color = None
+            if color is not None:
+                previous_color = tuple(self._gl.getParameter(gl.GL_COLOR_CLEAR_VALUE).to_py())
+                self._gl.clearColor(*color)
+            try:
+                with self:
+                    self._gl.clear(self._clear_bits)
+            finally:
+                if previous_color is not None:
+                    self._gl.clearColor(*previous_color)
 
     def delete(self) -> None:
         """Explicitly delete the Framebuffer."""
@@ -283,12 +330,7 @@ class WebGLFramebuffer:
             texture.id,
             level,
         )
-        if "COLOR" in attachment.name:
-            self._clear_bits |= gl.GL_COLOR_BUFFER_BIT
-        elif "DEPTH" in attachment.name:
-            self._clear_bits |= gl.GL_DEPTH_BUFFER_BIT
-        elif "STENCIL" in attachment.name:
-            self._clear_bits |= gl.GL_STENCIL_BUFFER_BIT
+        self._clear_bits |= _clear_bit_map[attachment]
         self._gl_attachment_types.append(gl_attachment)
         self._width = max(texture.width, self._width)
         self._height = max(texture.height, self._height)
@@ -318,8 +360,7 @@ class WebGLFramebuffer:
             level,
             layer,
         )
-        if "COLOR" in attachment.name:
-            self._clear_bits |= gl.GL_COLOR_BUFFER_BIT
+        self._clear_bits |= _clear_bit_map[attachment]
         self._gl_attachment_types.append(gl_attachment)
         self._width = max(texture.width, self._width)
         self._height = max(texture.height, self._height)
@@ -345,10 +386,7 @@ class WebGLFramebuffer:
             renderbuffer.id,
         )
         self._gl_attachment_types.append(gl_attachment)
-        if "DEPTH" in attachment.name:
-            self._clear_bits |= gl.GL_DEPTH_BUFFER_BIT
-        elif "STENCIL" in attachment.name:
-            self._clear_bits |= gl.GL_STENCIL_BUFFER_BIT
+        self._clear_bits |= _clear_bit_map[attachment]
         self._width = max(renderbuffer.width, self._width)
         self._height = max(renderbuffer.height, self._height)
         self.unbind()

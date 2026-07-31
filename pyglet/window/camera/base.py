@@ -572,6 +572,7 @@ class BaseCamera(Generic[ViewT]):
         view_storage: CameraViewStorage | None = None,
         *,
         viewport: ViewportType | None = None,
+        register_handlers: bool = True,
     ) -> None:
         """Initialize a camera.
 
@@ -585,6 +586,9 @@ class BaseCamera(Generic[ViewT]):
                 Optional fixed viewport for the root view. If ``None``, the
                 root view defaults to the full framebuffer viewport and tracks
                 resize/scale events.
+            register_handlers:
+                If ``True``, register the camera for window resize and scale
+                events. Disable this for fixed-size offscreen cameras.
         """
         self._window = weakref.proxy(window)
 
@@ -607,7 +611,8 @@ class BaseCamera(Generic[ViewT]):
 
         self._resolved_viewport: tuple[int, int, int, int] | None = None
 
-        window.push_handlers(self)
+        if register_handlers:
+            window.push_handlers(self)
 
     def _create_default_view_storage(
         self,

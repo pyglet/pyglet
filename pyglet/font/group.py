@@ -1,12 +1,9 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 import pyglet
 from pyglet.font import base
-
-if TYPE_CHECKING:
-    from pyglet.enums import Weight, Style, Stretch
+from pyglet.enums import Stretch, Style, Weight
 
 
 @dataclass(frozen=True)
@@ -55,6 +52,10 @@ class FontGroup:
         Returns:
             This existing font group instance.
         """
+        if isinstance(start, str):
+            start = ord(start)
+        if isinstance(end, str):
+            end = ord(end)
         self._ranges.append(_RangeEntry(start, end, family))
         return self
 
@@ -92,16 +93,16 @@ class FontGroupInstance(base.Font):
     def __init__(self, group: FontGroup, size: float, weight: str | Weight, style: str | Style,  # noqa: D107
                  stretch: str | Stretch,  dpi: int | None) -> None:
         super().__init__("", size, weight, style, stretch, dpi)
-        self._name = self._get_name()
         self._group = group
+        self._name = self._get_name()
 
         self._child_cache = {}
         self.glyphs.clear()  # This itself doesn't own glyphs
 
     def _get_name(self) -> str:
         """Generates a unique descriptor name for this instance."""
-        ital = "Italic" if self.style else "Regular"
-        return f"{self.name} ({int(self.size)}px {ital} w{self.weight} s{self.stretch} @{self.dpi}dpi)"
+        ital = "Italic" if self.style != "normal" else "Regular"
+        return f"{self._group.name} ({int(self.size)}px {ital} w{self.weight} s{self.stretch} @{self.dpi}dpi)"
 
     def _resolve_child(self, family: str) -> base.Font:
         f = self._child_cache.get(family)
@@ -115,7 +116,7 @@ class FontGroupInstance(base.Font):
             self._child_cache[family] = f
 
             self.ascent = max(self.ascent, getattr(f, "ascent", 0))
-            self.descent = max(self.descent, getattr(f, "descent", 0))
+            self.descent = min(self.descent, getattr(f, "descent", 0))
         return f
 
     def _font_for_cluster(self, cluster: str) -> base.Font | None:
@@ -124,7 +125,7 @@ class FontGroupInstance(base.Font):
         ft_fam = self._group._family_for_char(cluster[0])  # noqa: SLF001
         if ft_fam is None and self._group._ranges:  # noqa: SLF001
             # Default to first font in the group if nothing matches
-            fam = self._group._ranges[0].family  # noqa: SLF001
+            ft_fam = self._group._ranges[0].family  # noqa: SLF001
         return self._resolve_child(ft_fam) if ft_fam else None
 
     def get_glyphs(self, text: str, shaping: bool = False) -> tuple[list[base.Glyph], list[base.GlyphPosition]]:
@@ -152,19 +153,17 @@ class FontGroupInstance(base.Font):
             return 0, 0
 
         total_w = 0
-        max_ascent = self.ascent
-        max_descent = self.descent
+        max_height = 0
 
         run_font: base.Font | None = None
         run_text: list[str] = []
 
         def flush() -> None:
-            nonlocal total_w, max_ascent, max_descent, run_font, run_text
+            nonlocal total_w, max_height, run_font, run_text
             if run_font and run_text:
-                w, _ = run_font.get_text_size("".join(run_text))
+                w, h = run_font.get_text_size("".join(run_text))
                 total_w += w
-                max_ascent = max(max_ascent, getattr(run_font, "ascent", 0))
-                max_descent = max(max_descent, getattr(run_font, "descent", 0))
+                max_height = max(max_height, h)
             run_font = None
             run_text = []
 
@@ -176,4 +175,4 @@ class FontGroupInstance(base.Font):
             run_text.append(" " if cluster == "\t" else cluster)
 
         flush()
-        return (total_w, max_ascent + max_descent)
+        return total_w, max_height
