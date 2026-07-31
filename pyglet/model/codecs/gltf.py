@@ -431,6 +431,22 @@ class Skin:
         )
         joints_indices = data.get('joints', [])
         self.joints: list[Node] = [owner.nodes[i] for i in joints_indices]
+        self.ibm_idx = data.get('inverseBindMatrices')
+        ibm_accessor = owner.accessors[
+            self.ibm_idx
+        ] if self.ibm_idx is not None else None
+        # If inverseBindMatrices is not defined, each matrix is a 4x4 identity
+        # https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#_skin_inversebindmatrices
+        self.inverse_bind_matrices: list[Mat4] = []
+        ibms = ibm_accessor.as_array() if ibm_accessor else None
+        for i in range(len(self.joints)):
+            if ibms is None:
+                new_matrix = Mat4()
+            else:
+                offset = i * 16
+                new_matrix = Mat4(*ibms[offset:offset+16])
+            self.inverse_bind_matrices.append(new_matrix)
+
         self.skeleton_index: int | None = data.get('skeleton')
         self.skeleton: Node | None = owner.nodes[self.skeleton_index] if (
             self.skeleton_index is not None
@@ -438,6 +454,15 @@ class Skin:
         self.extensions = data.get('extensions')
         self.extras = data.get('extras')
 
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}("
+            f"name={self.name}, "
+            f"inverse_bind_matrices={self.ibm_idx}, "
+            f"skeleton={self.skeleton_index}, "
+            f"joints={len(self.joints)}"
+            ")"
+        )
 
 class Animation:
     def __init__(self, data, owner):
