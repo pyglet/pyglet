@@ -23,7 +23,7 @@ all_combinations = list(itertools.product(document_classes, layout_classes))
 
 
 @pytest.mark.parametrize('doctype, layouttype', all_combinations)
-def test_layout_creation_keyword(window, doctype, layouttype):
+def test_layout_creation_keyword(test_window, doctype, layouttype):
     _doc = doctype("This is a test")
     _layout = layouttype(document=_doc, x=X, y=Y, z=Z, width=WIDTH, height=HEIGHT)
     assert _layout.x == X
@@ -35,7 +35,7 @@ def test_layout_creation_keyword(window, doctype, layouttype):
 
 
 @pytest.mark.parametrize('doctype, layouttype', all_combinations)
-def test_layout_creation_positional(window, doctype, layouttype):
+def test_layout_creation_positional(test_window, doctype, layouttype):
     _doc = doctype("This is a test")
     _layout = layouttype(_doc, X, Y, Z, WIDTH, HEIGHT)
     # Make sure the arguments were in order:
@@ -47,8 +47,8 @@ def test_layout_creation_positional(window, doctype, layouttype):
     assert _layout.position == (X, Y, Z)
 
 
-def test_layout_get_as_texture(window):
-    window.switch_to()
+def test_layout_get_as_texture(test_window):
+    test_window.switch_to()
     text_layout = layout.TextLayout(document.UnformattedDocument("Render texture"), x=100, y=50)
     original_position = text_layout.position
     texture = text_layout.get_as_texture()
@@ -65,8 +65,8 @@ def test_layout_get_as_texture(window):
         text_layout.delete()
 
 
-def test_layout_get_as_texture_with_reusable_target(window):
-    window.switch_to()
+def test_layout_get_as_texture_with_reusable_target(test_window):
+    test_window.switch_to()
     render_target = pyglet.graphics.TextureRenderTarget()
     layouts = [
         layout.TextLayout(document.UnformattedDocument("First")),
@@ -137,7 +137,7 @@ class TestIssues(unittest.TestCase):
         incremental_layout = layout.IncrementalTextLayout(doc2, 100, 10, width=500, height=100)
         incremental_layout.document.delete_text(0, len(incremental_layout.document.text))
 
-def test_incrementallayout_get_position_on_line_before_start_of_text(window):
+def test_incrementallayout_get_position_on_line_before_start_of_text(test_window):
     single_line_text = "This is a single line of text."
     doc = document.UnformattedDocument(single_line_text)
     font = doc.get_font()

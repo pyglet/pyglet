@@ -16,7 +16,7 @@ Z = random.randint(-10, 10)
 
 @pytest.mark.parametrize('label_class', [Label, HTMLLabel])
 @pytest.mark.parametrize('shaping', [True, False])
-def test_label_creation(window, label_class, shaping):
+def test_label_creation(test_window, label_class, shaping):
     label = label_class("This is a test", x=X, y=Y, z=Z, shaping=shaping)
     assert label.x == X
     assert label.y == Y
@@ -32,7 +32,7 @@ def document(request):
     return decoder(string)
 
 @pytest.mark.parametrize('shaping', [True, False])
-def test_documentlabel_creation(window, document, shaping):
+def test_documentlabel_creation(test_window, document, shaping):
     label = DocumentLabel(document=document, x=X, y=Y, z=Z, shaping=shaping)
     assert label.x == X
     assert label.y == Y

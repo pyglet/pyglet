@@ -321,7 +321,7 @@ def _assert_program_switch_missing_attribute_raises(drawable, new_program) -> No
 
 
 @pytest.fixture(scope="module")
-def sprite_programs(window):  # noqa: ARG001
+def sprite_programs(test_window):  # noqa: ARG001
     fragment_source = _sprite_fragment_source()
     if _is_gl2_backend():
         base = _build_program(_sprite_vertex_source(_SPRITE_ORDER_A), fragment_source)
@@ -345,7 +345,7 @@ def sprite_programs(window):  # noqa: ARG001
 
 
 @pytest.fixture(scope="module")
-def shape_programs(window):  # noqa: ARG001
+def shape_programs(test_window):  # noqa: ARG001
     fragment_source = _shape_fragment_source()
     if _is_gl2_backend():
         base = _build_program(_shape_vertex_source(_SHAPE_ORDER_A), fragment_source)
@@ -374,7 +374,7 @@ def sprite_image():
     return pyglet.image.ImageData(2, 2, "RGBA", bytes(pixels))
 
 
-def test_sprite_program_change_same_attributes_keeps_domain_updates_group(window, sprite_programs, sprite_image):  # noqa: ARG001
+def test_sprite_program_change_same_attributes_keeps_domain_updates_group(test_window, sprite_programs, sprite_image):  # noqa: ARG001
     """Switch Sprite to a program with identical attributes.
 
     Verifies domain reuse vs recreation follows resolved attribute-key compatibility, and group/program state updates.
@@ -394,7 +394,7 @@ def test_sprite_program_change_same_attributes_keeps_domain_updates_group(window
         sprite.delete()
 
 
-def test_sprite_program_change_different_attributes_recreates_with_new_domain(window, sprite_programs, sprite_image):  # noqa: ARG001
+def test_sprite_program_change_different_attributes_recreates_with_new_domain(test_window, sprite_programs, sprite_image):  # noqa: ARG001
     """Switch Sprite to a program whose attribute layout differs.
 
     Verifies the vertex list is recreated and migrated to a new domain.
@@ -418,7 +418,7 @@ def test_sprite_program_change_different_attributes_recreates_with_new_domain(wi
         sprite.delete()
 
 
-def test_sprite_program_change_same_attributes_plus_one_recreates_in_same_domain(window, sprite_programs, sprite_image):  # noqa: ARG001
+def test_sprite_program_change_same_attributes_plus_one_recreates_in_same_domain(test_window, sprite_programs, sprite_image):  # noqa: ARG001
     """Switch Sprite to a program with one additional attribute.
 
     Verifies domain reuse vs recreation matches backend-resolved attribute-key compatibility for the new program.
@@ -438,7 +438,7 @@ def test_sprite_program_change_same_attributes_plus_one_recreates_in_same_domain
         sprite.delete()
 
 
-def test_sprite_program_change_missing_attribute_raises_and_removes_old_bucket(window, sprite_programs, sprite_image):  # noqa: ARG001
+def test_sprite_program_change_missing_attribute_raises_and_removes_old_bucket(test_window, sprite_programs, sprite_image):  # noqa: ARG001
     """Switch Sprite to a program missing a required attribute.
 
     Verifies assignment raises and the previous bucket allocation is cleaned up.
@@ -448,7 +448,7 @@ def test_sprite_program_change_missing_attribute_raises_and_removes_old_bucket(w
     _assert_program_switch_missing_attribute_raises(sprite, sprite_programs["missing"])
 
 
-def test_shape_program_change_same_attributes_keeps_domain_updates_group(window, shape_programs):  # noqa: ARG001
+def test_shape_program_change_same_attributes_keeps_domain_updates_group(test_window, shape_programs):  # noqa: ARG001
     """Switch Shape to a program with identical attributes.
 
     Verifies domain reuse vs recreation follows resolved attribute-key compatibility, with correct group/program updates.
@@ -468,7 +468,7 @@ def test_shape_program_change_same_attributes_keeps_domain_updates_group(window,
         shape.delete()
 
 
-def test_shape_program_change_different_attributes_recreates_with_new_domain(window, shape_programs):  # noqa: ARG001
+def test_shape_program_change_different_attributes_recreates_with_new_domain(test_window, shape_programs):  # noqa: ARG001
     """Switch Shape to a program with a different attribute layout.
 
     Verifies the vertex list is recreated in a different domain.
@@ -492,7 +492,7 @@ def test_shape_program_change_different_attributes_recreates_with_new_domain(win
         shape.delete()
 
 
-def test_shape_program_change_same_attributes_plus_one_recreates_in_same_domain(window, shape_programs):  # noqa: ARG001
+def test_shape_program_change_same_attributes_plus_one_recreates_in_same_domain(test_window, shape_programs):  # noqa: ARG001
     """Switch Shape to a program that adds one extra attribute.
 
     Verifies domain reuse vs recreation matches backend-resolved attribute-key compatibility for the new program.
@@ -512,7 +512,7 @@ def test_shape_program_change_same_attributes_plus_one_recreates_in_same_domain(
         shape.delete()
 
 
-def test_shape_program_change_missing_attribute_raises_and_removes_old_bucket(window, shape_programs):  # noqa: ARG001
+def test_shape_program_change_missing_attribute_raises_and_removes_old_bucket(test_window, shape_programs):  # noqa: ARG001
     """Switch Shape to a program missing a required attribute.
 
     Verifies failure is raised and stale bucket ownership is released."""

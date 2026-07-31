@@ -24,9 +24,9 @@ def test_ctype_data_store_assertions():
         store.set_bytes(7, b"\x00\x01")
 
 
-def test_buffer_object_create_resize_and_delete(window):
-    window.switch_to()
-    buffer = GL2BufferObject(window.context, 16)
+def test_buffer_object_create_resize_and_delete(test_window):
+    test_window.switch_to()
+    buffer = GL2BufferObject(test_window.context, 16)
 
     assert buffer.size == 16
     with pytest.raises(AssertionError):
@@ -54,9 +54,9 @@ def test_buffer_object_create_resize_and_delete(window):
     buffer.delete()
 
 
-def test_buffer_object_assertions(window):
-    window.switch_to()
-    buffer = GL2BufferObject(window.context, 8)
+def test_buffer_object_assertions(test_window):
+    test_window.switch_to()
+    buffer = GL2BufferObject(test_window.context, 8)
 
     with pytest.raises(AssertionError):
         buffer.set_bytes(b"\x00")
@@ -70,9 +70,9 @@ def test_buffer_object_assertions(window):
     buffer.delete()
 
 
-def test_backed_index_buffer_commit_resize_and_delete(window):
-    window.switch_to()
-    buffer = GL2IndexedBufferObject(window.context, size=8, data_type="I", stride=4, count=1)
+def test_backed_index_buffer_commit_resize_and_delete(test_window):
+    test_window.switch_to()
+    buffer = GL2IndexedBufferObject(test_window.context, size=8, data_type="I", stride=4, count=1)
 
     buffer.set_region(0, 2, [5, 9])
     buffer.commit()
@@ -101,9 +101,9 @@ def test_backed_index_buffer_commit_resize_and_delete(window):
     buffer.delete()
 
 
-def test_backed_index_buffer_first_partial_commit_allocates_and_uploads(window):
-    window.switch_to()
-    buffer = GL2IndexedBufferObject(window.context, size=16, data_type="I", stride=4, count=1)
+def test_backed_index_buffer_first_partial_commit_allocates_and_uploads(test_window):
+    test_window.switch_to()
+    buffer = GL2IndexedBufferObject(test_window.context, size=16, data_type="I", stride=4, count=1)
 
     buffer.set_data_region([7], start=0, length=4)
     buffer.commit()
@@ -115,9 +115,9 @@ def test_backed_index_buffer_first_partial_commit_allocates_and_uploads(window):
     buffer.delete()
 
 
-def test_backed_index_buffer_set_data_with_ctypes_array(window):
-    window.switch_to()
-    buffer = GL2IndexedBufferObject(window.context, size=16, data_type="I", stride=4, count=1)
+def test_backed_index_buffer_set_data_with_ctypes_array(test_window):
+    test_window.switch_to()
+    buffer = GL2IndexedBufferObject(test_window.context, size=16, data_type="I", stride=4, count=1)
 
     initial_values = (ctypes.c_uint32 * 4)(11, 22, 33, 44)
     buffer.set_data(initial_values)
@@ -130,9 +130,9 @@ def test_backed_index_buffer_set_data_with_ctypes_array(window):
     buffer.delete()
 
 
-def test_backed_index_buffer_set_data_with_python_list(window):
-    window.switch_to()
-    buffer = GL2IndexedBufferObject(window.context, size=16, data_type="I", stride=4, count=1)
+def test_backed_index_buffer_set_data_with_python_list(test_window):
+    test_window.switch_to()
+    buffer = GL2IndexedBufferObject(test_window.context, size=16, data_type="I", stride=4, count=1)
 
     buffer.set_data([11, 22, 33, 44])
     buffer.commit()
@@ -144,9 +144,9 @@ def test_backed_index_buffer_set_data_with_python_list(window):
     buffer.delete()
 
 
-def test_backed_index_buffer_set_data_region_with_python_list(window):
-    window.switch_to()
-    buffer = GL2IndexedBufferObject(window.context, size=16, data_type="I", stride=4, count=1)
+def test_backed_index_buffer_set_data_region_with_python_list(test_window):
+    test_window.switch_to()
+    buffer = GL2IndexedBufferObject(test_window.context, size=16, data_type="I", stride=4, count=1)
 
     initial_values = (ctypes.c_uint32 * 4)(11, 22, 33, 44)
     buffer.set_data(initial_values)
@@ -162,9 +162,9 @@ def test_backed_index_buffer_set_data_region_with_python_list(window):
     buffer.delete()
 
 
-def test_backed_index_buffer_set_data_ptr_with_ctypes_pointer(window):
-    window.switch_to()
-    buffer = GL2IndexedBufferObject(window.context, size=16, data_type="I", stride=4, count=1)
+def test_backed_index_buffer_set_data_ptr_with_ctypes_pointer(test_window):
+    test_window.switch_to()
+    buffer = GL2IndexedBufferObject(test_window.context, size=16, data_type="I", stride=4, count=1)
 
     initial_values = (ctypes.c_uint32 * 4)(11, 22, 33, 44)
     buffer.set_data(initial_values)
@@ -191,10 +191,10 @@ def _create_quad_vertices(x: float, y: float, z: float, width: float, height: fl
     )
 
 
-def test_gl2_indexed_batch_draw_keeps_element_buffer_bound(window) -> None:
+def test_gl2_indexed_batch_draw_keeps_element_buffer_bound(test_window) -> None:
     """Ensure GL2 indexed draws bind EBO every draw, even when index buffer is not dirty."""
-    window.switch_to()
-    ctx = window.context
+    test_window.switch_to()
+    ctx = test_window.context
     program = pyglet.graphics.api.get_default_shader()
     batch = pyglet.graphics.Batch()
 
