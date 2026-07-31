@@ -20,14 +20,13 @@ from pyglet.enums import (
 )
 
 from . import ModelDecodeException, ModelDecoder
-from .base import Scene
 from .base import PBRMaterial
 from .base import Camera as BaseCamera
 from .base import Attribute as BaseAttribute
 from .base import Primitive as BasePrimitive
 from .base import Node as BaseNode
 from .base import Mesh as BaseMesh
-
+from .base import Scene as BaseScene
 from ...math import Mat4, Quaternion, Vec3
 
 _array_types = {
@@ -344,10 +343,6 @@ class Node(BaseNode):
 
         # TODO: handle these:
         self.camera = None
-
-        # TODO: handle global and local transforms:
-        # https://github.com/KhronosGroup/glTF-Tutorials/blob/master/gltfTutorial/gltfTutorial_004_ScenesNodes.md
-
         self._child_indices = data.get('children', [])
         self._skin_index = data.get('skin')
 
@@ -409,6 +404,20 @@ class Node(BaseNode):
             f"mesh={self.mesh}, skin={self.skin}, "
             f"camera={self.camera}, children={len(self.children)}"
             f")"
+        )
+
+
+class Scene(BaseScene):
+    def __init__(self, name:str = "undefined", nodes: list[Node] | None = None):
+        super().__init__(nodes=nodes)
+        self.name = name
+
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}("
+            f"name={self.name}, "
+            f"nodes={len(self.nodes)}"
+            ")"
         )
 
 
