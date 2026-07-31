@@ -28,6 +28,7 @@ from .base import Primitive as BasePrimitive
 from .base import Node as BaseNode
 from .base import Mesh as BaseMesh
 
+from ...math import Mat4, Quaternion, Vec3
 
 _array_types = {
     GL_BYTE: 'b',
@@ -355,11 +356,44 @@ class Node(BaseNode):
         return [self._owner.nodes[i] for i in self._child_indices]
 
     @property
-    def parent(self):
+    def parent(self) -> "Node | None":
         for node in self._owner.nodes:
             if self in node.children:
                 return node
         return None
+
+    @property
+    def local_transform(self) -> Mat4:
+        if self.matrix:
+            transform = Mat4(*self.matrix)
+        else:
+            if self.translation:
+                t = Mat4.from_translation(Vec3(*self.translation))
+            else:
+                t = Mat4()
+
+            if self.rotation:
+                quat = Quaternion(self.rotation[3], *self.rotation[:3])
+                r = quat.to_mat4().transpose()
+            else:
+                r = Mat4()
+
+            if self.scale:
+                s = Mat4.from_scale(Vec3(*self.scale))
+            else:
+                s = Mat4()
+            transform = t @ r @ s
+
+        return transform
+
+    @property
+    def global_transform(self) -> Mat4:
+        # For this property to work make sure to call it after all nodes have
+        # been created. That way you make sure the parent has already been set
+        transform = self.local_transform
+        if self.parent:
+            transform = self.parent.global_transform @ transform
+        return transform
 
     @property
     def skin(self):
