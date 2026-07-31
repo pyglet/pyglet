@@ -424,11 +424,6 @@ class Scene(BaseScene):
 class Skin:
     def __init__(self, data, owner):
         self.name = data.get('name')
-        ibm_idx = data.get('inverseBindMatrices')
-        ibm_accessor = owner.accessors[ibm_idx] if ibm_idx is not None else None
-        self.inverse_bind_matrices: array | None = (
-            ibm_accessor.as_array() if ibm_accessor else None
-        )
         joints_indices = data.get('joints', [])
         self.joints: list[Node] = [owner.nodes[i] for i in joints_indices]
         self.ibm_idx = data.get('inverseBindMatrices')
