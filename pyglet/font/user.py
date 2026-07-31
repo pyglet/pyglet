@@ -61,6 +61,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, ClassVar, Protocol
 
 import pyglet
+from pyglet.enums import Stretch, Style, Weight
 from pyglet.font import base
 
 SCALING_ENABLED = False
@@ -108,7 +109,8 @@ class UserDefinedFontBase(base.Font):
 
     def __init__(
             self, name: str, default_char: str, size: int, ascent: int | None = None, descent: int | None = None,
-            weight: str = "normal", style: str = "normal", stretch: str = "normal", dpi: int = 96, locale: str | None = None,
+            weight: Weight | str = Weight.NORMAL, style: Style | str = Style.NORMAL,
+            stretch: Stretch | str = Stretch.NORMAL, dpi: int = 96, locale: str | None = None,
     ) -> None:
         """Initialize a user defined font.
 
@@ -194,7 +196,8 @@ class UserDefinedMappingFont(UserDefinedFontBase):
 
     def __init__(self, name: str, default_char: str, size: int, mappings: DictLikeObject,
             ascent: int | None = None, descent: int | None = None,
-            weight: str = "normal", style: str = "normal", stretch: str = "normal",
+            weight: Weight | str = Weight.NORMAL, style: Style | str = Style.NORMAL,
+            stretch: Stretch | str = Stretch.NORMAL,
             dpi: int = 96, locale: str | None = None) -> None:
         """Initialize the default parameters of your font.
 

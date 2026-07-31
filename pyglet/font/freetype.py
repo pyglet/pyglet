@@ -5,6 +5,7 @@ from ctypes import POINTER, byref, c_ubyte, cast, memmove, string_at, Array
 from typing import NamedTuple, Sequence, TYPE_CHECKING
 
 import pyglet
+from pyglet.enums import Stretch, Style, Weight
 from pyglet import image
 from pyglet.font import base
 from pyglet.font.base import GlyphPosition
@@ -254,7 +255,8 @@ class MemoryFaceStore:
     def contains(self, name: str) -> bool:
         return len([fn_name for fn_name, _, _, _ in self._dict if name.lower() == fn_name.lower()]) > 0
 
-    def get(self, name: str, weight: str, style: str, stretch: str) -> FreeTypeMemoryFace | None:
+    def get(self, name: str, weight: Weight | str, style: Style | str,
+            stretch: Stretch | str) -> FreeTypeMemoryFace | None:
         return self._dict.get((name, weight, style, stretch), None)
 
     def all_keys(self) -> list[tuple[str, str, str, str]]:
@@ -270,9 +272,9 @@ class FreeTypeFont(base.Font):
     face: FreeTypeFace
 
     def __init__(self, name: str, size: float,
-                 weight: str = "normal",
-                 style: str = "normal",
-                 stretch: str = "normal", dpi: int | None = None) -> None:
+                 weight: Weight | str = Weight.NORMAL,
+                 style: Style | str = Style.NORMAL,
+                 stretch: Stretch | str = Stretch.NORMAL, dpi: int | None = None) -> None:
         super().__init__(name, size, weight, style, stretch, dpi)
 
         self._load_font_face()

@@ -295,7 +295,7 @@ class Font:
     # The size of the font in pixels.
     pixel_size: float
 
-    def __init__(self, name: str, size: float, weight: str | Weight, style: str | Style, stretch: str | Stretch,
+    def __init__(self, name: str, size: float, weight: Weight | str, style: Style | str, stretch: Stretch | str,
                  dpi: int | None) -> None:
         """Initialize a font that can be used with Pyglet.
 

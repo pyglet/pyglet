@@ -184,7 +184,8 @@ class FontManager(pyglet.event.EventDispatcher):
             self._added_families.add(new_font[0])
             self.dispatch_event("on_font_loaded", *new_font)
 
-    def on_font_loaded(self, family_name: str, weight: str, style: str, stretch: str) -> EVENT_HANDLE_STATE:
+    def on_font_loaded(self, family_name: str, weight: Weight | str, style: Style | str,
+                       stretch: Stretch | str) -> EVENT_HANDLE_STATE:
         """When a font is loaded, this event will be dispatched with the family name and style of the font.
 
         On some platforms, a custom added font may not be available immediately after adding the data. In these cases,
@@ -282,9 +283,9 @@ def have_font(name: str) -> bool:
 def load(
     name: str | Iterable[str] | None = None,
     size: float | None = None,
-    weight: str | None = "normal",
-    style: str | None = "normal",
-    stretch: str | None = "normal",
+    weight: Weight | str | None = Weight.NORMAL,
+    style: Style | str | None = Style.NORMAL,
+    stretch: Stretch | str | None = Stretch.NORMAL,
     dpi: int | None = None,
 ) -> Font:
     """Load a font for rendering.

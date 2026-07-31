@@ -5,7 +5,7 @@ from collections import OrderedDict
 from ctypes import CDLL, Structure, Union, byref, c_char_p, c_double, c_int, c_uint, c_void_p, POINTER
 from typing import TYPE_CHECKING
 
-from pyglet.enums import Style
+from pyglet.enums import Stretch, Style, Weight
 from pyglet.font.base import FontException
 from pyglet.lib import load_library
 from pyglet.util import asbytes, asstr
@@ -200,8 +200,9 @@ class FontConfig:
         result = FontConfigSearchResult(self._fontconfig, pattern)
         return result.weight, result.italic, result.stretch
 
-    def find_font(self, name: str, size: float = 12, weight: str = "normal",
-                  italic: str = "normal", stretch: str = "normal") -> FontConfigSearchResult:
+    def find_font(self, name: str, size: float = 12, weight: Weight | str = Weight.NORMAL,
+                  italic: Style | str = Style.NORMAL,
+                  stretch: Stretch | str = Stretch.NORMAL) -> FontConfigSearchResult:
         assert isinstance(weight, str)
         assert isinstance(italic, str)
         if result := self._get_from_search_cache(name, size, weight, italic, stretch):
@@ -241,8 +242,8 @@ class FontConfig:
         if len(self._search_cache) > self._cache_size:
             self._search_cache.popitem(last=False)[1].dispose()
 
-    def _get_from_search_cache(self, name: str, size: float, weight: str,
-                               italic: str, stretch: str) -> FontConfigSearchResult | None:
+    def _get_from_search_cache(self, name: str, size: float, weight: Weight | str,
+                               italic: Style | str, stretch: Stretch | str) -> FontConfigSearchResult | None:
         result = self._search_cache.get((name, size, weight, italic, stretch), None)
 
         if result and result.is_valid:

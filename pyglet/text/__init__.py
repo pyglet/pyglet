@@ -43,6 +43,7 @@ from os.path import splitext as _splitext
 from typing import TYPE_CHECKING, Any, BinaryIO, Literal
 
 import pyglet
+from pyglet.enums import Stretch, Style, Weight
 
 from pyglet.text import caret, document, layout  # noqa: F401
 
@@ -328,7 +329,7 @@ class DocumentLabel(layout.TextLayout):
         self.document.set_style(0, len(self.document.text), {"font_size": font_size})
 
     @property
-    def weight(self) -> str:
+    def weight(self) -> Weight | str:
         """The font weight (boldness or thickness), as a string.
 
         See the :py:class:`~Weight` enum for valid cross-platform
@@ -337,7 +338,7 @@ class DocumentLabel(layout.TextLayout):
         return self.document.get_style("weight")
 
     @weight.setter
-    def weight(self, weight: str) -> None:
+    def weight(self, weight: Weight | str) -> None:
         self.document.set_style(0, len(self.document.text), {"weight": str(weight)})
 
     @property
@@ -387,7 +388,8 @@ class Label(DocumentLabel):
             anchor_x: AnchorX = "left", anchor_y: AnchorY = "baseline", rotation: float = 0.0,
             multiline: bool = False, dpi: int | None = None,
             font_name: str | None = None, font_size: float | None = None,
-            weight: str = "normal", style: str = "normal", stretch: str = "normal",
+            weight: Weight | str = Weight.NORMAL, style: Style | str = Style.NORMAL,
+            stretch: Stretch | str = Stretch.NORMAL,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
             align: HorizontalAlign = "left",
             batch: Batch | None = None, group: Group | None = None,

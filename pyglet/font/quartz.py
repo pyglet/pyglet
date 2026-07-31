@@ -7,7 +7,7 @@ from enum import Enum
 from typing import BinaryIO, TYPE_CHECKING
 
 import pyglet.image
-from pyglet.enums import Weight, Stretch
+from pyglet.enums import Weight, Stretch, Style
 from pyglet.font.base import Glyph, GlyphPosition, GlyphRenderer, Font, get_grapheme_clusters
 from pyglet.libs.darwin import CGFloat, cocoapy, kCTFontURLAttribute, cfnumber_to_number, CGPoint, CFRange
 from pyglet.font.harfbuzz import harfbuzz_available, get_resource_from_ct_font, get_harfbuzz_shaped_glyphs
@@ -407,9 +407,9 @@ class QuartzFont(Font):
         self,
         name: str,
         size: float,
-        weight: str = "normal",
-        style: str = "normal",
-        stretch: str = "normal",
+        weight: Weight | str = Weight.NORMAL,
+        style: Style | str = Style.NORMAL,
+        stretch: Stretch | str = Stretch.NORMAL,
         dpi: int | None = None,
     ) -> None:
         super().__init__(name, size, weight, style, stretch, dpi)
@@ -453,7 +453,7 @@ class QuartzFont(Font):
             self._cg_font = None
             self.hb_resource = get_resource_from_ct_font(self)
 
-    def _get_system_default(self, weight: str, italic_style: str) -> c_void_p:
+    def _get_system_default(self, weight: Weight | str, italic_style: Style | str) -> c_void_p:
         if weight == "bold":
             font_enum = kCTFontUIFontEmphasizedSystem
         else:

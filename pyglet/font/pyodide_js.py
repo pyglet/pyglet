@@ -6,6 +6,7 @@ from asyncio import Task
 from typing import TYPE_CHECKING, ClassVar
 
 import pyglet
+from pyglet.enums import Stretch, Style, Weight
 from pyglet.font.ttf import TruetypeInfoBytes
 from pyglet.font import base, FontManager
 from pyglet.font.base import Glyph, FontException, GlyphPosition
@@ -91,7 +92,8 @@ class JavascriptPyodideFont(base.Font):
     _font_data_cache: ClassVar[dict] = {}
     _name_font_cache: ClassVar[dict] = {}
 
-    def __init__(self, name: str, size: float, weight: str = "normal", style: str = "normal", stretch: str = "normal",
+    def __init__(self, name: str, size: float, weight: Weight | str = Weight.NORMAL,
+                 style: Style | str = Style.NORMAL, stretch: Stretch | str = Stretch.NORMAL,
                  dpi: int | None = None) -> None:
         self._glyph_renderer = None
         super().__init__(name, size, weight, style, stretch, dpi)

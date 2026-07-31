@@ -61,9 +61,9 @@ class FontGroup:
 
     def get_font(self,
                  size: float | None,
-                 weight: str | None = "normal",
-                 style: str | None = "normal",
-                 stretch: str | None = "normal",
+                 weight: Weight | str | None = Weight.NORMAL,
+                 style: Style | str | None = Style.NORMAL,
+                 stretch: Stretch | str | None = Stretch.NORMAL,
                  dpi: int | None = None,
     ) -> FontGroupInstance:
         size = size or 12
@@ -90,8 +90,8 @@ class FontGroupInstance(base.Font):
     """A font instance based off the FontGroup."""
     _child_cache: dict[str, base.Font]
 
-    def __init__(self, group: FontGroup, size: float, weight: str | Weight, style: str | Style,  # noqa: D107
-                 stretch: str | Stretch,  dpi: int | None) -> None:
+    def __init__(self, group: FontGroup, size: float, weight: Weight | str, style: Style | str,  # noqa: D107
+                 stretch: Stretch | str,  dpi: int | None) -> None:
         super().__init__("", size, weight, style, stretch, dpi)
         self._group = group
         self._name = self._get_name()

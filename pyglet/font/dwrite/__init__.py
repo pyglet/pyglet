@@ -9,6 +9,7 @@ from enum import Flag
 from typing import TYPE_CHECKING, BinaryIO, Sequence, Generator, ClassVar, Any
 
 import pyglet
+from pyglet.enums import Stretch, Style, Weight
 from pyglet.font import base, FontManager
 from pyglet.font.base import Glyph, GlyphPosition
 from pyglet.font.dwrite.d2d1_lib import (
@@ -884,9 +885,9 @@ class Win32DirectWriteFont(base.Font):
         self,
         name: str,
         size: float,
-        weight: str = "normal",
-        style: str = "normal",
-        stretch: str = "normal",
+        weight: Weight | str = Weight.NORMAL,
+        style: Style | str = Style.NORMAL,
+        stretch: Stretch | str = Stretch.NORMAL,
         dpi: int | None = None,
         locale: str | None = None,
     ) -> None:
@@ -1311,7 +1312,7 @@ class Win32DirectWriteFont(base.Font):
 
     @classmethod
     def find_font_face(
-        cls, font_name: str, weight: str, italic: str, stretch: str,
+        cls, font_name: str, weight: Weight | str, italic: Style | str, stretch: Stretch | str,
     ) -> tuple[IDWriteFont | None, IDWriteFontCollection | None]:
         """Search font collections for legacy RBIZ names.
 
