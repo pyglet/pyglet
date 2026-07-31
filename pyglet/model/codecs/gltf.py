@@ -230,6 +230,9 @@ class Material(PBRMaterial):
         # TODO: finish this once the base class is ready
         # super().__init__(name, )
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(name={self.name})"
+
 
 class Texture:
     def __init__(self, data, owner):
@@ -412,40 +415,76 @@ class Animation:
         self.extensions = data.get('extensions')
         self.extras = data.get('extras')
 
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"name={self.name}, "
+            f"samplers={len(self.samplers)}, "
+            f"channels={len(self.channels)}"
+            ")"
+        )
+
 
 class AnimationChannel:
     def __init__(self, data, owner, animation):
         self.target = AnimationChannelTarget(data.get('target'), owner)
-        sampler_id = data.get('sampler')
+        self.sampler_id = data.get('sampler')
         sampler = animation.samplers[
-            sampler_id
-        ] if sampler_id is not None else None
+            self.sampler_id
+        ] if self.sampler_id is not None else None
         self.sampler = sampler
         self.extensions = data.get('extensions')
         self.extras = data.get('extras')
 
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"target={self.target}, "
+            f"sampler={self.sampler_id}"
+            ")"
+        )
+
 
 class AnimationChannelTarget:
     def __init__(self, data, owner):
-        node_idx = data.get('node')
-        self.node = owner.nodes[node_idx] if node_idx is not None else None
+        self.node_idx = data.get('node')
+        self.node = owner.nodes[
+            self.node_idx
+        ] if self.node_idx is not None else None
         self.path = data.get('path', AnimationChannelTargetPath.ROTATION)
         self.extensions = data.get('extensions')
         self.extras = data.get('extras')
 
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"node={self.node_idx}, "
+            f"path={self.path}"
+            ")"
+        )
 
 class AnimationSampler:
     def __init__(self, data, owner):
-        input_idx = data.get('input')
-        self.input = owner.accessors[input_idx] if input_idx is not None else \
-            None
-        output_idx = data.get('output')
-        self.output = owner.accessors[output_idx] if output_idx is not None \
-            else None
+        self.input_idx = data.get('input')
+        self.input = owner.accessors[self.input_idx] if (
+            self.input_idx is not None
+        ) else None
+        self.output_idx = data.get('output')
+        self.output = owner.accessors[self.output_idx] if (
+            self.output_idx is not None
+        ) else None
         interpolation = data.get('interpolation', 'LINEAR')
         self.interpolation = AnimationInterpolation(interpolation)
         self.extensions = data.get('extensions')
         self.extras = data.get('extras')
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"input={self.input_idx}, "
+            f"output={self.output_idx}"
+            ")"
+        )
 
 class GLTF:
     def __init__(self, gltf_data: dict, binary_buffer: bytes | None = None):
