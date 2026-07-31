@@ -27,6 +27,10 @@ class JSAudioDriver(AbstractAudioDriver):
         self._audio_state_proxy = create_proxy(self._update_button_state)
         self.ctx.onstatechange = self._audio_state_proxy
 
+    @property
+    def sample_formats(self) -> tuple[str, ...]:
+        return ("S16",)
+
     def _update_button_state(self, event=None):
         state = self.ctx.state
         if state == "suspended":
