@@ -571,21 +571,29 @@ class GLTF:
 
         self.cameras = [Camera(cam['type'], cam[cam['type']]) for cam in gltf_data.get('cameras', [])]
 
-        self.meshes = [Mesh(data=data, owner=self) for data in gltf_data['meshes']]
-        self.nodes = [
-            Node(data=data, owner=self, index=idx) for idx, data in enumerate(gltf_data['nodes'])
+        self.meshes: list[Mesh] = [
+            Mesh(data=data, owner=self) for data in gltf_data['meshes']
+        ]
+        self.nodes: list[Node] = [
+            Node(data=data, owner=self, index=idx) for idx, data in
+            enumerate(gltf_data['nodes'])
         ]
 
-        self.skins = [
+        self.skins: list[Skin] = [
             Skin(data=data, owner=self) for data in gltf_data.get('skins', [])
         ]
-        self.animations = [
+        self.animations: list[Animation] = [
             Animation(data=data, owner=self) for data in
             gltf_data.get('animations', [])
         ]
 
-        self.scenes = [Scene(nodes=[self.nodes[i] for i in data['nodes']]) for data in gltf_data['scenes']]
-        self.default_scene = self.scenes[gltf_data.get('scene', 0)]
+        self.scenes: list[Scene] = [
+            Scene(
+                name=scene_data.get('name', "undefined"),
+                nodes=[self.nodes[i] for i in scene_data['nodes']]
+            )  for scene_data in gltf_data['scenes']
+        ]
+        self.default_scene: Scene = self.scenes[gltf_data.get('scene', 0)]
 
     def __repr__(self):
         return f"{self.__class__.__name__}(scenes={len(self.scenes)}, meshes={len(self.meshes)})"
