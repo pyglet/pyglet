@@ -20,14 +20,14 @@ from pyglet.enums import (
 )
 
 from . import ModelDecodeException, ModelDecoder
-from .base import Scene
 from .base import PBRMaterial
 from .base import Camera as BaseCamera
 from .base import Attribute as BaseAttribute
 from .base import Primitive as BasePrimitive
 from .base import Node as BaseNode
 from .base import Mesh as BaseMesh
-
+from .base import Scene as BaseScene
+from ...math import Mat4, Quaternion, Vec3
 
 _array_types = {
     GL_BYTE: 'b',
@@ -230,6 +230,9 @@ class Material(PBRMaterial):
         # TODO: finish this once the base class is ready
         # super().__init__(name, )
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(name={self.name})"
+
 
 class Texture:
     def __init__(self, data, owner):
@@ -324,44 +327,137 @@ class Mesh(BaseMesh):
 
 
 class Node(BaseNode):
-    def __init__(self, data, owner):
+    def __init__(self, data, owner, index):
         self._data = data
         self._owner = owner
+        self.index = index
 
         _mesh_index = data.get('mesh')
         self.mesh = owner.meshes[_mesh_index] if _mesh_index is not None else None
 
+        self.name = data.get('name')
         self.matrix = data.get('matrix')            # Mat4
         self.translation = data.get('translation')  # Vec3
         self.rotation = data.get('rotation')        # Quaternion
         self.scale = data.get('scale')              # Vec3
 
         # TODO: handle these:
-        self.skin = None
         self.camera = None
-
-        # TODO: handle global and local transforms:
-        # https://github.com/KhronosGroup/glTF-Tutorials/blob/master/gltfTutorial/gltfTutorial_004_ScenesNodes.md
-
         self._child_indices = data.get('children', [])
+        self._skin_index = data.get('skin')
 
     @property
     def children(self):
         return [self._owner.nodes[i] for i in self._child_indices]
 
+    @property
+    def parent(self) -> "Node | None":
+        for node in self._owner.nodes:
+            if self in node.children:
+                return node
+        return None
+
+    @property
+    def local_transform(self) -> Mat4:
+        if self.matrix:
+            transform = Mat4(*self.matrix)
+        else:
+            if self.translation:
+                t = Mat4.from_translation(Vec3(*self.translation))
+            else:
+                t = Mat4()
+
+            if self.rotation:
+                quat = Quaternion(self.rotation[3], *self.rotation[:3])
+                r = quat.to_mat4().transpose()
+            else:
+                r = Mat4()
+
+            if self.scale:
+                s = Mat4.from_scale(Vec3(*self.scale))
+            else:
+                s = Mat4()
+            transform = t @ r @ s
+
+        return transform
+
+    @property
+    def global_transform(self) -> Mat4:
+        # For this property to work make sure to call it after all nodes have
+        # been created. That way you make sure the parent has already been set
+        transform = self.local_transform
+        if self.parent:
+            transform = self.parent.global_transform @ transform
+        return transform
+
+    @property
+    def skin(self):
+        if self._skin_index is None:
+            return None
+        return self._owner.skins[self._skin_index]
+
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}"
+            f"("
+            f"index={self.index}, name={self.name}, "
+            f"mesh={self.mesh}, skin={self.skin}, "
+            f"camera={self.camera}, children={len(self.children)}"
+            f")"
+        )
+
+
+class Scene(BaseScene):
+    def __init__(self, name:str = "undefined", nodes: list[Node] | None = None):
+        super().__init__(nodes=nodes)
+        self.name = name
+
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}("
+            f"name={self.name}, "
+            f"nodes={len(self.nodes)}"
+            ")"
+        )
+
 
 class Skin:
     def __init__(self, data, owner):
         self.name = data.get('name')
-        ibm_idx = data.get('inverseBindMatrices')
-        ibm_accessor = owner.accessors[ibm_idx] if ibm_idx is not None else None
-        self.inverse_bind_matrices = ibm_accessor.as_array() if ibm_accessor \
-            else None
         joints_indices = data.get('joints', [])
-        self.joints = [owner.nodes[i] for i in joints_indices]
+        self.joints: list[Node] = [owner.nodes[i] for i in joints_indices]
+        self.ibm_idx = data.get('inverseBindMatrices')
+        ibm_accessor = owner.accessors[
+            self.ibm_idx
+        ] if self.ibm_idx is not None else None
+        # If inverseBindMatrices is not defined, each matrix is a 4x4 identity
+        # https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#_skin_inversebindmatrices
+        self.inverse_bind_matrices: list[Mat4] = []
+        ibms = ibm_accessor.as_array() if ibm_accessor else None
+        for i in range(len(self.joints)):
+            if ibms is None:
+                new_matrix = Mat4()
+            else:
+                offset = i * 16
+                new_matrix = Mat4(*ibms[offset:offset+16])
+            self.inverse_bind_matrices.append(new_matrix)
+
+        self.skeleton_index: int | None = data.get('skeleton')
+        self.skeleton: Node | None = owner.nodes[self.skeleton_index] if (
+            self.skeleton_index is not None
+        ) else None
         self.extensions = data.get('extensions')
         self.extras = data.get('extras')
 
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}("
+            f"name={self.name}, "
+            f"inverse_bind_matrices={self.ibm_idx}, "
+            f"skeleton={self.skeleton_index}, "
+            f"joints={len(self.joints)}"
+            ")"
+        )
 
 class Animation:
     def __init__(self, data, owner):
@@ -382,40 +478,76 @@ class Animation:
         self.extensions = data.get('extensions')
         self.extras = data.get('extras')
 
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"name={self.name}, "
+            f"samplers={len(self.samplers)}, "
+            f"channels={len(self.channels)}"
+            ")"
+        )
+
 
 class AnimationChannel:
     def __init__(self, data, owner, animation):
         self.target = AnimationChannelTarget(data.get('target'), owner)
-        sampler_id = data.get('sampler')
+        self.sampler_id = data.get('sampler')
         sampler = animation.samplers[
-            sampler_id
-        ] if sampler_id is not None else None
+            self.sampler_id
+        ] if self.sampler_id is not None else None
         self.sampler = sampler
         self.extensions = data.get('extensions')
         self.extras = data.get('extras')
 
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"target={self.target}, "
+            f"sampler={self.sampler_id}"
+            ")"
+        )
+
 
 class AnimationChannelTarget:
     def __init__(self, data, owner):
-        node_idx = data.get('node')
-        self.node = owner.nodes[node_idx] if node_idx is not None else None
+        self.node_idx = data.get('node')
+        self.node = owner.nodes[
+            self.node_idx
+        ] if self.node_idx is not None else None
         self.path = data.get('path', AnimationChannelTargetPath.ROTATION)
         self.extensions = data.get('extensions')
         self.extras = data.get('extras')
 
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"node={self.node_idx}, "
+            f"path={self.path}"
+            ")"
+        )
 
 class AnimationSampler:
     def __init__(self, data, owner):
-        input_idx = data.get('input')
-        self.input = owner.accessors[input_idx] if input_idx is not None else \
-            None
-        output_idx = data.get('output')
-        self.output = owner.accessors[output_idx] if output_idx is not None \
-            else None
+        self.input_idx = data.get('input')
+        self.input = owner.accessors[self.input_idx] if (
+            self.input_idx is not None
+        ) else None
+        self.output_idx = data.get('output')
+        self.output = owner.accessors[self.output_idx] if (
+            self.output_idx is not None
+        ) else None
         interpolation = data.get('interpolation', 'LINEAR')
         self.interpolation = AnimationInterpolation(interpolation)
         self.extensions = data.get('extensions')
         self.extras = data.get('extras')
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"input={self.input_idx}, "
+            f"output={self.output_idx}"
+            ")"
+        )
 
 class GLTF:
     def __init__(self, gltf_data: dict, binary_buffer: bytes | None = None):
@@ -439,19 +571,29 @@ class GLTF:
 
         self.cameras = [Camera(cam['type'], cam[cam['type']]) for cam in gltf_data.get('cameras', [])]
 
-        self.meshes = [Mesh(data=data, owner=self) for data in gltf_data['meshes']]
-        self.nodes = [Node(data=data, owner=self) for data in gltf_data['nodes']]
+        self.meshes: list[Mesh] = [
+            Mesh(data=data, owner=self) for data in gltf_data['meshes']
+        ]
+        self.nodes: list[Node] = [
+            Node(data=data, owner=self, index=idx) for idx, data in
+            enumerate(gltf_data['nodes'])
+        ]
 
-        self.skins = [
+        self.skins: list[Skin] = [
             Skin(data=data, owner=self) for data in gltf_data.get('skins', [])
         ]
-        self.animations = [
+        self.animations: list[Animation] = [
             Animation(data=data, owner=self) for data in
             gltf_data.get('animations', [])
         ]
 
-        self.scenes = [Scene(nodes=[self.nodes[i] for i in data['nodes']]) for data in gltf_data['scenes']]
-        self.default_scene = self.scenes[gltf_data.get('scene', 0)]
+        self.scenes: list[Scene] = [
+            Scene(
+                name=scene_data.get('name', "undefined"),
+                nodes=[self.nodes[i] for i in scene_data['nodes']]
+            )  for scene_data in gltf_data['scenes']
+        ]
+        self.default_scene: Scene = self.scenes[gltf_data.get('scene', 0)]
 
     def __repr__(self):
         return f"{self.__class__.__name__}(scenes={len(self.scenes)}, meshes={len(self.meshes)})"
