@@ -242,6 +242,8 @@ NSDeviceResolution = c_void_p.in_dll(appkit, 'NSDeviceResolution')
 NSDragOperationGeneric = 4
 
 NSStatusWindowLevel = 25
+NSMainMenuWindowLevel = 24
+NSNormalWindowLevel = 0
 
 
 # /System/Library/Frameworks/AppKit.framework/Headers/NSEvent.h
@@ -471,6 +473,9 @@ quartz.CGGetActiveDisplayList.argtypes = [c_uint32, POINTER(CGDirectDisplayID), 
 
 quartz.CGDisplayBounds.restype = CGRect
 quartz.CGDisplayBounds.argtypes = [CGDirectDisplayID]
+
+quartz.CGDisplayUnitNumber.restype = c_uint32
+quartz.CGDisplayUnitNumber.argtypes = [CGDirectDisplayID]
 
 quartz.CGImageSourceCreateWithData.restype = c_void_p
 quartz.CGImageSourceCreateWithData.argtypes = [c_void_p, c_void_p]
