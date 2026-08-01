@@ -54,9 +54,11 @@ class CoreAudioSource(StreamingSource):
         if file is None:
             fn_str = CFSTR(filename)
             url_ref = cf.CFURLCreateWithFileSystemPath(None, fn_str, kCFURLPOSIXPathStyle, False)
-
-            err_check(ca.ExtAudioFileOpenURL(url_ref, byref(audref)))
-            cf.CFRelease(fn_str)
+            try:
+                err_check(ca.ExtAudioFileOpenURL(url_ref, byref(audref)))
+            finally:
+                cf.CFRelease(url_ref)
+                cf.CFRelease(fn_str)
         else:
             self.file_obj = MemoryFileObject(file)
 

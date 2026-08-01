@@ -45,10 +45,10 @@ Some features of pyglet are:
 
 ## Requirements
 
-pyglet runs under Python 3.8+. Being written in pure Python, it also works on other Python interpreters such as PyPy. Supported platforms are:
+pyglet runs under Python 3.10+. Being written in pure Python, it also works on other Python interpreters such as PyPy. Supported platforms are:
 
 * Windows 7 or later
-* Mac OS X 10.3 or later
+* macOS 10.9 or later.
 * Linux, with the following libraries (most recent distributions will have
   these in a default installation):
   * OpenGL and GLX

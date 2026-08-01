@@ -72,9 +72,11 @@ jobs:
         run: |
           pip install pytest
       - name: Run tests
+        env:
+          PYGLET_BACKEND: opengl
         run: |
           python3 -m pyglet.info
-          pytest tests --ignore=tests/interactive --ignore=tests/integration
+          pytest tests --ignore=tests/interactive
 
   windows:
     runs-on: windows-latest

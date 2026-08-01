@@ -154,9 +154,11 @@ class PygletDelegate_Implementation:
             old_scale = old_scale_value.doubleValue()
             new_scale = self._window._nswindow.backingScaleFactor()
             if old_scale != new_scale:
+                new_dpi = round(96 * new_scale)
+                self._window._dpi = new_dpi  # noqa: SLF001
                 self._window.switch_to()
-                self._window.context.update_geometry()
-                self._window.dispatch_event("_on_internal_scale", new_scale, self._window._get_dpi_desc())
+                self._window._update_geometry()  # noqa: SLF001
+                self._window.dispatch_event("_on_internal_scale", new_scale, new_dpi)
 
 
 

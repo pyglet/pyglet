@@ -80,6 +80,7 @@ class CocoaWindow(BaseWindow):
     }
 
     def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
+        self._installing_view = False
         with AutoReleasePool():
             super().__init__(*args, **kwargs)
 
@@ -87,8 +88,9 @@ class CocoaWindow(BaseWindow):
         if 'context' in changes:
             self.context.set_current()
 
-        if 'fullscreen' in changes and not self._fullscreen:  # leaving fullscreen
-            self.screen.release_display()
+        if changes == ['fullscreen'] and self._nswindow is not None:
+            self._set_fullscreen_state()
+            return
 
         self._create()
 
@@ -127,20 +129,7 @@ class CocoaWindow(BaseWindow):
                 if self._style == BaseWindow.WINDOW_STYLE_TOOL:
                     WindowClass = PygletToolWindow
 
-            # First create an instance of our NSWindow subclass.
-
-            # FIX ME:
-            # Need to use this initializer to have any hope of multi-monitor support.
-            # But currently causes problems on Mac OS X Lion.  So for now, we initialize the
-            # window without including screen information.
-            #
-            # self._nswindow = WindowClass.alloc().initWithContentRect_styleMask_backing_defer_screen_(
-            #     content_rect,           # contentRect
-            #     style_mask,             # styleMask
-            #     NSBackingStoreBuffered, # backing
-            #     False,                  # defer
-            #     self.screen.get_nsscreen())  # screen
-
+            # The target screen is selected explicitly when positioning the window below.
             self._nswindow = WindowClass.alloc().initWithContentRect_styleMask_backing_defer_(
                 content_rect,  # contentRect
                 style_mask,  # styleMask
@@ -148,15 +137,11 @@ class CocoaWindow(BaseWindow):
                 False)  # defer
 
             if self._fullscreen:
-                # BUG: I suspect that this doesn't do the right thing when using
-                # multiple monitors (which would be to go fullscreen on the monitor
-                # where the window is located).  However, I've no way to test.
                 blackColor = NSColor.blackColor()
                 self._nswindow.setBackgroundColor_(blackColor)
                 self._nswindow.setOpaque_(True)
-                self.screen.capture_display()
-                self._nswindow.setLevel_(quartz.CGShieldingWindowLevel())
-                self.context.set_full_screen()
+                self._nswindow.setHasShadow_(False)
+                self._nswindow.setLevel_(cocoapy.NSMainMenuWindowLevel + 1)
                 self._center_window()
                 self._mouse_in_window = True
             else:
@@ -185,7 +170,13 @@ class CocoaWindow(BaseWindow):
                 self.context.attach(self)
                 if self._metal_layer:
                     self.context._nscontext = self._metal_layer  # noqa: SLF001
-            self._nswindow.setContentView_(self._nsview)
+            # Installing the content view invokes setFrameSize and is not a visible resize.
+            # Maintains event order by capturing this.
+            self._installing_view = True
+            try:
+                self._nswindow.setContentView_(self._nsview)
+            finally:
+                self._installing_view = False
             self._nswindow.makeFirstResponder_(self._nsview)
 
             # Configure the window.
@@ -193,7 +184,7 @@ class CocoaWindow(BaseWindow):
 
             # Required as it may cause a segfault after closing a Window, mostly due to NSTextView use.
             self._nswindow.setReleasedWhenClosed_(False)
-            self._nswindow.useOptimizedDrawing_(True)
+            self._nswindow.setRestorable_(False)
             self._nswindow.setPreservesContentDuringLiveResize_(False)
 
             # Set the delegate.
@@ -227,6 +218,64 @@ class CocoaWindow(BaseWindow):
                     self.set_mouse_passthrough(True)
                     self._nswindow.setLevel_(cocoapy.NSStatusWindowLevel)
 
+    def _set_fullscreen_state(self) -> None:
+        """Apply exclusive-style fullscreen without replacing the NSWindow or NSView.
+
+        NSWindow.toggleFullScreen: cannot be used here. It seems to be
+        asynchronous, so there isn't a current way to manage that.
+        """
+        with AutoReleasePool():
+            # Changing a style mask can synchronously resize the content view,
+            # whose callback updates these attributes. Preserve BaseWindow's
+            # requested transition size until the new frame is installed.
+            width, height = self._width, self._height
+            if self._fullscreen:
+                self._nswindow.setStyleMask_(cocoapy.NSBorderlessWindowMask)
+                self._nswindow.setLevel_(cocoapy.NSMainMenuWindowLevel + 1)
+                self._nswindow.setBackgroundColor_(NSColor.blackColor())
+                self._nswindow.setOpaque_(True)
+                self._nswindow.setHasShadow_(False)
+                self._set_frame_on_screen(width, height)
+                self._mouse_in_window = True
+            else:
+                style_mask = self._style_masks.get(self._style, self._style_masks[self.WINDOW_STYLE_DEFAULT])
+                if self._resizable:
+                    style_mask |= cocoapy.NSResizableWindowMask
+                self._nswindow.setStyleMask_(style_mask)
+                self._nswindow.setLevel_(cocoapy.NSNormalWindowLevel)
+                self._nswindow.setOpaque_(True)
+                self._nswindow.setBackgroundColor_(NSColor.windowBackgroundColor())
+                self._nswindow.setHasShadow_(True)
+                self._set_frame_size(width, height)
+
+                if self._style in ("transparent", "overlay"):
+                    self._nswindow.setOpaque_(False)
+                    self._nswindow.setBackgroundColor_(NSColor.clearColor())
+                    self._nswindow.setHasShadow_(False)
+                    if self._style == "overlay":
+                        self._nswindow.setLevel_(cocoapy.NSStatusWindowLevel)
+
+                self._mouse_in_window = self._mouse_in_content_rect()
+
+            # Cocoa may clear the first responder while changing the style mask.
+            self._nswindow.makeFirstResponder_(self._nsview)
+            self.switch_to()
+            self._update_geometry()
+
+    def _set_frame_on_screen(self, width: int, height: int) -> None:
+        ns_screen = self.screen.get_nsscreen()
+        if ns_screen is not None:
+            screen_frame = ns_screen.frame()
+            origin_x = screen_frame.origin.x + (screen_frame.size.width - width) / 2
+            origin_y = screen_frame.origin.y + (screen_frame.size.height - height) / 2
+        else:
+            main_height = quartz.CGDisplayBounds(quartz.CGMainDisplayID()).size.height
+            origin_x = self.screen.x + (self.screen.width - width) / 2
+            origin_y = main_height - self.screen.y - (self.screen.height + height) / 2
+
+        frame = cocoapy.NSMakeRect(origin_x, origin_y, width, height)
+        self._nswindow.setFrame_display_(frame, True)
+
     def _update_geometry(self):
         if self._metal_layer:
             pass
@@ -234,12 +283,7 @@ class CocoaWindow(BaseWindow):
             self.context.update_geometry()
 
     def _get_dpi_desc(self) -> int:
-        if self._nswindow:
-            desc = self._nswindow.deviceDescription()
-            rsize = desc.objectForKey_(darwin.NSDeviceResolution).sizeValue()
-            return int(rsize.width)
-
-        return 72
+        return round(96 * self.scale)
 
     @property
     def scale(self) -> float:
@@ -278,10 +322,14 @@ class CocoaWindow(BaseWindow):
             self._nswindow.cascadeTopLeftFromPoint_(point)
 
     def _center_window(self) -> None:
-        # [NSWindow center] does not move the window to a true center position
-        # and also always moves the window to the main display.
-        x = self.screen.x + int((self.screen.width - self._width) // 2)
-        y = self.screen.y + int((self.screen.height - self._height) // 2)
+        frame = self._nswindow.frame()
+        ns_screen = self.screen.get_nsscreen()
+        if ns_screen is None:
+            return
+
+        screen_frame = ns_screen.frame()
+        x = screen_frame.origin.x + (screen_frame.size.width - frame.size.width) / 2
+        y = screen_frame.origin.y + (screen_frame.size.height - frame.size.height) / 2
         self._nswindow.setFrameOrigin_(cocoapy.NSPoint(x, y))
 
     def close(self) -> None:
@@ -332,9 +380,8 @@ class CocoaWindow(BaseWindow):
 
     def _poll_app_events(self):
         with AutoReleasePool():
+            NSApp = NSApplication.sharedApplication()
             while True:
-                NSApp = NSApplication.sharedApplication()
-
                 event = NSApp.nextEventMatchingMask_untilDate_inMode_dequeue_(
                     cocoapy.NSAnyEventMask, None, cocoapy.NSDefaultRunLoopMode, True)
 
@@ -352,11 +399,13 @@ class CocoaWindow(BaseWindow):
         # Dequeue and process all of the pending Cocoa events.
         with AutoReleasePool():
             NSApp = NSApplication.sharedApplication()
+            dispatched_event = False
             while event and self._nswindow and self._context:
                 event = NSApp.nextEventMatchingMask_untilDate_inMode_dequeue_(
                     cocoapy.NSAnyEventMask, None, cocoapy.NSEventTrackingRunLoopMode, True)
 
                 if event:
+                    dispatched_event = True
                     event_type = event.type()
                     # Pass on all events.
                     NSApp.sendEvent_(event)
@@ -367,7 +416,9 @@ class CocoaWindow(BaseWindow):
                         NSApp.sendAction_to_from_(cocoapy.get_selector('pygletKeyUp:'), None, event)
                     elif event_type == cocoapy.NSFlagsChanged:
                         NSApp.sendAction_to_from_(cocoapy.get_selector('pygletFlagsChanged:'), None, event)
-                    NSApp.updateWindows()
+
+            if dispatched_event:
+                NSApp.updateWindows()
 
         self._allow_dispatch_event = False
 
@@ -394,9 +445,8 @@ class CocoaWindow(BaseWindow):
         bytesPerRow = len(fmt) * image.width
         data = image.get_bytes(fmt, -bytesPerRow)
 
-        # Use image data to create a data provider.
-        # Using CGDataProviderCreateWithData crashes PyObjC 2.2b3, so we create
-        # a CFDataRef object first and use it to create the data provider.
+        # Wrap the Python-owned bytes in CFData so the data provider has an
+        # explicit Core Foundation lifetime.
         cfdata = c_void_p(cf.CFDataCreate(None, data, len(data)))
 
         provider = c_void_p(quartz.CGDataProviderCreateWithCFData(cfdata))
@@ -413,16 +463,17 @@ class CocoaWindow(BaseWindow):
             True,
             cocoapy.kCGRenderingIntentDefault))
 
-        if not cgimage:
-            return
-
         cf.CFRelease(cfdata)
         quartz.CGDataProviderRelease(provider)
         quartz.CGColorSpaceRelease(colorSpace)
 
+        if not cgimage:
+            return
+
         # Turn the CGImage into an NSImage.
         size = cocoapy.NSMakeSize(image.width, image.height)
         nsimage = NSImage.alloc().initWithCGImage_size_(cgimage, size)
+        quartz.CGImageRelease(cgimage)
         if not nsimage:
             return
 
@@ -434,18 +485,14 @@ class CocoaWindow(BaseWindow):
     def get_location(self) -> tuple[int, int]:
         window_frame = self._nswindow.frame()
         rect = self._nswindow.contentRectForFrameRect_(window_frame)
-        screen_frame = self._nswindow.screen().frame()
-        screen_width = int(screen_frame.size.width)  # noqa: F841
-        screen_height = int(screen_frame.size.height)
-        return int(rect.origin.x), int(screen_height - rect.origin.y - rect.size.height)
+        main_height = quartz.CGDisplayBounds(quartz.CGMainDisplayID()).size.height
+        return int(rect.origin.x), int(main_height - rect.origin.y - rect.size.height)
 
     def set_location(self, x: int, y: int) -> None:
         window_frame = self._nswindow.frame()
         rect = self._nswindow.contentRectForFrameRect_(window_frame)
-        screen_frame = self._nswindow.screen().frame()
-        screen_width = int(screen_frame.size.width)  # noqa: F841
-        screen_height = int(screen_frame.size.height)
-        origin = cocoapy.NSPoint(x, screen_height - y - rect.size.height)
+        main_height = quartz.CGDisplayBounds(quartz.CGMainDisplayID()).size.height
+        origin = cocoapy.NSPoint(x, main_height - y - rect.size.height)
         self._nswindow.setFrameOrigin_(origin)
 
     def get_size(self) -> tuple[int, int]:
@@ -624,7 +671,7 @@ class CocoaWindow(BaseWindow):
             # display coords where (0,0) is now top-left of display and y down.
             screenInfo = self._nswindow.screen().deviceDescription()
             displayID = screenInfo.objectForKey_(cocoapy.get_NSString('NSScreenNumber'))
-            displayID = displayID.intValue()
+            displayID = displayID.unsignedIntValue()
             displayBounds = quartz.CGDisplayBounds(displayID)
             frame = self._nswindow.frame()
             windowOrigin = frame.origin
