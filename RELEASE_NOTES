@@ -1,3 +1,13 @@
+pyglet 2.1.16
+
+Bugfixes
+--------
+- math: Fix Mat3.scale and Mat4.translate to match Mat4 conventions. (#1460)
+- math: Fix Mat4.scale to use all values, not only diagonals. (#1463)
+- text: Route glyph placements to avoid accumulation errors. (#1450)
+- media: Backport ffmpeg fixes from pyglet 3.0. (#1459)
+
+
 pyglet 2.1.15
 
 Bugfixes
