@@ -19,9 +19,7 @@ All objects are immutable and hashable.
 #   on systems without access to compute shaders
 from __future__ import annotations
 
-from math import (
-    acos, sin, asin, cos, sqrt, ceil, trunc, atan2, floor, radians, tan, pi
-)
+from math import acos, sin, asin, cos, sqrt, ceil, trunc, atan2, floor, radians, tan, pi
 
 import typing as _typing
 import warnings as _warnings
@@ -29,7 +27,8 @@ import warnings as _warnings
 
 def clamp(num: float, minimum: float, maximum: float) -> float:
     """Clamp a value between a minimum and maximum limit."""
-    return max(min(num, maximum), minimum)
+    # if/else checks are significantly faster that min()/max() calls:
+    return minimum if num < minimum else maximum if num > maximum else num
 
 
 class Vec2(_typing.NamedTuple):
