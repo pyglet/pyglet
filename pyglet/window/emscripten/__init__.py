@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import TYPE_CHECKING, Callable
+from typing import Any, TYPE_CHECKING, Callable
 
 import js  # noqa: F821
 from pyodide.ffi import create_proxy  # noqa: F821
@@ -328,8 +328,10 @@ class EmscriptenWindow(BaseWindow):
         mode: ScreenMode | None = None,
     ) -> None:
         self._canvas = None
-        self._event_handlers: dict[int, Callable] = {}
-        self._canvas_event_handlers: dict[int, Callable] = {}
+        self._event_handlers: dict[str, Any] = {}
+        self._canvas_event_handlers: dict[str, Any] = {}
+        self._observer = None
+        self._proxy_resize = None
         self._keys_down = set()
 
         self._scale = js.window.devicePixelRatio
@@ -385,19 +387,43 @@ class EmscriptenWindow(BaseWindow):
                 assert message not in self._event_handlers, f"event: '{message}' already exists."
                 proxy = create_proxy(func)
                 if hasattr(func, '_canvas'):
-                    self._canvas_event_handlers[message] = func
+                    self._canvas_event_handlers[message] = proxy
                     if func._passive is not None:
                         # Not sure what behavior results if we pass None to the JS event handler.
                         self._canvas.addEventListener(message, proxy, passive=func._passive)
                     else:
                         self._canvas.addEventListener(message, proxy)
                 else:
-                    self._event_handlers[message] = func
+                    self._event_handlers[message] = proxy
                     js.window.addEventListener(message, proxy)
 
         self._proxy_resize = create_proxy(self._event_resized)
         self._observer = js.ResizeObserver.new(self._proxy_resize)
         self._observer.observe(self._canvas)
+
+    def close(self) -> None:
+        """Remove browser callbacks before releasing the pyglet window."""
+        if not self._context:
+            return
+
+        if self._observer is not None:
+            self._observer.disconnect()
+            self._observer = None
+        if self._proxy_resize is not None:
+            self._proxy_resize.destroy()
+            self._proxy_resize = None
+
+        for message, proxy in self._canvas_event_handlers.items():
+            self._canvas.removeEventListener(message, proxy)
+            proxy.destroy()
+        self._canvas_event_handlers.clear()
+
+        for message, proxy in self._event_handlers.items():
+            js.window.removeEventListener(message, proxy)
+            proxy.destroy()
+        self._event_handlers.clear()
+
+        super().close()
 
     def set_fullscreen(
         self,
@@ -684,12 +710,12 @@ class EmscriptenWindow(BaseWindow):
         print("WebGL context restored!")
 
     @CanvasEventHandler("focus")
-    async def _event_gain_focus(self, event):
-        await pyglet.app.platform_event_loop.post_event(self, 'on_activate')
+    def _event_gain_focus(self, event):
+        pyglet.app.platform_event_loop.post_event(self, 'on_activate')
 
     @CanvasEventHandler("blur")
-    async def _event_lose_focus(self, event):
-        await pyglet.app.platform_event_loop.post_event(self, 'on_deactivate')
+    def _event_lose_focus(self, event):
+        pyglet.app.platform_event_loop.post_event(self, 'on_deactivate')
 
     @CanvasEventHandler("contextmenu", passive=False)
     def _event_contextmenu(self, event):

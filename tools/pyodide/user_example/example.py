@@ -43,9 +43,4 @@ def on_draw():
     window.clear()
     batch.draw()
 
-# Pyodide 0.27.7 has a memory leak with asyncio. Use pyglet.app.run(None) until it's resolved.
-if pyglet.compat_platform == "emscripten":
-    # None will use requestAnimationFrame as a base for timer scheduling and rendering.
-    pyglet.app.run(None)
-else:
-    pyglet.app.run()
+pyglet.app.run()

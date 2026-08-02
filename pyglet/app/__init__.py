@@ -80,11 +80,7 @@ def run(interval: float | None = 1 / 60) -> None:
         pyglet.app.event_loop.run(interval)
 
     """
-    if pyglet.compat_platform == "emscripten":
-        import asyncio
-        asyncio.create_task(event_loop.run(interval))  # noqa: RUF006
-    else:
-        event_loop.run(interval)
+    event_loop.run(interval)
 
 
 def exit() -> None:
@@ -99,12 +95,7 @@ def exit() -> None:
         pyglet.app.event_loop.exit()
 
     """
-    if pyglet.compat_platform == "emscripten":
-        import asyncio
-
-        asyncio.create_task(event_loop.exit())
-    else:
-        event_loop.exit()
+    event_loop.exit()
 
 
 #: The global event loop. Applications can replace this
