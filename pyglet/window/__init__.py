@@ -1461,7 +1461,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                 paths:
                     File path strings currently being dragged.
 
-            .. note:: On Linux (xlib), paths are not available until ``on_file_drop`` due to OS limitations.
+            .. note:: On Linux (xlib) and in browsers, paths are not available
+                until ``on_file_drop`` due to platform limitations.
 
             .. versionadded:: 3.0
 
@@ -1479,7 +1480,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                 paths:
                     File path strings currently being dragged.
 
-            .. note:: On Linux (xlib), paths are not available until ``on_file_drop`` due to OS limitations.
+            .. note:: On Linux (xlib) and in browsers, paths are not available
+                until ``on_file_drop`` due to platform limitations.
 
             .. versionadded:: 3.0
 
@@ -1862,10 +1864,10 @@ class FPSDisplay:
         """
         from collections import deque  # noqa: PLC0415
         from statistics import mean  # noqa: PLC0415
-        from time import time  # noqa: PLC0415
+        from time import perf_counter  # noqa: PLC0415
 
         from pyglet.text import Label  # noqa: PLC0415
-        self._time = time
+        self._time = perf_counter
         self._mean = mean
 
         if window.context:
@@ -1879,7 +1881,7 @@ class FPSDisplay:
         self.label = Label('', x=10, y=10, font_size=24, weight="bold", color=color, batch=batch)
 
         self._elapsed = 0.0
-        self._last_time = time()
+        self._last_time = perf_counter()
         self._delta_times = deque(maxlen=samples)
 
     def update(self) -> None:
