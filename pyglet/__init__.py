@@ -18,10 +18,10 @@ if TYPE_CHECKING:
     from typing import Any, Callable, ItemsView, Sized
 
 #: The release version
-version = '3.0.dev6'
+version = '3.0.dev7'
 __version__ = version
 
-MIN_PYTHON_VERSION = 3, 8
+MIN_PYTHON_VERSION = 3, 10
 MIN_PYTHON_VERSION_STR = ".".join([str(v) for v in MIN_PYTHON_VERSION])
 
 if sys.version_info < MIN_PYTHON_VERSION:
