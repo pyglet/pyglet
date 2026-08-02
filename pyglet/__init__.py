@@ -24,6 +24,9 @@ __version__ = version
 MIN_PYTHON_VERSION = 3, 8
 MIN_PYTHON_VERSION_STR = ".".join([str(v) for v in MIN_PYTHON_VERSION])
 
+#: The Pyodide release used to develop and test pyglet's browser support.
+PYODIDE_VERSION = "0.29.4"
+
 if sys.version_info < MIN_PYTHON_VERSION:
     msg = f"pyglet {version} requires Python {MIN_PYTHON_VERSION_STR} or newer."
     raise Exception(msg)

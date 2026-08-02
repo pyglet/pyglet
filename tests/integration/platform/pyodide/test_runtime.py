@@ -17,7 +17,7 @@ from pyglet.resource import get_settings_path
 def test_runtime_is_pyodide_on_emscripten():
     assert sys.platform == "emscripten"
     assert pyglet.compat_platform == "emscripten"
-    assert pyodide.__version__
+    assert pyodide.__version__ == pyglet.PYODIDE_VERSION
 
 
 def test_browser_document_is_available():
