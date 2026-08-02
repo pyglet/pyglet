@@ -256,15 +256,6 @@ class EventLoop(event.EventDispatcher):
         Developers are discouraged from overriding the ``run`` method, as the
         implementation is platform-specific.
         """
-        self._interval = interval
-        if interval is None:
-            # User will schedule Window.draw manually
-            pass
-        elif interval == 0:
-            self.clock.schedule(self._redraw_windows)
-        else:
-            self.clock.schedule_interval(self._redraw_windows, interval)
-
         self.has_exit = False
 
         from pyglet.window import Window
@@ -285,10 +276,8 @@ class EventLoop(event.EventDispatcher):
             timeout = self.idle()
             platform_event_loop.step(timeout)
 
-        self.is_running = False
-        self.dispatch_event('on_exit')
-        platform_event_loop.stop()
         try:
+            self.is_running = False
             self.dispatch_event('on_exit')
         finally:
             self._unschedule_window_draw()
