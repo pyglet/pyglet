@@ -73,6 +73,10 @@ class GUID(ctypes.Structure):
     def __hash__(self) -> int:
         return hash(bytes(self))
 
+    def copy(self) -> GUID:
+        """Return an independent copy of this GUID."""
+        return GUID(self.Data1, self.Data2, self.Data3, *self.Data4)
+
     @classmethod
     def from_string(cls, text: str) -> GUID:
         """Convert a GUID string into a GUID object.
