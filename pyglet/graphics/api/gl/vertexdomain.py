@@ -118,7 +118,7 @@ class _GLVertexStreamMix(VertexStream):
         info = ctx.info
         if info.get_opengl_api() != GraphicsAPI.OPENGL:
             return False
-        return info.have_version(4, 4) or info.have_extension("GL_ARB_buffer_storage")
+        return info.features.persistent_buffers
 
     def get_buffer(self, size: int, attribute: GraphicsAttribute) -> GLAttributeBufferObject | PersistentBufferObject:
         if self._persistent_buffers_supported:
@@ -730,8 +730,7 @@ class GLIndexedVertexDomain(IndexedVertexDomain):
     def __init__(self, context: OpenGLSurfaceContext, initial_count: int, attribute_meta: dict[str, Attribute],  # noqa: D107
                  index_type: DataTypes = "I") -> None:
         self.index_type = index_type
-        #self._supports_base_vertex = False
-        self._supports_base_vertex = context.info.have_extension("GL_ARB_draw_elements_base_vertex")
+        self._supports_base_vertex = context.info.features.base_vertex
         super().__init__(context, initial_count, attribute_meta)
 
     def _has_multi_draw_extension(self, ctx: OpenGLSurfaceContext) -> bool:

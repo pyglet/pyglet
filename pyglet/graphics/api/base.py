@@ -125,6 +125,29 @@ class NullBackend(BackendGlobalObject):  # noqa: D101
         self._raise_no_backend()
 
 
+@dataclass
+class SurfaceFeatures:
+    """Optional graphics features available to a surface context."""
+    #: Enables GPU compute workloads through compute shaders.
+    compute_shaders: bool = False
+    #: Enables shader programs to access shader storage buffer objects.
+    shader_storage_buffers: bool = False
+    #: Enables sharing uniform data between shaders through uniform buffers.
+    uniform_buffers: bool = False
+    #: Enables GPU synchronization with fence and sync objects.
+    sync_objects: bool = False
+    #: Enables geometry-shader pipeline stages.
+    geometry_shaders: bool = False
+    #: Enables tessellation-control and tessellation-evaluation shader stages.
+    tessellation_shaders: bool = False
+    #: Enables indexed drawing with a per-draw base-vertex offset.
+    base_vertex: bool = False
+    #: Enables persistently mapped GPU buffer storage.
+    persistent_buffers: bool = False
+    #: Enables updating program uniforms without binding the program first.
+    separate_shader_objects: bool = False
+
+
 class SurfaceInfo(ABC):
     """Base backend capability info shared by all rendering APIs.
 
@@ -139,6 +162,7 @@ class SurfaceInfo(ABC):
     minor_version: int
     api: str
     was_queried: bool
+    features: SurfaceFeatures
 
     # Common capability limits shared by backends these should be automatically queried by the API.
     MAX_ARRAY_TEXTURE_LAYERS: int
@@ -163,6 +187,7 @@ class SurfaceInfo(ABC):
         self.minor_version = 0
         self.api = "unknown"
         self.was_queried = False
+        self.features = SurfaceFeatures()
 
         self.MAX_ARRAY_TEXTURE_LAYERS = 0
         self.MAX_TEXTURE_SIZE = 0
@@ -225,6 +250,59 @@ class SurfaceInfo(ABC):
     def get_opengl_api(self) -> str:
         """Compatibility alias for existing OpenGL callers."""
         return self.api
+
+    def update_features(self) -> None:
+        """Populate optional feature support after API version and extensions are known."""
+        is_desktop_gl = self.api == "opengl"
+        is_gles = self.api in ("gles2", "gles3")
+
+        def desktop_at_least(major: int, minor: int = 0) -> bool:
+            return is_desktop_gl and self.have_version(major, minor)
+
+        def gles_at_least(major: int, minor: int = 0) -> bool:
+            return is_gles and self.have_version(major, minor)
+
+        self.features.uniform_buffers = desktop_at_least(3, 1) or gles_at_least(3, 0)
+        self.features.sync_objects = (
+            desktop_at_least(3, 2)
+            or gles_at_least(3, 0)
+            or self.have_extension("GL_ARB_sync")
+        )
+        self.features.compute_shaders = (
+            desktop_at_least(4, 3)
+            or gles_at_least(3, 1)
+            or self.have_extension("GL_ARB_compute_shader")
+        )
+        self.features.shader_storage_buffers = (
+            desktop_at_least(4, 3)
+            or gles_at_least(3, 1)
+            or self.have_extension("GL_ARB_shader_storage_buffer_object")
+        )
+        self.features.geometry_shaders = (
+            desktop_at_least(3, 2)
+            or gles_at_least(3, 2)
+            or self.have_extension("GL_ARB_geometry_shader4")
+            or self.have_extension("GL_EXT_geometry_shader")
+        )
+        self.features.tessellation_shaders = (
+            desktop_at_least(4, 0)
+            or gles_at_least(3, 2)
+            or self.have_extension("GL_ARB_tessellation_shader")
+            or self.have_extension("GL_OES_tessellation_shader")
+        )
+        self.features.base_vertex = (
+            desktop_at_least(3, 2)
+            or gles_at_least(3, 2)
+            or self.have_extension("GL_ARB_draw_elements_base_vertex")
+            or self.have_extension("GL_OES_draw_elements_base_vertex")
+        )
+        self.features.persistent_buffers = desktop_at_least(4, 4) or self.have_extension("GL_ARB_buffer_storage")
+        self.features.separate_shader_objects = (
+            desktop_at_least(4, 1)
+            or gles_at_least(3, 1)
+            or self.have_extension("GL_ARB_separate_shader_objects")
+            or self.have_extension("GL_EXT_separate_shader_objects")
+        )
 
 
 @dataclass

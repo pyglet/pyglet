@@ -77,4 +77,5 @@ class GLInfo(SurfaceInfo):
         self.MAX_UNIFORM_BLOCK_SIZE = self._get_parameter(gl, "MAX_UNIFORM_BLOCK_SIZE")
         self.MAX_VERTEX_ATTRIBS = self._get_parameter(gl, "MAX_VERTEX_ATTRIBS")
 
+        self.update_features()
         self.was_queried = True

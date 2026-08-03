@@ -122,6 +122,7 @@ class GLInfo(SurfaceInfo):
         if self.platform_info:
             self.extensions.update(set(self.platform_info.get_extensions(context)))
 
+        self.update_features()
         self.was_queried = True
 
     def get_int(self, enum: int, default: int = 0) -> int:

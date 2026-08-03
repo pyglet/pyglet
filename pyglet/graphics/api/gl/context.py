@@ -125,7 +125,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
         super().frame_begin()
 
     def create_frame_fence(self) -> object | None:
-        if not (self.info.have_version(3, 2) or self.info.have_extension("GL_ARB_sync")):
+        if not self.info.features.sync_objects:
             return None
         return self.glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0)
 
