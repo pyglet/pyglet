@@ -5,11 +5,11 @@ from functools import lru_cache
 from typing import Any, TYPE_CHECKING, Callable
 
 import js  # noqa: F821
-from pyodide.ffi import create_proxy  # noqa: F821
 
 import pyglet.app
+from pyglet.libs.emscripten.files import import_files
+from pyglet.libs.emscripten.proxies import ProxyRegistry
 from pyglet.window import BaseWindow, DefaultMouseCursor, ImageMouseCursor, MouseCursor, key, mouse
-from pyglet.window.emscripten.files import import_files
 
 if TYPE_CHECKING:
     from pyglet.display.base import Display, Screen, ScreenMode
@@ -334,6 +334,7 @@ class EmscriptenWindow(BaseWindow):
         self._canvas_event_handlers: dict[str, Any] = {}
         self._observer = None
         self._proxy_resize = None
+        self._proxies = ProxyRegistry()
         self._keys_down = set()
         self._clipboard_text = ""
         self._file_import_tasks: set[Any] = set()
@@ -389,19 +390,16 @@ class EmscriptenWindow(BaseWindow):
             func = getattr(self, func_name)
             for message in func._platform_event_data:  # noqa: SLF001
                 assert message not in self._event_handlers, f"event: '{message}' already exists."
-                proxy = create_proxy(func)
                 if hasattr(func, '_canvas'):
+                    proxy = self._proxies.add_event_listener(
+                        self._canvas, message, func, passive=func._passive,
+                    )
                     self._canvas_event_handlers[message] = proxy
-                    if func._passive is not None:
-                        # Not sure what behavior results if we pass None to the JS event handler.
-                        self._canvas.addEventListener(message, proxy, passive=func._passive)
-                    else:
-                        self._canvas.addEventListener(message, proxy)
                 else:
+                    proxy = self._proxies.add_event_listener(js.window, message, func)
                     self._event_handlers[message] = proxy
-                    js.window.addEventListener(message, proxy)
 
-        self._proxy_resize = create_proxy(self._event_resized)
+        self._proxy_resize = self._proxies.create(self._event_resized)
         self._observer = js.ResizeObserver.new(self._proxy_resize)
         self._observer.observe(self._canvas)
 
@@ -413,18 +411,9 @@ class EmscriptenWindow(BaseWindow):
         if self._observer is not None:
             self._observer.disconnect()
             self._observer = None
-        if self._proxy_resize is not None:
-            self._proxy_resize.destroy()
-            self._proxy_resize = None
-
-        for message, proxy in self._canvas_event_handlers.items():
-            self._canvas.removeEventListener(message, proxy)
-            proxy.destroy()
+        self._proxies.destroy()
+        self._proxy_resize = None
         self._canvas_event_handlers.clear()
-
-        for message, proxy in self._event_handlers.items():
-            js.window.removeEventListener(message, proxy)
-            proxy.destroy()
         self._event_handlers.clear()
 
         super().close()

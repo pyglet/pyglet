@@ -5,10 +5,10 @@ import asyncio
 from typing import Any
 
 import js  # noqa: F821
-from pyodide.ffi import create_proxy  # noqa: F821
 
+from pyglet.libs.emscripten.files import import_files
+from pyglet.libs.emscripten.proxies import ProxyRegistry
 from pyglet.window.dialog.base import FileOpenDialogBase, FileSaveDialogBase
-from pyglet.window.emscripten.files import import_files
 
 
 def _accept_types(filetypes: list[tuple[str, str]] | None) -> str:
@@ -35,13 +35,11 @@ class EmscriptenFileOpenDialog(FileOpenDialogBase):
         input_element.accept = _accept_types(self.filetypes)
         input_element.style.display = "none"
         js.document.body.appendChild(input_element)
+        proxies = ProxyRegistry()
 
         def cleanup() -> None:
-            input_element.removeEventListener("change", change_proxy)
-            input_element.removeEventListener("cancel", cancel_proxy)
             input_element.remove()
-            change_proxy.destroy()
-            cancel_proxy.destroy()
+            proxies.destroy()
 
         async def changed() -> None:
             try:
@@ -60,10 +58,8 @@ class EmscriptenFileOpenDialog(FileOpenDialogBase):
             finally:
                 cleanup()
 
-        change_proxy = create_proxy(change)
-        cancel_proxy = create_proxy(cancel)
-        input_element.addEventListener("change", change_proxy)
-        input_element.addEventListener("cancel", cancel_proxy)
+        proxies.add_event_listener(input_element, "change", change)
+        proxies.add_event_listener(input_element, "cancel", cancel)
         # This must happen in the calling input event to retain browser user activation.
         input_element.click()
 

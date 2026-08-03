@@ -16,9 +16,10 @@ if TYPE_CHECKING:
 
 try:
     from js import cancelAnimationFrame, requestAnimationFrame, performance
-    from pyodide.ffi import create_proxy
 except ImportError as exc:
     raise ImportError('Pyodide not available.') from exc
+
+from pyglet.libs.emscripten.proxies import ProxyRegistry
 
 
 class AsyncEventLoop(event.EventDispatcher):
@@ -247,11 +248,14 @@ class RequestAnimationFrameDrawSource(WindowDrawSource):
         self._last_timestamp: float | None = None
         self._request_id: int | None = None
         self._running = False
-        self._callback = create_proxy(self._on_animation_frame)
+        self._callback = None
+        self._proxies = ProxyRegistry()
 
     def start(self, _interval: float) -> bool:
         self._running = True
         self._last_timestamp = None
+        if self._callback is None:
+            self._callback = self._proxies.create(self._on_animation_frame)
         self._request_next_frame()
         return True
 
@@ -263,7 +267,8 @@ class RequestAnimationFrameDrawSource(WindowDrawSource):
         if self._request_id is not None:
             cancelAnimationFrame(self._request_id)
             self._request_id = None
-        self._callback.destroy()
+        self._proxies.destroy()
+        self._callback = None
 
     def _request_next_frame(self) -> None:
         self._request_id = requestAnimationFrame(self._callback)
