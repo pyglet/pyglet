@@ -31,7 +31,6 @@ from pyglet.graphics.api.gl.gl import (
     GL_READ_WRITE,
     GL_RGBA32F,
     GLubyte,
-    GL_PACK_ALIGNMENT,
     GL_UNPACK_SKIP_PIXELS,
     GL_UNPACK_SKIP_ROWS,
     GL_UNPACK_ALIGNMENT,
@@ -70,7 +69,7 @@ from pyglet.graphics.api.gl.enums import texture_map
 from pyglet.image.base import ImageData, ImageDataRegion, CompressionFormat, \
     CompressedImageData
 from pyglet.image.base import ImageException
-from pyglet.graphics.texture import Texture, UniformTextureSequence, CompressedTexture, \
+from pyglet.graphics.texture import PixelData, Texture, UniformTextureSequence, CompressedTexture, \
     _TextureRegionShared, _Texture3DShared, _TextureArrayShared, TextureGrid
 
 _api_base_internal_formats = {
@@ -162,6 +161,17 @@ _data_types = {
     "f": gl.GL_FLOAT,
     "f.5": gl.GL_HALF_FLOAT,
     "d": gl.GL_DOUBLE,
+}
+
+_component_types = {
+    "b": gl.GLbyte,
+    "B": gl.GLubyte,
+    "h": gl.GLshort,
+    "H": gl.GLushort,
+    "i": gl.GLint,
+    "I": gl.GLuint,
+    "f": gl.GLfloat,
+    "d": gl.GLdouble,
 }
 
 
@@ -471,13 +481,18 @@ class GLTexture(Texture):
                              data)
         self._context.glFlush()
 
-    def _attach_gles_fbo_texture(self, _z: int = 0, level: int = 0) -> None:
-        self._context.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.id, level)
+    def _set_readback_framebuffer_attachment(self, texture_id: int, _z: int = 0, level: int = 0) -> None:
+        self._context.glFramebufferTexture2D(
+            GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture_id, level,
+        )
 
     def fetch(self, z: int = 0, level: int = 0) -> ImageData:
-        """Fetch the image data of this texture from the GPU.
+        """Fetch an unsigned-byte, image-oriented copy of this texture.
 
-        Binds the texture and reads the pixel data back from the GPU, as such, can be a costly operation.
+        Floating-point and integer textures cannot be fetched as
+        :class:`~pyglet.image.ImageData` without conversion. Use
+        :meth:`read_pixels` for those typed values.
+        Reading data back from the GPU can be a costly operation.
 
         Modifying the returned ImageData object has no effect on the
         texture itself. Uploading ImageData back to the GPU/texture
@@ -489,30 +504,43 @@ class GLTexture(Texture):
             level:
                 The mipmap level of the texture to retrieve.
         """
-        self._context.glBindTexture(self.target, self.id)
-
         pixel_format = self._context.info.pixel_format_preferences.readback_format
         fmt = pixel_format.component_format
         gl_format = _api_pixel_formats[fmt]
 
-        size = self.width * self.height * self.images * len(fmt)
-        buf = (GLubyte * size)()
+        if self.internal_format_type in ("f", "i", "I"):
+            msg = (
+                "Texture.fetch() only supports normalized byte image formats. "
+                "Use Texture.read_pixels() for floating-point or integer textures."
+            )
+            raise NotImplementedError(msg)
 
-        if not self._context.info.pixel_transfer.direct_texture_readback:
-            self._context.gles_pixel_fbo.bind()
-            self._context.glPixelStorei(GL_PACK_ALIGNMENT, 1)
-            self._attach_gles_fbo_texture(z, level)
-            self._context.glReadPixels(0, 0, self.width, self.height, gl_format, GL_UNSIGNED_BYTE, buf)
-            self._context.gles_pixel_fbo.unbind()
-            data = ImageData(self.width, self.height, fmt, buf)
+        width, height, image_bytes = self._context.pixel_readback.read_texture(
+            self, z, level, gl_format, GL_UNSIGNED_BYTE, GLubyte, len(fmt),
+        )
+        return ImageData(width, height, fmt, image_bytes)
+
+    def read_pixels(self, z: int = 0, level: int = 0) -> PixelData:
+        """Read typed, tightly packed RGBA pixel values from this texture."""
+        if self.internal_format in (ComponentFormat.D, ComponentFormat.DS):
+            raise NotImplementedError("Typed depth and depth-stencil texture readback is not yet supported.")
+
+        if self.internal_format_type in ("i", "I"):
+            gl_format = GL_RGBA_INTEGER
+            data_type = self.internal_format_type
+        elif self.internal_format_type == "f":
+            gl_format = GL_RGBA
+            data_type = "f"
         else:
-            self._context.glPixelStorei(GL_PACK_ALIGNMENT, 1)
-            self._context.glGetTexImage(self.target, level, gl_format, GL_UNSIGNED_BYTE, buf)
+            gl_format = GL_RGBA
+            data_type = "B"
 
-            data = ImageData(self.width, self.height, fmt, buf)
-            if self.images > 1:
-                data = data.get_region(0, z * self.height, self.width, self.height)
-        return data
+        gl_type = _data_types[data_type]
+        component_type = _component_types[data_type]
+        width, height, data = self._context.pixel_readback.read_texture(
+            self, z, level, gl_format, gl_type, component_type, 4,
+        )
+        return PixelData(width, height, ComponentFormat.RGBA, data_type, data)
 
     def _update_subregion(self, image_data: ImageData | ImageDataRegion, x: int, y: int, z: int,
                           level: int = 0) -> None:
@@ -665,8 +693,8 @@ class GLTexture3D(_Texture3DShared[GLTextureRegion], GLTexture, UniformTextureSe
         texture.item_height = item_height
         return texture
 
-    def _attach_gles_fbo_texture(self, z: int = 0, level: int = 0) -> None:
-        self._context.glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.id, level, z)
+    def _set_readback_framebuffer_attachment(self, texture_id: int, z: int = 0, level: int = 0) -> None:
+        self._context.glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture_id, level, z)
 
     def _update_subregion(self, image_data: ImageData, x: int, y: int, z: int,
                           level: int = 0):
@@ -754,8 +782,8 @@ class GLTextureArray(_TextureArrayShared[GLTextureArrayRegion], GLTexture, Unifo
         texture._allocate(None)
         return texture
 
-    def _attach_gles_fbo_texture(self, z: int = 0, level: int = 0) -> None:
-        self._context.glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.id, level, z)
+    def _set_readback_framebuffer_attachment(self, texture_id: int, z: int = 0, level: int = 0) -> None:
+        self._context.glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture_id, level, z)
 
     def _update_subregion(self, image_data: ImageData, x: int, y: int, z: int,
                           level: int = 0):

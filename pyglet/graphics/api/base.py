@@ -503,6 +503,7 @@ class SurfaceContext(ABC):  # Temp name for now.
         """
         # Backends need to implement setting this value.
 
+
     @abstractmethod
     def attach(self, window: Window) -> None:
         """Attaches the specified Window into the backend context.
@@ -562,6 +563,17 @@ class SurfaceContext(ABC):  # Temp name for now.
     @abstractmethod
     def clear(self) -> None:
         """Clears the framebuffer."""
+
+
+class PixelReadback(ABC):
+    """Base interface for backend-owned texture pixel readback resources."""
+
+    def __init__(self, context: SurfaceContext) -> None:
+        self._context = context
+
+    @abstractmethod
+    def read_texture(self, *args: Any, **kwargs: Any) -> tuple[int, int, Any]:
+        """Read one texture image or layer into backend-owned CPU memory."""
 
 
 class UnavailableContextError(GraphicsBackendError):

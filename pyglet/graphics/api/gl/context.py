@@ -7,7 +7,7 @@ from typing import Callable, TYPE_CHECKING
 from pyglet.enums import GraphicsAPI
 from pyglet.graphics import GraphicsAPIError, GraphicsIntegrationError
 from pyglet.graphics.api.gl import gl, gl_info, ObjectSpace
-from pyglet.graphics.api.base import SurfaceContext, NullContext
+from pyglet.graphics.api.base import PixelReadback, SurfaceContext, NullContext
 from pyglet.graphics.api.gl.gl import (
     GL_ALREADY_SIGNALED,
     GL_COLOR_BUFFER_BIT,
@@ -31,7 +31,6 @@ if TYPE_CHECKING:
     from pyglet.graphics.api.gl.xlib.glx_info import GLXInfo
     from pyglet.graphics.api.gl.win32.wgl_info import WGLInfo
     from pyglet.graphics.api.gl.global_opengl import OpenGLBackend
-    from pyglet.graphics.api.gl.framebuffer import GLFramebuffer
 
 
 class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
@@ -39,7 +38,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
 
     Use ``DisplayConfig.create_context`` to create a context.
     """
-    gles_pixel_fbo: GLFramebuffer | None
+    _pixel_readback: PixelReadback | None
     #: gl_info.GLInfo instance, filled in on first set_current
     _info: gl_info.GLInfo
 
@@ -81,8 +80,21 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
         self.cached_programs = weakref.WeakValueDictionary()
         self.renderer = GLRenderer(self)
 
-        # GLES needs an FBO to read pixel data.
-        self.gles_pixel_fbo = None
+        self._pixel_readback = None
+
+    @property
+    def pixel_readback(self) -> PixelReadback:
+        """Return the lazily created texture pixel readback helper."""
+        if self._pixel_readback is None:
+            if self.core.gl_api in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
+                from pyglet.graphics.api.gl2.pixel import GL2PixelReadback  # noqa: PLC0415
+
+                self._pixel_readback = GL2PixelReadback(self)
+            else:
+                from pyglet.graphics.api.gl.pixel import GLPixelReadback  # noqa: PLC0415
+
+                self._pixel_readback = GLPixelReadback(self)
+        return self._pixel_readback
 
     def resized(self, width, height):
         ...
@@ -169,15 +181,6 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
                 self.platform_func = self.platform_func_class()
             self.uniform_getters, self.uniform_setters = self._get_uniform_func_tables()
             self._info.query(self)
-            if self.info.get_opengl_api() in (GraphicsAPI.OPENGL_ES_2, GraphicsAPI.OPENGL_ES_3):
-                if self.info.get_opengl_api() == GraphicsAPI.OPENGL_ES_2:
-                    from pyglet.graphics.api.gl2.framebuffer import GL2Framebuffer
-
-                    self.gles_pixel_fbo = GL2Framebuffer(context=self)
-                else:
-                    from pyglet.graphics.api.gl.framebuffer import GLFramebuffer
-
-                    self.gles_pixel_fbo = GLFramebuffer(context=self)
 
         if self.object_space.doomed_textures:
             self._delete_objects(self.object_space.doomed_textures, self.glDeleteTextures)
