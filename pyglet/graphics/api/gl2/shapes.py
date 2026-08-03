@@ -33,7 +33,7 @@ vertex_source = """#version 110
     }
 """
 
-fragment_source = """#version 150 core
+fragment_source = """#version 110
     varying vec4 vertex_colors;
 
     void main()
