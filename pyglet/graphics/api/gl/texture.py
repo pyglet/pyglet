@@ -196,6 +196,16 @@ def _normalize_upload_format(data_format: str) -> str:
     return fmt
 
 
+def _get_upload_format(context: OpenGLSurfaceContext, data_format: str) -> str:
+    """Return a component order that the active backend can upload directly."""
+    if not context.info.pixel_transfer.bgra_upload:
+        if data_format == "BGRA":
+            return "RGBA"
+        if data_format == "BGR":
+            return "RGB"
+    return _normalize_upload_format(data_format)
+
+
 def _get_pixel_format(image_data: ImageData) -> tuple[int, int]:
     """Determine the pixel format from format string for the Graphics API."""
     data_format = _normalize_upload_format(image_data.format)
@@ -230,6 +240,14 @@ class GLTexture(Texture):
         self._gl_min_filter = texture_map[self.min_filter]
         self._gl_mag_filter = texture_map[self.mag_filter]
         self._gl_internal_format = _get_internal_format(internal_format, internal_format_size, internal_format_type)
+        if (
+            internal_format == ComponentFormat.BGRA
+            and context.info.get_opengl_api() in (GraphicsAPI.OPENGL_ES_2, GraphicsAPI.OPENGL_ES_3)
+            and context.info.pixel_transfer.bgra_upload
+        ):
+            # GL_EXT_texture_format_BGRA8888 requires matching unsized BGRA
+            # internal and external formats on OpenGL ES.
+            self._gl_internal_format = GL_BGRA
 
     def delete(self) -> None:
         """Delete this texture and the memory it occupies.
@@ -263,6 +281,9 @@ class GLTexture(Texture):
         align, row_length = self._get_image_alignment(image_data)
 
         self._context.glPixelStorei(GL_UNPACK_ALIGNMENT, align)
+        if not self._context.info.pixel_transfer.unpack_row_length:
+            return
+
         self._context.glPixelStorei(GL_UNPACK_ROW_LENGTH, row_length)
 
         if isinstance(image_data, ImageDataRegion):
@@ -270,6 +291,9 @@ class GLTexture(Texture):
             self._context.glPixelStorei(GL_UNPACK_SKIP_ROWS, image_data.y)
 
     def _end_upload(self, image_data: ImageData | ImageDataRegion) -> None:
+        if not self._context.info.pixel_transfer.unpack_row_length:
+            return
+
         self._context.glPixelStorei(GL_UNPACK_ROW_LENGTH, 0)
 
         if isinstance(image_data, ImageDataRegion):
@@ -337,25 +361,27 @@ class GLTexture(Texture):
         target = texture_map[tex_type]
         ctx.glBindTexture(target, tex_id.value)
 
+        pixel_fmt = _get_upload_format(ctx, image_data.format)
         texture = cls(ctx, image_data.width, image_data.height, tex_id.value, tex_type,
-                      ComponentFormat(image_data.format), internal_format_size, image_data.data_type, filters,
+                      ComponentFormat(pixel_fmt), internal_format_size, image_data.data_type, filters,
                       address_mode, anisotropic_level)
 
         ctx.glTexParameteri(target, GL_TEXTURE_MIN_FILTER, texture._gl_min_filter)
         ctx.glTexParameteri(target, GL_TEXTURE_MAG_FILTER, texture._gl_mag_filter)
 
-        pixel_fmt = image_data.format
         image_bytes = image_data.get_bytes(pixel_fmt, image_data.width * len(pixel_fmt))
-        gl_pfmt, gl_type = _get_pixel_format(image_data)
+        gl_pfmt, gl_type = _get_gl_format_and_type(pixel_fmt, image_data.data_type)
 
         # !!! Better place for this?
         if pixel_fmt in ("L", "LA"):
             texture._swizzle_legacy_fmts(pixel_fmt)
 
-        align, row_length = texture._get_image_alignment(image_data)
+        align, _ = texture._get_image_alignment(image_data)
 
         ctx.glPixelStorei(GL_UNPACK_ALIGNMENT, align)
-        ctx.glPixelStorei(GL_UNPACK_ROW_LENGTH, row_length)
+        if ctx.info.pixel_transfer.unpack_row_length:
+            # get_bytes above always returns tightly packed rows.
+            ctx.glPixelStorei(GL_UNPACK_ROW_LENGTH, 0)
 
         ctx.glTexImage2D(target, 0,
                          texture._gl_internal_format,
@@ -465,14 +491,14 @@ class GLTexture(Texture):
         """
         self._context.glBindTexture(self.target, self.id)
 
-        # Some tests seem to rely on this always being RGBA
-        fmt = 'RGBA'
-        gl_format = GL_RGBA
+        pixel_format = self._context.info.pixel_format_preferences.readback_format
+        fmt = pixel_format.component_format
+        gl_format = _api_pixel_formats[fmt]
 
         size = self.width * self.height * self.images * len(fmt)
         buf = (GLubyte * size)()
 
-        if self._context.info.get_opengl_api() in (GraphicsAPI.OPENGL_ES_2, GraphicsAPI.OPENGL_ES_3):
+        if not self._context.info.pixel_transfer.direct_texture_readback:
             self._context.gles_pixel_fbo.bind()
             self._context.glPixelStorei(GL_PACK_ALIGNMENT, 1)
             self._attach_gles_fbo_texture(z, level)
@@ -493,7 +519,7 @@ class GLTexture(Texture):
         data_pitch = abs(image_data._current_pitch)
 
         api = self._context.info.get_opengl_api()
-        upload_fmt = image_data.format
+        upload_fmt = _get_upload_format(self._context, image_data.format)
         upload_pitch = data_pitch
 
         # GLES drivers can be strict about sub-image upload format compatibility.
@@ -506,7 +532,11 @@ class GLTexture(Texture):
 
         # Get data in required format (hopefully will be the same format it's already
         # in, unless that's an obscure format, upside-down or the driver is old).
-        data = image_data.convert(upload_fmt, upload_pitch)
+        if self._context.info.pixel_transfer.unpack_row_length:
+            data = image_data.convert(upload_fmt, upload_pitch)
+        else:
+            upload_pitch = image_data.width * len(upload_fmt)
+            data = image_data.get_bytes(upload_fmt, upload_pitch)
 
         upload_fmt = _normalize_upload_format(upload_fmt)
         fmt, gl_type = _get_gl_format_and_type(upload_fmt, image_data.data_type)

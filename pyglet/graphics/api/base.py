@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import atexit
 import os
+import sys
 import weakref
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Protocol, get_type_hints, Sequence, Callable, NoReturn
+from typing import TYPE_CHECKING, Any, Callable, NoReturn, Protocol, Sequence, get_type_hints
 
-from pyglet.graphics import GraphicsIntegrationError, GraphicsBackendError
+from pyglet.enums import PixelFormat
+from pyglet.graphics import GraphicsBackendError, GraphicsIntegrationError
 from pyglet.util import debug_print
 
 if TYPE_CHECKING:
@@ -125,7 +127,7 @@ class NullBackend(BackendGlobalObject):  # noqa: D101
         self._raise_no_backend()
 
 
-@dataclass
+@dataclass(frozen=True)
 class SurfaceFeatures:
     """Optional graphics features available to a surface context."""
     #: Enables GPU compute workloads through compute shaders.
@@ -146,6 +148,34 @@ class SurfaceFeatures:
     persistent_buffers: bool = False
     #: Enables updating program uniforms without binding the program first.
     separate_shader_objects: bool = False
+    #: Enables asynchronous pixel transfers through pixel buffer objects.
+    pixel_buffer_objects: bool = False
+
+
+@dataclass(frozen=True)
+class PixelTransferFeatures:
+    """Pixel-transfer operations supported by a surface context."""
+
+    #: Accepts BGRA-ordered source pixels without CPU conversion.
+    bgra_upload: bool = False
+    #: Can return BGRA-ordered pixels from a read operation.
+    bgra_readback: bool = False
+    #: Supports row length and skip state for pixel uploads.
+    unpack_row_length: bool = False
+    #: Supports row length and skip state for pixel readback.
+    pack_row_length: bool = False
+    #: Reads texture storage directly without a framebuffer attachment.
+    direct_texture_readback: bool = False
+
+
+@dataclass(frozen=True)
+class PixelFormatPreferences:
+    """Backend-preferred formats for decoding and reading pixels."""
+
+    #: Preferred 32-bit output for decoders that can choose without slow Python conversion.
+    preferred_decode_format: PixelFormat = PixelFormat.RGBA8
+    #: Preferred component order for GPU pixel readback.
+    readback_format: PixelFormat = PixelFormat.RGBA8
 
 
 class SurfaceInfo(ABC):
@@ -163,6 +193,8 @@ class SurfaceInfo(ABC):
     api: str
     was_queried: bool
     features: SurfaceFeatures
+    pixel_transfer: PixelTransferFeatures
+    pixel_format_preferences: PixelFormatPreferences
 
     # Common capability limits shared by backends these should be automatically queried by the API.
     MAX_ARRAY_TEXTURE_LAYERS: int
@@ -188,6 +220,8 @@ class SurfaceInfo(ABC):
         self.api = "unknown"
         self.was_queried = False
         self.features = SurfaceFeatures()
+        self.pixel_transfer = PixelTransferFeatures()
+        self.pixel_format_preferences = PixelFormatPreferences()
 
         self.MAX_ARRAY_TEXTURE_LAYERS = 0
         self.MAX_TEXTURE_SIZE = 0
@@ -252,7 +286,7 @@ class SurfaceInfo(ABC):
         return self.api
 
     def update_features(self) -> None:
-        """Populate optional feature support after API version and extensions are known."""
+        """Populate feature and pixel-transfer support after version and extensions are known."""
         is_desktop_gl = self.api == "opengl"
         is_gles = self.api in ("gles2", "gles3")
 
@@ -262,46 +296,104 @@ class SurfaceInfo(ABC):
         def gles_at_least(major: int, minor: int = 0) -> bool:
             return is_gles and self.have_version(major, minor)
 
-        self.features.uniform_buffers = desktop_at_least(3, 1) or gles_at_least(3, 0)
-        self.features.sync_objects = (
+        uniform_buffers = desktop_at_least(3, 1) or gles_at_least(3, 0)
+        sync_objects = (
             desktop_at_least(3, 2)
             or gles_at_least(3, 0)
             or self.have_extension("GL_ARB_sync")
         )
-        self.features.compute_shaders = (
+        compute_shaders = (
             desktop_at_least(4, 3)
             or gles_at_least(3, 1)
             or self.have_extension("GL_ARB_compute_shader")
         )
-        self.features.shader_storage_buffers = (
+        shader_storage_buffers = (
             desktop_at_least(4, 3)
             or gles_at_least(3, 1)
             or self.have_extension("GL_ARB_shader_storage_buffer_object")
         )
-        self.features.geometry_shaders = (
+        geometry_shaders = (
             desktop_at_least(3, 2)
             or gles_at_least(3, 2)
             or self.have_extension("GL_ARB_geometry_shader4")
             or self.have_extension("GL_EXT_geometry_shader")
         )
-        self.features.tessellation_shaders = (
+        tessellation_shaders = (
             desktop_at_least(4, 0)
             or gles_at_least(3, 2)
             or self.have_extension("GL_ARB_tessellation_shader")
             or self.have_extension("GL_OES_tessellation_shader")
         )
-        self.features.base_vertex = (
+        base_vertex = (
             desktop_at_least(3, 2)
             or gles_at_least(3, 2)
             or self.have_extension("GL_ARB_draw_elements_base_vertex")
             or self.have_extension("GL_OES_draw_elements_base_vertex")
         )
-        self.features.persistent_buffers = desktop_at_least(4, 4) or self.have_extension("GL_ARB_buffer_storage")
-        self.features.separate_shader_objects = (
+        persistent_buffers = desktop_at_least(4, 4) or self.have_extension("GL_ARB_buffer_storage")
+        separate_shader_objects = (
             desktop_at_least(4, 1)
             or gles_at_least(3, 1)
             or self.have_extension("GL_ARB_separate_shader_objects")
             or self.have_extension("GL_EXT_separate_shader_objects")
+        )
+
+        pixel_buffer_objects = (
+            desktop_at_least(2, 1)
+            or gles_at_least(3, 0)
+            or (self.api == "webgl" and self.have_version(2, 0))
+            or self.have_extension("GL_ARB_pixel_buffer_object")
+            or self.have_extension("GL_EXT_pixel_buffer_object")
+            or self.have_extension("GL_NV_pixel_buffer_object")
+        )
+        self.features = SurfaceFeatures(
+            compute_shaders=compute_shaders,
+            shader_storage_buffers=shader_storage_buffers,
+            uniform_buffers=uniform_buffers,
+            sync_objects=sync_objects,
+            geometry_shaders=geometry_shaders,
+            tessellation_shaders=tessellation_shaders,
+            base_vertex=base_vertex,
+            persistent_buffers=persistent_buffers,
+            separate_shader_objects=separate_shader_objects,
+            pixel_buffer_objects=pixel_buffer_objects,
+        )
+
+        bgra_upload = is_desktop_gl or any(
+            self.have_extension(extension)
+            for extension in (
+                "GL_EXT_texture_format_BGRA8888",
+                "GL_APPLE_texture_format_BGRA8888",
+                "GL_IMG_texture_format_BGRA8888",
+            )
+        )
+        bgra_readback = is_desktop_gl or self.have_extension("GL_EXT_read_format_bgra")
+        is_webgl2 = self.api == "webgl" and self.have_version(2, 0)
+        self.pixel_transfer = PixelTransferFeatures(
+            bgra_upload=bgra_upload,
+            bgra_readback=bgra_readback,
+            unpack_row_length=is_desktop_gl or gles_at_least(3, 0) or is_webgl2
+            or self.have_extension("GL_EXT_unpack_subimage"),
+            pack_row_length=is_desktop_gl or gles_at_least(3, 0) or is_webgl2
+            or self.have_extension("GL_NV_pack_subimage"),
+            direct_texture_readback=is_desktop_gl,
+        )
+
+        prefer_bgra = sys.platform == "win32" and bgra_upload
+        self.pixel_format_preferences = PixelFormatPreferences(
+            preferred_decode_format=PixelFormat.BGRA8 if prefer_bgra else PixelFormat.RGBA8,
+            readback_format=(
+                PixelFormat.BGRA8 if sys.platform == "win32" and is_desktop_gl else PixelFormat.RGBA8
+            ),
+        )
+        self._apply_image_decode_policy()
+
+    def _apply_image_decode_policy(self) -> None:
+        """Publish backend preferences without requiring image to import graphics."""
+        from pyglet import image  # noqa: PLC0415
+
+        image.set_default_decode_policy(
+            image.ImageDecodePolicy(self.pixel_format_preferences.preferred_decode_format),
         )
 
 

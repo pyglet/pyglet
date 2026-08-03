@@ -438,6 +438,9 @@ class WebGLTexture(Texture):
         align, row_length = self._get_image_alignment(image_data)
 
         self._gl.pixelStorei(GL_UNPACK_ALIGNMENT, align)
+        if not self._context.info.pixel_transfer.unpack_row_length:
+            return
+
         self._gl.pixelStorei(GL_UNPACK_ROW_LENGTH, row_length)
 
         if isinstance(image_data, ImageDataRegion):
@@ -447,6 +450,9 @@ class WebGLTexture(Texture):
                 self._gl.pixelStorei(GL_UNPACK_IMAGE_HEIGHT, image_data.y + image_data.height)
 
     def _end_upload(self, image_data: ImageData | ImageDataRegion) -> None:
+        if not self._context.info.pixel_transfer.unpack_row_length:
+            return
+
         self._gl.pixelStorei(GL_UNPACK_ROW_LENGTH, 0)
 
         if isinstance(image_data, ImageDataRegion):
@@ -497,7 +503,11 @@ class WebGLTexture(Texture):
 
         # Get data in required format (hopefully will be the same format it's already
         # in, unless that's an obscure format, upside-down or the driver is old).
-        data = image_data.convert(upload_fmt, upload_pitch)
+        if self._context.info.pixel_transfer.unpack_row_length:
+            data = image_data.convert(upload_fmt, upload_pitch)
+        else:
+            upload_pitch = image_data.width * len(upload_fmt)
+            data = image_data.get_bytes(upload_fmt, upload_pitch)
         js_array = _to_uint8_array(data)
         fmt, gl_type = _get_gl_format_and_type(upload_fmt)
 
@@ -592,10 +602,12 @@ class WebGLTexture(Texture):
         js_array = _to_uint8_array(image_bytes)
         gl_pfmt, gl_type = _get_gl_format_and_type(pixel_fmt)
 
-        align, row_length = texture._get_image_alignment(image_data)
+        align, _ = texture._get_image_alignment(image_data)
 
         gl.pixelStorei(GL_UNPACK_ALIGNMENT, align)
-        gl.pixelStorei(GL_UNPACK_ROW_LENGTH, row_length)
+        if ctx.info.pixel_transfer.unpack_row_length:
+            # get_bytes above always returns tightly packed rows.
+            gl.pixelStorei(GL_UNPACK_ROW_LENGTH, 0)
 
         gl.texImage2D(
             target,
