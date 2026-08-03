@@ -732,6 +732,14 @@ class CTypeDataStore(BufferDataStore):
         self._validate_byte_range(offset, length)
         return ctypes.string_at(self._data_ptr + offset, length)
 
+    def get_memoryview(self, offset: int = 0, length: int | None = None) -> memoryview:
+        """Return a byte view of the store without copying its ctypes memory."""
+        if length is None:
+            length = self.size - offset
+        self._validate_byte_range(offset, length)
+        data = (ctypes.c_ubyte * length).from_address(self._data_ptr + offset)
+        return memoryview(data)
+
     def set_bytes(self, offset: int, data: ByteSource) -> None:
         raw = bytes(data)
         self._validate_byte_range(offset, len(raw))
