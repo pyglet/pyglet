@@ -4,14 +4,17 @@ import pytest
 
 from pyglet import image
 from pyglet.enums import PixelFormat
-from pyglet.graphics.api.base import SurfaceInfo
+from pyglet.graphics.api.gl.gl_info import GLInfo
 from tests.annotations import GraphicsAPIGroups, require_graphics_api
 
 
 pytestmark = require_graphics_api(GraphicsAPIGroups.GL3)
 
 
-class _TestSurfaceInfo(SurfaceInfo):
+class _TestSurfaceInfo(GLInfo):
+    def __init__(self) -> None:
+        super().__init__(platform_info=None)
+
     def query(self) -> None:
         pass
 
@@ -24,6 +27,7 @@ def test_surface_features_cover_gles3_versions_and_extensions() -> None:
 
     assert surface_info.features.uniform_buffers
     assert surface_info.features.sync_objects
+    assert surface_info.features.texture_storage
     assert not surface_info.features.compute_shaders
     assert not surface_info.features.shader_storage_buffers
 
@@ -31,6 +35,7 @@ def test_surface_features_cover_gles3_versions_and_extensions() -> None:
     surface_info.update_features()
     assert surface_info.features.compute_shaders
     assert surface_info.features.shader_storage_buffers
+    assert surface_info.features.texture_storage
     assert not surface_info.features.tessellation_shaders
     assert surface_info.features.pixel_buffer_objects
     assert surface_info.pixel_transfer.unpack_row_length

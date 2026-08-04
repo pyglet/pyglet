@@ -159,6 +159,7 @@ class Texture(_AbstractImage):
         super().__init__(width, height)
         self.id = tex_id
         self.tex_type = tex_type
+        self.immutable = False
         self._mipmap_levels = 1
         self._valid_mipmaps: set[int] = set()
 
@@ -207,11 +208,14 @@ class Texture(_AbstractImage):
     def create(cls, width: int, height: int,
                tex_type: TextureType = TextureType.TYPE_2D,
                internal_format: ComponentFormat = ComponentFormat.RGBA,
-               data_type: str = "b",
+               internal_format_size: int = 8,
+               internal_format_type: str = "B",
                filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                address_mode: AddressMode = AddressMode.REPEAT,
                anisotropic_level: int = 0,
                blank_data: bool = True,
+               immutable: bool = False,
+               mipmap_levels: int = 1,
                context: SurfaceContext | None = None) -> Texture:
         """Create a Texture.
 
@@ -227,8 +231,10 @@ class Texture(_AbstractImage):
                 The type of texture.
             internal_format:
                 The components of the internal format.
-            data_type:
-                The data type of the internal format, as a struct string value.
+            internal_format_size:
+                Bit size of each component in the internal format.
+            internal_format_type:
+                Internal format type, as a struct string value.
             filters:
                 The texture filter for the min and mag filters. If a single value is passed, both values will
                 be used as the filter.
@@ -238,6 +244,10 @@ class Texture(_AbstractImage):
                 The anisotropic level of the texture.
             blank_data:
                 If True, initialize the texture data with all zeros. If False, do not pass initial data.
+            immutable:
+                If True, allocate immutable-format texture storage.
+            mipmap_levels:
+                Number of mipmap levels to allocate. Immutable textures cannot add levels later.
             context:
                 If multiple contexts are being used, a specified context the texture is tied to.
         """
@@ -429,6 +439,12 @@ class Texture(_AbstractImage):
                 If True, initialize levels with zeroed data. If False, allocate the
                 levels without initializing their contents.
         """
+        if self.immutable:
+            raise ImageException(
+                "Immutable texture mipmap levels are fixed at creation. "
+                "Pass mipmap_levels to Texture.create()."
+            )
+
         max_levels = self._compute_mipmap_count()
         target_levels = levels if levels is not None else max_levels
         if target_levels < 1:
@@ -462,7 +478,8 @@ class Texture(_AbstractImage):
         """Generate mipmaps for this texture from the base level."""
         self.bind()
         self._generate_mipmaps()
-        self._mipmap_levels = max(self._mipmap_levels, self._compute_mipmap_count())
+        if not self.immutable:
+            self._mipmap_levels = max(self._mipmap_levels, self._compute_mipmap_count())
         self._valid_mipmaps = set(range(self._mipmap_levels))
 
     def get_mipmapped_texture(self) -> Texture:

@@ -2,11 +2,12 @@ from __future__ import annotations
 
 
 from ctypes import byref, Array
-from typing import Sequence
+from typing import cast, Sequence
 
 import pyglet
 from pyglet.enums import TextureType, TextureFilter, ComponentFormat, AddressMode, GraphicsAPI
 from pyglet.graphics.api.gl import OpenGLSurfaceContext, GL_COMPRESSED_RGB8_ETC2
+from pyglet.graphics.api.base import SurfaceContext
 from pyglet.graphics.api.gl.gl import (
     GL_RED,
     GL_RG,
@@ -25,6 +26,7 @@ from pyglet.graphics.api.gl.gl import (
     GL_UNSIGNED_BYTE,
     GL_TEXTURE_MIN_FILTER,
     GL_TEXTURE_MAG_FILTER,
+    GL_TEXTURE_MAX_LEVEL,
     GL_TEXTURE_2D,
     GLuint,
     GL_TEXTURE0,
@@ -276,7 +278,8 @@ class GLTexture(Texture):
                            layer: int = 0, access: int = GL_READ_WRITE, fmt: int = GL_RGBA32F):
         """Bind as an ImageTexture for use with a :py:class:`~pyglet.shader.ComputeShaderProgram`.
 
-        .. note:: OpenGL 4.3, or 4.2 with the GL_ARB_compute_shader extention is required.
+        OpenGL ES requires the texture to have immutable-format storage. Create
+        it with ``immutable=True`` when it will be bound as an image texture.
         """
         self._context.glBindImageTexture(unit, self.id, level, layered, layer, access, fmt)
 
@@ -321,6 +324,13 @@ class GLTexture(Texture):
     def _allocate_mipmap_level(self, level: int, width: int, height: int, depth: int,
                                data_size: int | None) -> None:
         data = (GLubyte * data_size)() if data_size is not None else None
+        if self.immutable:
+            if data is not None:
+                self._context.glTexSubImage2D(
+                    self.target, level, 0, 0, width, height,
+                    _get_base_format(self.internal_format), GL_UNSIGNED_BYTE, data,
+                )
+            return
         self._context.glTexImage2D(self.target, level,
                                    self._gl_internal_format,
                                    width, height,
@@ -422,7 +432,10 @@ class GLTexture(Texture):
                filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                address_mode: AddressMode = AddressMode.REPEAT,
                anisotropic_level: int = 0,
-               blank_data: bool = True, context: OpenGLSurfaceContext | None = None) -> GLTexture:
+               blank_data: bool = True,
+               immutable: bool = False,
+               mipmap_levels: int = 1,
+               context: SurfaceContext | None = None) -> GLTexture:
         """Create a Texture.
 
         Create a Texture with the specified dimensions, and attributes.
@@ -448,30 +461,73 @@ class GLTexture(Texture):
                 The maximum anisotropic level.
             blank_data:
                 If True, initialize the texture data with all zeros. If False, do not pass initial data.
+            immutable:
+                If True, allocate immutable-format storage with ``glTexStorage2D``.
+            mipmap_levels:
+                Number of mipmap levels to allocate. Immutable textures cannot add levels later.
             context:
                 A specific OpenGL Surface context, otherwise the current active context.
 
         Returns:
             A currently bound texture.
         """
-        ctx = context or pyglet.graphics.api.core.current_context
+        ctx = cast(OpenGLSurfaceContext, context or pyglet.graphics.api.core.current_context)
+
+        max_mipmap_levels = max(width, height).bit_length()
+        if not 1 <= mipmap_levels <= max_mipmap_levels:
+            msg = f"Mipmap levels must be between 1 and {max_mipmap_levels} for this texture size."
+            raise ImageException(msg)
+        if immutable and not ctx.info.features.texture_storage:
+            raise ImageException("Immutable texture storage is not supported by the current context.")
 
         tex_id = GLuint()
         target = texture_map[tex_type]
         ctx.glGenTextures(1, byref(tex_id))
 
-        texture = cls(ctx, width, height, tex_id.value, tex_type, internal_format, internal_format_size, internal_format_type, filters, address_mode, anisotropic_level)
+        texture = cls(
+            ctx, width, height, tex_id.value, tex_type, internal_format,
+            internal_format_size, internal_format_type, filters, address_mode,
+            anisotropic_level,
+        )
+        texture.immutable = immutable
+        if immutable:
+            texture._mipmap_levels = mipmap_levels
         ctx.glBindTexture(target, tex_id.value)
         ctx.glTexParameteri(target, GL_TEXTURE_MIN_FILTER, texture._gl_min_filter)
         ctx.glTexParameteri(target, GL_TEXTURE_MAG_FILTER, texture._gl_mag_filter)
+        if immutable or mipmap_levels > 1:
+            ctx.glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, mipmap_levels - 1)
 
         data = (GLubyte * (width * height * len(internal_format)))() if blank_data else None
         texture._allocate(data)
         if blank_data:
             texture._mark_mipmap_valid(0)
+        if mipmap_levels > 1:
+            if immutable:
+                for level in range(1, mipmap_levels):
+                    level_width = max(1, width >> level)
+                    level_height = max(1, height >> level)
+                    data_size = level_width * level_height * len(internal_format) if blank_data else None
+                    texture._allocate_mipmap_level(level, level_width, level_height, 1, data_size)
+                    if blank_data:
+                        texture._mark_mipmap_valid(level)
+            else:
+                texture.init_mipmaps(mipmap_levels, blank_data)
         return texture
 
     def _allocate(self, data: None | Array) -> None:
+        if self.immutable:
+            self._context.glTexStorage2D(
+                self.target, self._mipmap_levels, self._gl_internal_format, self.width, self.height,
+            )
+            if data is not None:
+                self._context.glTexSubImage2D(
+                    self.target, 0, 0, 0, self.width, self.height,
+                    _get_base_format(self.internal_format), GL_UNSIGNED_BYTE, data,
+                )
+            self._context.glFlush()
+            return
+
         self._context.glTexImage2D(self.target, 0,
                              self._gl_internal_format,
                              self.width, self.height,

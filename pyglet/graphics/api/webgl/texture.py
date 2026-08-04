@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, Sequence
+from typing import TYPE_CHECKING, Callable, cast, Sequence
 
 import js  # noqa: F821
 import pyodide  # noqa: F821
 
 import pyglet
+from pyglet.graphics.api.base import SurfaceContext
 from pyglet.enums import TextureFilter, TextureType, ComponentFormat, \
     AddressMode
 from pyglet.graphics.api.webgl.enums import texture_map
@@ -633,7 +634,10 @@ class WebGLTexture(Texture):
                filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                address_mode: AddressMode = AddressMode.REPEAT,
                anisotropic_level: int = 0,
-               blank_data: bool = True, context: OpenGLSurfaceContext | None = None) -> WebGLTexture:
+               blank_data: bool = True,
+               immutable: bool = False,
+               mipmap_levels: int = 1,
+               context: SurfaceContext | None = None) -> WebGLTexture:
         """Create a Texture.
 
         Create a Texture with the specified dimensions, and attributes.
@@ -659,13 +663,22 @@ class WebGLTexture(Texture):
                 The maximum anisotropic level.
             blank_data:
                 If True, initialize the texture data with all zeros. If False, do not pass initial data.
+            immutable:
+                If True, allocate immutable-format texture storage.
+            mipmap_levels:
+                Number of mipmap levels to allocate.
             context:
                 A specific OpenGL Surface context, otherwise the current active context.
 
         Returns:
             A currently bound texture.
         """
-        ctx = context or pyglet.graphics.api.core.current_context
+        if immutable:
+            raise NotImplementedError("Immutable texture creation is not implemented by the WebGL backend.")
+        if mipmap_levels != 1:
+            raise NotImplementedError("Explicit mipmap allocation is not implemented by the WebGL backend.")
+
+        ctx = cast("OpenGLSurfaceContext", context or pyglet.graphics.api.core.current_context)
         gl = ctx.gl
 
         tex_id = gl.createTexture()
