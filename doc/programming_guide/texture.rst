@@ -85,7 +85,17 @@ Reading texture pixels back to CPU memory can be done with
 
     image_data = texture.fetch()
 
-These readbacks can be expensive, especially if done every frame.
+``fetch()`` is intended for image-oriented use. It returns unsigned-byte
+:py:class:`~pyglet.image.ImageData` and does not convert floating-point or
+integer textures. Use ``Texture.read_pixels()`` when typed values are needed::
+
+    pixels = texture.read_pixels()
+    float_values = memoryview(pixels.data).cast("f")
+
+The returned :py:class:`~pyglet.graphics.texture.PixelData` contains tightly
+packed raw bytes together with their component format and data type. Neither
+method should generally be called every frame because GPU readback can be
+expensive.
 
 Writing into textures
 ---------------------

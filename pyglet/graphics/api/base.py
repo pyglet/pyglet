@@ -5,9 +5,10 @@ import os
 import weakref
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Protocol, get_type_hints, Sequence, Callable, NoReturn
+from typing import TYPE_CHECKING, Any, Callable, NoReturn, Protocol, Sequence, get_type_hints
 
-from pyglet.graphics import GraphicsIntegrationError, GraphicsBackendError
+from pyglet.enums import PixelFormat
+from pyglet.graphics import GraphicsBackendError, GraphicsIntegrationError
 from pyglet.util import debug_print
 
 if TYPE_CHECKING:
@@ -125,6 +126,59 @@ class NullBackend(BackendGlobalObject):  # noqa: D101
         self._raise_no_backend()
 
 
+@dataclass(frozen=True)
+class SurfaceFeatures:
+    """Optional graphics features available to a surface context."""
+    #: Enables GPU compute workloads through compute shaders.
+    compute_shaders: bool = False
+    #: Enables shader programs to access shader storage buffer objects.
+    shader_storage_buffers: bool = False
+    #: Enables sharing uniform data between shaders through uniform buffers.
+    uniform_buffers: bool = False
+    #: Enables GPU synchronization with fence and sync objects.
+    sync_objects: bool = False
+    #: Enables geometry-shader pipeline stages.
+    geometry_shaders: bool = False
+    #: Enables tessellation-control and tessellation-evaluation shader stages.
+    tessellation_shaders: bool = False
+    #: Enables indexed drawing with a per-draw base-vertex offset.
+    base_vertex: bool = False
+    #: Enables persistently mapped GPU buffer storage.
+    persistent_buffers: bool = False
+    #: Enables updating program uniforms without binding the program first.
+    separate_shader_objects: bool = False
+    #: Enables asynchronous pixel transfers through pixel buffer objects.
+    pixel_buffer_objects: bool = False
+    #: Enables immutable-format texture allocation through glTexStorage.
+    texture_storage: bool = False
+
+
+@dataclass(frozen=True)
+class PixelTransferFeatures:
+    """Pixel-transfer operations supported by a surface context."""
+
+    #: Accepts BGRA-ordered source pixels without CPU conversion.
+    bgra_upload: bool = False
+    #: Can return BGRA-ordered pixels from a read operation.
+    bgra_readback: bool = False
+    #: Supports row length and skip state for pixel uploads.
+    unpack_row_length: bool = False
+    #: Supports row length and skip state for pixel readback.
+    pack_row_length: bool = False
+    #: Reads texture storage directly without a framebuffer attachment.
+    direct_texture_readback: bool = False
+
+
+@dataclass(frozen=True)
+class PixelFormatPreferences:
+    """Backend-preferred formats for decoding and reading pixels."""
+
+    #: Preferred 32-bit output for decoders that can choose without slow Python conversion.
+    preferred_decode_format: PixelFormat = PixelFormat.RGBA8
+    #: Preferred component order for GPU pixel readback.
+    readback_format: PixelFormat = PixelFormat.RGBA8
+
+
 class SurfaceInfo(ABC):
     """Base backend capability info shared by all rendering APIs.
 
@@ -139,6 +193,9 @@ class SurfaceInfo(ABC):
     minor_version: int
     api: str
     was_queried: bool
+    features: SurfaceFeatures
+    pixel_transfer: PixelTransferFeatures
+    pixel_format_preferences: PixelFormatPreferences
 
     # Common capability limits shared by backends these should be automatically queried by the API.
     MAX_ARRAY_TEXTURE_LAYERS: int
@@ -163,6 +220,9 @@ class SurfaceInfo(ABC):
         self.minor_version = 0
         self.api = "unknown"
         self.was_queried = False
+        self.features = SurfaceFeatures()
+        self.pixel_transfer = PixelTransferFeatures()
+        self.pixel_format_preferences = PixelFormatPreferences()
 
         self.MAX_ARRAY_TEXTURE_LAYERS = 0
         self.MAX_TEXTURE_SIZE = 0
@@ -225,6 +285,18 @@ class SurfaceInfo(ABC):
     def get_opengl_api(self) -> str:
         """Compatibility alias for existing OpenGL callers."""
         return self.api
+
+    @abstractmethod
+    def update_features(self) -> None:
+        """Populate backend-specific feature support after querying the device."""
+
+    def _apply_image_decode_policy(self) -> None:
+        """Publish backend preferences without requiring image to import graphics."""
+        from pyglet import image  # noqa: PLC0415
+
+        image.set_default_decode_policy(
+            image.ImageDecodePolicy(self.pixel_format_preferences.preferred_decode_format),
+        )
 
 
 @dataclass
@@ -333,6 +405,7 @@ class SurfaceContext(ABC):  # Temp name for now.
         """
         # Backends need to implement setting this value.
 
+
     @abstractmethod
     def attach(self, window: Window) -> None:
         """Attaches the specified Window into the backend context.
@@ -392,6 +465,17 @@ class SurfaceContext(ABC):  # Temp name for now.
     @abstractmethod
     def clear(self) -> None:
         """Clears the framebuffer."""
+
+
+class PixelReadback(ABC):
+    """Base interface for backend-owned texture pixel readback resources."""
+
+    def __init__(self, context: SurfaceContext) -> None:
+        self._context = context
+
+    @abstractmethod
+    def read_texture(self, *args: Any, **kwargs: Any) -> tuple[int, int, Any]:
+        """Read one texture image or layer into backend-owned CPU memory."""
 
 
 class UnavailableContextError(GraphicsBackendError):

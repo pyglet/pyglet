@@ -718,9 +718,7 @@ def _introspect_uniform_blocks(ctx, program: GLShaderProgram | GLComputeShaderPr
 
 
 def _supports_shader_storage_blocks() -> bool:
-    return pyglet.graphics.api.have_version(4, 3) or pyglet.graphics.api.have_extension(
-        "GL_ARB_shader_storage_buffer_object",
-    )
+    return pyglet.graphics.api.core.current_context.info.features.shader_storage_buffers
 
 
 def _get_program_resource_name(ctx, program_id: int, interface: int, index: int) -> str:
@@ -901,11 +899,13 @@ class GLShaderSource(ShaderSource):
 
         self._version = self._find_glsl_version()
 
-        if pyglet.graphics.api.core.current_context.info.get_opengl_api() == GraphicsAPI.OPENGL_ES_3:
-            self._lines[0] = "#version 310 es"
+        context_info = pyglet.graphics.api.core.current_context.info
+        if context_info.get_opengl_api() == GraphicsAPI.OPENGL_ES_3:
+            glsl_version = 310 if context_info.have_version(3, 1) else 300
+            self._lines[0] = f"#version {glsl_version} es"
             self._lines.insert(1, "precision mediump float;")
 
-            if self._type == gl.GL_GEOMETRY_SHADER:
+            if self._type == gl.GL_GEOMETRY_SHADER and context_info.features.geometry_shaders:
                 self._lines.insert(1, "#extension GL_EXT_geometry_shader : require")
 
             if self._type == gl.GL_COMPUTE_SHADER:
@@ -1003,7 +1003,15 @@ class GLShader(_AbstractShader):
 
     @classmethod
     def supported_shaders(cls: type[GLShader]) -> tuple[ShaderType, ...]:
-        return 'vertex', 'fragment', 'compute', 'geometry', 'tesscontrol', 'tessevaluation'
+        features = pyglet.graphics.api.core.current_context.info.features
+        shader_types: tuple[ShaderType, ...] = ('vertex', 'fragment')
+        if features.compute_shaders:
+            shader_types += ('compute',)
+        if features.geometry_shaders:
+            shader_types += ('geometry',)
+        if features.tessellation_shaders:
+            shader_types += ('tesscontrol', 'tessevaluation')
+        return shader_types
 
     @property
     def id(self) -> int:
@@ -1077,7 +1085,7 @@ class GLShaderProgram(ShaderProgram):
 
         # Query if Direct State Access is available:
 
-        have_dsa = pyglet.graphics.api.have_version(4, 1) or pyglet.graphics.api.have_extension("GL_ARB_separate_shader_objects")
+        have_dsa = self._context.info.features.separate_shader_objects
         self._attributes = _introspect_attributes(self._context, self._id)
         self._uniforms = _introspect_uniforms(self._context, self._id, have_dsa)
         self._uniform_blocks = self._get_uniform_blocks()
@@ -1249,10 +1257,10 @@ class GLComputeShaderProgram(_AbstractShaderProgram):
         """Create an OpenGL ComputeShaderProgram from source."""
         super().__init__()
 
-        if not (pyglet.graphics.api.have_version(4, 3) or pyglet.graphics.api.have_extension("GL_ARB_compute_shader")):
+        if not pyglet.graphics.api.core.current_context.info.features.compute_shaders:
             msg = (
-                "Compute Shader not supported. OpenGL Context version must be at least "
-                "4.3 or higher, or 4.2 with the 'GL_ARB_compute_shader' extension."
+                "Compute Shader not supported. It requires desktop OpenGL 4.3, OpenGL ES 3.1, "
+                "or the required driver extension."
             )
             raise ShaderException(msg)
 
@@ -1263,7 +1271,7 @@ class GLComputeShaderProgram(_AbstractShaderProgram):
         if _debug_api_shaders:
             assert _debug_api_shader_print(_get_program_log(self._context, self._id))
 
-        have_dsa = pyglet.graphics.api.have_version(4, 1) or pyglet.graphics.api.have_extension("GL_ARB_separate_shader_objects")
+        have_dsa = self._context.info.features.separate_shader_objects
         self._uniforms = _introspect_uniforms(self._context, self._id, have_dsa)
         self._uniform_blocks = _introspect_uniform_blocks(self._context, self)
         self._shader_storage_blocks = _introspect_shader_storage_blocks(self._context, self)

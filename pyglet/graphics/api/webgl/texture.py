@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, Sequence
+from typing import TYPE_CHECKING, Callable, cast, Sequence
 
 import js  # noqa: F821
 import pyodide  # noqa: F821
 
 import pyglet
+from pyglet.graphics.api.base import SurfaceContext
 from pyglet.enums import TextureFilter, TextureType, ComponentFormat, \
     AddressMode
 from pyglet.graphics.api.webgl.enums import texture_map
@@ -438,6 +439,9 @@ class WebGLTexture(Texture):
         align, row_length = self._get_image_alignment(image_data)
 
         self._gl.pixelStorei(GL_UNPACK_ALIGNMENT, align)
+        if not self._context.info.pixel_transfer.unpack_row_length:
+            return
+
         self._gl.pixelStorei(GL_UNPACK_ROW_LENGTH, row_length)
 
         if isinstance(image_data, ImageDataRegion):
@@ -447,6 +451,9 @@ class WebGLTexture(Texture):
                 self._gl.pixelStorei(GL_UNPACK_IMAGE_HEIGHT, image_data.y + image_data.height)
 
     def _end_upload(self, image_data: ImageData | ImageDataRegion) -> None:
+        if not self._context.info.pixel_transfer.unpack_row_length:
+            return
+
         self._gl.pixelStorei(GL_UNPACK_ROW_LENGTH, 0)
 
         if isinstance(image_data, ImageDataRegion):
@@ -497,7 +504,11 @@ class WebGLTexture(Texture):
 
         # Get data in required format (hopefully will be the same format it's already
         # in, unless that's an obscure format, upside-down or the driver is old).
-        data = image_data.convert(upload_fmt, upload_pitch)
+        if self._context.info.pixel_transfer.unpack_row_length:
+            data = image_data.convert(upload_fmt, upload_pitch)
+        else:
+            upload_pitch = image_data.width * len(upload_fmt)
+            data = image_data.get_bytes(upload_fmt, upload_pitch)
         js_array = _to_uint8_array(data)
         fmt, gl_type = _get_gl_format_and_type(upload_fmt)
 
@@ -592,10 +603,12 @@ class WebGLTexture(Texture):
         js_array = _to_uint8_array(image_bytes)
         gl_pfmt, gl_type = _get_gl_format_and_type(pixel_fmt)
 
-        align, row_length = texture._get_image_alignment(image_data)
+        align, _ = texture._get_image_alignment(image_data)
 
         gl.pixelStorei(GL_UNPACK_ALIGNMENT, align)
-        gl.pixelStorei(GL_UNPACK_ROW_LENGTH, row_length)
+        if ctx.info.pixel_transfer.unpack_row_length:
+            # get_bytes above always returns tightly packed rows.
+            gl.pixelStorei(GL_UNPACK_ROW_LENGTH, 0)
 
         gl.texImage2D(
             target,
@@ -621,7 +634,10 @@ class WebGLTexture(Texture):
                filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                address_mode: AddressMode = AddressMode.REPEAT,
                anisotropic_level: int = 0,
-               blank_data: bool = True, context: OpenGLSurfaceContext | None = None) -> WebGLTexture:
+               blank_data: bool = True,
+               immutable: bool = False,
+               mipmap_levels: int = 1,
+               context: SurfaceContext | None = None) -> WebGLTexture:
         """Create a Texture.
 
         Create a Texture with the specified dimensions, and attributes.
@@ -647,13 +663,22 @@ class WebGLTexture(Texture):
                 The maximum anisotropic level.
             blank_data:
                 If True, initialize the texture data with all zeros. If False, do not pass initial data.
+            immutable:
+                If True, allocate immutable-format texture storage.
+            mipmap_levels:
+                Number of mipmap levels to allocate.
             context:
                 A specific OpenGL Surface context, otherwise the current active context.
 
         Returns:
             A currently bound texture.
         """
-        ctx = context or pyglet.graphics.api.core.current_context
+        if immutable:
+            raise NotImplementedError("Immutable texture creation is not implemented by the WebGL backend.")
+        if mipmap_levels != 1:
+            raise NotImplementedError("Explicit mipmap allocation is not implemented by the WebGL backend.")
+
+        ctx = cast("OpenGLSurfaceContext", context or pyglet.graphics.api.core.current_context)
         gl = ctx.gl
 
         tex_id = gl.createTexture()
