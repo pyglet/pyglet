@@ -1,11 +1,13 @@
-from ctypes import Array, c_float
+from ctypes import Array, byref, c_float
 
 import pyglet
 import pytest
 
 from pyglet.enums import ComponentFormat
+from pyglet.graphics import Texture
 from pyglet.graphics.api.gl import gl
 from pyglet.graphics.api.gl.framebuffer import GLFramebuffer
+from pyglet.image import ImageData, ImageException
 from tests.annotations import GraphicsAPIGroups, require_graphics_api
 
 
@@ -81,3 +83,34 @@ def test_float_texture_read_pixels(test_window):
     assert tuple(pixels.data) == values
     with pytest.raises(NotImplementedError, match="read_pixels"):
         texture.fetch()
+
+
+def test_create_immutable_texture(test_window):
+    context = test_window.context
+    if not context.info.features.texture_storage:
+        pytest.skip("Immutable texture storage is not supported by this context.")
+
+    texture = Texture.create(4, 2, immutable=True, mipmap_levels=2, context=context)
+    try:
+        immutable = gl.GLint()
+        levels = gl.GLint()
+        max_level = gl.GLint()
+        context.glGetTexParameteriv(texture.target, gl.GL_TEXTURE_IMMUTABLE_FORMAT, byref(immutable))
+        context.glGetTexParameteriv(texture.target, gl.GL_TEXTURE_IMMUTABLE_LEVELS, byref(levels))
+        context.glGetTexParameteriv(texture.target, gl.GL_TEXTURE_MAX_LEVEL, byref(max_level))
+
+        assert texture.immutable
+        assert texture.mipmap_count == 2
+        assert texture.valid_mipmaps == (0, 1)
+        assert immutable.value == gl.GL_TRUE
+        assert levels.value == 2
+        assert max_level.value == 1
+
+        data = bytes((9, 9, 9, 255)) * 2
+        texture.upload(ImageData(2, 1, "RGBA", data), 0, 0, 0, level=1)
+        texture.generate_mipmaps()
+        assert texture.mipmap_count == 2
+        with pytest.raises(ImageException, match="fixed at creation"):
+            texture.init_mipmaps()
+    finally:
+        texture.delete()
