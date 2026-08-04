@@ -7,7 +7,7 @@ from pyodide.ffi import create_proxy  # noqa: F401, F821
 
 from pyglet.graphics.api.base import SurfaceContext, NullContext
 from pyglet.graphics.api.webgl import gl
-from pyglet.graphics.api.webgl.gl import GL_COLOR_BUFFER_BIT
+from pyglet.graphics.api.webgl.gl import GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT
 from pyglet.graphics.api.webgl.gl_info import GLInfo
 from pyglet.graphics.api.webgl.renderer import WebGLRenderer
 
@@ -76,8 +76,6 @@ class OpenGLSurfaceContext(SurfaceContext):
 
         self._draw_proxy = create_proxy(self.window.draw)
 
-        self._clear_color = (0.0, 0.0, 0.0, 1.0)
-
         self.doomed_vaos = []
         self.doomed_framebuffers = []
 
@@ -109,10 +107,11 @@ class OpenGLSurfaceContext(SurfaceContext):
         return
 
     def set_clear_color(self, r: float, g: float, b: float, a: float) -> None:
-        self._clear_color = (r, g, b, a)
+        self.clear_color = (r, g, b, a)
+        self.gl.clearColor(r, g, b, a)
 
     def clear(self) -> None:
-        self.gl.clear(GL_COLOR_BUFFER_BIT)
+        self.gl.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
     def present(self):
         pass
@@ -139,8 +138,8 @@ class OpenGLSurfaceContext(SurfaceContext):
 
     def frame_begin(self) -> None:
         super().frame_begin()
-        self.gl.clearColor(*self._clear_color)
-        self.gl.clear(GL_COLOR_BUFFER_BIT)
+        self.gl.clearColor(*self.clear_color)
+        self.gl.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
     def set_current(self) -> None:
         return

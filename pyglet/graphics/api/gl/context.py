@@ -100,6 +100,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
         return
 
     def set_clear_color(self, r: float, g: float, b: float, a: float) -> None:
+        self.clear_color = (r, g, b, a)
         self.glClearColor(r, g, b, a)
 
     def clear(self) -> None:

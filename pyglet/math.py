@@ -19,9 +19,7 @@ All objects are immutable and hashable.
 #   on systems without access to compute shaders
 from __future__ import annotations
 
-from math import (
-    acos, sin, asin, cos, sqrt, ceil, trunc, atan2, floor, radians, tan, pi
-)
+from math import acos, sin, asin, cos, sqrt, ceil, trunc, atan2, floor, radians, tan, pi
 
 import typing as _typing
 import warnings as _warnings
@@ -29,7 +27,8 @@ import warnings as _warnings
 
 def clamp(num: float, minimum: float, maximum: float) -> float:
     """Clamp a value between a minimum and maximum limit."""
-    return max(min(num, maximum), minimum)
+    # if/else checks are significantly faster that min()/max() calls:
+    return minimum if num < minimum else maximum if num > maximum else num
 
 
 class Vec2(_typing.NamedTuple):
@@ -352,8 +351,25 @@ class Vec2(_typing.NamedTuple):
             clamp(self[0], min_x, max_x), clamp(self[1], min_y, max_y),  # type: ignore
         )
 
+    def cross(self, other: Vec2 | tuple[float, float]) -> float:
+        """Calculate the cross product of this vector and another 2D vector.
+
+        |a|*|b|*sin(ab)
+
+        The sign of the result reflects the sign of the angle between them.
+        If vectors are normalized, this is the sine of the angle between them.
+        Also, this is the signed area of the parallelogram built on two vectors,
+        or doubled area of the triangle built on them.
+        """
+        return self[0] * other[1] - self[1] * other[0]
+
     def dot(self, other: Vec2 | tuple[float, float]) -> float:
-        """Calculate the dot product of this vector and another 2D vector."""
+        """Calculate the dot product of this vector and another 2D vector.
+
+        |a|*|b|*cos(ab)
+
+        If vectors are normalized, this is the cosine of the angle between them.
+        """
         return self[0] * other[0] + self[1] * other[1]
 
     def index(self, *args: _typing.Any) -> int:
@@ -558,8 +574,11 @@ class Vec3(_typing.NamedTuple):
     def cross(self, other: Vec3 | tuple[float, float, float]) -> Vec3:
         """Calculate the cross product of this vector and another 3D vector.
 
-        Args:
-            other: Another Vec3 or tuple of 3 floats.
+        |a|*|b|*sin(θ) in the direction given by the right-hand rule.
+
+        The magnitude of the result is the area of the parallelogram
+        built on the two vectors (or twice the area of the triangle).
+        The result is perpendicular to both input vectors.
         """
         return Vec3(
             (self.y * other[2]) - (self.z * other[1]),
@@ -570,8 +589,9 @@ class Vec3(_typing.NamedTuple):
     def dot(self, other: Vec3 | tuple[float, float, float]) -> float:
         """Calculate the dot product of this vector and another 3D vector.
 
-        Args:
-            other: Another Vec3 or tuple of 3 floats.
+        |a|*|b|*cos(θ)
+
+        If the vectors are normalized, this is the cosine of the angle between them.
         """
         return self.x * other[0] + self.y * other[1] + self.z * other[2]
 
