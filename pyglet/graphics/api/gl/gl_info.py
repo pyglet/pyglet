@@ -9,11 +9,18 @@ Usage::
 from __future__ import annotations
 
 import re
+import sys
 import warnings
 from ctypes import c_char_p, cast, c_int, c_float
 from typing import TYPE_CHECKING
 
-from pyglet.graphics.api.base import SurfaceInfo
+from pyglet.enums import PixelFormat
+from pyglet.graphics.api.base import (
+    PixelFormatPreferences,
+    PixelTransferFeatures,
+    SurfaceFeatures,
+    SurfaceInfo,
+)
 from pyglet.graphics.api.gl import gl
 from pyglet.graphics.api.gl.lib import GLException
 
@@ -122,7 +129,108 @@ class GLInfo(SurfaceInfo):
         if self.platform_info:
             self.extensions.update(set(self.platform_info.get_extensions(context)))
 
+        self.update_features()
         self.was_queried = True
+
+    def update_features(self) -> None:
+        """Populate OpenGL and OpenGL ES feature support."""
+        is_desktop_gl = self.api == "opengl"
+        is_gles = self.api in ("gles2", "gles3")
+
+        def desktop_at_least(major: int, minor: int = 0) -> bool:
+            return is_desktop_gl and self.have_version(major, minor)
+
+        def gles_at_least(major: int, minor: int = 0) -> bool:
+            return is_gles and self.have_version(major, minor)
+
+        self.features = SurfaceFeatures(
+            compute_shaders=(
+                desktop_at_least(4, 3)
+                or gles_at_least(3, 1)
+                or self.have_extension("GL_ARB_compute_shader")
+            ),
+            shader_storage_buffers=(
+                desktop_at_least(4, 3)
+                or gles_at_least(3, 1)
+                or self.have_extension("GL_ARB_shader_storage_buffer_object")
+            ),
+            uniform_buffers=desktop_at_least(3, 1) or gles_at_least(3, 0),
+            sync_objects=(
+                desktop_at_least(3, 2)
+                or gles_at_least(3, 0)
+                or self.have_extension("GL_ARB_sync")
+            ),
+            geometry_shaders=(
+                desktop_at_least(3, 2)
+                or gles_at_least(3, 2)
+                or self.have_extension("GL_ARB_geometry_shader4")
+                or self.have_extension("GL_EXT_geometry_shader")
+            ),
+            tessellation_shaders=(
+                desktop_at_least(4, 0)
+                or gles_at_least(3, 2)
+                or self.have_extension("GL_ARB_tessellation_shader")
+                or self.have_extension("GL_OES_tessellation_shader")
+            ),
+            base_vertex=(
+                desktop_at_least(3, 2)
+                or gles_at_least(3, 2)
+                or self.have_extension("GL_ARB_draw_elements_base_vertex")
+                or self.have_extension("GL_OES_draw_elements_base_vertex")
+            ),
+            persistent_buffers=desktop_at_least(4, 4) or self.have_extension("GL_ARB_buffer_storage"),
+            separate_shader_objects=(
+                desktop_at_least(4, 1)
+                or gles_at_least(3, 1)
+                or self.have_extension("GL_ARB_separate_shader_objects")
+                or self.have_extension("GL_EXT_separate_shader_objects")
+            ),
+            pixel_buffer_objects=(
+                desktop_at_least(2, 1)
+                or gles_at_least(3, 0)
+                or self.have_extension("GL_ARB_pixel_buffer_object")
+                or self.have_extension("GL_EXT_pixel_buffer_object")
+                or self.have_extension("GL_NV_pixel_buffer_object")
+            ),
+            texture_storage=(
+                desktop_at_least(4, 2)
+                or gles_at_least(3, 0)
+                or self.have_extension("GL_ARB_texture_storage")
+            ),
+        )
+
+        bgra_upload = is_desktop_gl or any(
+            self.have_extension(extension)
+            for extension in (
+                "GL_EXT_texture_format_BGRA8888",
+                "GL_APPLE_texture_format_BGRA8888",
+                "GL_IMG_texture_format_BGRA8888",
+            )
+        )
+        self.pixel_transfer = PixelTransferFeatures(
+            bgra_upload=bgra_upload,
+            bgra_readback=is_desktop_gl or self.have_extension("GL_EXT_read_format_bgra"),
+            unpack_row_length=(
+                is_desktop_gl
+                or gles_at_least(3, 0)
+                or self.have_extension("GL_EXT_unpack_subimage")
+            ),
+            pack_row_length=(
+                is_desktop_gl
+                or gles_at_least(3, 0)
+                or self.have_extension("GL_NV_pack_subimage")
+            ),
+            direct_texture_readback=is_desktop_gl,
+        )
+
+        prefer_bgra = sys.platform == "win32" and bgra_upload
+        self.pixel_format_preferences = PixelFormatPreferences(
+            preferred_decode_format=PixelFormat.BGRA8 if prefer_bgra else PixelFormat.RGBA8,
+            readback_format=(
+                PixelFormat.BGRA8 if sys.platform == "win32" and is_desktop_gl else PixelFormat.RGBA8
+            ),
+        )
+        self._apply_image_decode_policy()
 
     def get_int(self, enum: int, default: int = 0) -> int:
         try:

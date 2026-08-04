@@ -2,11 +2,12 @@ from __future__ import annotations
 
 
 from ctypes import byref, Array
-from typing import Sequence
+from typing import cast, Sequence
 
 import pyglet
 from pyglet.enums import TextureType, TextureFilter, ComponentFormat, AddressMode, GraphicsAPI
 from pyglet.graphics.api.gl import OpenGLSurfaceContext, GL_COMPRESSED_RGB8_ETC2
+from pyglet.graphics.api.base import SurfaceContext
 from pyglet.graphics.api.gl.gl import (
     GL_RED,
     GL_RG,
@@ -25,13 +26,13 @@ from pyglet.graphics.api.gl.gl import (
     GL_UNSIGNED_BYTE,
     GL_TEXTURE_MIN_FILTER,
     GL_TEXTURE_MAG_FILTER,
+    GL_TEXTURE_MAX_LEVEL,
     GL_TEXTURE_2D,
     GLuint,
     GL_TEXTURE0,
     GL_READ_WRITE,
     GL_RGBA32F,
     GLubyte,
-    GL_PACK_ALIGNMENT,
     GL_UNPACK_SKIP_PIXELS,
     GL_UNPACK_SKIP_ROWS,
     GL_UNPACK_ALIGNMENT,
@@ -70,7 +71,7 @@ from pyglet.graphics.api.gl.enums import texture_map
 from pyglet.image.base import ImageData, ImageDataRegion, CompressionFormat, \
     CompressedImageData
 from pyglet.image.base import ImageException
-from pyglet.graphics.texture import Texture, UniformTextureSequence, CompressedTexture, \
+from pyglet.graphics.texture import PixelData, Texture, UniformTextureSequence, CompressedTexture, \
     _TextureRegionShared, _Texture3DShared, _TextureArrayShared, TextureGrid
 
 _api_base_internal_formats = {
@@ -164,6 +165,17 @@ _data_types = {
     "d": gl.GL_DOUBLE,
 }
 
+_component_types = {
+    "b": gl.GLbyte,
+    "B": gl.GLubyte,
+    "h": gl.GLshort,
+    "H": gl.GLushort,
+    "i": gl.GLint,
+    "I": gl.GLuint,
+    "f": gl.GLfloat,
+    "d": gl.GLdouble,
+}
+
 
 def get_max_texture_size() -> int:
     """Return the maximum texture size available."""
@@ -194,6 +206,16 @@ def _normalize_upload_format(data_format: str) -> str:
             4: 'RGBA',
         }.get(len(data_format))
     return fmt
+
+
+def _get_upload_format(context: OpenGLSurfaceContext, data_format: str) -> str:
+    """Return a component order that the active backend can upload directly."""
+    if not context.info.pixel_transfer.bgra_upload:
+        if data_format == "BGRA":
+            return "RGBA"
+        if data_format == "BGR":
+            return "RGB"
+    return _normalize_upload_format(data_format)
 
 
 def _get_pixel_format(image_data: ImageData) -> tuple[int, int]:
@@ -230,6 +252,14 @@ class GLTexture(Texture):
         self._gl_min_filter = texture_map[self.min_filter]
         self._gl_mag_filter = texture_map[self.mag_filter]
         self._gl_internal_format = _get_internal_format(internal_format, internal_format_size, internal_format_type)
+        if (
+            internal_format == ComponentFormat.BGRA
+            and context.info.get_opengl_api() in (GraphicsAPI.OPENGL_ES_2, GraphicsAPI.OPENGL_ES_3)
+            and context.info.pixel_transfer.bgra_upload
+        ):
+            # GL_EXT_texture_format_BGRA8888 requires matching unsized BGRA
+            # internal and external formats on OpenGL ES.
+            self._gl_internal_format = GL_BGRA
 
     def delete(self) -> None:
         """Delete this texture and the memory it occupies.
@@ -248,7 +278,8 @@ class GLTexture(Texture):
                            layer: int = 0, access: int = GL_READ_WRITE, fmt: int = GL_RGBA32F):
         """Bind as an ImageTexture for use with a :py:class:`~pyglet.shader.ComputeShaderProgram`.
 
-        .. note:: OpenGL 4.3, or 4.2 with the GL_ARB_compute_shader extention is required.
+        OpenGL ES requires the texture to have immutable-format storage. Create
+        it with ``immutable=True`` when it will be bound as an image texture.
         """
         self._context.glBindImageTexture(unit, self.id, level, layered, layer, access, fmt)
 
@@ -263,6 +294,9 @@ class GLTexture(Texture):
         align, row_length = self._get_image_alignment(image_data)
 
         self._context.glPixelStorei(GL_UNPACK_ALIGNMENT, align)
+        if not self._context.info.pixel_transfer.unpack_row_length:
+            return
+
         self._context.glPixelStorei(GL_UNPACK_ROW_LENGTH, row_length)
 
         if isinstance(image_data, ImageDataRegion):
@@ -270,6 +304,9 @@ class GLTexture(Texture):
             self._context.glPixelStorei(GL_UNPACK_SKIP_ROWS, image_data.y)
 
     def _end_upload(self, image_data: ImageData | ImageDataRegion) -> None:
+        if not self._context.info.pixel_transfer.unpack_row_length:
+            return
+
         self._context.glPixelStorei(GL_UNPACK_ROW_LENGTH, 0)
 
         if isinstance(image_data, ImageDataRegion):
@@ -287,6 +324,13 @@ class GLTexture(Texture):
     def _allocate_mipmap_level(self, level: int, width: int, height: int, depth: int,
                                data_size: int | None) -> None:
         data = (GLubyte * data_size)() if data_size is not None else None
+        if self.immutable:
+            if data is not None:
+                self._context.glTexSubImage2D(
+                    self.target, level, 0, 0, width, height,
+                    _get_base_format(self.internal_format), GL_UNSIGNED_BYTE, data,
+                )
+            return
         self._context.glTexImage2D(self.target, level,
                                    self._gl_internal_format,
                                    width, height,
@@ -337,25 +381,27 @@ class GLTexture(Texture):
         target = texture_map[tex_type]
         ctx.glBindTexture(target, tex_id.value)
 
+        pixel_fmt = _get_upload_format(ctx, image_data.format)
         texture = cls(ctx, image_data.width, image_data.height, tex_id.value, tex_type,
-                      ComponentFormat(image_data.format), internal_format_size, image_data.data_type, filters,
+                      ComponentFormat(pixel_fmt), internal_format_size, image_data.data_type, filters,
                       address_mode, anisotropic_level)
 
         ctx.glTexParameteri(target, GL_TEXTURE_MIN_FILTER, texture._gl_min_filter)
         ctx.glTexParameteri(target, GL_TEXTURE_MAG_FILTER, texture._gl_mag_filter)
 
-        pixel_fmt = image_data.format
         image_bytes = image_data.get_bytes(pixel_fmt, image_data.width * len(pixel_fmt))
-        gl_pfmt, gl_type = _get_pixel_format(image_data)
+        gl_pfmt, gl_type = _get_gl_format_and_type(pixel_fmt, image_data.data_type)
 
         # !!! Better place for this?
         if pixel_fmt in ("L", "LA"):
             texture._swizzle_legacy_fmts(pixel_fmt)
 
-        align, row_length = texture._get_image_alignment(image_data)
+        align, _ = texture._get_image_alignment(image_data)
 
         ctx.glPixelStorei(GL_UNPACK_ALIGNMENT, align)
-        ctx.glPixelStorei(GL_UNPACK_ROW_LENGTH, row_length)
+        if ctx.info.pixel_transfer.unpack_row_length:
+            # get_bytes above always returns tightly packed rows.
+            ctx.glPixelStorei(GL_UNPACK_ROW_LENGTH, 0)
 
         ctx.glTexImage2D(target, 0,
                          texture._gl_internal_format,
@@ -386,7 +432,10 @@ class GLTexture(Texture):
                filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                address_mode: AddressMode = AddressMode.REPEAT,
                anisotropic_level: int = 0,
-               blank_data: bool = True, context: OpenGLSurfaceContext | None = None) -> GLTexture:
+               blank_data: bool = True,
+               immutable: bool = False,
+               mipmap_levels: int = 1,
+               context: SurfaceContext | None = None) -> GLTexture:
         """Create a Texture.
 
         Create a Texture with the specified dimensions, and attributes.
@@ -412,30 +461,73 @@ class GLTexture(Texture):
                 The maximum anisotropic level.
             blank_data:
                 If True, initialize the texture data with all zeros. If False, do not pass initial data.
+            immutable:
+                If True, allocate immutable-format storage with ``glTexStorage2D``.
+            mipmap_levels:
+                Number of mipmap levels to allocate. Immutable textures cannot add levels later.
             context:
                 A specific OpenGL Surface context, otherwise the current active context.
 
         Returns:
             A currently bound texture.
         """
-        ctx = context or pyglet.graphics.api.core.current_context
+        ctx = cast(OpenGLSurfaceContext, context or pyglet.graphics.api.core.current_context)
+
+        max_mipmap_levels = max(width, height).bit_length()
+        if not 1 <= mipmap_levels <= max_mipmap_levels:
+            msg = f"Mipmap levels must be between 1 and {max_mipmap_levels} for this texture size."
+            raise ImageException(msg)
+        if immutable and not ctx.info.features.texture_storage:
+            raise ImageException("Immutable texture storage is not supported by the current context.")
 
         tex_id = GLuint()
         target = texture_map[tex_type]
         ctx.glGenTextures(1, byref(tex_id))
 
-        texture = cls(ctx, width, height, tex_id.value, tex_type, internal_format, internal_format_size, internal_format_type, filters, address_mode, anisotropic_level)
+        texture = cls(
+            ctx, width, height, tex_id.value, tex_type, internal_format,
+            internal_format_size, internal_format_type, filters, address_mode,
+            anisotropic_level,
+        )
+        texture.immutable = immutable
+        if immutable:
+            texture._mipmap_levels = mipmap_levels
         ctx.glBindTexture(target, tex_id.value)
         ctx.glTexParameteri(target, GL_TEXTURE_MIN_FILTER, texture._gl_min_filter)
         ctx.glTexParameteri(target, GL_TEXTURE_MAG_FILTER, texture._gl_mag_filter)
+        if immutable or mipmap_levels > 1:
+            ctx.glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, mipmap_levels - 1)
 
         data = (GLubyte * (width * height * len(internal_format)))() if blank_data else None
         texture._allocate(data)
         if blank_data:
             texture._mark_mipmap_valid(0)
+        if mipmap_levels > 1:
+            if immutable:
+                for level in range(1, mipmap_levels):
+                    level_width = max(1, width >> level)
+                    level_height = max(1, height >> level)
+                    data_size = level_width * level_height * len(internal_format) if blank_data else None
+                    texture._allocate_mipmap_level(level, level_width, level_height, 1, data_size)
+                    if blank_data:
+                        texture._mark_mipmap_valid(level)
+            else:
+                texture.init_mipmaps(mipmap_levels, blank_data)
         return texture
 
     def _allocate(self, data: None | Array) -> None:
+        if self.immutable:
+            self._context.glTexStorage2D(
+                self.target, self._mipmap_levels, self._gl_internal_format, self.width, self.height,
+            )
+            if data is not None:
+                self._context.glTexSubImage2D(
+                    self.target, 0, 0, 0, self.width, self.height,
+                    _get_base_format(self.internal_format), GL_UNSIGNED_BYTE, data,
+                )
+            self._context.glFlush()
+            return
+
         self._context.glTexImage2D(self.target, 0,
                              self._gl_internal_format,
                              self.width, self.height,
@@ -445,13 +537,18 @@ class GLTexture(Texture):
                              data)
         self._context.glFlush()
 
-    def _attach_gles_fbo_texture(self, _z: int = 0, level: int = 0) -> None:
-        self._context.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.id, level)
+    def _set_readback_framebuffer_attachment(self, texture_id: int, _z: int = 0, level: int = 0) -> None:
+        self._context.glFramebufferTexture2D(
+            GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture_id, level,
+        )
 
     def fetch(self, z: int = 0, level: int = 0) -> ImageData:
-        """Fetch the image data of this texture from the GPU.
+        """Fetch an unsigned-byte, image-oriented copy of this texture.
 
-        Binds the texture and reads the pixel data back from the GPU, as such, can be a costly operation.
+        Floating-point and integer textures cannot be fetched as
+        :class:`~pyglet.image.ImageData` without conversion. Use
+        :meth:`read_pixels` for those typed values.
+        Reading data back from the GPU can be a costly operation.
 
         Modifying the returned ImageData object has no effect on the
         texture itself. Uploading ImageData back to the GPU/texture
@@ -463,37 +560,50 @@ class GLTexture(Texture):
             level:
                 The mipmap level of the texture to retrieve.
         """
-        self._context.glBindTexture(self.target, self.id)
+        pixel_format = self._context.info.pixel_format_preferences.readback_format
+        fmt = pixel_format.component_format
+        gl_format = _api_pixel_formats[fmt]
 
-        # Some tests seem to rely on this always being RGBA
-        fmt = 'RGBA'
-        gl_format = GL_RGBA
+        if self.internal_format_type in ("f", "i", "I"):
+            msg = (
+                "Texture.fetch() only supports normalized byte image formats. "
+                "Use Texture.read_pixels() for floating-point or integer textures."
+            )
+            raise NotImplementedError(msg)
 
-        size = self.width * self.height * self.images * len(fmt)
-        buf = (GLubyte * size)()
+        width, height, image_bytes = self._context.pixel_readback.read_texture(
+            self, z, level, gl_format, GL_UNSIGNED_BYTE, GLubyte, len(fmt),
+        )
+        return ImageData(width, height, fmt, image_bytes)
 
-        if self._context.info.get_opengl_api() in (GraphicsAPI.OPENGL_ES_2, GraphicsAPI.OPENGL_ES_3):
-            self._context.gles_pixel_fbo.bind()
-            self._context.glPixelStorei(GL_PACK_ALIGNMENT, 1)
-            self._attach_gles_fbo_texture(z, level)
-            self._context.glReadPixels(0, 0, self.width, self.height, gl_format, GL_UNSIGNED_BYTE, buf)
-            self._context.gles_pixel_fbo.unbind()
-            data = ImageData(self.width, self.height, fmt, buf)
+    def read_pixels(self, z: int = 0, level: int = 0) -> PixelData:
+        """Read typed, tightly packed RGBA pixel values from this texture."""
+        if self.internal_format in (ComponentFormat.D, ComponentFormat.DS):
+            raise NotImplementedError("Typed depth and depth-stencil texture readback is not yet supported.")
+
+        if self.internal_format_type in ("i", "I"):
+            gl_format = GL_RGBA_INTEGER
+            data_type = self.internal_format_type
+        elif self.internal_format_type == "f":
+            gl_format = GL_RGBA
+            data_type = "f"
         else:
-            self._context.glPixelStorei(GL_PACK_ALIGNMENT, 1)
-            self._context.glGetTexImage(self.target, level, gl_format, GL_UNSIGNED_BYTE, buf)
+            gl_format = GL_RGBA
+            data_type = "B"
 
-            data = ImageData(self.width, self.height, fmt, buf)
-            if self.images > 1:
-                data = data.get_region(0, z * self.height, self.width, self.height)
-        return data
+        gl_type = _data_types[data_type]
+        component_type = _component_types[data_type]
+        width, height, data = self._context.pixel_readback.read_texture(
+            self, z, level, gl_format, gl_type, component_type, 4,
+        )
+        return PixelData(width, height, ComponentFormat.RGBA, data_type, data)
 
     def _update_subregion(self, image_data: ImageData | ImageDataRegion, x: int, y: int, z: int,
                           level: int = 0) -> None:
         data_pitch = abs(image_data._current_pitch)
 
         api = self._context.info.get_opengl_api()
-        upload_fmt = image_data.format
+        upload_fmt = _get_upload_format(self._context, image_data.format)
         upload_pitch = data_pitch
 
         # GLES drivers can be strict about sub-image upload format compatibility.
@@ -506,7 +616,11 @@ class GLTexture(Texture):
 
         # Get data in required format (hopefully will be the same format it's already
         # in, unless that's an obscure format, upside-down or the driver is old).
-        data = image_data.convert(upload_fmt, upload_pitch)
+        if self._context.info.pixel_transfer.unpack_row_length:
+            data = image_data.convert(upload_fmt, upload_pitch)
+        else:
+            upload_pitch = image_data.width * len(upload_fmt)
+            data = image_data.get_bytes(upload_fmt, upload_pitch)
 
         upload_fmt = _normalize_upload_format(upload_fmt)
         fmt, gl_type = _get_gl_format_and_type(upload_fmt, image_data.data_type)
@@ -635,8 +749,8 @@ class GLTexture3D(_Texture3DShared[GLTextureRegion], GLTexture, UniformTextureSe
         texture.item_height = item_height
         return texture
 
-    def _attach_gles_fbo_texture(self, z: int = 0, level: int = 0) -> None:
-        self._context.glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.id, level, z)
+    def _set_readback_framebuffer_attachment(self, texture_id: int, z: int = 0, level: int = 0) -> None:
+        self._context.glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture_id, level, z)
 
     def _update_subregion(self, image_data: ImageData, x: int, y: int, z: int,
                           level: int = 0):
@@ -724,8 +838,8 @@ class GLTextureArray(_TextureArrayShared[GLTextureArrayRegion], GLTexture, Unifo
         texture._allocate(None)
         return texture
 
-    def _attach_gles_fbo_texture(self, z: int = 0, level: int = 0) -> None:
-        self._context.glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.id, level, z)
+    def _set_readback_framebuffer_attachment(self, texture_id: int, z: int = 0, level: int = 0) -> None:
+        self._context.glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture_id, level, z)
 
     def _update_subregion(self, image_data: ImageData, x: int, y: int, z: int,
                           level: int = 0):
