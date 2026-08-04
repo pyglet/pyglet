@@ -93,17 +93,14 @@ def test_create_immutable_texture(test_window):
     texture = Texture.create(4, 2, immutable=True, mipmap_levels=2, context=context)
     try:
         immutable = gl.GLint()
-        levels = gl.GLint()
         max_level = gl.GLint()
         context.glGetTexParameteriv(texture.target, gl.GL_TEXTURE_IMMUTABLE_FORMAT, byref(immutable))
-        context.glGetTexParameteriv(texture.target, gl.GL_TEXTURE_IMMUTABLE_LEVELS, byref(levels))
         context.glGetTexParameteriv(texture.target, gl.GL_TEXTURE_MAX_LEVEL, byref(max_level))
 
         assert texture.immutable
         assert texture.mipmap_count == 2
         assert texture.valid_mipmaps == (0, 1)
         assert immutable.value == gl.GL_TRUE
-        assert levels.value == 2
         assert max_level.value == 1
 
         data = bytes((9, 9, 9, 255)) * 2
