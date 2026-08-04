@@ -6,8 +6,8 @@ to run periodically, or for one-shot future execution.
 
 .. _guide_calling-functions-periodically:
 
-Calling functions periodically
-------------------------------
+Scheduling functions
+--------------------
 
 As discussed in the :ref:`programming-guide-eventloop` section, pyglet
 applications begin execution by entering into an application event loop::
@@ -29,36 +29,81 @@ Typical applications need to execute code in only three circumstances:
   operation has timed out, or that a dialog can be automatically dismissed.
   We'll call this a "one-shot" event.
 
-To have a function called periodically, for example, once every 0.1 seconds::
+Running on a regular schedule
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Most applications should start with
+:py:func:`~pyglet.clock.schedule_interval`. It is well suited to animation,
+physics simulation, and game-state updates that should maintain a regular
+rate. To call a function once every 0.1 seconds::
 
     def update(dt):
         # ...
 
     pyglet.clock.schedule_interval(update, 0.1)
 
-The `dt`, or `delta time` parameter gives the number of "wall clock" seconds
+The ``dt``, or *delta time*, parameter gives the number of wall-clock seconds
 elapsed since the last call of this function, (or the time the function was
 scheduled, if it's the first period). Due to latency, load and timer
 imprecision, this might be slightly more or less than the requested interval.
-Please note that the `dt` parameter is always passed to scheduled functions,
+The ``dt`` parameter is always passed to scheduled functions,
 so be sure to expect it when writing functions even if you don't need to
 use it.
 
-Scheduling functions with a set interval is ideal for animation, physics
-simulation, and game state updates.  pyglet ensures that the application does
-not consume more resources than necessary to execute the scheduled functions
-on time.
+``schedule_interval`` follows the requested series of times. For example, a
+callback scheduled every second aims to run at 1, 2, 3, and 4 seconds. If the
+2-second call is delayed until 2.1 seconds, the next call still aims for 3
+seconds instead of being moved to 3.1 seconds. A late call can therefore be
+followed by a slightly shorter gap while the schedule returns to its requested
+timing.
 
-Rather than "limiting the frame rate", as is common in other toolkits, simply
-schedule all your update functions for no less than the minimum period your
-application or game requires.  For example, most games need not run at more
-than 60Hz (60 times a second) for imperceptibly smooth animation, so the
-interval given to :py:func:`~pyglet.clock.schedule_interval` would be
-``1/60.0`` (or more).
+If the application is delayed long enough to miss one or more calls, pyglet
+does not replay all of them. It calls the function once and chooses a future
+time for the next call. When several callbacks are overdue together, their
+next times are spread apart to avoid a burst of repeated catch-up work.
 
-If you are writing a benchmarking program or otherwise wish to simply run at
-the highest possible frequency, use `schedule`. This will call the function
-as frequently as possible (and will likely cause heavy CPU usage)::
+For example, most games need no more than 60 updates per second for smooth
+animation. A 60 Hz update can be scheduled with::
+
+    pyglet.clock.schedule_interval(update, 1 / 60)
+
+Spreading periodic work
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Use :py:func:`~pyglet.clock.schedule_interval_soft` for independent callbacks
+that should run regularly but do not need to run at the same moment. It
+chooses different starting times for callbacks with similar intervals,
+reducing bursts of work::
+
+    pyglet.clock.schedule_interval_soft(update_audio_buffer, 0.1)
+
+This is useful for background work such as updating several audio buffers,
+checking independent services, or starting repeated animations at different
+points in their cycles. The interval remains the requested average spacing,
+but the initial call may occur earlier or later so it does not coincide with
+other scheduled work.
+
+Waiting after each call finishes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Use :py:func:`~pyglet.clock.schedule_interval_fixed_delay` when there must be
+a full delay after one call finishes before the next call can begin::
+
+    pyglet.clock.schedule_interval_fixed_delay(poll_service, 1.0)
+
+If ``poll_service`` takes 0.2 seconds and the delay is 1 second, the next call
+starts approximately 1.2 seconds after the previous call started. Delays and
+slow callbacks push all future calls later; missed calls are skipped and are
+never replayed. This is useful for polling and maintenance work, but its
+average call rate will be lower when callbacks take significant time.
+
+Running on every clock tick
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Use :py:func:`~pyglet.clock.schedule` when a function should run on every
+clock tick rather than at a timed interval. This is mainly useful for
+benchmarks and specialized event loops. It can run as frequently as the
+application allows and is likely to consume an entire CPU core::
 
     def benchmark(dt):
         # ...
@@ -68,13 +113,25 @@ as frequently as possible (and will likely cause heavy CPU usage)::
 .. note:: By default pyglet window buffer swaps are synchronised to the display refresh
           rate, so you may also want to disable vsync if you are running a benchmark.
 
-For one-shot events, use :py:func:`~pyglet.clock.schedule_once`::
+All clock callbacks run serially on the event-loop thread. No scheduling
+method can maintain a requested rate when its callbacks require more total
+time than the interval provides. Keep callbacks short, reduce their frequency,
+or move blocking work to an appropriate worker thread.
+
+Calling a function once
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Use :py:func:`~pyglet.clock.schedule_once` when a function should run once
+after a delay::
 
     def dismiss_dialog(dt):
         # ...
 
     # Dismiss the dialog after 5 seconds.
     pyglet.clock.schedule_once(dismiss_dialog, 5.0)
+
+Canceling scheduled functions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To stop a scheduled function from being called, including cancelling a
 periodic function, use :py:func:`pyglet.clock.unschedule`. This could be
