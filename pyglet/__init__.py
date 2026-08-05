@@ -59,7 +59,6 @@ class PyodideOptions:
     page, and do not want to alter your code, then modify this option.
     """
 
-
 @dataclass
 class Options:
     """Dataclass for global pyglet options."""
@@ -505,6 +504,7 @@ if TYPE_CHECKING:
         resource,
         shapes,
         sprite,
+        storage,
         text,
         window,
     )
@@ -528,6 +528,7 @@ else:
     resource = _ModuleProxy("resource")  # type: ignore
     sprite = _ModuleProxy("sprite")  # type: ignore
     shapes = _ModuleProxy("shapes")  # type: ignore
+    storage = _ModuleProxy("storage")  # type: ignore
     text = _ModuleProxy("text")  # type: ignore
     window = _ModuleProxy("window")  # type: ignore
 

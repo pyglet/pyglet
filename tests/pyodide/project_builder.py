@@ -73,6 +73,11 @@ def build_pyodide_project(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     zip_folder(pyglet_folder, output_dir / PYGLET_ZIP_FILENAME)
+    emscripten_javascript = pyglet_folder / "libs" / "emscripten" / "pyglet_emscripten.js"
+    if not emscripten_javascript.is_file():
+        message = f"Emscripten JavaScript module not found: {emscripten_javascript}"
+        raise FileNotFoundError(message)
+    shutil.copyfile(emscripten_javascript, output_dir / emscripten_javascript.name)
     zip_list(resource_list, output_dir / RESOURCES_ZIP_FILENAME, script_path)
 
     script = script_path / script_filename

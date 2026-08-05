@@ -94,6 +94,7 @@ If you are migrating from an older version of pyglet, please read through
    modules/media
    modules/models
    modules/resource
+   modules/storage
    modules/sprite
    modules/shapes
    modules/text/index
