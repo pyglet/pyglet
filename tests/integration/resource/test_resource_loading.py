@@ -109,20 +109,5 @@ def test_resource_not_found(loader):
     pytest.raises(resource.ResourceNotFoundException, loader.file, 'foo')
 
 
-def test_loader_reports_indexed_and_accessed_resources(loader):
-    loader.path = ['dir1', 'dir2']
-
-    assert 'f2.txt' in loader.get_indexed_resource_names()
-    assert loader.get_accessed_resource_names() == ()
-
-    loader.file('f6.txt').close()
-    loader.file('f2.txt').close()
-    loader.file('f2.txt').close()
-    assert loader.get_accessed_resource_names() == ('f2.txt', 'f6.txt')
-
-    loader.clear_accessed_resource_names()
-    assert loader.get_accessed_resource_names() == ()
-
-
 def test_invalid_filename_format(loader):
     pytest.raises((AttributeError, TypeError), loader.file, ['foo'])

@@ -437,7 +437,7 @@ class Loader:
             file_location = self._index[name]
             return file_location.open(name, mode)
         except KeyError:
-            raise ResourceNotFoundException(name)
+            raise ResourceNotFoundException(name) from None
 
     def location(self, filename: str) -> FileLocation | URLLocation | ZIPLocation:
         """Get the location of a resource.
