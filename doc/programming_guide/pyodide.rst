@@ -64,17 +64,177 @@ Saving data
 Pyodide's default file system lives in memory. Files written there disappear
 when the page is reloaded.
 
-In a browser, ``pyglet.resource.get_settings_path("my-game")`` and
-``pyglet.resource.get_data_path("my-game")`` both use ``/data/my-game``. The
-path alone does not make the files persistent. The page or build tool must
-mount persistent browser storage at ``/data``, restore it before the
-application reads its saves, and synchronize it after writing them. An
-IndexedDB-backed Pyodide file system is one way to provide this.
+In a browser, :mod:`pyglet.storage` keeps saves and settings in the
+IndexedDB-backed ``/data`` mount. Its ``cache`` location is in ``/cache``, an
+Origin Private File System (OPFS) mount. Cache files survive a refresh, but
+applications must be prepared to recreate them when the browser purges storage.
 
 Storage synchronization is asynchronous, so avoid doing it during a
 time-sensitive update or draw. A file chosen through a browser file picker is
 also not automatically persistent; the application must save a copy if it
 needs the file after a reload.
+
+.. note:: Files in the default in-memory VFS only exist for the current page
+          session. The ``/data`` and ``/cache`` mounts created by
+          ``pyglet-web`` are backed by persistent browser storage and can
+          survive a refresh.
+
+Building and serving an application
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The ``pyglet-web`` tool packages Python sources and explicitly declared
+resources, creates the Pyodide launcher, and can serve the resulting directory.
+
+Quick start
+"""""""""""
+
+Configure a project in ``pyproject.toml``::
+
+    [tool.pyglet.web]
+    entrypoint = "game.py"
+    output = "dist/web"
+    sources = ["*.py", "game/**/*.py"]
+    resources = ["assets", "levels/**/*.json"]
+    title = "Super Game"
+
+Each ``sources`` and ``resources`` entry may be a file, a glob, or a directory.
+Directories are included recursively. Both are placed in ``application.zip``
+at their project-relative paths.
+
+Build or serve the project from a pyglet source checkout::
+
+    python tools/web.py build
+    python tools/web.py serve --open
+
+Recommended layout
+""""""""""""""""""
+
+Keep Python code, application resources, and browser files separate::
+
+    my-game/
+    ├── pyproject.toml
+    ├── main.py
+    ├── game/                 # additional Python modules
+    │   └── state.py
+    ├── assets/               # images, audio, data, shaders
+    │   ├── images/
+    │   └── sounds/
+    └── web/                  # HTML, CSS, JavaScript, and fonts
+        ├── index.html
+        ├── style.css
+        └── fonts/
+            └── game.woff2
+
+``assets/`` is available to Python through the resource loader. ``web/`` is
+copied directly into the browser build.
+
+Custom page and fonts
+""""""""""""""""""""""
+
+A ``web/index.html`` replaces pyglet's default page. It must load the generated
+launcher; the status element is optional but displays startup errors::
+
+    <canvas id="pygletCanvas"></canvas>
+    <pre id="pygletStatus">Loading&hellip;</pre>
+    <script type="module" src="pyglet-web.js"></script>
+
+Set ``pyglet.options.pyodide.canvas_id`` before creating a window when using a
+different canvas ID. Fonts below ``web/`` can be preloaded before Python starts::
+
+    [[tool.pyglet.web.fonts]]
+    name = "Action Man"
+    path = "fonts/action_man.woff2"
+    weight = "400"
+    style = "normal"
+
+``name`` is the font family used by pyglet and ``path`` is relative to ``web/``.
+Other string properties are passed as `FontFace descriptors
+<https://developer.mozilla.org/en-US/docs/Web/API/FontFace/FontFace>`_. The
+build waits for every configured font before it runs the Python entry point.
+
+Without ``pyproject.toml``
+"""""""""""""""""""""""""
+
+Reading ``pyproject.toml`` uses the standard-library ``tomllib`` module on
+Python 3.11 and newer. On Python 3.10, install the optional `tomli
+<https://pypi.org/project/tomli/>`_ reader::
+
+    python -m pip install tomli
+
+Or pass the configuration on the command line::
+
+    python tools/web.py --entrypoint game.py --output dist/web \
+        --source game.py --source "game/**/*.py" \
+        --resource assets --resource "levels/**/*.json" build
+
+Repeat ``--source`` and ``--resource`` as needed. ``serve`` accepts the same
+options, followed by server options such as ``--open``.
+
+Checking resource declarations
+""""""""""""""""""""""""""""
+
+The optional discovery command reports literal resource calls missing from the
+declared resource patterns::
+
+    python tools/web.py discover --missing
+
+It cannot find dynamically constructed names, so review resource declarations
+after exercising dynamic loading paths.
+
+Persistent application data
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Projects built by ``pyglet-web`` mount persistent browser storage before the
+Python entry point runs. Application code can therefore use normal synchronous
+filesystem operations through :mod:`pyglet.storage`::
+
+    storage = pyglet.storage.get("super-game")
+    (storage.data / "save.json").write_text(save_json, encoding="utf8")
+    (storage.cache / "level-preview.png").write_bytes(preview_data)
+
+    video = storage.settings.create(
+        "video",
+        defaults={"size": [1280, 720], "fullscreen": False},
+    )
+    video["fullscreen"] = True
+
+    @storage.event
+    def on_sync():
+        print("Save complete")
+
+    @storage.event
+    def on_sync_error(error):
+        print(f"Save failed: {error}")
+
+    storage.settings.sync()
+
+``sync`` returns immediately. Browser synchronization is asynchronous
+internally, and completion is delivered through pyglet's event system rather
+than requiring the application to use ``await``. Multiple calls made during an
+active synchronization are combined into one follow-up pass.
+
+Custom browser launchers
+^^^^^^^^^^^^^^^^^^^^^^^^
+Pyglet includes ``pyglet/libs/emscripten/pyglet_emscripten.js`` for projects
+that use another web builder. Copy that file into the web project and import
+its installer after loading Pyodide::
+
+    import { installPygletEmscripten } from "./pyglet_emscripten.js";
+
+    const pyodide = await loadPyodide();
+    await installPygletEmscripten(pyodide);
+
+The installer registers the ``pyglet_emscripten`` JavaScript module expected
+by pyglet, mounts and restores ``/data`` with IDBFS, and mounts ``/cache`` with
+OPFS before Python starts. ``Storage.sync`` can then persist both locations.
+The ``pyglet-web`` tool copies and imports this same module automatically.
+
+For custom paths or launchers that mount one location themselves, pass options
+to the installer. A ``null`` path skips that mount::
+
+    await installPygletEmscripten(pyodide, {
+        dataPath: "/data",
+        cachePath: null,
+    });
+
 
 The application loop
 --------------------
