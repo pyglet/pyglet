@@ -94,6 +94,7 @@ class GLInfo(SurfaceInfo):
         """Populate WebGL-specific feature support."""
         is_webgl2 = self.have_version(2, 0)
         self.features = SurfaceFeatures(
+            uniform_buffers=is_webgl2,
             pixel_buffer_objects=(
                 is_webgl2
                 or self.have_extension("GL_ARB_pixel_buffer_object")
