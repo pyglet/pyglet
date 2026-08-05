@@ -206,13 +206,14 @@ class Camera2D(BaseCamera[Camera2DView]):
                 Number of ring-buffered matrix copies reserved for this camera
                 on uniform-buffer backends.
             projection_uniform:
-                Projection-matrix uniform name used by OpenGL 2 and OpenGL ES 2.
+                Projection-matrix uniform name used when uniform buffers are unavailable.
             view_uniform:
-                View-matrix uniform name used by OpenGL 2 and OpenGL ES 2.
+                View-matrix uniform name used when uniform buffers are unavailable.
         """
         assert min_zoom <= max_zoom, "Minimum zoom must not be greater than maximum zoom."
 
         view_storage = self._create_default_view_storage(
+            window,
             window_block=window_block,
             copies_per_resource=copies_per_resource,
             projection_uniform=projection_uniform,

@@ -6,7 +6,6 @@ import weakref
 from typing import TYPE_CHECKING, Any, Generic, Protocol, TypeVar, overload, runtime_checkable
 
 import pyglet
-from pyglet.enums import GraphicsAPI
 from pyglet.graphics.buffer import UniformBufferRegion
 from pyglet.math import Vec3, Vec4
 
@@ -616,6 +615,7 @@ class BaseCamera(Generic[ViewT]):
 
     def _create_default_view_storage(
         self,
+        window: Window,
         *,
         window_block: UniformBlock | None = None,
         copies_per_resource: int = 3,
@@ -623,7 +623,7 @@ class BaseCamera(Generic[ViewT]):
         view_uniform: str = "u_view",
     ) -> CameraViewStorage:
         """Create the root view storage for this camera."""
-        if pyglet.options.backend in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
+        if not window.context.info.features.uniform_buffers:
             return UniformSetCameraRegion(
                 projection_uniform=projection_uniform,
                 view_uniform=view_uniform,
