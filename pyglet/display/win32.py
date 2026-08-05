@@ -46,6 +46,9 @@ if TYPE_CHECKING:
 _ERROR_SUCCESS = 0
 _ERROR_INSUFFICIENT_BUFFER = 122
 
+# sizeof(DISPLAYCONFIG_MODE_INFO). Mode data is not used, but the API requires a buffer for it.
+_DISPLAYCONFIG_MODE_INFO_SIZE = 64
+
 
 def set_dpi_awareness() -> None:
     """Setting DPI varies per Windows version.
@@ -104,8 +107,16 @@ class Win32Screen(Screen):  # noqa: D101
         info = self._get_monitor_info()
         return info.dwFlags & MONITORINFOF_PRIMARY
 
-    def _get_display_config_path(self) -> DISPLAYCONFIG_PATH_INFO | None:
-        """Get the active Display Configuration path for this screen."""
+    @staticmethod
+    def _query_active_display_paths() -> list[DISPLAYCONFIG_PATH_INFO]:
+        """Query the currently active Display Configuration paths.
+
+        ``GetDisplayConfigBufferSizes`` only reports the sizes required at the moment it is
+        called. If the display topology changes before ``QueryDisplayConfig`` runs, the buffers
+        may no longer be large enough and it fails with ``ERROR_INSUFFICIENT_BUFFER``. In that
+        case the sizes have to be queried again and larger buffers allocated, so each attempt
+        re-runs the size query and reallocates.
+        """
         while True:
             path_count = UINT32()
             mode_count = UINT32()
@@ -116,10 +127,10 @@ class Win32Screen(Screen):  # noqa: D101
                 ctypes.byref(mode_count),
             )
             if result != _ERROR_SUCCESS:
-                return None
+                return []
 
             paths = (DISPLAYCONFIG_PATH_INFO * path_count.value)()
-            modes = ctypes.create_string_buffer(64 * mode_count.value)  # dummy buffer
+            modes = ctypes.create_string_buffer(_DISPLAYCONFIG_MODE_INFO_SIZE * mode_count.value)
 
             result = _user32.QueryDisplayConfig(
                 QDC_ONLY_ACTIVE_PATHS,
@@ -131,27 +142,33 @@ class Win32Screen(Screen):  # noqa: D101
             )
             if result == _ERROR_INSUFFICIENT_BUFFER:
                 continue
+
             if result != _ERROR_SUCCESS:
-                return None
+                return []
 
-            for path in paths[: path_count.value]:
-                if not path.targetInfo.targetAvailable:
-                    continue
+            # QueryDisplayConfig may fill in fewer paths than were allocated.
+            return paths[:path_count.value]
 
-                source_name = DISPLAYCONFIG_SOURCE_DEVICE_NAME()
-                source_name.header.adapterId = path.sourceInfo.adapterId
-                source_name.header.id = path.sourceInfo.id
-                source_name.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME
-                source_name.header.size = ctypes.sizeof(source_name)
+    def _get_display_config_path(self) -> DISPLAYCONFIG_PATH_INFO | None:
+        """Get the active Display Configuration path for this screen."""
+        for path in self._query_active_display_paths():
+            if not path.targetInfo.targetAvailable:
+                continue
 
-                result = _user32.DisplayConfigGetDeviceInfo(ctypes.byref(source_name.header))
-                if result != _ERROR_SUCCESS:
-                    continue
+            source_name = DISPLAYCONFIG_SOURCE_DEVICE_NAME()
+            source_name.header.adapterId = path.sourceInfo.adapterId
+            source_name.header.id = path.sourceInfo.id
+            source_name.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME
+            source_name.header.size = ctypes.sizeof(source_name)
 
-                if source_name.viewGdiDeviceName.casefold() == self._device_name.casefold():
-                    return path
+            result = _user32.DisplayConfigGetDeviceInfo(ctypes.byref(source_name.header))
+            if result != _ERROR_SUCCESS:
+                continue
 
-            return None
+            if source_name.viewGdiDeviceName.casefold() == self._device_name.casefold():
+                return path
+
+        return None
 
     def _get_friendly_name_display_config_api(self) -> str:
         """Get the friendly name of a monitor using the newer Display Configuration API.

@@ -69,20 +69,42 @@ def test_display_config_path_matches_gdi_device_name(monkeypatch):
     assert selected.sourceInfo.id == 2
 
 
-def test_display_config_query_retries_changed_buffer(monkeypatch):
+def test_display_config_query_reallocates_after_insufficient_buffer(monkeypatch):
+    buffer_sizes = iter(((1, 1), (2, 2)))
     query_results = iter((win32._ERROR_INSUFFICIENT_BUFFER, 0))
+    allocations = []
 
     def get_buffer_sizes(_flags, path_count, mode_count):
-        path_count._obj.value = 0
-        mode_count._obj.value = 0
+        paths, modes = next(buffer_sizes)
+        path_count._obj.value = paths
+        mode_count._obj.value = modes
+        return 0
+
+    def query_display_config(_flags, _path_count, output_paths, _mode_count, modes, _topology):
+        allocations.append((len(output_paths), len(modes)))
+        return next(query_results)
+
+    monkeypatch.setattr(win32._user32, 'GetDisplayConfigBufferSizes', get_buffer_sizes)
+    monkeypatch.setattr(win32._user32, 'QueryDisplayConfig', query_display_config)
+
+    found = win32.Win32Screen._query_active_display_paths()
+
+    # The second attempt must re-query the sizes and allocate the larger buffers.
+    assert allocations == [
+        (1, win32._DISPLAYCONFIG_MODE_INFO_SIZE),
+        (2, 2 * win32._DISPLAYCONFIG_MODE_INFO_SIZE),
+    ]
+    assert len(found) == 2
+
+
+def test_display_config_query_failure_yields_no_path(monkeypatch):
+    def get_buffer_sizes(_flags, path_count, mode_count):
+        path_count._obj.value = 1
+        mode_count._obj.value = 1
         return 0
 
     monkeypatch.setattr(win32._user32, 'GetDisplayConfigBufferSizes', get_buffer_sizes)
-    monkeypatch.setattr(
-        win32._user32,
-        'QueryDisplayConfig',
-        lambda *_args: next(query_results),
-    )
+    monkeypatch.setattr(win32._user32, 'QueryDisplayConfig', lambda *_args: 5)  # ERROR_ACCESS_DENIED
 
     assert _screen()._get_display_config_path() is None
 
