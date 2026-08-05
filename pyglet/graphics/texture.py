@@ -1085,6 +1085,9 @@ class CompressedTexture(_AbstractImage):
         super().__init__(width, height)
         self.id = tex_id
         self.tex_type = tex_type
+        self.immutable = False
+        self._mipmap_levels = 1
+        self._valid_mipmaps: set[int] = set()
 
         filters = filters or self.default_filters
         if isinstance(filters, TextureFilter):
@@ -1107,6 +1110,16 @@ class CompressedTexture(_AbstractImage):
     def get_region(self, x: int, y: int, width: int, height: int) -> _AbstractImage:
         msg = f"Region views are not implemented for {self}."
         raise NotImplementedError(msg)
+
+
+class UnsupportedCompressedTexture(CompressedTexture):
+    """Placeholder used by backends without compressed-texture support."""
+
+    @classmethod
+    def create_from_image(cls, image_data: CompressedImageData, *args, **kwargs) -> CompressedTexture:
+        from pyglet.graphics import UnsupportedBackendError  # noqa: PLC0415
+
+        raise UnsupportedBackendError("CompressedTexture")
 
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
@@ -1170,6 +1183,8 @@ if not _is_pyglet_doc_run:
             get_screenshot,
         )
         from pyglet.graphics.api.webgl.texture import (
+            WebGLCompressedTexture,
+            WebGLCompressedTexture as CompressedTexture,  # noqa: F401
             WebGLTexture,
             WebGLTexture as Texture,  # noqa: F401
             WebGLTextureRegion as TextureRegion,  # noqa: F401

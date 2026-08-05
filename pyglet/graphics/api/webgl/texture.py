@@ -45,10 +45,12 @@ from pyglet.graphics.api.webgl.gl import (
     GL_UNPACK_SKIP_ROWS,
     GL_UNSIGNED_BYTE,
 )
-from pyglet.graphics.texture import Texture, UniformTextureSequence, _TextureRegionShared, _Texture3DShared, \
+from pyglet.graphics import UnsupportedBackendError
+from pyglet.graphics.texture import CompressedTexture, Texture, UniformTextureSequence, _TextureRegionShared, _Texture3DShared, \
     _TextureArrayShared, TextureGrid
 from pyglet.image.base import (
     CompressedImageData,
+    CompressionFormat,
     ImageData,
     ImageDataRegion,
     ImageException,
@@ -167,6 +169,115 @@ def _to_uint8_array(data):
         buffer = pyodide.ffi.to_js(memoryview(data))
         return js.Uint8Array.new(buffer)
     return js.Uint8Array.new(data)
+
+
+_webgl_compression_formats = {
+    b"DXT1": (0x83F1, "WEBGL_compressed_texture_s3tc"),
+    b"BC1 ": (0x83F1, "WEBGL_compressed_texture_s3tc"),
+    b"DXT3": (0x83F2, "WEBGL_compressed_texture_s3tc"),
+    b"BC2 ": (0x83F2, "WEBGL_compressed_texture_s3tc"),
+    b"DXT5": (0x83F3, "WEBGL_compressed_texture_s3tc"),
+    b"BC3 ": (0x83F3, "WEBGL_compressed_texture_s3tc"),
+}
+
+_dxgi_to_webgl_format = {
+    71: (0x83F0, "WEBGL_compressed_texture_s3tc"), 72: (0x83F1, "WEBGL_compressed_texture_s3tc"),
+    74: (0x83F2, "WEBGL_compressed_texture_s3tc"), 75: (0x83F2, "WEBGL_compressed_texture_s3tc"),
+    77: (0x83F3, "WEBGL_compressed_texture_s3tc"), 78: (0x83F3, "WEBGL_compressed_texture_s3tc"),
+    80: (0x8DBB, "EXT_texture_compression_rgtc"), 81: (0x8DBC, "EXT_texture_compression_rgtc"),
+    83: (0x8DBD, "EXT_texture_compression_rgtc"), 84: (0x8DBE, "EXT_texture_compression_rgtc"),
+    95: (0x8E8C, "EXT_texture_compression_bptc"), 96: (0x8E8D, "EXT_texture_compression_bptc"),
+    98: (0x8E8E, "EXT_texture_compression_bptc"), 99: (0x8E8F, "EXT_texture_compression_bptc"),
+}
+
+_vk_to_webgl_format = {
+    131: (0x83F1, "WEBGL_compressed_texture_s3tc"), 132: (0x83F1, "WEBGL_compressed_texture_s3tc"),
+    133: (0x83F2, "WEBGL_compressed_texture_s3tc"), 134: (0x83F2, "WEBGL_compressed_texture_s3tc"),
+    135: (0x83F3, "WEBGL_compressed_texture_s3tc"), 136: (0x83F3, "WEBGL_compressed_texture_s3tc"),
+    137: (0x8DBB, "EXT_texture_compression_rgtc"), 138: (0x8DBC, "EXT_texture_compression_rgtc"),
+    139: (0x8DBD, "EXT_texture_compression_rgtc"), 140: (0x8DBE, "EXT_texture_compression_rgtc"),
+    141: (0x8E8C, "EXT_texture_compression_bptc"), 142: (0x8E8D, "EXT_texture_compression_bptc"),
+    146: (0x8E8E, "EXT_texture_compression_bptc"), 147: (0x8E8F, "EXT_texture_compression_bptc"),
+    67: (0x9270, "WEBGL_compressed_texture_etc"), 68: (0x9271, "WEBGL_compressed_texture_etc"),
+    69: (0x9272, "WEBGL_compressed_texture_etc"), 70: (0x9273, "WEBGL_compressed_texture_etc"),
+    74: (0x9274, "WEBGL_compressed_texture_etc"), 75: (0x9275, "WEBGL_compressed_texture_etc"),
+    76: (0x9276, "WEBGL_compressed_texture_etc"), 77: (0x9277, "WEBGL_compressed_texture_etc"),
+    78: (0x9278, "WEBGL_compressed_texture_etc"), 79: (0x9279, "WEBGL_compressed_texture_etc"),
+}
+
+
+def _get_webgl_compression_format(fmt: CompressionFormat) -> tuple[int, str]:
+    if fmt.fmt in (b"DXT1", b"BC1 "):
+        return (0x83F1 if fmt.alpha else 0x83F0), "WEBGL_compressed_texture_s3tc"
+    if result := _webgl_compression_formats.get(fmt.fmt):
+        return result
+    if fmt.fmt == b"DX10" and (result := _dxgi_to_webgl_format.get(fmt.dxgi_format)):
+        return result
+    if fmt.fmt == b"KTX2" and (result := _vk_to_webgl_format.get(fmt.vk_format)):
+        return result
+    msg = f"Compressed texture format is not supported by WebGL: {fmt!r}"
+    raise UnsupportedBackendError(msg)
+
+
+class WebGLCompressedTexture(CompressedTexture):
+    """A WebGL texture created from GPU-ready compressed image data."""
+
+    def __init__(self, context: OpenGLSurfaceContext, width: int, height: int, tex_id,
+                 compression_fmt: CompressionFormat,
+                 tex_type: TextureType = TextureType.TYPE_2D,
+                 filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
+                 address_mode: AddressMode = AddressMode.REPEAT,
+                 anisotropic_level: int = 0) -> None:
+        super().__init__(width, height, tex_id, compression_fmt, tex_type, filters, address_mode, anisotropic_level)
+        self._context = context
+        self._gl = context.gl
+        self.target = texture_map[tex_type]
+        self._gl_min_filter = texture_map[self.min_filter]
+        self._gl_mag_filter = texture_map[self.mag_filter]
+        self._gl_format, self._extension_name = _get_webgl_compression_format(compression_fmt)
+        self._extension = self._gl.getExtension(self._extension_name)
+        if self._extension is None:
+            raise UnsupportedBackendError(f"Compressed texture format '{compression_fmt.fmt.decode()}'")
+        self.mipmap_data: list[bytes | None] = []
+        self._mipmap_levels = 1
+        self._valid_mipmaps: set[int] = set()
+
+    @classmethod
+    def create_from_image(cls, image_data: CompressedImageData,
+                          tex_type: TextureType = TextureType.TYPE_2D,
+                          filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
+                          address_mode: AddressMode = AddressMode.REPEAT,
+                          anisotropic_level: int = 0,
+                          context: OpenGLSurfaceContext | None = None) -> WebGLCompressedTexture:
+        ctx = context or pyglet.graphics.api.core.current_context
+        tex_id = ctx.gl.createTexture()
+        texture = cls(ctx, image_data.width, image_data.height, tex_id, image_data.fmt, tex_type,
+                      filters, address_mode, anisotropic_level)
+        texture.bind()
+        ctx.gl.texParameteri(texture.target, GL_TEXTURE_MIN_FILTER, texture._gl_min_filter)
+        ctx.gl.texParameteri(texture.target, GL_TEXTURE_MAG_FILTER, texture._gl_mag_filter)
+        texture._upload_level(0, image_data.width, image_data.height, image_data.data)
+        texture.mipmap_data = image_data.mipmap_data.copy()
+        texture._upload_mipmap_data()
+        return texture
+
+    def bind(self, texture_unit: int = 0) -> None:
+        self._gl.activeTexture(GL_TEXTURE0 + texture_unit)
+        self._gl.bindTexture(self.target, self.id)
+
+    def _upload_level(self, level: int, width: int, height: int, data: bytes) -> None:
+        self._gl.compressedTexImage2D(self.target, level, self._gl_format, width, height, 0, _to_uint8_array(data))
+
+    def _upload_mipmap_data(self) -> None:
+        if not self.mipmap_data:
+            self._valid_mipmaps = {0}
+            return
+        for level, data in enumerate(self.mipmap_data, start=1):
+            if data is None:
+                raise ImageException(f"Compressed texture mipmap level {level} has no data.")
+            self._upload_level(level, max(1, self.width >> level), max(1, self.height >> level), data)
+        self._mipmap_levels = len(self.mipmap_data) + 1
+        self._valid_mipmaps = set(range(self._mipmap_levels))
 
 
 class GLCompressedImageData(CompressedImageData):

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pyglet
+import pytest
 
 
 def test_rgba_texture_upload_and_readback(webgl_window):
@@ -14,6 +17,20 @@ def test_rgba_texture_upload_and_readback(webgl_window):
         assert bytes(result) == pixel * 16
     finally:
         texture.delete()
+
+
+def test_compressed_texture_upload(webgl_window):
+    gl = webgl_window.context.gl
+    if gl.getExtension("WEBGL_compressed_texture_s3tc") is None:
+        pytest.skip("S3TC texture compression is not supported.")
+
+    image_path = Path(__file__).parents[3] / "data" / "images" / "rgba_dxt1.dds"
+    image = pyglet.image.load(image_path)
+    texture = image.get_texture()
+
+    assert texture.width == image.width
+    assert texture.height == image.height
+    assert gl.getError() == gl.NO_ERROR
 
 
 def test_framebuffer_attachment_clear_and_readback(webgl_window):
