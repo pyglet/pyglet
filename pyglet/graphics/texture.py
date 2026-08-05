@@ -3,7 +3,8 @@ from __future__ import annotations
 import struct
 import sys
 from dataclasses import dataclass
-from typing import Generic, Iterator, Literal, Protocol, Sequence, TYPE_CHECKING, TypeVar, overload
+from abc import ABC, abstractmethod
+from typing import Any, Generic, Iterator, Literal, Protocol, Sequence, TYPE_CHECKING, TypeVar, overload
 
 import pyglet
 from pyglet.customtypes import Buffer, DataTypes
@@ -32,6 +33,16 @@ class TextureArrayDepthExceeded(ImageException):
 
 
 TTexture = TypeVar("TTexture", bound="Texture")
+
+class PixelReadback(ABC):
+    """Base interface for backend-owned texture pixel readback resources."""
+
+    def __init__(self, context: SurfaceContext) -> None:
+        self._context = context
+
+    @abstractmethod
+    def read_texture(self, *args: Any, **kwargs: Any) -> tuple[int, int, Any]:
+        """Read one texture image or layer into backend-owned CPU memory."""
 
 
 @dataclass(frozen=True)

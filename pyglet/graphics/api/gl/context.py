@@ -4,10 +4,9 @@ import threading
 import weakref
 from typing import Callable, TYPE_CHECKING
 
-from pyglet.enums import GraphicsAPI
 from pyglet.graphics import GraphicsAPIError, GraphicsIntegrationError
 from pyglet.graphics.api.gl import gl, gl_info, ObjectSpace
-from pyglet.graphics.api.base import PixelReadback, SurfaceContext, NullContext
+from pyglet.graphics.api.base import SurfaceContext, NullContext
 from pyglet.graphics.api.gl.gl import (
     GL_ALREADY_SIGNALED,
     GL_COLOR_BUFFER_BIT,
@@ -25,6 +24,7 @@ from pyglet.graphics.api.gl.renderer import GLRenderer
 
 if TYPE_CHECKING:
     from pyglet.config import SurfaceConfig
+    from pyglet.graphics.texture import PixelReadback
     from pyglet.graphics.api.gl.shader import GLDataType, GLFunc
     from ctypes import Array
     from pyglet.window import Window
@@ -86,14 +86,9 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
     def pixel_readback(self) -> PixelReadback:
         """Return the lazily created texture pixel readback helper."""
         if self._pixel_readback is None:
-            if self.core.gl_api in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
-                from pyglet.graphics.api.gl2.pixel import GL2PixelReadback  # noqa: PLC0415
+            from pyglet.graphics.api.gl.texture import GLPixelReadback  # noqa: PLC0415
 
-                self._pixel_readback = GL2PixelReadback(self)
-            else:
-                from pyglet.graphics.api.gl.pixel import GLPixelReadback  # noqa: PLC0415
-
-                self._pixel_readback = GLPixelReadback(self)
+            self._pixel_readback = GLPixelReadback(self)
         return self._pixel_readback
 
     def resized(self, width, height):

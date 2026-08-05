@@ -467,17 +467,6 @@ class SurfaceContext(ABC):  # Temp name for now.
         """Clears the framebuffer."""
 
 
-class PixelReadback(ABC):
-    """Base interface for backend-owned texture pixel readback resources."""
-
-    def __init__(self, context: SurfaceContext) -> None:
-        self._context = context
-
-    @abstractmethod
-    def read_texture(self, *args: Any, **kwargs: Any) -> tuple[int, int, Any]:
-        """Read one texture image or layer into backend-owned CPU memory."""
-
-
 class UnavailableContextError(GraphicsBackendError):
     """An exception that occurs when a backend context is not yet available."""
     def __init__(self) -> None:  # noqa: D107

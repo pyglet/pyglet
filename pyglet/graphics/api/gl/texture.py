@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 
-from ctypes import byref, Array
-from typing import cast, Sequence
+from contextlib import contextmanager
+from ctypes import byref, Array, sizeof
+from typing import cast, Iterator, Sequence, TYPE_CHECKING
 
 import pyglet
 from pyglet.enums import TextureType, TextureFilter, ComponentFormat, AddressMode, GraphicsAPI
+from pyglet.graphics import GraphicsAPIError
 from pyglet.graphics.api.gl import OpenGLSurfaceContext, GL_COMPRESSED_RGB8_ETC2
 from pyglet.graphics.api.base import SurfaceContext
 from pyglet.graphics.api.gl.gl import (
@@ -71,8 +73,85 @@ from pyglet.graphics.api.gl.enums import texture_map
 from pyglet.image.base import ImageData, ImageDataRegion, CompressionFormat, \
     CompressedImageData
 from pyglet.image.base import ImageException
-from pyglet.graphics.texture import PixelData, Texture, UniformTextureSequence, CompressedTexture, \
+from pyglet.graphics.texture import PixelData, PixelReadback, Texture, UniformTextureSequence, CompressedTexture, \
     _TextureRegionShared, _Texture3DShared, _TextureArrayShared, TextureGrid
+
+if TYPE_CHECKING:
+    from pyglet.customtypes import Buffer
+    from pyglet.graphics.api.gl.framebuffer import GLFramebuffer
+
+
+class GLPixelReadback(PixelReadback):
+    """Context-owned resources and state handling for texture readback."""
+
+    def __init__(self, context: OpenGLSurfaceContext) -> None:
+        """Create a readback helper for an OpenGL surface context."""
+        super().__init__(context)
+        self._framebuffer: GLFramebuffer | None = None
+
+    def get_framebuffer(self) -> GLFramebuffer:
+        """Return the lazily created framebuffer used for texture readback."""
+        if self._framebuffer is None:
+            if self._context.core.gl_api in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
+                from pyglet.graphics.api.gl2.framebuffer import GL2Framebuffer  # noqa: PLC0415
+
+                self._framebuffer = GL2Framebuffer(context=self._context)
+            else:
+                from pyglet.graphics.api.gl.framebuffer import GLFramebuffer  # noqa: PLC0415
+
+                self._framebuffer = GLFramebuffer(context=self._context)
+        return self._framebuffer
+
+    @contextmanager
+    def _pack_state(self) -> Iterator[None]:
+        alignment = gl.GLint()
+        self._context.glGetIntegerv(gl.GL_PACK_ALIGNMENT, alignment)
+        self._context.glPixelStorei(gl.GL_PACK_ALIGNMENT, 1)
+        try:
+            yield
+        finally:
+            self._context.glPixelStorei(gl.GL_PACK_ALIGNMENT, alignment.value)
+
+    def read_texture(self, texture: GLTexture, z: int, level: int,
+                     gl_format: int, gl_type: int, component_type: type,
+                     components: int) -> tuple[int, int, Buffer]:
+        """Read one texture image or layer into tightly packed CPU memory."""
+        width, height, depth = texture._get_mipmap_dimensions(level)
+        if not 0 <= z < depth:
+            msg = f"Texture layer {z} is outside the valid range 0..{depth - 1}."
+            raise ValueError(msg)
+
+        layer_elements = width * height * components
+        direct_readback = self._context.info.pixel_transfer.direct_texture_readback
+
+        with self._pack_state():
+            if direct_readback:
+                buffer = (component_type * (layer_elements * depth))()
+                self._context.glBindTexture(texture.target, texture.id)
+                self._context.glGetTexImage(texture.target, level, gl_format, gl_type, buffer)
+
+                if depth == 1:
+                    data = buffer
+                else:
+                    start = z * layer_elements
+                    data = (component_type * layer_elements).from_buffer(
+                        buffer, start * sizeof(component_type),
+                    )
+            else:
+                buffer = (component_type * layer_elements)()
+                framebuffer = self.get_framebuffer()
+                with framebuffer:
+                    texture._set_readback_framebuffer_attachment(texture.id, z, level)
+                    try:
+                        if not framebuffer.is_complete:
+                            msg = f"Texture cannot be read through a framebuffer: {framebuffer.get_status()}"
+                            raise GraphicsAPIError(msg)
+                        self._context.glReadPixels(0, 0, width, height, gl_format, gl_type, buffer)
+                    finally:
+                        texture._set_readback_framebuffer_attachment(0, z, level)
+                data = buffer
+
+        return width, height, data
 
 _api_base_internal_formats = {
     'R': 'GL_R',
