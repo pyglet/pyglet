@@ -24,6 +24,9 @@ __version__ = version
 MIN_PYTHON_VERSION = 3, 10
 MIN_PYTHON_VERSION_STR = ".".join([str(v) for v in MIN_PYTHON_VERSION])
 
+#: The Pyodide release used to develop and test pyglet's browser support.
+PYODIDE_VERSION = "0.29.4"
+
 if sys.version_info < MIN_PYTHON_VERSION:
     msg = f"pyglet {version} requires Python {MIN_PYTHON_VERSION_STR} or newer."
     raise Exception(msg)
@@ -55,7 +58,6 @@ class PyodideOptions:
     If the ID is not detected, a canvas will be created with the above. If you have a canvas already embedded in your
     page, and do not want to alter your code, then modify this option.
     """
-
 
 @dataclass
 class Options:
@@ -502,6 +504,7 @@ if TYPE_CHECKING:
         resource,
         shapes,
         sprite,
+        storage,
         text,
         window,
     )
@@ -525,6 +528,7 @@ else:
     resource = _ModuleProxy("resource")  # type: ignore
     sprite = _ModuleProxy("sprite")  # type: ignore
     shapes = _ModuleProxy("shapes")  # type: ignore
+    storage = _ModuleProxy("storage")  # type: ignore
     text = _ModuleProxy("text")  # type: ignore
     window = _ModuleProxy("window")  # type: ignore
 

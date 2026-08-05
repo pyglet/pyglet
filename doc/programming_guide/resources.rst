@@ -211,6 +211,138 @@ an application should be used with :py:mod:`pyglet.resource`.
 Saving user preferences and data
 --------------------------------
 
+New applications should use :mod:`pyglet.storage` for application-created
+files. The older path functions documented below remain available for
+compatibility.
+
+Creating application storage
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Call :func:`pyglet.storage.get` with a stable application name. Repeated calls
+with the same name return the same storage object::
+
+    storage = pyglet.storage.get('SuperGame')
+
+The name determines where pyglet stores the application's files, so it should
+not change between releases. Pyglet creates each storage directory when the
+object is first created.
+
+Choosing a storage location
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The storage object separates disposable files, re-creatable caches,
+application data, and settings:
+
+.. list-table:: Storage locations
+   :header-rows: 1
+   :widths: 18 35 24 23
+
+   * - Location
+     - Use for
+     - Desktop backing
+     - Browser backing
+   * - ``storage.temporary``
+     - Disposable working files: downloads, intermediate files, and temporary
+       exports. Do not store anything needed by a later run here.
+     - Operating-system temporary directory. The OS may clean it.
+     - In-memory VFS under ``/tmp``. Lost when the page reloads; it is never
+       synchronized.
+   * - ``storage.cache``
+     - Re-creatable files that should normally survive between runs, such as
+       generated previews or downloaded content. The application must work if
+       these files are purged.
+     - A ``cache`` directory below the application's data directory.
+     - Persistent OPFS directory under ``/cache/<name>``. Call ``sync`` after
+       writing files that should survive a reload.
+   * - ``storage.data``
+     - Persistent application content: save games, profiles, imported data,
+       and content the application owns.
+     - Platform application-data directory.
+     - Persistent IDBFS mount under ``/data/<name>``. Call ``sync`` after an
+       important write.
+   * - ``storage.settings``
+     - Structured configuration such as preferences, key bindings, and window
+       state. It also provides access to the underlying settings directory.
+     - Platform configuration directory. It may be the same physical
+       directory as application data on some platforms.
+     - Persistent IDBFS directory under ``/data/<name>/settings``. Call
+       ``sync`` after an important write.
+
+Writing application files
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Each location is path-like and works with normal Python filesystem APIs. Save
+games and other application-owned content normally belong in ``data``::
+
+    save_file = storage.data / 'highscores.txt'
+    save_file.write_text('10000', encoding='utf8')
+
+Use ``temporary`` for files that can disappear at any time and ``cache`` for
+files that the application can recreate. Files that belong beside structured
+configuration can be written directly through ``settings``::
+
+    controls_file = storage.settings / 'controls.ini'
+    controls_file.write_text('jump=space', encoding='utf8')
+
+Structured settings
+^^^^^^^^^^^^^^^^^^^
+
+The settings manager stores named sections together in one JSON file. Calling
+:meth:`~pyglet.storage.Settings.create` gets an existing section or creates it
+when it does not exist::
+
+    window = storage.settings.create(
+        'window',
+        defaults={'size': [1280, 720], 'fullscreen': False},
+    )
+
+    window['fullscreen'] = True
+
+``defaults`` only fills missing keys. It does not overwrite values loaded from
+an earlier run. Assign a key to replace one value::
+
+    window['size'] = [1920, 1080]
+
+To replace the entire section, clear it before adding the new values::
+
+    window.clear()
+    window.update({'size': [1920, 1080], 'fullscreen': True})
+
+Use :meth:`~pyglet.storage.Settings.remove` to delete a section completely.
+Settings values must be JSON serializable; JSON arrays are returned as Python
+lists.
+
+Persisting changes
+^^^^^^^^^^^^^^^^^^
+
+Synchronize after changing settings to write every section to
+``settings.json``::
+
+    storage.settings.sync()
+
+On ordinary desktop filesystems the write is complete when ``write_text``
+returns. Browser applications use the same synchronous Python file APIs, but
+must synchronize the virtual filesystem with persistent browser storage. This
+does not require an ``asyncio`` application::
+
+    @storage.event
+    def on_sync():
+        print('Save is persistent')
+
+    @storage.event
+    def on_sync_error(error):
+        print(f'Could not persist save: {error}')
+
+    storage.sync()
+
+If :meth:`~pyglet.storage.Storage.sync` is called while synchronization is in
+progress, pyglet coalesces the requests into one follow-up operation. The
+``on_sync`` event is dispatched only after all requests made so far are
+complete.
+
+Legacy storage paths
+^^^^^^^^^^^^^^^^^^^^
+
 Because Python applications can be distributed in several ways, including
 within ZIP files, it is usually not feasible to save user preferences, high
 score lists, and so on within the application directory (or worse, the working

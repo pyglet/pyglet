@@ -19,13 +19,10 @@ test_files = sorted(
 if not test_files:
     raise RuntimeError("No supported tests were included in the Pyodide project.")
 
-warning_filter = "ignore:coroutine 'AsyncEventLoop.on_window_close' was never awaited:RuntimeWarning"
 PYGLET_PYTEST_EXIT_CODE = int(pytest.main([
     *test_files,
     "-v",
     "--tb=short",
     "-p",
     "no:cacheprovider",
-    "-W",
-    warning_filter,
 ]))

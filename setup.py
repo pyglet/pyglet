@@ -48,6 +48,7 @@ setup_info = dict(  # noqa: C408
     ],
     # Package info
     packages=['pyglet'] + ['pyglet.' + pkg for pkg in find_packages('pyglet')],
+    package_data={'pyglet': ['libs/emscripten/*.js']},
     # Add _ prefix to the names of temporary build dirs
     options={
         'build': {'build_base': '_build'},

@@ -45,9 +45,9 @@ if TYPE_CHECKING:
     from pyglet.graphics.shader import GraphicsAttribute
 
 
-def _to_js_uint8(data: bytes) -> js.Uint8Array:
-    buffer = pyodide.ffi.to_js(memoryview(data))
-    return js.Uint8Array.new(buffer)
+def _to_js_uint8(data: bytes | memoryview) -> js.Uint8Array:
+    view = data if isinstance(data, memoryview) else memoryview(data)
+    return pyodide.ffi.to_js(view)
 
 
 class WebGLBufferObject(AbstractBuffer):
@@ -278,13 +278,17 @@ class WebGLBackedBufferObject(BaseBackedBufferObject, WebGLBufferObject):
 
         self.bind()
         size = self._dirty_max - self._dirty_min
+        if isinstance(self.store, CTypeDataStore):
+            data = self.store.get_memoryview
+        else:
+            data = self.store.get_bytes
         if not self._allocated or not self._data_uploaded or size == self.size:
-            self._gl.bufferData(self.target, _to_js_uint8(self.store.get_bytes()), self.usage)
+            self._gl.bufferData(self.target, _to_js_uint8(data()), self.usage)
         else:
             self._gl.bufferSubData(
                 self.target,
                 self._dirty_min,
-                _to_js_uint8(self.store.get_bytes(self._dirty_min, size)),
+                _to_js_uint8(data(self._dirty_min, size)),
             )
         self._set_data_uploaded()
 

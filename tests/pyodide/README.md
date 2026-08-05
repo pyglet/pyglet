@@ -15,8 +15,8 @@ and application/event-loop integration tests are not selected in the Pyodide
 run. The browser owns Pyodide's asynchronous event loop, so repeatedly starting
 and stopping it is intentionally outside this suite's current scope.
 
-Pyodide 0.27.7 includes
-[`pytest` as a loadable package](https://pyodide.org/en/0.27.7/usage/packages-in-pyodide.html).
+The supported Pyodide version is recorded as `pyglet.PYODIDE_VERSION`. It
+includes [`pytest` as a loadable package](https://pyodide.org/en/stable/usage/packages-in-pyodide.html).
 Pyodide also maintains
 [`pytest-pyodide`](https://pyodide.org/en/stable/development/testing.html) for
 host-side browser fixtures. This runner retains Playwright because pyglet

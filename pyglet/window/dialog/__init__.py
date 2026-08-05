@@ -69,6 +69,9 @@ class _OpenDialogMeta(type):
         if pyglet.compat_platform == "linux":
             from pyglet.window.dialog.linux import TkFileOpenDialog  # noqa: PLC0415
             return TkFileOpenDialog
+        if pyglet.compat_platform == "emscripten":
+            from pyglet.window.dialog.emscripten import EmscriptenFileOpenDialog  # noqa: PLC0415
+            return EmscriptenFileOpenDialog
 
         return super().__new__(cls, name, bases, attrs)
 
@@ -132,6 +135,9 @@ class _SaveDialogMeta(type):
         if pyglet.compat_platform == "linux":
             from pyglet.window.dialog.linux import TkFileSaveDialog  # noqa: PLC0415
             return TkFileSaveDialog
+        if pyglet.compat_platform == "emscripten":
+            from pyglet.window.dialog.emscripten import EmscriptenFileSaveDialog  # noqa: PLC0415
+            return EmscriptenFileSaveDialog
 
         return super().__new__(cls, name, bases, attrs)
 

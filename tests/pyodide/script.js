@@ -1,8 +1,10 @@
-import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.mjs";
+import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v0.29.4/full/pyodide.mjs";
+import { installPygletEmscripten } from "./pyglet_emscripten.js";
 
 async function main() {
     const pyodide = await loadPyodide();
     console.log("Pyodide Loaded.");
+    await installPygletEmscripten(pyodide);
     await pyodide.loadPackage(["pillow", "pytest"]);
 
     const filesToLoad = [
@@ -29,6 +31,7 @@ with zipfile.ZipFile("/pyglet.zip") as archive:
     archive.extractall("/")
 with zipfile.ZipFile("/tests.zip") as archive:
     archive.extractall("/")
+import pyglet
 exec(open("/pytest_runner.py").read())
         `);
 
