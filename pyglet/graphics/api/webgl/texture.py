@@ -3,10 +3,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Callable, cast, Sequence
 
 import js  # noqa: F821
-import pyodide  # noqa: F821
 
 import pyglet
-from pyglet.graphics.api.base import SurfaceContext
+from pyglet.libs.emscripten import zero_copy
 from pyglet.enums import TextureFilter, TextureType, ComponentFormat, \
     AddressMode
 from pyglet.graphics.api.webgl.enums import texture_map
@@ -61,6 +60,7 @@ from pyglet.image.base import (
 
 
 if TYPE_CHECKING:
+    from pyglet.graphics.api.base import SurfaceContext
     from typing import Callable
 
     from pyglet.graphics.api.webgl import OpenGLSurfaceContext
@@ -163,14 +163,6 @@ def _normalize_upload_format(data_format: str) -> str:
     return data_format
 
 
-def _to_uint8_array(data):
-    """Return a JavaScript Uint8Array for Python or JavaScript-backed image data."""
-    if isinstance(data, (bytes, bytearray, memoryview)):
-        buffer = pyodide.ffi.to_js(memoryview(data))
-        return js.Uint8Array.new(buffer)
-    return js.Uint8Array.new(data)
-
-
 _webgl_compression_formats = {
     b"DXT1": (0x83F1, "WEBGL_compressed_texture_s3tc"),
     b"BC1 ": (0x83F1, "WEBGL_compressed_texture_s3tc"),
@@ -265,8 +257,15 @@ class WebGLCompressedTexture(CompressedTexture):
         self._gl.activeTexture(GL_TEXTURE0 + texture_unit)
         self._gl.bindTexture(self.target, self.id)
 
+    def delete(self) -> None:
+        """Delete this texture and its WebGL resource."""
+        if self.id is not None:
+            self._gl.deleteTexture(self.id)
+            self.id = None
+
     def _upload_level(self, level: int, width: int, height: int, data: bytes) -> None:
-        self._gl.compressedTexImage2D(self.target, level, self._gl_format, width, height, 0, _to_uint8_array(data))
+        with zero_copy(data) as js_array:
+            self._gl.compressedTexImage2D(self.target, level, self._gl_format, width, height, 0, js_array)
 
     def _upload_mipmap_data(self) -> None:
         if not self.mipmap_data:
@@ -438,17 +437,17 @@ class WebGLTexture(Texture):
         else:
             upload_pitch = image_data.width * len(upload_fmt)
             data = image_data.get_bytes(upload_fmt, upload_pitch)
-        js_array = _to_uint8_array(data)
         fmt, gl_type = _get_gl_format_and_type(upload_fmt)
 
-        if self.target == GL_TEXTURE_3D or self.target == GL_TEXTURE_2D_ARRAY:
-            self._gl.texSubImage3D(
-                self.target, level, x, y, z, image_data.width, image_data.height, 1, fmt, gl_type, js_array,
-            )
-        else:
-            self._gl.texSubImage2D(
-                self.target, level, x, y, image_data.width, image_data.height, fmt, gl_type, js_array,
-            )
+        with zero_copy(data) as js_array:
+            if self.target == GL_TEXTURE_3D or self.target == GL_TEXTURE_2D_ARRAY:
+                self._gl.texSubImage3D(
+                    self.target, level, x, y, z, image_data.width, image_data.height, 1, fmt, gl_type, js_array,
+                )
+            else:
+                self._gl.texSubImage2D(
+                    self.target, level, x, y, image_data.width, image_data.height, fmt, gl_type, js_array,
+                )
 
     @staticmethod
     def _get_image_alignment(image_data: ImageData) -> tuple[int, int]:
@@ -529,7 +528,6 @@ class WebGLTexture(Texture):
 
         pixel_fmt = _normalize_upload_format(image_data.format)
         image_bytes = image_data.get_bytes(pixel_fmt, image_data.width * len(pixel_fmt))
-        js_array = _to_uint8_array(image_bytes)
         gl_pfmt, gl_type = _get_gl_format_and_type(pixel_fmt)
 
         align, _ = texture._get_image_alignment(image_data)
@@ -539,17 +537,18 @@ class WebGLTexture(Texture):
             # get_bytes above always returns tightly packed rows.
             gl.pixelStorei(GL_UNPACK_ROW_LENGTH, 0)
 
-        gl.texImage2D(
-            target,
-            0,
-            texture._gl_internal_format,
-            image_data.width,
-            image_data.height,
-            0,
-            gl_pfmt,
-            gl_type,
-            js_array,
-        )
+        with zero_copy(image_bytes) as js_array:
+            gl.texImage2D(
+                target,
+                0,
+                texture._gl_internal_format,
+                image_data.width,
+                image_data.height,
+                0,
+                gl_pfmt,
+                gl_type,
+                js_array,
+            )
         gl.flush()
         texture._mark_mipmap_valid(0)
         return texture
