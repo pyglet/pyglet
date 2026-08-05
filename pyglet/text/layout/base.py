@@ -19,6 +19,7 @@ from pyglet import graphics
 from pyglet.enums import BlendFactor, GeometryMode, GraphicsAPI
 from pyglet.graphics import Group, ShaderProgram
 from pyglet.text import runlist
+from pyglet.text.document import UnformattedDocument
 from pyglet.font.base import GlyphPosition
 
 if TYPE_CHECKING:
@@ -860,9 +861,32 @@ class TextLayout:
         return self._flow_glyphs_single_line
 
     def _initialize_groups(self) -> None:
-        decoration_shader = get_default_decoration_shader()
-        self.background_decoration_group = self.decoration_class(decoration_shader, order=0, parent=self._user_group)
-        self.foreground_decoration_group = self.decoration_class(decoration_shader, order=2, parent=self._user_group)
+        # Most labels do not contain backgrounds, underlines, or carets.
+        # Avoid constructing groups until one is used.
+        self._background_decoration_group = None
+        self._foreground_decoration_group = None
+
+    @property
+    def background_decoration_group(self) -> TextDecorationGroup:
+        if self._background_decoration_group is None:
+            program = get_default_decoration_shader()
+            self._background_decoration_group = self.decoration_class(program, order=0, parent=self._user_group)
+        return self._background_decoration_group
+
+    @background_decoration_group.setter
+    def background_decoration_group(self, group: TextDecorationGroup | None) -> None:
+        self._background_decoration_group = group
+
+    @property
+    def foreground_decoration_group(self) -> TextDecorationGroup:
+        if self._foreground_decoration_group is None:
+            program = get_default_decoration_shader()
+            self._foreground_decoration_group = self.decoration_class(program, order=2, parent=self._user_group)
+        return self._foreground_decoration_group
+
+    @foreground_decoration_group.setter
+    def foreground_decoration_group(self, group: TextDecorationGroup | None) -> None:
+        self._foreground_decoration_group = group
 
     @property
     def group(self) -> Group | None:
@@ -1355,6 +1379,12 @@ class TextLayout:
             self._batch.draw_subset(self._vertex_lists)
 
     def _get_lines(self) -> list[_Line]:
+        if not self._multiline and type(self._document) is UnformattedDocument:
+            return self._get_unformatted_single_line()
+
+        return self._get_lines_generic()
+
+    def _get_lines_generic(self) -> list[_Line]:
         len_text = len(self._document.text)
         glyphs, offsets = self._get_glyphs()
         owner_runs = runlist.RunList(len_text, None)
@@ -1364,6 +1394,68 @@ class TextLayout:
         self._line_count = len(lines)
         self._flow_lines(lines, 0, self._line_count)
         return lines
+
+    def _get_unformatted_single_line(self) -> list[_Line]:
+        """Lay out a uniform, single-line document without generic run iterators."""
+        document = self._document
+        text = document.text
+        font = document.get_font(dpi=self._dpi)
+        glyphs, offsets = font.get_glyphs(text, self._shaping)
+
+        line = _Line(0)
+        if self._width:
+            align = document.get_style("align")
+            if align in ("left", "right", "center"):
+                line.align = align
+
+        kerning = document.get_style("kerning")
+        if kerning is None:
+            kerning = 0
+
+        owner = glyphs[0].owner
+        owner_glyphs = []
+        owner_width = 0
+        for glyph, offset in zip(glyphs, offsets):
+            if glyph.owner != owner:
+                line.add_box(_GlyphBox(owner, font, owner_glyphs, owner_width))
+                owner = glyph.owner
+                owner_glyphs = []
+                owner_width = 0
+
+            owner_glyphs.append((kerning, glyph, offset))
+            owner_width += glyph.advance + kerning + offset.x_advance
+
+        line.add_box(_GlyphBox(owner, font, owner_glyphs, owner_width))
+        line.paragraph_begin = line.paragraph_end = True
+
+        self._content_width = line.width
+        self._line_count = 1
+        self._flow_unformatted_single_line(line)
+        return [line]
+
+    def _flow_unformatted_single_line(self, line: _Line) -> None:
+        """Position a uniform single line without paragraph run processing."""
+        document = self._document
+        margin_top = document.get_style("margin_top")
+        margin_bottom = document.get_style("margin_bottom")
+        line_spacing = document.get_style("line_spacing")
+
+        margin_top = self._parse_distance(margin_top) if margin_top is not None else 0
+        margin_bottom = self._parse_distance(margin_bottom) if margin_bottom is not None else 0
+        line_spacing = self._parse_distance(line_spacing) if line_spacing is not None else None
+
+        if line.align == "center" and line.width <= self.width:
+            line.x = (self.width - line.width) // 2
+        elif line.align == "right" and line.width <= self.width:
+            line.x = self.width - line.width
+
+        y = -margin_top
+        y -= line.ascent if line_spacing is None else line_spacing
+        line.y = y
+        if line_spacing is None:
+            y += line.descent
+        y -= margin_bottom
+        self._content_height = -y
 
     def _update(self) -> None:
         if not self._update_enabled:
