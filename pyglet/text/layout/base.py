@@ -39,23 +39,21 @@ if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
         get_default_decoration_shader,
         get_default_image_layout_shader,
         get_default_layout_shader,
+        get_default_scrollable_layout_shader,
     )
 elif pyglet.options.backend in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
     from pyglet.graphics.api.gl2.text import (
         get_default_decoration_shader,
         get_default_image_layout_shader,
         get_default_layout_shader,
+        get_default_scrollable_layout_shader,
     )
 elif pyglet.options.backend == GraphicsAPI.WEBGL:
     from pyglet.graphics.api.webgl.text import (
         get_default_decoration_shader,
         get_default_image_layout_shader,  # noqa: F401
         get_default_layout_shader,
-    )
-elif pyglet.options.backend == GraphicsAPI.VULKAN:
-    from pyglet.graphics.api.vulkan.text import (
-        get_default_decoration_shader,
-        get_default_layout_shader,
+        get_default_scrollable_layout_shader,
     )
 
 
@@ -441,16 +439,20 @@ class _GlyphBox(_AbstractBox):
 
         t_position = (x, y, z)
 
+        vertex_data = {
+            "position": ("f", vertices),
+            "translation": ("f", t_position * 4 * n_glyphs),
+            "colors": ("Bn", colors),
+            "tex_coords": ("f", tex_coords),
+            "rotation": ("f", ((rotation,) * 4) * n_glyphs),
+            "visible": ("f", ((visible,) * 4) * n_glyphs),
+            "anchor": ("f", ((anchor_x, anchor_y) * 4) * n_glyphs),
+        }
+        if "view_translation" in layout.program.attributes:
+            vertex_data["view_translation"] = ('f', ((0, 0, 0) * 4 * n_glyphs))
+
         vertex_list = layout.program.vertex_list_indexed(n_glyphs * 4, GeometryMode.TRIANGLES, indices, layout.batch,
-                                                         group,
-                                                         position=("f", vertices),
-                                                         translation=("f", t_position * 4 * n_glyphs),
-                                                         colors=("Bn", colors),
-                                                         view_translation=('f', ((0, 0, 0) * 4 * n_glyphs)),
-                                                         tex_coords=("f", tex_coords),
-                                                         rotation=("f", ((rotation,) * 4) * n_glyphs),
-                                                         visible=("f", ((visible,) * 4) * n_glyphs),
-                                                         anchor=("f", ((anchor_x, anchor_y) * 4) * n_glyphs))
+                                                         group, **vertex_data)
         self._add_vertex_list(vertex_list, context)
 
         # Decoration (background color and underline)

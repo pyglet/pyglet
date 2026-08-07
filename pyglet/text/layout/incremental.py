@@ -16,6 +16,7 @@ from pyglet.text.layout.base import (
     _is_pyglet_doc_run,
     _LayoutContext,
     _Line,
+    get_default_scrollable_layout_shader,
 )
 from pyglet.text.layout import ScrollableTextLayoutGroup, ScrollableTextDecorationGroup
 
@@ -137,7 +138,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         self._owner_runs = runlist.RunList(0, None)
 
         super().__init__(document, x, y, z, width, height, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
-                         program, wrap_lines)
+                         program or get_default_scrollable_layout_shader(), wrap_lines)
 
     def _update_scissor_area(self) -> None:
         area = (self.left, self.bottom, self._width, self._height)
