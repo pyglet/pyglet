@@ -706,15 +706,28 @@ class Batch:
             return False
 
         drawable_attributes = {name: attributes[name] for name in vertex_list.initial_attribs}
+
+        # Attribute locations may change between linked programs, but the GPU
+        # data can be copied directly when each existing attribute retains the
+        # same storage shape. ``_normalized_shader_attributes`` has already
+        # restored the source data type, normalization, and divisor.
+        if incompatible := [
+            name for name, initial in vertex_list.initial_attribs.items()
+            if initial.fmt != drawable_attributes[name].fmt
+        ]:
+            if _debug_graphics_batch:
+                warnings.warn(f"Incompatible shader attributes for update: {incompatible}")
+            return False
+
         domain = self.get_domain(
             vertex_list.indexed, vertex_list.instanced, mode, group,
             program.derive_domain_attributes(drawable_attributes),
         )
 
-        # TODO: Allow migration if we can restore original vertices somehow. Much faster.
-        # If the domain's don't match, we need to re-create the vertex list. Tell caller no match.
         if domain != vertex_list.domain:
-            return False
+            vertex_list.migrate(domain, group)
+            self._draw_list_dirty = True
+            return True
 
         # Same domain, but state can still differ (for example, a different program).
         if vertex_list.group != group:
