@@ -31,7 +31,7 @@ from pyglet.media.exceptions import MediaFormatException
 from pyglet.util import asbytes, asstr
 
 from . import MediaDecoder
-from .base import AudioData, AudioFormat, SourceInfo, StaticSource, StreamingSource, VideoFormat
+from .base import AudioData, AudioFormat, SampleType, SourceInfo, StaticSource, StreamingSource, VideoFormat
 from .ffmpeg_lib import (
     AV_CODEC_ID_VP8,
     AV_CODEC_ID_VP9,
@@ -585,14 +585,14 @@ class AudioPacket(_Packet):
 
 class FFmpegSource(StreamingSource):
 
-    AV_FORMAT_MAP = {AV_SAMPLE_FMT_U8: (8, AudioFormat.SAMPLE_TYPE_UINT),
-                     AV_SAMPLE_FMT_U8P: (8, AudioFormat.SAMPLE_TYPE_UINT),
-                     AV_SAMPLE_FMT_S16: (16, AudioFormat.SAMPLE_TYPE_INT),
-                     AV_SAMPLE_FMT_S16P: (16, AudioFormat.SAMPLE_TYPE_INT),
-                     AV_SAMPLE_FMT_S32: (32, AudioFormat.SAMPLE_TYPE_INT),
-                     AV_SAMPLE_FMT_S32P: (32, AudioFormat.SAMPLE_TYPE_INT),
-                     AV_SAMPLE_FMT_FLT: (32, AudioFormat.SAMPLE_TYPE_FLOAT),
-                     AV_SAMPLE_FMT_FLTP: (32, AudioFormat.SAMPLE_TYPE_FLOAT)}
+    AV_FORMAT_MAP = {AV_SAMPLE_FMT_U8: (8, SampleType.UINT),
+                     AV_SAMPLE_FMT_U8P: (8, SampleType.UINT),
+                     AV_SAMPLE_FMT_S16: (16, SampleType.INT),
+                     AV_SAMPLE_FMT_S16P: (16, SampleType.INT),
+                     AV_SAMPLE_FMT_S32: (32, SampleType.INT),
+                     AV_SAMPLE_FMT_S32P: (32, SampleType.INT),
+                     AV_SAMPLE_FMT_FLT: (32, SampleType.FLOAT),
+                     AV_SAMPLE_FMT_FLTP: (32, SampleType.FLOAT)}
 
     _audio_stream: FFmpegStream | None
     _video_stream: FFmpegStream | None
