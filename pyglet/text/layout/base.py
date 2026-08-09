@@ -440,16 +440,16 @@ class _GlyphBox(_AbstractBox):
         t_position = (x, y, z)
 
         vertex_data = {
-            "position": ("f", vertices),
-            "translation": ("f", t_position * 4 * n_glyphs),
-            "colors": ("Bn", colors),
-            "tex_coords": ("f", tex_coords),
-            "rotation": ("f", ((rotation,) * 4) * n_glyphs),
-            "visible": ("f", ((visible,) * 4) * n_glyphs),
-            "anchor": ("f", ((anchor_x, anchor_y) * 4) * n_glyphs),
+            "position": vertices,
+            "translation": t_position * 4 * n_glyphs,
+            "colors": colors,
+            "tex_coords": tex_coords,
+            "rotation": ((rotation,) * 4) * n_glyphs,
+            "visible": ((visible,) * 4) * n_glyphs,
+            "anchor": ((anchor_x, anchor_y) * 4) * n_glyphs,
         }
         if "view_translation" in layout.program.attributes:
-            vertex_data["view_translation"] = ('f', ((0, 0, 0) * 4 * n_glyphs))
+            vertex_data["view_translation"] = (0, 0, 0) * 4 * n_glyphs
 
         vertex_list = layout.program.vertex_list_indexed(n_glyphs * 4, GeometryMode.TRIANGLES, indices, layout.batch,
                                                          group, **vertex_data)
@@ -500,13 +500,13 @@ class _GlyphBox(_AbstractBox):
             background_list = decoration_program.vertex_list_indexed(bg_count, GeometryMode.TRIANGLES,
                                                                      background_indices,
                                                                      layout.batch, layout.background_decoration_group,
-                                                                     position=("f", background_vertices),
-                                                                     translation=("f", t_position * bg_count),
-                                                                     view_translation=('f', (0, 0, 0) * bg_count),
-                                                                     colors=("Bn", background_colors),
-                                                                     rotation=("f", (rotation,) * bg_count),
-                                                                     visible=("f", (visible,) * bg_count),
-                                                                     anchor=("f", (anchor_x, anchor_y) * bg_count))
+                                                                     position=background_vertices,
+                                                                     translation=t_position * bg_count,
+                                                                     view_translation=(0, 0, 0) * bg_count,
+                                                                     colors=background_colors,
+                                                                     rotation=(rotation,) * bg_count,
+                                                                     visible=(visible,) * bg_count,
+                                                                     anchor=(anchor_x, anchor_y) * bg_count)
             self._add_vertex_list(background_list, context)
 
         if underline_vertices:
@@ -514,13 +514,13 @@ class _GlyphBox(_AbstractBox):
             decoration_program = get_default_decoration_shader()
             underline_list = decoration_program.vertex_list(ul_count, GeometryMode.LINES,
                                                             layout.batch, layout.foreground_decoration_group,
-                                                            position=("f", underline_vertices),
-                                                            translation=("f", t_position * ul_count),
-                                                            view_translation=('f', (0, 0, 0) * ul_count),
-                                                            colors=("Bn", underline_colors),
-                                                            rotation=("f", (rotation,) * ul_count),
-                                                            visible=("f", (visible,) * ul_count),
-                                                            anchor=("f", (anchor_x, anchor_y) * ul_count))
+                                                            position=underline_vertices,
+                                                            translation=t_position * ul_count,
+                                                            view_translation=(0, 0, 0) * ul_count,
+                                                            colors=underline_colors,
+                                                            rotation=(rotation,) * ul_count,
+                                                            visible=(visible,) * ul_count,
+                                                            anchor=(anchor_x, anchor_y) * ul_count)
             self._add_vertex_list(underline_list, context)
 
     def update_translation(self, x: float, y: float, z: float) -> None:

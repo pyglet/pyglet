@@ -55,6 +55,7 @@ def shader_program(test_window):
     vertex = Shader(_vertex_source, "vertex")
     fragment = Shader(_fragment_source, "fragment")
     program = ShaderProgram(vertex, fragment)
+    program.set_instance_attributes(colors=1, translate=1)
     try:
         yield program
     finally:
@@ -71,12 +72,11 @@ def vlist_factory(shader_program):
             4,
             mode=GeometryMode.TRIANGLES,
             indices=list(indices),
-            instance_attributes={"colors": 1, "translate": 1},
             batch=batch,
             group=group,
-            position=("f", tuple(verts)),
-            colors=("f", (1.0, 0.0, 0.0, 1.0)),
-            translate=("f", (500.0, 500.0, 0.0)),
+            position=tuple(verts),
+            colors=(1.0, 0.0, 0.0, 1.0),
+            translate=(500.0, 500.0, 0.0),
         )
     return make
 
@@ -90,12 +90,11 @@ def vlist_non_indexed_factory(shader_program):
         return shader_program.vertex_list_instanced(
             3,
             mode=GeometryMode.TRIANGLES,
-            instance_attributes={"colors": 1, "translate": 1},
             batch=batch,
             group=group,
-            position=("f", tuple(verts)),
-            colors=("f", (1.0, 0.0, 0.0, 1.0)),
-            translate=("f", (500.0, 500.0, 0.0)),
+            position=tuple(verts),
+            colors=(1.0, 0.0, 0.0, 1.0),
+            translate=(500.0, 500.0, 0.0),
         )
 
     return make

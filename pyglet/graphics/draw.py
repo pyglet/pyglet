@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from pyglet.customtypes import ScissorProtocol
     from pyglet.graphics.shader import ShaderProgram
     from pyglet.graphics.texture import Texture
-    from pyglet.graphics.vertexdomain import IndexedVertexList, VertexDomain, VertexList
+    from pyglet.graphics.vertexdomain import DomainAttributes, IndexedVertexList, VertexDomain, VertexList
 
 
 
@@ -706,7 +706,10 @@ class Batch:
             return False
 
         drawable_attributes = {name: attributes[name] for name in vertex_list.initial_attribs}
-        domain = self.get_domain(vertex_list.indexed, vertex_list.instanced, mode, group, drawable_attributes)
+        domain = self.get_domain(
+            vertex_list.indexed, vertex_list.instanced, mode, group,
+            program.derive_domain_attributes(drawable_attributes),
+        )
 
         # TODO: Allow migration if we can restore original vertices somehow. Much faster.
         # If the domain's don't match, we need to re-create the vertex list. Tell caller no match.
@@ -748,8 +751,10 @@ class Batch:
                 The batch to migrate to (or the current batch).
 
         """
-        attributes = vertex_list.domain.attribute_meta
-        domain = batch.get_domain(vertex_list.indexed, vertex_list.instanced, mode, group, attributes)
+        domain = batch.get_domain(
+            vertex_list.indexed, vertex_list.instanced, mode, group,
+            vertex_list.domain.domain_attributes,
+        )
 
         if domain != vertex_list.domain:
             vertex_list.migrate(domain, group)
@@ -762,7 +767,7 @@ class Batch:
 
 
     def get_domain(self, indexed: bool, instanced: bool, mode: GeometryMode, group: Group,
-                   attributes: dict[str, Any]) -> VertexDomain:
+                   domain_attributes: DomainAttributes) -> VertexDomain:
         """Get, or create, the vertex domain corresponding to the given arguments.
 
         mode is the render mode such as GL_LINES or GL_TRIANGLES
@@ -773,13 +778,16 @@ class Batch:
 
         # If instanced, ensure a separate domain, as multiple instance sources can match the key.
         # Find domain given formats, indices and mode
-        key = _DomainKey(indexed, instanced, mode, self._attributes_key(attributes))
+        key = _DomainKey(indexed, instanced, mode, domain_attributes.key)
 
         try:
             domain = self._domain_registry[key]
         except KeyError:
             # Create domain
-            domain = self._domain_class_map[(indexed, instanced)](self._context, self.initial_count, attributes)
+            domain = self._domain_class_map[(indexed, instanced)](
+                self._context, self.initial_count, domain_attributes.attributes
+            )
+            domain.domain_attributes = domain_attributes
             self._domain_registry[key] = domain
             self._draw_list_dirty = True
         return domain

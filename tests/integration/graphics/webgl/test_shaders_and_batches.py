@@ -34,7 +34,7 @@ def test_custom_shaders_uniforms_and_indexed_batch(webgl_window):
         GeometryMode.TRIANGLES,
         [0, 1, 2],
         batch=batch,
-        position=("f", (-0.75, -0.75, 0.75, -0.75, 0.0, 0.75)),
+        position=(-0.75, -0.75, 0.75, -0.75, 0.0, 0.75),
     )
 
     try:
