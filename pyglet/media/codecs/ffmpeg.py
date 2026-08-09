@@ -596,9 +596,6 @@ class FFmpegSource(StreamingSource):
 
     _audio_stream: FFmpegStream | None
     _video_stream: FFmpegStream | None
-    # Max increase/decrease of original sample size
-    SAMPLE_CORRECTION_PERCENT_MAX = 10
-
     # Maximum amount of packets to create for video and audio queues.
     MAX_QUEUE_SIZE = 100
 
@@ -1021,14 +1018,14 @@ class FFmpegSource(StreamingSource):
             return audio_packet
         return None
 
-    def get_audio_data(self, num_bytes: int, compensation_time: float=0.0) -> AudioData | None:
+    def get_audio_data(self, num_bytes: int) -> AudioData | None:
         data = b''
         while len(data) < num_bytes:
             if not self.audioq:
                 break
 
             audio_packet = self._get_audio_packet()
-            buffer = self._decode_audio_packet(audio_packet, compensation_time)
+            buffer = self._decode_audio_packet(audio_packet)
 
             if not buffer:
                 break
@@ -1045,13 +1042,12 @@ class FFmpegSource(StreamingSource):
 
         return AudioData(data, len(data))
 
-    def _decode_audio_packet(self, audio_packet: AudioPacket, compensation_time: float) -> bytes | None:
+    def _decode_audio_packet(self, audio_packet: AudioPacket) -> bytes | None:
         while True:
             try:
                 size_out = self._ffmpeg_decode_audio(
                     audio_packet.packet,
-                    self._audio_buffer,
-                    compensation_time)
+                    self._audio_buffer)
             except FFmpegException:
                 break
 
@@ -1066,7 +1062,7 @@ class FFmpegSource(StreamingSource):
 
         return None
 
-    def _ffmpeg_decode_audio(self, packet: AVPacket, data_out: Array[c_uint8], compensation_time: float) -> int:
+    def _ffmpeg_decode_audio(self, packet: AVPacket, data_out: Array[c_uint8]) -> int:
         stream = self._audio_stream
 
         if stream.type != AVMEDIA_TYPE_AUDIO:
@@ -1114,26 +1110,8 @@ class FFmpegSource(StreamingSource):
             raise FFmpegException('Output audio buffer is too small for current audio frame!')
 
         nb_samples = stream.frame.contents.nb_samples
-        sample_rate = stream.codec_context.contents.sample_rate
         bytes_per_sample = avutil.av_get_bytes_per_sample(self.tgt_format)
         channels_out = min(2, self.audio_format.channels)
-
-        wanted_nb_samples = nb_samples + compensation_time * sample_rate
-        min_nb_samples = (nb_samples * (100 - self.SAMPLE_CORRECTION_PERCENT_MAX) / 100)
-        max_nb_samples = (nb_samples * (100 + self.SAMPLE_CORRECTION_PERCENT_MAX) / 100)
-        wanted_nb_samples = min(max(wanted_nb_samples, min_nb_samples), max_nb_samples)
-        wanted_nb_samples = int(wanted_nb_samples)
-
-        if wanted_nb_samples != nb_samples:
-            res = swresample.swr_set_compensation(
-                self.audio_convert_ctx,
-                (wanted_nb_samples - nb_samples),
-                wanted_nb_samples,
-            )
-
-            if res < 0:
-                raise FFmpegException('swr_set_compensation failed.')
-
         data_in = stream.frame.contents.extended_data
         p_data_out = cast(data_out, POINTER(c_uint8))
 

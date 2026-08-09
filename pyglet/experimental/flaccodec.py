@@ -304,7 +304,7 @@ class FLACSource(StreamingSource):
     def __del__(self):
         self._file.close()
 
-    def get_audio_data(self, num_bytes, compensation_time=0.0):
+    def get_audio_data(self, num_bytes):
 
         data = b''
 

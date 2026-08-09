@@ -135,7 +135,7 @@ class CoreAudioSource(StreamingSource):
             err_check(ca.ExtAudioFileDispose(self._audref))
             self._audref = None
 
-    def get_audio_data(self, num_bytes, compensation_time=0.0):
+    def get_audio_data(self, num_bytes):
         num_frames = c_uint32(num_bytes // self.convert_desc.mBytesPerFrame)
 
         if not self._bl:

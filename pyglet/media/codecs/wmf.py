@@ -664,7 +664,7 @@ class WMFSource(Source):
         self.video_format.sample_aspect = num / den
         assert _debug(f'WMFVideoDecoder: Pixel Ratio: {num} / {den} = {self.video_format.sample_aspect}')
 
-    def get_audio_data(self, num_bytes, compensation_time=0.0):
+    def get_audio_data(self, num_bytes):
         flags = DWORD()
         timestamp = c_longlong()
 

@@ -348,7 +348,7 @@ class PyOggSource(StreamingSource):
     def _load_source(self):
         pass
 
-    def get_audio_data(self, num_bytes, compensation_time=0.0):
+    def get_audio_data(self, num_bytes):
         """Data returns as c_short_array instead of LP_c_char or c_ubyte, cast each buffer."""
         data = self._stream.get_buffer()  # Returns buffer, length or None
         if data is not None:
@@ -407,7 +407,7 @@ class PyOggVorbisSource(PyOggSource):
 
         self._duration = pyogg.vorbis.libvorbisfile.ov_time_total(byref(self._stream.vf), -1)
 
-    def get_audio_data(self, num_bytes, compensation_time=0.0):
+    def get_audio_data(self, num_bytes):
         data = self._stream.get_buffer()  # Returns buffer, length or None
 
         if data is not None:

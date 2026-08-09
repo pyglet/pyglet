@@ -399,18 +399,12 @@ class Source:
         """
         return self
 
-    def get_audio_data(self, num_bytes: int, compensation_time=0.0) -> AudioData | None:
+    def get_audio_data(self, num_bytes: int) -> AudioData | None:
         """Get next packet of audio data.
 
         Args:
             num_bytes (int): A size hint for the amount of bytes to return,
                 but the returned amount may be lower or higher.
-            compensation_time (float): Time in sec to compensate due to a
-                difference between the master clock and the audio clock.
-
-        .. deprecated:: 2.0.10
-            compensation_time: Will always be given as ``0.0``.
-
         Returns:
             :class:`.AudioData`: Next packet of audio data, or ``None`` if
             there is no (more) data.
@@ -486,7 +480,7 @@ class StaticSource(Source):
             return StaticMemorySource(self._data, self.audio_format)
         return None
 
-    def get_audio_data(self, num_bytes: float, compensation_time: float = 0.0) -> Optional[AudioData]:
+    def get_audio_data(self, num_bytes: float) -> Optional[AudioData]:
         """The StaticSource does not provide audio data.
 
         When the StaticSource is queued on a
@@ -530,7 +524,7 @@ class StaticMemorySource(StaticSource):
         # Align to audio frame to not corrupt audio data.
         self._file.seek(self.audio_format.align(offset))
 
-    def get_audio_data(self, num_bytes: float, compensation_time: float = 0.0) -> Optional[AudioData]:
+    def get_audio_data(self, num_bytes: float) -> Optional[AudioData]:
         """Get next packet of audio data.
 
         Args:
@@ -596,7 +590,7 @@ class SourceGroup:
             if isinstance(old_source, StreamingSource):
                 old_source.delete()
 
-    def get_audio_data(self, num_bytes: float, compensation_time=0.0) -> Optional[AudioData]:
+    def get_audio_data(self, num_bytes: float) -> Optional[AudioData]:
         """Get next audio packet.
 
         Args:

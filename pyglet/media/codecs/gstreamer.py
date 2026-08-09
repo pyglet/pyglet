@@ -192,7 +192,7 @@ class GStreamerSource(StreamingSource):
         except (ImportError, AttributeError):
             pass
 
-    def get_audio_data(self, num_bytes, compensation_time=0.0):
+    def get_audio_data(self, num_bytes):
         if self._finished.is_set():
             return None
 

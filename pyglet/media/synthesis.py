@@ -240,7 +240,7 @@ class SynthesisSource(Source):
         self._max_offset = int(self._bytes_per_second * duration) & 0xfffffffe
         self._offset = 0
 
-    def get_audio_data(self, num_bytes: int, compensation_time: float = 0.0) -> AudioData | None:
+    def get_audio_data(self, num_bytes: int) -> AudioData | None:
         """Return ``num_bytes`` bytes of audio data."""
         num_bytes = min(num_bytes, self._max_offset - self._offset)
         if num_bytes <= 0:
