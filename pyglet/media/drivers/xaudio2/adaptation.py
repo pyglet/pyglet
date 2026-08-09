@@ -3,7 +3,7 @@ import math
 import threading
 from typing import Deque, Tuple, TYPE_CHECKING
 
-from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer, MediaEvent
+from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.player_worker_thread import PlayerWorkerThread
 from pyglet.media.drivers.listener import AbstractListener
 from pyglet.util import debug_print
@@ -206,7 +206,7 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
             if self._pyglet_source_exhausted:
                 # Last buffer ran out naturally, out of AudioData; voice will now fall silent
                 assert _debug("Last buffer ended normally, dispatching eos")
-                MediaEvent('on_eos').sync_dispatch_to_player(self.player)
+                self.dispatch_eos()
             else:
                 # Shouldn't have ran out; supplier is running behind
                 # All we can do is wait; as long as voices are not stopped via `Stop`, they will
@@ -228,7 +228,7 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
             assert _debug(f"XAudio2: Source is out of data")
             self._pyglet_source_exhausted = True
             if not self._audio_data_in_use:
-                MediaEvent('on_eos').sync_dispatch_to_player(self.player)
+                self.dispatch_eos()
             return
 
         xa2_buffer = interface.create_xa2_buffer(audio_data)
@@ -236,7 +236,6 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         self._xa2_source_voice.submit_buffer(xa2_buffer)
         assert _debug(f"XAudio2: Submitted buffer of size {audio_data.length}B")
 
-        self.append_events(self._write_cursor, audio_data.events)
         self._write_cursor += audio_data.length
 
     def _update_play_cursor(self) -> None:
@@ -252,7 +251,6 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
     def work(self) -> None:
         with self._audio_data_lock:
             self._update_play_cursor()
-            self.dispatch_media_events(self._play_cursor)
             self._maybe_refill()
 
     def _maybe_refill(self) -> bool:

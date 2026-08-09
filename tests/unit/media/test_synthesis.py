@@ -40,7 +40,6 @@ def test_total_duration(source_class, sample_rate):
     audio_data = source.get_audio_data(expected_bytes + 100)
 
     assert audio_data.length == pytest.approx(expected_bytes)
-    assert audio_data.duration == pytest.approx(1.0)
     assert len(audio_data.data) == pytest.approx(expected_bytes)
 
     # Should now be out of data

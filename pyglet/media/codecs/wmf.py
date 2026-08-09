@@ -701,11 +701,7 @@ class WMFSource(Source):
             imf_buffer.Release()
             imf_sample.Release()
 
-            return AudioData(audio_data,
-                             audio_data_length.value,
-                             timestamp_from_wmf(timestamp.value),
-                             audio_data_length.value / self.audio_format.sample_rate,
-                             [])
+            return AudioData(audio_data, audio_data_length.value)
 
         return None
 

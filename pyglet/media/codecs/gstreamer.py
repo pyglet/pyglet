@@ -207,10 +207,7 @@ class GStreamerSource(StreamingSource):
         if not data:
             return None
 
-        timestamp = self._pipeline.query_position(Gst.Format.TIME).cur / Gst.SECOND
-        duration = self.audio_format.bytes_per_second / len(data)
-
-        return AudioData(data, len(data), timestamp, duration, [])
+        return AudioData(data, len(data))
 
     def seek(self, timestamp):
         # First clear any data in the queue:

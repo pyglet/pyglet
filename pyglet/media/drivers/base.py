@@ -25,8 +25,6 @@ class SourcePrecisionBuffer:
     less than the requested size, where less hints at definite source
     exhaustion.
 
-    This class erases AudioData-contained timestamp/duration information and
-    events.
     """
 
     def __init__(self, source: Source) -> None:
@@ -127,9 +125,6 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
         # At which point a driver should try and refill data from the source
         self._buffered_data_comfortable_limit = int(self._buffered_data_ideal_size * (2/3))
 
-        # A deque of (play_cursor, MediaEvent)
-        self._events = deque()
-
         # Audio synchronization
         self.desync_bytes_critical = afmt.timestamp_to_bytes_aligned(
             self.audio_desync_time_critical)
@@ -203,7 +198,6 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
 
         The player must be stopped before calling this method.
         """
-        self._events.clear()
         self._compensated_bytes = 0
         self.audio_sync_measurements.clear()
         self.audio_sync_cumul_measurements = 0
@@ -244,6 +238,15 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
     def _to_perceived_play_cursor(self, play_cursor):
         return play_cursor - self._compensated_bytes
 
+    def dispatch_eos(self) -> None:
+        """Notify the high-level player that this source has finished.
+
+        Audio backends may run on worker threads, so the notification must be
+        posted through the platform event loop rather than dispatched directly.
+        EOS is a driver lifecycle notification, not an audio-data packet.
+        """
+        pyglet.app.platform_event_loop.post_event(self.player, 'on_eos')
+
     def _play_group(self, audio_players):
         """Begin simultaneous playback on a list of audio players."""
         # This should be overridden by subclasses for better synchrony.
@@ -255,33 +258,6 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
         # This should be overridden by subclasses for better synchrony.
         for player in audio_players:
             player.stop()
-
-    def append_events(self, start_index, events):
-        """Append the given :class:`MediaEvent`s to the events deque using
-        the current source's audio format and the supplied ``start_index``
-        to convert their timestamps to dispatch indices.
-
-        The high level player's ``last_seek_time`` will be subtracted from
-        each event's timestamp.
-        """
-        bps = self.source.audio_format.bytes_per_second
-        lst = self.player.last_seek_time
-        for event in events:
-            event_cursor = start_index + (max(0.0, event.timestamp - lst) * bps)
-            assert _debug(f'AbstractAudioPlayer: Adding event {event} at {event_cursor}')
-            self._events.append((event_cursor, event))
-
-    def dispatch_media_events(self, until_cursor):
-        """Dispatch all :class:`MediaEvent`s whose index is less than or equal
-        to the specified ``until_cursor`` (which should be a very recent play
-        cursor position).
-        Please note that :attr:`_compensated_bytes` will be subtracted from
-        the passed ``until_cursor``.
-        """
-        until_cursor = self._to_perceived_play_cursor(until_cursor)
-
-        while self._events and self._events[0][0] <= until_cursor:
-            self._events.popleft()[1].sync_dispatch_to_player(self.player)
 
     def get_audio_time_diff(self, audio_time):
         """Query the difference between the provided time and the high
@@ -379,7 +355,7 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
                 ad[0:compensated_bytes] = first_frame * (compensated_bytes // afmt.bytes_per_frame)
                 ad[compensated_bytes:] = audio_data.data
 
-                audio_data = AudioData(ad, len(ad), audio_data.events)
+                audio_data = AudioData(ad, len(ad))
 
         elif desync_bytes < 0:
             # Player falling behind
@@ -402,7 +378,6 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
                             audio_data.length - compensated_bytes,
                         ),
                         audio_data.length - compensated_bytes,
-                        audio_data.events,
                     )
                     compensated_bytes *= -1
 
@@ -466,36 +441,3 @@ class AbstractAudioDriver(metaclass=ABCMeta):
     @abstractmethod
     def delete(self):
         pass
-
-
-class MediaEvent:
-    """Representation of a media event.
-
-    These events are used internally by some audio driver implementation to
-    communicate events to the :class:`~pyglet.media.player.AudioPlayer`.
-    One example is the ``on_eos`` event.
-
-    Args:
-        event (str): Event description.
-        timestamp (float): The time when this event happens.
-        *args: Any required positional argument to go along with this event.
-    """
-
-    __slots__ = 'args', 'event', 'timestamp'
-
-    def __init__(self, event, timestamp=0.0, *args):
-        # Meaning of timestamp is dependent on context; and not seen by application.
-        self.event = event
-        self.timestamp = timestamp
-        self.args = args
-
-    def sync_dispatch_to_player(self, player):
-        pyglet.app.platform_event_loop.post_event(player, self.event, *self.args)
-
-    def __repr__(self):
-        return f"MediaEvent({self.event}, {self.timestamp}, {self.args})"
-
-    def __lt__(self, other):
-        if not isinstance(other, MediaEvent):
-            return NotImplemented
-        return self.timestamp < other.timestamp

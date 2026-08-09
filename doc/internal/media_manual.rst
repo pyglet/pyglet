@@ -215,7 +215,6 @@ In pseudocode, the general way this method is implemented is: ::
 
     def work():
         update_play_cursor()
-        dispatch_media_events()
         if not source_exhausted:
             if play_cursor_too_close_to_write_cursor():
                 get_and_submit_new_audio_data()
@@ -234,7 +233,6 @@ tends to be different: ::
 
     def work():
         update_play_cursor()
-        dispatch_media_events()
         if not source_exhausted:
             if play_cursor_too_close_to_write_cursor():
                 get_and_submit_new_audio_data()

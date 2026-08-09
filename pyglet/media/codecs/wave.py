@@ -57,9 +57,7 @@ class WaveSource(StreamingSource):
         if not data:
             return None
 
-        timestamp = self._wave.tell() / self.audio_format.sample_rate
-        duration = num_frames / self.audio_format.sample_rate
-        return AudioData(data, len(data), timestamp, duration, [])
+        return AudioData(data, len(data))
 
     def seek(self, timestamp: float) -> None:
         timestamp = max(0.0, min(timestamp, self._duration))

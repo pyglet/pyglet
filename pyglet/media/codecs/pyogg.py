@@ -354,7 +354,7 @@ class PyOggSource(StreamingSource):
         if data is not None:
             buff, length = data
             buff_char_p = cast(buff, POINTER(c_char))
-            return AudioData(buff_char_p[:length], length, 1000, 1000, [])
+            return AudioData(buff_char_p[:length], length)
 
         return None
 
@@ -411,7 +411,7 @@ class PyOggVorbisSource(PyOggSource):
         data = self._stream.get_buffer()  # Returns buffer, length or None
 
         if data is not None:
-            return AudioData(*data, 1000, 1000, [])
+            return AudioData(*data)
 
         return None
 

@@ -246,8 +246,6 @@ class SynthesisSource(Source):
         if num_bytes <= 0:
             return None
 
-        timestamp = self._offset / self._bytes_per_second
-        duration = num_bytes / self._bytes_per_second
         self._offset += num_bytes
 
         # Generate bytes:
@@ -257,7 +255,7 @@ class SynthesisSource(Source):
         data = (int(next(generator) * next(envelope) * 0x7fff) for _ in range(samples))
         data = _struct.pack(f"{samples}h", *data)
 
-        return AudioData(data, num_bytes, timestamp, duration, [])
+        return AudioData(data, num_bytes)
 
     def seek(self, timestamp: float) -> None:
         # Bound within duration & align to sample:

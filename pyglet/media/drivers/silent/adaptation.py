@@ -1,5 +1,5 @@
 #from pyglet.media import _VALID_AUDIO_SAMPLE_FORMATS
-from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer, MediaEvent
+from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.drivers.listener import AbstractListener
 from pyglet.media.player_worker_thread import PlayerWorkerThread
 
@@ -81,8 +81,6 @@ class SilentAudioPlayer(AbstractAudioPlayer):
 
     def work(self):
         self._update_play_cursor()
-        self.dispatch_media_events(self._pseudo_play_cursor)
-
         if not self._exhausted:
             remaining = max(0, self._pseudo_write_cursor - self._pseudo_play_cursor)
             if remaining > self._buffered_data_comfortable_limit:
@@ -96,8 +94,6 @@ class SilentAudioPlayer(AbstractAudioPlayer):
                 self._exhausted = True
                 self._update_play_cursor()
             else:
-                self.append_events(self._pseudo_write_cursor, data.events)
-
                 # The silent player always cheats itself to be 100% accurate, compensation is
                 # effectless and actually throws off audio syncing as well as accurate
                 # on_eos dispatching. Undo it here.
@@ -111,7 +107,7 @@ class SilentAudioPlayer(AbstractAudioPlayer):
             not self._dispatched_on_eos
         ):
             self._dispatched_on_eos = True
-            MediaEvent('on_eos').sync_dispatch_to_player(self.player)
+            self.dispatch_eos()
 
     def clear(self):
         super().clear()

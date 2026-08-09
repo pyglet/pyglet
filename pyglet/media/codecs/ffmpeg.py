@@ -805,8 +805,6 @@ class FFmpegSource(StreamingSource):
                         'Cannot create sample rate converter.', result)
 
         self._packet = ffmpeg_init_packet()
-        self._events = []  # They don't seem to be used!
-
         self.audioq = deque()
         # Make queue big enough to accommodate 1.2 sec?
         self._max_len_audioq = self.MAX_QUEUE_SIZE  # Need to figure out a correct amount
@@ -886,7 +884,6 @@ class FFmpegSource(StreamingSource):
             self._file,
             timestamp_to_ffmpeg(timestamp + self.start_time),
         )
-        del self._events[:]
         self._stream_end = False
         self._clear_video_audio_queues()
         self._fillq()
@@ -1026,14 +1023,12 @@ class FFmpegSource(StreamingSource):
 
     def get_audio_data(self, num_bytes: int, compensation_time: float=0.0) -> AudioData | None:
         data = b''
-        timestamp = duration = 0
-
         while len(data) < num_bytes:
             if not self.audioq:
                 break
 
             audio_packet = self._get_audio_packet()
-            buffer, timestamp, duration = self._decode_audio_packet(audio_packet, compensation_time)
+            buffer = self._decode_audio_packet(audio_packet, compensation_time)
 
             if not buffer:
                 break
@@ -1048,21 +1043,9 @@ class FFmpegSource(StreamingSource):
 
             return None
 
-        audio_data = AudioData(data, len(data), timestamp, duration, [])
+        return AudioData(data, len(data))
 
-        while self._events and self._events[0].timestamp <= (timestamp + duration):
-            event = self._events.pop(0)
-            if event.timestamp >= timestamp:
-                event.timestamp -= timestamp
-                audio_data.events.append(event)
-
-        if _debug:
-            print(f'get_audio_data returning ts {audio_data.timestamp} with events {audio_data.events}')
-            print('remaining events are', self._events)
-
-        return audio_data
-
-    def _decode_audio_packet(self, audio_packet: AudioPacket, compensation_time: float) -> tuple[bytes | None, float, float]:
+    def _decode_audio_packet(self, audio_packet: AudioPacket, compensation_time: float) -> bytes | None:
         while True:
             try:
                 size_out = self._ffmpeg_decode_audio(
@@ -1079,12 +1062,9 @@ class FFmpegSource(StreamingSource):
             memmove(buffer, self._audio_buffer, len(buffer))
             buffer = buffer.raw
 
-            duration = float(len(buffer)) / self.audio_format.bytes_per_second
-            timestamp = ffmpeg_get_frame_ts(self._audio_stream)
-            timestamp = timestamp_from_ffmpeg(timestamp)
-            return buffer, timestamp, duration
+            return buffer
 
-        return None, 0, 0
+        return None
 
     def _ffmpeg_decode_audio(self, packet: AVPacket, data_out: Array[c_uint8], compensation_time: float) -> int:
         stream = self._audio_stream

@@ -155,7 +155,7 @@ class CoreAudioSource(StreamingSource):
 
             data = cast(self._bl.mBuffers[0].mData, POINTER(c_char))
             slice = data[:size]
-            return AudioData(slice, size, 0.0, size / self.audio_format.sample_rate, [])
+            return AudioData(slice, size)
 
         return None
 

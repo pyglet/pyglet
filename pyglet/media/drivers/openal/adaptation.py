@@ -2,7 +2,7 @@ from collections import deque
 from typing import TYPE_CHECKING, List, Optional, Tuple
 import weakref
 
-from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer, MediaEvent
+from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.drivers.listener import AbstractListener
 from pyglet.media.drivers.openal import interface
 from pyglet.media.player_worker_thread import PlayerWorkerThread
@@ -179,13 +179,11 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
     def work(self) -> None:
         self._check_processed_buffers()
         self._update_play_cursor()
-        self.dispatch_media_events(self._play_cursor)
-
         if self._pyglet_source_exhausted:
             if not self._has_underrun and not self.alsource.is_playing:
                 self._has_underrun = True
                 assert _debug('OpenALAudioPlayer: Dispatching eos')
-                MediaEvent('on_eos').sync_dispatch_to_player(self.player)
+                self.dispatch_eos()
             return
 
         refilled = self._maybe_refill()
@@ -216,9 +214,6 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         if audio_data is None:
             self._pyglet_source_exhausted = True
             return
-
-        # We got new audio data; first queue its events
-        self.append_events(self._write_cursor, audio_data.events)
 
         # Get, fill and queue OpenAL buffer using the entire AudioData
         buf = self.alsource.get_buffer()

@@ -3,7 +3,7 @@ from __future__ import annotations
 import ctypes
 import io
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, BinaryIO, Optional, Union, ClassVar
+from typing import TYPE_CHECKING, BinaryIO, Optional, ClassVar
 
 from pyglet.media.exceptions import MediaException, CannotSeekException
 
@@ -11,7 +11,6 @@ if TYPE_CHECKING:
     from pyglet.graphics import Texture
     from pyglet.image.animation import Animation
     from pyglet.media.codecs import MediaEncoder
-    from pyglet.media.drivers.base import MediaEvent
     from pyglet.media.player import AudioPlayer
 
 
@@ -119,7 +118,7 @@ class VideoFormat:
     should be displayed at 1280x480.  It is the responsibility of the
     application to perform this scaling.
 
-        Args:
+    Args:
             width:
                 Width of video image, in pixels.
             height:
@@ -143,32 +142,20 @@ class AudioData:
     This class is used internally by pyglet.
     """
 
-    __slots__ = 'data', 'duration', 'events', 'length', 'pointer', 'timestamp'
+    __slots__ = 'data', 'length', 'pointer'
 
     def __init__(
         self,
         data: bytes | ctypes.Array,
         length: int,
-        timestamp: float = 0.0,
-        duration: float = 0.0,
-        events: list[MediaEvent] | None = None,
     ) -> None:
         """Create an audio packet.
 
         Args:
             data:
-                (bytes, ctypes array, or supporting buffer protocol): Sample data.
+                Sample data.
             length:
                 Size of sample data, in bytes.
-            timestamp:
-                Time of the first sample, in seconds.
-            duration:
-                Total data duration, in seconds.
-            events:
-                List of events contained within this packet. Events are timestamped relative to this audio packet.
-
-        .. deprecated:: 2.0.10
-           `timestamp` and `duration` are unused and will be removed eventually.
         """
         if isinstance(data, bytes):
             # bytes are treated specially by ctypes and can be cast to a void pointer, get
@@ -187,9 +174,6 @@ class AudioData:
         # a readable buffer.
 
         self.length = length
-        self.timestamp = timestamp
-        self.duration = duration
-        self.events = [] if events is None else events
 
 
 @dataclass
@@ -556,15 +540,11 @@ class StaticMemorySource(StaticSource):
             :class:`.AudioData`: Next packet of audio data, or ``None`` if
             there is no (more) data.
         """
-        offset_before = self._file.tell()
-
         data = self._file.read(num_bytes)
         if not data:
             return None
 
-        timestamp = float(offset_before) / self.audio_format.bytes_per_second
-        duration = len(data) / self.audio_format.bytes_per_second
-        return AudioData(data, len(data), timestamp, duration)
+        return AudioData(data, len(data))
 
 
 class SourceGroup:
@@ -580,8 +560,6 @@ class SourceGroup:
         self.video_format = None
         self.info = None
         self.duration = 0.0
-        self._timestamp_offset = 0.0
-        self._dequeued_durations = []
         self._sources = []
         self.is_player_source = False
 
@@ -596,9 +574,11 @@ class SourceGroup:
         self.audio_format = self.audio_format or source.audio_format
         self.info = self.info or source.info
         source = source.get_queue_source()
-        assert source.audio_format == self.audio_format, "Sources must share the same audio format."
+        if source.audio_format != self.audio_format:
+            raise MediaException("Sources must share the same audio format.")
         self._sources.append(source)
-        self.duration += source.duration
+        if self.duration is not None:
+            self.duration = None if source.duration is None else self.duration + source.duration
 
     def has_next(self) -> bool:
         return len(self._sources) > 1
@@ -608,10 +588,10 @@ class SourceGroup:
 
     def _advance(self) -> None:
         if self._sources:
-            self._timestamp_offset += self._sources[0].duration
-            self._dequeued_durations.insert(0, self._sources[0].duration)
             old_source = self._sources.pop(0)
-            self.duration -= old_source.duration
+            if old_source.duration is not None:
+                if self.duration is not None:
+                    self.duration -= old_source.duration
 
             if isinstance(old_source, StreamingSource):
                 old_source.delete()
@@ -630,16 +610,14 @@ class SourceGroup:
             return None
 
         buffer = b""
-        duration = 0.0
-        timestamp = 0.0
 
         while len(buffer) < num_bytes and self._sources:
-            audiodata = self._sources[0].get_audio_data(num_bytes)
+            audiodata = self._sources[0].get_audio_data(num_bytes - len(buffer))
             if audiodata:
                 buffer += audiodata.data
-                duration += audiodata.duration
-                timestamp += self._timestamp_offset
             else:
                 self._advance()
 
-        return AudioData(buffer, len(buffer), timestamp, duration)
+        if not buffer:
+            return None
+        return AudioData(buffer, len(buffer))
