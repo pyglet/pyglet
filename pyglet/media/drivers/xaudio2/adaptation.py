@@ -1,7 +1,10 @@
+# ruff: noqa: SLF001
+
+from __future__ import annotations
 from collections import deque
 import math
 import threading
-from typing import Deque, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.player_worker_thread import PlayerWorkerThread
@@ -10,14 +13,14 @@ from pyglet.util import debug_print
 from . import interface
 
 if TYPE_CHECKING:
-    from pyglet.media.codecs import AudioData, AudioFormat, Source
+    from pyglet.media.codecs import AudioData, Source
     from pyglet.media.player import AudioPlayer
 
 
 _debug = debug_print('debug_media')
 
 
-def _convert_coordinates(coordinates: Tuple[float, float, float]) -> Tuple[float, float, float]:
+def _convert_coordinates(coordinates: tuple[float, float, float]) -> tuple[float, float, float]:
     x, y, z = coordinates
     return x, y, -z
 
@@ -32,18 +35,18 @@ class XAudio2Driver(AbstractAudioDriver):
         self.worker.start()
 
     @property
-    def sample_formats(self):
+    def sample_formats(self) -> tuple[str, ...]:
         return tuple(interface.SAMPLE_FORMATS.keys())
 
     def get_performance(self) -> interface.lib.XAUDIO2_PERFORMANCE_DATA:
         assert self._xa2_driver is not None
         return self._xa2_driver.get_performance()
 
-    def create_audio_player(self, source: 'Source', player: 'AudioPlayer') -> 'XAudio2AudioPlayer':
+    def create_audio_player(self, source: Source, player: AudioPlayer) -> XAudio2AudioPlayer:
         assert self._xa2_driver is not None
         return XAudio2AudioPlayer(self, source, player)
 
-    def get_listener(self) -> 'XAudio2Listener':
+    def get_listener(self) -> XAudio2Listener:
         return self._listener
 
     def delete(self) -> None:
@@ -56,7 +59,7 @@ class XAudio2Driver(AbstractAudioDriver):
 
 
 class XAudio2Listener(AbstractListener):
-    def __init__(self, xa2_listener, xa2_driver) -> None:
+    def __init__(self, xa2_listener: interface.XAudio2Listener, xa2_driver: interface.XAudio2Driver) -> None:
         self._xa2_listener = xa2_listener
         self._xa2_driver = xa2_driver
 
@@ -64,26 +67,26 @@ class XAudio2Listener(AbstractListener):
         self._volume = volume
         self._xa2_driver.volume = volume
 
-    def _set_position(self, position: Tuple[float, float, float]) -> None:
+    def _set_position(self, position: tuple[float, float, float]) -> None:
         self._position = position
         self._xa2_listener.position = _convert_coordinates(position)
 
-    def _set_forward_orientation(self, orientation: Tuple[float, float, float]) -> None:
+    def _set_forward_orientation(self, orientation: tuple[float, float, float]) -> None:
         self._forward_orientation = orientation
         self._set_orientation()
 
-    def _set_up_orientation(self, orientation: Tuple[float, float, float]) -> None:
+    def _set_up_orientation(self, orientation: tuple[float, float, float]) -> None:
         self._up_orientation = orientation
         self._set_orientation()
 
     def _set_orientation(self) -> None:
-        self._xa2_listener.orientation = (
-            _convert_coordinates(self._forward_orientation) +
-            _convert_coordinates(self._up_orientation))
+        self._xa2_listener.orientation = _convert_coordinates(self._forward_orientation) + _convert_coordinates(
+            self._up_orientation,
+        )
 
 
 class XAudio2AudioPlayer(AbstractAudioPlayer):
-    def __init__(self, driver: 'XAudio2Driver', source: 'Source', player: 'AudioPlayer') -> None:
+    def __init__(self, driver: XAudio2Driver, source: Source, player: AudioPlayer) -> None:
         super().__init__(source, player)
         # We keep here a strong reference because the AudioDriver is anyway
         # a singleton object which will only be deleted when the application
@@ -105,7 +108,7 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         self._write_cursor = 0
         self._play_cursor = 0
 
-        self._audio_data_in_use: Deque['AudioData'] = deque()
+        self._audio_data_in_use: deque[AudioData] = deque()
         self._pyglet_source_exhausted = False
 
         # A lock to be held whenever modifying things relating to the in-use audio data.
@@ -125,7 +128,7 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         # Queue up any buffers that are still in queue but weren't deleted. This does not
         # pickup where the last sample played, only where the last buffer was submitted.
         # As such, audio will be replayed.
-        # TODO: Make best effort by using XAUDIO2_BUFFER.PlayBegin in conjunction
+        # Make a best effort by using XAUDIO2_BUFFER.PlayBegin in conjunction
         # with last playback sample
         for audio_data in self._audio_data_in_use:
             xa2_buffer = interface.create_xa2_buffer(audio_data)
@@ -215,6 +218,7 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
 
     def _refill(self, refill_size: int) -> None:
         """Get one piece of AudioData and submit it to the voice.
+
         This method will release the lock around the call to `get_audio_data`,
         so make sure it's held upon calling.
         """
@@ -225,7 +229,7 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         self._audio_data_lock.acquire()
 
         if audio_data is None:
-            assert _debug(f"XAudio2: Source is out of data")
+            assert _debug("XAudio2: Source is out of data")
             self._pyglet_source_exhausted = True
             if not self._audio_data_in_use:
                 self.dispatch_eos()
@@ -272,7 +276,7 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
     def set_volume(self, volume: float) -> None:
         self._xa2_source_voice.volume = volume
 
-    def set_position(self, position: Tuple[float, float, float]) -> None:
+    def set_position(self, position: tuple[float, float, float]) -> None:
         if self._xa2_source_voice.is_emitter:
             self._xa2_source_voice.position = _convert_coordinates(position)
 
@@ -282,13 +286,13 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
             self._xa2_source_voice.distance_scaler = min_distance
 
     def set_max_distance(self, max_distance: float) -> None:
-        """No such thing built into xaudio2"""
+        """No such thing built into xaudio2."""
         return
 
     def set_pitch(self, pitch: float) -> None:
         self._xa2_source_voice.frequency = pitch
 
-    def set_cone_orientation(self, cone_orientation: Tuple[float, float, float]) -> None:
+    def set_cone_orientation(self, cone_orientation: tuple[float, float, float]) -> None:
         if self._xa2_source_voice.is_emitter:
             self._xa2_source_voice.cone_orientation = _convert_coordinates(cone_orientation)
 
