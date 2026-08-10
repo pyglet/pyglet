@@ -174,7 +174,14 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         if self.driver is None:
             return
 
-        self.stop()
+        # Driver shutdown stops and removes the shared worker before players
+        # are deleted.  In that state the driver voices are
+        # already gone, so there is nothing left for stop() to access.
+        if self.driver.worker is not None:
+            self.stop()
+        else:
+            self._playing = False
+
         with self._audio_data_lock:
             self._deleted = True
             xa2_driver = self.driver._xa2_driver
