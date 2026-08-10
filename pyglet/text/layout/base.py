@@ -472,15 +472,35 @@ class _GlyphBox(_AbstractBox):
         for start, end, decoration in context.decoration_iter.ranges(i, i + n_glyphs):
             bg, underline = decoration
             x2 = x1
+            background_x1 = x1
+            background_y1 = y1
+            background_x2 = x1
+            background_y2 = y2
             for (kern, glyph, glyph_pos) in self.glyphs[start - i:end - i]:
-                x2 += glyph.advance + kern + glyph_pos.x_advance
+                x2 += kern
+                v0, v1, v2, v3 = glyph.vertices
+
+                # Glyphs can extend outside their advance, use bounds. (italic, emoji)
+                glyph_x = x2 + glyph_pos.x_offset
+                glyph_y = line_y + baseline + glyph_pos.y_offset
+                background_x1 = min(background_x1, glyph_x + v0)
+                background_y1 = min(background_y1, glyph_y + v1)
+                background_x2 = max(background_x2, glyph_x + v2)
+                background_y2 = max(background_y2, glyph_y + v3)
+
+                x2 += glyph.advance + glyph_pos.x_advance
 
             if bg is not None:
                 if len(bg) != 4:
                     msg = f"Background color requires 4 values (R, G, B, A). Value received: {bg}"
                     raise ValueError(msg)
 
-                background_vertices.extend([x1, y1, 0, x2, y1, 0, x2, y2, 0, x1, y2, 0])
+                background_vertices.extend([
+                    background_x1, background_y1, 0,
+                    background_x2, background_y1, 0,
+                    background_x2, background_y2, 0,
+                    background_x1, background_y2, 0,
+                ])
                 background_colors.extend(bg * 4)
 
             if underline is not None:
