@@ -5,7 +5,8 @@ from __future__ import annotations
 import threading
 import weakref
 from collections import defaultdict, deque
-from collections.abc import Callable, KeysView
+from collections.abc import Callable
+from contextlib import suppress
 from ctypes import POINTER, byref, c_char, c_float, cast, pointer
 from ctypes.wintypes import DWORD, FLOAT
 from typing import TYPE_CHECKING, NamedTuple, TypeAlias, ClassVar
@@ -13,7 +14,7 @@ from typing import TYPE_CHECKING, NamedTuple, TypeAlias, ClassVar
 import pyglet
 from pyglet.libs.win32 import com
 from pyglet.media.devices import get_audio_device_manager
-from pyglet.media.devices.base import AudioDevice, DeviceFlow
+from pyglet.media.devices.base import DeviceFlow, DeviceState
 from pyglet.media.exceptions import MediaException
 from pyglet.util import debug_print
 
@@ -21,8 +22,8 @@ from . import lib_xaudio2 as lib
 
 if TYPE_CHECKING:
     from pyglet.media.codecs import AudioData, AudioFormat
+    from pyglet.media.devices.base import AbstractAudioDeviceManager, AudioDevice
     from pyglet.media.drivers.xaudio2.adaptation import XAudio2AudioPlayer
-    from pyglet.media.player import AudioPlayer
 
 Vector3: TypeAlias = tuple[float, float, float]
 Orientation: TypeAlias = tuple[float, float, float, float, float, float]
@@ -119,23 +120,21 @@ class _VoiceResetter:
 class XA2EngineCallback(com.COMObject):
     _interfaces_ = [lib.IXAudio2EngineCallback]  # noqa: RUF012
 
-    def __init__(self, lock):  # noqa: ANN001, ANN204
+    def __init__(self, restart_requested: threading.Event):  # noqa: ANN204
         super().__init__()
-        self._lock = lock
+        self._restart_requested = restart_requested
 
     def OnProcessingPassStart(self):  # noqa: ANN201, N802
-        self._lock.acquire()
+        pass
 
     def OnProcessingPassEnd(self):  # noqa: ANN201, N802
-        self._lock.release()
+        pass
 
     def OnCriticalError(self, hresult):  # noqa: ANN001, ANN201, N802
-        # This is a textbook bad example, yes.
-        # It's probably safe though: assuming that XA2 has ceased to operate if we ever end up
-        # here, nothing can release the lock in between.
-        if self._lock.locked():
-            self._lock.release()
-        raise Exception("Critical Error:", hresult)
+        # XAudio2 callbacks must not block or perform engine operations. The pyglet
+        # clock observes this flag and recreates the engine on the application thread.
+        assert _debug(f"XAudio2EngineCallback.OnCriticalError: {hresult}")
+        self._restart_requested.set()
 
 
 class XAudio2VoiceCallback(com.COMObject):
@@ -158,23 +157,24 @@ class XAudio2VoiceCallback(com.COMObject):
         self.on_buffer_end: BufferEndCallback | None = None
 
     def OnBufferEnd(self, pBufferContext):  # noqa: ANN001, ANN201, N802, N803
-        self.on_buffer_end(pBufferContext)
+        callback = self.on_buffer_end
+        if callback is not None:
+            callback(pBufferContext)
 
-    def OnVoiceError(self, pBufferContext, hresult):  # noqa: ANN001, ANN201, N802, N803
-        message = f"Error occurred during audio playback: {hresult}"
-        raise Exception(message)
+    def OnVoiceError(self, _pBufferContext, hresult):  # noqa: ANN001, ANN201, N802, N803
+        assert _debug(f"Error occurred during audio playback: {hresult}")
 
 
 class XAudio2Driver:
     _listener: XAudio2Listener | None
     _xaudio2: lib.IXAudio2 | None
 
-    _players: list[AudioPlayer]
+    _players: set[XAudio2AudioPlayer]
     _resetting_voices: dict[XA2SourceVoice, _VoiceResetter]
     _in_use: dict[XA2SourceVoice, XAudio2AudioPlayer]
     _voice_pool: defaultdict[tuple[int, int], list[XA2SourceVoice]]
     _engine_callback: XA2EngineCallback
-    lock: threading.Lock
+    lock: threading.RLock
     _emitting_voices: list[XA2SourceVoice]
 
     # Specifies if positional audio should be used. Can be enabled later, but not disabled.
@@ -203,19 +203,18 @@ class XAudio2Driver:
         assert _debug('Constructing XAudio2Driver')
         self._listener = None
         self._xaudio2 = None
-        self._dead = False
-
-        # A lock that will prevent XAudio2 from running any callbacks (processing audio at all)
-        # while it is held. Must be acquired by audio players in certain situations in order to
-        # ensure that the following, very unlikely, sequence of events does not happen:
-        # - an on_buffer_end callback is made
-        # - python creates a dummy thread to run its code
-        # - very early on, before it could acquire any protective locks, the thread is suspended
-        #   and the main thread runs
-        # - the main thread runs a critical operation on the player such as `delete` to completion
-        # - the callback is resumed and breaks as the audio player is deleted.
-        self.lock = threading.Lock()
-        self._engine_callback = XA2EngineCallback(self.lock)
+        self._deleted = False
+        # Protects ownership transitions between the active, resetting, and pooled
+        # voice collections. This is deliberately not acquired from an XAudio2
+        # callback; callbacks must remain non-blocking.
+        self.lock = threading.RLock()
+        self._restart_lock = threading.Lock()
+        self._restart_requested = threading.Event()
+        self._engine_callback = XA2EngineCallback(self._restart_requested)
+        self._device_id: str | None = None
+        self._volume = 1.0
+        self._waiting_for_output_device = False
+        self._device_manager: AbstractAudioDeviceManager | None = None
 
         self._emitting_voices: list[XA2SourceVoice] = []
         self._voice_pool: defaultdict[VoiceKey, list[XA2SourceVoice]] = defaultdict(list)
@@ -223,45 +222,93 @@ class XAudio2Driver:
 
         self._resetting_voices: dict[XA2SourceVoice, _VoiceResetter] = {}
 
-        self._players: list[AudioPlayer] = []
+        self._players: set[XAudio2AudioPlayer] = set()
 
         self._create_xa2()
 
         if self.restart_on_error:
-            audio_devices = get_audio_device_manager()
-            if audio_devices:
-                assert _debug('Audio device instance found.')
-                audio_devices.push_handlers(self)
+            pyglet.clock.schedule_interval_soft(self._check_state, 0.5)
 
-                if audio_devices.get_default_output() is None:
-                    raise ImportError("No default audio device found, can not create driver.")
+    def _check_state(self, _dt: float) -> None:
+        """Recreate XAudio2 outside of its callback thread after a critical error."""
+        if self._deleted or not self._restart_requested.is_set():
+            return
 
-                pyglet.clock.schedule_interval_soft(self._check_state, 0.5)
+        with self._restart_lock:
+            if self._deleted or not self._restart_requested.is_set():
+                return
 
-    def _check_state(self, dt: float) -> None:
-        """Hack/workaround, you cannot shutdown/create XA2 within a COM callback, set a schedule to check state."""
-        if self._dead is True:
-            if self._xaudio2:
+            if self._xaudio2 is not None:
                 self._shutdown_xaudio2()
-        else:
-            if not self._xaudio2:
-                self._create_xa2()
-                # Notify all active it's reset.
-                for player in self._players:
-                    player.dispatch_event('on_driver_reset')
 
+            # Clear before creation so a critical error from the new engine is
+            # not accidentally erased after it has been reported.
+            self._restart_requested.clear()
+            try:
+                self._create_xa2(self._device_id)
+            except (ImportError, OSError) as err:
+                # Will occur due to no audio endpoint (if all go missing)
+                # No audio endpoint is an expected, stable state. Wait for a
+                # Windows device notification instead of retrying every clock
+                # tick and spamming the debug log.
+                was_waiting = self._waiting_for_output_device
+                self._wait_for_output_device()
+                if not was_waiting:
+                    _debug(f"XAudio2 restart waiting for an output device: {err}")
+                return
+
+            self._stop_waiting_for_output_device()
+            with self.lock:
+                players = tuple(self._players)
                 self._players.clear()
 
+        for player in players:
+            # The high-level player may have been deleted while the device was absent.
+            with suppress(ReferenceError):
+                player.player.dispatch_event('on_driver_reset')
+
+    @staticmethod
+    def _is_output_device(device: AudioDevice) -> bool:
+        return device.platform_flow[device.flow] in (DeviceFlow.OUTPUT, DeviceFlow.INPUT_OUTPUT)
+
+    def _wait_for_output_device(self) -> None:
+        """Suspend restart retries until Windows reports an output-device change."""
+        self._waiting_for_output_device = True
+        if self._device_manager is None:
+            self._device_manager = get_audio_device_manager()
+            if self._device_manager is not None:
+                self._device_manager.push_handlers(self)
+
+        # Avoid missing a device which appeared between CreateMasteringVoice
+        # failing and installing the notification handler.
+        if self._device_manager is not None and self._device_manager.get_default_output() is not None:
+            self._resume_after_output_device_change()
+
+    def _stop_waiting_for_output_device(self) -> None:
+        self._waiting_for_output_device = False
+        if self._device_manager is not None:
+            self._device_manager.remove_handlers(self)
+            self._device_manager = None
+
+    def _resume_after_output_device_change(self) -> None:
+        if self._waiting_for_output_device and not self._deleted:
+            self._waiting_for_output_device = False
+            self._restart_requested.set()
+
+    # Audio manager event.
+    def on_device_added(self, device: AudioDevice) -> None:
+        if self._is_output_device(device):
+            self._resume_after_output_device_change()
+
+    # Audio manager event.
+    def on_device_state_changed(self, device: AudioDevice, _old_state: DeviceState, new_state: DeviceState) -> None:
+        if new_state == DeviceState.ACTIVE and self._is_output_device(device):
+            self._resume_after_output_device_change()
+
+    # Audio manager event.
     def on_default_changed(self, device: AudioDevice | None, flow: DeviceFlow) -> None:
-        if flow == DeviceFlow.OUTPUT:
-            """Callback derived from the Audio Devices to help us determine when the system no longer has output."""
-            if device is None:
-                assert _debug('Error: Default audio device was removed or went missing.')
-                self._dead = True
-            else:
-                if self._dead:
-                    assert _debug('Warning: Default audio device added after going missing.')
-                    self._dead = False
+        if device is not None and flow in (DeviceFlow.OUTPUT, DeviceFlow.INPUT_OUTPUT):
+            self._resume_after_output_device_change()
 
     def _create_xa2(self, device_id: str | None = None) -> None:
         self._xaudio2 = lib.IXAudio2()
@@ -269,33 +316,41 @@ class XAudio2Driver:
         try:
             lib.XAudio2Create(byref(self._xaudio2), 0, self.processor)
         except OSError as err:
+            self._xaudio2 = None
             raise ImportError("XAudio2 driver could not be initialized.") from err
 
-        if _debug:
-            # Debug messages are found in Windows Event Viewer, you must enable event logging:
-            # Applications and Services -> Microsoft -> Windows -> Xaudio2 -> Debug Logging.
-            # Right click -> Enable Logs
-            debug = lib.XAUDIO2_DEBUG_CONFIGURATION()
-            debug.LogThreadID = True
-            debug.TraceMask = lib.XAUDIO2_LOG_ERRORS | lib.XAUDIO2_LOG_WARNINGS
-            debug.BreakMask = lib.XAUDIO2_LOG_WARNINGS
+        try:
+            if _debug:
+                # Debug messages are found in Windows Event Viewer, you must enable event logging:
+                # Applications and Services -> Microsoft -> Windows -> Xaudio2 -> Debug Logging.
+                # Right click -> Enable Logs
+                debug = lib.XAUDIO2_DEBUG_CONFIGURATION()
+                debug.LogThreadID = True
+                debug.TraceMask = lib.XAUDIO2_LOG_ERRORS | lib.XAUDIO2_LOG_WARNINGS
+                debug.BreakMask = lib.XAUDIO2_LOG_WARNINGS
 
-            self._xaudio2.SetDebugConfiguration(byref(debug), None)
+                self._xaudio2.SetDebugConfiguration(byref(debug), None)
 
-        self._xaudio2.RegisterForCallbacks(self._engine_callback)
+            self._xaudio2.RegisterForCallbacks(self._engine_callback)
 
-        self._mvoice_details = lib.XAUDIO2_VOICE_DETAILS()
-        self._master_voice = lib.IXAudio2MasteringVoice()
-        self._xaudio2.CreateMasteringVoice(
-            byref(self._master_voice),
-            lib.XAUDIO2_DEFAULT_CHANNELS,
-            lib.XAUDIO2_DEFAULT_SAMPLERATE,
-            0,
-            device_id,
-            None,
-            self.category,
-        )
-        self._master_voice.GetVoiceDetails(byref(self._mvoice_details))
+            self._mvoice_details = lib.XAUDIO2_VOICE_DETAILS()
+            self._master_voice = lib.IXAudio2MasteringVoice()
+            self._xaudio2.CreateMasteringVoice(
+                byref(self._master_voice),
+                lib.XAUDIO2_DEFAULT_CHANNELS,
+                lib.XAUDIO2_DEFAULT_SAMPLERATE,
+                0,
+                device_id,
+                None,
+                self.category,
+            )
+            self._master_voice.GetVoiceDetails(byref(self._mvoice_details))
+            self._master_voice.SetVolume(self._volume, 0)
+        except OSError:
+            self._xaudio2.UnregisterForCallbacks(self._engine_callback)
+            self._xaudio2.Release()
+            self._xaudio2 = None
+            raise
 
         self._x3d_handle = None
         self._dsp_settings = None
@@ -303,58 +358,61 @@ class XAudio2Driver:
             self.enable_3d()
 
     @property
-    def active_voices(self) -> KeysView[XA2SourceVoice]:
-        return self._in_use.keys()
+    def active_voices(self) -> tuple[XA2SourceVoice, ...]:
+        with self.lock:
+            return tuple(self._in_use)
 
     def _destroy_voices(self) -> None:
         """Destroy and clear all voice pools."""
-        for list_ in self._voice_pool.values():
-            for voice in list_:
+        with self.lock:
+            for list_ in self._voice_pool.values():
+                for voice in list_:
+                    voice.destroy()
+                list_.clear()
+
+            for voice, resetter in tuple(self._resetting_voices.items()):
                 voice.destroy()
-            list_.clear()
+                resetter.destroy()
+            self._resetting_voices.clear()
 
-        for voice, resetter in self._resetting_voices.items():
-            voice.destroy()
-            resetter.destroy()
-        self._resetting_voices.clear()
-
-        for voice in self.active_voices:
-            voice.destroy()
-        self._in_use.clear()
+            self._emitting_voices.clear()
+            for voice in tuple(self._in_use):
+                voice.destroy()
+            self._in_use.clear()
 
     def set_device(self, device: AudioDevice) -> None:
         """Attach XA2 with a specific device rather than the virtual device."""
-        self._shutdown_xaudio2()
-        self._create_xa2(device.id)
-
-        # Notify all active players it's reset.
-        for player in self._players:
-            player.dispatch_event('on_driver_reset')
-
-        self._players.clear()
+        self._device_id = device.id
+        self._restart_requested.set()
+        self._check_state(0)
 
     def _shutdown_xaudio2(self) -> None:
         """Stops and destroys all active voices, then destroys XA2 instance."""
-        for player in self._in_use.values():
+        with self.lock:
+            players = tuple(self._in_use.values())
+        for player in players:
             player.on_driver_destroy()
-            self._players.append(player.player)
+        with self.lock:
+            self._players.update(players)
 
         self._delete_driver()
 
     def _delete_driver(self) -> None:
-        if self._xaudio2:
-            assert _debug("XAudio2Driver: Deleting")
-            # Stop 3d
-            if self.allow_3d:
-                pyglet.clock.unschedule(self._calculate_3d_sources)
+        with self.lock:
+            if self._xaudio2:
+                assert _debug("XAudio2Driver: Deleting")
+                # Stop 3d
+                if self.allow_3d:
+                    pyglet.clock.unschedule(self._calculate_3d_sources)
 
-            # Destroy all pooled voices as master will change.
-            self._destroy_voices()
+                # DestroyVoice and Release synchronously wait for XAudio2's
+                # processing thread, so callbacks cannot outlive this method.
+                self._destroy_voices()
 
-            self._xaudio2.UnregisterForCallbacks(self._engine_callback)
-            self._xaudio2.StopEngine()
-            self._xaudio2.Release()
-            self._xaudio2 = None
+                self._xaudio2.UnregisterForCallbacks(self._engine_callback)
+                self._xaudio2.StopEngine()
+                self._xaudio2.Release()
+                self._xaudio2 = None
 
     def enable_3d(self) -> None:
         """Initializes the prerequisites for 3D positional audio and initializes with default DSP settings."""
@@ -374,21 +432,33 @@ class XAudio2Driver:
 
     @property
     def volume(self) -> float:
-        vol = c_float()
-        self._master_voice.GetVolume(byref(vol))
-        return vol.value
+        if self._xaudio2 is not None:
+            try:
+                vol = c_float()
+                self._master_voice.GetVolume(byref(vol))
+                return vol.value
+            except OSError:
+                # A critical error can invalidate the mastering voice before
+                # the clock has observed the restart request.
+                pass
+        return self._volume
 
     @volume.setter
     def volume(self, value: float) -> None:
         """Sets global volume of the master voice."""
-        self._master_voice.SetVolume(value, 0)
+        self._volume = value
+        if self._xaudio2 is not None:
+            self._master_voice.SetVolume(value, 0)
 
-    def _calculate_3d_sources(self, dt: float) -> None:
+    def _calculate_3d_sources(self, _dt: float) -> None:
         """We calculate the 3d emitters and sources every 15 fps, committing everything after deferring all changes."""
-        for source_voice in self._emitting_voices:
-            self._apply3d(source_voice, 1)
+        with self.lock:
+            if self._xaudio2 is None:
+                return
+            for source_voice in tuple(self._emitting_voices):
+                self._apply3d(source_voice, 1)
 
-        self._xaudio2.CommitChanges(1)
+            self._xaudio2.CommitChanges(1)
 
     def apply3d(self, source_voice: XA2SourceVoice) -> None:
         """Apply and immediately commit positional audio effects for the given voice."""
@@ -421,8 +491,14 @@ class XAudio2Driver:
         source_voice._voice.SetFrequencyRatio(self._dsp_settings.DopplerFactor, commit)
 
     def delete(self) -> None:
-        self._delete_driver()
         pyglet.clock.unschedule(self._check_state)
+        with self._restart_lock:
+            self._deleted = True
+            self._restart_requested.clear()
+            self._stop_waiting_for_output_device()
+            with self.lock:
+                self._players.clear()
+            self._delete_driver()
 
     def get_performance(self) -> lib.XAUDIO2_PERFORMANCE_DATA:
         """Retrieve some basic XAudio2 performance data such as memory usage and source counts."""
@@ -445,20 +521,26 @@ class XAudio2Driver:
         by the driver completes in order to not have theoretical dangling
         pointers.
         """
-        if voice.is_emitter:
-            self._emitting_voices.remove(voice)
-        self._in_use.pop(voice)
+        with self.lock:
+            if voice.is_emitter:
+                self._emitting_voices.remove(voice)
+            self._in_use.pop(voice)
 
-        assert _debug(f"XA2AudioDriver: Resetting {voice}...")
-        voice_key = (voice.channel_count, voice.sample_size)
-        resetter = _VoiceResetter(self, voice, voice_key, remaining_data)
-        self._resetting_voices[voice] = resetter
-        resetter.run()
+            assert _debug(f"XA2AudioDriver: Resetting {voice}...")
+            voice_key = (voice.channel_count, voice.sample_size)
+            resetter = _VoiceResetter(self, voice, voice_key, remaining_data)
+            self._resetting_voices[voice] = resetter
+            resetter.run()
 
     def _return_reset_voice(self, voice: XA2SourceVoice, voice_key: VoiceKey) -> None:
-        self._resetting_voices.pop(voice).destroy()
-        self._voice_pool[voice_key].append(voice)
-        assert _debug(f"XA2AudioDriver: {voice} back in pool")
+        with self.lock:
+            resetter = self._resetting_voices.pop(voice, None)
+            if resetter is None:
+                return
+            resetter.destroy()
+            if self._xaudio2 is not None:
+                self._voice_pool[voice_key].append(voice)
+                assert _debug(f"XA2AudioDriver: {voice} back in pool")
 
     def get_source_voice(self, audio_format: AudioFormat, player: XAudio2AudioPlayer) -> XA2SourceVoice:
         """Get a source voice from the pool.
@@ -467,24 +549,28 @@ class XAudio2Driver:
         So pooling is recommended. We pool based on audio channels.
         A source voice handles all of the audio playing and state for a single source.
         """
-        voice_key = (audio_format.channels, audio_format.sample_size)
-        if not self._voice_pool[voice_key]:
-            voice = self._create_new_voice(audio_format)
-            # Create a 2nd one for good measure, multiple players might be needing it soon,
-            # and a clear command will probably complete more quickly when swapping out for a
-            # pooled voice
-            self._voice_pool[voice_key].append(self._create_new_voice(audio_format))
-        else:
-            voice = self._voice_pool[voice_key].pop()
+        with self.lock:
+            if self._xaudio2 is None:
+                raise RuntimeError("XAudio2 is currently unavailable")
 
-        assert voice.buffers_queued == 0
+            voice_key = (audio_format.channels, audio_format.sample_size)
+            if not self._voice_pool[voice_key]:
+                voice = self._create_new_voice(audio_format)
+                # Create a 2nd one for good measure, multiple players might be needing it soon,
+                # and a clear command will probably complete more quickly when swapping out for a
+                # pooled voice
+                self._voice_pool[voice_key].append(self._create_new_voice(audio_format))
+            else:
+                voice = self._voice_pool[voice_key].pop()
 
-        voice.acquired(player.on_buffer_end, audio_format.sample_rate)
-        if voice.is_emitter:
-            self._emitting_voices.append(voice)
-        self._in_use[voice] = player
+            assert voice.buffers_queued == 0
 
-        return voice
+            voice.acquired(player.on_buffer_end, audio_format.sample_rate)
+            if voice.is_emitter:
+                self._emitting_voices.append(voice)
+            self._in_use[voice] = player
+
+            return voice
 
     def _create_new_voice(self, audio_format: AudioFormat) -> XA2SourceVoice:
         """Has the driver create a new source voice for the given audio format."""
