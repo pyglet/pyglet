@@ -86,15 +86,15 @@ class WINDOW_MULTISAMPLE(InteractiveTestCase):
                 6,
                 GeometryMode.TRIANGLES,
                 batch=scene_batch,
-                position=('f', (0.0,) * 18),
-                colors=('f', (1.0, 0.0, 0.0, 1.0) * 6),
+                position=(0.0,) * 18,
+                colors=(1.0, 0.0, 0.0, 1.0) * 6,
             )
             green_square = program.vertex_list(
                 6,
                 GeometryMode.TRIANGLES,
                 batch=scene_batch,
-                position=('f', (0.0,) * 18),
-                colors=('f', (0.0, 1.0, 0.0, 0.5) * 6),
+                position=(0.0,) * 18,
+                colors=(0.0, 1.0, 0.0, 0.5) * 6,
             )
 
             self.win = new_window

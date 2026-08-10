@@ -119,9 +119,9 @@ def create_torus(radius, inner_radius, slices, inner_slices, shader, batch):
     group = pyglet.model.MaterialGroup(material=material, program=shader)
 
     vertex_list = shader.vertex_list_indexed(len(vertices) // 3, GeometryMode.TRIANGLES, indices, batch, group,
-                                             position=('f', vertices),
-                                             normals=('f', normals),
-                                             colors=('f', material.diffuse * (len(vertices) // 3)))
+                                             position=vertices,
+                                             normals=normals,
+                                             colors=material.diffuse * (len(vertices) // 3))
 
     return pyglet.model.Model([vertex_list], [group], batch)
 

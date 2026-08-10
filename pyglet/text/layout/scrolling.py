@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar
 
-from pyglet.text.layout.base import TextLayout, ScrollableTextLayoutGroup, ScrollableTextDecorationGroup
+from pyglet.text.layout.base import (
+    ScrollableTextDecorationGroup,
+    ScrollableTextLayoutGroup,
+    TextLayout,
+    get_default_scrollable_layout_shader,
+)
 
 if TYPE_CHECKING:
     from pyglet.graphics.draw import Group
@@ -47,7 +52,7 @@ class ScrollableTextLayout(TextLayout):
             raise Exception(msg)
 
         super().__init__(document, x, y, z, width, height, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
-                         program, wrap_lines)
+                         program or get_default_scrollable_layout_shader(), wrap_lines)
 
     def _update_scissor_area(self) -> None:
         if not self.document.text:

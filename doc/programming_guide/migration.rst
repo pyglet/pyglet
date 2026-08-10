@@ -79,6 +79,48 @@ constants from ``pyglet.graphics.api.gl``. But for pyglet's high-level APIs
 and new rendering helpers, refer to the enums.
 
 
+Shader vertex formats
+^^^^^^^^^^^^^^^^^^^^^
+Vertex-list creation no longer accepts ``(format, values)`` tuples. Configure
+non-default vertex-buffer storage formats on a ShaderProgram view before creating
+vertex lists instead. For example, replace::
+
+    program.vertex_list(3, GeometryMode.TRIANGLES, colors=('Bn', colors))
+
+with::
+
+    byte_colors = program.create_vertex_layout(colors='Bn')
+    byte_colors.vertex_list(3, GeometryMode.TRIANGLES, colors=colors)
+
+This is especially useful for normalized color attributes: the ``"Bn"`` format
+stores colors as unsigned bytes and normalizes them for a ``vec4`` shader input.
+
+Instance attribute divisors are also configured once on the program. Replace::
+
+    program.vertex_list_instanced(3, GeometryMode.TRIANGLES,
+                                  instance_attributes={'translation': 1},
+                                  translation=translations)
+
+with::
+
+    program.set_instance_attributes(translation=1)
+    program.vertex_list_instanced(3, GeometryMode.TRIANGLES,
+                                  translation=translations)
+
+Use ``program.create_vertex_layout(...)`` when one linked shader program needs
+multiple vertex formats. It returns an interned
+:class:`~pyglet.graphics.shader.ShaderProgramView`, which can be used anywhere
+a ShaderProgram is accepted. Equivalent configurations return the same view::
+
+    byte_colors = program.create_vertex_layout(colors='Bn')
+    float_colors = program.create_vertex_layout(colors='f')
+
+To keep a different divisor configuration alongside the program's default,
+configure it on a view::
+
+    instanced_byte_colors = byte_colors.set_instance_attributes(colors=1)
+
+
 Image changes and removal of image.blit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Many classes have been moved out of the ``pyglet.image`` to ``pyglet.graphics.texture``. These changes

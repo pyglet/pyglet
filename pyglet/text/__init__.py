@@ -463,10 +463,10 @@ class Label(DocumentLabel):
         r, g, b, *a = color
         rgba = r, g, b, a[0] if a else 255
 
-        super().__init__(doc, x, y, z, width, height, anchor_x, anchor_y, rotation,
-                         multiline, dpi, batch, group, program, shaping=shaping, init_document=False)
-
-        self.document.set_style(0, len(self.document.text), {
+        # This document has no listeners yet, so initialize its uniform style
+        # before attaching it to the layout. This avoids dispatching a style
+        # event solely to perform the initial layout.
+        doc._set_style(0, len(doc.text), {  # noqa: SLF001
             "font_name": font_name,
             "font_size": font_size,
             "weight": weight,
@@ -475,6 +475,25 @@ class Label(DocumentLabel):
             "color": rgba,
             "align": align,
         })
+
+        super().__init__(
+            doc,
+            x,
+            y,
+            z,
+            width,
+            height,
+            anchor_x,
+            anchor_y,
+            rotation,
+            multiline,
+            dpi,
+            batch,
+            group,
+            program,
+            shaping=shaping,
+            init_document=True,
+        )
 
 
 class HTMLLabel(DocumentLabel):

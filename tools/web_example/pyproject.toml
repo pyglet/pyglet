@@ -2,7 +2,7 @@
 entrypoint = "example.py"
 output = "dist"
 sources = ["example.py"]
-resources = []
+resources = ["pyglet.png"]
 title = "Pyglet Pyodide Example"
 
 # Fonts live under web/ and are available to pyglet before example.py starts.

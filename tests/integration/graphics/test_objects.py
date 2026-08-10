@@ -394,10 +394,10 @@ def test_sprite_program_change_same_attributes_keeps_domain_updates_group(test_w
         sprite.delete()
 
 
-def test_sprite_program_change_different_attributes_recreates_with_new_domain(test_window, sprite_programs, sprite_image):  # noqa: ARG001
+def test_sprite_program_change_different_attributes_migrates_to_new_domain(test_window, sprite_programs, sprite_image):  # noqa: ARG001
     """Switch Sprite to a program whose attribute layout differs.
 
-    Verifies the vertex list is recreated and migrated to a new domain.
+    Verifies the existing vertex list is migrated to a new domain.
     """
     if _is_gl2_backend():
         names = ("position", "translate", "colors", "tex_coords", "scale", "rotation")
@@ -411,7 +411,7 @@ def test_sprite_program_change_different_attributes_recreates_with_new_domain(te
         _assert_program_switch_success(
             sprite,
             sprite_programs["different"],
-            expect_recreated=True,
+            expect_recreated=False,
             expect_same_domain=False,
         )
     finally:
@@ -468,10 +468,10 @@ def test_shape_program_change_same_attributes_keeps_domain_updates_group(test_wi
         shape.delete()
 
 
-def test_shape_program_change_different_attributes_recreates_with_new_domain(test_window, shape_programs):  # noqa: ARG001
+def test_shape_program_change_different_attributes_migrates_to_new_domain(test_window, shape_programs):  # noqa: ARG001
     """Switch Shape to a program with a different attribute layout.
 
-    Verifies the vertex list is recreated in a different domain.
+    Verifies the existing vertex list is migrated to a new domain.
     """
     if _is_gl2_backend():
         names = ("position", "translation", "colors", "rotation")
@@ -485,7 +485,7 @@ def test_shape_program_change_different_attributes_recreates_with_new_domain(tes
         _assert_program_switch_success(
             shape,
             shape_programs["different"],
-            expect_recreated=True,
+            expect_recreated=False,
             expect_same_domain=False,
         )
     finally:

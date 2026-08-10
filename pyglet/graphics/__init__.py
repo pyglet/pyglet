@@ -34,7 +34,9 @@ if TYPE_CHECKING:
     from pyglet.enums import GraphicsAPI
     from pyglet.graphics import api  # noqa: F401
     from pyglet.graphics.draw import Group, ShaderGroup, Batch  # noqa: F401
-    from pyglet.graphics.shader import Shader, ShaderProgram, ComputeShaderProgram, TransformFeedbackShaderProgram  # noqa: F401
+    from pyglet.graphics.shader import (  # noqa: F401
+        ComputeShaderProgram, Shader, ShaderProgram, ShaderProgramView, TransformFeedbackShaderProgram,
+    )
     from pyglet.graphics.state import State, Viewport, ViewportProtocol  # noqa: F401
     from pyglet.graphics.shader import get_default_shader  # noqa: F401
     from pyglet.graphics.buffer import UniformBufferRegion  # noqa: F401
@@ -50,6 +52,7 @@ else:
         ShaderProgram,
         ComputeShaderProgram,
         TransformFeedbackShaderProgram,
+        ShaderProgramView,
         get_default_shader,
     )
     from pyglet.graphics.state import State, Viewport, ViewportProtocol  # noqa: F401

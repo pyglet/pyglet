@@ -7,7 +7,7 @@ from typing import cast, Iterator, Sequence, TYPE_CHECKING
 
 import pyglet
 from pyglet.enums import TextureType, TextureFilter, ComponentFormat, AddressMode, GraphicsAPI
-from pyglet.graphics import GraphicsAPIError
+from pyglet.graphics import GraphicsAPIError, UnsupportedBackendError
 from pyglet.graphics.api.gl import OpenGLSurfaceContext, GL_COMPRESSED_RGB8_ETC2
 from pyglet.graphics.api.base import SurfaceContext
 from pyglet.graphics.api.gl.gl import (
@@ -1209,7 +1209,7 @@ class GLCompressedTexture(CompressedTexture):
         self._gl_internal_format = _get_gl_compression_format(compression_fmt)
         self._compression_fmt = compression_fmt
         self._can_gpu_decode = self._is_format_supported()
-        self.mipmap_data = []
+        self.mipmap_data: list[bytes | None] = []
 
     def _is_format_supported(self) -> bool:
         family = _get_format_family(self._gl_internal_format)
@@ -1217,21 +1217,22 @@ class GLCompressedTexture(CompressedTexture):
             msg = f"Unsupported compression format: {self._compression_fmt}"
             raise ValueError(msg)
 
+        if family == "ETC2" and self._context.info.get_opengl_api() == GraphicsAPI.OPENGL_ES_3:
+            return True
+
         required = _required_exts.get(family, [])
         return any(self._context.core.have_extension(ext) for ext in required)
 
     @classmethod
     def create(cls, width: int, height: int,
                fmt: CompressionFormat,
+               data: bytes | Array,
                tex_type: TextureType = TextureType.TYPE_2D,
-               internal_format: ComponentFormat = ComponentFormat.RGBA,
-               internal_format_size: int = 8,
-               internal_format_type: str = "B",
                filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                address_mode: AddressMode = AddressMode.REPEAT,
                anisotropic_level: int = 0,
-               blank_data: bool = True,
                context: OpenGLSurfaceContext | None = None) -> GLCompressedTexture:
+        """Create a compressed texture from a complete compressed base level."""
         ctx = context or pyglet.graphics.api.core.current_context
 
         tex_id = GLuint()
@@ -1243,7 +1244,6 @@ class GLCompressedTexture(CompressedTexture):
         ctx.glTexParameteri(target, GL_TEXTURE_MIN_FILTER, texture._gl_min_filter)
         ctx.glTexParameteri(target, GL_TEXTURE_MAG_FILTER, texture._gl_mag_filter)
 
-        data = (GLubyte * (width * height * len(internal_format)))() if blank_data else None
         texture._allocate(data)
         return texture
 
@@ -1264,8 +1264,6 @@ class GLCompressedTexture(CompressedTexture):
                 The image instance.
             tex_type:
                 The texture enum type.
-            internal_format_size:
-                Byte size of the internal format.
             filters:
                 Texture format filter, passed as a list of min/mag filters, or a single filter to apply both.
             address_mode:
@@ -1291,6 +1289,8 @@ class GLCompressedTexture(CompressedTexture):
         ctx.glTexParameteri(target, GL_TEXTURE_MIN_FILTER, texture._gl_min_filter)
         ctx.glTexParameteri(target, GL_TEXTURE_MAG_FILTER, texture._gl_mag_filter)
         texture._allocate(image_data.data)
+        texture.mipmap_data = image_data.mipmap_data.copy()
+        texture._upload_mipmap_data()
         return texture
 
     def set_mipmap_data(self, level: int, data: bytes) -> None:
@@ -1300,12 +1300,77 @@ class GLCompressedTexture(CompressedTexture):
         This image data must be in the same format as was used in the
         constructor. The image data must also be of the correct dimensions for
         the level (i.e., width >> level, height >> level); but this is not checked.
-        If *any* mipmap levels are specified, they are used; otherwise, mipmaps for
-        ``mipmapped_texture`` are generated automatically.
+        Source mipmap levels are uploaded when the texture is created. If none
+        are supplied, call :meth:`generate_mipmaps` to create them from level 0.
         """
+        if level < 1:
+            raise ImageException("Compressed texture mipmap levels must be greater than zero.")
+
         # Extend mipmap_data list to required level
         self.mipmap_data += [None] * (level - len(self.mipmap_data))
         self.mipmap_data[level - 1] = data
+
+    def bind(self, texture_unit: int = 0) -> None:
+        """Bind to a specific Texture Unit by number."""
+        self._context.glActiveTexture(GL_TEXTURE0 + texture_unit)
+        self._context.glBindTexture(self.target, self.id)
+
+    def _compute_mipmap_count(self) -> int:
+        max_dimension = max(self.width, self.height)
+        count = 1
+        while max_dimension > 1:
+            max_dimension //= 2
+            count += 1
+        return count
+
+    @property
+    def mipmap_count(self) -> int:
+        """Return the number of mipmap levels initialized for this texture."""
+        return self._mipmap_levels
+
+    @property
+    def valid_mipmaps(self) -> tuple[int, ...]:
+        """Return a sorted tuple of mipmap levels that contain valid data."""
+        return tuple(sorted(self._valid_mipmaps))
+
+    def generate_mipmaps(self) -> None:
+        """Generate a complete mipmap chain from the compressed base level."""
+        self.bind()
+        info = self._context.info
+        if info.get_opengl_api() == GraphicsAPI.OPENGL_ES_2:
+            raise UnsupportedBackendError("Compressed texture mipmap generation")
+
+        if not info.have_version(3):
+            if not self._context.core.have_extension("GL_EXT_framebuffer_object"):
+                raise UnsupportedBackendError("Compressed texture mipmap generation")
+            self._context.glGenerateMipmapEXT(self.target)
+        else:
+            self._context.glGenerateMipmap(self.target)
+        self._context.glFlush()
+        self._mipmap_levels = self._compute_mipmap_count()
+        self._valid_mipmaps = set(range(self._mipmap_levels))
+
+    def _upload_mipmap_data(self) -> None:
+        """Upload the compressed mip chain collected from an image container."""
+        if not self.mipmap_data:
+            self._valid_mipmaps = {0}
+            return
+
+        self.bind()
+        for level, data in enumerate(self.mipmap_data, start=1):
+            if data is None:
+                msg = f"Compressed texture mipmap level {level} has no data."
+                raise ImageException(msg)
+
+            width = max(1, self.width >> level)
+            height = max(1, self.height >> level)
+            self._context.glCompressedTexImage2D(
+                self.target, level, self._gl_internal_format, width, height, 0, len(data), data,
+            )
+
+        self._context.glFlush()
+        self._mipmap_levels = len(self.mipmap_data) + 1
+        self._valid_mipmaps = set(range(self._mipmap_levels))
 
     def _allocate(self, data: None | Array) -> None:
         if self._can_gpu_decode:
@@ -1313,6 +1378,7 @@ class GLCompressedTexture(CompressedTexture):
                                                  self._gl_internal_format,
                                                  self.width, self.height, 0,
                                                  len(data), data)
+            self._valid_mipmaps = {0}
         elif self.decoder:
             image = self.decoder(data, self.width, self.height)
             texture = image.get_texture()
@@ -1323,63 +1389,3 @@ class GLCompressedTexture(CompressedTexture):
             raise ImageException(msg)
 
         self._context.glFlush()
-    #
-    # def get_mipmapped_texture(self) -> TextureBase:
-    #     if self._current_mipmap_texture:
-    #         return self._current_mipmap_texture
-    #
-    #     if not self._have_extension():
-    #         # TODO: mip-mapped software decoded compressed textures.
-    #         #       For now, just return a non-mipmapped texture.
-    #         return self.get_texture()
-    #
-    #     texture = TextureBase.create(self.width, self.height, GL_TEXTURE_2D, None)
-    #
-    #     if self.anchor_x or self.anchor_y:
-    #         texture.anchor_x = self.anchor_x
-    #         texture.anchor_y = self.anchor_y
-    #
-    #     self._context.glBindTexture(texture.target, texture.id)
-    #
-    #     self._context.glTexParameteri(texture.target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
-    #
-    #     if not self.mipmap_data:
-    #         self._context.glGenerateMipmap(texture.target)
-    #
-    #     self._context.glCompressedTexImage2D(texture.target, texture.level,
-    #                                          self.gl_format,
-    #                                          self.width, self.height, 0,
-    #                                          len(self.data), self.data)
-    #
-    #     width, height = self.width, self.height
-    #     level = 0
-    #     for data in self.mipmap_data:
-    #         width >>= 1
-    #         height >>= 1
-    #         level += 1
-    #         self._context.glCompressedTexImage2D(texture.target, level, self.gl_format, width, height, 0, len(data),
-    #                                              data)
-    #
-    #     self._context.glFlush()
-    #
-    #     self._current_mipmap_texture = texture
-    #     return texture
-    #
-    # def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int, internalformat: int = None):
-    #     if not self._have_extension():
-    #         raise ImageException(f"{self.extension} is required to decode {self}")
-    #
-    #     # TODO: use glCompressedTexImage2D/3D if `internalformat` is specified.
-    #
-    #     if target == GL_TEXTURE_3D:
-    #         self._context.glCompressedTexSubImage3D(target, level,
-    #                                                 x - self.anchor_x, y - self.anchor_y, z,
-    #                                                 self.width, self.height, 1,
-    #                                                 self.gl_format,
-    #                                                 len(self.data), self.data)
-    #     else:
-    #         self._context.glCompressedTexSubImage2D(target, level,
-    #                                                 x - self.anchor_x, y - self.anchor_y,
-    #                                                 self.width, self.height,
-    #                                                 self.gl_format,
-    #                                                 len(self.data), self.data)

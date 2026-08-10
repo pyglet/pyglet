@@ -15,12 +15,8 @@ label = pyglet.text.Label('Press Any Key To Add A Sprite!',
                           anchor_y='center',
                           batch=batch)
 
-try:
-    # Will be found in the pyodide VFS.
-    image = pyglet.resource.image("pyglet.png")
-except pyglet.resource.ResourceNotFoundException:
-    # Could not find the image, check your path.
-    image = pyglet.image.SolidColorImagePattern((255, 0, 0, 255)).create_image(64, 64)
+# Packaged by ``resources`` in pyproject.toml and loaded from the Pyodide VFS.
+image = pyglet.resource.image("pyglet.png")
 
 image.anchor_x = image.width // 2
 image.anchor_y = image.height // 2

@@ -56,7 +56,7 @@ def get_default_shader() -> ShaderProgram:
         "default_shapes",
         (vertex_source, 'vertex'),
         (fragment_source, 'fragment'),
-    )
+    ).create_vertex_layout(colors="Bn")
 
 
 class _ShapeGroup(Group):

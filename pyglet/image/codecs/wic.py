@@ -97,7 +97,7 @@ def _get_bitmap_frame(bitmap_decoder: IWICBitmapDecoder, frame_index: int) -> IW
     bitmap_decoder.GetFrame(frame_index, byref(bitmap))
     return bitmap
 
-_guid_null = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+_guid_null = com.GUID()
 
 
 def get_bitmap(width: int, height: int, target_fmt: com.GUID=GUID_WICPixelFormat32bppBGRA) -> IWICBitmap:
@@ -139,7 +139,7 @@ def extract_image_data(bitmap: IWICBitmap, target_fmt: com.GUID | None = None) -
     height = int(height.value)
 
     # Get image pixel format
-    pf = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    pf = com.GUID()
     bitmap.GetPixelFormat(byref(pf))
 
     # If target format is not what we want (32bit BGRA) convert it.

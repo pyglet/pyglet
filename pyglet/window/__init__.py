@@ -1929,7 +1929,7 @@ if _is_pyglet_doc_run:
 else:
     # Try to determine which platform to use.
     if pyglet.options.headless:
-        from pyglet.window.headless import HeadlessWindow as Window
+        from pyglet.window.headless import EGLHeadlessWindow as Window
     elif pyglet.compat_platform == 'darwin':
         from pyglet.window.cocoa import CocoaWindow as Window
     elif pyglet.compat_platform in ('win32', 'cygwin'):

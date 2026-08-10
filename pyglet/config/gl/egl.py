@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from pyglet import options
 from pyglet.graphics.api.gl.egl.context import EGLContext
-import pyglet.libs.linux.egl as egl
+import pyglet.libs.egl as egl
 from pyglet.config import SurfaceConfig
 from pyglet.enums import GraphicsAPI
 

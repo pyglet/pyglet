@@ -54,13 +54,13 @@ class ImageElement(pyglet.text.document.InlineElement):
 
         vertex_list = program.vertex_list_indexed(4, GeometryMode.TRIANGLES, [0, 1, 2, 0, 2, 3],
                                                   layout.batch, group,
-                                                  position=("f", (x1, y1, z, x2, y1, z, x2, y2, z, x1, y2, z)),
-                                                  translation=("f", (x, y, z) * 4),
-                                                  tex_coords=("f", self.image.tex_coords),
-                                                  visible=("f", (visible,) * 4),
-                                                  rotation=("f", (rotation,) * 4),
-                                                  anchor=("f", (anchor_x, anchor_y) * 4),
-                                                  view_translation=("f", (0, 0, 0) * 4),
+                                                  position=(x1, y1, z, x2, y1, z, x2, y2, z, x1, y2, z),
+                                                  translation=(x, y, z) * 4,
+                                                  tex_coords=self.image.tex_coords,
+                                                  visible=(visible,) * 4,
+                                                  rotation=(rotation,) * 4,
+                                                  anchor=(anchor_x, anchor_y) * 4,
+                                                  view_translation=(0, 0, 0) * 4,
                                                   #colors=("Bn", (128, 128, 128, 255) * 4),
                                                   )
 

@@ -1,6 +1,6 @@
 from ctypes import *
-from pyglet.libs.linux.egl import egl
-from pyglet.libs.linux.egl.lib import link_EGL as _link_function
+from pyglet.libs.egl import egl
+from pyglet.libs.egl.lib import link_EGL as _link_function
 from pyglet.graphics.api.gl.lib import MissingFunctionException, missing_function
 
 

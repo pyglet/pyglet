@@ -117,8 +117,8 @@ vertex_positions = create_quad(576, 296, tex)
 
 # count, mode, indices, batch, group, *data
 vertex_list = shader_program.vertex_list_indexed(4, GeometryMode.TRIANGLES, indices, batch, group,
-                                                 position=('f', vertex_positions),
-                                                 tex_coords=('f', tex.tex_coords))
+                                                 position=vertex_positions,
+                                                 tex_coords=tex.tex_coords)
 
 
 #####################

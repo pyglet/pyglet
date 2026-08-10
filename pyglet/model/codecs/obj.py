@@ -240,17 +240,23 @@ class OBJScene(Scene):
                 if material.texture_name:
                     _texture = pyglet.resource.texture(material.texture_name, atlas=False)
                     program = pyglet.model.get_default_textured_shader()
-                    matgroup = TexturedMaterialGroup(material, program, _texture, parent=group)
                 else:
                     program = pyglet.model.get_default_shader()
-                    matgroup = MaterialGroup(material, program, parent=group)
 
-                data = {a.name: (a.fmt, a.array) for a in primitive.attributes if a.name in program.attributes}
-                data |= {'TRANSLATION': ('f', Vec3()), 'ROTATION': ('f', Quaternion()), 'SCALE': ('f', Vec3(1.0, 1.0, 1.0))}
-                vertex_list = program.vertex_list_instanced(count=count,
-                                                            mode=GeometryMode.TRIANGLES,
-                                                            instance_attributes={'TRANSLATION': 1, 'ROTATION': 1, 'SCALE': 1},
-                                                            batch=batch, group=matgroup, **data)
+                formats = {a.name: a.fmt for a in primitive.attributes if a.name in program.attributes}
+                layout = program.create_vertex_layout(**formats).set_instance_attributes(
+                    TRANSLATION=1, ROTATION=1, SCALE=1
+                )
+                if material.texture_name:
+                    matgroup = TexturedMaterialGroup(material, layout, _texture, parent=group)
+                else:
+                    matgroup = MaterialGroup(material, layout, parent=group)
+
+                data = {a.name: a.array for a in primitive.attributes if a.name in program.attributes}
+                data |= {'TRANSLATION': Vec3(), 'ROTATION': Quaternion(), 'SCALE': Vec3(1.0, 1.0, 1.0)}
+                vertex_list = layout.vertex_list_instanced(
+                    count=count, mode=GeometryMode.TRIANGLES, batch=batch, group=matgroup, **data
+                )
 
                 vertex_lists.append(vertex_list)
                 groups.append(matgroup)
