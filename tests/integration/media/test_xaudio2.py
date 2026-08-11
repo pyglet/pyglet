@@ -62,7 +62,7 @@ def test_critical_error_only_requests_restart(interface_driver) -> None:
 
 def test_source_voice_is_reused_from_pool(interface_driver) -> None:
     audio_format = AudioFormat(2, 16, 48_000)
-    player = SimpleNamespace(create_buffer_end_callback=lambda: lambda _context: None)
+    player = SimpleNamespace(on_buffer_end=lambda _context: None)
     voice = interface_driver.get_source_voice(audio_format, player)
 
     _return_voices(interface_driver, (voice,))
@@ -79,7 +79,7 @@ def test_concurrent_source_voice_acquisition_has_unique_ownership(interface_driv
     start = threading.Barrier(8)
 
     def acquire_voice():
-        player = SimpleNamespace(create_buffer_end_callback=lambda: lambda _context: None)
+        player = SimpleNamespace(on_buffer_end=lambda _context: None)
         start.wait()
         return interface_driver.get_source_voice(audio_format, player)
 
@@ -100,7 +100,7 @@ def test_concurrent_source_voice_acquisition_has_unique_ownership(interface_driv
 
 def test_source_voice_acquisition_waits_for_pool_transaction(interface_driver) -> None:
     audio_format = AudioFormat(2, 16, 48_000)
-    player = SimpleNamespace(create_buffer_end_callback=lambda: lambda _context: None)
+    player = SimpleNamespace(on_buffer_end=lambda _context: None)
     started = threading.Event()
 
     def acquire_voice():
@@ -119,8 +119,8 @@ def test_source_voice_acquisition_waits_for_pool_transaction(interface_driver) -
     _return_voices(interface_driver, (voice,))
 
 
-def test_buffer_end_callback_never_waits_for_player_lock(driver) -> None:
-    """XAudio2's callback must hand work to the audio worker without blocking."""
+def test_buffer_end_callback_serializes_with_player_state(driver) -> None:
+    """The callback cannot mutate queued data while player state is being changed."""
     source = Silence(1.0)
     player = AudioPlayer()
     player.queue(source)
@@ -133,17 +133,49 @@ def test_buffer_end_callback_never_waits_for_player_lock(driver) -> None:
         callback_finished.set()
 
     try:
-        # If the callback takes _audio_data_lock, as the previous design did,
-        # it cannot finish until this block exits.
-        with audio_player._audio_data_lock:
+        # on_buffer_end and voice/buffer lifecycle changes share this lock.
+        with audio_player._audio_state_lock:
             callback_thread = threading.Thread(target=invoke_callback)
             callback_thread.start()
-            assert callback_finished.wait(0.2)
+            assert not callback_finished.wait(0.05)
 
-        callback_thread.join()
-        audio_player.work()  # Drain the notification on the worker-side path.
+        callback_thread.join(1)
+        assert callback_finished.is_set()
     finally:
         player.delete()
+
+
+def test_driver_stays_available_when_initial_master_voice_creation_fails(monkeypatch) -> None:
+    """A missing startup endpoint must not make driver selection fall back permanently."""
+    wait_for_device = threading.Event()
+
+    def no_output_device(self, _device_id=None):
+        self._xaudio2 = None
+        raise interface._MasteringVoiceCreationError('No output device')
+
+    def wait_for_output_device(_self):
+        wait_for_device.set()
+
+    monkeypatch.setattr(interface.XAudio2Driver, '_create_xa2', no_output_device)
+    monkeypatch.setattr(interface.XAudio2Driver, '_wait_for_output_device', wait_for_output_device)
+
+    driver = interface.XAudio2Driver()
+    try:
+        assert wait_for_device.is_set()
+        assert driver._xaudio2 is None
+    finally:
+        driver.delete()
+
+
+def test_unavailable_driver_registers_new_player_for_reset(interface_driver) -> None:
+    audio_format = AudioFormat(2, 16, 48_000)
+    player = object()
+    interface_driver._delete_driver()
+
+    voice = interface_driver.get_source_voice(audio_format, player)
+
+    assert voice is None
+    assert player in interface_driver._players
 
 
 def test_engine_reset_replaces_voice_preserves_cursor_and_resumes(driver) -> None:

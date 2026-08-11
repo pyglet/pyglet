@@ -687,6 +687,35 @@ class PlayerTestCase(unittest.TestCase):
         self.video_player.seek_next_frame()
         self.assert_texture_not_updated()
 
+    def test_video_finished_dispatches_eos_when_audio_driver_is_inactive(self):
+        """A lost audio device must not prevent a video stream from ending."""
+        mock_source = self.create_mock_source(self.audio_format_1, self.video_format_1)
+        self.video_player.queue(mock_source)
+        self.video_player.play()
+        self.mock_audio_driver_player.can_dispatch_eos = False
+        self.video_player.dispatch_event = MagicMock()
+
+        self.video_player._video_finished(0)
+
+        self.video_player.dispatch_event.assert_called_once_with('on_eos')
+
+    def test_video_finished_waits_for_source_duration_when_audio_driver_is_inactive(self):
+        """A temporary audio outage cannot truncate a source with a longer duration."""
+        mock_source = self.create_mock_source(self.audio_format_1, self.video_format_1)
+        type(mock_source.get_queue_source.return_value).duration = mock.PropertyMock(return_value=10.)
+        self.video_player.queue(mock_source)
+        self.video_player.play()
+        self.video_player._timer.set_time(3.)
+        self.mock_audio_driver_player.can_dispatch_eos = False
+        self.video_player.dispatch_event = MagicMock()
+
+        self.video_player._video_finished(0)
+
+        callback, delay = self.mock_clock.schedule_once.call_args.args
+        self.assertEqual(callback, self.video_player._video_finished)
+        self.assertAlmostEqual(delay, 7., places=2)
+        self.video_player.dispatch_event.assert_not_called()
+
     def test_video_without_audio(self):
         """It is possible to have videos without audio streams."""
         mock_source = self.create_mock_source(None, self.video_format_1)
