@@ -143,6 +143,11 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
             self._xa2_source_voice = None
             self._playing = False
 
+    @property
+    def can_dispatch_eos(self) -> bool:
+        with self._audio_data_lock:
+            return self._playing and self._xa2_source_voice is not None
+
     def on_driver_reset(self) -> None:
         with self._audio_data_lock:
             if self._deleted:

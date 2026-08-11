@@ -150,6 +150,15 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
         """Called after the audio driver has been re-initialized."""
         return
 
+    @property
+    def can_dispatch_eos(self) -> bool:
+        """Whether this backend can currently drive end-of-stream events.
+
+        Backends which can temporarily lose their output device may override
+        this while they wait for recovery.
+        """
+        return True
+
     def set_source(self, source: Source) -> None:
         """Change the player's source for a new one.
 

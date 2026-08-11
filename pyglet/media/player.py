@@ -481,7 +481,7 @@ class AudioPlayer(pyglet.event.EventDispatcher):
         By default, this will kill the current audio player, create a new one,
         and requeue the buffers. Any buffers that may have been queued in a
         player will be resubmitted. It will continue from the last buffers
-        submitted, not played, and may cause sync issues if using video.
+        submitted, not played.
         """
         if self._audio_player is None:
             return
@@ -504,7 +504,11 @@ class AudioPlayer(pyglet.event.EventDispatcher):
             setattr(self, attr, value)
 
         if self._playing:
-            self._audio_player.play()
+            self._resume_after_driver_reset()
+
+    def _resume_after_driver_reset(self) -> None:
+        """Resume audio after a backend driver reset."""
+        self._audio_player.play()
 
 
 AudioPlayer.register_event_type('on_eos')
@@ -546,6 +550,16 @@ class VideoPlayer(AudioPlayer):
         from pyglet.media import have_ffmpeg
         if not have_ffmpeg():
             raise MediaException("VideoPlayer requires FFmpeg to be installed.")
+
+    def _resume_after_driver_reset(self) -> None:
+        if self.source.video_format is None:
+            super()._resume_after_driver_reset()
+            return
+
+        # The video clock continues while an audio device is absent. Discard
+        # old queued audio and resume from that clock, rather than replaying
+        # audio that belongs to already-shown frames.
+        self.seek(self.time)
 
     @property
     def position(self) -> tuple[int, int]:
@@ -676,8 +690,20 @@ class VideoPlayer(AudioPlayer):
         pyglet.clock.schedule_once(self.update_texture, delay)
 
     def _video_finished(self, _dt: float) -> None:
+        # Audio normally owns EOS for a source containing both streams.
+        # Some drivers (XAudio2) device loss leaves audio players alive to recover.
+        # In this state, it cannot dispatch EOS. So the video controls the new EOS.
         if self._audio_player is None:
             self.dispatch_event("on_eos")
+            return
+
+        if not self._audio_player.can_dispatch_eos:
+            # A video stream can run out of frames before the source's duration.
+            duration = self.source.duration
+            if duration is not None and self.time < duration:
+                pyglet.clock.schedule_once(self._video_finished, duration - self.time)
+            else:
+                self.dispatch_event("on_eos")
 
     @property
     def texture(self) -> Texture | None:
