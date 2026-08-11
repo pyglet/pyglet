@@ -31,6 +31,10 @@ VoiceKey: TypeAlias = tuple[int, int]
 BufferEndCallback: TypeAlias = Callable[[int], None]
 
 
+class _MasteringVoiceCreationError(OSError):
+    """Raised when XAudio2 cannot attach a mastering voice to an endpoint."""
+
+
 class ConeAngles(NamedTuple):  # noqa: D101
     inside: float
     outside: float
@@ -224,7 +228,14 @@ class XAudio2Driver:
 
         self._players: set[XAudio2AudioPlayer] = set()
 
-        self._create_xa2()
+        try:
+            self._create_xa2()
+        except _MasteringVoiceCreationError:
+            # Catch master voice creation failure. Mostly due to invalid output devices.
+            # Catch this to keep this driver selected rather than falling through to a different
+            # audio driver.
+            # The device manager will request a retry when an output device returns.
+            self._wait_for_output_device()
 
         if self.restart_on_error:
             pyglet.clock.schedule_interval_soft(self._check_state, 0.5)
@@ -246,7 +257,7 @@ class XAudio2Driver:
             self._restart_requested.clear()
             try:
                 self._create_xa2(self._device_id)
-            except (ImportError, OSError) as err:
+            except _MasteringVoiceCreationError as err:
                 # Will occur due to no audio endpoint (if all go missing)
                 # No audio endpoint is an expected, stable state. Wait for a
                 # Windows device notification instead of retrying every clock
@@ -332,9 +343,14 @@ class XAudio2Driver:
                 self._xaudio2.SetDebugConfiguration(byref(debug), None)
 
             self._xaudio2.RegisterForCallbacks(self._engine_callback)
+        except OSError:
+            self._xaudio2.Release()
+            self._xaudio2 = None
+            raise
 
-            self._mvoice_details = lib.XAUDIO2_VOICE_DETAILS()
-            self._master_voice = lib.IXAudio2MasteringVoice()
+        self._mvoice_details = lib.XAUDIO2_VOICE_DETAILS()
+        self._master_voice = lib.IXAudio2MasteringVoice()
+        try:
             self._xaudio2.CreateMasteringVoice(
                 byref(self._master_voice),
                 lib.XAUDIO2_DEFAULT_CHANNELS,
@@ -344,6 +360,13 @@ class XAudio2Driver:
                 None,
                 self.category,
             )
+        except OSError as err:
+            self._xaudio2.UnregisterForCallbacks(self._engine_callback)
+            self._xaudio2.Release()
+            self._xaudio2 = None
+            raise _MasteringVoiceCreationError(*err.args) from err
+
+        try:
             self._master_voice.GetVoiceDetails(byref(self._mvoice_details))
             self._master_voice.SetVolume(self._volume, 0)
         except OSError:
@@ -542,7 +565,7 @@ class XAudio2Driver:
                 self._voice_pool[voice_key].append(voice)
                 assert _debug(f"XA2AudioDriver: {voice} back in pool")
 
-    def get_source_voice(self, audio_format: AudioFormat, player: XAudio2AudioPlayer) -> XA2SourceVoice:
+    def get_source_voice(self, audio_format: AudioFormat, player: XAudio2AudioPlayer) -> XA2SourceVoice | None:
         """Get a source voice from the pool.
 
         Source voice creation can be slow to create/destroy.
@@ -551,7 +574,11 @@ class XAudio2Driver:
         """
         with self.lock:
             if self._xaudio2 is None:
-                raise RuntimeError("XAudio2 is currently unavailable")
+                # A player can be created while there is no default output
+                # device.  Remember it so the next successful engine creation
+                # can notify its high-level Player to rebuild the voice.
+                self._players.add(player)
+                return None
 
             voice_key = (audio_format.channels, audio_format.sample_size)
             if not self._voice_pool[voice_key]:

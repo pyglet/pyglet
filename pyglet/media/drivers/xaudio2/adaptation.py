@@ -122,6 +122,7 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         self._play_cursor_base = 0
         self._deleted = False
 
+        # This can start as None if no default output device is available on startup.
         self._xa2_source_voice = self.driver._xa2_driver.get_source_voice(source.audio_format, self)
 
     def on_driver_destroy(self) -> None:
@@ -151,7 +152,8 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
             # is still desired. Reset this even if play was requested while the
             # device was unavailable, so that call starts the new voice.
             self._playing = False
-            self._get_and_configure_voice()
+            if not self._get_and_configure_voice():
+                return
 
             # Drop buffers that finished before the old engine stopped, and
             # begin the first remaining buffer at the last known play cursor.
@@ -243,8 +245,11 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
             self._audio_data_in_use = deque()
             self._get_and_configure_voice()
 
-    def _get_and_configure_voice(self) -> None:
+    def _get_and_configure_voice(self) -> bool:
         voice = self.driver._xa2_driver.get_source_voice(self.source.audio_format, self)
+        if voice is None:
+            return False
+
         self._xa2_source_voice = voice
         voice.volume = self.player.volume
         voice.frequency = self.player.pitch
@@ -255,6 +260,7 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
             voice.cone_outside_volume = self.player.cone_outer_gain
             self._set_cone_angles()
             self.driver._xa2_driver.apply3d(voice)
+        return True
 
     def on_buffer_end(self, _buffer_context_ptr: int) -> None:
         # Called from the XAudio2 thread.
