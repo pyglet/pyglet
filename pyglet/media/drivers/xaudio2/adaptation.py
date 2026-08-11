@@ -115,10 +115,10 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         self._audio_data_in_use: deque[AudioData] = deque()
         self._pyglet_source_exhausted = False
 
-        # A lock to be held whenever modifying things relating to the in-use audio data.
-        # Ensures that the XAudio2 callbacks will not interfere with the
-        # player operations.
-        self._audio_data_lock = threading.RLock()
+        # Keeps the source voice and its playback data in sync when the audio
+        # worker or an XAudio2 callback runs at the same time. This includes
+        # queued buffers, playback position, resets, and deletion.
+        self._audio_state_lock = threading.RLock()
         self._play_cursor_base = 0
         self._deleted = False
 
@@ -131,7 +131,7 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         if self._playing:
             self.driver.worker.remove(self)
 
-        with self._audio_data_lock:
+        with self._audio_state_lock:
             voice = self._xa2_source_voice
             if voice is not None:
                 try:
@@ -145,11 +145,10 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
 
     @property
     def can_dispatch_eos(self) -> bool:
-        with self._audio_data_lock:
-            return self._playing and self._xa2_source_voice is not None
+        return self._playing and self._xa2_source_voice is not None
 
     def on_driver_reset(self) -> None:
-        with self._audio_data_lock:
+        with self._audio_state_lock:
             if self._deleted:
                 return
 
@@ -189,7 +188,7 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         else:
             self._playing = False
 
-        with self._audio_data_lock:
+        with self._audio_state_lock:
             self._deleted = True
             xa2_driver = self.driver._xa2_driver
             if xa2_driver is None or self._xa2_source_voice is None:
@@ -214,7 +213,7 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
 
         if not self._playing:
             self._playing = True
-            with self._audio_data_lock:
+            with self._audio_state_lock:
                 if self._xa2_source_voice is not None:
                     self._xa2_source_voice.play()
                     self.driver.worker.add(self)
@@ -227,7 +226,7 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         if self._playing:
             if self._xa2_source_voice is not None:
                 self.driver.worker.remove(self)
-                with self._audio_data_lock:
+                with self._audio_state_lock:
                     if self._xa2_source_voice is not None:
                         self._xa2_source_voice.stop()
             self._playing = False
@@ -241,7 +240,7 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         self._play_cursor_base = 0
         self._write_cursor = 0
         self._pyglet_source_exhausted = False
-        with self._audio_data_lock:
+        with self._audio_state_lock:
             if self._xa2_source_voice is None:
                 self._audio_data_in_use.clear()
                 return
@@ -270,7 +269,7 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
     def on_buffer_end(self, _buffer_context_ptr: int) -> None:
         # Called from the XAudio2 thread.
         # A buffer stopped being played by the voice, it should by all means be the first one
-        with self._audio_data_lock:
+        with self._audio_state_lock:
             if self._deleted or self._xa2_source_voice is None:
                 return
             if not self._audio_data_in_use:
@@ -302,9 +301,9 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         """
         assert _debug(f"XAudio2: Retrieving new buffer of {refill_size}B")
 
-        self._audio_data_lock.release()
+        self._audio_state_lock.release()
         audio_data = self._get_and_compensate_audio_data(refill_size, self._play_cursor)
-        self._audio_data_lock.acquire()
+        self._audio_state_lock.acquire()
 
         if audio_data is None:
             assert _debug("XAudio2: Source is out of data")
@@ -335,7 +334,7 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         return self._play_cursor
 
     def work(self) -> None:
-        with self._audio_data_lock:
+        with self._audio_state_lock:
             if self._xa2_source_voice is None:
                 return
             self._update_play_cursor()
@@ -354,51 +353,44 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         return True
 
     def prefill_audio(self) -> None:
-        with self._audio_data_lock:
+        with self._audio_state_lock:
             if self._xa2_source_voice is not None:
                 self._maybe_refill()
 
     def set_volume(self, volume: float) -> None:
-        with self._audio_data_lock:
-            if self._xa2_source_voice is not None:
-                self._xa2_source_voice.volume = volume
+        if self._xa2_source_voice is not None:
+            self._xa2_source_voice.volume = volume
 
     def set_position(self, position: tuple[float, float, float]) -> None:
-        with self._audio_data_lock:
-            if self._xa2_source_voice is not None and self._xa2_source_voice.is_emitter:
-                self._xa2_source_voice.position = _convert_coordinates(position)
+        if self._xa2_source_voice is not None and self._xa2_source_voice.is_emitter:
+            self._xa2_source_voice.position = _convert_coordinates(position)
 
     def set_min_distance(self, min_distance: float) -> None:
         """Not a true min distance, but similar effect. Changes CurveDistanceScaler default is 1."""
-        with self._audio_data_lock:
-            if self._xa2_source_voice is not None and self._xa2_source_voice.is_emitter:
-                self._xa2_source_voice.min_distance = min_distance
+        if self._xa2_source_voice is not None and self._xa2_source_voice.is_emitter:
+            self._xa2_source_voice.min_distance = min_distance
 
     def set_max_distance(self, _max_distance: float) -> None:
         """No such thing built into xaudio2."""
         return
 
     def set_pitch(self, pitch: float) -> None:
-        with self._audio_data_lock:
-            if self._xa2_source_voice is not None:
-                self._xa2_source_voice.frequency = pitch
+        if self._xa2_source_voice is not None:
+            self._xa2_source_voice.frequency = pitch
 
     def set_cone_orientation(self, cone_orientation: tuple[float, float, float]) -> None:
-        with self._audio_data_lock:
-            if self._xa2_source_voice is not None and self._xa2_source_voice.is_emitter:
-                self._xa2_source_voice.cone_orientation = _convert_coordinates(cone_orientation)
+        if self._xa2_source_voice is not None and self._xa2_source_voice.is_emitter:
+            self._xa2_source_voice.cone_orientation = _convert_coordinates(cone_orientation)
 
     def set_cone_inner_angle(self, cone_inner_angle: float) -> None:
-        with self._audio_data_lock:
-            if self._xa2_source_voice is not None and self._xa2_source_voice.is_emitter:
-                self._cone_inner_angle = int(cone_inner_angle)
-                self._set_cone_angles()
+        if self._xa2_source_voice is not None and self._xa2_source_voice.is_emitter:
+            self._cone_inner_angle = int(cone_inner_angle)
+            self._set_cone_angles()
 
     def set_cone_outer_angle(self, cone_outer_angle: float) -> None:
-        with self._audio_data_lock:
-            if self._xa2_source_voice is not None and self._xa2_source_voice.is_emitter:
-                self._cone_outer_angle = int(cone_outer_angle)
-                self._set_cone_angles()
+        if self._xa2_source_voice is not None and self._xa2_source_voice.is_emitter:
+            self._cone_outer_angle = int(cone_outer_angle)
+            self._set_cone_angles()
 
     def _set_cone_angles(self) -> None:
         if self._xa2_source_voice is None:
@@ -408,6 +400,5 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         self._xa2_source_voice.set_cone_angles(math.radians(inner), math.radians(outer))
 
     def set_cone_outer_gain(self, cone_outer_gain: float) -> None:
-        with self._audio_data_lock:
-            if self._xa2_source_voice is not None and self._xa2_source_voice.is_emitter:
-                self._xa2_source_voice.cone_outside_volume = cone_outer_gain
+        if self._xa2_source_voice is not None and self._xa2_source_voice.is_emitter:
+            self._xa2_source_voice.cone_outside_volume = cone_outer_gain
