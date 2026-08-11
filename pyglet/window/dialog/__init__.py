@@ -27,8 +27,8 @@ Create a `FileOpenDialog` instance, and attach a handler to it::
     # and allow selecting more than one file
     open_dialog = FileOpenDialog(filetypes=[("PNG", ".png"), ("24-bit Bitmap", ".bmp")], multiple=True)
 
-    # Multiple filetypes can be specified in the same string as long as a space is used. Wildcards are also accepted.
-    open_dialog = FileOpenDialog(filetypes=[("Images", "*.png *.bmp *.jpg")], multiple=True)
+    # Multiple patterns in one entry use semicolons. Whitespace is accepted for compatibility.
+    open_dialog = FileOpenDialog(filetypes=[("Images", "*.png;*.bmp;*.jpg")], multiple=True)
 
     @open_dialog.event
     def on_dialog_open(filenames):
@@ -98,8 +98,9 @@ class FileOpenDialog(_EventDispatcher, metaclass=_OpenDialogMeta):
                 An optional list of tuples containing (name, extension) to filter by.
                 If none are given, all files will be shown and selectable.
                 For example: `[("PNG", ".png"), ("24-bit Bitmap", ".bmp")]`
-                For multiple file types in the same selection, separate by a semicolon.
-                For example: [("Images", ".png;.bmp")]`
+                For multiple file types in the same selection, separate patterns with semicolons.
+                For example: [("Images", "*.png;*.bmp")]`
+                Whitespace-separated patterns are accepted for compatibility.
             multiple: bool
                 True if multiple files can be selected. Defaults to False.
         """
@@ -165,6 +166,9 @@ class FileSaveDialog(_EventDispatcher, metaclass=_SaveDialogMeta):
                 file name. If a list of `filetypes` are not give, you can enter
                 any file name to save as.
                 For example: `[("PNG", ".png"), ("24-bit Bitmap", ".bmp")]`
+                For multiple file types in the same selection, separate patterns with semicolons.
+                For example: `[("Images", "*.png;*.bmp")]`
+                Whitespace-separated patterns are accepted for compatibility.
             default_ext:
                 A default file extension to add to the file. This will override
                 the `filetypes` list if given, but will not override a manually

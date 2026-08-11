@@ -14,7 +14,7 @@ from concurrent.futures import ProcessPoolExecutor as _ProcessPoolExecutor
 from pathlib import Path
 
 import pyglet
-from pyglet.window.dialog.base import FileOpenDialogBase, FileSaveDialogBase
+from pyglet.window.dialog.base import FileOpenDialogBase, FileSaveDialogBase, _split_filetype_patterns
 
 
 class _TkFileDialogBackend:
@@ -48,7 +48,8 @@ class TkFileOpenDialog(_TkFileDialogBackend, FileOpenDialogBase):
         self._dialog = filedialog.Open(title=title,
                                        initialdir=initial_dir,
                                        initialfile=initial_file,
-                                       filetypes=filetypes or (),
+                                       filetypes=[(label, " ".join(_split_filetype_patterns(patterns)))
+                                                  for label, patterns in filetypes] if filetypes else (),
                                        multiple=multiple)
 
     def _dispatch_event(self, future):
@@ -64,7 +65,8 @@ class TkFileSaveDialog(_TkFileDialogBackend, FileSaveDialogBase):
             title=title,
             initialdir=initial_dir,
             initialfile=initial_file or (),
-            filetypes=filetypes or (),
+            filetypes=[(label, " ".join(_split_filetype_patterns(patterns)))
+                       for label, patterns in filetypes] if filetypes else (),
             defaultextension=default_ext,
         )
 
