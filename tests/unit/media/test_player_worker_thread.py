@@ -1,9 +1,18 @@
 from __future__ import annotations
 
+import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
+import pytest
+
 from pyglet.media.player_worker_thread import PlayerWorkerThread
+
+
+pytestmark = pytest.mark.skipif(
+    sys.platform == "emscripten",
+    reason="PlayerWorkerThread requires native Python threads.",
+)
 
 
 class _ContendedSet(set):
