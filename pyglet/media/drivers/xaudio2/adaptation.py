@@ -302,8 +302,10 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         assert _debug(f"XAudio2: Retrieving new buffer of {refill_size}B")
 
         self._audio_state_lock.release()
-        audio_data = self._get_and_compensate_audio_data(refill_size, self._play_cursor)
-        self._audio_state_lock.acquire()
+        try:
+            audio_data = self._get_and_compensate_audio_data(refill_size, self._play_cursor)
+        finally:  # Release lock incase decoding fails.
+            self._audio_state_lock.acquire()
 
         if audio_data is None:
             assert _debug("XAudio2: Source is out of data")
