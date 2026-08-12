@@ -1104,6 +1104,11 @@ class Win32DirectWriteFont(base.Font):
 
         return glyph_indices, missing
 
+    def has_character(self, character: str) -> bool:
+        super().has_character(character)
+        indices, missing = self.get_glyph_indices(character)
+        return bool(indices) and not missing
+
     def render_glyph_indices(self, indices: list[int]) -> None:
         """Given the indice list, ensure all glyphs are available."""
         # Process any glyphs we haven't rendered.

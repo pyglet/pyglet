@@ -321,6 +321,10 @@ class FreeTypeFont(base.Font):
         self.face.set_char_size(self.size, self.dpi)
         return self.face.get_glyph_slot(glyph_index)
 
+    def has_character(self, character: str) -> bool:
+        super().has_character(character)
+        return self.face.get_character_index(character) != 0
+
     def _load_font_face(self) -> None:
         self.face = self._memory_faces.get(self._name, self.weight, self.style, self.stretch)
         if self.face is None:

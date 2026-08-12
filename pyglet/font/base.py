@@ -477,6 +477,23 @@ class Font:
         """
         self.get_glyphs(characters, shaping=False)
 
+    def has_character(self, character: str) -> bool:
+        """Return whether this font face contains a glyph for one character.
+
+        This query only considers the selected face. It does not report glyphs
+        that a platform renderer might obtain through system font fallback.
+
+        .. versionadded:: 3.0.0
+
+        Args:
+            character:
+                A single Unicode character.
+
+        ``character`` must contain exactly one Unicode character.
+        """
+        assert len(character) == 1, "At least one Unicode character is expected."
+        return False
+
     @abc.abstractmethod
     def get_text_size(self, text: str) -> tuple[int, int]:
         """Return's an estimated width and height of text using glyph metrics without rendering..

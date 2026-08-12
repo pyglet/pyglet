@@ -278,6 +278,10 @@ class UserDefinedMappingFont(UserDefinedFontBase):
             offsets.append(base.GlyphPosition(0, 0, 0, 0))
         return glyphs, offsets
 
+    def has_character(self, character: str) -> bool:
+        super().has_character(character)
+        return self.mappings.get(character) is not None
+
 
 def get_scaled_user_font(font_base: UserDefinedMappingFont, size: int) -> UserDefinedMappingFont:
     """This function will return a new font instance which can scale it's size based off the original base font.
