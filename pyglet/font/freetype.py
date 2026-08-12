@@ -7,7 +7,7 @@ from typing import NamedTuple, Sequence, TYPE_CHECKING
 import pyglet
 from pyglet.enums import Stretch, Style, Weight
 from pyglet import image
-from pyglet.font import base
+from pyglet.font import _font_name_compatibility_enabled, base
 from pyglet.font.base import GlyphPosition
 from pyglet.font.fontconfig import get_fontconfig
 from pyglet.font.freetype_lib import (
@@ -245,19 +245,36 @@ class FreeTypeFontMetrics(NamedTuple):
 
 class MemoryFaceStore:
     _dict: dict[tuple[str, str, str, str], FreeTypeMemoryFace]
+    _full_name_aliases: dict[str, FreeTypeMemoryFace]
 
     def __init__(self) -> None:
         self._dict = {}
+        self._full_name_aliases = {}
 
     def add(self, face: FreeTypeMemoryFace) -> None:
         self._dict[face.name, face.weight, face.style, face.stretch] = face
+        if full_name := face.full_name:
+            self._full_name_aliases[full_name.casefold()] = face
 
     def contains(self, name: str) -> bool:
-        return len([fn_name for fn_name, _, _, _ in self._dict if name.lower() == fn_name.lower()]) > 0
+        return (
+            (_font_name_compatibility_enabled() and name.casefold() in self._full_name_aliases)
+            or any(name.casefold() == family_name.casefold() for family_name, _, _, _ in self._dict)
+        )
 
     def get(self, name: str, weight: Weight | str, style: Style | str,
             stretch: Stretch | str) -> FreeTypeMemoryFace | None:
-        return self._dict.get((name, weight, style, stretch), None)
+        # A full name identifies one concrete face, including its traits. A
+        # family name remains trait-sensitive, so callers can select variants.
+        if _font_name_compatibility_enabled() and (face := self._full_name_aliases.get(name.casefold())):
+            return face
+
+        for (family_name, face_weight, face_style, face_stretch), face in self._dict.items():
+            if (family_name.casefold() == name.casefold()
+                    and (face_weight, face_style, face_stretch) == (weight, style, stretch)):
+                return face
+
+        return None
 
     def all_keys(self) -> list[tuple[str, str, str, str]]:
         return list(self._dict.keys())
@@ -574,25 +591,36 @@ class FreeTypeFace:
         """Return the value from the TTF/OTF/AAT font table for the specified TT_NAME_ID."""
         if self.face_flags & FT_FACE_FLAG_SFNT:
             name_count = FT_Get_Sfnt_Name_Count(self.ft_face)
+            fallback_name = None
             for i in range(name_count):
                 name = FT_SfntName()
                 FT_Get_Sfnt_Name(self.ft_face, i, name)
-                if name.platform_id == name_id:
+                if name.name_id == name_id:
                     raw = string_at(name.string, name.string_len)
 
-                    # First try decoding with UTF-16BE (used by Windows name table)
+                    # Microsoft and Unicode name records are UTF-16BE. The
+                    # first matching record is not necessarily one of those.
                     try:
-                        full_name = raw.decode("utf-16-be")
+                        font_name = raw.decode("utf-16-be") if name.platform_id in (0, 3) else raw.decode("mac_roman")
                     except UnicodeDecodeError:
-                        full_name = raw.decode("latin1", errors="replace")
+                        font_name = raw.decode("latin1", errors="replace")
 
-                    return full_name
+                    if name.platform_id == 3:
+                        return font_name
+                    fallback_name = fallback_name or font_name
+
+            return fallback_name
 
         return None
 
     def _get_full_name(self) -> str | None:
         """Checks the font naming table."""
         return self._get_ttf_string(TT_NAME_ID_FULL_NAME)
+
+    @property
+    def full_name(self) -> str | None:
+        """Return the OpenType full name when one is present."""
+        return self._get_full_name()
 
 
 
