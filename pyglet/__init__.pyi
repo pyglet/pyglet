@@ -65,6 +65,7 @@ class Options:
     headless_device: int
     text_shaping: Literal["platform", "harfbuzz", False]
     dw_legacy_naming: bool
+    font_name_compatibility: bool
     win32_disable_xinput: bool
     com_mta: bool
     osx_alt_loop: bool

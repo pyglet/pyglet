@@ -210,25 +210,39 @@ class Options:
     .. versionadded:: 2.0
     """
 
-    dw_legacy_naming: bool = False
-    """If ``True``, will enable legacy naming support for the default Windows font renderer (``DirectWrite``).
-    Attempt to parse fonts by the passed name, to best match legacy RBIZ naming.
+    font_name_compatibility: bool = False
+    """If ``True``, pyglet performs additional compatibility lookup for font names.
+
+    The portable spelling of a font is its family name with explicit ``weight``, ``style``, and ``stretch``. This
+    option additionally accepts OpenType full names and platform compatibility aliases where the backend supports
+    them. For example, it allows ``"Arial Narrow"`` rather than ``"Arial"`` with a ``"condensed"`` stretch, or
+    ``"Arial Black"`` instead of ``"Arial"`` with a weight of ``"black"``.
+
+    This option does not reject full names when disabled: a platform font API may still accept them natively. It only
+    enables pyglet's extra compatibility lookup and mapping, which can improve cross-platform behavior at the cost of
+    slower font resolution.
+
+    On Windows with DirectWrite, GDI/RBIZ aliases are not indexed as family names. Resolving one requires enumerating
+    installed font families and faces, and can be noticeably slow on systems with many installed fonts. Results are
+    cached until a custom font is added.
 
     :see: https://learn.microsoft.com/en-us/windows/win32/directwrite/font-selection#rbiz-font-family-model
 
-    For example, this allows specifying ``"Arial Narrow"`` rather than ``"Arial"`` with a ``"condensed"`` stretch or
-    ``"Arial Black"`` instead of ``"Arial"`` with a weight of ``black``. This may enhance naming compatibility
-    cross-platform for select fonts as older font renderers went by this naming scheme.
-
-    Starts by parsing the string for any known style names, and searches all font collections for a matching RBIZ name.
-    If a perfect match is not found, it will choose a second best match.
-
     .. note:: Due to the high variation of styles and limited capability of some fonts, there is no guarantee the
-       second closest match will be exactly what the user wants.
+       selected face will be exactly what the user wants.
 
     .. note:: The ``debug_font`` option can provide information on what settings are being selected.
 
-    .. versionadded:: 2.0.3
+    .. versionadded:: 3.0
+    """
+
+    dw_legacy_naming: bool = False
+    """Deprecated alias for :attr:`font_name_compatibility`.
+
+    This Windows-specific name is retained for source compatibility. New applications should use
+    :attr:`font_name_compatibility`.
+
+    .. deprecated:: 3.0
     """
 
     win32_disable_xinput: bool = False

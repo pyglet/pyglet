@@ -14,6 +14,21 @@ pyglet will automatically load any system-installed fonts.  You can add addition
 
 See the :mod:`pyglet.font.base` module for documentation on the base classes used
 by this package.
+
+Font names
+==========
+
+For portable results, identify a font by its family name and pass ``weight``,
+``style``, and ``stretch`` separately. A font's OpenType Full Name identifies a
+specific face, and legacy platform aliases can combine a family with one or more
+traits; these names are not consistent across operating systems.
+
+Set :attr:`pyglet.Options.font_name_compatibility` to accept such Full Names and
+platform compatibility aliases when pyglet needs to map them itself. The option
+adds compatibility lookup; it does not cause native platform font APIs to reject
+Full Names when it is disabled. In particular, DirectWrite must enumerate font
+families to resolve GDI/RBIZ aliases, so enabling it can make first-time font
+resolution slower on Windows systems with many installed fonts.
 """
 
 from __future__ import annotations
@@ -197,6 +212,15 @@ class FontManager(pyglet.event.EventDispatcher):
 
 manager = FontManager()
 manager.register_event_type("on_font_loaded")
+
+
+def _font_name_compatibility_enabled() -> bool:
+    """Return whether pyglet should perform its extra compatibility name lookup.
+
+    ``dw_legacy_naming`` is kept as a temporary compatibility alias for the
+    pre-3.0 Windows option.
+    """
+    return pyglet.options["font_name_compatibility"] or pyglet.options["dw_legacy_naming"]
 
 def _get_system_font_class() -> type[Font]:
     """Get the appropriate class for the system being used.

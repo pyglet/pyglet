@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, BinaryIO, Sequence, Generator, ClassVar, Any
 
 import pyglet
 from pyglet.enums import Stretch, Style, Weight
-from pyglet.font import base, FontManager
+from pyglet.font import _font_name_compatibility_enabled, base, FontManager
 from pyglet.font.base import Glyph, GlyphPosition
 from pyglet.font.dwrite.d2d1_lib import (
     D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT,
@@ -929,7 +929,7 @@ class Win32DirectWriteFont(base.Font):
         format_name = name
         # DW does not use RBIZ aliases as family names.
         # Opt-in as this will scan all face in every collection.
-        if self._collection is None and pyglet.options["dw_legacy_naming"]:
+        if self._collection is None and _font_name_compatibility_enabled():
             legacy_match = self.find_font_face(name, self._weight, self._style, self._stretch)
             if legacy_match:
                 format_name, self._weight, self._style, self._stretch = legacy_match
@@ -1329,7 +1329,7 @@ class Win32DirectWriteFont(base.Font):
         DirectWrite family name and the selected face's traits.
 
         This searches all font faces in the system and custom collections, and is therefore intentionally used only
-        when :attr:`pyglet.options.dw_legacy_naming` is enabled.
+        when :attr:`pyglet.options.font_name_compatibility` is enabled.
 
         Returns:
             The DirectWrite family name, weight, style, and stretch, if a matching alias is found.
@@ -1376,7 +1376,7 @@ class Win32DirectWriteFont(base.Font):
             return True
 
         return bool(
-            pyglet.options["dw_legacy_naming"] and cls.find_font_face(
+            _font_name_compatibility_enabled() and cls.find_font_face(
                 name, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL,
             ),
         )
