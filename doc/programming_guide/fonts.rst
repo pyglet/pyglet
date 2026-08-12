@@ -105,16 +105,20 @@ font, or use the platform default.
 Font groups
 -----------
 
-:py:class:`~pyglet.font.group.FontGroup` gives several families one logical
-name and assigns each family to Unicode ranges. This is useful when one layout
-contains multiple scripts or symbols::
+Automatic fallback
+^^^^^^^^^^^^^^^^^^
+
+:py:class:`~pyglet.font.group.FontGroup` gives an ordered set of families one
+logical name. For each character, pyglet selects the first family containing a
+glyph for it. This allows an application supply font fallbacks if one font
+does not contain all of the characters needed.::
 
     import pyglet
 
     ui_font = pyglet.font.FontGroup("ui-font")
-    ui_font.add("Noto Sans", 0x0000, 0x024F)
-    ui_font.add("Noto Sans CJK JP", 0x3040, 0x30FF)
-    ui_font.add("Noto Color Emoji", 0x1F300, 0x1FAFF)
+    ui_font.add("Noto Sans")
+    ui_font.add("Noto Sans CJK JP")
+    ui_font.add("Noto Color Emoji")
     pyglet.font.add_group(ui_font)
 
     label = pyglet.text.Label(
@@ -122,6 +126,32 @@ contains multiple scripts or symbols::
         font_name="ui-font",
         font_size=18,
     )
+
+Range-based fallback
+^^^^^^^^^^^^^^^^^^^^
+
+If an application needs fixed, predictable routing instead, use
+:py:class:`~pyglet.font.group.FontRangeGroup`. It assigns families to explicit
+Unicode ranges, and uses the first matching range::
+
+    script_font = pyglet.font.FontRangeGroup("script-font")
+    script_font.add("Noto Sans", 0x0000, 0x024F)
+    script_font.add("Noto Sans CJK JP", 0x3040, 0x30FF)
+    script_font.add("Noto Color Emoji", 0x1F300, 0x1FAFF)
+    pyglet.font.add_group(script_font)
+
+    label = pyglet.text.Label(
+        "Hello こんにちは 😀",
+        font_name="script-font",
+        font_size=18,
+    )
+
+Use ``Font.has_character`` to check whether the selected font face contains
+one Unicode character. It does not include implicit system font fallback. This
+is useful when diagnosing missing bundled glyphs::
+
+    if not ui_font.get_font(16).has_character("😀"):
+        print("The configured font group has no emoji glyph")
 
 Font sizes and metrics
 ----------------------
