@@ -42,7 +42,7 @@ from typing import TYPE_CHECKING, BinaryIO, Iterable, Sequence, Any
 
 import pyglet
 from pyglet.enums import Weight, Style, Stretch
-from pyglet.font.group import FontGroup
+from pyglet.font.group import FontGroupBase, FontGroup, FontRangeGroup
 from pyglet.font.user import UserDefinedFontBase
 from pyglet.graphics.api import core
 from pyglet.util import debug_print
@@ -90,7 +90,7 @@ class FontManager(pyglet.event.EventDispatcher):
 
     resolved_names: dict[tuple[str, ...], str]
 
-    _font_groups: dict[str, FontGroup]
+    _font_groups: dict[str, FontGroupBase]
     _user_font_names: set[str]
     _font_contexts: weakref.WeakKeyDictionary[SurfaceContext, _FontContext]
 
@@ -128,7 +128,7 @@ class FontManager(pyglet.event.EventDispatcher):
 
         return key_names
 
-    def get_group(self, name: str) -> FontGroup | None:
+    def get_group(self, name: str) -> FontGroupBase | None:
         """Check if the specified name is a font group."""
         return self._font_groups.get(name)
 
@@ -190,7 +190,7 @@ class FontManager(pyglet.event.EventDispatcher):
         self._user_font_names.add(font.name)
         self.dispatch_event("on_font_loaded", font.name, font.weight, font.style, font.stretch)
 
-    def _add_font_group(self, group: FontGroup) -> None:
+    def _add_font_group(self, group: FontGroupBase) -> None:
         self._font_groups[group.name] = group
 
     def _add_loaded_font(self, fonts: set[tuple[str, str, str, str]]) -> None:
@@ -253,9 +253,9 @@ def _get_system_font_class() -> type[Font]:
 
     return _font_class
 
-def add_group(font_group: FontGroup) -> None:
+def add_group(font_group: FontGroupBase) -> None:
     """Add a font group to pyglet's list of font groups."""
-    assert isinstance(font_group, FontGroup), "Added group must be based on a FontGroup class."
+    assert isinstance(font_group, FontGroupBase), "Added group must be based on a FontGroupBase class."
 
     if _system_font_class.have_font(font_group.name):
         msg = f"Cannot use FontGroup, name '{font_group.name}' already exists within the system or loaded fonts."
@@ -422,4 +422,5 @@ def get_custom_font_names() -> tuple[str, ...]:
     return tuple(manager._added_families)  # noqa: SLF001
 
 
-__all__ = ("add_directory", "add_file", "add_user_font", "get_custom_font_names", "have_font", "load", "manager")
+__all__ = ("FontGroup", "FontRangeGroup", "add_directory", "add_file", "add_group", "add_user_font",
+           "get_custom_font_names", "have_font", "load", "manager")
