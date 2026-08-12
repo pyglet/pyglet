@@ -5,8 +5,8 @@ from collections import OrderedDict
 from ctypes import CDLL, Structure, Union, byref, c_char_p, c_double, c_int, c_uint, c_void_p, POINTER
 from typing import TYPE_CHECKING
 
+import pyglet
 from pyglet.enums import Stretch, Style, Weight
-from pyglet.font import _font_name_compatibility_enabled
 from pyglet.font.base import FontException
 from pyglet.lib import load_library
 from pyglet.util import asbytes, asstr
@@ -224,7 +224,7 @@ class FontConfig:
         # Fontconfig normally resolves a full name through FC_FAMILY, but not
         # all configurations expose that alias. Retry an apparent fallback as
         # FC_FULLNAME so a valid OpenType full name loads the intended face.
-        if result and name and not result.matches_name(name) and _font_name_compatibility_enabled():
+        if result and name and not result.matches_name(name) and pyglet.options.font_name_compatibility:
             full_name_pattern = self.create_search_pattern()
             full_name_pattern.full_name = name
             full_name_pattern.size = size
@@ -246,7 +246,7 @@ class FontConfig:
     def have_font(self, name: str) -> bool:
         if result := self.find_font(name):
             # Check the name matches, fontconfig can return a default
-            if name and not result.matches_name(name, include_full_name=_font_name_compatibility_enabled()):
+            if name and not result.matches_name(name, include_full_name=pyglet.options.font_name_compatibility):
                 return False
             return True
 

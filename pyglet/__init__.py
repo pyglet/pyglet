@@ -236,15 +236,6 @@ class Options:
     .. versionadded:: 3.0
     """
 
-    dw_legacy_naming: bool = False
-    """Deprecated alias for :attr:`font_name_compatibility`.
-
-    This Windows-specific name is retained for source compatibility. New applications should use
-    :attr:`font_name_compatibility`.
-
-    .. deprecated:: 3.0
-    """
-
     win32_disable_xinput: bool = False
     """If ``True``, this will disable the ``XInput`` controller usage in Windows and fallback to ``DirectInput``.  Can
     be useful for debugging or special uses cases. A controller can only be controlled by either ``XInput`` or

@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, BinaryIO, Sequence, Generator, ClassVar, Any
 
 import pyglet
 from pyglet.enums import Stretch, Style, Weight
-from pyglet.font import _font_name_compatibility_enabled, base, FontManager
+from pyglet.font import base, FontManager
 from pyglet.font.base import Glyph, GlyphPosition
 from pyglet.font.dwrite.d2d1_lib import (
     D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT,
@@ -929,15 +929,22 @@ class Win32DirectWriteFont(base.Font):
         format_name = name
         # DW does not use RBIZ aliases as family names.
         # Opt-in as this will scan all face in every collection.
-        if self._collection is None and _font_name_compatibility_enabled():
+        if self._collection is None and pyglet.options.font_name_compatibility:
             legacy_match = self.find_font_face(name, self._weight, self._style, self._stretch)
             if legacy_match:
                 format_name, self._weight, self._style, self._stretch = legacy_match
                 self._font_index, self._collection = self.get_collection(format_name)
 
-        assert self._collection is not None, f"Font: '{name}' not found in loaded or system font collection."
+        if self._collection is None:
+            format_name = FontManager.default_win32_font
+            _debug_print(f"directwrite: font '{name}' was not found; using platform default '{format_name}'.")
+            self._name = format_name
+            self._font_index, self._collection = self.get_collection(format_name)
 
-        assert self._font_index is not None
+        if self._collection is None or self._font_index is None:
+            msg = f"DirectWrite could not load the requested font '{name}' or platform default '{format_name}'."
+            raise base.FontException(msg)
+
         font_family = IDWriteFontFamily1()
         self._collection.GetFontFamily(self._font_index, byref(font_family))
 
@@ -966,6 +973,7 @@ class Win32DirectWriteFont(base.Font):
 
         font_face = IDWriteFontFace()
         write_font.CreateFontFace(byref(font_face))
+        write_font.Release()
 
         # font_face4 = IDWriteFontFace4()
         # if com.is_available(font_face, IID_IDWriteFontFace4, font_face4):
@@ -1316,6 +1324,8 @@ class Win32DirectWriteFont(base.Font):
             if font_exists.value:
                 return font_index.value, sys_collection
 
+            sys_collection.Release()
+
         return None, None
 
     @classmethod
@@ -1376,7 +1386,7 @@ class Win32DirectWriteFont(base.Font):
             return True
 
         return bool(
-            _font_name_compatibility_enabled() and cls.find_font_face(
+            pyglet.options.font_name_compatibility and cls.find_font_face(
                 name, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL,
             ),
         )

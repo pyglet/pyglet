@@ -45,11 +45,15 @@ from pyglet.enums import Weight, Style, Stretch
 from pyglet.font.group import FontGroup
 from pyglet.font.user import UserDefinedFontBase
 from pyglet.graphics.api import core
+from pyglet.util import debug_print
 
 if TYPE_CHECKING:
     from pyglet.event import EVENT_HANDLE_STATE
     from pyglet.font.base import Font
     from pyglet.graphics.api.base import SurfaceContext
+
+
+_debug_print = debug_print("debug_font")
 
 
 @dataclass
@@ -149,7 +153,9 @@ class FontManager(pyglet.event.EventDispatcher):
                 return font_name
 
         # If nothing found here, then get a default name.
-        self.resolved_names[key_names] = manager.get_platform_default_name()
+        default_name = manager.get_platform_default_name()
+        _debug_print(f"font: none of {key_names!r} were found; using platform default '{default_name}'.")
+        self.resolved_names[key_names] = default_name
         return self.resolved_names[key_names]
 
     def get_platform_default_name(self) -> str:
@@ -212,15 +218,6 @@ class FontManager(pyglet.event.EventDispatcher):
 
 manager = FontManager()
 manager.register_event_type("on_font_loaded")
-
-
-def _font_name_compatibility_enabled() -> bool:
-    """Return whether pyglet should perform its extra compatibility name lookup.
-
-    ``dw_legacy_naming`` is kept as a temporary compatibility alias for the
-    pre-3.0 Windows option.
-    """
-    return pyglet.options["font_name_compatibility"] or pyglet.options["dw_legacy_naming"]
 
 def _get_system_font_class() -> type[Font]:
     """Get the appropriate class for the system being used.

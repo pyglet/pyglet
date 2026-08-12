@@ -7,7 +7,7 @@ from typing import NamedTuple, Sequence, TYPE_CHECKING
 import pyglet
 from pyglet.enums import Stretch, Style, Weight
 from pyglet import image
-from pyglet.font import _font_name_compatibility_enabled, base
+from pyglet.font import base
 from pyglet.font.base import GlyphPosition
 from pyglet.font.fontconfig import get_fontconfig
 from pyglet.font.freetype_lib import (
@@ -258,7 +258,7 @@ class MemoryFaceStore:
 
     def contains(self, name: str) -> bool:
         return (
-            (_font_name_compatibility_enabled() and name.casefold() in self._full_name_aliases)
+            (pyglet.options.font_name_compatibility and name.casefold() in self._full_name_aliases)
             or any(name.casefold() == family_name.casefold() for family_name, _, _, _ in self._dict)
         )
 
@@ -266,7 +266,7 @@ class MemoryFaceStore:
             stretch: Stretch | str) -> FreeTypeMemoryFace | None:
         # A full name identifies one concrete face, including its traits. A
         # family name remains trait-sensitive, so callers can select variants.
-        if _font_name_compatibility_enabled() and (face := self._full_name_aliases.get(name.casefold())):
+        if pyglet.options.font_name_compatibility and (face := self._full_name_aliases.get(name.casefold())):
             return face
 
         for (family_name, face_weight, face_style, face_stretch), face in self._dict.items():
