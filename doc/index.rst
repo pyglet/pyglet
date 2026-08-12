@@ -47,6 +47,7 @@ If you are migrating from an older version of pyglet, please read through
    programming_guide/mouse
    programming_guide/input
    programming_guide/image
+   programming_guide/fonts
    programming_guide/text
    programming_guide/media
    programming_guide/shapes
