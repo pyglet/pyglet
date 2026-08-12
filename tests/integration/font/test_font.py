@@ -16,6 +16,17 @@ def test_default_font_get_text_size(test_window):
     assert height > 0
 
 
+def test_font_preload_glyphs(test_window):
+    font = pyglet.font.load(None, size=12, dpi=96)
+    characters = "".join(chr(codepoint) for codepoint in range(0x20, 0x7f))
+
+    assert font.preload_glyphs() is None
+
+    glyphs, _ = font.get_glyphs(characters, shaping=False)
+    assert len(glyphs) == len(characters)
+    assert all(any(cached is glyph for cached in font.glyphs.values()) for glyph in glyphs)
+
+
 def test_default_platform_font():
     """Ensure the platform has a default font from the manager."""
     assert pyglet.font.manager.get_platform_default_name() is not None
@@ -23,6 +34,14 @@ def test_default_platform_font():
 
 def test_missing_font():
     assert not pyglet.font.have_font('definitely-doesnt-exist-font')
+
+
+def test_missing_font_loads_a_usable_fallback(test_window):
+    font = pyglet.font.load("definitely-doesnt-exist-font-638593", size=12, dpi=96)
+
+    assert font.name
+    glyphs, _ = font.get_glyphs("Fallback", shaping=False)
+    assert len(glyphs) == len("Fallback")
 
 
 @skip_platform(Platform.LINUX)
@@ -75,10 +94,10 @@ def test_font_load_callback(test_data):
     file = test_data.get_file('fonts', 'action_man_bold.ttf')
     pyglet.font.add_file(file)
 
-def test_font_group_routes_ranges_and_measures_text(test_window, test_data):
+def test_font_range_group_routes_ranges_and_measures_text(test_window, test_data):
     pyglet.font.add_file(test_data.get_file("fonts", "action_man.ttf"))
     default_family = pyglet.font.manager.get_platform_default_name()
-    group = pyglet.font.FontGroup("font-group-638593")
+    group = pyglet.font.FontRangeGroup("font-group-638593")
     group.add("Action Man", "A", "M")
     group.add(default_family, "N", "Z")
     pyglet.font.add_group(group)
@@ -100,6 +119,59 @@ def test_font_group_routes_ranges_and_measures_text(test_window, test_data):
     default_width, default_height = default_font.get_text_size("N")
     assert width == action_a_width + default_width + action_fallback_width
     assert height == max(action_a_height, default_height, action_fallback_height)
+
+
+def test_font_group_uses_ordered_character_fallback(test_window):
+    image = pyglet.image.ImageData(1, 1, "RGBA", b"\xff\xff\xff\xff")
+    primary = pyglet.font.user.UserDefinedMappingFont(
+        "font-group-primary-638593", default_char="A", size=12, mappings={"A": image},
+    )
+    fallback = pyglet.font.user.UserDefinedMappingFont(
+        "font-group-fallback-638593", default_char="B", size=12, mappings={"B": image},
+    )
+    pyglet.font.add_user_font(primary)
+    pyglet.font.add_user_font(fallback)
+
+    group = pyglet.font.FontGroup("font-group-ordered-638593")
+    group.add(primary.name).add(fallback.name)
+    pyglet.font.add_group(group)
+
+    font = pyglet.font.load(group.name, size=12, dpi=96)
+    glyphs, _ = font.get_glyphs("AB", shaping=False)
+
+    assert font.has_character("A")
+    assert font.has_character("B")
+    assert not font.has_character("C")
+    assert glyphs[0] is font._child_cache[primary.name].get_glyphs("A", shaping=False)[0][0]  # noqa: SLF001
+    assert glyphs[1] is font._child_cache[fallback.name].get_glyphs("B", shaping=False)[0][0]  # noqa: SLF001
+
+
+def test_font_group_measures_consecutive_clusters_as_one_font_run(monkeypatch):
+    class FakeFont:
+        ascent = 10
+        descent = -2
+
+        def __init__(self) -> None:
+            self.measured_runs = []
+
+        def has_character(self, character: str) -> bool:
+            return True
+
+        def get_text_size(self, text: str) -> tuple[int, int]:
+            self.measured_runs.append(text)
+            # This deliberately differs from measuring the characters one at
+            # a time, as kerning and shaped text often do.
+            return (15 if text == "AV" else len(text) * 10, 12)
+
+    child_font = FakeFont()
+    monkeypatch.setattr(pyglet.font, "load", lambda *args, **kwargs: child_font)
+
+    group = pyglet.font.FontGroup("font-group-measure-runs-638593")
+    group.add("fake-family")
+    font = group.get_font(12)
+
+    assert font.get_text_size("AV") == (15, 12)
+    assert child_font.measured_runs == ["AV"]
 
 def test_user_font(test_window, test_data):
     bitmap_image = test_data.get_file('fonts', 'action_man_atlas.png')
