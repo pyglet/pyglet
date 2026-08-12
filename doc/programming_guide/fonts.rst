@@ -237,6 +237,26 @@ that renders font glyph textures directly is responsible for compatible
 texture and blending state; most applications do not need to manage these
 details.
 
+Preloading glyphs
+-----------------
+
+Font glyph bitmaps are normally rasterized and added to a texture atlas when
+text first needs them. That first use can cause a small, noticeable pause in
+latency-sensitive applications. Call ``Font.preload_glyphs`` after loading a
+font::
+
+    ui_font = pyglet.font.load("Action Man", 16)
+    ui_font.preload_glyphs()
+
+With no argument, this preloads all 95 printable ASCII characters: a space,
+uppercase and lowercase letters, digits, and keyboard punctuation such as
+``!@#$%^``. Pass a string to preload the characters that matter to an
+application instead, or to include non-ASCII text::
+
+    ui_font.preload_glyphs("Loading... 0123456789 \N{HORIZONTAL ELLIPSIS}")
+
+This only preloads bitmap glyphs for the particular loaded font face and size.
+Load and prewarm each size, weight, style, or stretch that an application uses.
 
 .. _guide_font_shaping:
 
