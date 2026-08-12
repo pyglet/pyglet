@@ -2,18 +2,19 @@
 from __future__ import annotations
 
 import math
-from ctypes import byref, c_int32, c_void_p, string_at, cast, c_char_p, c_float
-from enum import Enum
-from typing import BinaryIO, TYPE_CHECKING
+from ctypes import byref, c_char_p, c_float, c_int32, c_void_p, cast, string_at
+from typing import TYPE_CHECKING, BinaryIO
 
+import pyglet
 import pyglet.image
-from pyglet.enums import Weight, Stretch, Style
 from pyglet.enums import Stretch, Style, Weight
-from pyglet.font.base import Glyph, GlyphPosition, GlyphRenderer, Font, get_grapheme_clusters
-from pyglet.libs.darwin import CGFloat, cocoapy, kCTFontURLAttribute, cfnumber_to_number, CGPoint, CFRange
-from pyglet.font.harfbuzz import harfbuzz_available, get_resource_from_ct_font, get_harfbuzz_shaped_glyphs
+from pyglet.font.base import Font, Glyph, GlyphPosition, GlyphRenderer, get_grapheme_clusters
+from pyglet.font.harfbuzz import get_harfbuzz_shaped_glyphs, get_resource_from_ct_font, harfbuzz_available
+from pyglet.libs.darwin import CFRange, CGFloat, CGPoint, cfnumber_to_number, cocoapy, kCTFontURLAttribute
 
 if TYPE_CHECKING:
+    from enum import Enum
+
     from pyglet.font import FontManager
 
 
@@ -155,10 +156,10 @@ if harfbuzz_available():
     to retrieve the tag tables.
     """
     from pyglet.libs.shared.lib_harfbuzz import (
-        hb_lib,
-        hb_destroy_func_t,
-        hb_reference_table_func_t,
         HB_MEMORY_MODE_READONLY,
+        hb_destroy_func_t,
+        hb_lib,
+        hb_reference_table_func_t,
     )
 
     def py_coretext_table_data_destroy(user_data: c_void_p):
@@ -444,6 +445,10 @@ class QuartzFont(Font):
                 cgFont = result[0]
                 # Use cgFont from table to create a CTFont object with the specified size.
                 self.ctFont = c_void_p(ct.CTFontCreateWithGraphicsFont(cgFont, self.pixel_size, None, None))
+            elif pyglet.options.font_name_compatibility and (full_name_font := self._get_full_name_font(name)):
+                # A full name already identifies a concrete face. Do not add
+                # family traits, which could select a different face.
+                self.ctFont = full_name_font
             else:
                 # Create a font descriptor for given name and traits and use it to create font.
                 descriptor = self._create_font_descriptor(name, self._italic, self._weight, self._stretch)
@@ -562,6 +567,40 @@ class QuartzFont(Font):
             return fonts[0]
         # Otherwise return whatever we have.
         return list(fonts.values())[0]
+
+    def _get_full_name_font(self, name: str) -> c_void_p | None:
+        """Return a system font selected by its CoreText full name, if ``name`` is one.
+
+        ``CTFontDescriptorCreateWithNameAndSize`` accepts both family and full
+        names.  We only use its result when the requested name is demonstrably
+        a full name for a different family, leaving normal family lookups to
+        the trait-aware descriptor path below.
+        """
+        cfname = cocoapy.CFSTR(name)
+        descriptor = c_void_p(ct.CTFontDescriptorCreateWithNameAndSize(cfname, self.pixel_size))
+        cf.CFRelease(cfname)
+        matched = c_void_p(ct.CTFontDescriptorCreateMatchingFontDescriptor(descriptor, None))
+        cf.CFRelease(descriptor)
+        if not matched:
+            return None
+
+        font = c_void_p(ct.CTFontCreateWithFontDescriptor(matched, self.pixel_size, None))
+        cf.CFRelease(matched)
+        if not font:
+            return None
+
+        full_name_ref = c_void_p(ct.CTFontCopyFullName(font))
+        family_name_ref = c_void_p(ct.CTFontCopyFamilyName(font))
+        full_name = str(cocoapy.cfstring_to_string(full_name_ref))
+        family_name = str(cocoapy.cfstring_to_string(family_name_ref))
+        cf.CFRelease(full_name_ref)
+        cf.CFRelease(family_name_ref)
+
+        if full_name.casefold() == name.casefold() and family_name.casefold() != name.casefold():
+            return font
+
+        cf.CFRelease(font)
+        return None
 
     def _create_font_descriptor(
         self, family_name: str, italic_traits: int, weight: float | None = None, stretch: float | None = None,
