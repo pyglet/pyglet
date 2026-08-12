@@ -91,6 +91,7 @@ class JavascriptPyodideFont(base.Font):
     # Cache font data by the loaded name dict.
     _font_data_cache: ClassVar[dict] = {}
     _name_font_cache: ClassVar[dict] = {}
+    _full_name_aliases: ClassVar[dict[str, tuple[str, int, str, str]]] = {}
 
     def __init__(self, name: str, size: float, weight: Weight | str = Weight.NORMAL,
                  style: Style | str = Style.NORMAL, stretch: Stretch | str = Stretch.NORMAL,
@@ -98,24 +99,35 @@ class JavascriptPyodideFont(base.Font):
         self._glyph_renderer = None
         super().__init__(name, size, weight, style, stretch, dpi)
 
-        if isinstance(weight, str):
-            self._weight = name_to_weight.get(weight.lower(), "normal")
-        else:
-            self._weight = "bold" if weight is True else "normal"
+        full_name_alias = None
+        if pyglet.options.font_name_compatibility:
+            full_name_alias = self._full_name_aliases.get(name.casefold())
 
-        if isinstance(stretch, str):
-            self._stretch = _name_to_stretch.get(stretch.lower(), "normal")
+        if full_name_alias:
+            family, self._weight, self._italic, self._stretch = full_name_alias
+            # A full name identifies one concrete face. Use its canonical CSS
+            # family and embedded traits, rather than synthesizing a different
+            # face from separately requested traits.
+            self._name = family
         else:
-            self._stretch = "normal"
+            if isinstance(weight, str):
+                self._weight = name_to_weight.get(weight.lower(), "normal")
+            else:
+                self._weight = "bold" if weight is True else "normal"
 
-        if style is True:
-            self._italic = "italic"
-        elif isinstance(style, str) and style.lower() in ("italic", "oblique"):
-            self._italic = style.lower()
-        else:
-            self._italic = "normal"
+            if isinstance(stretch, str):
+                self._stretch = _name_to_stretch.get(stretch.lower(), "normal")
+            else:
+                self._stretch = "normal"
 
-        self.js_name = f"{self._italic} {self._weight} {self.pixel_size}px '{name}'"
+            if style is True:
+                self._italic = "italic"
+            elif isinstance(style, str) and style.lower() in ("italic", "oblique"):
+                self._italic = style.lower()
+            else:
+                self._italic = "normal"
+
+        self.js_name = f"{self._italic} {self._weight} {self.pixel_size}px '{self._name}'"
 
         _font_context.font = self.js_name
         metrics = _font_context.measureText("A")
@@ -132,7 +144,7 @@ class JavascriptPyodideFont(base.Font):
     @classmethod
     def add_font_data(cls, data: bytes, manager: FontManager) -> Task:
         ttf_info = TruetypeInfoBytes(data)
-        family = ttf_info.get_name("family")  # Family Name
+        family = ttf_info.get_font_family_name()
         if family is None:
             raise FontException("Could not read the font family name.")
 
@@ -140,9 +152,7 @@ class JavascriptPyodideFont(base.Font):
         if subfamily is None:
             raise FontException("Could not read the font subfamily name.")
 
-        fullname = ttf_info.get_name("name")  # Usually combines Family + Subfamily, but not always.
-        #if fullname is None:
-        #    raise FontException("Could not read the font name.")
+        fullname = ttf_info.get_full_font_name()
 
         weight = ttf_info.get_weight_class()  # TTF weight value like 700.
         clamped_weight = min(max(weight, 100), 900)  # clamp 100-900.
@@ -179,22 +189,16 @@ class JavascriptPyodideFont(base.Font):
                 return False
 
             js.document.fonts.add(fam_font)
-            # js.document.body.style.fontFamily = family
-            # if _debug:
-            #     js.console.log(f"Loaded Family Font: {family}")
+
+            if fullname and fullname.casefold() != family.casefold():
+                cls._full_name_aliases[fullname.casefold()] = (
+                    family,
+                    clamped_weight,
+                    italic,
+                    _width_class_to_js_stretch.get(ttf_stretch_id, "normal"),
+                )
 
             manager._add_loaded_font({(family, weight_name, italic, stretch_name)})  # noqa: SLF001
-
-            # if family != fullname:
-            #     try:
-            #         await full_font.load()
-            #     except Exception as e:
-            #         print("Exception occurred loading Name Font:", e)
-            #         return False
-            #     js.document.fonts.add(full_font)
-            #     if _debug:
-            #         js.console.log(f"Loaded Named Font: {fullname}")
-            #
             return True
 
         return asyncio.create_task(_load_fonts())
@@ -232,6 +236,9 @@ class JavascriptPyodideFont(base.Font):
         Therefore, a hidden element will be used to measure a string to check for a size match between the above
         font families. If the text matches, then a fallback font was used.
         """
+        if pyglet.options.font_name_compatibility and name.casefold() in cls._full_name_aliases:
+            return True
+
         match_serif_name = f"'{name}', serif"
         match_sans_serif_name = f"'{name}', sans-serif"
 
