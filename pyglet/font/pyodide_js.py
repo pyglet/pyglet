@@ -108,7 +108,12 @@ class JavascriptPyodideFont(base.Font):
         else:
             self._stretch = "normal"
 
-        self._italic = "italic" if style is True else "normal"
+        if style is True:
+            self._italic = "italic"
+        elif isinstance(style, str) and style.lower() in ("italic", "oblique"):
+            self._italic = style.lower()
+        else:
+            self._italic = "normal"
 
         self.js_name = f"{self._italic} {self._weight} {self.pixel_size}px '{name}'"
 
