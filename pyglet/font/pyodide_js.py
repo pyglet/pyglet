@@ -92,6 +92,7 @@ class JavascriptPyodideFont(base.Font):
     _font_data_cache: ClassVar[dict] = {}
     _name_font_cache: ClassVar[dict] = {}
     _full_name_aliases: ClassVar[dict[str, tuple[str, int, str, str]]] = {}
+    _custom_character_maps: ClassVar[dict[str, set[str]]] = {}
 
     def __init__(self, name: str, size: float, weight: Weight | str = Weight.NORMAL,
                  style: Style | str = Style.NORMAL, stretch: Stretch | str = Stretch.NORMAL,
@@ -153,6 +154,7 @@ class JavascriptPyodideFont(base.Font):
             raise FontException("Could not read the font subfamily name.")
 
         fullname = ttf_info.get_full_font_name()
+        supported_characters = set(ttf_info.get_character_map())
 
         weight = ttf_info.get_weight_class()  # TTF weight value like 700.
         clamped_weight = min(max(weight, 100), 900)  # clamp 100-900.
@@ -190,6 +192,8 @@ class JavascriptPyodideFont(base.Font):
 
             js.document.fonts.add(fam_font)
 
+            cls._custom_character_maps.setdefault(family.casefold(), set()).update(supported_characters)
+
             if fullname and fullname.casefold() != family.casefold():
                 cls._full_name_aliases[fullname.casefold()] = (
                     family,
@@ -223,6 +227,13 @@ class JavascriptPyodideFont(base.Font):
 
     def get_glyphs_for_width(self, text: str, width: int) -> list[Glyph]:
         return super().get_glyphs_for_width(text, width)
+
+    def has_character(self, character: str) -> bool:
+        # Browser APIs do not expose a way to do this for system fonts.
+        # For custom fonts, we utilize the glyph table from our ttf inspector.
+        super().has_character(character)
+        custom_characters = self._custom_character_maps.get(self._name.casefold())
+        return custom_characters is None or character in custom_characters
 
     @classmethod
     def have_font(cls: type[JavascriptPyodideFont], name: str) -> bool:
