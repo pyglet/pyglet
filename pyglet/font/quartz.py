@@ -885,3 +885,20 @@ class QuartzFont(Font):
                     offsets.append(GlyphPosition(0, 0, 0, 0))
 
         return glyphs, offsets
+
+    def has_character(self, character: str) -> bool:
+        super().has_character(character)
+        codepoint = ord(character)
+        if codepoint <= 0xffff:
+            # CTFontGetGlyphsForCharacters accepts UTF-16 ``UniChar`` values.
+            chars = (cocoapy.UniChar * 1)(codepoint)
+            glyphs = (cocoapy.CGGlyph * 1)()
+            return bool(ct.CTFontGetGlyphsForCharacters(self.ctFont, chars, glyphs, 1) and glyphs[0])
+
+        # Supplementary-plane codepoints (for example, most emoji) cannot fit
+        # in one 16-bit UniChar. Convert the Unicode to its UTF-16 high
+        # and low surrogate units before asking CoreText for its glyph.
+        codepoint -= 0x10000
+        chars = (cocoapy.UniChar * 2)(0xd800 + (codepoint >> 10), 0xdc00 + (codepoint & 0x3ff))
+        glyphs = (cocoapy.CGGlyph * 2)()
+        return bool(ct.CTFontGetGlyphsForCharacters(self.ctFont, chars, glyphs, 2) and glyphs[0])
