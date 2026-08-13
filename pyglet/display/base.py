@@ -264,8 +264,8 @@ class ScreenMode:
     depth: int = None
     """Pixel color depth, in bits per pixel."""
 
-    rate: int = None
-    """Screen refresh rate in Hz."""
+    rate: int | float | None = None
+    """Screen refresh rate in Hz. May be fractional when provided by the operating system."""
 
     def __init__(self, screen: Screen) -> None:
         self.screen = screen
