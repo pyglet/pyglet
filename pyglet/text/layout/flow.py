@@ -144,12 +144,12 @@ class _FlowLayoutBase:
         owner = glyphs[start].owner
         run_start = start
 
-        # TODO avoid glyph slice on non-incremental
-        for i, glyph in enumerate(glyphs[start:end]):
+        for index in range(start, end):
+            glyph = glyphs[index]
             if owner != glyph.owner:
-                owner_runs.set_run(run_start, i + start, owner)
+                owner_runs.set_run(run_start, index, owner)
                 owner = glyph.owner
-                run_start = i + start
+                run_start = index
         owner_runs.set_run(run_start, end, owner)
 
     def _flow_glyphs_wrap(
