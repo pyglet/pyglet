@@ -123,6 +123,17 @@ D2D1_FIGURE_END = UINT
 D2D1_FIGURE_END_OPEN = 0
 D2D1_FIGURE_END_CLOSED = 1
 
+D2D1_CAP_STYLE = UINT
+D2D1_CAP_STYLE_FLAT = 0
+
+D2D1_LINE_JOIN = UINT
+D2D1_LINE_JOIN_MITER = 0
+D2D1_LINE_JOIN_BEVEL = 1
+D2D1_LINE_JOIN_ROUND = 2
+
+D2D1_DASH_STYLE = UINT
+D2D1_DASH_STYLE_SOLID = 0
+
 
 D2D1CreateFactory = d2d_lib.D2D1CreateFactory
 D2D1CreateFactory.restype = HRESULT
@@ -146,6 +157,18 @@ class D2D1_RENDER_TARGET_PROPERTIES(Structure):
         ("dpiY", FLOAT),
         ("usage", D2D1_RENDER_TARGET_USAGE),
         ("minLevel", D2D1_FEATURE_LEVEL),
+    )
+
+
+class D2D1_STROKE_STYLE_PROPERTIES(Structure):
+    _fields_ = (
+        ("startCap", D2D1_CAP_STYLE),
+        ("endCap", D2D1_CAP_STYLE),
+        ("dashCap", D2D1_CAP_STYLE),
+        ("lineJoin", D2D1_LINE_JOIN),
+        ("miterLimit", FLOAT),
+        ("dashStyle", D2D1_DASH_STYLE),
+        ("dashOffset", FLOAT),
     )
 
 class D2D1_BITMAP_PROPERTIES(Structure):
@@ -226,6 +249,10 @@ class ID2D1PathGeometry(ID2D1Geometry):
         ("GetSegmentCount", com.STDMETHOD()),
         ("GetFigureCount", com.STDMETHOD()),
     ]
+
+
+class ID2D1StrokeStyle(ID2D1Resource):
+    _methods_ = []
 
 
 class ID2D1Brush(ID2D1Resource):
@@ -671,7 +698,7 @@ class ID2D1Factory(com.pIUnknown):
         ("CreatePathGeometry",
          com.STDMETHOD(POINTER(ID2D1PathGeometry))),
         ("CreateStrokeStyle",
-         com.STDMETHOD()),
+         com.STDMETHOD(POINTER(D2D1_STROKE_STYLE_PROPERTIES), POINTER(FLOAT), UINT32, POINTER(ID2D1StrokeStyle))),
         ("CreateDrawingStateBlock",
          com.STDMETHOD()),
         ("CreateWicBitmapRenderTarget",
