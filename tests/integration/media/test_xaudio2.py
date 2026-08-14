@@ -11,7 +11,7 @@ from types import SimpleNamespace
 import pytest
 
 import pyglet
-from pyglet.media.codecs import AudioFormat
+from pyglet.media.codecs import AudioFormat, VideoFormat
 from pyglet.media.player import AudioPlayer
 from pyglet.media.synthesis import Silence
 
@@ -176,6 +176,34 @@ def test_unavailable_driver_registers_new_player_for_reset(interface_driver) -> 
 
     assert voice is None
     assert player in interface_driver._players
+
+
+def test_video_audio_is_consumed_while_output_is_unavailable(driver) -> None:
+    """Interleaved audio must be drained so FFmpeg can continue supplying video."""
+    source = Silence(2.0)
+    source.video_format = VideoFormat(16, 16, frame_rate=30)
+    player = AudioPlayer()
+    player.queue(source)
+    driver._xa2_driver._delete_driver()
+    audio_player = driver.create_audio_player(source, player)
+    player._audio_player = audio_player
+
+    try:
+        assert audio_player._xa2_source_voice is None
+        audio_player.play()
+
+        deadline = time.monotonic() + 1
+        while source._offset == 0 and time.monotonic() < deadline:
+            time.sleep(0.01)
+
+        assert source._offset > 0
+        assert source._offset <= audio_player._buffered_data_ideal_size
+        assert audio_player in driver.worker.players
+
+        audio_player.stop()
+        assert audio_player not in driver.worker.players
+    finally:
+        player.delete()
 
 
 def test_engine_reset_replaces_voice_preserves_cursor_and_resumes(driver) -> None:

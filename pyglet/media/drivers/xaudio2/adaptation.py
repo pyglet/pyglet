@@ -128,7 +128,8 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
     def on_driver_destroy(self) -> None:
         # Stop worker access first. A critical engine error means voice methods
         # may already fail, so cursor capture and Stop are best-effort.
-        if self._playing:
+        was_playing = self._playing
+        if was_playing:
             self.driver.worker.remove(self)
 
         with self._audio_state_lock:
@@ -141,13 +142,22 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
                     pass
             self._play_cursor_base = self._play_cursor
             self._xa2_source_voice = None
-            self._playing = False
+
+        # FFmpeg only fills its queues while both the audio and
+        # video queues have room. Have worker make this voice keep consuming audio.
+        if was_playing and self.source.video_format is not None:
+            self.driver.worker.add(self)
 
     @property
     def can_dispatch_eos(self) -> bool:
         return self._playing and self._xa2_source_voice is not None
 
     def on_driver_reset(self) -> None:
+        # A video player may be using the worker to consume audio
+        # while no output device exists.
+        if self._playing:
+            self.driver.worker.remove(self)
+
         with self._audio_state_lock:
             if self._deleted:
                 return
@@ -216,7 +226,11 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
             with self._audio_state_lock:
                 if self._xa2_source_voice is not None:
                     self._xa2_source_voice.play()
-                    self.driver.worker.add(self)
+
+                needs_worker = self._xa2_source_voice is not None or self.source.video_format is not None
+
+            if needs_worker:
+                self.driver.worker.add(self)
 
         assert _debug('return XAudio2 play')
 
@@ -224,11 +238,10 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         assert _debug('XAudio2 stop')
 
         if self._playing:
-            if self._xa2_source_voice is not None:
-                self.driver.worker.remove(self)
-                with self._audio_state_lock:
-                    if self._xa2_source_voice is not None:
-                        self._xa2_source_voice.stop()
+            self.driver.worker.remove(self)
+            with self._audio_state_lock:
+                if self._xa2_source_voice is not None:
+                    self._xa2_source_voice.stop()
             self._playing = False
 
         assert _debug('return XAudio2 stop')
@@ -338,9 +351,37 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
     def work(self) -> None:
         with self._audio_state_lock:
             if self._xa2_source_voice is None:
+                self._consume_audio_for_video()
                 return
             self._update_play_cursor()
             self._maybe_refill()
+
+    def _consume_audio_for_video(self) -> None:
+        """Consume interleaved audio while video advances without an output device.
+
+        This keeps FFmpeg able to refill the video queue still. Uses the timing of the player.
+        """
+        if self.source.video_format is None or self._pyglet_source_exhausted:
+            return
+
+        audio_format = self.source.audio_format
+        elapsed = max(0.0, self.player.time - self.player.last_seek_time)
+        self._play_cursor = audio_format.timestamp_to_bytes_aligned(elapsed)
+        remaining_bytes = max(0, self._write_cursor - self._play_cursor)
+        if remaining_bytes >= self._buffered_data_comfortable_limit:
+            return
+
+        requested_size = audio_format.align_ceil(self._buffered_data_ideal_size - remaining_bytes)
+        self._audio_state_lock.release()
+        try:
+            audio_data = self._get_audio_data(requested_size)
+        finally:
+            self._audio_state_lock.acquire()
+
+        if audio_data is None:
+            self._pyglet_source_exhausted = True
+        else:
+            self._write_cursor += audio_data.length
 
     def _maybe_refill(self) -> bool:
         if self._pyglet_source_exhausted:
