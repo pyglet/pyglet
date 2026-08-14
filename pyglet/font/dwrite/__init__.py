@@ -15,7 +15,16 @@ from pyglet.font.base import Glyph, GlyphPosition
 from pyglet.font.dwrite.d2d1_lib import (
     D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT,
     D2D1_DRAW_TEXT_OPTIONS_NONE,
+    D2D1_CAP_STYLE_FLAT,
+    D2D1_DASH_STYLE_SOLID,
     D2D1_FACTORY_TYPE_SINGLE_THREADED,
+    ID2D1GeometrySink,
+    ID2D1PathGeometry,
+    ID2D1StrokeStyle,
+    D2D1_LINE_JOIN_BEVEL,
+    D2D1_LINE_JOIN_MITER,
+    D2D1_LINE_JOIN_ROUND,
+    D2D1_STROKE_STYLE_PROPERTIES,
     D2D1_TEXT_ANTIALIAS_MODE_ALIASED,
     D2D1_TEXT_ANTIALIAS_MODE_DEFAULT,
     D2D1CreateFactory,
@@ -27,7 +36,7 @@ from pyglet.font.dwrite.d2d1_lib import (
     IID_ID2D1Factory,
     default_target_properties,
 )
-from pyglet.font.dwrite.d2d1_types_lib import D2D1_COLOR_F, D2D_POINT_2F
+from pyglet.font.dwrite.d2d1_types_lib import D2D1_COLOR_F, D2D1_MATRIX_3X2_F, D2D_POINT_2F
 from pyglet.font.dwrite.dwrite_lib import (
     DWRITE_CLUSTER_METRICS,
     DWRITE_COLOR_GLYPH_RUN1,
@@ -314,6 +323,10 @@ class _DWriteTextRenderer(com.COMObject):
             for idx, glyph_indice in enumerate(missing):
                 glyph = glyph_renderer.render_single_glyph(glyph_run.fontFace, glyph_indice, metrics[idx], mode)
                 glyph_renderer.font.glyphs[(font_ref, glyph_indice)] = glyph
+                # ``glyph_run.fontFace`` is not retained after it returns.
+                glyph_renderer.font._glyph_sources[id(glyph)] = (
+                    glyph_renderer.font.font_face, glyph_indice, metrics[idx],
+                )
 
         # Set glyphs for run.
         current = []
@@ -456,9 +469,15 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):  # noqa: D101
 
     def render_single_glyph(
         self, font_face: IDWriteFontFace, indice: int, metrics: tuple[float, float, float, float, float], mode: int,
+        stroke_size: float = 0, stroke_join: str = "round",
     ) -> base.Glyph:
         """Renders a single glyph indice using Direct2D."""
         glyph_width, glyph_height, glyph_lsb, glyph_advance, glyph_bsb = metrics
+
+        # DrawGeometry strokes are centred on the path. Miter joins can extend
+        # up to ten times the half-width at sharp corners; round and bevel
+        # joins require only the nominal stroke extent.
+        stroke_padding = math.ceil(stroke_size * (10 if stroke_join == "miter" else 1)) + 1 if stroke_size else 0
 
         offset = DWRITE_GLYPH_OFFSET(0.0, 0.0)
 
@@ -474,7 +493,9 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):  # noqa: D101
         )
 
         # If color drawing is enabled, get a color enumerator.
-        if self.draw_options & D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT:
+        if stroke_size:
+            enumerator = None
+        elif self.draw_options & D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT:
             enumerator = self._get_color_enumerator(run)
         else:
             enumerator = None
@@ -482,19 +503,23 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):  # noqa: D101
         # Use the glyph's advance as a width as bitmap width.
         # Some characters have no glyph width at all, just use a 1x1
         if glyph_width == 0 and glyph_height == 0:
-            render_width = 1
-            render_height = 1
+            render_width = 1 + stroke_padding * 2
+            render_height = 1 + stroke_padding * 2
         else:
             # Use the glyph width, or if the advance is larger, use that instead.
             # Diacritics usually have no proper sizing, but instead have an advance.
             # Add 1, sometimes AA can add an extra pixel or so.
-            render_width = int(math.ceil(max(glyph_width, glyph_advance) * self.font.font_scale_ratio)) + 1
-            render_height = int(math.ceil(self.font.max_glyph_height)) + 1
+            render_width = (
+                math.ceil(max(glyph_width, glyph_advance) * self.font.font_scale_ratio)
+                + 1 + stroke_padding * 2
+            )
+            render_height = math.ceil(self.font.max_glyph_height) + 1 + stroke_padding * 2
 
         render_offset_x = 0
         if glyph_lsb < 0:
             # Negative LSB: we shift the offset, otherwise the glyph will be cut off.
             render_offset_x = glyph_lsb * self.font.font_scale_ratio
+        render_offset_x -= stroke_padding
 
         # Create new bitmap.
         # TODO: We can probably adjust bitmap/baseline to reduce the whitespace and save a lot of texture space.
@@ -502,13 +527,52 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):  # noqa: D101
         self._create_bitmap(render_width, render_height)
 
         # Glyphs are drawn at the baseline, and with LSB, so we need to offset it based on top left position.
-        baseline_offset = D2D_POINT_2F(-render_offset_x, self.font.ascent)
+        baseline_offset = D2D_POINT_2F(-render_offset_x, self.font.ascent + stroke_padding)
 
         self._render_target.BeginDraw()
 
         self._render_target.Clear(transparent)
 
-        if enumerator:
+        if stroke_size:
+            # DirectWrite writes the glyph contours to a Direct2D geometry
+            # sink. DrawGeometry then rasterizes a precise vector stroke
+            # instead of repeatedly drawing shifted glyph masks.
+            geometry = ID2D1PathGeometry()
+            d2d_factory.CreatePathGeometry(byref(geometry))
+            sink = ID2D1GeometrySink()
+            geometry.Open(byref(sink))
+            font_face.GetGlyphRunOutline(
+                self.font.pixel_size,
+                run.glyphIndices,
+                run.glyphAdvances,
+                None,
+                run.glyphCount,
+                run.isSideways,
+                bool(run.bidiLevel & 1),
+                cast(sink, c_void_p),
+            )
+            sink.Close()
+            transform = D2D1_MATRIX_3X2_F(1, 0, 0, 1, baseline_offset.x, baseline_offset.y)
+            line_joins = {
+                "miter": D2D1_LINE_JOIN_MITER,
+                "round": D2D1_LINE_JOIN_ROUND,
+                "bevel": D2D1_LINE_JOIN_BEVEL,
+            }
+            stroke_properties = D2D1_STROKE_STYLE_PROPERTIES(
+                D2D1_CAP_STYLE_FLAT, D2D1_CAP_STYLE_FLAT, D2D1_CAP_STYLE_FLAT,
+                line_joins[stroke_join], 10.0, D2D1_DASH_STYLE_SOLID, 0.0,
+            )
+            stroke_style = ID2D1StrokeStyle()
+            d2d_factory.CreateStrokeStyle(byref(stroke_properties), None, 0, byref(stroke_style))
+            self._render_target.SetTransform(byref(transform))
+            self._render_target.DrawGeometry(
+                cast(geometry, c_void_p), cast(self._brush, c_void_p), stroke_size * 2, cast(stroke_style, c_void_p),
+            )
+            self._render_target.SetTransform(byref(D2D1_MATRIX_3X2_F(1, 0, 0, 1, 0, 0)))
+            stroke_style.Release()
+            sink.Release()
+            geometry.Release()
+        elif enumerator:
             temp_brush: None | ID2D1SolidColorBrush = None
             while True:
                 has_run = BOOL(True)
@@ -565,7 +629,8 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):  # noqa: D101
 
         glyph = self.font.create_glyph(image)
 
-        glyph.set_bearings(-self.font.descent, render_offset_x, glyph_advance * self.font.font_scale_ratio)
+        glyph.set_bearings(-self.font.descent + stroke_padding, render_offset_x,
+                           glyph_advance * self.font.font_scale_ratio)
 
         return glyph
 
@@ -899,6 +964,9 @@ class Win32DirectWriteFont(base.Font):
 
         super().__init__(name, size, weight, style, stretch, dpi)
 
+        self._glyph_sources: dict[int, tuple[IDWriteFontFace, int, tuple[float, float, float, float, float]]] = {}
+        self._stroke_glyphs: dict[tuple[int, float, str], Glyph] = {}
+
         self.buffers = []
         self.locale = locale
 
@@ -1129,6 +1197,20 @@ class Win32DirectWriteFont(base.Font):
                     self.font_face, glyph_indice, metrics[idx], self._glyph_renderer.measuring_mode,
                 )
                 self.glyphs[glyph_indice] = glyph
+                self._glyph_sources[id(glyph)] = (self.font_face, glyph_indice, metrics[idx])
+
+    def get_stroke_glyph(self, glyph: Glyph, size: float, join: str = "round") -> Glyph | None:
+        if size <= 0 or (source := self._glyph_sources.get(id(glyph))) is None:
+            return None
+        cache_key = id(glyph), size, join
+        if stroked := self._stroke_glyphs.get(cache_key):
+            return stroked
+        face, index, metrics = source
+        self._initialize_renderer()
+        stroked = self._glyph_renderer.render_single_glyph(face, index, metrics, self._glyph_renderer.measuring_mode,
+                                                           stroke_size=size, stroke_join=join)
+        self._stroke_glyphs[cache_key] = stroked
+        return stroked
 
 
     def get_glyphs(self, text: str, shaping: bool) -> tuple[list[Glyph], list[base.GlyphPosition]]:

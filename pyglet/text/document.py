@@ -79,6 +79,9 @@ The following character style attribute names are recognised by pyglet:
 ``underline``
     4-tuple of ints in range (0, 255) giving RGBA underline color, or None
     (default) for no underline.
+``strikethrough``
+    4-tuple of ints in range (0, 255) giving RGBA strikethrough color, or
+    ``None`` (default) for no strikethrough.
 ``kerning``
     Additional space to insert between glyphs, in points.  Defaults to 0.
 ``baseline``
@@ -89,6 +92,10 @@ The following character style attribute names are recognised by pyglet:
 ``background_color``
     4-tuple of ints in range (0, 255) giving RGBA text background color; or
     ``None`` for no background fill.
+``shadow``
+    A :class:`~pyglet.text.DropShadow`, or ``None`` (default) for no shadow.
+``stroke``
+    A :class:`~pyglet.text.Stroke`, or ``None`` (default) for no text stroke.
 
 The following paragraph style attribute names are recognised by pyglet.  Note
 that paragraph styles are handled no differently from character styles by the

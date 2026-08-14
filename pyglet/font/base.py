@@ -494,6 +494,10 @@ class Font:
         assert len(character) == 1, "At least one Unicode character is expected."
         return False
 
+    def get_stroke_glyph(self, glyph: Glyph, size: float, join: str = "round") -> Glyph | None:  # noqa: ARG002
+        """Return a stroked bitmap for ``glyph`` when the backend supports it."""
+        return None
+
     @abc.abstractmethod
     def get_text_size(self, text: str) -> tuple[int, int]:
         """Return's an estimated width and height of text using glyph metrics without rendering..

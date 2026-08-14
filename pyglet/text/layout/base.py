@@ -262,8 +262,19 @@ class _LayoutContext:
                  background_iter: AbstractRunIterator) -> None:
         self.layout = layout
         self.colors_iter = colors_iter
+        self.stroke_iter = document.get_style_runs("stroke")
         underline_iter = document.get_style_runs("underline")
-        self.decoration_iter = runlist.ZipRunIterator((background_iter, underline_iter))
+        strikethrough_iter = document.get_style_runs("strikethrough")
+        self.decoration_iter = runlist.ZipRunIterator((background_iter, underline_iter, strikethrough_iter))
+        # The common case has no shadow. Scan the style runs once so glyph
+        # boxes can skip the effect entirely in that case. This also catches
+        # a shadow that begins after the first character.
+        self.shadow_iter = None
+        shadow_iter = document.get_style_runs("shadow")
+        for _, _, shadow in shadow_iter.ranges(0, len(document.text)):
+            if shadow is not None:
+                self.shadow_iter = document.get_style_runs("shadow")
+                break
         self.baseline_iter = runlist.FilteredRunIterator(
             document.get_style_runs("baseline"),
             lambda value: value is not None, 0)
@@ -355,6 +366,7 @@ class _GlyphBox(_AbstractBox):
     glyphs: list[tuple[int, Glyph, GlyphPosition]]
     advance: int
     vertex_lists: list[_LayoutVertexList]
+    _glyph_vertex_list: _LayoutVertexList | None
 
     def __init__(self, owner: Texture, font: Font, glyphs: list[tuple[int, Glyph, GlyphPosition]], advance: int) -> None:
         """Create a run of glyphs sharing the same texture.
@@ -380,6 +392,7 @@ class _GlyphBox(_AbstractBox):
         self.glyphs = glyphs
         self.advance = advance
         self.vertex_lists = []
+        self._glyph_vertex_list = None
 
     def _add_vertex_list(self, vertex_list: _LayoutVertexList | VertexList, context: _LayoutContext) -> None:
         self.vertex_lists.append(vertex_list)
@@ -451,11 +464,82 @@ class _GlyphBox(_AbstractBox):
         if "view_translation" in layout.program.attributes:
             vertex_data["view_translation"] = (0, 0, 0) * 4 * n_glyphs
 
+        # A shadow needs no additional glyph rendering: it uses the same atlas
+        # texture and geometry, at an offset below the fill layer.  Build this
+        # second list only when a shadow is actually styled.
+        shadow_colors = []
+        shadow_vertices = None
+        has_shadow = False
+        if context.shadow_iter is not None:
+            for start, end, shadow in context.shadow_iter.ranges(i, i + n_glyphs):
+                character_count = end - start
+                if shadow is None:
+                    shadow_colors.extend((0, 0, 0, 0) * (character_count * 4))
+                    continue
+                shadow_color = shadow.color
+                shadow_offset = shadow.offset
+                if len(shadow_color) != 4:
+                    msg = f"Shadow color requires 4 values (R, G, B, A). Value received: {shadow_color}"
+                    raise ValueError(msg)
+                if len(shadow_offset) != 2:
+                    msg = f"Shadow offset requires 2 values (X, Y). Value received: {shadow_offset}"
+                    raise ValueError(msg)
+                if shadow_vertices is None:
+                    shadow_vertices = list(vertices)
+                has_shadow = True
+                shadow_colors.extend(shadow_color * (character_count * 4))
+                offset_start = (start - i) * 12
+                offset_end = offset_start + character_count * 12
+                for vertex_index in range(offset_start, offset_end, 3):
+                    shadow_vertices[vertex_index] += shadow_offset[0]
+                    shadow_vertices[vertex_index + 1] += shadow_offset[1]
+
+        if has_shadow:
+            shadow_key = self.owner, 0
+            try:
+                shadow_group = layout.group_cache[shadow_key]
+            except KeyError:
+                shadow_group = layout.group_class(self.owner, layout.program, order=0, parent=layout.group)
+                layout.group_cache[shadow_key] = shadow_group
+            shadow_data = vertex_data | {"position": shadow_vertices, "colors": shadow_colors}
+            shadow_list = layout.program.vertex_list_indexed(n_glyphs * 4,
+                                                             GeometryMode.TRIANGLES,
+                                                             indices,
+                                                             layout.batch,
+                                                             shadow_group, **shadow_data)
+            self._add_vertex_list(shadow_list, context)
+
         vertex_list = layout.program.vertex_list_indexed(n_glyphs * 4, GeometryMode.TRIANGLES, indices, layout.batch,
                                                          group, **vertex_data)
+        self._glyph_vertex_list = vertex_list
         self._add_vertex_list(vertex_list, context)
 
-        # Decoration (background color and underline)
+        # DirectWrite may provide a second, stroked glyph mask. It is drawn
+        # in a lower-order group so the regular fill glyph remains on top.
+        stroke_x = round(line_x)
+        for glyph_index, (kern, glyph, glyph_pos) in enumerate(self.glyphs):
+            stroke_x += round(kern)
+            stroke = context.stroke_iter[i + glyph_index]
+            stroke_glyph = self.font.get_stroke_glyph(glyph, stroke.size, stroke.join) if stroke else None
+            if stroke_glyph is not None:
+                v0, v1, v2, v3 = stroke_glyph.vertices
+                gx = stroke_x + round(glyph_pos.x_offset)
+                gy = round(line_y + baseline + glyph_pos.y_offset)
+                stroke_vertices = [v0 + gx, v1 + gy, 0, v2 + gx, v1 + gy, 0,
+                                    v2 + gx, v3 + gy, 0, v0 + gx, v3 + gy, 0]
+                stroke_group = layout.group_class(stroke_glyph.owner, layout.program, order=0, parent=layout.group)
+                stroke_list = layout.program.vertex_list_indexed(
+                    4, GeometryMode.TRIANGLES, (0, 1, 2, 0, 2, 3), layout.batch, stroke_group,
+                    position=stroke_vertices, translation=t_position * 4, colors=stroke.color * 4,
+                    tex_coords=stroke_glyph.tex_coords, rotation=(rotation,) * 4, visible=(visible,) * 4,
+                    anchor=(anchor_x, anchor_y) * 4,
+                    **({"view_translation": (0, 0, 0) * 4} if "view_translation" in layout.program.attributes else {}),
+                )
+                self._add_vertex_list(stroke_list, context)
+            stroke_x += round(glyph.advance + glyph_pos.x_advance)
+
+        # Decoration (background color, underline, and strikethrough)
+        # Decorations are geometry only and without textures.
         # -------------------------------------------
         # Should iterate over baseline too, but in practice any sensible
         # change in baseline will correspond with a change in font size,
@@ -465,12 +549,14 @@ class _GlyphBox(_AbstractBox):
         background_colors = []
         underline_vertices = []
         underline_colors = []
+        strikethrough_vertices = []
+        strikethrough_colors = []
         y1 = line_y + self.descent + baseline
         y2 = line_y + self.ascent + baseline
         x1 = line_x
 
         for start, end, decoration in context.decoration_iter.ranges(i, i + n_glyphs):
-            bg, underline = decoration
+            bg, underline, strikethrough = decoration
             x2 = x1
             background_x1 = x1
             background_y1 = y1
@@ -511,6 +597,15 @@ class _GlyphBox(_AbstractBox):
                 underline_vertices.extend([x1, line_y + baseline - 2, 0, x2, line_y + baseline - 2, 0])
                 underline_colors.extend(underline * 2)
 
+            if strikethrough is not None:
+                if len(strikethrough) != 4:
+                    msg = f"Strikethrough color requires 4 values (R, G, B, A). Value received: {strikethrough}"
+                    raise ValueError(msg)
+
+                strikethrough_y = line_y + baseline + self.ascent / 3
+                strikethrough_vertices.extend([x1, strikethrough_y, 0, x2, strikethrough_y, 0])
+                strikethrough_colors.extend(strikethrough * 2)
+
             x1 = x2
 
         if background_vertices:
@@ -543,6 +638,20 @@ class _GlyphBox(_AbstractBox):
                                                             anchor=(anchor_x, anchor_y) * ul_count)
             self._add_vertex_list(underline_list, context)
 
+        if strikethrough_vertices:
+            st_count = len(strikethrough_vertices) // 3
+            decoration_program = get_default_decoration_shader()
+            strikethrough_list = decoration_program.vertex_list(st_count, GeometryMode.LINES,
+                                                                layout.batch, layout.foreground_decoration_group,
+                                                                position=strikethrough_vertices,
+                                                                translation=t_position * st_count,
+                                                                view_translation=(0, 0, 0) * st_count,
+                                                                colors=strikethrough_colors,
+                                                                rotation=(rotation,) * st_count,
+                                                                visible=(visible,) * st_count,
+                                                                anchor=(anchor_x, anchor_y) * st_count)
+            self._add_vertex_list(strikethrough_list, context)
+
     def update_translation(self, x: float, y: float, z: float) -> None:
         translation = (x, y, z)
         for _vertex_list in self.vertex_lists:
@@ -553,19 +662,11 @@ class _GlyphBox(_AbstractBox):
 
         Update just the specific range of glyphs with the colors.
         """
-        # Receives flattened list of colors based on the count.
-        for _vertex_list in self.vertex_lists:
-            vertices_per_char = _vertex_list.count // self.length
-            # Check length, because underlines and BG's can exist.
-            if vertices_per_char == 4:
-                color_end_index = (end - start) * 4
-
-                # Calculate the vertex start and end indices for (RGBA)
-                vertex_start_index = start * vertices_per_char * 4
-                vertex_end_index = end * vertices_per_char * 4
-
-                # Update the vertex colors
-                _vertex_list.colors[vertex_start_index:vertex_end_index] = colors[:color_end_index] * vertices_per_char
+        if self._glyph_vertex_list is not None:
+            color_end_index = (end - start) * 4
+            vertex_start_index = start * 16
+            vertex_end_index = end * 16
+            self._glyph_vertex_list.colors[vertex_start_index:vertex_end_index] = colors[:color_end_index] * 4
 
     def update_view_translation(self, translate_x: float, translate_y: float) -> None:
         view_translation = (-translate_x, -translate_y, 0)
@@ -746,7 +847,7 @@ class TextLayout:
     """
     _vertex_lists: list[_LayoutVertexList]
     _boxes: list[_AbstractBox]
-    group_cache: dict[Texture, graphics.Group]
+    group_cache: dict[Texture | tuple[Texture, int], graphics.Group]
 
     _document: AbstractDocument | None = None
 
