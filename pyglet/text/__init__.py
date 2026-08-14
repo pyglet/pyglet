@@ -38,16 +38,15 @@ creating scrollable layouts.
 from __future__ import annotations
 
 from abc import abstractmethod
-from dataclasses import dataclass
 from os.path import dirname as _dirname
 from os.path import splitext as _splitext
 from typing import TYPE_CHECKING, Any, BinaryIO, Literal
 
 import pyglet
 from pyglet.enums import Stretch, Style, Weight
+from pyglet.text.effects import DropShadow, LinearGradient, Stroke
 
-from pyglet.text import caret, document, layout  # noqa: F401
-
+from pyglet.text import caret, document, layout # noqa: F401
 
 if TYPE_CHECKING:
     from pyglet.font import base
@@ -80,38 +79,6 @@ class DocumentDecoder:
 
 SupportedMimeTypes = Literal["text/plain", "text/html", "text/vnd.pyglet-attributed"]
 
-
-@dataclass(slots=True)
-class DropShadow:
-    """Style data for a text drop shadow.
-
-    Args:
-        offset: Pixel offset relative to the text.
-        color: RGBA color of the shadow.
-    """
-
-    offset: tuple[int, int] = (1, -1)
-    color: tuple[int, int, int, int] = (0, 0, 0, 255)
-
-
-@dataclass(slots=True)
-class Stroke:
-    """Style data for a text stroke.
-
-    Args:
-        size: Width of the stroke outside the glyph, in pixels.
-        color: RGBA color of the stroke.
-        join: Shape used where two straight contour segments meet.
-    """
-
-    size: float = 1.0
-    color: tuple[int, int, int, int] = (0, 0, 0, 255)
-    join: Literal["miter", "round", "bevel"] = "round"
-
-    def __post_init__(self) -> None:
-        if self.join not in {"miter", "round", "bevel"}:
-            msg = f"Unsupported stroke join: {self.join!r}"
-            raise ValueError(msg)
 
 
 def get_decoder(filename: str | None, mimetype: SupportedMimeTypes | None = None) -> DocumentDecoder:
@@ -290,15 +257,18 @@ class DocumentLabel(layout.TextLayout):
         self.document.text = text
 
     @property
-    def color(self) -> tuple[int, int, int, int]:
+    def color(self) -> tuple[int, int, int, int] | LinearGradient:
         """Text color.
 
-        Color is a 4-tuple of RGBA components, each in range [0, 255].
+        Color is an RGBA tuple or a :class:`LinearGradient`.
         """
         return self.document.get_style("color")
 
     @color.setter
-    def color(self, color: tuple[int, int, int, int]) -> None:
+    def color(self, color: tuple[int, int, int, int] | LinearGradient) -> None:
+        if isinstance(color, LinearGradient):
+            self.document.set_style(0, len(self.document.text), {"color": color})
+            return
         r, g, b, *a = color
         color = r, g, b, a[0] if a else 255
         self.document.set_style(0, len(self.document.text), {"color": color})
@@ -314,12 +284,17 @@ class DocumentLabel(layout.TextLayout):
         An opacity of 255 (the default) has no effect.  An opacity of 128 will
         make the label appear semi-translucent.
         """
-        return self.color[3]
+        color = self.color
+        return color.start[3] if isinstance(color, LinearGradient) else color[3]
 
     @opacity.setter
     def opacity(self, alpha: int) -> None:
-        if alpha != self.color[3]:
-            self.color = list(map(int, (*self.color[:3], alpha)))
+        color = self.color
+        if isinstance(color, LinearGradient):
+            if alpha != color.start[3] or alpha != color.end[3]:
+                self.color = LinearGradient((*color.start[:3], alpha), (*color.end[:3], alpha))
+        elif alpha != color[3]:
+            self.color = list(map(int, (*color[:3], alpha)))
 
     @property
     def shadow(self) -> DropShadow | None:
@@ -449,7 +424,7 @@ class Label(DocumentLabel):
             font_name: str | None = None, font_size: float | None = None,
             weight: Weight | str = Weight.NORMAL, style: Style | str = Style.NORMAL,
             stretch: Stretch | str = Stretch.NORMAL,
-            color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            color: tuple[int, int, int, int] | tuple[int, int, int] | LinearGradient = (255, 255, 255, 255),
             shadow: DropShadow | None = None, stroke: Stroke | None = None,
             align: HorizontalAlign = "left",
             batch: Batch | None = None, group: Group | None = None,
@@ -502,7 +477,7 @@ class Label(DocumentLabel):
                  style names.
             color:
                 Font color as RGBA or RGB components, each within
-                ``0 <= component <= 255``.
+                ``0 <= component <= 255``, or a :class:`LinearGradient`.
             shadow:
                 Optional :class:`DropShadow` style. ``None`` (the default)
                 disables the shadow.
@@ -531,8 +506,11 @@ class Label(DocumentLabel):
             Added the *shaping* parameter.
         """
         doc = decode_text(text)
-        r, g, b, *a = color
-        rgba = r, g, b, a[0] if a else 255
+        if isinstance(color, LinearGradient):
+            rgba = color
+        else:
+            r, g, b, *a = color
+            rgba = r, g, b, a[0] if a else 255
         # This document has no listeners yet, so initialize its uniform style
         # before attaching it to the layout. This avoids dispatching a style
         # event solely to perform the initial layout.
@@ -661,8 +639,9 @@ __all__ = [
     "DropShadow",
     "HTMLLabel",
     "Label",
-    "SupportedMimeTypes",
+    "LinearGradient",
     "Stroke",
+    "SupportedMimeTypes",
     "decode_attributed",
     "decode_html",
     "decode_text",

@@ -73,7 +73,8 @@ is 18 pixels.
     values give a superscript, negative values give a subscript.  Defaults to
     0.
 ``color``
-    4-tuple of ints in range (0, 255) giving RGBA text color
+    4-tuple of ints in range (0, 255) giving RGBA text color, or a
+    :class:`~pyglet.text.LinearGradient`.
 ``background_color``
     4-tuple of ints in range (0, 255) giving RGBA text background color; or
     ``None`` for no background fill.

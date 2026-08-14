@@ -20,6 +20,7 @@ from pyglet.enums import BlendFactor, GeometryMode, GraphicsAPI
 from pyglet.graphics import Group, ShaderProgram
 from pyglet.text import runlist
 from pyglet.text.document import UnformattedDocument
+from pyglet.text.effects import LinearGradient
 from pyglet.font.base import GlyphPosition
 
 if TYPE_CHECKING:
@@ -394,6 +395,16 @@ class _GlyphBox(_AbstractBox):
         self.vertex_lists = []
         self._glyph_vertex_list = None
 
+    @staticmethod
+    def _interpolate_gradient(
+        gradient: LinearGradient, position: float, start: float, span: float,
+    ) -> tuple[int, int, int, int]:
+        t = 0.0 if span == 0 else min(max((position - start) / span, 0.0), 1.0)
+        return tuple(
+            round(a + (b - a) * t)
+            for a, b in zip(gradient.start, gradient.end, strict=True)
+        )
+
     def _add_vertex_list(self, vertex_list: _LayoutVertexList | VertexList, context: _LayoutContext) -> None:
         self.vertex_lists.append(vertex_list)
         context.add_list(vertex_list)
@@ -435,15 +446,29 @@ class _GlyphBox(_AbstractBox):
                 tex_coords.extend(glyph.tex_coords)
                 x1 += round(glyph.advance + glyph_pos.x_advance)
 
-        # Text color
+        # Text color. The text shaders interpolate the color attribute, so a
+        # gradient only needs different colors at each side of a glyph quad.
         colors = []
         for start, end, color in context.colors_iter.ranges(i, i + n_glyphs):
             if color is None:
                 color = (0, 0, 0, 255)  # noqa: PLW2901
-            if len(color) != 4:
+            if isinstance(color, LinearGradient):
+                start_glyph = start - i
+                end_glyph = end - i
+                left_edge = vertices[start_glyph * 12]
+                right_edge = vertices[(end_glyph - 1) * 12 + 6]
+                span = right_edge - left_edge
+                for glyph_idx in range(start_glyph, end_glyph):
+                    left = vertices[glyph_idx * 12]
+                    right = vertices[glyph_idx * 12 + 6]
+                    left_color = self._interpolate_gradient(color, left, left_edge, span)
+                    right_color = self._interpolate_gradient(color, right, left_edge, span)
+                    colors.extend(left_color * 2 + right_color * 2)
+            elif len(color) != 4:
                 msg = f"Color requires 4 values (R, G, B, A). Value received: {color}"
                 raise ValueError(msg)
-            colors.extend(color * ((end - start) * 4))
+            else:
+                colors.extend(color * ((end - start) * 4))
 
         indices = []
         # Create indices for each glyph quad:
@@ -1680,6 +1705,16 @@ class TextLayout:
     def _update_color(self, start: int, end: int) -> None:
         # This function usually is only called by Labels/HTML when updating just colors.
         colors_iter = self._document.get_style_runs("color")
+        has_gradient = any(
+            isinstance(color, LinearGradient)
+            for _, _, color in colors_iter.ranges(0, len(self._document.text))
+        )
+        if has_gradient:
+            # Gradient colors depend on glyph positions, so rebuilding the
+            # affected vertex data is required instead of the solid-color
+            # in-place update below.
+            self._init_document()
+            return
 
         colors = []
         for iter_start, iter_end, color in colors_iter.ranges(start, end):
