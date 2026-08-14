@@ -61,7 +61,7 @@ FT_Short = c_short
 FT_UShort = c_ushort
 FT_Long = c_long
 FT_ULong = c_ulong
-FT_Bool = c_char
+FT_Bool = c_ubyte
 FT_Offset = c_size_t
 # FT_PtrDist = ?
 FT_String = c_char
@@ -263,6 +263,39 @@ class FT_Outline(Structure):
         ("contours", POINTER(c_short)),  # the contour end points
         ("flags", c_int),  # outline masks
     ]
+
+
+class FT_GlyphRec(Structure):
+    _fields_ = [
+        ("library", FT_Library),
+        ("clazz", c_void_p),
+        ("format", FT_Glyph_Format),
+        ("advance", FT_Vector),
+    ]
+
+
+FT_Glyph = POINTER(FT_GlyphRec)
+FT_Stroker = c_void_p
+
+
+class FT_BitmapGlyphRec(Structure):
+    _fields_ = [
+        ("root", FT_GlyphRec),
+        ("left", FT_Int),
+        ("top", FT_Int),
+        ("bitmap", FT_Bitmap),
+    ]
+
+
+FT_BitmapGlyph = POINTER(FT_BitmapGlyphRec)
+
+# FT_Stroker_LineCap
+FT_STROKER_LINECAP_ROUND = 0
+
+# FT_Stroker_LineJoin
+FT_STROKER_LINEJOIN_ROUND = 0
+FT_STROKER_LINEJOIN_BEVEL = 1
+FT_STROKER_LINEJOIN_MITER_VARIABLE = 2
 
 
 FT_SubGlyph = c_void_p
@@ -643,6 +676,19 @@ FT_Get_Char_Index = _get_function("FT_Get_Char_Index",
                                                       [FT_Face, FT_ULong], FT_UInt)
 FT_Load_Char = _get_function_with_error_handling("FT_Load_Char",
                                                  [FT_Face, FT_ULong, FT_Int32], FT_Error)
+FT_Get_Glyph = _get_function_with_error_handling("FT_Get_Glyph", [FT_GlyphSlot, POINTER(FT_Glyph)], FT_Error)
+FT_Done_Glyph = _get_function("FT_Done_Glyph", [FT_Glyph], None)
+FT_Glyph_To_Bitmap = _get_function_with_error_handling(
+    "FT_Glyph_To_Bitmap", [POINTER(FT_Glyph), FT_Int, POINTER(FT_Vector), FT_Bool], FT_Error,
+)
+FT_Stroker_New = _get_function_with_error_handling("FT_Stroker_New", [FT_Library, POINTER(FT_Stroker)], FT_Error)
+FT_Stroker_Set = _get_function(
+    "FT_Stroker_Set", [FT_Stroker, FT_Fixed, FT_Int, FT_Int, FT_Fixed], None,
+)
+FT_Stroker_Done = _get_function("FT_Stroker_Done", [FT_Stroker], None)
+FT_Glyph_StrokeBorder = _get_function_with_error_handling(
+    "FT_Glyph_StrokeBorder", [POINTER(FT_Glyph), FT_Stroker, FT_Bool, FT_Bool], FT_Error,
+)
 FT_Get_Kerning = _get_function_with_error_handling("FT_Get_Kerning",
                                                    [FT_Face, FT_UInt, FT_UInt, FT_UInt, POINTER(FT_Vector)], FT_Error)
 
