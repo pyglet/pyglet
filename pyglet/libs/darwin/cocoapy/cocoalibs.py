@@ -582,8 +582,29 @@ quartz.CGContextSetShouldAntialias.argtypes = [c_void_p, c_bool]
 quartz.CGContextSetTextDrawingMode.restype = None
 quartz.CGContextSetTextDrawingMode.argtypes = [c_void_p, c_int32]
 
+quartz.CGContextSetLineWidth.restype = None
+quartz.CGContextSetLineWidth.argtypes = [c_void_p, CGFloat]
+
+quartz.CGContextSetLineJoin.restype = None
+quartz.CGContextSetLineJoin.argtypes = [c_void_p, c_int32]
+
+quartz.CGContextSetMiterLimit.restype = None
+quartz.CGContextSetMiterLimit.argtypes = [c_void_p, CGFloat]
+
+quartz.CGContextAddPath.restype = None
+quartz.CGContextAddPath.argtypes = [c_void_p, c_void_p]
+
+quartz.CGContextStrokePath.restype = None
+quartz.CGContextStrokePath.argtypes = [c_void_p]
+
+quartz.CGPathRelease.restype = None
+quartz.CGPathRelease.argtypes = [c_void_p]
+
 quartz.CGContextSetRGBFillColor.restype = None
 quartz.CGContextSetRGBFillColor.argtypes = [c_void_p, CGFloat, CGFloat, CGFloat, CGFloat]
+
+quartz.CGContextSetRGBStrokeColor.restype = None
+quartz.CGContextSetRGBStrokeColor.argtypes = [c_void_p, CGFloat, CGFloat, CGFloat, CGFloat]
 
 quartz.CGFontCopyTableTags.restype = c_void_p
 quartz.CGFontCopyTableTags.argtypes = [c_void_p]
@@ -641,6 +662,9 @@ ct.CTFontGetBoundingRectsForGlyphs.argtypes = [c_void_p, CTFontOrientation, POIN
 
 ct.CTFontGetAdvancesForGlyphs.restype = c_double
 ct.CTFontGetAdvancesForGlyphs.argtypes = [c_void_p, CTFontOrientation, POINTER(CGGlyph), POINTER(CGSize), CFIndex]
+
+ct.CTFontCreatePathForGlyph.restype = c_void_p
+ct.CTFontCreatePathForGlyph.argtypes = [c_void_p, CGGlyph, c_void_p]
 
 ct.CTFontGetAscent.restype = CGFloat
 ct.CTFontGetAscent.argtypes = [c_void_p]
