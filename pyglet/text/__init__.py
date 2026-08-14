@@ -503,7 +503,7 @@ class Label(DocumentLabel):
                 disables the shadow.
             stroke:
                 Optional :class:`Stroke` style. ``None`` (the default) disables
-                the stroke. Currently supported by DirectWrite and CoreText.
+                the stroke.
             align:
                 Horizontal alignment of text on a line, only applies if
                 a width is supplied. One of ``"left"``, ``"center"``
