@@ -232,6 +232,7 @@ class DocumentLabel(layout.TextLayout):
             multiline: bool = False, dpi: int | None = None,
             batch: Batch | None = None, group: Group | None = None,
             program: ShaderProgram | None = None,
+            decoration_shader: ShaderProgram | None = None, effect_shader: ShaderProgram | None = None,
             shaping: bool = True,
             init_document: bool = True,
     ) -> None:
@@ -262,6 +263,8 @@ class DocumentLabel(layout.TextLayout):
             batch: Optional graphics batch to add the label to.
             group: Optional graphics group to use.
             program: Optional graphics shader to use. Will affect all glyphs.
+            decoration_shader: Optional graphics shader to use for all text decorations.
+            effect_shader: Optional graphics shader to use for all glyph-backed text effects.
             shaping:
                 Whether this label should use text shaping. The shaping backend is selected globally with
                 ``pyglet.options.text_shaping``. If ``False``, glyph positions are based on their unshaped metrics.
@@ -274,7 +277,8 @@ class DocumentLabel(layout.TextLayout):
             Added the *shaping* parameter.
         """
         super().__init__(document, x, y, z, width, height, anchor_x, anchor_y, rotation,
-                         multiline, dpi, batch, group, program, shaping=shaping, init_document=init_document)
+                         multiline, dpi, batch, group, program, decoration_shader, effect_shader,
+                         shaping=shaping, init_document=init_document)
 
     @property
     def text(self) -> str:
@@ -450,6 +454,7 @@ class Label(DocumentLabel):
             align: HorizontalAlign = "left",
             batch: Batch | None = None, group: Group | None = None,
             program: ShaderProgram | None = None,
+            decoration_shader: ShaderProgram | None = None, effect_shader: ShaderProgram | None = None,
             shaping: bool = True,
     ) -> None:
         """Create a plain text label.
@@ -514,6 +519,10 @@ class Label(DocumentLabel):
                 Optional graphics group to use.
             program:
                 Optional graphics shader to use. Will affect all glyphs.
+            decoration_shader:
+                Optional graphics shader to use for all text decorations.
+            effect_shader:
+                Optional graphics shader to use for all glyph-backed text effects.
             shaping:
                 Whether this label should use text shaping. The shaping backend is selected globally with
                 ``pyglet.options.text_shaping``. If ``False``, glyph positions are based on their unshaped metrics.
@@ -554,6 +563,8 @@ class Label(DocumentLabel):
             batch,
             group,
             program,
+            decoration_shader,
+            effect_shader,
             shaping=shaping,
             init_document=True,
         )
@@ -573,6 +584,7 @@ class HTMLLabel(DocumentLabel):
                  location: Location | None = None,
                  batch: Batch | None = None, group: Group | None = None,
                  program: ShaderProgram | None = None,
+                 decoration_shader: ShaderProgram | None = None, effect_shader: ShaderProgram | None = None,
                  shaping: bool = True) -> None:
         """Create a label with an HTML string.
 
@@ -613,6 +625,10 @@ class HTMLLabel(DocumentLabel):
                 Optional graphics group to use.
             program:
                 Optional graphics shader to use. Will affect all glyphs.
+            decoration_shader:
+                Optional graphics shader to use for all text decorations.
+            effect_shader:
+                Optional graphics shader to use for all glyph-backed text effects.
             shaping:
                 Whether this label should use text shaping. The shaping backend is selected globally with
                 ``pyglet.options.text_shaping``. If ``False``, glyph positions are based on their unshaped metrics.
@@ -624,7 +640,8 @@ class HTMLLabel(DocumentLabel):
         self._location = location
         doc = decode_html(text, location)
         super().__init__(doc, x, y, z, width, height, anchor_x, anchor_y, rotation,
-                         multiline, dpi, batch, group, program, shaping=shaping, init_document=True)
+                         multiline, dpi, batch, group, program, decoration_shader, effect_shader,
+                         shaping=shaping, init_document=True)
 
     @property
     def text(self) -> str:

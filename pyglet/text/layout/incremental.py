@@ -90,6 +90,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     _selection_background_color: tuple[int, int, int, int] = (46, 106, 197, 255)
 
     group_class: ClassVar[type[IncrementalTextLayoutGroup]] = IncrementalTextLayoutGroup
+    effect_group_class: ClassVar[type[IncrementalTextLayoutGroup]] = IncrementalTextLayoutGroup
     decoration_class: ClassVar[type[IncrementalTextDecorationGroup]] = IncrementalTextDecorationGroup
 
     _translate_x: int = 0
@@ -112,7 +113,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
                  width: int | None = None, height: int | None = None,
                  anchor_x: AnchorX = 'left', anchor_y: AnchorY = 'bottom', rotation: float = 0, multiline: bool = False,
                  dpi: float | None = None, batch: Batch | None = None, group: Group | None = None,
-                 program: ShaderProgram | None = None, wrap_lines: bool = True) -> None:
+                 program: ShaderProgram | None = None, decoration_shader: ShaderProgram | None = None,
+                 effect_shader: ShaderProgram | None = None, wrap_lines: bool = True) -> None:
 
         if width is None or height is None:
             msg = "Invalid size. IncrementalTextLayout width or height cannot be None."
@@ -138,12 +140,15 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         self._owner_runs = runlist.RunList(0, None)
 
         super().__init__(document, x, y, z, width, height, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
-                         program or get_default_scrollable_layout_shader(), wrap_lines)
+                         program or get_default_scrollable_layout_shader(), decoration_shader, effect_shader,
+                         wrap_lines=wrap_lines)
 
     def _update_scissor_area(self) -> None:
         area = (self.left, self.bottom, self._width, self._height)
 
         for group in self.group_cache.values():
+            group.uniforms["scissor_area"] = area
+        for group in self.effect_group_cache.values():
             group.uniforms["scissor_area"] = area
         self.background_decoration_group.uniforms["scissor_area"] = area
         self.foreground_decoration_group.uniforms["scissor_area"] = area

@@ -35,6 +35,7 @@ class ScrollableTextLayout(TextLayout):
     """
 
     group_class: ClassVar[type[ScrollableTextLayoutGroup]] = ScrollableTextLayoutGroup
+    effect_group_class: ClassVar[type[ScrollableTextLayoutGroup]] = ScrollableTextLayoutGroup
     decoration_class: ClassVar[type[ScrollableTextDecorationGroup]] = ScrollableTextDecorationGroup
 
     _translate_x: int = 0
@@ -45,14 +46,16 @@ class ScrollableTextLayout(TextLayout):
                  width: int | None = None, height: int | None = None,
                  anchor_x: AnchorX = 'left', anchor_y: AnchorY = 'bottom', rotation: float = 0, multiline: bool = False,
                  dpi: float | None = None, batch: Batch | None = None, group: Group | None = None,
-                 program: ShaderProgram | None = None, wrap_lines: bool = True) -> None:
+                 program: ShaderProgram | None = None, decoration_shader: ShaderProgram | None = None,
+                 effect_shader: ShaderProgram | None = None, wrap_lines: bool = True) -> None:
 
         if width is None or height is None:
             msg = "Invalid size. ScrollableTextLayout width or height cannot be None."
             raise Exception(msg)
 
         super().__init__(document, x, y, z, width, height, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
-                         program or get_default_scrollable_layout_shader(), wrap_lines)
+                         program or get_default_scrollable_layout_shader(), decoration_shader, effect_shader,
+                         wrap_lines=wrap_lines)
 
     def _update_scissor_area(self) -> None:
         if not self.document.text:
@@ -61,6 +64,8 @@ class ScrollableTextLayout(TextLayout):
         area = (self.left, self.bottom, self._width, self._height)
 
         for group in self.group_cache.values():
+            group.uniforms["scissor_area"] = area
+        for group in self.effect_group_cache.values():
             group.uniforms["scissor_area"] = area
 
         self.background_decoration_group.uniforms["scissor_area"] = area

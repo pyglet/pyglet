@@ -495,12 +495,7 @@ class _GlyphBox(_AbstractBox):
                     shadow_vertices[vertex_index + 1] += shadow_offset[1]
 
         if has_shadow:
-            shadow_key = self.owner, 0
-            try:
-                shadow_group = layout.group_cache[shadow_key]
-            except KeyError:
-                shadow_group = layout.group_class(self.owner, layout.program, order=0, parent=layout.group)
-                layout.group_cache[shadow_key] = shadow_group
+            shadow_group = layout.get_effect_group(self.owner)
             shadow_data = vertex_data | {"position": shadow_vertices, "colors": shadow_colors}
             shadow_list = layout.program.vertex_list_indexed(n_glyphs * 4,
                                                              GeometryMode.TRIANGLES,
@@ -527,7 +522,7 @@ class _GlyphBox(_AbstractBox):
                 gy = round(line_y + baseline + glyph_pos.y_offset)
                 stroke_vertices = [v0 + gx, v1 + gy, 0, v2 + gx, v1 + gy, 0,
                                     v2 + gx, v3 + gy, 0, v0 + gx, v3 + gy, 0]
-                stroke_group = layout.group_class(stroke_glyph.owner, layout.program, order=0, parent=layout.group)
+                stroke_group = layout.get_effect_group(stroke_glyph.owner)
                 stroke_list = layout.program.vertex_list_indexed(
                     4, GeometryMode.TRIANGLES, (0, 1, 2, 0, 2, 3), layout.batch, stroke_group,
                     position=stroke_vertices, translation=t_position * 4, colors=stroke.color * 4,
@@ -611,7 +606,7 @@ class _GlyphBox(_AbstractBox):
         if background_vertices:
             bg_count = len(background_vertices) // 3
             background_indices = [(0, 1, 2, 0, 2, 3)[i % 6] for i in range(bg_count * 3)]
-            decoration_program = get_default_decoration_shader()
+            decoration_program = layout.decoration_shader
             background_list = decoration_program.vertex_list_indexed(bg_count, GeometryMode.TRIANGLES,
                                                                      background_indices,
                                                                      layout.batch, layout.background_decoration_group,
@@ -626,7 +621,7 @@ class _GlyphBox(_AbstractBox):
 
         if underline_vertices:
             ul_count = len(underline_vertices) // 3
-            decoration_program = get_default_decoration_shader()
+            decoration_program = layout.decoration_shader
             underline_list = decoration_program.vertex_list(ul_count, GeometryMode.LINES,
                                                             layout.batch, layout.foreground_decoration_group,
                                                             position=underline_vertices,
@@ -640,7 +635,7 @@ class _GlyphBox(_AbstractBox):
 
         if strikethrough_vertices:
             st_count = len(strikethrough_vertices) // 3
-            decoration_program = get_default_decoration_shader()
+            decoration_program = layout.decoration_shader
             strikethrough_list = decoration_program.vertex_list(st_count, GeometryMode.LINES,
                                                                 layout.batch, layout.foreground_decoration_group,
                                                                 position=strikethrough_vertices,
@@ -842,6 +837,9 @@ class TextLayout:
     Attributes:
         group_class:
             Default group used to set the state for all glyphs.
+        effect_group_class:
+            Default group used to set the state for glyph-backed effects, such
+            as shadows and strokes.
         decoration_class:
             Default group used to set the state for all decorations including background colors and underlines.
     """
@@ -855,6 +853,7 @@ class TextLayout:
     _own_batch: bool = False
 
     group_class: ClassVar[type[TextLayoutGroup]] = TextLayoutGroup
+    effect_group_class: ClassVar[type[TextLayoutGroup]] = TextLayoutGroup
     decoration_class: ClassVar[type[TextDecorationGroup]] = TextDecorationGroup
 
     _ascent: float = 0
@@ -882,6 +881,7 @@ class TextLayout:
                  anchor_x: AnchorX = 'left', anchor_y: AnchorY = 'bottom', rotation: float = 0,
                  multiline: bool = False, dpi: float | None = None, batch: Batch | None = None,
                  group: graphics.Group | None = None, program: ShaderProgram | None = None,
+                 decoration_shader: ShaderProgram | None = None, effect_shader: ShaderProgram | None = None,
                  wrap_lines: bool = True, shaping: bool = True, init_document: bool = True) -> None:
         """Create a text layout.
 
@@ -920,6 +920,14 @@ class TextLayout:
                 be rendered simultaneously in a Batch.
             program:
                 Optional graphics shader to use. Will affect all glyphs in the layout.
+            decoration_shader:
+                Optional graphics shader to use for all decorations in the
+                layout, including backgrounds and underlines. It cannot vary
+                between text runs.
+            effect_shader:
+                Optional graphics shader to use for all glyph-backed effects
+                in the layout, including shadows and strokes. It cannot vary
+                between text runs.
             wrap_lines:
                 If True and `multiline` is True, the text is word-wrapped using the specified width.
             shaping:
@@ -969,6 +977,8 @@ class TextLayout:
         self._batch = batch
 
         self._program = program or get_default_layout_shader()
+        self._decoration_shader = decoration_shader or get_default_decoration_shader()
+        self._effect_shader = effect_shader
 
         self._wrap_lines_flag = wrap_lines
         self._wrap_lines_invariant()
@@ -984,16 +994,26 @@ class TextLayout:
         return self._flow_glyphs_single_line
 
     def _initialize_groups(self) -> None:
-        # Most labels do not contain backgrounds, underlines, or carets.
+        # Most labels do not contain effects, backgrounds, underlines, or carets.
         # Avoid constructing groups until one is used.
         self._background_decoration_group = None
         self._foreground_decoration_group = None
+        self.effect_group_cache = {}
+
+    def get_effect_group(self, texture: Texture) -> TextLayoutGroup:
+        try:
+            return self.effect_group_cache[texture]
+        except KeyError:
+            group = self.effect_group_class(texture, self.effect_shader, order=0, parent=self._user_group)
+            self.effect_group_cache[texture] = group
+            return group
 
     @property
     def background_decoration_group(self) -> TextDecorationGroup:
         if self._background_decoration_group is None:
-            program = get_default_decoration_shader()
-            self._background_decoration_group = self.decoration_class(program, order=0, parent=self._user_group)
+            self._background_decoration_group = self.decoration_class(
+                self._decoration_shader, order=0, parent=self._user_group,
+            )
         return self._background_decoration_group
 
     @background_decoration_group.setter
@@ -1003,8 +1023,9 @@ class TextLayout:
     @property
     def foreground_decoration_group(self) -> TextDecorationGroup:
         if self._foreground_decoration_group is None:
-            program = get_default_decoration_shader()
-            self._foreground_decoration_group = self.decoration_class(program, order=2, parent=self._user_group)
+            self._foreground_decoration_group = self.decoration_class(
+                self._decoration_shader, order=2, parent=self._user_group,
+            )
         return self._foreground_decoration_group
 
     @foreground_decoration_group.setter
@@ -1024,6 +1045,42 @@ class TextLayout:
         self._user_group = group
         self._initialize_groups()
         self.group_cache.clear()
+        self._update()
+
+    @property
+    def decoration_shader(self) -> ShaderProgram:
+        """Shader applied to every decoration in this layout.
+
+        Assigning a shader recreates the layout's decoration vertex lists.
+        A decoration shader applies to all text runs in the layout.
+        """
+        return self._decoration_shader
+
+    @decoration_shader.setter
+    def decoration_shader(self, shader: ShaderProgram | None) -> None:
+        shader = shader or get_default_decoration_shader()
+        if self._decoration_shader == shader:
+            return
+        self._decoration_shader = shader
+        self._background_decoration_group = None
+        self._foreground_decoration_group = None
+        self._update()
+
+    @property
+    def effect_shader(self) -> ShaderProgram:
+        """Shader applied to every glyph-backed effect in this layout.
+
+        Assigning a shader recreates the layout's effect vertex lists. An
+        effect shader applies to all text runs in the layout.
+        """
+        return self._effect_shader or self._program
+
+    @effect_shader.setter
+    def effect_shader(self, shader: ShaderProgram | None) -> None:
+        if self._effect_shader == shader:
+            return
+        self._effect_shader = shader
+        self.effect_group_cache.clear()
         self._update()
 
     @property
@@ -1084,6 +1141,8 @@ class TextLayout:
             return
 
         self._program = shader_program
+        if self._effect_shader is None:
+            self.effect_group_cache.clear()
         self._update()
 
     @property
