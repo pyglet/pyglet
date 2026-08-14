@@ -20,6 +20,9 @@ from pyglet.font.freetype_lib import (
     FT_Done_Face,
     FT_Face,
     FT_GlyphSlot,
+    FT_Glyph,
+    FT_Stroker,
+    FT_BitmapGlyph,
     FT_Load_Glyph,
     FT_New_Face,
     FT_New_Memory_Face,
@@ -37,6 +40,7 @@ from pyglet.font.freetype_lib import (
     FT_PIXEL_MODE_BGRA,
     FT_Get_Char_Index,
     FT_LOAD_NO_BITMAP,
+    FT_LOAD_DEFAULT,
     FT_Load_Char,
     FT_FACE_FLAG_SFNT,
     FT_SfntName,
@@ -44,6 +48,20 @@ from pyglet.font.freetype_lib import (
     FT_Get_Sfnt_Name,
     TT_NAME_ID_FULL_NAME,
     TT_NAME_ID_FONT_FAMILY,
+    FT_Get_Glyph,
+    FT_Done_Glyph,
+    FT_Glyph_To_Bitmap,
+    FT_Glyph_StrokeBorder,
+    FT_Stroker_New,
+    FT_Stroker_Set,
+    FT_Stroker_Done,
+    FT_RENDER_MODE_NORMAL,
+    FT_RENDER_MODE_MONO,
+    FT_STROKER_LINECAP_ROUND,
+    FT_STROKER_LINEJOIN_ROUND,
+    FT_STROKER_LINEJOIN_BEVEL,
+    FT_STROKER_LINEJOIN_MITER_VARIABLE,
+    FreeTypeError,
 )
 from pyglet.font.harfbuzz import harfbuzz_available, get_resource_from_ft_font, get_harfbuzz_shaped_glyphs
 from pyglet.util import asbytes, asstr, debug_print
@@ -237,6 +255,75 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
         self._get_bitmap_data()
         return self._create_glyph()
 
+    def render_stroke(self, glyph_index: int, size: float, join: str, advance: int) -> base.Glyph | None:
+        """Rasterize the outside border of an outline glyph."""
+        self.font.face.set_char_size(self.font.size, self.font.dpi)
+        glyph = FT_Glyph()
+        stroker = None
+        try:
+            flags = FT_LOAD_DEFAULT | FT_LOAD_NO_BITMAP
+            if pyglet.options.text_antialiasing is False:
+                flags |= FT_LOAD_TARGET_MONO
+            FT_Load_Glyph(self.font.face.ft_face, glyph_index, flags)
+            FT_Get_Glyph(self.font.face.ft_face.contents.glyph, byref(glyph))
+
+            stroker = self.font.face.new_stroker(size, join)
+            # ``inside=0`` retains only the border outside the filled glyph.
+            FT_Glyph_StrokeBorder(byref(glyph), stroker, 0, 1)
+            FT_Stroker_Done(stroker)
+            stroker = None
+            FT_Glyph_To_Bitmap(
+                byref(glyph),
+                FT_RENDER_MODE_MONO if pyglet.options.text_antialiasing is False else FT_RENDER_MODE_NORMAL,
+                None, 1,
+            )
+        except FreeTypeError:
+            # Bitmap, SVG, and other non-outline glyphs cannot be stroked by
+            # FreeType's outline stroker.
+            if glyph:
+                FT_Done_Glyph(glyph)
+            return None
+        finally:
+            if stroker:
+                FT_Stroker_Done(stroker)
+
+        try:
+            bitmap_glyph = cast(glyph, FT_BitmapGlyph).contents
+            bitmap = bitmap_glyph.bitmap
+            width, height = bitmap.width, bitmap.rows
+            if width == 0 or height == 0:
+                data = bytes(4)
+                width = height = 1
+            elif bitmap.pixel_mode == FT_PIXEL_MODE_GRAY:
+                raw = string_at(bitmap.buffer, abs(bitmap.pitch) * height)
+                data = bytearray(width * height * 4)
+                for y in range(height):
+                    row = raw[y * abs(bitmap.pitch):y * abs(bitmap.pitch) + width]
+                    for x, alpha in enumerate(row):
+                        offset = (y * width + x) * 4
+                        data[offset:offset + 4] = (255, 255, 255, alpha)
+            elif bitmap.pixel_mode == FT_PIXEL_MODE_MONO:
+                raw = string_at(bitmap.buffer, abs(bitmap.pitch) * height)
+                data = bytearray(width * height * 4)
+                for y in range(height):
+                    row = raw[y * abs(bitmap.pitch):(y + 1) * abs(bitmap.pitch)]
+                    for x in range(width):
+                        alpha = 255 if row[x // 8] & (0x80 >> (x % 8)) else 0
+                        offset = (y * width + x) * 4
+                        data[offset:offset + 4] = (255, 255, 255, alpha)
+            else:
+                return None
+
+            image_data = image.ImageData(width, height, "BGRA", bytes(data), width * 4)
+            stroked = self.font.create_glyph(image_data)
+            stroked.set_bearings(height - bitmap_glyph.top, bitmap_glyph.left, advance)
+            # FreeType bitmap rows run from top to bottom.
+            tex_coords = list(stroked.tex_coords)
+            stroked.tex_coords = tex_coords[9:12] + tex_coords[6:9] + tex_coords[3:6] + tex_coords[:3]
+            return stroked
+        finally:
+            FT_Done_Glyph(glyph)
+
 
 class FreeTypeFontMetrics(NamedTuple):
     ascent: int
@@ -296,6 +383,8 @@ class FreeTypeFont(base.Font):
 
         self._load_font_face()
         self.metrics = self.face.get_font_metrics(self.size, self.dpi)
+        self._glyph_sources: dict[int, int] = {}
+        self._stroke_glyphs: dict[tuple[int, float, str], base.Glyph] = {}
 
         if pyglet.options.text_shaping == 'harfbuzz' and harfbuzz_available():
             self.hb_resource = get_resource_from_ft_font(self)
@@ -373,7 +462,9 @@ class FreeTypeFont(base.Font):
 
         # Missing glyphs, get their info.
         for glyph_indice in missing:
-            self.glyphs[glyph_indice] = self._glyph_renderer.render_index(glyph_indice)
+            glyph = self._glyph_renderer.render_index(glyph_indice)
+            self.glyphs[glyph_indice] = glyph
+            self._glyph_sources[id(glyph)] = glyph_indice
 
     def get_glyphs(self, text: str, shaping: bool) -> tuple[list[base.Glyph], list[base.GlyphPosition]]:
         """Create and return a list of Glyphs for `text`.
@@ -398,10 +489,26 @@ class FreeTypeFont(base.Font):
             if c == "\t":
                 c = " "  # noqa: PLW2901
             if c not in self.glyphs:
-                self.glyphs[c] = self._glyph_renderer.render(c)
+                glyph = self._glyph_renderer.render(c)
+                self.glyphs[c] = glyph
+                self._glyph_sources[id(glyph)] = self.face.get_character_index(c)
             glyphs.append(self.glyphs[c])
 
         return glyphs, [GlyphPosition(0, 0, 0, 0)] * len(text)
+
+    def get_stroke_glyph(self, glyph: base.Glyph, size: float, join: str = "round") -> base.Glyph | None:
+        if size <= 0 or (glyph_index := self._glyph_sources.get(id(glyph))) is None:
+            return None
+
+        cache_key = id(glyph), size, join
+        if stroked := self._stroke_glyphs.get(cache_key):
+            return stroked
+
+        self._initialize_renderer()
+        stroked = self._glyph_renderer.render_stroke(glyph_index, size, join, glyph.advance)
+        if stroked is not None:
+            self._stroke_glyphs[cache_key] = stroked
+        return stroked
 
     def get_text_size(self, text: str) -> tuple[int, int]:
         width = 0
@@ -557,6 +664,18 @@ class FreeTypeFace:
 
         FT_Load_Glyph(self.ft_face, glyph_index, flags)
         return self.ft_face.contents.glyph.contents
+
+    def new_stroker(self, size: float, join: str):
+        stroker = FT_Stroker()
+        # A stroke radius is specified in 26.6 pixels. Its miter limit is 16.16
+        FT_Stroker_New(ft_get_library(), byref(stroker))
+        line_joins = {
+            "round": FT_STROKER_LINEJOIN_ROUND,
+            "bevel": FT_STROKER_LINEJOIN_BEVEL,
+            "miter": FT_STROKER_LINEJOIN_MITER_VARIABLE,
+        }
+        FT_Stroker_Set(stroker, float_to_f26p6(size), FT_STROKER_LINECAP_ROUND, line_joins[join], 10 << 16)
+        return stroker
 
     def get_font_metrics(self, size: float, dpi: int) -> FreeTypeFontMetrics:
         if self.set_char_size(size, dpi):
