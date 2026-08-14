@@ -142,8 +142,6 @@ class GLVertexStream(VertexStream):
         return GLAttribute(attribute, view)
 
     def get_buffer(self, size: int, attribute) -> GL2AttributeBufferObject:
-        # TODO: use persistent buffer if we have GL support for it:
-        # attribute.buffer = PersistentBufferObject(attribute.stride * self.allocator.capacity, attribute, self.vao)
         return GL2AttributeBufferObject(self._ctx, size, attribute)
 
     def bind_into(self, _vao: None) -> None:

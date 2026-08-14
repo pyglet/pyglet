@@ -377,8 +377,11 @@ does not apply.
 Images, audio, and graphics
 ---------------------------
 
-PNG and BMP images work without optional packages. Load Pillow before starting
-the application for additional image formats.
+Without optional packages, pyglet uses the browser's image decoder. It supports
+PNG, BMP, JPEG, GIF, WebP, and AVIF when the active browser supports the
+format. If Pillow is loaded before pyglet is imported, it takes priority and
+provides Pillow's additional image formats. Pillow can also be up to five times
+faster at loading images, but does add an additional dependency.
 
 Audio uses the Web Audio API and is decoded into memory rather than streamed.
 The browser determines which of MP3, AAC, WAV, OGG, and WebM it can decode.

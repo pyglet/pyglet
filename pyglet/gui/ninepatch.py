@@ -138,12 +138,12 @@ class NinePatch(Sprite):
 
         self._vertex_list = self.program.vertex_list_indexed(
             16, GeometryMode.TRIANGLE_STRIP, indices, self._batch, self._group,
-            position=('f', self._get_vertices()),
-            colors=('Bn', self._rgba * 16),
-            translate=('f', (self._x, self._y, self._z) * 16),
-            scale=('f', (self._scale*self._scale_x, self._scale*self._scale_y) * 16),
-            rotation=('f', (self._rotation,) * 16),
-            tex_coords=('f', uvs))
+            position=self._get_vertices(),
+            colors=self._rgba * 16,
+            translate=(self._x, self._y, self._z) * 16,
+            scale=(self._scale*self._scale_x, self._scale*self._scale_y) * 16,
+            rotation=(self._rotation,) * 16,
+            tex_coords=uvs)
 
     def _get_vertices(self) -> tuple:
         if not self._visible:

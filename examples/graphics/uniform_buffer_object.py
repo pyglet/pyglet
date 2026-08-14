@@ -106,7 +106,7 @@ triangle_1 = program.vertex_list(
     GeometryMode.TRIANGLES,
     batch=batch,
     group=groups[0],
-    position=("f", triangle_vertices),
+    position=triangle_vertices,
 )
 triangle_2 = program.vertex_list_indexed(
     4,
@@ -114,14 +114,14 @@ triangle_2 = program.vertex_list_indexed(
     indices=(0, 1, 2, 0, 2, 3),
     batch=batch,
     group=groups[1],
-    position=("f", quad_vertices),
+    position=quad_vertices,
 )
 triangle_3 = program.vertex_list(
     3,
     GeometryMode.TRIANGLES,
     batch=batch,
     group=groups[2],
-    position=("f", triangle_vertices),
+    position=triangle_vertices,
 )
 
 

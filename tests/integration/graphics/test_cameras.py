@@ -1,11 +1,19 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import pytest
 
 import pyglet
 from pyglet.math import Mat4, Vec3
 from pyglet.graphics.draw import DrawContext, DrawPass
-from pyglet.window.camera.base import BaseCamera, CameraViewStorageFactory, UniformSetCameraRegion
+from pyglet.window.camera import base as camera_base
+from pyglet.window.camera.base import (
+    BaseCamera,
+    CameraViewStorageFactory,
+    UniformBufferCameraRegion,
+    UniformSetCameraRegion,
+)
 from tests.annotations import GraphicsAPIGroups, require_graphics_api
 
 
@@ -68,8 +76,41 @@ def _set_default_view_storage(monkeypatch: pytest.MonkeyPatch, storage: Recordin
     monkeypatch.setattr(
         BaseCamera,
         "_create_default_view_storage",
-        lambda self, **_kwargs: storage,
+        lambda self, _window, **_kwargs: storage,
     )
+
+
+@pytest.mark.parametrize("uniform_buffers", [False, True])
+def test_default_camera_storage_uniform_buffer_capability(
+    monkeypatch: pytest.MonkeyPatch,
+    uniform_buffers: bool,
+) -> None:
+    window = SimpleNamespace(
+        context=SimpleNamespace(
+            info=SimpleNamespace(features=SimpleNamespace(uniform_buffers=uniform_buffers)),
+        ),
+    )
+
+    if not uniform_buffers:
+        storage = BaseCamera._create_default_view_storage(SimpleNamespace(), window)
+        assert isinstance(storage, UniformSetCameraRegion)
+        return
+
+    ubo = object()
+
+    class RecordingUniformBufferCameraRegion:
+        def __init__(self, *, ubo, copies_per_resource) -> None:
+            self.ubo = ubo
+            self.copies_per_resource = copies_per_resource
+
+    monkeypatch.setattr(camera_base, "_create_default_camera_ubo", lambda *_args, **_kwargs: ubo)
+    monkeypatch.setattr(camera_base, "UniformBufferCameraRegion", RecordingUniformBufferCameraRegion)
+
+    storage = BaseCamera._create_default_view_storage(SimpleNamespace(), window, copies_per_resource=5)
+
+    assert isinstance(storage, RecordingUniformBufferCameraRegion)
+    assert storage.ubo is ubo
+    assert storage.copies_per_resource == 5
 
 
 def test_camera2d_auto_viewport_tracks_internal_resize(test_window):

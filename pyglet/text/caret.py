@@ -108,13 +108,13 @@ class Caret(EventDispatcher):
         colors = r, g, b, self._visible_alpha, r, g, b, self._visible_alpha
 
         self._list = self._group.program.vertex_list(2, GeometryMode.LINES, self._batch, self._group,
-                                                        position=('f', (0, 0, 0) * 2),
-                                                        translation=('f', (0, 0, 0) * 2),
-                                                        view_translation=('f', (0, 0, 0) * 2),
-                                                        anchor=('f', (0, 0) * 2),
-                                                        rotation=('f', (0, 0)),
-                                                        visible=('f', (1, 1)),
-                                                        colors=("Bn", colors))
+                                                        position=(0, 0, 0) * 2,
+                                                        translation=(0, 0, 0) * 2,
+                                                        view_translation=(0, 0, 0) * 2,
+                                                        anchor=(0, 0) * 2,
+                                                        rotation=(0, 0),
+                                                        visible=(1, 1),
+                                                        colors=colors)
 
         self._ideal_x = None
         self._ideal_line = None

@@ -61,13 +61,13 @@ class TestElement(document.InlineElement):
 
         self.vertex_list = program.vertex_list_indexed(4, GeometryMode.TRIANGLES, [0, 1, 2, 0, 2, 3],
                                                   layout.batch, group,
-                                                  position=('f', (x1, y1, z, x2, y1, z, x2, y2, z, x1, y2, z)),
-                                                  colors=('Bn', (200, 200, 200, 255) * 4),
-                                                  translation=('f', (x, y, z) * 4),
-                                                  visible=('f', (visible,) * 4),
-                                                  rotation=('f', (rotation,) * 4),
-                                                  anchor=('f', (anchor_x, anchor_y) * 4),
-                                                  view_translation=("f", (0, 0, 0) * 4),
+                                                  position=(x1, y1, z, x2, y1, z, x2, y2, z, x1, y2, z),
+                                                  colors=(200, 200, 200, 255) * 4,
+                                                  translation=(x, y, z) * 4,
+                                                  visible=(visible,) * 4,
+                                                  rotation=(rotation,) * 4,
+                                                  anchor=(anchor_x, anchor_y) * 4,
+                                                  view_translation=(0, 0, 0) * 4,
                                                   )
     def update_translation(self, x: float, y: float, z: float):
         self.vertex_list.translation[:] = (x, y, z) * self.vertex_list.count

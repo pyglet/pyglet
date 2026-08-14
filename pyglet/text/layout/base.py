@@ -19,6 +19,7 @@ from pyglet import graphics
 from pyglet.enums import BlendFactor, GeometryMode, GraphicsAPI
 from pyglet.graphics import Group, ShaderProgram
 from pyglet.text import runlist
+from pyglet.text.document import UnformattedDocument
 from pyglet.font.base import GlyphPosition
 
 if TYPE_CHECKING:
@@ -38,23 +39,21 @@ if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
         get_default_decoration_shader,
         get_default_image_layout_shader,
         get_default_layout_shader,
+        get_default_scrollable_layout_shader,
     )
 elif pyglet.options.backend in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
     from pyglet.graphics.api.gl2.text import (
         get_default_decoration_shader,
         get_default_image_layout_shader,
         get_default_layout_shader,
+        get_default_scrollable_layout_shader,
     )
 elif pyglet.options.backend == GraphicsAPI.WEBGL:
     from pyglet.graphics.api.webgl.text import (
         get_default_decoration_shader,
         get_default_image_layout_shader,  # noqa: F401
         get_default_layout_shader,
-    )
-elif pyglet.options.backend == GraphicsAPI.VULKAN:
-    from pyglet.graphics.api.vulkan.text import (
-        get_default_decoration_shader,
-        get_default_layout_shader,
+        get_default_scrollable_layout_shader,
     )
 
 
@@ -440,16 +439,20 @@ class _GlyphBox(_AbstractBox):
 
         t_position = (x, y, z)
 
+        vertex_data = {
+            "position": vertices,
+            "translation": t_position * 4 * n_glyphs,
+            "colors": colors,
+            "tex_coords": tex_coords,
+            "rotation": ((rotation,) * 4) * n_glyphs,
+            "visible": ((visible,) * 4) * n_glyphs,
+            "anchor": ((anchor_x, anchor_y) * 4) * n_glyphs,
+        }
+        if "view_translation" in layout.program.attributes:
+            vertex_data["view_translation"] = (0, 0, 0) * 4 * n_glyphs
+
         vertex_list = layout.program.vertex_list_indexed(n_glyphs * 4, GeometryMode.TRIANGLES, indices, layout.batch,
-                                                         group,
-                                                         position=("f", vertices),
-                                                         translation=("f", t_position * 4 * n_glyphs),
-                                                         colors=("Bn", colors),
-                                                         view_translation=('f', ((0, 0, 0) * 4 * n_glyphs)),
-                                                         tex_coords=("f", tex_coords),
-                                                         rotation=("f", ((rotation,) * 4) * n_glyphs),
-                                                         visible=("f", ((visible,) * 4) * n_glyphs),
-                                                         anchor=("f", ((anchor_x, anchor_y) * 4) * n_glyphs))
+                                                         group, **vertex_data)
         self._add_vertex_list(vertex_list, context)
 
         # Decoration (background color and underline)
@@ -469,15 +472,35 @@ class _GlyphBox(_AbstractBox):
         for start, end, decoration in context.decoration_iter.ranges(i, i + n_glyphs):
             bg, underline = decoration
             x2 = x1
+            background_x1 = x1
+            background_y1 = y1
+            background_x2 = x1
+            background_y2 = y2
             for (kern, glyph, glyph_pos) in self.glyphs[start - i:end - i]:
-                x2 += glyph.advance + kern + glyph_pos.x_advance
+                x2 += kern
+                v0, v1, v2, v3 = glyph.vertices
+
+                # Glyphs can extend outside their advance, use bounds. (italic, emoji)
+                glyph_x = x2 + glyph_pos.x_offset
+                glyph_y = line_y + baseline + glyph_pos.y_offset
+                background_x1 = min(background_x1, glyph_x + v0)
+                background_y1 = min(background_y1, glyph_y + v1)
+                background_x2 = max(background_x2, glyph_x + v2)
+                background_y2 = max(background_y2, glyph_y + v3)
+
+                x2 += glyph.advance + glyph_pos.x_advance
 
             if bg is not None:
                 if len(bg) != 4:
                     msg = f"Background color requires 4 values (R, G, B, A). Value received: {bg}"
                     raise ValueError(msg)
 
-                background_vertices.extend([x1, y1, 0, x2, y1, 0, x2, y2, 0, x1, y2, 0])
+                background_vertices.extend([
+                    background_x1, background_y1, 0,
+                    background_x2, background_y1, 0,
+                    background_x2, background_y2, 0,
+                    background_x1, background_y2, 0,
+                ])
                 background_colors.extend(bg * 4)
 
             if underline is not None:
@@ -497,13 +520,13 @@ class _GlyphBox(_AbstractBox):
             background_list = decoration_program.vertex_list_indexed(bg_count, GeometryMode.TRIANGLES,
                                                                      background_indices,
                                                                      layout.batch, layout.background_decoration_group,
-                                                                     position=("f", background_vertices),
-                                                                     translation=("f", t_position * bg_count),
-                                                                     view_translation=('f', (0, 0, 0) * bg_count),
-                                                                     colors=("Bn", background_colors),
-                                                                     rotation=("f", (rotation,) * bg_count),
-                                                                     visible=("f", (visible,) * bg_count),
-                                                                     anchor=("f", (anchor_x, anchor_y) * bg_count))
+                                                                     position=background_vertices,
+                                                                     translation=t_position * bg_count,
+                                                                     view_translation=(0, 0, 0) * bg_count,
+                                                                     colors=background_colors,
+                                                                     rotation=(rotation,) * bg_count,
+                                                                     visible=(visible,) * bg_count,
+                                                                     anchor=(anchor_x, anchor_y) * bg_count)
             self._add_vertex_list(background_list, context)
 
         if underline_vertices:
@@ -511,13 +534,13 @@ class _GlyphBox(_AbstractBox):
             decoration_program = get_default_decoration_shader()
             underline_list = decoration_program.vertex_list(ul_count, GeometryMode.LINES,
                                                             layout.batch, layout.foreground_decoration_group,
-                                                            position=("f", underline_vertices),
-                                                            translation=("f", t_position * ul_count),
-                                                            view_translation=('f', (0, 0, 0) * ul_count),
-                                                            colors=("Bn", underline_colors),
-                                                            rotation=("f", (rotation,) * ul_count),
-                                                            visible=("f", (visible,) * ul_count),
-                                                            anchor=("f", (anchor_x, anchor_y) * ul_count))
+                                                            position=underline_vertices,
+                                                            translation=t_position * ul_count,
+                                                            view_translation=(0, 0, 0) * ul_count,
+                                                            colors=underline_colors,
+                                                            rotation=(rotation,) * ul_count,
+                                                            visible=(visible,) * ul_count,
+                                                            anchor=(anchor_x, anchor_y) * ul_count)
             self._add_vertex_list(underline_list, context)
 
     def update_translation(self, x: float, y: float, z: float) -> None:
@@ -860,9 +883,32 @@ class TextLayout:
         return self._flow_glyphs_single_line
 
     def _initialize_groups(self) -> None:
-        decoration_shader = get_default_decoration_shader()
-        self.background_decoration_group = self.decoration_class(decoration_shader, order=0, parent=self._user_group)
-        self.foreground_decoration_group = self.decoration_class(decoration_shader, order=2, parent=self._user_group)
+        # Most labels do not contain backgrounds, underlines, or carets.
+        # Avoid constructing groups until one is used.
+        self._background_decoration_group = None
+        self._foreground_decoration_group = None
+
+    @property
+    def background_decoration_group(self) -> TextDecorationGroup:
+        if self._background_decoration_group is None:
+            program = get_default_decoration_shader()
+            self._background_decoration_group = self.decoration_class(program, order=0, parent=self._user_group)
+        return self._background_decoration_group
+
+    @background_decoration_group.setter
+    def background_decoration_group(self, group: TextDecorationGroup | None) -> None:
+        self._background_decoration_group = group
+
+    @property
+    def foreground_decoration_group(self) -> TextDecorationGroup:
+        if self._foreground_decoration_group is None:
+            program = get_default_decoration_shader()
+            self._foreground_decoration_group = self.decoration_class(program, order=2, parent=self._user_group)
+        return self._foreground_decoration_group
+
+    @foreground_decoration_group.setter
+    def foreground_decoration_group(self, group: TextDecorationGroup | None) -> None:
+        self._foreground_decoration_group = group
 
     @property
     def group(self) -> Group | None:
@@ -1355,6 +1401,12 @@ class TextLayout:
             self._batch.draw_subset(self._vertex_lists)
 
     def _get_lines(self) -> list[_Line]:
+        if not self._multiline and type(self._document) is UnformattedDocument:
+            return self._get_unformatted_single_line()
+
+        return self._get_lines_generic()
+
+    def _get_lines_generic(self) -> list[_Line]:
         len_text = len(self._document.text)
         glyphs, offsets = self._get_glyphs()
         owner_runs = runlist.RunList(len_text, None)
@@ -1364,6 +1416,68 @@ class TextLayout:
         self._line_count = len(lines)
         self._flow_lines(lines, 0, self._line_count)
         return lines
+
+    def _get_unformatted_single_line(self) -> list[_Line]:
+        """Lay out a uniform, single-line document without generic run iterators."""
+        document = self._document
+        text = document.text
+        font = document.get_font(dpi=self._dpi)
+        glyphs, offsets = font.get_glyphs(text, self._shaping)
+
+        line = _Line(0)
+        if self._width:
+            align = document.get_style("align")
+            if align in ("left", "right", "center"):
+                line.align = align
+
+        kerning = document.get_style("kerning")
+        if kerning is None:
+            kerning = 0
+
+        owner = glyphs[0].owner
+        owner_glyphs = []
+        owner_width = 0
+        for glyph, offset in zip(glyphs, offsets):
+            if glyph.owner != owner:
+                line.add_box(_GlyphBox(owner, font, owner_glyphs, owner_width))
+                owner = glyph.owner
+                owner_glyphs = []
+                owner_width = 0
+
+            owner_glyphs.append((kerning, glyph, offset))
+            owner_width += glyph.advance + kerning + offset.x_advance
+
+        line.add_box(_GlyphBox(owner, font, owner_glyphs, owner_width))
+        line.paragraph_begin = line.paragraph_end = True
+
+        self._content_width = line.width
+        self._line_count = 1
+        self._flow_unformatted_single_line(line)
+        return [line]
+
+    def _flow_unformatted_single_line(self, line: _Line) -> None:
+        """Position a uniform single line without paragraph run processing."""
+        document = self._document
+        margin_top = document.get_style("margin_top")
+        margin_bottom = document.get_style("margin_bottom")
+        line_spacing = document.get_style("line_spacing")
+
+        margin_top = self._parse_distance(margin_top) if margin_top is not None else 0
+        margin_bottom = self._parse_distance(margin_bottom) if margin_bottom is not None else 0
+        line_spacing = self._parse_distance(line_spacing) if line_spacing is not None else None
+
+        if line.align == "center" and line.width <= self.width:
+            line.x = (self.width - line.width) // 2
+        elif line.align == "right" and line.width <= self.width:
+            line.x = self.width - line.width
+
+        y = -margin_top
+        y -= line.ascent if line_spacing is None else line_spacing
+        line.y = y
+        if line_spacing is None:
+            y += line.descent
+        y -= margin_bottom
+        self._content_height = -y
 
     def _update(self) -> None:
         if not self._update_enabled:

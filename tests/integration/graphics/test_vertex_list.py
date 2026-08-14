@@ -36,13 +36,27 @@ class VertexListTest(unittest.TestCase):
         )
 
         vertex_list = program.vertex_list(3, GeometryMode.TRIANGLES,
-                                          position=('f', vertices),
-                                          colors=('f', colors))
+                                          position=vertices,
+                                          colors=colors)
 
         assert vertex_list.count == 3
         assert vertex_list.indexed is False
         assert tuple(vertex_list.position[:]) == pytest.approx(vertices)
         assert tuple(vertex_list.colors[:]) == pytest.approx(colors)
+
+    def test_interned_vertex_layout_creates_vertex_list(self):
+        program = pyglet.graphics.api.get_default_shader()
+        layout = program.create_vertex_layout(colors="Bn")
+
+        vertex_list = layout.vertex_list(
+            3,
+            GeometryMode.TRIANGLES,
+            position=(0, 0, 0) * 3,
+            colors=(255, 128, 0, 255) * 3,
+        )
+
+        assert program.create_vertex_layout(colors="Bn") is layout
+        assert tuple(vertex_list.colors[:]) == (255, 128, 0, 255) * 3
 
     def test_vertex_list_property_set(self):
         program = pyglet.graphics.api.get_default_shader()
@@ -66,8 +80,8 @@ class VertexListTest(unittest.TestCase):
         )
 
         vertex_list = program.vertex_list(3, GeometryMode.TRIANGLES,
-                                          position=('f', vertices_1),
-                                          colors=('f', colors))
+                                          position=vertices_1,
+                                          colors=colors)
 
         assert vertex_list.count == 3
         assert vertex_list.indexed is False
@@ -99,8 +113,8 @@ class VertexListTest(unittest.TestCase):
         )
 
         vertex_list = program.vertex_list(3, GeometryMode.TRIANGLES,
-                                          position=('f', vertices_1),
-                                          colors=('f', colors))
+                                          position=vertices_1,
+                                          colors=colors)
 
         vertex_list.position = vertices_2
 
@@ -116,8 +130,8 @@ class VertexListTest(unittest.TestCase):
         vertex_list = program.vertex_list_indexed(4, GeometryMode.TRIANGLES, indices,
                                                   batch=None,
                                                   group=None,
-                                                  position=('f', vertices),
-                                                  colors=('f', colors))
+                                                  position=vertices,
+                                                  colors=colors)
 
         assert vertex_list.count == 4
         assert vertex_list.indexed is True
@@ -136,8 +150,8 @@ class VertexListTest(unittest.TestCase):
         vertex_list = program.vertex_list_indexed(4, GeometryMode.TRIANGLES, indices,
                                                   batch=None,
                                                   group=None,
-                                                  position=('f', vertices_1),
-                                                  colors=('f', colors))
+                                                  position=vertices_1,
+                                                  colors=colors)
 
         assert tuple(vertex_list.position[:]) == pytest.approx(vertices_1)
 
@@ -156,8 +170,8 @@ class VertexListTest(unittest.TestCase):
         vertex_list = program.vertex_list_indexed(4, GeometryMode.TRIANGLES, indices,
                                                   batch=None,
                                                   group=None,
-                                                  position=('f', vertices_1),
-                                                  colors=('f', colors))
+                                                  position=vertices_1,
+                                                  colors=colors)
 
         vertex_list.position = vertices_2
 
@@ -180,20 +194,20 @@ class VertexListTest(unittest.TestCase):
         vertex_list1 = program.vertex_list_indexed(4, GeometryMode.TRIANGLES, indices,
                                                   batch=batch,
                                                   group=None,
-                                                  position=('f', vertices),
-                                                  colors=('f', colors))
+                                                  position=vertices,
+                                                  colors=colors)
 
         vertex_list2 = program.vertex_list_indexed(4, GeometryMode.TRIANGLES, indices,
                                                    batch=batch,
                                                    group=None,
-                                                   position=('f', vertices),
-                                                   colors=('f', colors))
+                                                   position=vertices,
+                                                   colors=colors)
 
         vertex_list3 = program.vertex_list_indexed(4, GeometryMode.TRIANGLES, indices,
                                                    batch=batch,
                                                    group=None,
-                                                   position=('f', vertices),
-                                                   colors=('f', colors))
+                                                   position=vertices,
+                                                   colors=colors)
 
         shared_bucket = vertex_list1.bucket
         assert vertex_list1.domain == vertex_list2.domain == vertex_list3.domain
@@ -211,8 +225,8 @@ class VertexListTest(unittest.TestCase):
         vertex_list4 = program.vertex_list_indexed(4, GeometryMode.TRIANGLES, indices,
                                                    batch=batch,
                                                    group=None,
-                                                   position=('f', vertices),
-                                                   colors=('f', colors))
+                                                   position=vertices,
+                                                   colors=colors)
 
         shared_bucket = vertex_list1.bucket
         assert vertex_list1.domain == vertex_list4.domain == vertex_list3.domain

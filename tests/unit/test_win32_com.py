@@ -6,6 +6,21 @@ import pytest
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows COM is available only on Windows")
+def test_guid_without_arguments_is_a_new_null_guid() -> None:
+    from pyglet.libs.win32.com import GUID
+
+    first = GUID()
+    second = GUID()
+
+    assert bytes(first) == bytes(16)
+    assert first == second
+    assert first is not second
+
+    first.Data1 = 1
+    assert second.Data1 == 0
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows COM is available only on Windows")
 def test_guid_copy_is_independent() -> None:
     from pyglet.libs.win32.com import GUID
 

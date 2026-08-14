@@ -208,8 +208,8 @@ def test_gl2_indexed_batch_draw_keeps_element_buffer_bound(test_window) -> None:
         indices,
         batch=batch,
         group=None,
-        position=("f", vertices),
-        colors=("f", colors),
+        position=vertices,
+        colors=colors,
     )
 
     original_draw_elements = ctx.glDrawElements
