@@ -4,8 +4,8 @@ import random
 import pytest
 
 
-from pyglet.text import decode_text, decode_attributed, decode_html
-from pyglet.text import Label, DocumentLabel, HTMLLabel
+from pyglet.text import decode_text, decode_attributed, decode_html, LinearGradient
+from pyglet.text import DocumentLabel, HTMLLabel, Label
 
 WIDTH = 500
 HEIGHT = 100
@@ -38,3 +38,13 @@ def test_documentlabel_creation(test_window, document, shaping):
     assert label.y == Y
     assert label.z == Z
     assert label._shaping is shaping  # noqa: SLF001
+
+
+def test_label_linear_gradient(test_window):
+    gradient = LinearGradient((255, 0, 0, 255), (0, 0, 255, 255))
+    label = Label("Gradient", color=gradient)
+
+    colors = tuple(label._boxes[0]._glyph_vertex_list.colors)  # noqa: SLF001
+    assert label.color is gradient
+    assert colors[:8] == gradient.start * 2
+    assert colors[-8:] == gradient.end * 2

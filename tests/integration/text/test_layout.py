@@ -1,4 +1,5 @@
 """Test creation of all Layout classes"""
+
 import random
 import itertools
 import unittest
@@ -93,6 +94,21 @@ def test_layout_get_as_texture_with_reusable_target(test_window):
             text_layout.delete()
 
 
+def test_text_layout_reuses_groups_until_group_state_changes(test_window, monkeypatch):
+    # Test to make sure labels don't disappear on group/state change.
+    text_layout = layout.TextLayout(document.UnformattedDocument("Reusable groups"))
+    original_groups = dict(text_layout.group_cache)
+
+    text_layout._update()  # noqa: SLF001
+    assert text_layout.group_cache == original_groups
+
+    monkeypatch.setattr(text_layout, "_update", lambda: None)
+    text_layout.program = object()  # type: ignore[assignment]
+    assert not text_layout.group_cache
+
+    text_layout.delete()
+
+
 class TestIssues(unittest.TestCase):
 
     def test_issue471(self):
@@ -124,10 +140,8 @@ class TestIssues(unittest.TestCase):
         doc.delete_text(0, 1)
 
     def test_issue429_comment4a(self):
-        doc = decode_attributed(
-            '{bold True}Hello{bold False}\n\n\n\n')
-        doc2 = decode_attributed(
-            '{bold True}Goodbye{bold False}\n\n\n\n')
+        doc = decode_attributed('{bold True}Hello{bold False}\n\n\n\n')
+        doc2 = decode_attributed('{bold True}Goodbye{bold False}\n\n\n\n')
         incremental_layout = layout.IncrementalTextLayout(doc, 100, 10, width=500, height=100)
         incremental_layout.document = doc2
         incremental_layout.document.delete_text(0, len(incremental_layout.document.text))
@@ -137,14 +151,14 @@ class TestIssues(unittest.TestCase):
         incremental_layout = layout.IncrementalTextLayout(doc2, 100, 10, width=500, height=100)
         incremental_layout.document.delete_text(0, len(incremental_layout.document.text))
 
+
 def test_incrementallayout_get_position_on_line_before_start_of_text(test_window):
     single_line_text = "This is a single line of text."
     doc = document.UnformattedDocument(single_line_text)
     font = doc.get_font()
-    incremental_layout = layout.IncrementalTextLayout(doc,
-                                                      height = font.ascent - font.descent,
-                                                      width = 200,
-                                                      multiline=False)
+    incremental_layout = layout.IncrementalTextLayout(
+        doc, height=font.ascent - font.descent, width=200, multiline=False
+    )
     incremental_layout.x = 100
     incremental_layout.y = 100
 
