@@ -331,10 +331,7 @@ class DocumentLabel(layout.TextLayout):
 
     @property
     def stroke(self) -> Stroke | None:
-        """Text stroke style, or ``None`` to disable it.
-
-        Currently supported by DirectWrite.
-        """
+        """Text stroke style, or ``None`` to disable it."""
         return self.document.get_style("stroke")
 
     @stroke.setter
@@ -506,7 +503,7 @@ class Label(DocumentLabel):
                 disables the shadow.
             stroke:
                 Optional :class:`Stroke` style. ``None`` (the default) disables
-                the stroke. Currently supported by DirectWrite.
+                the stroke. Currently supported by DirectWrite and CoreText.
             align:
                 Horizontal alignment of text on a line, only applies if
                 a width is supplied. One of ``"left"``, ``"center"``

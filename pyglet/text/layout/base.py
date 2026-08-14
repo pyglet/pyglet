@@ -514,7 +514,7 @@ class _GlyphBox(_AbstractBox):
         self._glyph_vertex_list = vertex_list
         self._add_vertex_list(vertex_list, context)
 
-        # DirectWrite may provide a second, stroked glyph mask. It is drawn
+        # Supported font backends may provide a second, stroked glyph mask. It is drawn
         # in a lower-order group so the regular fill glyph remains on top.
         stroke_x = round(line_x)
         for glyph_index, (kern, glyph, glyph_pos) in enumerate(self.glyphs):
@@ -2145,4 +2145,3 @@ class TextLayout:
     def get_line_count(self) -> int:
         """Get the number of lines in the text layout."""
         return self._line_count
-
