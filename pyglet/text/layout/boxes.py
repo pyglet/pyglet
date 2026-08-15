@@ -371,24 +371,38 @@ class _GlyphBox(_AbstractBox):
         for start, end, color in context.colors_iter.ranges(start_index, start_index + self.length):
             if color is None:
                 color = (0, 0, 0, 255)  # noqa: PLW2901
-            if isinstance(color, LinearGradient):
-                start_glyph = start - start_index
-                end_glyph = end - start_index
-                left_edge = vertices[start_glyph * 12]
-                right_edge = vertices[(end_glyph - 1) * 12 + 6]
-                span = right_edge - left_edge
-                for glyph_idx in range(start_glyph, end_glyph):
-                    left = vertices[glyph_idx * 12]
-                    right = vertices[glyph_idx * 12 + 6]
-                    left_color = self._interpolate_gradient(color, left, left_edge, span)
-                    right_color = self._interpolate_gradient(color, right, left_edge, span)
-                    colors.extend(left_color * 2 + right_color * 2)
-            elif len(color) != 4:
-                msg = f"Color requires 4 values (R, G, B, A). Value received: {color}"
-                raise ValueError(msg)
-            else:
-                colors.extend(color * ((end - start) * 4))
+            colors.extend(self._create_range_colors(color, start, end, start_index, vertices, "Color"))
         return colors
+
+    def _create_range_colors(
+        self,
+        color: tuple[int, int, int, int] | LinearGradient,
+        start: int,
+        end: int,
+        start_index: int,
+        vertices: list[float],
+        effect_name: str,
+    ) -> list[int]:
+        """Create quad colors for a solid or gradient style range."""
+        character_count = end - start
+        if isinstance(color, LinearGradient):
+            start_glyph = start - start_index
+            end_glyph = end - start_index
+            left_edge = vertices[start_glyph * 12]
+            right_edge = vertices[(end_glyph - 1) * 12 + 6]
+            span = right_edge - left_edge
+            colors = []
+            for glyph_idx in range(start_glyph, end_glyph):
+                left = vertices[glyph_idx * 12]
+                right = vertices[glyph_idx * 12 + 6]
+                left_color = self._interpolate_gradient(color, left, left_edge, span)
+                right_color = self._interpolate_gradient(color, right, left_edge, span)
+                colors.extend(left_color * 2 + right_color * 2)
+            return colors
+        if len(color) != 4:
+            msg = f"{effect_name} color requires 4 values (R, G, B, A). Value received: {color}"
+            raise ValueError(msg)
+        return list(color * (character_count * 4))
 
     @staticmethod
     def _create_vertex_data(
@@ -438,16 +452,15 @@ class _GlyphBox(_AbstractBox):
             if shadow is None:
                 shadow_colors.extend((0, 0, 0, 0) * (character_count * 4))
                 continue
-            if len(shadow.color) != 4:
-                msg = f"Shadow color requires 4 values (R, G, B, A). Value received: {shadow.color}"
-                raise ValueError(msg)
             if len(shadow.offset) != 2:
                 msg = f"Shadow offset requires 2 values (X, Y). Value received: {shadow.offset}"
                 raise ValueError(msg)
             if shadow_vertices is None:
                 shadow_vertices = list(vertices)
             has_shadow = True
-            shadow_colors.extend(shadow.color * (character_count * 4))
+            shadow_colors.extend(
+                self._create_range_colors(shadow.color, start, end, start_index, vertices, "Shadow"),
+            )
             offset_start = (start - start_index) * 12
             offset_end = offset_start + character_count * 12
             for vertex_index in range(offset_start, offset_end, 3):
@@ -476,6 +489,7 @@ class _GlyphBox(_AbstractBox):
         line_x: float,
         line_y: float,
         baseline: int,
+        vertices: list[float],
         translation: tuple[float, float, float],
         rotation: float,
         visible: bool,
@@ -488,13 +502,27 @@ class _GlyphBox(_AbstractBox):
         if context.stroke_iter is None:
             return
 
-        stroke_iter = context.stroke_iter
+        gradient_colors = {}
+        for start, end, stroke in context.stroke_iter.ranges(start_index, start_index + self.length):
+            if stroke is None or not isinstance(stroke.color, LinearGradient):
+                continue
+            colors = self._create_range_colors(stroke.color, start, end, start_index, vertices, "Stroke")
+            range_start = start - start_index
+            for glyph_index in range(range_start, end - start_index):
+                color_start = (glyph_index - range_start) * 16
+                gradient_colors[glyph_index] = colors[color_start : color_start + 16]
+
         stroke_x = round(line_x)
         for glyph_index, (kern, glyph, glyph_pos) in enumerate(self.glyphs):
             stroke_x += round(kern)
-            stroke = stroke_iter[start_index + glyph_index]
+            stroke = context.stroke_iter[start_index + glyph_index]
             stroke_glyph = self.font.get_stroke_glyph(glyph, stroke.size, stroke.join) if stroke else None
             if stroke_glyph is not None:
+                stroke_color = (
+                    gradient_colors[glyph_index]
+                    if isinstance(stroke.color, LinearGradient)
+                    else stroke.color * 4
+                )
                 v0, v1, v2, v3 = stroke_glyph.vertices
                 gx = stroke_x + round(glyph_pos.x_offset)
                 gy = round(line_y + baseline + glyph_pos.y_offset)
@@ -516,7 +544,7 @@ class _GlyphBox(_AbstractBox):
                     layout,
                     stroke_vertices,
                     stroke_glyph.tex_coords,
-                    stroke.color * 4,
+                    stroke_color,
                     translation,
                     rotation,
                     visible,
@@ -771,6 +799,7 @@ class _GlyphBox(_AbstractBox):
             line_x,
             line_y,
             baseline,
+            vertices,
             translation,
             rotation,
             visible,

@@ -14,11 +14,11 @@ class DropShadow:
 
     Args:
         offset: Pixel offset relative to the text.
-        color: RGBA color of the shadow.
+        color: RGBA color or :class:`LinearGradient` of the shadow.
     """
 
     offset: tuple[int, int] = (1, -1)
-    color: RGBAColor = (0, 0, 0, 255)
+    color: RGBAColor | LinearGradient = (0, 0, 0, 255)
 
 
 @dataclass(slots=True)
@@ -27,12 +27,12 @@ class Stroke:
 
     Args:
         size: Width of the stroke outside the glyph, in pixels.
-        color: RGBA color of the stroke.
+        color: RGBA color or :class:`LinearGradient` of the stroke.
         join: Shape used where two straight contour segments meet.
     """
 
     size: float = 1.0
-    color: RGBAColor = (0, 0, 0, 255)
+    color: RGBAColor | LinearGradient = (0, 0, 0, 255)
     join: Literal["miter", "round", "bevel"] = "round"
 
     def __post_init__(self) -> None:
