@@ -466,8 +466,7 @@ class Font:
         By default, this preloads the 95 printable ASCII characters: space,
         letters, digits, and keyboard punctuation. Pass a string to preload
         the characters an application uses in addition to, or instead of,
-        that default set. Glyphs are deliberately loaded without text shaping,
-        because the cache stores individual glyph bitmaps.
+        that default set.
 
         .. versionadded:: 3.0.0
 
