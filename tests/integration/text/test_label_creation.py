@@ -4,7 +4,7 @@ import random
 import pytest
 
 
-from pyglet.text import decode_text, decode_attributed, decode_html, LinearGradient
+from pyglet.text import decode_text, decode_attributed, decode_html, DropShadow, LinearGradient, Stroke
 from pyglet.text import DocumentLabel, HTMLLabel, Label
 
 WIDTH = 500
@@ -48,3 +48,17 @@ def test_label_linear_gradient(test_window):
     assert label.color is gradient
     assert colors[:8] == gradient.start * 2
     assert colors[-8:] == gradient.end * 2
+
+
+@pytest.mark.parametrize(("style_name", "effect"), [
+    ("shadow", lambda gradient: DropShadow(color=gradient)),
+    ("stroke", lambda gradient: Stroke(color=gradient)),
+])
+def test_label_effect_linear_gradient(test_window, style_name, effect):
+    gradient = LinearGradient((255, 0, 0, 255), (0, 0, 255, 255))
+    label = Label("Gradient", **{style_name: effect(gradient)})
+
+    vertex_lists = label._boxes[0].vertex_lists  # noqa: SLF001
+    effect_lists = vertex_lists[:-1] if style_name == "shadow" else vertex_lists[1:]
+    assert tuple(effect_lists[0].colors[:8]) == gradient.start * 2
+    assert tuple(effect_lists[-1].colors[-8:]) == gradient.end * 2
