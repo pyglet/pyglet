@@ -130,6 +130,7 @@ D2D1_LINE_JOIN = UINT
 D2D1_LINE_JOIN_MITER = 0
 D2D1_LINE_JOIN_BEVEL = 1
 D2D1_LINE_JOIN_ROUND = 2
+D2D1_LINE_JOIN_MITER_OR_BEVEL = 3
 
 D2D1_DASH_STYLE = UINT
 D2D1_DASH_STYLE_SOLID = 0
@@ -227,7 +228,7 @@ class ID2D1GeometrySink(ID2D1SimplifiedGeometrySink):
 class ID2D1Geometry(ID2D1Resource):
     _methods_ = [
         ("GetBounds", com.STDMETHOD()),
-        ("GetWidenedBounds", com.STDMETHOD()),
+        ("GetWidenedBounds", com.STDMETHOD(FLOAT, c_void_p, POINTER(D2D1_MATRIX_3X2_F), FLOAT, POINTER(D2D1_RECT_F))),
         ("StrokeContainsPoint", com.STDMETHOD()),
         ("FillContainsPoint", com.STDMETHOD()),
         ("CompareWithGeometry", com.STDMETHOD()),
@@ -343,27 +344,11 @@ class ID2D1SimplifiedGeometrySink(com.pIUnknown):
     ]
 
 
-class ID2D1GeometrySink(ID2D1SimplifiedGeometrySink):
-    _methods_ = [
-        ("AddLine", com.STDMETHOD(D2D1_POINT_2F)),
-        ("AddBezier", com.STDMETHOD(POINTER(D2D1_BEZIER_SEGMENT))),
-        ("AddQuadraticBezier", com.STDMETHOD()),
-        ("AddQuadraticBeziers", com.STDMETHOD()),
-        ("AddArc", com.STDMETHOD()),
-    ]
-
-
-class ID2D1TessellationSink(com.IUnknown):
-    _methods_ = [
-        ("AddTriangles", com.METHOD(None, POINTER(D2D1_TRIANGLE), UINT32)),
-        ("Close", com.STDMETHOD()),
-    ]
-
-
 class ID2D1Geometry(ID2D1Resource):
     _methods_ = [
         ("GetBounds", com.STDMETHOD()),
-        ("GetWidenedBounds", com.STDMETHOD()),
+        ("GetWidenedBounds", com.STDMETHOD(FLOAT, ID2D1StrokeStyle, POINTER(D2D1_MATRIX_3X2_F), FLOAT,
+                                           POINTER(D2D1_RECT_F))),
         ("StrokeContainsPoint", com.STDMETHOD()),
         ("FillContainsPoint", com.STDMETHOD()),
         ("CompareWithGeometry", com.STDMETHOD()),
@@ -378,13 +363,6 @@ class ID2D1Geometry(ID2D1Resource):
     ]
 
 
-class ID2D1PathGeometry(ID2D1Geometry):
-    _methods_ = [
-        ("Open", com.STDMETHOD(POINTER(ID2D1GeometrySink))),
-        ("Stream", com.STDMETHOD()),
-        ("GetSegmentCount", com.STDMETHOD()),
-        ("GetFigureCount", com.STDMETHOD()),
-    ]
 
 
 class IDXGISurface(com.pIUnknown):
@@ -554,7 +532,8 @@ class ID2D1DeviceContext(ID2D1RenderTarget):
         ("GetUnitMode",
          com.STDMETHOD()),
         ("DrawGlyphRun_Context",
-         com.METHOD(c_void, D2D_POINT_2F, POINTER(DWRITE_GLYPH_RUN), POINTER(DWRITE_GLYPH_RUN_DESCRIPTION), ID2D1Brush, UINT32)),
+         com.METHOD(c_void, D2D_POINT_2F, POINTER(DWRITE_GLYPH_RUN), POINTER(DWRITE_GLYPH_RUN_DESCRIPTION),
+                    ID2D1Brush, UINT32)),
         ("DrawImage",
          com.STDMETHOD()),
         ("DrawGdiMetafile",
@@ -625,11 +604,14 @@ class ID2D1DeviceContext4(ID2D1DeviceContext3):
         ("CreateSvgGlyphStyle",
          com.STDMETHOD()),
         ("DrawText4",
-         com.STDMETHOD(c_wchar_p, UINT32, IDWriteTextFormat, D2D1_RECT_F, ID2D1Brush, ID2D1SvgGlyphStyle, UINT32, D2D1_DRAW_TEXT_OPTIONS, DWRITE_MEASURING_MODE)),
+         com.STDMETHOD(c_wchar_p, UINT32, IDWriteTextFormat, D2D1_RECT_F, ID2D1Brush, ID2D1SvgGlyphStyle, UINT32,
+                       D2D1_DRAW_TEXT_OPTIONS, DWRITE_MEASURING_MODE)),
         ("DrawTextLayout4",
-         com.STDMETHOD(D2D1_POINT_2F, IDWriteTextLayout, ID2D1Brush, ID2D1SvgGlyphStyle, UINT32, D2D1_DRAW_TEXT_OPTIONS)),
+         com.STDMETHOD(D2D1_POINT_2F, IDWriteTextLayout, ID2D1Brush, ID2D1SvgGlyphStyle, UINT32,
+                       D2D1_DRAW_TEXT_OPTIONS)),
         ("DrawColorBitmapGlyphRun",
-         com.METHOD(c_void, DWRITE_GLYPH_IMAGE_FORMATS, D2D1_POINT_2F, POINTER(DWRITE_GLYPH_RUN), DWRITE_MEASURING_MODE, D2D1_COLOR_BITMAP_GLYPH_SNAP_OPTION)),
+         com.METHOD(c_void, DWRITE_GLYPH_IMAGE_FORMATS, D2D1_POINT_2F, POINTER(DWRITE_GLYPH_RUN),
+                    DWRITE_MEASURING_MODE, D2D1_COLOR_BITMAP_GLYPH_SNAP_OPTION)),
         ("DrawSvgGlyphRun",
          com.METHOD(c_void, D2D_POINT_2F, POINTER(DWRITE_GLYPH_RUN), ID2D1Brush, ID2D1SvgGlyphStyle, UINT32, DWRITE_MEASURING_MODE)),
         ("GetColorBitmapGlyphImage",
