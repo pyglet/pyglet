@@ -91,6 +91,7 @@ from pyglet.event import EVENT_HANDLE_STATE, EventDispatcher
 
 from pyglet.window import event, key, dialog
 from pyglet.window.camera import Camera2D
+from pyglet.window.camera.base import BaseCamera
 
 if TYPE_CHECKING:
     from pyglet.math import Mat4
@@ -371,7 +372,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     _context_share: SurfaceContext | None = None
     _projection_matrix: Mat4 = pyglet.math.Mat4()
     _view_matrix: Mat4 = pyglet.math.Mat4()
-    _camera: Camera2D | None = None
+    _camera: BaseCamera[Any] | None = None
 
     # Used to restore window size and position after fullscreen
     _windowed_size: tuple[int, int] | None = None
@@ -1278,11 +1279,12 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         return w / h
 
     @property
-    def camera(self) -> Camera2D:
+    def camera(self) -> BaseCamera[Any]:
         """The window's default camera.
 
-        Read-only handle. Use its ``projection``, ``view``, and ``viewport``
-        attributes to update the default draw camera state.
+        The default is a :class:`~pyglet.window.camera.Camera2D`. Assign a
+        compatible camera, such as :class:`~pyglet.window.camera.Camera3D`,
+        to change the camera used for default drawing.
         """
         if self._camera is None:
             if not self.context:
@@ -1290,6 +1292,16 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                 raise RuntimeError(msg)
             self._camera = self._create_default_camera()
         return self._camera
+
+    @camera.setter
+    def camera(self, value: BaseCamera[Any]) -> None:
+        if not isinstance(value, BaseCamera):
+            msg = "Window camera must be an instance of BaseCamera."
+            raise TypeError(msg)
+        if value._window != self:  # noqa: SLF001
+            msg = "Window camera must be created for this window."
+            raise ValueError(msg)
+        self._camera = value
 
     @property
     def projection(self) -> Mat4:
