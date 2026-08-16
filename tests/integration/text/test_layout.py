@@ -109,6 +109,22 @@ def test_text_layout_reuses_groups_until_group_state_changes(test_window, monkey
     text_layout.delete()
 
 
+def test_incremental_layout_selection_creates_background_decoration(test_window):
+    text_layout = layout.IncrementalTextLayout(
+        document.FormattedDocument("aaaaaaaa"),
+        width=500,
+        height=100,
+    )
+
+    text_layout.set_selection(4, 8)
+    decoration_lists = [vertex_list for line in text_layout.lines for vertex_list in line.vertex_lists]
+
+    assert any(
+        vertex_list.count == 4 and tuple(vertex_list.colors[:4]) == text_layout.selection_background_color
+        for vertex_list in decoration_lists
+    )
+
+
 class TestIssues(unittest.TestCase):
 
     def test_issue471(self):
