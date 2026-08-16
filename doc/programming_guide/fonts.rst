@@ -16,9 +16,8 @@ Each weight, slant, or width within that family is a **font face**. For
 example, ``Arial`` is a family; its regular, bold, italic, and narrow designs
 are faces within that family.
 
-For portable selection, pass the family name to :py:func:`pyglet.font.load`
-and describe the desired face separately with ``weight``, ``style``, and
-``stretch``::
+For a portable cross-platform selection, pass the family name to :py:func:`pyglet.font.load`
+and describe the desired face separately with ``weight``, ``style``, and ``stretch``::
 
     from pyglet import font
     from pyglet.enums import Stretch, Style, Weight
@@ -45,10 +44,13 @@ Alternative font names
 ^^^^^^^^^^^^^^^^^^^^^^
 
 Font files can contain several kinds of names. The family name groups related
-faces. An OpenType Full Name usually identifies one concrete face, such as
-``"Example Sans Bold Italic"``. Older platform APIs can expose other names
-that combine family and face information. Those alternative names are not
-always spelled or interpreted consistently across operating systems.
+faces, while the OpenType Full Name usually identifies one specific face,
+such as **Action Man Bold Italic**. Fonts may also contain legacy, platform-specific, or
+localized names that combine family and face information in different ways. These
+names are not always consistent: they may use different formatting, spelling, or even
+entirely different names for the same face. Operating systems may also choose or
+interpret these fields differently, so the name reported for a font can vary
+between platforms.
 
 Set :attr:`pyglet.Options.font_name_compatibility` before resolving fonts when
 an application needs pyglet to perform additional lookup for Full Names and
@@ -59,19 +61,42 @@ platform-specific aliases::
     pyglet.options.font_name_compatibility = True
     narrow = pyglet.font.load("Arial Narrow", 16)
 
-The option does not reject Full Names when it is ``False``. A native font API
-may recognize them without help from pyglet. Enabling it only adds pyglet's
-compatibility lookup, which can improve cross-platform matching at the cost of
+A native font API may recognize them without help from pyglet. Enabling it only adds
+pyglet's compatibility lookup, which can improve cross-platform matching at the cost of
 additional font-resolution time.
 
 On Windows, DirectWrite does not index some names historically exposed by the
-older Windows font renderer. Finding such a name requires inspecting installed
+older Windows font renderer like GDI. Finding such a name requires inspecting installed
 families and faces. The first lookup can therefore be noticeably slower on a
 system with many fonts; successful results are cached.
+
+If a name does not resolve as expected, see :ref:`Troubleshooting font loading
+<troubleshooting-font-loading>` for ways to identify the names pyglet found.
 
 Because a Full Name identifies a concrete face, its embedded traits take
 precedence over separately requested ``weight``, ``style``, or ``stretch``.
 Family name plus explicit traits remains the recommended portable form.
+
+Font sizes and metrics
+----------------------
+
+Font sizes are specified in points. pyglet uses the PostScript definition of
+one point as 1/72 inch and assumes 96 DPI unless another value is supplied::
+
+    font_144_dpi = pyglet.font.load("Arial", 16, dpi=144)
+
+The loaded font exposes pixel metrics through ``ascent`` and ``descent``.
+Descent is normally negative because it extends below the baseline. A basic
+line advance can be calculated as::
+
+    line_advance = loaded_font.ascent - loaded_font.descent + leading
+
+.. figure:: img/font_metrics.png
+
+   Font metrics relative to the baseline.
+
+Labels and layouts accept a ``dpi`` argument as well. Keep the DPI consistent
+when comparing or combining their measurements.
 
 Loading system fonts
 --------------------
@@ -101,6 +126,88 @@ Passing ``None`` selects pyglet's platform default::
 Applications should not assume that a particular commercial font is installed
 on every operating system. Use a fallback sequence, bundle a suitably licensed
 font, or use the platform default.
+
+Loading custom fonts
+--------------------
+
+Applications can bundle fonts that are not normally installed on the target
+system. Confirm that the font's license permits redistribution.
+
+Add every required face, then select it by family and traits::
+
+    import pyglet
+    from pyglet.enums import Weight
+
+    pyglet.font.add_file("action_man.ttf")
+    pyglet.font.add_file("action_man_bold.ttf")
+
+    regular = pyglet.font.load("Action Man", 16)
+    bold = pyglet.font.load("Action Man", 16, weight=Weight.BOLD)
+
+The filename is not the font family name. The family is read from metadata
+inside the file, and several differently named files can contribute faces to
+the same family. :py:func:`pyglet.font.add_file` also accepts a binary file-like
+object or bytes. :py:func:`pyglet.font.add_directory` loads supported files
+from a directory.
+
+Fonts can also be loaded through :ref:`guide_resources`. On Pyodide, custom
+font registration is asynchronous; see the Fonts section in :doc:`pyodide`.
+
+Supported formats
+^^^^^^^^^^^^^^^^^
+
+Font-format support is provided primarily by the operating system's font
+stack, so it varies by platform and OS version. TrueType (``.ttf``) and
+OpenType (``.otf``) are the most portable choices. Platform-specific bitmap,
+collection, and legacy formats may work only on the backend that supports
+them. Test every bundled font on each target platform, since malformed or
+incomplete metadata can also change family and face matching.
+
+.. _troubleshooting-font-loading:
+
+Troubleshooting font loading
+----------------------------
+
+A font's filename, family name, and Full Name can all be different. After
+adding custom font files, query the family names that pyglet actually
+discovered instead of guessing from the filenames::
+
+    import pyglet
+
+    pyglet.font.add_file("fonts/example-sans-bold.otf")
+    print(pyglet.font.get_custom_font_names())
+
+The result contains family names, such as ``("Example Sans",)``, which can be
+passed to :py:func:`pyglet.font.load`. It does not list every face filename or
+Full Name. On Pyodide, check it after the ``on_font_loaded`` event because
+browser font registration is asynchronous.
+
+Check system-font availability before constructing application-specific
+fallback behavior::
+
+    if not pyglet.font.have_font("Example Sans"):
+        print("Example Sans is unavailable; pyglet will use a fallback")
+
+If no requested family is available, :py:func:`pyglet.font.load` selects the
+platform default.
+
+For detailed resolution messages, enable ``debug_font`` before importing the
+font module::
+
+    import pyglet
+
+    pyglet.options.debug_font = True
+    from pyglet import font
+
+    font.add_file("fonts/example-sans-bold.otf")
+    print(font.get_custom_font_names())
+    selected = font.load("Example Sans", 16)
+    print(selected.name)
+
+The debug output reports missing requested families, compatibility-name
+searches, and fallback to the platform default. Also inspect ``selected.name``
+to see the family ultimately returned by the renderer.
+
 
 Font groups
 -----------
@@ -153,105 +260,6 @@ is useful when diagnosing missing bundled glyphs::
     if not ui_font.get_font(16).has_character("😀"):
         print("The configured font group has no emoji glyph")
 
-Font sizes and metrics
-----------------------
-
-Font sizes are specified in points. pyglet uses the PostScript definition of
-one point as 1/72 inch and assumes 96 DPI unless another value is supplied::
-
-    font_144_dpi = pyglet.font.load("Arial", 16, dpi=144)
-
-The loaded font exposes pixel metrics through ``ascent`` and ``descent``.
-Descent is normally negative because it extends below the baseline. A basic
-line advance can be calculated as::
-
-    line_advance = loaded_font.ascent - loaded_font.descent + leading
-
-.. figure:: img/font_metrics.png
-
-   Font metrics relative to the baseline.
-
-Labels and layouts accept a ``dpi`` argument as well. Keep the DPI consistent
-when comparing or combining their measurements.
-
-Loading custom fonts
---------------------
-
-Applications can bundle fonts that are not normally installed on the target
-system. Confirm that the font's license permits redistribution.
-
-Add every required face, then select it by family and traits::
-
-    import pyglet
-    from pyglet.enums import Weight
-
-    pyglet.font.add_file("action_man.ttf")
-    pyglet.font.add_file("action_man_bold.ttf")
-
-    regular = pyglet.font.load("Action Man", 16)
-    bold = pyglet.font.load("Action Man", 16, weight=Weight.BOLD)
-
-The filename is not the font family name. The family is read from metadata
-inside the file, and several differently named files can contribute faces to
-the same family. :py:func:`pyglet.font.add_file` also accepts a binary file-like
-object or bytes. :py:func:`pyglet.font.add_directory` loads supported files
-from a directory.
-
-Fonts can also be loaded through :ref:`guide_resources`. On Pyodide, custom
-font registration is asynchronous; see the Fonts section in :doc:`pyodide`.
-
-Supported formats
-^^^^^^^^^^^^^^^^^
-
-Font-format support is provided primarily by the operating system's font
-stack, so it varies by platform and OS version. TrueType (``.ttf``) and
-OpenType (``.otf``) are the most portable choices. Platform-specific bitmap,
-collection, and legacy formats may work only on the backend that supports
-them. Test every bundled font on each target platform, since malformed or
-incomplete metadata can also change family and face matching.
-
-Troubleshooting font loading
-----------------------------
-
-A font's filename, family name, and Full Name can all be different. After
-adding custom font files, query the family names that pyglet actually
-discovered instead of guessing from the filenames::
-
-    import pyglet
-
-    pyglet.font.add_file("fonts/example-sans-bold.otf")
-    print(pyglet.font.get_custom_font_names())
-
-The result contains family names, such as ``("Example Sans",)``, which can be
-passed to :py:func:`pyglet.font.load`. It does not list every face filename or
-Full Name. On Pyodide, check it after the ``on_font_loaded`` event because
-browser font registration is asynchronous.
-
-Check system-font availability before constructing application-specific
-fallback behavior::
-
-    if not pyglet.font.have_font("Example Sans"):
-        print("Example Sans is unavailable; pyglet will use a fallback")
-
-If no requested family is available, :py:func:`pyglet.font.load` selects the
-platform default.
-
-For detailed resolution messages, enable ``debug_font`` before importing the
-font module::
-
-    import pyglet
-
-    pyglet.options.debug_font = True
-    from pyglet import font
-
-    font.add_file("fonts/example-sans-bold.otf")
-    print(font.get_custom_font_names())
-    selected = font.load("Example Sans", 16)
-    print(selected.name)
-
-The debug output reports missing requested families, compatibility-name
-searches, and fallback to the platform default. Also inspect ``selected.name``
-to see the family ultimately returned by the renderer.
 
 Rendering and graphics contexts
 -------------------------------
