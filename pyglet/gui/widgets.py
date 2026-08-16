@@ -12,7 +12,7 @@ from pyglet.text.caret import Caret
 from pyglet.text.layout import IncrementalTextLayout
 
 if TYPE_CHECKING:
-    from pyglet.customtypes import RGBColor
+    from pyglet.customtypes import RGBColor, RGBAColor
     from pyglet.image import _AbstractImage
 
 
@@ -297,9 +297,9 @@ class TextButton(WidgetBase):
     """
 
     def __init__(self, x: int, y: int, text: str,
-                 pressed_color: RGBColor = (255, 0, 0),
-                 unpressed_color: RGBColor = (255, 255, 255),
-                 hover_color: RGBColor = (0, 255, 0),
+                 pressed_color: RGBColor | RGBAColor = (255, 0, 0),
+                 unpressed_color: RGBColor | RGBAColor = (255, 255, 255),
+                 hover_color: RGBColor | RGBAColor = (0, 255, 0),
                  batch: Batch | None = None,
                  group: Group | None = None) -> None:
         """Create a push button.
@@ -324,7 +324,7 @@ class TextButton(WidgetBase):
         self._batch = batch or pyglet.graphics.Batch()
         self._user_group = group
         fg_group = Group(order=1, parent=group)
-        self._label = pyglet.text.Label(text=self._text, x=x, y=y, batch=batch, group=fg_group)
+        self._label = pyglet.text.Label(text=self._text, x=x, y=y, color=unpressed_color, batch=batch, group=fg_group)
         super().__init__(x, y, self._label.content_width, self._label.content_height)
         self._pressed_color = pressed_color
         self._unpressed_color = unpressed_color
@@ -397,6 +397,7 @@ class TextButton(WidgetBase):
 
 TextButton.register_event_type('on_press')
 TextButton.register_event_type('on_release')
+
 
 class ToggleButton(PushButton):
     """Instance of a toggle button.
@@ -566,9 +567,9 @@ class TextEntry(WidgetBase):
 
     def __init__(self, text: str,
                  x: int, y: int, width: int,
-                 color: tuple[int, int, int, int] = (255, 255, 255, 255),
-                 text_color: tuple[int, int, int, int] = (0, 0, 0, 255),
-                 caret_color: tuple[int, int, int, int] = (0, 0, 0, 255),
+                 color: RGBAColor = (255, 255, 255, 255),
+                 text_color: RGBAColor = (0, 0, 0, 255),
+                 caret_color: RGBColor | RGBAColor = (0, 0, 0, 255),
                  batch: Batch | None = None,
                  group: Group | None = None) -> None:
         """Create a text entry widget.
