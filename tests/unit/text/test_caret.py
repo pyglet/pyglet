@@ -94,6 +94,11 @@ def test_color_setter_preserves_alpha_channel_when_setting_rgb_colors(
     assert rgb_or_rgba_caret.color[3] == original_rgb_or_rgba_expected_alpha
 
 
+def test_word_selection_bounds_exclude_trailing_space():
+    assert caret.Caret._get_word_bounds("This paragraph has text", 8) == (5, 14)
+    assert caret.Caret._get_word_bounds("This paragraph has text", 14) == (5, 14)
+
+
 def test_color_setter_changes_alpha_channel_when_setting_rgba_colors(
     rgb_or_rgba_caret,
     new_rgba_color
