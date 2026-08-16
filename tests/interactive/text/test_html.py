@@ -45,6 +45,9 @@ doctext = """
     <p><u>This text is underlined</u>.  <font color=green><u>This text is
     underlined and green.</u></font></p>
 
+    <p><s>This text is struck through</s>.  <font color=green><s>This text is
+    struck through and green.</s></font></p>
+
     <h1>Heading 1</h1>
     <h2>Heading 2</h2>
     <h3>Heading 3</h3>

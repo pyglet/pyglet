@@ -4,7 +4,7 @@ A subset of HTML 4.01 Transitional is implemented.  The following elements are
 supported fully::
 
     B BLOCKQUOTE BR CENTER CODE DD DIR DL EM FONT H1 H2 H3 H4 H5 H6 I IMG KBD
-    LI MENU OL P PRE Q SAMP STRONG SUB SUP TT U UL VAR
+    LI MENU OL P PRE Q S SAMP STRONG SUB SUP TT U UL VAR
 
 As of 3.0 supports the following inline style tags::
 
@@ -309,6 +309,11 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
             if color is None:
                 color = [0, 0, 0, 255]
             style["underline"] = color
+        elif element == "s":
+            color = self.current_style.get("color")
+            if color is None:
+                color = [0, 0, 0, 255]
+            style["strikethrough"] = color
         elif element == "font":
             if "face" in attrs:
                 style["font_name"] = attrs["face"].split(",")
