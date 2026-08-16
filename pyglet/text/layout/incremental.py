@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.shader import ShaderProgram
     from pyglet.graphics.vertexdomain import VertexList
     from pyglet.text.document import AbstractDocument
+    from pyglet.text.runlist import AbstractRunIterator, RunIterator
 
 
 class _IncrementalLayoutContext(_LayoutContext):
@@ -34,6 +35,20 @@ class _IncrementalLayoutContext(_LayoutContext):
     # boxes are kept alive. This also allows the Layout to determine word wraps and line lengths without a vertex list.
 
     line = None
+
+    def __init__(
+        self,
+        layout: TextLayout,
+        document: AbstractDocument,
+        colors_iter: RunIterator,
+        background_iter: AbstractRunIterator,
+        has_selection: bool,
+    ) -> None:
+        self._has_selection = has_selection
+        super().__init__(layout, document, colors_iter, background_iter)
+
+    def _uses_background_override(self) -> bool:
+        return self._has_selection
 
     def add_list(self, vertex_list: VertexList) -> None:
         self.line.vertex_lists.append(vertex_list)
@@ -446,7 +461,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
         colors_iter = self.document.get_style_runs("color")
         background_iter = self.document.get_style_runs("background_color")
-        if self._selection_end - self._selection_start > 0:
+        has_selection = self._selection_end - self._selection_start > 0
+        if has_selection:
             colors_iter = runlist.OverriddenRunIterator(
                 colors_iter,
                 self._selection_start,
@@ -458,7 +474,13 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
                 self._selection_end,
                 self._selection_background_color)
 
-        context = _IncrementalLayoutContext(self, self._document, colors_iter, background_iter)
+        context = _IncrementalLayoutContext(
+            self,
+            self._document,
+            colors_iter,
+            background_iter,
+            has_selection,
+        )
 
         lines = self.lines[invalid_start:invalid_end]
         self._line_count = len(self.lines)

@@ -147,32 +147,26 @@ class _LayoutContext:
     ) -> None:
         self.layout = layout
         self.colors_iter = colors_iter
-        self.stroke_iter = None
-        stroke_iter = document.get_style_runs("stroke")
-        for _, _, stroke in stroke_iter.ranges(0, len(document.text)):
-            if stroke is not None:
-                self.stroke_iter = stroke_iter
-                break
-        underline_iter = document.get_style_runs("underline")
-        strikethrough_iter = document.get_style_runs("strikethrough")
-        self.decoration_iter = None
-        decoration_iter = runlist.ZipRunIterator((background_iter, underline_iter, strikethrough_iter))
-        for _, _, decoration in decoration_iter.ranges(0, len(document.text)):
-            if any(value is not None for value in decoration):
-                self.decoration_iter = decoration_iter
-                break
-        # The common case has no shadow. Scan the style runs once so glyph
-        # boxes can skip the effect entirely in that case. This also catches
-        # a shadow that begins after the first character.
-        self.shadow_iter = None
-        shadow_iter = document.get_style_runs("shadow")
-        for _, _, shadow in shadow_iter.ranges(0, len(document.text)):
-            if shadow is not None:
-                self.shadow_iter = document.get_style_runs("shadow")
-                break
+        self.stroke_iter = document.get_style_runs("stroke") if document.has_style_run("stroke") else None
+        if self._uses_background_override() or any(
+            document.has_style_run(attribute) for attribute in ("background_color", "underline", "strikethrough")
+        ):
+            self.decoration_iter = runlist.ZipRunIterator(
+                (
+                    background_iter,
+                    document.get_style_runs("underline"),
+                    document.get_style_runs("strikethrough"),
+                ),
+            )
+        else:
+            self.decoration_iter = None
+        self.shadow_iter = document.get_style_runs("shadow") if document.has_style_run("shadow") else None
         self.baseline_iter = runlist.FilteredRunIterator(
-            document.get_style_runs("baseline"), lambda value: value is not None, 0
+            document.get_style_runs("baseline"), lambda value: value is not None, 0,
         )
+
+    def _uses_background_override(self) -> bool:
+        return False
 
     @abstractmethod
     def add_list(self, vertex_list: VertexList) -> None: ...
@@ -443,21 +437,20 @@ class _GlyphBox(_AbstractBox):
         # texture and geometry, at an offset below the fill layer.
         if context.shadow_iter is None:
             return
-
-        shadow_colors = []
+        shadow_colors = None
         shadow_vertices = None
-        has_shadow = False
         for start, end, shadow in context.shadow_iter.ranges(start_index, start_index + self.length):
             character_count = end - start
             if shadow is None:
-                shadow_colors.extend((0, 0, 0, 0) * (character_count * 4))
+                if shadow_colors is not None:
+                    shadow_colors.extend((0, 0, 0, 0) * (character_count * 4))
                 continue
             if len(shadow.offset) != 2:
                 msg = f"Shadow offset requires 2 values (X, Y). Value received: {shadow.offset}"
                 raise ValueError(msg)
-            if shadow_vertices is None:
+            if shadow_colors is None:
+                shadow_colors = list((0, 0, 0, 0) * ((start - start_index) * 4))
                 shadow_vertices = list(vertices)
-            has_shadow = True
             shadow_colors.extend(
                 self._create_range_colors(shadow.color, start, end, start_index, vertices, "Shadow"),
             )
@@ -467,7 +460,7 @@ class _GlyphBox(_AbstractBox):
                 shadow_vertices[vertex_index] += shadow.offset[0]
                 shadow_vertices[vertex_index + 1] += shadow.offset[1]
 
-        if not has_shadow:
+        if shadow_colors is None:
             return
 
         assert shadow_vertices is not None
@@ -501,67 +494,80 @@ class _GlyphBox(_AbstractBox):
         # in a lower-order group so the regular fill glyph remains on top.
         if context.stroke_iter is None:
             return
-
-        gradient_colors = {}
-        for start, end, stroke in context.stroke_iter.ranges(start_index, start_index + self.length):
-            if stroke is None or not isinstance(stroke.color, LinearGradient):
-                continue
-            colors = self._create_range_colors(stroke.color, start, end, start_index, vertices, "Stroke")
-            range_start = start - start_index
-            for glyph_index in range(range_start, end - start_index):
-                color_start = (glyph_index - range_start) * 16
-                gradient_colors[glyph_index] = colors[color_start : color_start + 16]
-
         stroke_x = round(line_x)
-        for glyph_index, (kern, glyph, glyph_pos) in enumerate(self.glyphs):
-            stroke_x += round(kern)
-            stroke = context.stroke_iter[start_index + glyph_index]
-            stroke_glyph = self.font.get_stroke_glyph(glyph, stroke.size, stroke.join) if stroke else None
-            if stroke_glyph is not None:
-                stroke_color = (
-                    gradient_colors[glyph_index]
-                    if isinstance(stroke.color, LinearGradient)
-                    else stroke.color * 4
-                )
-                v0, v1, v2, v3 = stroke_glyph.vertices
-                gx = stroke_x + round(glyph_pos.x_offset)
-                gy = round(line_y + baseline + glyph_pos.y_offset)
-                stroke_vertices = [
-                    v0 + gx,
-                    v1 + gy,
-                    0,
-                    v2 + gx,
-                    v1 + gy,
-                    0,
-                    v2 + gx,
-                    v3 + gy,
-                    0,
-                    v0 + gx,
-                    v3 + gy,
-                    0,
-                ]
-                stroke_data = self._create_vertex_data(
-                    layout,
-                    stroke_vertices,
-                    stroke_glyph.tex_coords,
-                    stroke_color,
-                    translation,
-                    rotation,
-                    visible,
-                    anchor_x,
-                    anchor_y,
-                    4,
-                )
-                stroke_list = layout.program.vertex_list_indexed(
-                    4,
-                    GeometryMode.TRIANGLES,
-                    (0, 1, 2, 0, 2, 3),
-                    layout.batch,
-                    layout.get_effect_group(stroke_glyph.owner),
-                    **stroke_data,
-                )
-                self._add_vertex_list(stroke_list, context)
-            stroke_x += round(glyph.advance + glyph_pos.x_advance)
+        glyph_index = 0
+        for start, end, stroke in context.stroke_iter.ranges(start_index, start_index + self.length):
+            if stroke is None:
+                continue
+
+            range_start_glyph = start - start_index
+            range_end_glyph = end - start_index
+            while glyph_index < range_start_glyph:
+                kern, glyph, glyph_pos = self.glyphs[glyph_index]
+                stroke_x += round(kern)
+                stroke_x += round(glyph.advance + glyph_pos.x_advance)
+                glyph_index += 1
+
+            gradient_span = None
+            if isinstance(stroke.color, LinearGradient):
+                gradient_left = vertices[range_start_glyph * 12]
+                gradient_right = vertices[(range_end_glyph - 1) * 12 + 6]
+                gradient_span = gradient_right - gradient_left
+
+            for glyph_index in range(range_start_glyph, range_end_glyph):
+                kern, glyph, glyph_pos = self.glyphs[glyph_index]
+                stroke_x += round(kern)
+                stroke_glyph = self.font.get_stroke_glyph(glyph, stroke.size, stroke.join)
+                if stroke_glyph is not None:
+                    if gradient_span is not None:
+                        left = vertices[glyph_index * 12]
+                        right = vertices[glyph_index * 12 + 6]
+                        stroke_color = (
+                            self._interpolate_gradient(stroke.color, left, gradient_left, gradient_span) * 2
+                            + self._interpolate_gradient(stroke.color, right, gradient_left, gradient_span) * 2
+                        )
+                    else:
+                        stroke_color = stroke.color * 4
+                    v0, v1, v2, v3 = stroke_glyph.vertices
+                    gx = stroke_x + round(glyph_pos.x_offset)
+                    gy = round(line_y + baseline + glyph_pos.y_offset)
+                    stroke_vertices = [
+                        v0 + gx,
+                        v1 + gy,
+                        0,
+                        v2 + gx,
+                        v1 + gy,
+                        0,
+                        v2 + gx,
+                        v3 + gy,
+                        0,
+                        v0 + gx,
+                        v3 + gy,
+                        0,
+                    ]
+                    stroke_data = self._create_vertex_data(
+                        layout,
+                        stroke_vertices,
+                        stroke_glyph.tex_coords,
+                        stroke_color,
+                        translation,
+                        rotation,
+                        visible,
+                        anchor_x,
+                        anchor_y,
+                        4,
+                    )
+                    stroke_list = layout.program.vertex_list_indexed(
+                        4,
+                        GeometryMode.TRIANGLES,
+                        (0, 1, 2, 0, 2, 3),
+                        layout.batch,
+                        layout.get_effect_group(stroke_glyph.owner),
+                        **stroke_data,
+                    )
+                    self._add_vertex_list(stroke_list, context)
+                stroke_x += round(glyph.advance + glyph_pos.x_advance)
+            glyph_index = range_end_glyph
 
     def _create_decoration_geometry(
         self,
@@ -570,7 +576,7 @@ class _GlyphBox(_AbstractBox):
         line_y: float,
         baseline: int,
         decoration_iter: runlist.ZipRunIterator,
-    ) -> _DecorationGeometry:
+    ) -> _DecorationGeometry | None:
         # Decoration (background color, underline, and strikethrough)
         # Decorations are geometry only and without textures.
         # Should iterate over baseline too, but in practice any sensible
@@ -586,25 +592,41 @@ class _GlyphBox(_AbstractBox):
         y1 = line_y + self.descent + baseline
         y2 = line_y + self.ascent + baseline
         x1 = line_x
+        glyph_index = 0
+        has_decoration = False
+        for start, end, (bg, underline, strikethrough) in decoration_iter.ranges(
+            start_index, start_index + self.length,
+        ):
+            if bg is None and underline is None and strikethrough is None:
+                continue
 
-        for start, end, decoration in decoration_iter.ranges(start_index, start_index + self.length):
-            bg, underline, strikethrough = decoration
+            has_decoration = True
+            range_start_glyph = start - start_index
+            range_end_glyph = end - start_index
+            while glyph_index < range_start_glyph:
+                kern, glyph, glyph_pos = self.glyphs[glyph_index]
+                x1 += kern
+                x1 += glyph.advance + glyph_pos.x_advance
+                glyph_index += 1
+
             x2 = x1
             background_x1 = x1
             background_y1 = y1
             background_x2 = x1
             background_y2 = y2
-            for kern, glyph, glyph_pos in self.glyphs[start - start_index : end - start_index]:
+            for glyph_index in range(range_start_glyph, range_end_glyph):
+                kern, glyph, glyph_pos = self.glyphs[glyph_index]
                 x2 += kern
-                v0, v1, v2, v3 = glyph.vertices
+                if bg is not None:
+                    v0, v1, v2, v3 = glyph.vertices
 
-                # Glyphs can extend outside their advance, use bounds. (italic, emoji)
-                glyph_x = x2 + glyph_pos.x_offset
-                glyph_y = line_y + baseline + glyph_pos.y_offset
-                background_x1 = min(background_x1, glyph_x + v0)
-                background_y1 = min(background_y1, glyph_y + v1)
-                background_x2 = max(background_x2, glyph_x + v2)
-                background_y2 = max(background_y2, glyph_y + v3)
+                    # Glyphs can extend outside their advance, use bounds. (italic, emoji)
+                    glyph_x = x2 + glyph_pos.x_offset
+                    glyph_y = line_y + baseline + glyph_pos.y_offset
+                    background_x1 = min(background_x1, glyph_x + v0)
+                    background_y1 = min(background_y1, glyph_y + v1)
+                    background_x2 = max(background_x2, glyph_x + v2)
+                    background_y2 = max(background_y2, glyph_y + v3)
 
                 x2 += glyph.advance + glyph_pos.x_advance
 
@@ -649,6 +671,10 @@ class _GlyphBox(_AbstractBox):
                 strikethrough_colors.extend(strikethrough * 2)
 
             x1 = x2
+            glyph_index = range_end_glyph
+
+        if not has_decoration:
+            return None
 
         return _DecorationGeometry(
             _DecorationData(background_vertices, background_colors),
@@ -670,8 +696,7 @@ class _GlyphBox(_AbstractBox):
         anchor_y: float,
         context: _LayoutContext,
     ) -> None:
-        decoration_iter = context.decoration_iter
-        if decoration_iter is None:
+        if context.decoration_iter is None:
             return
 
         geometry = self._create_decoration_geometry(
@@ -679,8 +704,10 @@ class _GlyphBox(_AbstractBox):
             line_x,
             line_y,
             baseline,
-            decoration_iter,
+            context.decoration_iter,
         )
+        if geometry is None:
+            return
 
         if geometry.background.vertices:
             bg_count = len(geometry.background.vertices) // 3

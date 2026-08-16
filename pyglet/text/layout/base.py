@@ -26,7 +26,7 @@ from pyglet.text.layout.boxes import (
 from pyglet.text.layout.flow import _FlowLayoutBase
 
 if TYPE_CHECKING:
-    from pyglet.customtypes import AnchorX, AnchorY, ContentVAlign
+    from pyglet.customtypes import AnchorX, AnchorY, ContentVAlign, RGBAColor
     from pyglet.graphics import Batch
     from pyglet.graphics.shader import ShaderProgram
     from pyglet.graphics import Texture, TextureRenderTarget
@@ -958,19 +958,16 @@ class TextLayout(_FlowLayoutBase):
             self._boxes.extend(line.boxes)
             self._create_vertex_lists(line.x, line.y, self._anchor_left, anchor_top, line.start, line.boxes, context)
 
-    def _update_color(self, start: int, end: int) -> None:
+    def _update_color(self, start: int, end: int, color: RGBAColor | LinearGradient) -> None:
         # This function usually is only called by Labels/HTML when updating just colors.
-        colors_iter = self._document.get_style_runs("color")
-        has_gradient = any(
-            isinstance(color, LinearGradient) for _, _, color in colors_iter.ranges(0, len(self._document.text))
-        )
-        if has_gradient:
+        if isinstance(color, LinearGradient):
             # Gradient colors depend on glyph positions, so rebuilding the
             # affected vertex data is required instead of the solid-color
             # in-place update below.
             self._init_document()
             return
 
+        colors_iter = self._document.get_style_runs("color")
         colors = []
         for iter_start, iter_end, color in colors_iter.ranges(start, end):
             colors.extend(color * (iter_end - iter_start))
@@ -1101,7 +1098,7 @@ class TextLayout(_FlowLayoutBase):
         """
         # To save performance when lerping colors, only update color values instead of recreating layout.
         if len(attributes) == 1 and "color" in attributes:
-            self._update_color(start, end)
+            self._update_color(start, end, attributes["color"])
         else:
             self._init_document()
 

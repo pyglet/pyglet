@@ -304,6 +304,14 @@ class AbstractDocument(event.EventDispatcher):
                 Name of style attribute to query.
         """
 
+    def has_style_run(self, attribute: str) -> bool:  # noqa: ARG002
+        """Return whether this document stores runs for a style attribute.
+
+        This is a fast-path hint. Custom document types return
+        ``True`` by default so callers continue to inspect their style runs.
+        """
+        return True
+
     @abstractmethod
     def get_style(self, attribute: str, position: int = 0) -> Any:
         """Get an attribute style at the given position.
@@ -560,6 +568,9 @@ class UnformattedDocument(AbstractDocument):
         value = self.styles.get(attribute)
         return runlist.ConstRunIterator(len(self.text), value)
 
+    def has_style_run(self, attribute: str) -> bool:
+        return self.styles.get(attribute) is not None
+
     def get_style(self, attribute: str, position: int | None = None) -> Any:  # noqa: ARG002
         return self.styles.get(attribute)
 
@@ -605,6 +616,9 @@ class FormattedDocument(AbstractDocument):
             return self._style_runs[attribute].get_run_iterator()
         except KeyError:
             return _no_style_range_iterator
+
+    def has_style_run(self, attribute: str) -> bool:
+        return attribute in self._style_runs
 
     def get_style(self, attribute: str, position: int = 0) -> Any | None:
         try:
