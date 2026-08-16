@@ -3,8 +3,8 @@
 A subset of HTML 4.01 Transitional is implemented.  The following elements are
 supported fully::
 
-    B BLOCKQUOTE BR CENTER CODE DD DIR DL EM FONT H1 H2 H3 H4 H5 H6 I IMG KBD
-    LI MENU OL P PRE Q S SAMP STRONG SUB SUP TT U UL VAR
+    B BLOCKQUOTE BR CENTER CODE DD DIR DL DT EM FONT H1 H2 H3 H4 H5 H6 I IMG KBD
+    HR LI MENU OL P PRE Q S SAMP STRONG SUB SUP TT U UL VAR
 
 As of 3.0 supports the following inline style tags::
 
@@ -426,6 +426,17 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
                 self.prepare_for_data()
                 self.add_element(structured.ImageElement(image, width, height))
                 self.strip_leading_space = False
+        elif element == "hr":
+            style["align"] = "left"
+            color = self.current_style.get("color") or (0, 0, 0, 255)
+            if "color" in attrs:
+                with contextlib.suppress(ValueError):
+                    color = _parse_color(attrs["color"])
+            self.add_element(structured.HorizontalRuleElement(tuple(color)))
+            self.add_text("\n")
+            self.block_begin = True
+            self.need_block_begin = False
+            self.strip_leading_space = True
         if "style" in attrs:
             css_style = _parse_style_attr(attrs["style"], self.current_style)
             style.update(css_style)

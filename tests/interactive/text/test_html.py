@@ -48,6 +48,8 @@ doctext = """
     <p><s>This text is struck through</s>.  <font color=green><s>This text is
     struck through and green.</s></font></p>
 
+    <hr color=red>
+
     <h1>Heading 1</h1>
     <h2>Heading 2</h2>
     <h3>Heading 3</h3>

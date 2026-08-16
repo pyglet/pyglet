@@ -100,6 +100,66 @@ class ImageElement(pyglet.text.document.InlineElement):
         del self.vertex_lists[layout]
 
 
+class HorizontalRuleElement(pyglet.text.document.InlineElement):
+    """A horizontal rule that spans the available layout width."""
+
+    def __init__(self, color: tuple[int, int, int, int], width: int = 100) -> None:
+        self.color = color
+        self.width = width
+        self.vertex_lists = {}
+        super().__init__(1, -1, 0)
+
+    def place(self, layout: TextLayout, x: float, y: float, z: float, line_x: float, line_y: float, rotation: float,
+              visible: bool, anchor_x: float, anchor_y: float) -> None:
+        program = layout.decoration_shader
+        right = layout.width if layout.width is not None else line_x + self.width
+        vertex_list = program.vertex_list(
+            2,
+            GeometryMode.LINES,
+            layout.batch,
+            layout.foreground_decoration_group,
+            position=(line_x, line_y, z, right, line_y, z),
+            translation=(x, y, z) * 2,
+            colors=self.color * 2,
+            visible=(visible,) * 2,
+            rotation=(rotation,) * 2,
+            anchor=(anchor_x, anchor_y) * 2,
+        )
+        self.vertex_lists[layout] = vertex_list
+
+    def update_translation(self, x: float, y: float, z: float) -> None:
+        translation = (x, y, z)
+        for vertex_list in self.vertex_lists.values():
+            vertex_list.translation[:] = translation * vertex_list.count
+
+    def update_color(self, color: list[int]) -> None:
+        self.color = tuple(color[:4])
+        for vertex_list in self.vertex_lists.values():
+            vertex_list.colors[:] = self.color * vertex_list.count
+
+    def update_view_translation(self, translate_x: float, translate_y: float) -> None:
+        view_translation = (-translate_x, -translate_y, 0)
+        for vertex_list in self.vertex_lists.values():
+            vertex_list.view_translation[:] = view_translation * vertex_list.count
+
+    def update_rotation(self, rotation: float) -> None:
+        for vertex_list in self.vertex_lists.values():
+            vertex_list.rotation[:] = (rotation,) * vertex_list.count
+
+    def update_visibility(self, visible: bool) -> None:
+        for vertex_list in self.vertex_lists.values():
+            vertex_list.visible[:] = (visible,) * vertex_list.count
+
+    def update_anchor(self, anchor_x: float, anchor_y: float) -> None:
+        anchor = (anchor_x, anchor_y)
+        for vertex_list in self.vertex_lists.values():
+            vertex_list.anchor[:] = anchor * vertex_list.count
+
+    def remove(self, layout: TextLayout) -> None:
+        self.vertex_lists[layout].delete()
+        del self.vertex_lists[layout]
+
+
 def _int_to_roman(number: int) -> str:
     # From http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/81611
     if not 0 < number < 4000:
