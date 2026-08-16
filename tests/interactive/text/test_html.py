@@ -48,6 +48,10 @@ doctext = """
     <p><s>This text is struck through</s>.  <font color=green><s>This text is
     struck through and green.</s></font></p>
 
+    <p>This paragraph contains a <a href="https://pyglet.org">blue, underlined
+    link</a> and a <a href="https://pyglet.org" style="color: red">red,
+    underlined link</a>.</p>
+
     <hr color=red>
 
     <h1>Heading 1</h1>
