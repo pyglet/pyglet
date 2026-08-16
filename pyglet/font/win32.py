@@ -60,6 +60,7 @@ StringFormatFlagsLineLimit = 0x00002000
 StringFormatFlagsNoClip = 0x00004000
 
 FontFamilyNotFound = 14
+GGI_MARK_NONEXISTING_GLYPHS = 0x0001
 
 
 _debug_font = pyglet.options.debug_font
@@ -401,6 +402,23 @@ class Win32Font(base.Font):
             finally:
                 gdi32.SelectObject(dc, previous_font)
         return size.cx, size.cy
+
+    def has_character(self, character: str) -> bool:
+        super().has_character(character)
+
+        glyph_index = ctypes.c_ushort()
+        with device_context(None) as dc:
+            previous_font = gdi32.SelectObject(dc, self.hfont)
+            try:
+                result = gdi32.GetGlyphIndicesW(
+                    dc, character, 1, ctypes.byref(glyph_index), GGI_MARK_NONEXISTING_GLYPHS,
+                )
+            finally:
+                gdi32.SelectObject(dc, previous_font)
+        # GDI_ERROR (0xffffffff) signals a failed query. With
+        # GGI_MARK_NONEXISTING_GLYPHS, 0xffff marks a character that has no
+        # glyph in the selected face rather than returning its default glyph.
+        return result != 0xffffffff and glyph_index.value != 0xffff
 
 
 def _get_font_families(font_collection: ctypes.c_void_p) -> Sequence[ctypes.c_void_p]:

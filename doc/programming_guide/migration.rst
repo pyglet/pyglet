@@ -426,7 +426,9 @@ Additional changes not covered above:
   ``pyglet.font.manager`` now supports custom font-name callbacks,
   ``pyglet.font.get_custom_font_names`` was added, and ``pyglet.font.FontGroup``
   allows grouped font fallbacks. ``Label.font_name`` now returns the resolved
-  font family name, not the style string passed in.
+  font family name, not the style string passed in. The Windows-only
+  ``pyglet.options.dw_legacy_naming`` option was removed; use the
+  cross-platform ``pyglet.options.font_name_compatibility`` option instead.
 
 * ``pyglet.window``:
   ``Window.set_mouse_visible`` was renamed to

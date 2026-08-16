@@ -406,7 +406,7 @@ class IDWriteFontFace(com.pIUnknown):
         ("ReleaseFontTable",
          com.METHOD(c_void)),
         ("GetGlyphRunOutline",
-         com.STDMETHOD()),
+         com.STDMETHOD(FLOAT, POINTER(UINT16), POINTER(FLOAT), c_void_p, UINT32, BOOL, BOOL, c_void_p)),
         ("GetRecommendedRenderingMode",
          com.STDMETHOD()),
         ("GetGdiCompatibleMetrics",

@@ -2,18 +2,19 @@
 from __future__ import annotations
 
 import math
-from ctypes import byref, c_int32, c_void_p, string_at, cast, c_char_p, c_float
-from enum import Enum
-from typing import BinaryIO, TYPE_CHECKING
+from ctypes import byref, c_char_p, c_float, c_int32, c_void_p, cast, string_at
+from typing import TYPE_CHECKING, BinaryIO
 
+import pyglet
 import pyglet.image
-from pyglet.enums import Weight, Stretch, Style
 from pyglet.enums import Stretch, Style, Weight
-from pyglet.font.base import Glyph, GlyphPosition, GlyphRenderer, Font, get_grapheme_clusters
-from pyglet.libs.darwin import CGFloat, cocoapy, kCTFontURLAttribute, cfnumber_to_number, CGPoint, CFRange
-from pyglet.font.harfbuzz import harfbuzz_available, get_resource_from_ct_font, get_harfbuzz_shaped_glyphs
+from pyglet.font.base import Font, Glyph, GlyphPosition, GlyphRenderer, get_grapheme_clusters
+from pyglet.font.harfbuzz import get_harfbuzz_shaped_glyphs, get_resource_from_ct_font, harfbuzz_available
+from pyglet.libs.darwin import CFRange, CGFloat, CGPoint, cfnumber_to_number, cocoapy, kCTFontURLAttribute
 
 if TYPE_CHECKING:
+    from enum import Enum
+
     from pyglet.font import FontManager
 
 
@@ -155,10 +156,10 @@ if harfbuzz_available():
     to retrieve the tag tables.
     """
     from pyglet.libs.shared.lib_harfbuzz import (
-        hb_lib,
-        hb_destroy_func_t,
-        hb_reference_table_func_t,
         HB_MEMORY_MODE_READONLY,
+        hb_destroy_func_t,
+        hb_lib,
+        hb_reference_table_func_t,
     )
 
     def py_coretext_table_data_destroy(user_data: c_void_p):
@@ -205,7 +206,9 @@ class QuartzGlyphRenderer(GlyphRenderer):
         super().__init__(font)
         self.font = font
 
-    def render_index(self, ct_font: c_void_p, glyph_index: int) -> None:
+    def render_index(
+        self, ct_font: c_void_p, glyph_index: int, stroke_size: float = 0, stroke_join: str = "round",
+    ) -> Glyph:
         # Create an attributed string using text and font.
         # Determine the glyphs involved for the text (if any)
         # Get a bounding rectangle for glyphs in string.
@@ -217,15 +220,20 @@ class QuartzGlyphRenderer(GlyphRenderer):
         # Get advance for all glyphs in string.
         advance = ct.CTFontGetAdvancesForGlyphs(ct_font, 0, glyphs, None, count)
 
+        # Quartz centres a text stroke on the outline.  Reserve enough room
+        # for its outer half, plus the normal one-pixel atlas border.  Miter
+        # joins can protrude substantially farther than the nominal width.
+        stroke_padding = math.ceil(stroke_size * (10 if stroke_join == "miter" else 1)) + 1 if stroke_size else 0
+
         # Set image parameters:
         # We add 2 pixels to the bitmap width and height so that there will be a 1-pixel border
         # around the glyph image when it is placed in the texture atlas.  This prevents
         # weird artifacts from showing up around the edges of the rendered glyph textures.
         # We adjust the baseline and lsb of the glyph by 1 pixel accordingly.
-        width = max(int(math.ceil(rect.size.width) + 2), 1)
-        height = max(int(math.ceil(rect.size.height) + 2), 1)
-        baseline = -int(math.floor(rect.origin.y)) + 1
-        lsb = int(math.ceil(rect.origin.x)) - 1
+        width = max(int(math.ceil(rect.size.width) + 2 + stroke_padding * 2), 1)
+        height = max(int(math.ceil(rect.size.height) + 2 + stroke_padding * 2), 1)
+        baseline = -int(math.floor(rect.origin.y)) + 1 + stroke_padding
+        lsb = int(math.ceil(rect.origin.x)) - 1 - stroke_padding
         advance = int(round(advance))
 
         # Create bitmap context.
@@ -248,13 +256,26 @@ class QuartzGlyphRenderer(GlyphRenderer):
         quartz.CGContextSetShouldAntialias(bitmap_context, pyglet.options.text_antialiasing)
         quartz.CGContextSetTextPosition(bitmap_context, -lsb, baseline)
         quartz.CGContextSetRGBFillColor(bitmap_context, 1, 1, 1, 1)
+        if stroke_size:
+            quartz.CGContextSetRGBStrokeColor(bitmap_context, 1, 1, 1, 1)
+            quartz.CGContextSetLineWidth(bitmap_context, stroke_size * 2)
+            quartz.CGContextSetLineJoin(bitmap_context, {"miter": 0, "round": 1, "bevel": 2}[stroke_join])
+            quartz.CGContextSetMiterLimit(bitmap_context, 10)
         quartz.CGContextSetFont(bitmap_context, ct_font)
         quartz.CGContextSetFontSize(bitmap_context, self.font.pixel_size)
         quartz.CGContextTranslateCTM(bitmap_context, 0, height)  # Move origin to top-left
         quartz.CGContextScaleCTM(bitmap_context, 1, -1)  # Flip vertically
 
-        positions = (cocoapy.CGPoint * 1)(*[cocoapy.CGPoint(0, 0)])
-        quartz.CTFontDrawGlyphs(ct_font, glyphs, positions, 1, bitmap_context)
+        if stroke_size:
+            path = c_void_p(ct.CTFontCreatePathForGlyph(ct_font, glyph_index, None))
+            if path:
+                quartz.CGContextTranslateCTM(bitmap_context, -lsb, baseline)
+                quartz.CGContextAddPath(bitmap_context, path)
+                quartz.CGContextStrokePath(bitmap_context)
+                quartz.CGPathRelease(path)
+        else:
+            positions = (cocoapy.CGPoint * 1)(*[cocoapy.CGPoint(0, 0)])
+            quartz.CTFontDrawGlyphs(ct_font, glyphs, positions, 1, bitmap_context)
 
         # Create an image to get the data out.
         image_ref = c_void_p(quartz.CGBitmapContextCreateImage(bitmap_context))
@@ -422,6 +443,9 @@ class QuartzFont(Font):
         dpi: int | None = None,
     ) -> None:
         super().__init__(name, size, weight, style, stretch, dpi)
+        self._glyph_sources: dict[int, tuple[c_void_p, int]] = {}
+        self._stroke_glyphs: dict[tuple[int, float, str], Glyph] = {}
+        self._stroke_fallback_fonts: dict[int, c_void_p] = {}
 
         # Weight value
         self._weight = name_to_weight[weight]
@@ -444,6 +468,10 @@ class QuartzFont(Font):
                 cgFont = result[0]
                 # Use cgFont from table to create a CTFont object with the specified size.
                 self.ctFont = c_void_p(ct.CTFontCreateWithGraphicsFont(cgFont, self.pixel_size, None, None))
+            elif pyglet.options.font_name_compatibility and (full_name_font := self._get_full_name_font(name)):
+                # A full name already identifies a concrete face. Do not add
+                # family traits, which could select a different face.
+                self.ctFont = full_name_font
             else:
                 # Create a font descriptor for given name and traits and use it to create font.
                 descriptor = self._create_font_descriptor(name, self._italic, self._weight, self._stretch)
@@ -534,7 +562,12 @@ class QuartzFont(Font):
         return self._name
 
     def __del__(self) -> None:
-        cf.CFRelease(self.ctFont)
+        for ct_font in self._stroke_fallback_fonts.values():
+            cf.CFRelease(ct_font)
+        self._stroke_fallback_fonts.clear()
+        if self.ctFont:
+            cf.CFRelease(self.ctFont)
+            self.ctFont = None
 
     def _lookup_font_with_family_and_traits(self, family: str, traits: int) -> tuple[c_void_p, bytes] | None:
         # This method searches the _loaded_CGFont_table to find a loaded
@@ -562,6 +595,40 @@ class QuartzFont(Font):
             return fonts[0]
         # Otherwise return whatever we have.
         return list(fonts.values())[0]
+
+    def _get_full_name_font(self, name: str) -> c_void_p | None:
+        """Return a system font selected by its CoreText full name, if ``name`` is one.
+
+        ``CTFontDescriptorCreateWithNameAndSize`` accepts both family and full
+        names.  We only use its result when the requested name is demonstrably
+        a full name for a different family, leaving normal family lookups to
+        the trait-aware descriptor path below.
+        """
+        cfname = cocoapy.CFSTR(name)
+        descriptor = c_void_p(ct.CTFontDescriptorCreateWithNameAndSize(cfname, self.pixel_size))
+        cf.CFRelease(cfname)
+        matched = c_void_p(ct.CTFontDescriptorCreateMatchingFontDescriptor(descriptor, None))
+        cf.CFRelease(descriptor)
+        if not matched:
+            return None
+
+        font = c_void_p(ct.CTFontCreateWithFontDescriptor(matched, self.pixel_size, None))
+        cf.CFRelease(matched)
+        if not font:
+            return None
+
+        full_name_ref = c_void_p(ct.CTFontCopyFullName(font))
+        family_name_ref = c_void_p(ct.CTFontCopyFamilyName(font))
+        full_name = str(cocoapy.cfstring_to_string(full_name_ref))
+        family_name = str(cocoapy.cfstring_to_string(family_name_ref))
+        cf.CFRelease(full_name_ref)
+        cf.CFRelease(family_name_ref)
+
+        if full_name.casefold() == name.casefold() and family_name.casefold() != name.casefold():
+            return font
+
+        cf.CFRelease(font)
+        return None
 
     def _create_font_descriptor(
         self, family_name: str, italic_traits: int, weight: float | None = None, stretch: float | None = None,
@@ -718,7 +785,9 @@ class QuartzFont(Font):
 
         for glyph_index in set(indices):
             if glyph_index not in self.glyphs:
-                self.glyphs[glyph_index] = self._glyph_renderer.render_index(self.ctFont, glyph_index)
+                glyph = self._glyph_renderer.render_index(self.ctFont, glyph_index)
+                self.glyphs[glyph_index] = glyph
+                self._glyph_sources[id(glyph)] = (self.ctFont, glyph_index)
 
     def _render_glyph_indices_for_font(
         self,
@@ -738,7 +807,36 @@ class QuartzFont(Font):
 
         # Missing glyphs, get their info.
         for glyph_index in missing:
-            self.glyphs[(font_name, glyph_index)] = self._glyph_renderer.render_index(ct_font, glyph_index)
+            glyph = self._glyph_renderer.render_index(ct_font, glyph_index)
+            self.glyphs[(font_name, glyph_index)] = glyph
+            self._glyph_sources[id(glyph)] = (self._stroke_font_reference(ct_font), glyph_index)
+
+    def _stroke_font_reference(self, ct_font: c_void_p) -> c_void_p:
+        """Return a retained CTFont suitable for deferred stroke rendering."""
+        if ct_font.value == self.ctFont.value:
+            return self.ctFont
+
+        font_key = ct_font.value
+        if font_key not in self._stroke_fallback_fonts:
+            self._stroke_fallback_fonts[font_key] = c_void_p(
+                ct.CTFontCreateCopyWithAttributes(ct_font, self.pixel_size, None, None),
+            )
+        return self._stroke_fallback_fonts[font_key]
+
+    def get_stroke_glyph(self, glyph: Glyph, size: float, join: str = "round") -> Glyph | None:
+        """Return a cached CoreText outline mask for ``glyph``."""
+        if size <= 0 or (source := self._glyph_sources.get(id(glyph))) is None:
+            return None
+
+        cache_key = id(glyph), size, join
+        if stroked := self._stroke_glyphs.get(cache_key):
+            return stroked
+
+        ct_font, glyph_index = source
+        self._initialize_renderer()
+        stroked = self._glyph_renderer.render_index(ct_font, glyph_index, size, join)
+        self._stroke_glyphs[cache_key] = stroked
+        return stroked
 
     def _get_shaped_glyphs(self, text: str) -> tuple[list[Glyph], list[GlyphPosition]]:
         attributes = c_void_p(
@@ -835,7 +933,13 @@ class QuartzFont(Font):
             if c == "\t":
                 c = " "  # noqa: PLW2901
             if c not in self.glyphs:
-                self.glyphs[c] = self._glyph_renderer.render(c)
+                glyph = self._glyph_renderer.render(c)
+                self.glyphs[c] = glyph
+                if len(c) == 1 and ord(c) <= 0xffff:
+                    chars = (cocoapy.UniChar * 1)(ord(c))
+                    glyph_indices = (cocoapy.CGGlyph * 1)()
+                    if ct.CTFontGetGlyphsForCharacters(self.ctFont, chars, glyph_indices, 1) and glyph_indices[0]:
+                        self._glyph_sources[id(glyph)] = (self.ctFont, glyph_indices[0])
             glyphs.append(self.glyphs[c])
             offsets.append(GlyphPosition(0, 0, 0, 0))
 
@@ -846,3 +950,20 @@ class QuartzFont(Font):
                     offsets.append(GlyphPosition(0, 0, 0, 0))
 
         return glyphs, offsets
+
+    def has_character(self, character: str) -> bool:
+        super().has_character(character)
+        codepoint = ord(character)
+        if codepoint <= 0xffff:
+            # CTFontGetGlyphsForCharacters accepts UTF-16 ``UniChar`` values.
+            chars = (cocoapy.UniChar * 1)(codepoint)
+            glyphs = (cocoapy.CGGlyph * 1)()
+            return bool(ct.CTFontGetGlyphsForCharacters(self.ctFont, chars, glyphs, 1) and glyphs[0])
+
+        # Supplementary-plane codepoints (for example, most emoji) cannot fit
+        # in one 16-bit UniChar. Convert the Unicode to its UTF-16 high
+        # and low surrogate units before asking CoreText for its glyph.
+        codepoint -= 0x10000
+        chars = (cocoapy.UniChar * 2)(0xd800 + (codepoint >> 10), 0xdc00 + (codepoint & 0x3ff))
+        glyphs = (cocoapy.CGGlyph * 2)()
+        return bool(ct.CTFontGetGlyphsForCharacters(self.ctFont, chars, glyphs, 2) and glyphs[0])
