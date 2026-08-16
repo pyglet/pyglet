@@ -268,7 +268,6 @@ class _GlyphBox(_AbstractBox):
         owner: Texture,
         font: Font,
         glyphs: list[tuple[int, Glyph, GlyphPosition]],
-        advance: int,
     ) -> None:
         """Create a run of glyphs sharing the same texture.
 
@@ -280,20 +279,22 @@ class _GlyphBox(_AbstractBox):
             glyphs:
                 Pairs of ``(kern, glyph)``, where ``kern`` gives horizontal
                 displacement of the glyph in pixels (typically 0).
-            advance:
-                Width of glyph run; must correspond to the sum of advances
-                and kerns in the glyph list.
             offsets:
                 A list of all position transformations done to each glyph.
         """
+        advance = sum(self._glyph_advance(kern, glyph, glyph_pos) for kern, glyph, glyph_pos in glyphs)
         super().__init__(font.ascent, font.descent, advance, len(glyphs))
         assert owner
         self.owner = owner
         self.font = font
         self.glyphs = glyphs
-        self.advance = advance
         self.vertex_lists = []
         self._glyph_vertex_list = None
+
+    @staticmethod
+    def _glyph_advance(kern: float, glyph: Glyph, glyph_pos: GlyphPosition) -> int:
+        """Return the pixel-rounded advance used to position glyph quads."""
+        return round(kern) + round(glyph.advance + glyph_pos.x_advance)
 
     @staticmethod
     def _interpolate_gradient(
@@ -605,8 +606,7 @@ class _GlyphBox(_AbstractBox):
             range_end_glyph = end - start_index
             while glyph_index < range_start_glyph:
                 kern, glyph, glyph_pos = self.glyphs[glyph_index]
-                x1 += kern
-                x1 += glyph.advance + glyph_pos.x_advance
+                x1 += self._glyph_advance(kern, glyph, glyph_pos)
                 glyph_index += 1
 
             x2 = x1
@@ -616,7 +616,7 @@ class _GlyphBox(_AbstractBox):
             background_y2 = y2
             for glyph_index in range(range_start_glyph, range_end_glyph):
                 kern, glyph, glyph_pos = self.glyphs[glyph_index]
-                x2 += kern
+                x2 += round(kern)
                 if bg is not None:
                     v0, v1, v2, v3 = glyph.vertices
 
@@ -628,7 +628,7 @@ class _GlyphBox(_AbstractBox):
                     background_x2 = max(background_x2, glyph_x + v2)
                     background_y2 = max(background_y2, glyph_y + v3)
 
-                x2 += glyph.advance + glyph_pos.x_advance
+                x2 += round(glyph.advance + glyph_pos.x_advance)
 
             if bg is not None:
                 if len(bg) != 4:
@@ -896,18 +896,19 @@ class _GlyphBox(_AbstractBox):
             if position == 0:
                 break
             position -= 1
-            x += glyph.advance + kern + offset.x_advance
+            x += self._glyph_advance(kern, glyph, offset)
         return x
 
     def get_position_in_box(self, x: float) -> int:
         position = 0
         last_glyph_x = 0
         for kern, glyph, offset in self.glyphs:
-            last_glyph_x += kern
-            if last_glyph_x + glyph.advance + offset.x_advance // 2 > x:
+            last_glyph_x += round(kern)
+            advance = round(glyph.advance + offset.x_advance)
+            if last_glyph_x + advance / 2 > x:
                 return position
             position += 1
-            last_glyph_x += glyph.advance
+            last_glyph_x += advance
         return position
 
     def __repr__(self) -> str:

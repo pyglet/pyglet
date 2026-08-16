@@ -79,18 +79,15 @@ class _FlowLayoutBase:
 
         owner = glyphs[0].owner
         owner_glyphs = []
-        owner_width = 0
         for glyph, offset in zip(glyphs, offsets):
             if glyph.owner != owner:
-                line.add_box(_GlyphBox(owner, font, owner_glyphs, owner_width))
+                line.add_box(_GlyphBox(owner, font, owner_glyphs))
                 owner = glyph.owner
                 owner_glyphs = []
-                owner_width = 0
 
             owner_glyphs.append((kerning, glyph, offset))
-            owner_width += glyph.advance + kerning + offset.x_advance
 
-        line.add_box(_GlyphBox(owner, font, owner_glyphs, owner_width))
+        line.add_box(_GlyphBox(owner, font, owner_glyphs))
         line.paragraph_begin = line.paragraph_end = True
 
         self._content_width = line.width
@@ -306,7 +303,7 @@ class _FlowLayoutBase:
                         # Create the _GlyphBox for the committed glyphs in the
                         # current owner.
                         if owner_accum_commit:
-                            line.add_box(_GlyphBox(owner, font, owner_accum_commit, owner_accum_commit_width))
+                            line.add_box(_GlyphBox(owner, font, owner_accum_commit))
                             owner_accum_commit = []
                             owner_accum_commit_width = 0
 
@@ -379,9 +376,9 @@ class _FlowLayoutBase:
             # The owner run is finished; create GlyphBoxes for the committed
             # and pending glyphs.
             if owner_accum_commit:
-                line.add_box(_GlyphBox(owner, font, owner_accum_commit, owner_accum_commit_width))
+                line.add_box(_GlyphBox(owner, font, owner_accum_commit))
             if owner_accum:
-                run_accum.append(_GlyphBox(owner, font, owner_accum, owner_accum_width))
+                run_accum.append(_GlyphBox(owner, font, owner_accum))
                 run_accum_width += owner_accum_width
 
         # All glyphs have been processed: commit everything pending and flush
@@ -437,7 +434,7 @@ class _FlowLayoutBase:
                 for _, glyph, _ in owner_glyphs:
                     line.add_box(glyph)
             else:
-                line.add_box(_GlyphBox(owner, font, owner_glyphs, width))
+                line.add_box(_GlyphBox(owner, font, owner_glyphs))
 
         if not line.boxes:
             line.ascent = font.ascent
