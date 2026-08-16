@@ -184,3 +184,25 @@ def test_incrementallayout_get_position_on_line_before_start_of_text(test_window
     assert incremental_layout.get_position_on_line(0, 70) == 0
     assert incremental_layout.get_position_on_line(0, 60) == 0
     assert incremental_layout.get_position_on_line(0, 50) == 0
+
+
+def test_incremental_layout_hit_testing_and_decorations_match_glyph_positions(test_window):
+    doc = document.FormattedDocument("abcd")
+    doc.set_style(1, 3, {"underline": (0, 0, 0, 255)})
+    incremental_layout = layout.IncrementalTextLayout(doc, width=200, height=100, multiline=False)
+    line = incremental_layout.lines[0]
+    glyph_box = line.boxes[0]
+
+    for position in range(glyph_box.length):
+        left = line.x + glyph_box.get_point_in_box(position)
+        right = line.x + glyph_box.get_point_in_box(position + 1)
+        assert incremental_layout.get_position_on_line(0, left + (right - left) * 0.25) == position
+        assert incremental_layout.get_position_on_line(0, left + (right - left) * 0.75) == position + 1
+
+    underline_list = next(vertex_list for vertex_list in glyph_box.vertex_lists if vertex_list.count == 2)
+    assert underline_list.position[0] == line.x + glyph_box.get_point_in_box(1)
+    assert underline_list.position[3] == line.x + glyph_box.get_point_in_box(3)
+
+    incremental_layout.set_selection(0, 3)
+    background_list = next(vertex_list for vertex_list in glyph_box.vertex_lists if vertex_list.count == 8)
+    assert list(background_list.indices) == [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7]
