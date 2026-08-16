@@ -415,7 +415,7 @@ class _GlyphBox(_AbstractBox):
     advance: int
     vertex_lists: list[_LayoutVertexList]
 
-    def __init__(self, owner: Texture, font: Font, glyphs: list[tuple[int, Glyph, GlyphPosition]], advance: int) -> None:
+    def __init__(self, owner: Texture, font: Font, glyphs: list[tuple[int, Glyph, GlyphPosition]]) -> None:
         """Create a run of glyphs sharing the same texture.
 
         Args:
@@ -426,19 +426,21 @@ class _GlyphBox(_AbstractBox):
             glyphs:
                 Pairs of ``(kern, glyph)``, where ``kern`` gives horizontal
                 displacement of the glyph in pixels (typically 0).
-            advance:
-                Width of glyph run; must correspond to the sum of advances
-                and kerns in the glyph list.
             offsets:
                 A list of all position transformations done to each glyph.
         """
+        advance = sum(self._glyph_advance(kern, glyph, glyph_pos) for kern, glyph, glyph_pos in glyphs)
         super().__init__(font.ascent, font.descent, advance, len(glyphs))
         assert owner
         self.owner = owner
         self.font = font
         self.glyphs = glyphs
-        self.advance = advance
         self.vertex_lists = []
+
+    @staticmethod
+    def _glyph_advance(kern: float, glyph: Glyph, glyph_pos: GlyphPosition) -> int:
+        """Return the pixel-rounded advance used to position glyph quads."""
+        return round(kern) + round(glyph.advance + glyph_pos.x_advance)
 
     def _add_vertex_list(self, vertex_list: _LayoutVertexList | VertexList, context: _LayoutContext) -> None:
         self.vertex_lists.append(vertex_list)
@@ -521,12 +523,21 @@ class _GlyphBox(_AbstractBox):
         y1 = line_y + self.descent + baseline
         y2 = line_y + self.ascent + baseline
         x1 = line_x
+        glyph_index = 0
 
         for start, end, decoration in context.decoration_iter.ranges(i, i + n_glyphs):
             bg, underline = decoration
+            range_start_glyph = start - i
+            range_end_glyph = end - i
+            while glyph_index < range_start_glyph:
+                kern, glyph, glyph_pos = self.glyphs[glyph_index]
+                x1 += self._glyph_advance(kern, glyph, glyph_pos)
+                glyph_index += 1
+
             x2 = x1
-            for (kern, glyph, glyph_pos) in self.glyphs[start - i:end - i]:
-                x2 += glyph.advance + kern + glyph_pos.x_advance
+            for glyph_index in range(range_start_glyph, range_end_glyph):
+                kern, glyph, glyph_pos = self.glyphs[glyph_index]
+                x2 += self._glyph_advance(kern, glyph, glyph_pos)
 
             if bg is not None:
                 if len(bg) != 4:
@@ -545,10 +556,15 @@ class _GlyphBox(_AbstractBox):
                 underline_colors.extend(underline * 2)
 
             x1 = x2
+            glyph_index = range_end_glyph
 
         if background_vertices:
             bg_count = len(background_vertices) // 3
-            background_indices = [(0, 1, 2, 0, 2, 3)[i % 6] for i in range(bg_count * 3)]
+            background_indices = [
+                vertex + quad * 4
+                for quad in range(bg_count // 4)
+                for vertex in (0, 1, 2, 0, 2, 3)
+            ]
             decoration_program = get_default_decoration_shader()
             background_list = decoration_program.vertex_list_indexed(bg_count, GL_TRIANGLES, background_indices,
                                                                      layout.batch, layout.background_decoration_group,
@@ -629,18 +645,19 @@ class _GlyphBox(_AbstractBox):
             if position == 0:
                 break
             position -= 1
-            x += glyph.advance + kern + offset.x_advance
+            x += self._glyph_advance(kern, glyph, offset)
         return x
 
     def get_position_in_box(self, x: float) -> int:
         position = 0
         last_glyph_x = 0
-        for (kern, glyph, offset) in self.glyphs:
-            last_glyph_x += kern
-            if last_glyph_x + glyph.advance + offset.x_advance // 2 > x:
+        for kern, glyph, offset in self.glyphs:
+            last_glyph_x += round(kern)
+            advance = round(glyph.advance + offset.x_advance)
+            if last_glyph_x + advance / 2 > x:
                 return position
             position += 1
-            last_glyph_x += glyph.advance
+            last_glyph_x += advance
         return position
 
     def __repr__(self) -> str:
@@ -1800,7 +1817,7 @@ class TextLayout:
                         # Create the _GlyphBox for the committed glyphs in the
                         # current owner.
                         if owner_accum_commit:
-                            line.add_box(_GlyphBox(owner, font, owner_accum_commit, owner_accum_commit_width))
+                            line.add_box(_GlyphBox(owner, font, owner_accum_commit))
                             owner_accum_commit = []
                             owner_accum_commit_width = 0
 
@@ -1873,9 +1890,9 @@ class TextLayout:
             # The owner run is finished; create GlyphBoxes for the committed
             # and pending glyphs.
             if owner_accum_commit:
-                line.add_box(_GlyphBox(owner, font, owner_accum_commit, owner_accum_commit_width))
+                line.add_box(_GlyphBox(owner, font, owner_accum_commit))
             if owner_accum:
-                run_accum.append(_GlyphBox(owner, font, owner_accum, owner_accum_width))
+                run_accum.append(_GlyphBox(owner, font, owner_accum))
                 run_accum_width += owner_accum_width
 
         # All glyphs have been processed: commit everything pending and flush
@@ -1927,7 +1944,7 @@ class TextLayout:
                 for _, glyph, _ in owner_glyphs:
                     line.add_box(glyph)
             else:
-                line.add_box(_GlyphBox(owner, font, owner_glyphs, width))
+                line.add_box(_GlyphBox(owner, font, owner_glyphs))
 
         if not line.boxes:
             line.ascent = font.ascent

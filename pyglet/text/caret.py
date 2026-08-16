@@ -52,6 +52,7 @@ class Caret(EventDispatcher):
     """
     _next_word_re: Pattern[str] = re.compile(r"(?<=\W)\w")
     _previous_word_re: Pattern[str] = re.compile(r"(?<=\W)\w+\W*$")
+    _word_re: Pattern[str] = re.compile(r"\w+")
     _next_para_re: Pattern[str] = re.compile(r"\n", flags=re.DOTALL)
     _previous_para_re: Pattern[str] = re.compile(r"\n", flags=re.DOTALL)
 
@@ -335,22 +336,21 @@ class Caret(EventDispatcher):
         """Select the word at the given window coordinate."""
         line = self._layout.get_line_from_point(x, y)
         p = self._layout.get_position_on_line(line, x)
-        match1 = self._previous_word_re.search(self._layout.document.text, 0, p + 1)
-        if not match1:
-            mark1 = 0
-        else:
-            mark1 = match1.start()
-        self.mark = mark1
+        word = self._get_word_bounds(self._layout.document.text, p)
+        if word is None:
+            return
 
-        match2 = self._next_word_re.search(self._layout.document.text, p)
-        if not match2:
-            mark2 = len(self._layout.document.text)
-        else:
-            mark2 = match2.start()
-
-        self._position = mark2
+        self.mark, self._position = word
         self._update(line=line)
         self._next_attributes.clear()
+
+    @classmethod
+    def _get_word_bounds(cls, text: str, position: int) -> tuple[int, int] | None:
+        """Return the word containing an insertion position, without trailing whitespace."""
+        for match in cls._word_re.finditer(text):
+            if match.start() <= position <= match.end():
+                return match.span()
+        return None
 
     def select_paragraph(self, x: int, y: int) -> None:
         """Select the paragraph at the given window coordinate."""
