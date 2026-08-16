@@ -24,6 +24,7 @@ class GeometryMode(Enum):
     TRIANGLES = auto()
     TRIANGLE_STRIP = auto()
     TRIANGLE_FAN = auto()
+    PATCHES = auto()
 
 
 class BlendFactor(Enum):
