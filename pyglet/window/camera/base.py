@@ -36,7 +36,7 @@ class CameraScissor:
     width: int
     height: int
 
-    __slots__ = ("height", "width", "x", "y")
+    __slots__ = ("x", "y", "width", "height")
 
     def __init__(self, x: int, y: int, width: int, height: int) -> None:
         self.x = int(x)
@@ -57,6 +57,10 @@ class CameraScissor:
         self.y = int(y)
         self.width = max(0, int(width))
         self.height = max(0, int(height))
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(x={self.x}, y={self.y}, width={self.width}, height={self.height})"
+
 
 @runtime_checkable
 class CameraViewStorage(Protocol):

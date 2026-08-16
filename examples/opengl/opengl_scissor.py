@@ -1,8 +1,9 @@
 """In some cases, you may want to restrict drawing to a specific part
 of the Window. To accomplish this, you can use an OpenGL Scissor
-area. In this example we define a custom Group that enforces this.
-Any Sprites/Labels that are assigned to this Group will not be drawn
-outside the specified area. Drag the mouse to move the position.
+area. In this example we use a Camera view with a Scissor area
+attached to a Group to enforce this. Any Sprites/Labels that are
+assigned to this Group will not be drawn outside the specified area.
+Drag the mouse to move the position.
 """
 
 import pyglet
@@ -23,72 +24,37 @@ def on_draw():
 
 
 ###################################################
-# A custom Group class that enforces a Scissor area
+# A Camera view that enforces a Scissor area
 ###################################################
 
-class ScissorGroup(pyglet.graphics.Group):
-    """A Custom Group that defines a "Scissor" area.
+# Create a child view of the window's default camera. A Scissor area
+# on this view clips anything drawn with it. Any Sprites/Labels that
+# are drawn through this view will not render outside the area.
+scissor_view = window.camera.create_view(inherit=True)
+scissor = scissor_view.set_scissor_area(x=50, y=50, width=300, height=300)
 
-    If a Sprite/Label is in this Group, any parts of it that
-    fall outside the specified area will not be drawn.
-    NOTE: You should use the same exact group instance
-    for every object that will use the group, equal groups
-    will still be kept separate.
-
-    Args:
-        x:
-            The X coordinate of the Scissor area.
-        y:
-            The Y coordinate of the Scissor area.
-        width:
-            The width of the Scissor area.
-        height:
-            The height of the Scissor area.
-
-    """
-
-    def __init__(
-        self, x: int, y: int, width: int, height: int, order: int = 0, parent: pyglet.graphics.Group | None = None
-    ) -> None:
-        super().__init__(order, parent)
-        self.x, self.y = x, y
-        self.width, self.height = width, height
-        self.uniforms = {
-            "scissor": self.area,
-        }
-        self.set_scissor(self)
-
-    @property
-    def area(self) -> tuple[int, int, int, int]:
-        return int(self.x), int(self.y), int(self.width), int(self.height)
-
-    @area.setter
-    def area(self, area: tuple[int, int, int, int]) -> None:
-        self.x, self.y, self.width, self.height = area
+# Assign the view to a Group, so anything in the Group is drawn with it.
+scissor_group = pyglet.graphics.Group()
+scissor_group.set_camera(scissor_view)
 
 ###################################################
-# Create an instance of our Group, and some Sprites
+# Create some Sprites
 ###################################################
 
-# Create an instance of the ScissorGroup that defines the center of the window:
-scissor_group = ScissorGroup(x=50, y=50, width=300, height=300)
-
-# Create a bunch of Sprites, and assign them to our custom Group. Any parts
+# Create a bunch of Sprites, and assign them to our scissor group. Any parts
 # of these Sprites that are outside the specified area will not be drawn.
 sprites = []
 img = pyglet.resource.texture('pyglet.png')
 for x in range(5):
     for y in range(5):
-        sprite = Sprite(img, x*img.width, y*img.height, group=scissor_group, batch=batch)
+        sprite = Sprite(img, x * img.width, y * img.height, group=scissor_group, batch=batch)
         sprites.append(sprite)
 
 
 @window.event
 def on_mouse_drag(x, y, dx, dy, *etc):
-    scissor_group.x += dx
-    scissor_group.y += dy
-    scissor_group.uniforms["scissor"] = scissor_group.area
-
+    scissor.x += dx
+    scissor.y += dy
 
 
 pyglet.app.run()
