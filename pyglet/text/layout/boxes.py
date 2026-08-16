@@ -711,7 +711,12 @@ class _GlyphBox(_AbstractBox):
 
         if geometry.background.vertices:
             bg_count = len(geometry.background.vertices) // 3
-            background_indices = [(0, 1, 2, 0, 2, 3)[index % 6] for index in range(bg_count * 3)]
+            # Needs this split for text highlighting in incremental layer.
+            background_indices = [
+                vertex + quad * 4
+                for quad in range(bg_count // 4)
+                for vertex in (0, 1, 2, 0, 2, 3)
+            ]
             decoration_program = layout.decoration_shader
             background_list = decoration_program.vertex_list_indexed(
                 bg_count,
