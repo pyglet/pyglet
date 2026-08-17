@@ -11,9 +11,79 @@ readme = "README.md"
 license = { file = "LICENSE" }
 dynamic = ["version", "description"]
 requires-python = ">=3.10"
+dependencies = []
+
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: MacOS X",
+    "Environment :: Win32 (MS Windows)",
+    "Environment :: X11 Applications",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Games/Entertainment",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 
 [project.urls]
 Home = "https://pyglet.org"
+Documentation = "https://pyglet.readthedocs.io"
+Repository = "https://github.com/pyglet/pyglet/"
+Tracker = "https://github.com/pyglet/pyglet/issues"
+
+[dependency-groups]
+test = [
+    "pytest",
+]
+
+test-all = [
+    { include-group = "test" },
+    "Pillow",
+]
+
+docs = [
+    "sphinx==9.0.4",
+    "sphinx_rtd_theme==3.1.0",
+    "readthedocs-sphinx-search==0.3.2",
+    "sphinx-autodoc-typehints==3.6.1",
+]
+
+dev = [
+    { include-group = "test" },
+    { include-group = "docs" },
+]
+
+[tool.pytest.ini_options]
+addopts = "-s --strict-markers"
+testpaths = ["tests"]
+
+norecursedirs = [
+    "contrib",
+    "doc",
+    "examples",
+    "experimental",
+    "tools",
+    "website",
+    "webgl",
+    "pyodide",
+]
+
+markers = [
+    "unit: Unit tests are fast and only test a single module.",
+    "integration: Integration tests integrate several modules or integrate with the OS.",
+    "interactive: Interactive tests require interaction with the user to complete.",
+    "requires_user_action: Test cannot run without user interaction.",
+    "requires_user_validation: Test cannot validate without user interaction, but can run for sanity.",
+    "only_interactive: This test can only be run in interactive mode.",
+]
 
 [tool.mypy]
 exclude = "pyglet.experimental.*"
@@ -32,7 +102,7 @@ ignore_errors = true
 [tool.ruff]
 line-length = 120
 indent-width = 4
-target-version = "py38"
+target-version = "py310"
 exclude = ["venv/*", ".venv/*", "build/*", "doc/*", ".github/*", "tests"]
 
 [tool.ruff.lint]

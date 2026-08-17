@@ -123,7 +123,7 @@ code, is a bug that deserves to be reported on a ticket.
 
 To get started quickly:
 
-    pip install -r doc/requirements.txt
+    python -m pip install -e . --group docs
     python make.py docs
 
 Please check [Documentation and Type Hints][] guide to learn more.
@@ -133,7 +133,7 @@ Please check [Documentation and Type Hints][] guide to learn more.
 pyglet makes use of pytest for its test suite.
 
 ```bash
-pip install -r tests/requirements.txt --user
+python -m pip install -e . --group test
 # Only run unittests
 pytest tests/unit
 ```

@@ -8,10 +8,10 @@ text documents using pyglet.  Applications also usually have the need to load
 other data files: for example, level descriptions in a game, internationalised
 strings, and so on.
 
-Programmers are often tempted to load, for example, an image required by their
-application with::
+Programmers are often tempted to load, for example, a texture required by
+their application with::
 
-    image = pyglet.image.load('logo.png')
+    texture = pyglet.image.load('logo.png').get_texture()
 
 This code assumes ``logo.png`` is in the current working directory.
 Unfortunately the working directory is not necessarily the same as the
@@ -31,14 +31,14 @@ file instead of the working directory::
 
     script_dir = os.path.dirname(__file__)
     path = os.path.join(script_dir, 'logo.png')
-    image = pyglet.image.load(path)
+    texture = pyglet.image.load(path).get_texture()
 
 This, besides being tedious to write, still does not work for resources within
 ZIP files, and can be troublesome in projects that span multiple packages.
 
 The :py:mod:`pyglet.resource` module solves this problem elegantly::
 
-    image = pyglet.resource.image('logo.png')
+    texture = pyglet.resource.texture('logo.png')
 
 The following sections describe exactly how the resources are located, and how
 the behaviour can be customised.
@@ -70,13 +70,15 @@ functions.
           - File-like object
         * - :py:func:`pyglet.image.load`
           - :py:func:`pyglet.resource.image`
-          - :py:class:`~pyglet.image.Texture` or :py:class:`~pyglet.image.TextureRegion`
-        * - :py:func:`pyglet.image.load`
+          - :py:class:`~pyglet.image.ImageData`
+        * - :py:func:`pyglet.image.load` followed by
+            :py:meth:`~pyglet.image.ImageData.get_texture`
           - :py:func:`pyglet.resource.texture`
-          - :py:class:`~pyglet.image.Texture`
+          - :py:class:`~pyglet.graphics.texture.Texture` or
+            :py:class:`~pyglet.graphics.texture.TextureRegion`
         * - :py:func:`pyglet.image.load_animation`
           - :py:func:`pyglet.resource.animation`
-          - :py:class:`~pyglet.image.Animation`
+          - :py:class:`~pyglet.image.animation.Animation`
         * - :py:func:`pyglet.media.load_audio`
           - :py:func:`pyglet.resource.audio`
           - :py:class:`~pyglet.media.Source`
@@ -99,21 +101,20 @@ functions.
           - :py:func:`pyglet.resource.add_font`
           - ``None``
 
-:py:func:`pyglet.resource.texture` is for loading stand-alone textures.
-This can be useful when using the texture for a 3D model, or generally
-working with OpenGL directly.
+:py:func:`pyglet.resource.texture` loads GPU-backed data for drawing. By
+default, the resource module attempts to pack small textures into larger
+texture atlases (explained in :ref:`guide_texture-bins-and-atlases`) for more
+efficient rendering. This is why the return type can be either
+:py:class:`~pyglet.graphics.texture.Texture` or
+:py:class:`~pyglet.graphics.texture.TextureRegion`. Pass ``atlas=False`` when
+you specifically need a stand-alone texture, such as for texture wrapping or
+lower-level rendering.
 
-:py:func:`pyglet.resource.image` is optimised for loading sprite-like
-images that can have their texture coordinates adjusted.
-The resource module attempts to pack small images into larger texture atlases
-(explained in :ref:`guide_texture-bins-and-atlases`) for efficient rendering
-(which is why the return type of this function can be
-:py:class:`~pyglet.image.TextureRegion`).
-It is also advisable to use the texture atlas classes directly if you wish
-to have different anchor points on multiple copies of the same image.
-This is because when loading an image more than once, you will actually get
-the **same** object back. You can still use the resource module for getting
-the image location, and described in the next section.
+:py:func:`pyglet.resource.image` loads and caches CPU-side
+:py:class:`~pyglet.image.ImageData`. Use it when you need to inspect or modify
+pixels before uploading them to the GPU. Although image data can be passed to
+a sprite and uploaded automatically, :py:func:`pyglet.resource.texture` is the
+preferred path when the asset is loaded for drawing.
 
 
 Resource locations
