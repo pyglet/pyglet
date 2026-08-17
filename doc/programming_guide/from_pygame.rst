@@ -207,8 +207,8 @@ pyglet gives direct scheduling functions without manual timer bookkeeping:
 You can also schedule one time events via ``clock.schedule_once``.
 
 .. tip:: You can also set the timing precision of the app loop by passing a value into
-``pyglet.app.run(1 / 60.0)``. By default this is 1 / 60.0. Lowering the value may improve timing
-resolution on some systems at the cost of CPU usage. You can set to 0.0 for as fast as possible.
+         ``pyglet.app.run(1 / 60.0)``. By default this is 1 / 60.0. Lowering the value may improve timing
+         resolution on some systems at the cost of CPU usage. You can set to 0.0 for as fast as possible.
 
 
 Surfaces vs images and textures
@@ -353,8 +353,8 @@ GPU-friendly structures. Otherwise, you would essentially be creating the geomet
 then throwing away, and repeating each frame.
 
 .. tip:: Avoid creating any objects in any scheduled functions or draws. You want to create an object
-once and re-use it where possible. Even in cases like sprites, you can set a sprite visible property
-to ``False``, and then re-use it later by attaching a new texture to it and making it visible again.
+         once and re-use it where possible. Even in cases like sprites, you can set a sprite visible property
+         to ``False``, and then re-use it later by attaching a new texture to it and making it visible again.
 
 Collision and ``Rect`` migration
 --------------------------------
