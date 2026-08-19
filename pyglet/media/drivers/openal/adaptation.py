@@ -2,7 +2,11 @@ from collections import deque
 from typing import TYPE_CHECKING, List, Optional, Tuple
 import weakref
 
-from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
+from pyglet.media.drivers.base import (
+    AbstractAudioDriver,
+    AbstractAudioPlayer,
+    GaplessAudioPlayerBase,
+)
 from pyglet.media.drivers.listener import AbstractListener
 from pyglet.media.drivers.openal import interface
 from pyglet.media.player_worker_thread import PlayerWorkerThread
@@ -35,6 +39,10 @@ class OpenALDriver(AbstractAudioDriver):
     def create_audio_player(self, source: 'Source', player: 'AudioPlayer') -> 'OpenALAudioPlayer':
         assert self.device is not None, 'Device was closed'
         return OpenALAudioPlayer(self, source, player)
+
+    def create_gapless_audio_player(self, source: 'Source', player: 'AudioPlayer') -> 'OpenALGaplessAudioPlayer':
+        assert self.device is not None, 'Device was closed'
+        return OpenALGaplessAudioPlayer(self, source, player)
 
     def delete(self) -> None:
         if self.context is None:
@@ -253,3 +261,62 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
 
     def set_cone_outer_gain(self, cone_outer_gain: float) -> None:
         self.alsource.cone_outer_gain = cone_outer_gain
+
+
+class OpenALGaplessAudioPlayer(OpenALAudioPlayer, GaplessAudioPlayerBase):
+    """Keep a single OpenAL source fed across source boundaries."""
+
+    def __init__(self, driver: 'OpenALDriver', source: 'Source', player: 'AudioPlayer') -> None:
+        super().__init__(driver, source, player)
+        self._queued_source_end_counts = deque()
+
+    def clear(self) -> None:
+        super().clear()
+        self._queued_source_end_counts.clear()
+
+    def _check_processed_buffers(self) -> None:
+        buffers_processed = self.alsource.unqueue_buffers()
+        for _ in range(buffers_processed):
+            self._buffer_cursor += self._queued_buffer_sizes.popleft()
+            source_end_count = self._queued_source_end_counts.popleft()
+            self._dispatch_source_eos_events(source_end_count)
+
+    def _finish_source(self) -> None:
+        if self._queued_source_end_counts:
+            self._queued_source_end_counts[-1] += 1
+        else:
+            self._dispatch_source_eos_events()
+
+    def _refill(self, refill_size) -> None:
+        while not self._pyglet_source_exhausted:
+            # The queued source may be well ahead of the audible source, so
+            # clock compensation must not alter data at a source boundary.
+            audio_data = self._get_audio_data(refill_size)
+            if audio_data is not None:
+                buf = self.alsource.get_buffer()
+                buf.data(audio_data, self.source.audio_format, self.driver.sample_formats)
+                self.alsource.queue_buffer(buf)
+                self._write_cursor += audio_data.length
+                self._queued_buffer_sizes.append(audio_data.length)
+                self._queued_source_end_counts.append(0)
+
+                if audio_data.length >= refill_size:
+                    return
+
+            self._finish_source()
+            if not self._advance_source(self._write_cursor):
+                self._pyglet_source_exhausted = True
+                return
+
+    def work(self) -> None:
+        self._check_processed_buffers()
+        self._update_play_cursor()
+        if self._pyglet_source_exhausted:
+            return
+
+        refilled = self._maybe_refill()
+        if refilled and not self.alsource.is_playing:
+            self.alsource.play()
+
+    def get_play_cursor(self) -> int:
+        return self._get_source_play_cursor(self._play_cursor)

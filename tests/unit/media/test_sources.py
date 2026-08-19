@@ -282,6 +282,97 @@ class StaticSourceTestCase(unittest.TestCase):
         self.assertIsNone(no_more_audio_data)
 
 
+class LoopingSourceTestCase(unittest.TestCase):
+    def setUp(self):
+        self.audio_format = AudioFormat(1, 8, 10)
+        self.source_data = bytes(range(10))
+
+    def create_source(self, loop_count):
+        source = _LoopTestSource(self.source_data, self.audio_format)
+        return LoopingSource.from_frames(source, loop_start=2, loop_end=5, loop_count=loop_count)
+
+    @staticmethod
+    def read_all(source, request_size=64):
+        chunks = []
+        while audio_data := source.get_audio_data(request_size):
+            chunks.append(_bytes_from_audiodata(audio_data))
+        return b''.join(chunks)
+
+    def test_finite_loop_includes_intro_loop_and_outro(self):
+        source = self.create_source(loop_count=2).get_queue_source()
+
+        self.assertEqual(self.read_all(source), b'\x00\x01\x02\x03\x04\x02\x03\x04\x02\x03\x04\x05\x06\x07\x08\x09')
+        self.assertEqual(source.remaining_loop_count, 0)
+
+    def test_loop_boundary_is_continuous_in_one_request(self):
+        source = self.create_source(loop_count=1).get_queue_source()
+
+        data = source.get_audio_data(8)
+        self.assertEqual(_bytes_from_audiodata(data), b'\x00\x01\x02\x03\x04\x02\x03\x04')
+        self.assertEqual(source.remaining_loop_count, 0)
+
+    def test_loop_count_can_change_while_playing(self):
+        source = self.create_source(loop_count=-1).get_queue_source()
+        self.assertEqual(_bytes_from_audiodata(source.get_audio_data(5)), b'\x00\x01\x02\x03\x04')
+
+        source.set_loop_count(0)
+        self.assertEqual(self.read_all(source), b'\x05\x06\x07\x08\x09')
+        self.assertEqual(source.remaining_loop_count, 0)
+
+    def test_duration_and_frame_points(self):
+        source = self.create_source(loop_count=2)
+
+        self.assertEqual(source.loop_start, 0.2)
+        self.assertEqual(source.loop_end, 0.5)
+        self.assertEqual(source.duration, 1.6)
+
+    def test_streaming_looping_source_cannot_be_queued_twice(self):
+        source = _LoopStreamingSource(self.source_data, self.audio_format)
+        looping_source = LoopingSource.from_frames(source, loop_start=2, loop_end=5)
+
+        self.assertIs(looping_source.get_queue_source(), looping_source)
+        self.assertTrue(looping_source.is_player_source)
+        with self.assertRaises(MediaException):
+            looping_source.get_queue_source()
+
+        looping_source.is_player_source = False
+        self.assertFalse(looping_source.is_player_source)
+        self.assertIs(looping_source.get_queue_source(), looping_source)
+
+
+class _LoopTestSource(Source):
+    """Small reusable PCM source used to verify loop boundaries."""
+
+    def __init__(self, data, audio_format):
+        self._data = data
+        self._cursor = 0
+        self.audio_format = audio_format
+        self.video_format = None
+        self.info = None
+        self._duration = len(data) / audio_format.bytes_per_second
+
+    def get_queue_source(self):
+        return type(self)(self._data, self.audio_format)
+
+    def get_audio_data(self, num_bytes):
+        data = self._data[self._cursor:self._cursor + num_bytes]
+        if not data:
+            return None
+        self._cursor += len(data)
+        return AudioData(data, len(data))
+
+    def seek_to_frame(self, frame):
+        self._cursor = frame * self.audio_format.bytes_per_frame
+
+    def is_precise(self):
+        return True
+
+
+class _LoopStreamingSource(_LoopTestSource, StreamingSource):
+    def get_queue_source(self):
+        return StreamingSource.get_queue_source(self)
+
+
 @unittest.skip('Too dangerous to modify 2.0.x\'s SourceGroups, this test will fail for them')
 class SourceGroupTestCase(unittest.TestCase):
     def test_empty(self):

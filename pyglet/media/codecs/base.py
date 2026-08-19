@@ -380,8 +380,22 @@ class Source:
             timestamp (float): Time where to seek in the source. The
                 ``timestamp`` will be clamped to the duration of the source.
         """
-        del timestamp
         raise CannotSeekException
+
+    def seek_to_frame(self, frame: int) -> None:
+        """Seek to a decoded PCM frame.
+
+        The default implementation preserves the historical, timestamp-based
+        seek API.  Decoders which can seek sample-accurately should override
+        this method.  Consumers that need an exact loop boundary should use
+        this method instead of converting a frame index back to a float.
+
+        Args:
+            frame: Zero-based PCM frame index.
+        """
+        if self.audio_format is None:
+            raise CannotSeekException
+        self.seek(frame / self.audio_format.sample_rate)
 
     def get_queue_source(self) -> Source | None:
         """Return the ``Source`` to be used as the queue source for a player.
@@ -404,7 +418,6 @@ class Source:
             :class:`.AudioData`: Next packet of audio data, or ``None`` if
             there is no (more) data.
         """
-        del num_bytes
         return None
 
 
@@ -489,7 +502,6 @@ class StaticSource(Source):
         Raises:
             RuntimeError
         """
-        del num_bytes
         raise RuntimeError('StaticSource cannot be queued.')
 
 
@@ -523,6 +535,11 @@ class StaticMemorySource(StaticSource):
         # Align to audio frame to not corrupt audio data.
         self._file.seek(self.audio_format.align(offset))
 
+    def seek_to_frame(self, frame: int) -> None:
+        """Seek directly to a PCM frame without a floating-point conversion."""
+        frame = max(0, frame)
+        self._file.seek(min(frame * self.audio_format.bytes_per_frame, self._max_offset))
+
     def get_audio_data(self, num_bytes: int) -> AudioData | None:
         """Get next packet of audio data.
 
@@ -538,6 +555,256 @@ class StaticMemorySource(StaticSource):
             return None
 
         return AudioData(data, len(data))
+
+
+class LoopingSource(Source):
+    """Wrap an audio source with a repeatable region.
+
+    Audio before ``loop_start`` is played once. The interval
+    ``[loop_start, loop_end]`` is then repeated ``loop_count`` additional
+    times before playback continues with the audio after ``loop_end``.
+    A loop count of ``-1`` repeats indefinitely, while ``0`` disables further
+    repeats. Changing :attr:`loop_count` during playback takes effect when the
+    source next reaches the loop end.
+
+    Loop points are expressed in seconds. Use :meth:`from_frames` when loop
+    metadata is expressed as PCM frame indexes.
+    """
+
+    def __init__(self, source: Source, loop_start: float, loop_end: float, loop_count: int = -1) -> None:
+        """Initialize a loop source object.
+
+        Args:
+            source:
+                A frame-seekable, audio-only source.  The looping source has the
+                same queueing behavior as this source: wrapping a
+                :class:`StaticSource` creates an independent looping cursor for
+                each player, while a streaming source remains single-use.
+            loop_start:
+                Start of the loop region in seconds.
+            loop_end:
+                Exclusive end of the loop region in seconds.
+            loop_count:
+                Number of additional times to play the loop region, or ``-1``
+                for infinite looping.
+        """
+        if source.audio_format is None:
+            raise ValueError("LoopingSource requires a source with audio.")
+        if source.video_format is not None:
+            raise ValueError("LoopingSource does not support video sources.")
+        if loop_start < 0:
+            raise ValueError("loop_start must be greater than or equal to zero.")
+        if loop_end <= loop_start:
+            raise ValueError("loop_end must be greater than loop_start.")
+        if source.duration is not None and loop_end > source.duration:
+            raise ValueError("loop_end must not exceed the source duration.")
+
+        self.audio_format = source.audio_format
+        self.video_format = None
+        self.info = source.info
+        self._source_template = source
+        self._source = None
+        self._is_player_source = False
+
+        self._loop_start = self.audio_format.timestamp_to_bytes_aligned(loop_start)
+        self._loop_end = self.audio_format.timestamp_to_bytes_aligned(loop_end)
+        if self._loop_end <= self._loop_start:
+            raise ValueError("Loop points must contain at least one complete audio frame.")
+
+        self._cursor = 0
+        self._loop_boundary_pending = False
+        self._loop_count = 0
+        self._remaining_loop_count = 0
+        self.loop_count = loop_count
+
+    @property
+    def is_player_source(self) -> bool:
+        return self._is_player_source
+
+    @is_player_source.setter
+    def is_player_source(self, value: bool) -> None:
+        self._is_player_source = value
+        if not value and self._source is not None:
+            self._source.is_player_source = False
+
+    @classmethod
+    def from_frames(
+        cls,
+        source: Source,
+        loop_start: int,
+        loop_end: int,
+        loop_count: int = -1,
+    ) -> LoopingSource:
+        """Create a looping source using PCM frame indexes as loop points."""
+        if source.audio_format is None:
+            raise ValueError("LoopingSource requires a source with audio.")
+        if not isinstance(loop_start, int) or not isinstance(loop_end, int):
+            raise TypeError("Frame loop points must be integers.")
+        sample_rate = source.audio_format.sample_rate
+        looping_source = cls(source, loop_start / sample_rate, loop_end / sample_rate, loop_count)
+        # Preserve the caller's exact frame indexes
+        looping_source._loop_start = loop_start * source.audio_format.bytes_per_frame
+        looping_source._loop_end = loop_end * source.audio_format.bytes_per_frame
+        return looping_source
+
+    @property
+    def loop_start(self) -> float:
+        """Start of the loop region in seconds."""
+        return self._loop_start / self.audio_format.bytes_per_second
+
+    @property
+    def loop_end(self) -> float:
+        """Exclusive end of the loop region in seconds."""
+        return self._loop_end / self.audio_format.bytes_per_second
+
+    @property
+    def loop_count(self) -> int:
+        """Configured number of additional repeats, or ``-1`` for infinite."""
+        return self._loop_count
+
+    @loop_count.setter
+    def loop_count(self, value: int) -> None:
+        assert isinstance(value, int), "loop_count must be an integer."
+        if value < -1:
+            raise ValueError("loop_count must be -1 or greater.")
+        self._loop_count = value
+        self._remaining_loop_count = value
+
+    def set_loop_count(self, value: int) -> None:
+        """Set the number of repeats to make after the next loop boundary.
+
+        The current pass through the loop region is never interrupted.  For
+        example, setting this to ``0`` while an infinite loop is playing lets
+        that pass finish and then continues with the outro.
+        """
+        self.loop_count = value
+
+    @property
+    def duration(self) -> float | None:
+        """The duration including finite loop repetitions, if known."""
+        source_duration = self._source_template.duration
+        if source_duration is None or self._loop_count == -1:
+            return None
+        loop_duration = (self._loop_end - self._loop_start) / self.audio_format.bytes_per_second
+        return source_duration + self._loop_count * loop_duration
+
+    @property
+    def remaining_loop_count(self) -> int:
+        """Number of repeats remaining, or ``-1`` for infinite."""
+        return self._remaining_loop_count
+
+    def get_queue_source(self) -> LoopingSource:
+        if isinstance(self._source_template, StreamingSource) and self.is_player_source:
+            raise MediaException('This source is already queued on a player.')
+
+        source = self._source_template.get_queue_source()
+        if isinstance(self._source_template, StreamingSource):
+            # The wrapped stream owns its one-shot queueing restriction.
+            self._source = source
+            self.is_player_source = True
+            self._cursor = 0
+            self._loop_boundary_pending = False
+            self._remaining_loop_count = self._loop_count
+            return self
+
+        # Static sources return a new playable source for every player. Keep
+        # the loop state independent as well, and retain the exact frame
+        # positions instead of round-tripping through seconds.
+        queue_source = type(self).from_frames(
+            self._source_template,
+            self._loop_start // self.audio_format.bytes_per_frame,
+            self._loop_end // self.audio_format.bytes_per_frame,
+            self._loop_count,
+        )
+        queue_source._source = source
+        return queue_source
+
+    def is_precise(self) -> bool:
+        return self._source is not None and self._source.is_precise()
+
+    def seek(self, timestamp: float) -> None:
+        if self._source is None:
+            raise RuntimeError("LoopingSource must be queued before it can be seeked.")
+        timestamp = max(0.0, timestamp)
+        if self.duration is not None:
+            timestamp = min(timestamp, self.duration)
+
+        requested_frame = int(timestamp * self.audio_format.sample_rate)
+        loop_start_frame = self._loop_start // self.audio_format.bytes_per_frame
+        loop_end_frame = self._loop_end // self.audio_format.bytes_per_frame
+        loop_length = loop_end_frame - loop_start_frame
+
+        if requested_frame < loop_start_frame:
+            source_frame = requested_frame
+            self._remaining_loop_count = self._loop_count
+        elif self._loop_count == -1:
+            source_frame = loop_start_frame + (requested_frame - loop_start_frame) % loop_length
+            self._remaining_loop_count = -1
+        else:
+            final_loop_end = loop_start_frame + (self._loop_count + 1) * loop_length
+            if requested_frame < final_loop_end:
+                iteration = (requested_frame - loop_start_frame) // loop_length
+                source_frame = loop_start_frame + (requested_frame - loop_start_frame) % loop_length
+                self._remaining_loop_count = self._loop_count - iteration
+            else:
+                source_frame = loop_end_frame + (requested_frame - final_loop_end)
+                self._remaining_loop_count = 0
+
+        self._source.seek_to_frame(source_frame)
+        self._cursor = source_frame * self.audio_format.bytes_per_frame
+        self._loop_boundary_pending = False
+
+    def get_audio_data(self, num_bytes: int, compensation_time: float = 0.0) -> AudioData | None:
+        assert self._source
+        requested_size = self.audio_format.align(num_bytes)
+        if requested_size <= 0:
+            return None
+
+        chunks = []
+        remaining_size = requested_size
+        while remaining_size:
+            if self._loop_boundary_pending:
+                if self._remaining_loop_count == -1 or self._remaining_loop_count > 0:
+                    if self._remaining_loop_count > 0:
+                        self._remaining_loop_count -= 1
+                    self._source.seek_to_frame(self._loop_start // self.audio_format.bytes_per_frame)
+                    self._cursor = self._loop_start
+                self._loop_boundary_pending = False
+
+            request_size = remaining_size
+            if self._cursor < self._loop_end:
+                request_size = min(request_size, self._loop_end - self._cursor)
+
+            audio_data = self._source.get_audio_data(request_size)
+            if audio_data is None:
+                break
+
+            length = self.audio_format.align(min(audio_data.length, request_size))
+            if length <= 0:
+                break
+
+            chunks.append(ctypes.string_at(audio_data.pointer, length))
+            self._cursor += length
+            remaining_size -= length
+
+            if length != audio_data.length:
+                # An imprecise decoder may have advanced beyond the requested
+                # boundary.  Return it to the precise output position before
+                # continuing at the loop point or in the outro.
+                self._source.seek_to_frame(self._cursor // self.audio_format.bytes_per_frame)
+
+            if self._cursor == self._loop_end:
+                self._loop_boundary_pending = True
+
+        if not chunks:
+            return None
+        data = b''.join(chunks)
+        return AudioData(data, len(data))
+
+    def delete(self) -> None:
+        if isinstance(self._source, StreamingSource):
+            self._source.delete()
+        self.is_player_source = False
 
 
 class SourceGroup:

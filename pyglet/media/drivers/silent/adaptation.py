@@ -1,5 +1,11 @@
 #from pyglet.media import _VALID_AUDIO_SAMPLE_FORMATS
-from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
+from collections import deque
+
+from pyglet.media.drivers.base import (
+    AbstractAudioDriver,
+    AbstractAudioPlayer,
+    GaplessAudioPlayerBase,
+)
 from pyglet.media.drivers.listener import AbstractListener
 from pyglet.media.player_worker_thread import PlayerWorkerThread
 
@@ -20,6 +26,9 @@ class SilentDriver(AbstractAudioDriver):
 
     def create_audio_player(self, source, player):
         return SilentAudioPlayer(self, source, player)
+
+    def create_gapless_audio_player(self, source, player):
+        return SilentGaplessAudioPlayer(self, source, player)
 
     def get_listener(self):
         return SilentListener()
@@ -145,3 +154,56 @@ class SilentAudioPlayer(AbstractAudioPlayer):
 
     def set_cone_outer_gain(self, cone_outer_gain):
         pass
+
+
+class SilentGaplessAudioPlayer(SilentAudioPlayer, GaplessAudioPlayerBase):
+    """Maintain gapless playlist semantics without an output device."""
+
+    def __init__(self, driver, source, player):
+        super().__init__(driver, source, player)
+        self._source_end_cursors = deque()
+
+    def clear(self):
+        super().clear()
+        self._source_end_cursors.clear()
+
+    def _update_play_cursor(self):
+        corrected_time = self.player.time - self.player.last_seek_time
+        source_start = self._source_start_cursors[0] if self._source_start_cursors else self._pseudo_write_cursor
+        target_cursor = source_start + self.source.audio_format.timestamp_to_bytes_aligned(corrected_time)
+        self._pseudo_play_cursor = min(self._pseudo_write_cursor, max(self._pseudo_play_cursor, target_cursor))
+
+    def _dispatch_completed_sources(self):
+        while self._source_end_cursors and self._pseudo_play_cursor >= self._source_end_cursors[0]:
+            self._source_end_cursors.popleft()
+            self._dispatch_source_eos_events()
+
+    def _refill(self, size):
+        remaining = size
+        while remaining and not self._exhausted:
+            request_size = remaining
+            audio_data = self._get_audio_data(request_size)
+            if audio_data is not None:
+                length = min(audio_data.length, request_size)
+                self._pseudo_write_cursor += length
+                remaining -= length
+                if length == request_size:
+                    continue
+
+            self._source_end_cursors.append(self._pseudo_write_cursor)
+            if not self._advance_source(self._pseudo_write_cursor):
+                self._exhausted = True
+                return
+
+    def work(self):
+        self._update_play_cursor()
+        self._dispatch_completed_sources()
+
+        if self._exhausted:
+            return
+        remaining = max(0, self._pseudo_write_cursor - self._pseudo_play_cursor)
+        if remaining <= self._buffered_data_comfortable_limit:
+            self._refill(self.source.audio_format.align(self._buffered_data_ideal_size - remaining))
+
+    def get_play_cursor(self):
+        return self._get_source_play_cursor(self._pseudo_play_cursor)

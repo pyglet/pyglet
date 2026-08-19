@@ -45,10 +45,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, BinaryIO, Sequence
 
 from .drivers import get_audio_driver
-from .player import AudioPlayer, VideoPlayer, PlayerGroup
+from .player import AudioPlayer, GaplessAudioPlayer, VideoPlayer, PlayerGroup
 from .codecs import registry as _codec_registry
 from .codecs import add_default_codecs as _add_default_codecs
-from .codecs import Source, StaticSource, StreamingSource, SourceGroup, have_ffmpeg
+from .codecs import Source, StaticSource, StreamingSource, SourceGroup, LoopingSource, have_ffmpeg
 
 from . import synthesis
 
@@ -319,6 +319,7 @@ _add_default_codecs()
 
 __all__ = [
     'AudioPlayer',
+    'GaplessAudioPlayer',
     'PlayerGroup',
     'Source',
     'SourceGroup',

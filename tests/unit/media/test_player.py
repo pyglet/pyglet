@@ -7,8 +7,9 @@ from tests import mock
 import random
 import unittest
 
-from pyglet.media.player import AudioPlayer, VideoPlayer, PlayerGroup
-from pyglet.media.codecs.base import AudioFormat, VideoFormat, Source
+from pyglet.media.player import AudioPlayer, GaplessAudioPlayer, VideoPlayer, PlayerGroup
+from pyglet.media.codecs.base import AudioData, AudioFormat, LoopingSource, VideoFormat, Source
+from pyglet.media.exceptions import MediaException
 
 class VideoTestPlayer(VideoPlayer):
     def _create_sprite(self) -> None:
@@ -22,6 +23,29 @@ class VideoTestPlayer(VideoPlayer):
 class SeekableSource(Source):
     def seek(self, timestamp: float) -> None:
         pass
+
+
+class LoopTestSource(Source):
+    def __init__(self, data, audio_format):
+        self._data = data
+        self._cursor = 0
+        self.audio_format = audio_format
+        self.video_format = None
+        self.info = None
+        self._duration = len(data) / audio_format.bytes_per_second
+
+    def get_queue_source(self):
+        return type(self)(self._data, self.audio_format)
+
+    def get_audio_data(self, num_bytes):
+        data = self._data[self._cursor:self._cursor + num_bytes]
+        if not data:
+            return None
+        self._cursor += len(data)
+        return AudioData(data, len(data))
+
+    def seek_to_frame(self, frame):
+        self._cursor = frame * self.audio_format.bytes_per_frame
 
 
 class PlayerTestCase(unittest.TestCase):
@@ -189,6 +213,27 @@ class PlayerTestCase(unittest.TestCase):
         self.assert_driver_player_created_for(self.audio_player, mock_source)
         self.assert_driver_player_started()
         self.assert_now_playing(self.audio_player, mock_source)
+
+    def test_set_loop_count_on_current_looping_source(self):
+        source = LoopingSource.from_frames(
+            LoopTestSource(b'0123456789', self.audio_format_1),
+            loop_start=2,
+            loop_end=5,
+            loop_count=-1,
+        )
+        self.audio_player.queue(source)
+
+        self.audio_player.set_loop_count(2)
+
+        self.assertEqual(self.audio_player.source.loop_count, 2)
+        self.assertEqual(source.loop_count, -1)
+
+    def test_set_loop_count_requires_looping_source(self):
+        self.audio_player.queue(self.create_mock_source(self.audio_format_1, None))
+
+        with self.assertRaises(ValueError):
+            self.audio_player.set_loop_count(1)
+
 
     def test_queue_multiple_audio_sources_same_format_and_play(self):
         """Queue multiple audio sources using the same audio format and start playing."""
@@ -739,6 +784,57 @@ class PlayerTestCase(unittest.TestCase):
         self.mock_get_audio_driver.return_value = None
         self.audio_player.queue(mock_source)
         self.audio_player.play()
+
+
+class GaplessAudioPlayerTestCase(unittest.TestCase):
+    def setUp(self):
+        self._player_case = PlayerTestCase()
+        self._player_case.setUp()
+        self.mock_audio_driver = self._player_case.mock_audio_driver
+        self.audio_format_1 = self._player_case.audio_format_1
+        self.audio_player = GaplessAudioPlayer()
+        self.mock_gapless_driver_player = self.mock_audio_driver.create_gapless_audio_player.return_value
+
+    def tearDown(self):
+        self._player_case.tearDown()
+
+    def create_mock_source(self, *args):
+        return self._player_case.create_mock_source(*args)
+
+    def test_uses_gapless_driver_player_and_prequeues_sources(self):
+        source1 = self.create_mock_source(self.audio_format_1, None)
+        source2 = self.create_mock_source(self.audio_format_1, None)
+        self.audio_player.queue([source1, source2])
+
+        self.audio_player.play()
+
+        self.mock_audio_driver.create_gapless_audio_player.assert_called_once_with(
+            source1.get_queue_source.return_value, self.audio_player)
+        self.mock_gapless_driver_player.queue.assert_called_once_with(source2.get_queue_source.return_value)
+        self.mock_gapless_driver_player.prefill_audio.assert_called_once_with()
+        self.mock_gapless_driver_player.play.assert_called_once_with()
+        self.assertIs(self.audio_player.source, source1.get_queue_source.return_value)
+
+    def test_source_boundary_advances_without_resetting_backend_queue(self):
+        source1 = self.create_mock_source(self.audio_format_1, None)
+        source2 = self.create_mock_source(self.audio_format_1, None)
+        self.audio_player.queue([source1, source2])
+        self.audio_player.play()
+        self.mock_gapless_driver_player.reset_mock()
+
+        self.audio_player.on_gapless_source_eos()
+
+        self.assertIs(self.audio_player.source, source2.get_queue_source.return_value)
+        self.mock_gapless_driver_player.reset_queue.assert_not_called()
+        self.mock_gapless_driver_player.clear.assert_not_called()
+
+    def test_rejects_drivers_without_native_gapless_support(self):
+        source = self.create_mock_source(self.audio_format_1, None)
+        self.mock_audio_driver.create_gapless_audio_player.return_value = None
+        self.audio_player.queue(source)
+
+        with self.assertRaises(MediaException):
+            self.audio_player.play()
 
 
 class SourcePlayTestCase(unittest.TestCase):

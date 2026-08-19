@@ -27,7 +27,7 @@ from typing import TYPE_CHECKING, BinaryIO, Iterator, Sequence
 import pyglet
 import pyglet.lib
 from pyglet import image
-from pyglet.media.exceptions import MediaFormatException
+from pyglet.media.exceptions import CannotSeekException, MediaFormatException
 from pyglet.util import asbytes, asstr
 
 from . import MediaDecoder
@@ -803,6 +803,9 @@ class FFmpegSource(StreamingSource):
 
         self._packet = ffmpeg_init_packet()
         self.audioq = deque()
+        # A seek that lands on a compressed packet edge.  Keep the requested
+        # frame so get_audio_data can discard the leading decoded frames.
+        self._audio_seek_frame: int | None = None
         # Make queue big enough to accommodate 1.2 sec?
         self._max_len_audioq = self.MAX_QUEUE_SIZE  # Need to figure out a correct amount
         if self.audio_format:
@@ -874,6 +877,20 @@ class FFmpegSource(StreamingSource):
             ffmpeg_close_file(self._file)
 
     def seek(self, timestamp: float) -> None:
+        timestamp = max(0.0, min(timestamp, self._duration))
+        seek_frame = None if self.audio_format is None else int(timestamp * self.audio_format.sample_rate)
+        self._seek(timestamp, seek_frame)
+
+    def seek_to_frame(self, frame: int) -> None:
+        """Seek to an output PCM frame, decoding past the packet boundary."""
+        if self.audio_format is None:
+            raise CannotSeekException
+        frame = max(0, frame)
+        if self._duration is not None:
+            frame = min(frame, int(self._duration * self.audio_format.sample_rate))
+        self._seek(frame / self.audio_format.sample_rate, frame)
+
+    def _seek(self, timestamp: float, seek_frame: int | None) -> None:
         if _debug:
             print('FFmpeg seek', timestamp)
 
@@ -882,6 +899,7 @@ class FFmpegSource(StreamingSource):
             timestamp_to_ffmpeg(timestamp + self.start_time),
         )
         self._stream_end = False
+        self._audio_seek_frame = seek_frame
         self._clear_video_audio_queues()
         self._fillq()
 
@@ -1029,6 +1047,16 @@ class FFmpegSource(StreamingSource):
 
             if not buffer:
                 break
+
+            if self._audio_seek_frame is not None:
+                packet_frame = int(audio_packet.timestamp * self.audio_format.sample_rate)
+                skip_frames = max(0, self._audio_seek_frame - packet_frame)
+                skip_bytes = skip_frames * self.audio_format.bytes_per_frame
+                if skip_bytes >= len(buffer):
+                    # The requested frame lies in a later decoded packet.
+                    continue
+                buffer = buffer[skip_bytes:]
+                self._audio_seek_frame = None
             data += buffer
 
         # No data and no audio queue left
