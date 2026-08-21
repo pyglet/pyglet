@@ -20,19 +20,6 @@ if TYPE_CHECKING:
     from pyglet.window.emscripten import EmscriptenWindow
 
 
-class ObjectSpace:
-    """A container to store shared objects that are to be removed."""
-
-    def __init__(self) -> None:
-        """Initialize the context object space."""
-        # Objects scheduled for deletion the next time this object space is active.
-        self.doomed_textures = []
-        self.doomed_buffers = []
-        self.doomed_shader_programs = []
-        self.doomed_shaders = []
-        self.doomed_renderbuffers = []
-
-
 class OpenGLSurfaceContext(SurfaceContext):
     """A base OpenGL context for drawing.
 
@@ -72,8 +59,6 @@ class OpenGLSurfaceContext(SurfaceContext):
 
         self._info = GLInfo()
         self._info.query(self.gl)
-        self.object_space = ObjectSpace()
-
         self._draw_proxy = create_proxy(self.window.draw)
 
         self.doomed_vaos = []
@@ -142,41 +127,7 @@ class OpenGLSurfaceContext(SurfaceContext):
         self.gl.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
     def set_current(self) -> None:
-        return
-        """Make this the active Context.
-
-        Setting the Context current will also delete any OpenGL
-        objects that have been queued for deletion. IE: any objects
-        that were created in this Context, but have been called for
-        deletion while another Context was active.
-        """
-        assert self.window is not None, "Window has not been attached."
-
-        # Not per-thread
-        self.global_ctx.current_context = self
-        gl.current_context = self
-
-        # Set active context.
-        # gl_info.set_active_context()
-
-        if not self._info.was_queried:
-            self._info.query()
-
-        if self.object_space.doomed_textures:
-            self._delete_objects(self.object_space.doomed_textures, gl.glDeleteTextures)
-        if self.object_space.doomed_buffers:
-            self._delete_objects(self.object_space.doomed_buffers, gl.glDeleteBuffers)
-        if self.object_space.doomed_shader_programs:
-            self._delete_objects_one_by_one(self.object_space.doomed_shader_programs, gl.glDeleteProgram)
-        if self.object_space.doomed_shaders:
-            self._delete_objects_one_by_one(self.object_space.doomed_shaders, gl.glDeleteShader)
-        if self.object_space.doomed_renderbuffers:
-            self._delete_objects(self.object_space.doomed_renderbuffers, gl.glDeleteRenderbuffers)
-
-        if self.doomed_vaos:
-            self._delete_objects(self.doomed_vaos, gl.glDeleteVertexArrays)
-        if self.doomed_framebuffers:
-            self._delete_objects(self.doomed_framebuffers, gl.glDeleteFramebuffers)
+        """WebGL contexts are always current on their owning canvas."""
 
     def _create_uniform_dicts(self) -> None:
         self._uniform_setters: dict[int, tuple[GLDataType, Callable, int]] = {

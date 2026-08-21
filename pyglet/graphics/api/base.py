@@ -13,7 +13,6 @@ from pyglet.util import debug_print
 
 if TYPE_CHECKING:
     from pyglet.config import SurfaceConfig
-    from pyglet.graphics.api.gl import ObjectSpace
     from pyglet.graphics.buffer import BufferRange
     from pyglet.window import Window
 
@@ -34,11 +33,6 @@ class BackendGlobalObject(ABC):  # Temp name for now.
     @property
     def have_context(self) -> bool:
         return self._have_context
-
-    @property
-    @abstractmethod
-    def object_space(self) -> ObjectSpace:
-        ...
 
     @abstractmethod
     def get_surface_context(
@@ -110,10 +104,6 @@ class UnavailableBackendError(GraphicsBackendError):
 class NullBackend(BackendGlobalObject):  # noqa: D101
     def _raise_no_backend(self) -> NoReturn:
         raise UnavailableBackendError
-
-    @property
-    def object_space(self) -> ObjectSpace:
-        self._raise_no_backend()
 
     def get_surface_context(self, window: Window, config: SurfaceConfig,
                             shared: SurfaceContext | None = None) -> SurfaceContext:

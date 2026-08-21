@@ -5,7 +5,8 @@ import weakref
 from typing import Callable, TYPE_CHECKING
 
 from pyglet.graphics import GraphicsAPIError, GraphicsIntegrationError
-from pyglet.graphics.api.gl import gl, gl_info, ObjectSpace
+from pyglet.graphics.api.gl import gl, gl_info
+from pyglet.graphics.api.gl.base import GLSharedObjectSpace
 from pyglet.graphics.api.base import SurfaceContext, NullContext
 from pyglet.graphics.api.gl.gl import (
     GL_ALREADY_SIGNALED,
@@ -43,7 +44,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
     _info: gl_info.GLInfo
 
     #: A container which is shared between all contexts that share GL objects.
-    object_space: ObjectSpace
+    object_space: GLSharedObjectSpace
     config: SurfaceConfig
     context_share: OpenGLSurfaceContext | None
 
@@ -75,7 +76,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
         if context_share:
             self.object_space = context_share.object_space
         else:
-            self.object_space = ObjectSpace()
+            self.object_space = GLSharedObjectSpace()
 
         self.cached_programs = weakref.WeakValueDictionary()
         self.renderer = GLRenderer(self)
@@ -177,17 +178,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
             self.uniform_getters, self.uniform_setters = self._get_uniform_func_tables()
             self._info.query(self)
 
-        if self.object_space.doomed_textures:
-            self._delete_objects(self.object_space.doomed_textures, self.glDeleteTextures)
-        if self.object_space.doomed_buffers:
-            self._delete_objects(self.object_space.doomed_buffers, self.glDeleteBuffers)
-        if self.object_space.doomed_shader_programs:
-            self._delete_objects_one_by_one(self.object_space.doomed_shader_programs,
-                                            self.glDeleteProgram)
-        if self.object_space.doomed_shaders:
-            self._delete_objects_one_by_one(self.object_space.doomed_shaders, self.glDeleteShader)
-        if self.object_space.doomed_renderbuffers:
-            self._delete_objects(self.object_space.doomed_renderbuffers, self.glDeleteRenderbuffers)
+        self.object_space.flush(self)
 
         if self.doomed_vaos:
             self._delete_objects(self.doomed_vaos, self.glDeleteVertexArrays)
@@ -273,7 +264,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
         if self._safe_to_operate_on_object_space():
             self.glDeleteTextures(1, GLuint(texture_id))
         else:
-            self.object_space.doomed_textures.append(texture_id)
+            self.object_space.defer_texture(texture_id)
 
     def delete_buffer(self, buffer_id: int) -> None:
         """Safely delete a Buffer belonging to this context's object space.
@@ -284,7 +275,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
         if self._safe_to_operate_on_object_space():
             self.glDeleteBuffers(1, GLuint(buffer_id))
         else:
-            self.object_space.doomed_buffers.append(buffer_id)
+            self.object_space.defer_buffer(buffer_id)
 
     def delete_shader_program(self, program_id: int) -> None:
         """Safely delete a ShaderProgram belonging to this context's object space.
@@ -295,7 +286,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
         if self._safe_to_operate_on_object_space():
             self.glDeleteProgram(GLuint(program_id))
         else:
-            self.object_space.doomed_shader_programs.append(program_id)
+            self.object_space.defer_shader_program(program_id)
 
     def delete_shader(self, shader_id: int) -> None:
         """Safely delete a Shader belonging to this context's object space.
@@ -306,7 +297,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
         if self._safe_to_operate_on_object_space():
             self.glDeleteShader(GLuint(shader_id))
         else:
-            self.object_space.doomed_shaders.append(shader_id)
+            self.object_space.defer_shader(shader_id)
 
     def delete_renderbuffer(self, rbo_id: int) -> None:
         """Safely delete a Renderbuffer belonging to this context's object space.
@@ -317,7 +308,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
         if self._safe_to_operate_on_object_space():
             self.glDeleteRenderbuffers(1, GLuint(rbo_id))
         else:
-            self.object_space.doomed_renderbuffers.append(rbo_id)
+            self.object_space.defer_renderbuffer(rbo_id)
 
     def delete_vao(self, vao_id: int) -> None:
         """Safely delete a Vertex Array Object belonging to this context.
