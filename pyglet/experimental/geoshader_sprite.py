@@ -200,7 +200,7 @@ class SpriteGroup(graphics.Group):
         self.program.use()
 
         glActiveTexture(GL_TEXTURE0)
-        glBindTexture(self.texture.target, self.texture.id)
+        glBindTexture(self.texture.target, self.texture.handle)
 
         glEnable(GL_BLEND)
         glBlendFunc(self.blend_src, self.blend_dest)
@@ -217,13 +217,13 @@ class SpriteGroup(graphics.Group):
                 self.program is other.program and
                 self.parent == other.parent and
                 self.texture.target == other.texture.target and
-                self.texture.id == other.texture.id and
+                self.texture.key == other.texture.key and
                 self.blend_src == other.blend_src and
                 self.blend_dest == other.blend_dest)
 
     def __hash__(self):
         return hash((self.program, self.parent,
-                     self.texture.id, self.texture.target,
+                     self.texture.key, self.texture.target,
                      self.blend_src, self.blend_dest))
 
 
@@ -442,7 +442,7 @@ class Sprite(event.EventDispatcher):
             self._set_texture(img.get_texture())
 
     def _set_texture(self, texture):
-        if texture.id is not self._texture.id:
+        if texture.key != self._texture.key:
             self._group = self._group.__class__(texture,
                                                 self._group.blend_src,
                                                 self._group.blend_dest,

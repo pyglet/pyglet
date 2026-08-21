@@ -60,7 +60,7 @@ form).  To use a texture with pyglet.gl::
 
     from pyglet.graphics.api.gl import *
     glEnable(texture.target)        # typically target is GL_TEXTURE_2D
-    glBindTexture(texture.target, texture.id)
+    glBindTexture(texture.target, texture.handle)
     # ... draw with the texture
 
 Pixel access

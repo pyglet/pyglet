@@ -322,7 +322,7 @@ class WebGLFramebuffer:
             self._gl_target,
             gl_attachment,
             gl.GL_TEXTURE_2D,
-            texture.id,
+            texture.handle,
             level,
         )
         self._clear_bits |= _clear_bit_map[attachment]
@@ -351,7 +351,7 @@ class WebGLFramebuffer:
         self._gl.framebufferTextureLayer(
             self._gl_target,
             gl_attachment,
-            texture.id,
+            texture.handle,
             level,
             layer,
         )

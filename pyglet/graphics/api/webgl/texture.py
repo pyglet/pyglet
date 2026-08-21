@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, cast, Sequence
+from typing import TYPE_CHECKING, Any, Callable, cast, Sequence
 
 import js  # noqa: F821
 
@@ -62,6 +62,7 @@ if TYPE_CHECKING:
 
     from pyglet.graphics.api.webgl import OpenGLSurfaceContext
     from pyglet.graphics.api.webgl.webgl_js import WebGL2RenderingContext
+    from pyglet.graphics.resource import TextureKey
 
 _api_base_internal_formats = {
     'R': 'GL_R',
@@ -202,13 +203,13 @@ def _get_webgl_compression_format(fmt: CompressionFormat) -> tuple[int, str]:
 class WebGLCompressedTexture(CompressedTexture):
     """A WebGL texture created from GPU-ready compressed image data."""
 
-    def __init__(self, context: OpenGLSurfaceContext, width: int, height: int, tex_id,
+    def __init__(self, context: OpenGLSurfaceContext, width: int, height: int, handle: Any,
                  compression_fmt: CompressionFormat,
                  tex_type: TextureType = TextureType.TYPE_2D,
                  filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT,
                  anisotropic_level: int = 0) -> None:
-        super().__init__(width, height, tex_id, compression_fmt, tex_type, filters, address_mode, anisotropic_level)
+        super().__init__(width, height, handle, compression_fmt, tex_type, filters, address_mode, anisotropic_level)
         self._context = context
         self._gl = context.gl
         self.target = texture_map[tex_type]
@@ -245,13 +246,13 @@ class WebGLCompressedTexture(CompressedTexture):
 
     def bind(self, texture_unit: int = 0) -> None:
         self._gl.activeTexture(GL_TEXTURE0 + texture_unit)
-        self._gl.bindTexture(self.target, self.id)
+        self._gl.bindTexture(self.target, self.handle)
 
     def delete(self) -> None:
         """Delete this texture and its WebGL resource."""
-        if self.id is not None:
-            self._gl.deleteTexture(self.id)
-            self.id = None
+        if self.handle is not None:
+            self._gl.deleteTexture(self.handle)
+            self._handle = None
 
     def _upload_level(self, level: int, width: int, height: int, data: bytes) -> None:
         with zero_copy(data) as js_array:
@@ -301,16 +302,18 @@ class WebGLTexture(Texture):
     _ctx: OpenGLSurfaceContext
     _gl: WebGL2RenderingContext
 
-    def __init__(self, context: OpenGLSurfaceContext, width: int, height: int, tex_id: int,
+    def __init__(self, context: OpenGLSurfaceContext, width: int, height: int, handle: Any,
                  tex_type: TextureType = TextureType.TYPE_2D,
                  internal_format: ComponentFormat = ComponentFormat.RGBA,
                  internal_format_size: int = 8,
                  internal_format_type: str = "B",
                  filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT,
-                 anisotropic_level: int = 0):
-        super().__init__(width, height, tex_id, tex_type, internal_format, internal_format_size, internal_format_type,
-                         filters, address_mode, anisotropic_level)
+                 anisotropic_level: int = 0,
+                 *,
+                 key: TextureKey | None = None):
+        super().__init__(width, height, handle, tex_type, internal_format, internal_format_size, internal_format_type,
+                         filters, address_mode, anisotropic_level, key=key)
         self._context = context
         self._gl = self._context.gl
         self.target = texture_map[self.tex_type]
@@ -323,13 +326,13 @@ class WebGLTexture(Texture):
 
         Textures are invalid after deletion, and may no longer be used.
         """
-        self._gl.deleteTexture(self.id)
-        self.id = None
+        self._gl.deleteTexture(self.handle)
+        self._handle = None
 
     def bind(self, texture_unit: int = 0) -> None:
         """Bind to a specific Texture Unit by number."""
         self._gl.activeTexture(GL_TEXTURE0 + texture_unit)
-        self._gl.bindTexture(self.target, self.id)
+        self._gl.bindTexture(self.target, self.handle)
 
     def bind_image_texture(
         self,
@@ -350,8 +353,8 @@ class WebGLTexture(Texture):
         self._gl.flush()
 
     def _delete_resource(self) -> None:
-        self._context.delete_texture(self.id)
-        self.id = None
+        self._context.delete_texture(self.handle)
+        self._handle = None
 
     def _begin_upload(self, image_data: ImageData | ImageDataRegion) -> None:
         align, row_length = self._get_image_alignment(image_data)
@@ -625,7 +628,7 @@ class WebGLTexture(Texture):
         self._gl.flush()
 
     def _attach_texture_to_fbo(self, z: int = 0, level: int = 0) -> None:
-        self._gl.framebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.id, level)
+        self._gl.framebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.handle, level)
 
     def fetch(self, z: int = 0, level: int = 0) -> ImageData:
         """Fetch the image data of this texture from the GPU.
@@ -642,7 +645,7 @@ class WebGLTexture(Texture):
             level:
                 The mipmap level of the texture to retrieve.
         """
-        self._gl.bindTexture(self.target, self.id)
+        self._gl.bindTexture(self.target, self.handle)
 
         # Always extract complete RGBA data.  Could check internalformat
         # to only extract used channels. XXX
@@ -671,9 +674,9 @@ class WebGLTextureRegion(_TextureRegionShared, WebGLTexture):
     """A rectangular region of a texture, presented as if it were a separate texture."""
 
     def __init__(self, x: int, y: int, z: int, width: int, height: int, owner: Texture):
-        super().__init__(owner._context, width, height, owner.id, owner.tex_type, owner.internal_format,
+        super().__init__(owner._context, width, height, owner.handle, owner.tex_type, owner.internal_format,
                          owner.internal_format_size, owner.internal_format_type, owner.filters, owner.address_mode,
-                         owner.anisotropic_level)
+                         owner.anisotropic_level, key=owner.key)
         self._init_region(x, y, z, width, height, owner)
 
 
@@ -779,17 +782,17 @@ class WebGLTexture3D(_Texture3DShared[WebGLTextureRegion], WebGLTexture, Uniform
         )
 
     def _attach_texture_to_fbo(self, z: int = 0, level: int = 0) -> None:
-        self._gl.framebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.id, level, z)
+        self._gl.framebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.handle, level, z)
 
     def _bind_sequence_texture(self) -> None:
-        self._gl.bindTexture(self.target, self.id)
+        self._gl.bindTexture(self.target, self.handle)
 
 
 class WebGLTextureArrayRegion(WebGLTextureRegion):
     """A region of a TextureArray, presented as if it were a separate texture."""
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(id={self.id}, size={self.width}x{self.height}, layer={self.z})"
+        return f"{self.__class__.__name__}(handle={self.handle}, size={self.width}x{self.height}, layer={self.z})"
 
 
 class WebGLTextureArray(_TextureArrayShared[WebGLTextureArrayRegion], WebGLTexture, UniformTextureSequence[WebGLTextureArrayRegion]):
@@ -896,7 +899,7 @@ class WebGLTextureArray(_TextureArrayShared[WebGLTextureArrayRegion], WebGLTextu
         WebGLTexture.upload(self, image, x, y, z, level=level)
 
     def _attach_texture_to_fbo(self, z: int = 0, level: int = 0) -> None:
-        self._gl.framebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.id, level, z)
+        self._gl.framebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.handle, level, z)
 
     def _allocate(self, data: None | js.Uint8Array) -> None:
         self._gl.texImage3D(
@@ -936,7 +939,7 @@ class WebGLTextureArray(_TextureArrayShared[WebGLTextureArrayRegion], WebGLTextu
         self._gl.flush()
 
     def _bind_sequence_texture(self) -> None:
-        self._gl.bindTexture(self.target, self.id)
+        self._gl.bindTexture(self.target, self.handle)
 
     def _allocate_image(self, image: ImageData, layer: int) -> None:
         self.upload(image, image.anchor_x, image.anchor_y, layer)

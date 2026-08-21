@@ -79,6 +79,7 @@ from pyglet.graphics.texture import PixelData, PixelReadback, Texture, UniformTe
 if TYPE_CHECKING:
     from pyglet.customtypes import Buffer
     from pyglet.graphics.api.gl.framebuffer import GLFramebuffer
+    from pyglet.graphics.resource import TextureKey
 
 
 class GLPixelReadback(PixelReadback):
@@ -127,7 +128,7 @@ class GLPixelReadback(PixelReadback):
         with self._pack_state():
             if direct_readback:
                 buffer = (component_type * (layer_elements * depth))()
-                self._context.glBindTexture(texture.target, texture.id)
+                self._context.glBindTexture(texture.target, texture.handle)
                 self._context.glGetTexImage(texture.target, level, gl_format, gl_type, buffer)
 
                 if depth == 1:
@@ -141,7 +142,7 @@ class GLPixelReadback(PixelReadback):
                 buffer = (component_type * layer_elements)()
                 framebuffer = self.get_framebuffer()
                 with framebuffer:
-                    texture._set_readback_framebuffer_attachment(texture.id, z, level)
+                    texture._set_readback_framebuffer_attachment(texture.handle, z, level)
                     try:
                         if not framebuffer.is_complete:
                             msg = f"Texture cannot be read through a framebuffer: {framebuffer.get_status()}"
@@ -306,16 +307,18 @@ class GLTexture(Texture):
      The class should be a subclass of TextureRegion.
     """
 
-    def __init__(self, context: OpenGLSurfaceContext, width: int, height: int, tex_id: int,
+    def __init__(self, context: OpenGLSurfaceContext, width: int, height: int, handle: int,
                  tex_type: TextureType = TextureType.TYPE_2D,
                  internal_format: ComponentFormat = ComponentFormat.RGBA,
                  internal_format_size: int = 8,
                  internal_format_type: str = "B",
                  filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT,
-                 anisotropic_level: int = 0):
-        super().__init__(width, height, tex_id, tex_type, internal_format, internal_format_size, internal_format_type,
-                         filters, address_mode, anisotropic_level)
+                 anisotropic_level: int = 0,
+                 *,
+                 key: TextureKey | None = None):
+        super().__init__(width, height, handle, tex_type, internal_format, internal_format_size, internal_format_type,
+                         filters, address_mode, anisotropic_level, key=key)
         self._context = context
         self.target = texture_map[self.tex_type]
         self._gl_min_filter = texture_map[self.min_filter]
@@ -335,13 +338,13 @@ class GLTexture(Texture):
 
         Textures are invalid after deletion, and may no longer be used.
         """
-        self._context.glDeleteTextures(1, GLuint(self.id))
-        self.id = None
+        self._context.glDeleteTextures(1, GLuint(self.handle))
+        self._handle = None
 
     def bind(self, texture_unit: int = 0) -> None:
         """Bind to a specific Texture Unit by number."""
         self._context.glActiveTexture(GL_TEXTURE0 + texture_unit)
-        self._context.glBindTexture(self.target, self.id)
+        self._context.glBindTexture(self.target, self.handle)
 
     def bind_image_texture(self, unit: int, level: int = 0, layered: bool = False,
                            layer: int = 0, access: int = GL_READ_WRITE, fmt: int = GL_RGBA32F):
@@ -350,14 +353,14 @@ class GLTexture(Texture):
         OpenGL ES requires the texture to have immutable-format storage. Create
         it with ``immutable=True`` when it will be bound as an image texture.
         """
-        self._context.glBindImageTexture(unit, self.id, level, layered, layer, access, fmt)
+        self._context.glBindImageTexture(unit, self.handle, level, layered, layer, access, fmt)
 
     def _flush(self) -> None:
         self._context.glFlush()
 
     def _delete_resource(self) -> None:
-        self._context.delete_texture(self.id)
-        self.id = None
+        self._context.delete_texture(self.handle)
+        self._handle = None
 
     def _begin_upload(self, image_data: ImageData | ImageDataRegion) -> None:
         align, row_length = self._get_image_alignment(image_data)
@@ -704,9 +707,9 @@ class GLTextureRegion(_TextureRegionShared, GLTexture):
     """A rectangular region of a texture, presented as if it were a separate texture."""
 
     def __init__(self, x: int, y: int, z: int, width: int, height: int, owner: Texture):
-        super().__init__(owner._context, width, height, owner.id, owner.tex_type, owner.internal_format,
+        super().__init__(owner._context, width, height, owner.handle, owner.tex_type, owner.internal_format,
                          owner.internal_format_size, owner.internal_format_type, owner.filters, owner.address_mode,
-                         owner.anisotropic_level)
+                         owner.anisotropic_level, key=owner.key)
         self._init_region(x, y, z, width, height, owner)
 
 
@@ -836,14 +839,14 @@ class GLTexture3D(_Texture3DShared[GLTextureRegion], GLTexture, UniformTextureSe
                                       data)
 
     def _bind_sequence_texture(self) -> None:
-        self._context.glBindTexture(self.target, self.id)
+        self._context.glBindTexture(self.target, self.handle)
 
 
 class GLTextureArrayRegion(GLTextureRegion):
     """A region of a TextureArray, presented as if it were a separate texture."""
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(id={self.id}, size={self.width}x{self.height}, layer={self.z})"
+        return f"{self.__class__.__name__}(handle={self.handle}, size={self.width}x{self.height}, layer={self.z})"
 
 
 class GLTextureArray(_TextureArrayShared[GLTextureArrayRegion], GLTexture, UniformTextureSequence[GLTextureArrayRegion]):
@@ -955,7 +958,7 @@ class GLTextureArray(_TextureArrayShared[GLTextureArrayRegion], GLTexture, Unifo
         self._context.glFlush()
 
     def _bind_sequence_texture(self) -> None:
-        self._context.glBindTexture(self.target, self.id)
+        self._context.glBindTexture(self.target, self.handle)
 
     def _allocate_image(self, image: ImageData, layer: int) -> None:
         self.upload(image, image.anchor_x, image.anchor_y, layer)
@@ -1186,12 +1189,12 @@ class GLCompressedTexture(CompressedTexture):
     """A compressed texture created from CompressedImageData."""
 
     def __init__(self, context: OpenGLSurfaceContext, width: int, height: int,
-                 tex_id: int,
+                 handle: int,
                  compression_fmt: CompressionFormat,
                  tex_type: TextureType = TextureType.TYPE_2D,
                  filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT, anisotropic_level: int = 0) -> None:
-        super().__init__(width, height, tex_id, compression_fmt, tex_type, filters, address_mode, anisotropic_level)
+        super().__init__(width, height, handle, compression_fmt, tex_type, filters, address_mode, anisotropic_level)
         self._context = context
         self.target = texture_map[self.tex_type]
         self._gl_min_filter = texture_map[self.min_filter]
@@ -1303,7 +1306,13 @@ class GLCompressedTexture(CompressedTexture):
     def bind(self, texture_unit: int = 0) -> None:
         """Bind to a specific Texture Unit by number."""
         self._context.glActiveTexture(GL_TEXTURE0 + texture_unit)
-        self._context.glBindTexture(self.target, self.id)
+        self._context.glBindTexture(self.target, self.handle)
+
+    def delete(self) -> None:
+        """Delete this texture and its OpenGL resource."""
+        if self.handle is not None:
+            self._context.glDeleteTextures(1, GLuint(self.handle))
+            self._handle = None
 
     def _compute_mipmap_count(self) -> int:
         max_dimension = max(self.width, self.height)

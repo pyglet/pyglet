@@ -315,7 +315,7 @@ class GLFramebuffer:
         """
         self.bind()
         gl_attachment = _gl_attachment_map[attachment]
-        self._context.glFramebufferTexture(self._gl_target, gl_attachment, texture.id, level)
+        self._context.glFramebufferTexture(self._gl_target, gl_attachment, texture.handle, level)
         self._clear_bits |= _clear_bit_map[attachment]
         self._width = max(texture.width, self._width)
         self._height = max(texture.height, self._height)
@@ -338,7 +338,7 @@ class GLFramebuffer:
         """
         self.bind()
         gl_attachment = _gl_attachment_map[attachment]
-        self._context.glFramebufferTextureLayer(self._gl_target, gl_attachment, texture.id, level, layer)
+        self._context.glFramebufferTextureLayer(self._gl_target, gl_attachment, texture.handle, level, layer)
         self._clear_bits |= _clear_bit_map[attachment]
         self._width = max(texture.width, self._width)
         self._height = max(texture.height, self._height)

@@ -56,7 +56,7 @@ class GL2Framebuffer(GLFramebuffer):
             gl.GL_FRAMEBUFFER,
             gl_attachment,
             texture.target,
-            texture.id,
+            texture.handle,
             level,
         )
         self._clear_bits |= _clear_bit_map[attachment]

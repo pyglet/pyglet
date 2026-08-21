@@ -1209,7 +1209,7 @@ class UniformBlock:
 
     def bind(self, ubo: UniformBufferObject) -> None:
         """Bind a UBO to the binding point of this uniform block."""
-        self._bind_buffer_base(self.binding, ubo.buffer.id)
+        self._bind_buffer_base(self.binding, ubo.buffer.handle)
 
     def create_ubo(
         self,

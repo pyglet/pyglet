@@ -391,7 +391,7 @@ class Sprite(event.EventDispatcher):
         self._update_position()
 
     def _set_texture(self, texture: Texture) -> None:
-        texture_changed = texture.id != self._texture.id
+        texture_changed = texture.key != self._texture.key
         self._texture = texture
 
         if texture_changed:
@@ -916,7 +916,7 @@ class MultiTextureSprite(Sprite):
             self.dispatch_event('on_animation_end')
 
     def _set_multi_texture(self, key: str, new_tex: Texture) -> None:
-        if new_tex.id != self._textures[key].id:
+        if new_tex.key != self._textures[key].key:
             # Copy so this instance can diverge from grouped peers on migration.
             self._textures = self._textures.copy()
             self._textures[key] = new_tex
@@ -986,7 +986,7 @@ class MultiTextureSprite(Sprite):
         self._set_multi_texture(name, texture)
 
         base_texture = self._get_base_texture()
-        if base_texture.id != self._texture.id:
+        if base_texture.key != self._texture.key:
             self._texture = base_texture
             self._update_position()
 

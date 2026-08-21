@@ -7,8 +7,8 @@ from abc import ABC, abstractmethod
 from typing import Any, Generic, Iterator, Literal, Protocol, Sequence, TYPE_CHECKING, TypeVar, overload
 
 import pyglet
-from pyglet.customtypes import Buffer, DataTypes
 from pyglet.enums import AddressMode, ComponentFormat, TextureFilter, TextureType, GraphicsAPI
+from pyglet.graphics.resource import GraphicsResource, TextureKey
 from pyglet.image.base import (
     _AbstractImage,
     _AbstractImageSequence,
@@ -18,9 +18,11 @@ from pyglet.image.base import (
     ImageGrid,
     _AbstractGrid,
     CompressionFormat,
+    CompressedImageData,
 )
 
 if TYPE_CHECKING:
+    from pyglet.customtypes import Buffer, DataTypes
     from pyglet.graphics.api.base import SurfaceContext
 
 
@@ -116,7 +118,7 @@ class TextureSequence(_AbstractImageSequence, Generic[TTexture]):
         return self
 
 
-class Texture(_AbstractImage):
+class Texture(_AbstractImage, GraphicsResource[Any, TextureKey]):
     """An image loaded into GPU memory.
 
     Typically, you will get an instance of Texture by accessing calling
@@ -147,6 +149,7 @@ class Texture(_AbstractImage):
     """The GL texture target (e.g., ``GL_TEXTURE_2D``)."""
 
     images = 1
+    key_type = TextureKey
 
     default_filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR, TextureFilter.LINEAR
     """The default minification and magnification filters, as a tuple.
@@ -158,7 +161,7 @@ class Texture(_AbstractImage):
     y: int = 0
     z: int = 0
 
-    def __init__(self, width: int, height: int, tex_id: int,
+    def __init__(self, width: int, height: int, handle: Any,
                  tex_type: TextureType = TextureType.TYPE_2D,
                  internal_format: ComponentFormat = ComponentFormat.RGBA,
                  internal_format_size: int = 8,
@@ -166,9 +169,12 @@ class Texture(_AbstractImage):
                  filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT,
                  anisotropic_level: int = 0,
+                 *,
+                 key: TextureKey | None = None,
                  ) -> None:
         super().__init__(width, height)
-        self.id = tex_id
+        GraphicsResource.__init__(self, key=key)
+        self._handle = handle
         self.tex_type = tex_type
         self.immutable = False
         self._mipmap_levels = 1
@@ -194,10 +200,10 @@ class Texture(_AbstractImage):
 
         Textures are invalid after deletion, and may no longer be used.
         """
-        self.id = None
+        self._handle = None
 
     def __del__(self) -> None:
-        if self.id is not None:
+        if self.handle is not None:
             try:
                 self._delete_resource()
             except (AttributeError, ImportError, NotImplementedError):
@@ -651,7 +657,8 @@ class _TextureRegionShared:
     z: int
     _width: int
     _height: int
-    id: int | None
+    handle: Any | None
+    key: TextureKey
     width: int
     height: int
     owner: Texture
@@ -846,9 +853,9 @@ class TextureRegion(Texture, _TextureRegionShared):
     """A rectangular region of a texture, presented as if it were a separate texture."""
 
     def __init__(self, x: int, y: int, z: int, width: int, height: int, owner: Texture):
-        super().__init__(width, height, owner.id, owner.tex_type, owner.internal_format,
+        super().__init__(width, height, owner.handle, owner.tex_type, owner.internal_format,
                          owner.internal_format_size, owner.internal_format_type, owner.filters, owner.address_mode,
-                         owner.anisotropic_level)
+                         owner.anisotropic_level, key=owner.key)
         self._init_region(x, y, z, width, height, owner)
 
     @property
@@ -1050,7 +1057,7 @@ TextureArray.region_class = TextureArrayRegion
 TextureArrayRegion.region_class = TextureArrayRegion
 
 
-class CompressedTexture(_AbstractImage):
+class CompressedTexture(_AbstractImage, GraphicsResource[Any, TextureKey]):
     tex_coords = (0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0)
     """12-tuple of float, named (u1, v1, r1, u2, v2, r2, ...).
     ``u, v, r`` give the 3D texture coordinates for vertices 1-4. The vertices
@@ -1069,21 +1076,25 @@ class CompressedTexture(_AbstractImage):
     """The mipmap level of this texture."""
 
     images = 1
+    key_type = TextureKey
     default_filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR, TextureFilter.LINEAR
 
     x: int = 0
     y: int = 0
     z: int = 0
 
-    def __init__(self, width: int, height: int, tex_id: int,
+    def __init__(self, width: int, height: int, handle: Any,
                  compression_format: CompressionFormat,
                  tex_type: TextureType = TextureType.TYPE_2D,
                  filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT,
                  anisotropic_level: int = 0,
+                 *,
+                 key: TextureKey | None = None,
                  ) -> None:
         super().__init__(width, height)
-        self.id = tex_id
+        GraphicsResource.__init__(self, key=key)
+        self._handle = handle
         self.tex_type = tex_type
         self.immutable = False
         self._mipmap_levels = 1
