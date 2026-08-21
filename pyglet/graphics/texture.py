@@ -1129,7 +1129,6 @@ if not _is_pyglet_doc_run:
         from pyglet.graphics.api.gl.framebuffer import (  # noqa: F401
             GLFramebuffer as Framebuffer,
             GLRenderbuffer as Renderbuffer,
-            get_max_color_attachments,
             get_screenshot,
         )
         from pyglet.graphics.api.gl.texture import (
@@ -1147,14 +1146,11 @@ if not _is_pyglet_doc_run:
             GLTextureArrayRegion as TextureArrayRegion,  # noqa: F401
             GLTextureGrid,
             GLTextureGrid as TextureGrid,  # noqa: F401
-            get_max_texture_size,
-            get_max_array_texture_layers,
         )
     elif pyglet.options.backend in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
         from pyglet.graphics.api.gl2.framebuffer import (  # noqa: F401
             GL2Framebuffer as Framebuffer,
             GLRenderbuffer as Renderbuffer,
-            get_max_color_attachments,
             get_screenshot,
         )
         from pyglet.graphics.api.gl.texture import (
@@ -1172,14 +1168,11 @@ if not _is_pyglet_doc_run:
             GLTextureArrayRegion as TextureArrayRegion,  # noqa: F401
             GLTextureGrid,
             GLTextureGrid as TextureGrid,  # noqa: F401
-            get_max_texture_size,
-            get_max_array_texture_layers,
         )
     elif pyglet.options.backend == GraphicsAPI.WEBGL:
         from pyglet.graphics.api.webgl.framebuffer import (  # noqa: F401
             WebGLFramebuffer as Framebuffer,
             WebGLRenderbuffer as Renderbuffer,
-            get_max_color_attachments,
             get_screenshot,
         )
         from pyglet.graphics.api.webgl.texture import (
@@ -1196,8 +1189,6 @@ if not _is_pyglet_doc_run:
             WebGLTextureArrayRegion as TextureArrayRegion,  # noqa: F401
             WebGLTextureGrid,
             WebGLTextureGrid as TextureGrid,  # noqa: F401
-            get_max_texture_size,  # noqa: F401
-            get_max_array_texture_layers,  # noqa: F401
         )
     elif pyglet.options.backend == GraphicsAPI.VULKAN:
         raise NotImplementedError("Vulkan is not yet implemented")

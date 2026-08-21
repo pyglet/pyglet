@@ -8,7 +8,7 @@ from pyodide.ffi import create_proxy  # noqa: F401, F821
 from pyglet.graphics.api.base import SurfaceContext, NullContext
 from pyglet.graphics.api.webgl import gl
 from pyglet.graphics.api.webgl.gl import GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT
-from pyglet.graphics.api.webgl.gl_info import GLInfo
+from pyglet.graphics.api.webgl.gl_info import WebGLInfo
 from pyglet.graphics.api.webgl.renderer import WebGLRenderer
 
 if TYPE_CHECKING:
@@ -57,7 +57,7 @@ class OpenGLSurfaceContext(SurfaceContext):
         # The GL Context.  Pass through the WebGLConfig settings:
         self.gl = self.window.canvas.getContext("webgl2", **self.config.attributes)
 
-        self._info = GLInfo()
+        self._info = WebGLInfo()
         self._info.query(self.gl)
         self._draw_proxy = create_proxy(self.window.draw)
 
@@ -69,11 +69,11 @@ class OpenGLSurfaceContext(SurfaceContext):
         self.renderer = WebGLRenderer(self)
 
     @property
-    def info(self) -> GLInfo:
+    def info(self) -> WebGLInfo:
         """Get the :py:class:`~GLInfo` instance for this context."""
         return self._info
 
-    def get_info(self) -> GLInfo:
+    def get_info(self) -> WebGLInfo:
         """Get the :py:class:`~GLInfo` instance for this context."""
         return self.info
 

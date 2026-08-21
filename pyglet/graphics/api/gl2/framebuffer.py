@@ -11,7 +11,6 @@ from pyglet.graphics.api.gl.framebuffer import (
     GLRenderbuffer,
     _clear_bit_map,
     _gl_attachment_map,
-    get_max_color_attachments,
     get_screenshot,
     get_viewport,
 )
@@ -79,7 +78,6 @@ class GL2Framebuffer(GLFramebuffer):
 __all__ = (
     "GL2Framebuffer",
     "GLRenderbuffer",
-    "get_max_color_attachments",
     "get_screenshot",
     "get_viewport",
 )

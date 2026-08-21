@@ -113,11 +113,6 @@ def get_screenshot() -> ImageData:
     return ImageData(width, height, fmt, buf)
 
 
-def get_max_color_attachments() -> int:
-    """Return the maximum number of color attachments supported by the current context."""
-    return pyglet.graphics.api.core.current_context.info.MAX_COLOR_ATTACHMENTS
-
-
 class WebGLRenderbuffer:
     """OpenGL Renderbuffer Object."""
 

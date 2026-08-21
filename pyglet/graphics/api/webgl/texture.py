@@ -56,9 +56,6 @@ from pyglet.image.base import (
     _AbstractImage,
 )
 
-# from pyglet.image.buffer import Framebuffer, Renderbuffer, get_max_color_attachments
-
-
 if TYPE_CHECKING:
     from pyglet.graphics.api.base import SurfaceContext
     from typing import Callable
@@ -133,15 +130,6 @@ _api_pixel_formats = {
     'D': GL_DEPTH_COMPONENT,
     'DS': GL_DEPTH_STENCIL,
 }
-
-def get_max_texture_size() -> int:
-    """Query the maximum texture size available"""
-    return pyglet.graphics.api.core.current_context.info.MAX_TEXTURE_SIZE
-
-
-def get_max_array_texture_layers() -> int:
-    return pyglet.graphics.api.core.current_context.info.MAX_ARRAY_TEXTURE_LAYERS
-
 
 def _get_gl_format_and_type(fmt: str):
     fmt = _api_pixel_formats.get(fmt)
@@ -227,6 +215,8 @@ class WebGLCompressedTexture(CompressedTexture):
         self._gl_min_filter = texture_map[self.min_filter]
         self._gl_mag_filter = texture_map[self.mag_filter]
         self._gl_format, self._extension_name = _get_webgl_compression_format(compression_fmt)
+        if not context.info.have_extension(self._extension_name):
+            raise UnsupportedBackendError(f"Compressed texture format '{compression_fmt.fmt.decode()}'")
         self._extension = self._gl.getExtension(self._extension_name)
         if self._extension is None:
             raise UnsupportedBackendError(f"Compressed texture format '{compression_fmt.fmt.decode()}'")
@@ -846,7 +836,7 @@ class WebGLTextureArray(_TextureArrayShared[WebGLTextureArrayRegion], WebGLTextu
         """
         ctx = context or pyglet.graphics.api.core.current_context
 
-        max_depth_limit = get_max_array_texture_layers()
+        max_depth_limit = ctx.info.MAX_ARRAY_TEXTURE_LAYERS
         assert max_depth <= max_depth_limit, f"TextureArray max_depth supported is {max_depth_limit}."
 
         gl = ctx.gl

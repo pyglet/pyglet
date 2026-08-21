@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.api.webgl.webgl_js import WebGLRenderingContext
 
 
-class GLInfo(SurfaceInfo):
+class WebGLInfo(SurfaceInfo):
     """Information interface for a single GL context.
 
     A default instance is created automatically when the first OpenGL context

@@ -256,16 +256,6 @@ _component_types = {
 }
 
 
-def get_max_texture_size() -> int:
-    """Return the maximum texture size available."""
-    return pyglet.graphics.api.core.current_context.info.MAX_TEXTURE_SIZE
-
-
-def get_max_array_texture_layers() -> int:
-    """Return the maximum TextureArray depth."""
-    return pyglet.graphics.api.core.current_context.info.MAX_ARRAY_TEXTURE_LAYERS
-
-
 def _get_gl_format_and_type(fmt: str, data_type: str) -> tuple[int | None, int | None]:
     fmt = _api_pixel_formats.get(fmt)
     if fmt:
@@ -901,7 +891,7 @@ class GLTextureArray(_TextureArrayShared[GLTextureArrayRegion], GLTexture, Unifo
         """
         ctx = context or pyglet.graphics.api.core.current_context
 
-        max_depth_limit = get_max_array_texture_layers()
+        max_depth_limit = ctx.info.MAX_ARRAY_TEXTURE_LAYERS
         assert max_depth <= max_depth_limit, f"TextureArray max_depth supported is {max_depth_limit}."
 
         tex_id = GLuint()
@@ -1221,7 +1211,7 @@ class GLCompressedTexture(CompressedTexture):
             return True
 
         required = _required_exts.get(family, [])
-        return any(self._context.core.have_extension(ext) for ext in required)
+        return any(self._context.info.have_extension(ext) for ext in required)
 
     @classmethod
     def create(cls, width: int, height: int,
@@ -1341,7 +1331,7 @@ class GLCompressedTexture(CompressedTexture):
             raise UnsupportedBackendError("Compressed texture mipmap generation")
 
         if not info.have_version(3):
-            if not self._context.core.have_extension("GL_EXT_framebuffer_object"):
+            if not info.have_extension("GL_EXT_framebuffer_object"):
                 raise UnsupportedBackendError("Compressed texture mipmap generation")
             self._context.glGenerateMipmapEXT(self.target)
         else:
