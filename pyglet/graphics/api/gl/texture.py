@@ -338,13 +338,13 @@ class GLTexture(Texture):
 
         Textures are invalid after deletion, and may no longer be used.
         """
-        self._context.glDeleteTextures(1, GLuint(self.handle))
+        self._context.glDeleteTextures(1, GLuint(self._handle))
         self._handle = None
 
     def bind(self, texture_unit: int = 0) -> None:
         """Bind to a specific Texture Unit by number."""
         self._context.glActiveTexture(GL_TEXTURE0 + texture_unit)
-        self._context.glBindTexture(self.target, self.handle)
+        self._context.glBindTexture(self.target, self._handle)
 
     def bind_image_texture(self, unit: int, level: int = 0, layered: bool = False,
                            layer: int = 0, access: int = GL_READ_WRITE, fmt: int = GL_RGBA32F):
@@ -353,13 +353,13 @@ class GLTexture(Texture):
         OpenGL ES requires the texture to have immutable-format storage. Create
         it with ``immutable=True`` when it will be bound as an image texture.
         """
-        self._context.glBindImageTexture(unit, self.handle, level, layered, layer, access, fmt)
+        self._context.glBindImageTexture(unit, self._handle, level, layered, layer, access, fmt)
 
     def _flush(self) -> None:
         self._context.glFlush()
 
     def _delete_resource(self) -> None:
-        self._context.delete_texture(self.handle)
+        self._context.delete_texture(self._handle)
         self._handle = None
 
     def _begin_upload(self, image_data: ImageData | ImageDataRegion) -> None:
@@ -839,14 +839,14 @@ class GLTexture3D(_Texture3DShared[GLTextureRegion], GLTexture, UniformTextureSe
                                       data)
 
     def _bind_sequence_texture(self) -> None:
-        self._context.glBindTexture(self.target, self.handle)
+        self._context.glBindTexture(self.target, self._handle)
 
 
 class GLTextureArrayRegion(GLTextureRegion):
     """A region of a TextureArray, presented as if it were a separate texture."""
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(handle={self.handle}, size={self.width}x{self.height}, layer={self.z})"
+        return f"{self.__class__.__name__}(handle={self._handle}, size={self.width}x{self.height}, layer={self.z})"
 
 
 class GLTextureArray(_TextureArrayShared[GLTextureArrayRegion], GLTexture, UniformTextureSequence[GLTextureArrayRegion]):
@@ -958,7 +958,7 @@ class GLTextureArray(_TextureArrayShared[GLTextureArrayRegion], GLTexture, Unifo
         self._context.glFlush()
 
     def _bind_sequence_texture(self) -> None:
-        self._context.glBindTexture(self.target, self.handle)
+        self._context.glBindTexture(self.target, self._handle)
 
     def _allocate_image(self, image: ImageData, layer: int) -> None:
         self.upload(image, image.anchor_x, image.anchor_y, layer)
@@ -1306,12 +1306,12 @@ class GLCompressedTexture(CompressedTexture):
     def bind(self, texture_unit: int = 0) -> None:
         """Bind to a specific Texture Unit by number."""
         self._context.glActiveTexture(GL_TEXTURE0 + texture_unit)
-        self._context.glBindTexture(self.target, self.handle)
+        self._context.glBindTexture(self.target, self._handle)
 
     def delete(self) -> None:
         """Delete this texture and its OpenGL resource."""
-        if self.handle is not None:
-            self._context.glDeleteTextures(1, GLuint(self.handle))
+        if self._handle is not None:
+            self._context.glDeleteTextures(1, GLuint(self._handle))
             self._handle = None
 
     def _compute_mipmap_count(self) -> int:

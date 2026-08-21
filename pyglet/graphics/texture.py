@@ -203,7 +203,7 @@ class Texture(_AbstractImage, GraphicsResource[Any, TextureKey]):
         self._handle = None
 
     def __del__(self) -> None:
-        if self.handle is not None:
+        if self._handle is not None:
             try:
                 self._delete_resource()
             except (AttributeError, ImportError, NotImplementedError):

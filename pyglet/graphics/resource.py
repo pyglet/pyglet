@@ -94,7 +94,7 @@ class GraphicsResource(ABC, Generic[HandleT, KeyT]):
         .. deprecated:: 3.0
            Use :attr:`handle` instead.
         """
-        return self.handle
+        return self._handle
 
     @abstractmethod
     def delete(self) -> None:

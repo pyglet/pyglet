@@ -246,12 +246,12 @@ class WebGLCompressedTexture(CompressedTexture):
 
     def bind(self, texture_unit: int = 0) -> None:
         self._gl.activeTexture(GL_TEXTURE0 + texture_unit)
-        self._gl.bindTexture(self.target, self.handle)
+        self._gl.bindTexture(self.target, self._handle)
 
     def delete(self) -> None:
         """Delete this texture and its WebGL resource."""
-        if self.handle is not None:
-            self._gl.deleteTexture(self.handle)
+        if self._handle is not None:
+            self._gl.deleteTexture(self._handle)
             self._handle = None
 
     def _upload_level(self, level: int, width: int, height: int, data: bytes) -> None:
@@ -326,13 +326,13 @@ class WebGLTexture(Texture):
 
         Textures are invalid after deletion, and may no longer be used.
         """
-        self._gl.deleteTexture(self.handle)
+        self._gl.deleteTexture(self._handle)
         self._handle = None
 
     def bind(self, texture_unit: int = 0) -> None:
         """Bind to a specific Texture Unit by number."""
         self._gl.activeTexture(GL_TEXTURE0 + texture_unit)
-        self._gl.bindTexture(self.target, self.handle)
+        self._gl.bindTexture(self.target, self._handle)
 
     def bind_image_texture(
         self,
@@ -353,7 +353,7 @@ class WebGLTexture(Texture):
         self._gl.flush()
 
     def _delete_resource(self) -> None:
-        self._context.delete_texture(self.handle)
+        self._context.delete_texture(self._handle)
         self._handle = None
 
     def _begin_upload(self, image_data: ImageData | ImageDataRegion) -> None:
@@ -628,7 +628,7 @@ class WebGLTexture(Texture):
         self._gl.flush()
 
     def _attach_texture_to_fbo(self, z: int = 0, level: int = 0) -> None:
-        self._gl.framebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.handle, level)
+        self._gl.framebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self._handle, level)
 
     def fetch(self, z: int = 0, level: int = 0) -> ImageData:
         """Fetch the image data of this texture from the GPU.
@@ -645,7 +645,7 @@ class WebGLTexture(Texture):
             level:
                 The mipmap level of the texture to retrieve.
         """
-        self._gl.bindTexture(self.target, self.handle)
+        self._gl.bindTexture(self.target, self._handle)
 
         # Always extract complete RGBA data.  Could check internalformat
         # to only extract used channels. XXX
@@ -782,17 +782,17 @@ class WebGLTexture3D(_Texture3DShared[WebGLTextureRegion], WebGLTexture, Uniform
         )
 
     def _attach_texture_to_fbo(self, z: int = 0, level: int = 0) -> None:
-        self._gl.framebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.handle, level, z)
+        self._gl.framebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self._handle, level, z)
 
     def _bind_sequence_texture(self) -> None:
-        self._gl.bindTexture(self.target, self.handle)
+        self._gl.bindTexture(self.target, self._handle)
 
 
 class WebGLTextureArrayRegion(WebGLTextureRegion):
     """A region of a TextureArray, presented as if it were a separate texture."""
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(handle={self.handle}, size={self.width}x{self.height}, layer={self.z})"
+        return f"{self.__class__.__name__}(handle={self._handle}, size={self.width}x{self.height}, layer={self.z})"
 
 
 class WebGLTextureArray(_TextureArrayShared[WebGLTextureArrayRegion], WebGLTexture, UniformTextureSequence[WebGLTextureArrayRegion]):
@@ -899,7 +899,7 @@ class WebGLTextureArray(_TextureArrayShared[WebGLTextureArrayRegion], WebGLTextu
         WebGLTexture.upload(self, image, x, y, z, level=level)
 
     def _attach_texture_to_fbo(self, z: int = 0, level: int = 0) -> None:
-        self._gl.framebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.handle, level, z)
+        self._gl.framebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self._handle, level, z)
 
     def _allocate(self, data: None | js.Uint8Array) -> None:
         self._gl.texImage3D(
@@ -939,7 +939,7 @@ class WebGLTextureArray(_TextureArrayShared[WebGLTextureArrayRegion], WebGLTextu
         self._gl.flush()
 
     def _bind_sequence_texture(self) -> None:
-        self._gl.bindTexture(self.target, self.handle)
+        self._gl.bindTexture(self.target, self._handle)
 
     def _allocate_image(self, image: ImageData, layer: int) -> None:
         self.upload(image, image.anchor_x, image.anchor_y, layer)

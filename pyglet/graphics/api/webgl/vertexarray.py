@@ -46,11 +46,11 @@ class VertexArray(VertexArrayResource):
     def __del__(self) -> None:
         if self._id is not None:
             try:
-                self._context.delete_vao(self.handle)
+                self._context.delete_vao(self._handle)
                 self._id = None
                 self._handle = None
             except (ImportError, AttributeError):
                 pass  # Interpreter is shutting down
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(handle={self.handle})"
+        return f"{self.__class__.__name__}(handle={self._handle})"

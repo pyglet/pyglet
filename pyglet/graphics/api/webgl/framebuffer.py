@@ -173,7 +173,7 @@ class WebGLRenderbuffer(RenderbufferResource):
         self.delete()
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(handle={self.handle})"
+        return f"{self.__class__.__name__}(handle={self._handle})"
 
 
 _status_states = {
