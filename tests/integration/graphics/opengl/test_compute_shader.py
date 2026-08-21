@@ -61,7 +61,7 @@ def _create_compute_program(test_window):
 def test_compute_shader_program_creation(test_window):
     program = _create_compute_program(test_window)
     try:
-        assert program.id > 0
+        assert program.handle > 0
         assert "img_output" in program.uniforms
         assert program.max_work_group_invocations > 0
     finally:

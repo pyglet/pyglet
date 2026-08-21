@@ -29,6 +29,7 @@ from typing import TYPE_CHECKING
 from pyglet.enums import FramebufferTarget, FramebufferAttachment, ComponentFormat
 from pyglet.graphics.api.webgl import gl
 from pyglet.graphics.api.webgl.texture import _get_internal_format
+from pyglet.graphics.resource import FramebufferResource, RenderbufferResource
 from pyglet.image.base import ImageData
 
 if TYPE_CHECKING:
@@ -113,12 +114,13 @@ def get_screenshot() -> ImageData:
     return ImageData(width, height, fmt, buf)
 
 
-class WebGLRenderbuffer:
+class WebGLRenderbuffer(RenderbufferResource):
     """OpenGL Renderbuffer Object."""
 
     def __init__(self, context: OpenGLSurfaceContext, width: int, height: int,
                  component_format: ComponentFormat, bit_size: int, data_type: DataTypes = "I", samples: int = 1) -> None:
         """Create a RenderBuffer instance."""
+        RenderbufferResource.__init__(self)
         self._context = context or pyglet.graphics.api.core.current_context
         self._gl = self._context.gl
         self._width = width
@@ -126,6 +128,7 @@ class WebGLRenderbuffer:
         self._internal_format = _get_internal_format(component_format, bit_size, data_type)
 
         self._id = self._gl.createRenderbuffer()
+        self._handle = self._id
         self.bind()
 
         if samples > 1:
@@ -147,10 +150,6 @@ class WebGLRenderbuffer:
         self.unbind()
 
     @property
-    def id(self) -> WebGLRenderbufferObject:
-        return self._id
-
-    @property
     def width(self) -> int:
         return self._width
 
@@ -168,12 +167,13 @@ class WebGLRenderbuffer:
         if self._id is not None:
             self._gl.deleteRenderbuffer(self._id)   # FIX for WebGL
             self._id = None
+            self._handle = None
 
     def __del__(self) -> None:
         self.delete()
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(id={self._id})"
+        return f"{self.__class__.__name__}(handle={self.handle})"
 
 
 _status_states = {
@@ -187,7 +187,7 @@ _status_states = {
     gl.GL_FRAMEBUFFER_COMPLETE: "Framebuffer is complete.",
 }
 
-class WebGLFramebuffer:
+class WebGLFramebuffer(FramebufferResource):
     """OpenGL Framebuffer Object.
 
     .. versionadded:: 2.0
@@ -197,9 +197,11 @@ class WebGLFramebuffer:
     def __init__(self,
                  target: FramebufferTarget = FramebufferTarget.FRAMEBUFFER,
                  context: OpenGLSurfaceContext | None = None) -> None:
+        FramebufferResource.__init__(self)
         self._context = context or pyglet.graphics.api.core.current_context
         self._gl = self._context.gl
         self._id = self._gl.createFramebuffer()
+        self._handle = self._id
         self._clear_bits = 0
         self._gl_attachment_types = []
         self._width = 0
@@ -207,11 +209,6 @@ class WebGLFramebuffer:
         self._binding_stack: list[tuple[WebGLFramebufferObject | None, ...]] = []
         self.target = target
         self._gl_target = _gl_target_map[target]
-
-    @property
-    def id(self) -> WebGLFramebufferObject:
-        """The Framebuffer id."""
-        return self._id
 
     @property
     def width(self) -> int:
@@ -283,6 +280,7 @@ class WebGLFramebuffer:
         if self._id is not None:
             self._gl.deleteFramebuffer(self._id)
             self._id = None
+            self._handle = None
 
     def __del__(self) -> None:
         self.delete()
@@ -378,7 +376,7 @@ class WebGLFramebuffer:
             self._gl_target,
             gl_attachment,
             gl.GL_RENDERBUFFER,
-            renderbuffer.id,
+            renderbuffer.handle,
         )
         self._gl_attachment_types.append(gl_attachment)
         self._clear_bits |= _clear_bit_map[attachment]

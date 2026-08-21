@@ -25,6 +25,31 @@ class TextureKey(ResourceKey):
     """Identity for a texture resource."""
 
 
+@dataclass(frozen=True, slots=True)
+class ShaderKey(ResourceKey):
+    """Identity for a shader resource."""
+
+
+@dataclass(frozen=True, slots=True)
+class ShaderProgramKey(ResourceKey):
+    """Identity for a shader-program resource."""
+
+
+@dataclass(frozen=True, slots=True)
+class FramebufferKey(ResourceKey):
+    """Identity for a framebuffer resource."""
+
+
+@dataclass(frozen=True, slots=True)
+class RenderbufferKey(ResourceKey):
+    """Identity for a renderbuffer resource."""
+
+
+@dataclass(frozen=True, slots=True)
+class VertexArrayKey(ResourceKey):
+    """Identity for a vertex-array resource."""
+
+
 HandleT = TypeVar("HandleT")
 KeyT = TypeVar("KeyT", bound=ResourceKey)
 
@@ -39,10 +64,7 @@ class GraphicsResource(ABC, Generic[HandleT, KeyT]):
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
-        # The class that declares a key type owns its allocator. Backend-specific
-        # subclasses inherit that allocator, keeping keys unique across them.
-        if "key_type" in cls.__dict__:
-            cls._key_counter = count(1)
+        cls._key_counter = count(1)
 
     def __init__(self, *, key: KeyT | None = None) -> None:
         """Create a resource identity."""
@@ -77,3 +99,21 @@ class GraphicsResource(ABC, Generic[HandleT, KeyT]):
     @abstractmethod
     def delete(self) -> None:
         """Release the backend resource."""
+
+
+class FramebufferResource(GraphicsResource[Any, FramebufferKey], ABC):
+    """Base class for framebuffer resources."""
+
+    key_type = FramebufferKey
+
+
+class RenderbufferResource(GraphicsResource[Any, RenderbufferKey], ABC):
+    """Base class for renderbuffer resources."""
+
+    key_type = RenderbufferKey
+
+
+class VertexArrayResource(GraphicsResource[Any, VertexArrayKey], ABC):
+    """Base class for vertex-array resources."""
+
+    key_type = VertexArrayKey

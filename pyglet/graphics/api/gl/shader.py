@@ -409,11 +409,11 @@ class GLUniformBlock(BaseUniformBlock):
         )
 
     def _set_block_binding(self) -> None:
-        self._context.glUniformBlockBinding(self.program.id, self.index, self.binding)
+        self._context.glUniformBlockBinding(self.program.handle, self.index, self.binding)
 
     def _introspect_uniforms(self) -> type[Structure]:
         """Introspect the block's structure and return a ctypes struct for manipulating the uniform block's members."""
-        p_id = self.program.id
+        p_id = self.program.handle
         index = self.index
 
         active_count = self.uniform_count
@@ -445,11 +445,11 @@ class GLUniformBlock(BaseUniformBlock):
     def _actual_binding_point(self) -> int:
         """Queries OpenGL to find what the bind point currently is."""
         binding = gl.GLint()
-        gl.glGetActiveUniformBlockiv(self.program.id, self.index, gl.GL_UNIFORM_BLOCK_BINDING, binding)
+        gl.glGetActiveUniformBlockiv(self.program.handle, self.index, gl.GL_UNIFORM_BLOCK_BINDING, binding)
         return binding.value
 
     def __repr__(self) -> str:
-        return (f"{self.__class__.__name__}(program={self.program.id}, location={self.index}, size={self.size}, "
+        return (f"{self.__class__.__name__}(program={self.program.handle}, location={self.index}, size={self.size}, "
                 f"binding={self.binding})")
 
 
@@ -484,11 +484,11 @@ class GLShaderStorageBlock:
     def set_binding(self, binding: int) -> None:
         assert binding >= 0, "Binding index must be non-negative."
         self.binding = binding
-        self._context.glShaderStorageBlockBinding(self.program.id, self.index, binding)
+        self._context.glShaderStorageBlockBinding(self.program.handle, self.index, binding)
 
     def __repr__(self) -> str:
         return (
-            f"{self.__class__.__name__}(program={self.program.id}, name={self.name}, "
+            f"{self.__class__.__name__}(program={self.program.handle}, name={self.name}, "
             f"index={self.index}, size={self.size}, binding={self.binding})"
         )
 
@@ -541,7 +541,7 @@ def _create_program(ctx: OpenGLSurfaceContext, *shaders: GLShader) -> int:
     """
     program_id = ctx.glCreateProgram()
     for shader in shaders:
-        ctx.glAttachShader(program_id, shader.id)
+        ctx.glAttachShader(program_id, shader.handle)
     return program_id
 
 
@@ -564,7 +564,7 @@ def _link_program(ctx: OpenGLSurfaceContext, program_id: int) -> None:
 def _detach_program_shaders(ctx: OpenGLSurfaceContext, program_id: int, *shaders: GLShader) -> None:
     """Detach Shader objects from an already linked program."""
     for shader in shaders:
-        ctx.glDetachShader(program_id, shader.id)
+        ctx.glDetachShader(program_id, shader.handle)
 
 
 def _build_program(ctx: OpenGLSurfaceContext, *shaders: GLShader) -> int:
@@ -648,7 +648,7 @@ def _get_uniform_block_name(ctx, program_id: int, index: int) -> str:
 
 def _introspect_uniform_blocks(ctx, program: GLShaderProgram | GLComputeShaderProgram) -> dict[str, GLUniformBlock]:
     uniform_blocks = {}
-    program_id = program.id
+    program_id = program.handle
 
     for index in range(_get_number(ctx, program_id, gl.GL_ACTIVE_UNIFORM_BLOCKS)):
         name = _get_uniform_block_name(ctx, program_id, index)
@@ -774,7 +774,7 @@ def _introspect_shader_storage_blocks(
         return {}
 
     storage_blocks: dict[str, GLShaderStorageBlock] = {}
-    program_id = program.id
+    program_id = program.handle
 
     active_resources = gl.GLint(0)
     ctx.glGetProgramInterfaceiv(program_id, gl.GL_SHADER_STORAGE_BLOCK, gl.GL_ACTIVE_RESOURCES, byref(active_resources))
@@ -972,6 +972,7 @@ class GLShader(_AbstractShader):
 
         shader_id = self._context.glCreateShader(shader_gl_type)
         self._id = shader_id
+        self._handle = shader_id
         self._context.glShaderSource(shader_id, 1, byref(source_buffer_pointer), source_length)
         self._context.glCompileShader(shader_id)
 
@@ -1010,10 +1011,6 @@ class GLShader(_AbstractShader):
             shader_types += ('tesscontrol', 'tessevaluation')
         return shader_types
 
-    @property
-    def id(self) -> int:
-        return self._id
-
     def _get_shader_log(self, shader_id: int) -> str:
         log_length = c_int(0)
         self._context.glGetShaderiv(shader_id, GL_INFO_LOG_LENGTH, byref(log_length))
@@ -1040,6 +1037,7 @@ class GLShader(_AbstractShader):
         """
         self._context.glDeleteShader(self._id)
         self._id = None
+        self._handle = None
 
     def __del__(self) -> None:
         if self._id is not None:
@@ -1047,11 +1045,12 @@ class GLShader(_AbstractShader):
                 self._context.delete_shader(self._id)
                 assert _debug_api_shader_print(f"Destroyed {self.type} Shader '{self._id}'")
                 self._id = None
+                self._handle = None
             except (AttributeError, ImportError):
                 pass  # Interpreter is shutting down
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(id={self.id}, type={self.type})"
+        return f"{self.__class__.__name__}(handle={self.handle}, type={self.type})"
 
 
 class GLShaderProgram(ShaderProgram):
@@ -1070,6 +1069,7 @@ class GLShaderProgram(ShaderProgram):
 
         self._context = pyglet.graphics.api.core.current_context
         self._id = _build_program(self._context, *shaders)
+        self._handle = self._id
 
         self._initialize_program_state()
 
@@ -1094,10 +1094,6 @@ class GLShaderProgram(ShaderProgram):
         return _introspect_uniform_blocks(self._context, self)
 
     @property
-    def id(self) -> int:
-        return self._id
-
-    @property
     def shader_storage_blocks(self) -> dict[str, GLShaderStorageBlock]:
         """A dictionary of introspected Shader Storage Blocks."""
         return self._shader_storage_blocks
@@ -1111,12 +1107,14 @@ class GLShaderProgram(ShaderProgram):
     def delete(self) -> None:
         self._context.glDeleteProgram(self._id)
         self._id = None
+        self._handle = None
 
     def __del__(self) -> None:
         if self._id is not None:
             try:
                 self._context.delete_shader_program(self._id)
                 self._id = None
+                self._handle = None
             except (AttributeError, ImportError):
                 pass  # Interpreter is shutting down
 
@@ -1140,6 +1138,7 @@ class GLTransformFeedbackShaderProgram(GLShaderProgram):
             raise ShaderException(msg)
 
         self._id = _create_program(self._context, *shaders)
+        self._handle = self._id
         self._set_transform_feedback_varyings()
         _link_program(self._context, self._id)
         _detach_program_shaders(self._context, self._id, *shaders)
@@ -1187,6 +1186,7 @@ class GLComputeShaderProgram(_AbstractShaderProgram):
         self._shader = GLShader(source, 'compute')
         self._context = pyglet.graphics.api.core.current_context
         self._id = _build_program(self._context, self._shader)
+        self._handle = self._id
 
         if _debug_api_shaders:
             assert _debug_api_shader_print(_get_program_log(self._context, self._id))
@@ -1228,10 +1228,6 @@ class GLComputeShaderProgram(_AbstractShaderProgram):
             self._context.glMemoryBarrier(barrier)
 
     @property
-    def id(self) -> int:
-        return self._id
-
-    @property
     def uniform_blocks(self) -> dict[str, GLUniformBlock]:
         return self._uniform_blocks
 
@@ -1255,12 +1251,14 @@ class GLComputeShaderProgram(_AbstractShaderProgram):
     def delete(self) -> None:
         self._context.glDeleteProgram(self._id)
         self._id = None
+        self._handle = None
 
     def __del__(self) -> None:
         if self._id is not None:
             try:
                 self._context.delete_shader_program(self._id)
                 self._id = None
+                self._handle = None
             except (AttributeError, ImportError):
                 pass  # Interpreter is shutting down
 
