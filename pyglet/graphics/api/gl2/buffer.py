@@ -28,7 +28,7 @@ class GL2BufferObject(GLBufferObject):
         super().__init__(context, size, target=target, usage=usage)
 
     def bind_to_index_buffer(self) -> None:
-        self._context.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.id)
+        self._context.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self._handle)
 
 
 class GL2MappedBufferObject(GLMappedBufferObject):
@@ -118,7 +118,7 @@ class GL2IndexedBufferObject(GL2BackedBufferObject):
         )
 
     def bind_to_index_buffer(self) -> None:
-        self._context.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.id)
+        self._context.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self._handle)
 
 
 class GL2UniformBufferObject:

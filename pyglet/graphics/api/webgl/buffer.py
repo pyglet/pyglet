@@ -88,7 +88,7 @@ class WebGLBufferObject(AbstractBuffer):
     This class intentionally treats data as bytes for GPU transfer.
     """
 
-    id: WebGLBuffer | None
+    handle: WebGLBuffer | None
     usage: int
     target: int
 
@@ -112,7 +112,7 @@ class WebGLBufferObject(AbstractBuffer):
         self._context = context
         self._gl = context.gl
 
-        self.id = self._gl.createBuffer()
+        self._handle = self._gl.createBuffer()
         self._allocated = False
         self._data_uploaded = False
 
@@ -123,7 +123,7 @@ class WebGLBufferObject(AbstractBuffer):
         )
 
     def bind(self) -> None:
-        self._gl.bindBuffer(self.target, self.id)
+        self._gl.bindBuffer(self.target, self._handle)
 
     def unbind(self) -> None:
         self._gl.bindBuffer(self.target, None)
@@ -187,18 +187,18 @@ class WebGLBufferObject(AbstractBuffer):
         self._data_uploaded = False
 
     def delete(self) -> None:
-        if self.id is None:
+        if self._handle is None:
             return
-        self._gl.deleteBuffer(self.id)
-        self.id = None
+        self._gl.deleteBuffer(self._handle)
+        self._handle = None
         self._allocated = False
         self._data_uploaded = False
 
     def __del__(self) -> None:
-        if self.id is not None:
+        if self._handle is not None:
             try:
-                self._context.delete_buffer(self.id)
-                self.id = None
+                self._context.delete_buffer(self._handle)
+                self._handle = None
             except (AttributeError, ImportError):
                 pass  # Interpreter is shutting down
 
@@ -211,7 +211,7 @@ class WebGLBufferObject(AbstractBuffer):
             return
 
         # Copy data from old buffer into new buffer, then replace.
-        old_id = self.id
+        old_id = self._handle
         new_id = self._gl.createBuffer()
         copy_size = min(self.size, size) if self._data_uploaded else 0
 
@@ -227,13 +227,13 @@ class WebGLBufferObject(AbstractBuffer):
                 copy_size,
             )
         self._gl.deleteBuffer(old_id)
-        self.id = new_id
+        self._handle = new_id
         self.size = size
         self._allocated = True
         self._data_uploaded = copy_size > 0
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(id={self.id}, size={self.size})"
+        return f"{self.__class__.__name__}(handle={self._handle}, size={self.size})"
 
 
 class WebGLMappedBufferObject(WebGLBufferObject, BaseMappedBufferObject):
@@ -397,7 +397,7 @@ class WebGLIndexedBufferObject(WebGLBackedBufferObject):
         )
 
     def bind_to_index_buffer(self) -> None:
-        self._gl.bindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.id)
+        self._gl.bindBuffer(GL_ELEMENT_ARRAY_BUFFER, self._handle)
 
 
 class WebGLPixelBufferObject(WebGLBufferObject, PixelBuffer):
@@ -462,13 +462,13 @@ class WebGLTransformFeedbackBufferObject(WebGLBufferObject, TransformFeedbackBuf
 
     def bind_base(self, index: int) -> None:
         self._ensure_allocated()
-        self._gl.bindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, index, self.id)
+        self._gl.bindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, index, self._handle)
         self._data_uploaded = True
 
     def bind_range(self, index: int, offset: int, size: int) -> None:
         self._validate_byte_range(offset, size)
         self._ensure_allocated()
-        self._gl.bindBufferRange(GL_TRANSFORM_FEEDBACK_BUFFER, index, self.id, offset, size)
+        self._gl.bindBufferRange(GL_TRANSFORM_FEEDBACK_BUFFER, index, self._handle, offset, size)
         self._data_uploaded = True
 
 
@@ -522,7 +522,7 @@ class WebGLUniformBufferObject(UniformBufferObject):
         return WebGLBufferObject(context, buffer_size, target=GL_UNIFORM_BUFFER)
 
     def _bind_range(self, binding: int, offset: int, size: int) -> None:
-        self._gl.bindBufferRange(GL_UNIFORM_BUFFER, binding, self.buffer.id, offset, size)
+        self._gl.bindBufferRange(GL_UNIFORM_BUFFER, binding, self.buffer.handle, offset, size)
 
 
 class WebGLPersistentBufferObject(BaseMappedBufferObject):

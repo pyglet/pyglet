@@ -13,7 +13,6 @@ from pyglet.util import debug_print
 
 if TYPE_CHECKING:
     from pyglet.config import SurfaceConfig
-    from pyglet.graphics.api.gl import ObjectSpace
     from pyglet.graphics.buffer import BufferRange
     from pyglet.window import Window
 
@@ -34,11 +33,6 @@ class BackendGlobalObject(ABC):  # Temp name for now.
     @property
     def have_context(self) -> bool:
         return self._have_context
-
-    @property
-    @abstractmethod
-    def object_space(self) -> ObjectSpace:
-        ...
 
     @abstractmethod
     def get_surface_context(
@@ -110,10 +104,6 @@ class UnavailableBackendError(GraphicsBackendError):
 class NullBackend(BackendGlobalObject):  # noqa: D101
     def _raise_no_backend(self) -> NoReturn:
         raise UnavailableBackendError
-
-    @property
-    def object_space(self) -> ObjectSpace:
-        self._raise_no_backend()
 
     def get_surface_context(self, window: Window, config: SurfaceConfig,
                             shared: SurfaceContext | None = None) -> SurfaceContext:
@@ -613,61 +603,3 @@ class GraphicsConfig:
     def user_set_attributes(self) -> set[str]:
         """Return a set of attribute names that were explicitly set by the user."""
         return self._user_set_attributes
-
-
-class GraphicsResource(Protocol):  # noqa: D101
-    def delete(self) -> None:
-        ...
-
-
-class ResourceManagement:
-    """A manager to handle the freeing of resources for an API.
-
-    In some graphical API's, the order in which you free resources can be very specific.
-    """
-    managers: list[GraphicsResource]
-    weak_resources: weakref.WeakSet[GraphicsResource]
-
-    def __init__(self) -> None:  # noqa: D107
-        self._func = None
-        self.managers = []
-        self.weak_resources = weakref.WeakSet()
-        atexit.register(self.on_exit_cleanup)
-
-    def set_pre_cleanup_func(self, func: Callable) -> None:
-        """Register a function to be called before cleanup.
-
-        Some API's may need to enforce a sync before cleanup.
-        """
-        self._func = func
-
-    def register_manager(self, resource: GraphicsResource) -> None:
-        """A manager handles multiple resources, these will be called in reverse order on cleanup."""
-        self.managers.append(resource)
-
-    def register_resource(self, resource: GraphicsResource) -> None:
-        """Registers a resource as a weak reference.
-
-        Some resources do not have a manager, but they do need to be freed before others. Keeping them permanently
-        may prevent them from being garbage collected prior to shutdown.
-        """
-        self.weak_resources.add(resource)
-
-    def on_exit_cleanup(self) -> None:
-        """Cleans up all graphical resources that have been registered on application exit."""
-        self.cleanup_all()
-
-    def cleanup_all(self) -> None:
-        """Cleans up all graphical resources that have been registered.
-
-        Weak resources registered are destroyed first.
-
-        Managers are called last, and in reverse order of registered.
-        """
-        if self._func:
-            self._func()
-
-        for resource in self.weak_resources:
-            resource.delete()
-        for resource in reversed(self.managers):
-            resource.delete()

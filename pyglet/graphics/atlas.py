@@ -148,7 +148,7 @@ class TextureAtlas:
 
     def __init__(self, width: int = 2048, height: int = 2048) -> None:
         """Create a Texture Atlas of the given size."""
-        max_texture_size = pyglet.graphics.texture.get_max_texture_size()
+        max_texture_size = pyglet.graphics.api.core.current_context.info.MAX_TEXTURE_SIZE
         width = min(width, max_texture_size)
         height = min(height, max_texture_size)
 
@@ -187,7 +187,7 @@ class TextureBin:
 
     def __init__(self, texture_width: int = 2048, texture_height: int = 2048) -> None:
         """Create a texture bin for holding atlases of the given size."""
-        max_texture_size = pyglet.graphics.texture.get_max_texture_size()
+        max_texture_size = pyglet.graphics.api.core.current_context.info.MAX_TEXTURE_SIZE
         self.texture_width = min(texture_width, max_texture_size)
         self.texture_height = min(texture_height, max_texture_size)
         self.atlases = []
@@ -225,8 +225,8 @@ class TextureArrayBin:
     """
 
     def __init__(self, texture_width: int = 2048, texture_height: int = 2048, max_depth: int | None = None) -> None:
-        max_texture_size = pyglet.graphics.texture.get_max_texture_size()
-        self.max_depth = max_depth or pyglet.graphics.texture.get_max_array_texture_layers()
+        max_texture_size = pyglet.graphics.api.core.current_context.info.MAX_TEXTURE_SIZE
+        self.max_depth = max_depth or pyglet.graphics.api.core.current_context.info.MAX_ARRAY_TEXTURE_LAYERS
         self.texture_width = min(texture_width, max_texture_size)
         self.texture_height = min(texture_height, max_texture_size)
         self.arrays = []

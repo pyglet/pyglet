@@ -314,7 +314,7 @@ class RenderTexture(_TextureRenderTargetBase):
         """
         texture = self.texture
         super().delete()
-        if delete_texture and texture is not None and texture.id is not None:
+        if delete_texture and texture is not None and texture.handle is not None:
             texture.delete()
 
 
@@ -439,5 +439,5 @@ class TextureRenderTarget(_TextureRenderTargetBase):
         finally:
             if self.texture is texture:
                 self.texture = None
-            if not succeeded and texture.id is not None:
+            if not succeeded and texture.handle is not None:
                 texture.delete()

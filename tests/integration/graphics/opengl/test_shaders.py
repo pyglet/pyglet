@@ -718,8 +718,8 @@ def test_transform_feedback_shader_program_varyings_are_linked(test_window):
     link_status = gl.GLint(0)
     tf_count = gl.GLint(0)
     ctx = pyglet.graphics.api.core.current_context
-    ctx.glGetProgramiv(program.id, gl.GL_LINK_STATUS, link_status)
-    ctx.glGetProgramiv(program.id, gl.GL_TRANSFORM_FEEDBACK_VARYINGS, tf_count)
+    ctx.glGetProgramiv(program.handle, gl.GL_LINK_STATUS, link_status)
+    ctx.glGetProgramiv(program.handle, gl.GL_TRANSFORM_FEEDBACK_VARYINGS, tf_count)
     link_status = link_status.value
     tf_count = tf_count.value
 

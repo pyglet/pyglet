@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 import pyglet
 from pyglet.graphics.api.gl import GLuint
+from pyglet.graphics.resource import VertexArrayResource
 
 if TYPE_CHECKING:
     from ctypes import c_uint
@@ -13,20 +14,18 @@ if TYPE_CHECKING:
 __all__ = ['VertexArray']
 
 
-class VertexArray:
+class VertexArray(VertexArrayResource):
     """OpenGL Vertex Array Object."""
     _context: OpenGLSurfaceContext | NullContext
     _id: c_uint
 
     def __init__(self, context: OpenGLSurfaceContext) -> None:
         """Create an instance of a Vertex Array object."""
+        VertexArrayResource.__init__(self)
         self._context = context
         self._id = GLuint()
         self._context.glGenVertexArrays(1, self._id)
-
-    @property
-    def id(self) -> int:
-        return self._id.value
+        self._handle = self._id.value
 
     def bind(self) -> None:
         self._context.glBindVertexArray(self._id)
@@ -37,6 +36,7 @@ class VertexArray:
     def delete(self) -> None:
         self._context.glDeleteVertexArrays(1, self._id)
         self._id = None
+        self._handle = None
 
     __enter__ = bind
 
@@ -46,10 +46,11 @@ class VertexArray:
     def __del__(self) -> None:
         if self._id is not None:
             try:
-                self._context.delete_vao(self.id)
+                self._context.delete_vao(self._handle)
                 self._id = None
+                self._handle = None
             except (ImportError, AttributeError):
                 pass  # Interpreter is shutting down
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(id={self._id.value})"
+        return f"{self.__class__.__name__}(handle={self._handle})"

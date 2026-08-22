@@ -319,7 +319,7 @@ class Emitter(event.EventDispatcher):
             self.dispatch_event('on_animation_end')
 
     def _set_texture(self, texture):
-        if texture.id is not self._texture.id:
+        if texture.key != self._texture.key:
             self._group = self._group.__class__(texture,
                                                 self._group.blend_src,
                                                 self._group.blend_dest,

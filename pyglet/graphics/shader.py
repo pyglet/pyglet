@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Any, Callable, Literal, Protocol, Sequence, ov
 import pyglet
 from pyglet.enums import GeometryMode, GraphicsAPI
 from pyglet.graphics.buffer import UniformBufferRegion
+from pyglet.graphics.resource import GraphicsResource, ShaderKey, ShaderProgramKey
 
 if TYPE_CHECKING:
     from _weakref import CallableProxyType
@@ -86,8 +87,8 @@ class Sampler:
     stages: Sequence[ShaderType] = ("fragment",)
 
 
-class _AbstractShaderProgram(ABC):
-    _id: int | None
+class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
+    key_type = ShaderProgramKey
     _attributes: dict[str, Attribute]
     _uniforms: dict[str, Any]
     _uniform_blocks: dict[str, UniformBlock]
@@ -100,7 +101,7 @@ class _AbstractShaderProgram(ABC):
     _vertex_layouts: dict[tuple[Any, ...], ShaderProgramView]
 
     def __init__(self, *shaders: Shader) -> None:
-        self._id = None
+        GraphicsResource.__init__(self)
 
         # Attribute description
         self._attributes = {}
@@ -118,10 +119,6 @@ class _AbstractShaderProgram(ABC):
 
         # Sampler descriptions
         self._samplers = {}
-
-    @property
-    def id(self) -> int | None:
-        return self._id
 
     @property
     def is_defined(self) -> bool:
@@ -484,7 +481,7 @@ class _AbstractShaderProgram(ABC):
         )
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(id={self.id})"
+        return f"{self.__class__.__name__}(handle={self._handle})"
 
 
 class ShaderProgram(_AbstractShaderProgram):
@@ -510,6 +507,7 @@ class ShaderProgramView(ShaderProgram):
 
     def __init__(self, program: _AbstractShaderProgram, attributes: dict[str, Attribute],
                  instances: dict[str, int]) -> None:
+        GraphicsResource.__init__(self, key=program.key)
         self._program = program
         self._attributes = attributes
         self._instance_attributes = instances.copy()
@@ -526,6 +524,14 @@ class ShaderProgramView(ShaderProgram):
     def program(self) -> _AbstractShaderProgram:
         """The ShaderProgram that owns this layout."""
         return self._program
+
+    @property
+    def handle(self) -> Any:
+        """Backend handle of the program this view represents."""
+        return self._program.handle
+
+    def delete(self) -> None:
+        """Release this view without affecting its owning shader program."""
 
     @property
     def attributes(self) -> dict[str, Attribute]:
@@ -660,10 +666,6 @@ class TransformFeedbackShaderProgram(ShaderProgram):
         msg = f"{self.__class__.__name__} is backend-specific and must be provided by the active backend."
         raise NotImplementedError(msg)
 
-    @property
-    def id(self) -> int:
-        return self._id
-
 class ShaderSource(abc.ABC):
     """String source of shader used during load of a Shader instance."""
 
@@ -672,7 +674,7 @@ class ShaderSource(abc.ABC):
         """Return the validated shader source."""
 
 
-class _AbstractShader(abc.ABC):
+class _AbstractShader(GraphicsResource[Any, ShaderKey], abc.ABC):
     """Graphics shader.
 
     Shader objects may be compiled on instantiation if OpenGL or already compiled in Vulkan.
@@ -680,9 +682,11 @@ class _AbstractShader(abc.ABC):
     """
     _src_str: str
     type: ShaderType
+    key_type = ShaderKey
 
     def __init__(self, source_string: str, shader_type: ShaderType) -> None:
         """Initialize a shader type."""
+        GraphicsResource.__init__(self)
         self._src_str = source_string
         self.type = shader_type
 
@@ -1209,7 +1213,7 @@ class UniformBlock:
 
     def bind(self, ubo: UniformBufferObject) -> None:
         """Bind a UBO to the binding point of this uniform block."""
-        self._bind_buffer_base(self.binding, ubo.buffer.id)
+        self._bind_buffer_base(self.binding, ubo.buffer.handle)
 
     def create_ubo(
         self,
@@ -1305,7 +1309,7 @@ class UniformBlock:
         raise NotImplementedError
 
     def __repr__(self) -> str:
-        return (f"{self.__class__.__name__}(program={self.program.id}, location={self.index}, size={self.size}, "
+        return (f"{self.__class__.__name__}(program={self.program.handle}, location={self.index}, size={self.size}, "
                 f"binding={self.binding})")
 
 
