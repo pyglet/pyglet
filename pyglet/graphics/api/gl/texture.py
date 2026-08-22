@@ -41,10 +41,46 @@ from pyglet.graphics.api.gl.gl import (
     GL_UNPACK_ROW_LENGTH,
     GL_TEXTURE_2D_ARRAY,  # noqa: F401
     GL_TRIANGLES,  # noqa: F401
-    GL_RGBA8,  # noqa: F401
+    # Sized internal formats resolved dynamically by _get_internal_format:
     GL_R8,  # noqa: F401
+    GL_R16,  # noqa: F401
     GL_RG8,  # noqa: F401
+    GL_RG16,  # noqa: F401
     GL_RGB8,  # noqa: F401
+    GL_RGB16,  # noqa: F401
+    GL_RGBA8,  # noqa: F401
+    GL_RGBA16,  # noqa: F401
+    GL_R16F,  # noqa: F401
+    GL_R32F,  # noqa: F401
+    GL_RG16F,  # noqa: F401
+    GL_RG32F,  # noqa: F401
+    GL_RGB16F,  # noqa: F401
+    GL_RGB32F,  # noqa: F401
+    GL_RGBA16F,  # noqa: F401
+    GL_R8I,  # noqa: F401
+    GL_R8UI,  # noqa: F401
+    GL_R16I,  # noqa: F401
+    GL_R16UI,  # noqa: F401
+    GL_R32I,  # noqa: F401
+    GL_R32UI,  # noqa: F401
+    GL_RG8I,  # noqa: F401
+    GL_RG8UI,  # noqa: F401
+    GL_RG16I,  # noqa: F401
+    GL_RG16UI,  # noqa: F401
+    GL_RG32I,  # noqa: F401
+    GL_RG32UI,  # noqa: F401
+    GL_RGB8I,  # noqa: F401
+    GL_RGB8UI,  # noqa: F401
+    GL_RGB16I,  # noqa: F401
+    GL_RGB16UI,  # noqa: F401
+    GL_RGB32I,  # noqa: F401
+    GL_RGB32UI,  # noqa: F401
+    GL_RGBA8I,  # noqa: F401
+    GL_RGBA8UI,  # noqa: F401
+    GL_RGBA16I,  # noqa: F401
+    GL_RGBA16UI,  # noqa: F401
+    GL_RGBA32I,  # noqa: F401
+    GL_RGBA32UI,  # noqa: F401
     GL_BYTE,  # noqa: F401
     GL_INT,  # noqa: F401
     GL_DEPTH_COMPONENT16,  # noqa: F401

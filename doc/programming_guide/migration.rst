@@ -442,6 +442,7 @@ Additional changes not covered above:
   ``Window.set_mouse_visible`` was renamed to
   ``Window.set_mouse_cursor_visible``, and ``Window.set_mouse_platform_visible``
   was renamed to ``Window.set_mouse_cursor_platform_visible``.
+  ``MouseCursor.gl_drawable`` was renamed to ``MouseCursor.api_drawable``.
 
 * ``pyglet.input``:
   Controllers now dispatch separate events for left/right sticks and
