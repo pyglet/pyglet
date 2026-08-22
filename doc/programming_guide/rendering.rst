@@ -550,7 +550,7 @@ a texture requires the following before drawing::
 
     from pyglet.graphics.api.gl import *
     glActiveTexture(GL_TEXTURE0)
-    glBindTexture(texture.target, texture.id)
+    glBindTexture(texture.target, texture.handle)
 
 With a :py:class:`~pyglet.graphics.Group` these state changes can be
 encapsulated and associated with the vertex lists they affect.
@@ -566,7 +566,7 @@ and `Group.unset_state` methods to perform the required state changes::
         def set_state(self):
             self.program.use()
             glActiveTexture(GL_TEXTURE0)
-            glBindTexture(self.texture.target, self.texture.id)
+            glBindTexture(self.texture.target, self.texture.handle)
 
         def unset_state(self):
             self.program.stop()

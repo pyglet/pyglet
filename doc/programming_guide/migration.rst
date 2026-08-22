@@ -368,19 +368,19 @@ Previously to apply a state, your group might look like this::
             self.texture = texture
 
         def set_state(self):
-            glBindTexture(GL_TEXTURE_2D, self.texture.id)
+            glBindTexture(GL_TEXTURE_2D, self.texture.handle)
 
         def unset_state(self):
             # not required
 
         def __eq__(self, other):
             return (self.__class__ is other.__class__ and
-                    self.texture.id == other.texture.id and
+                    self.texture.key == other.texture.key and
                     self.texture.target == other.texture.target and
                     self.parent == other.parent)
 
         def __hash__(self):
-            return hash((self.texture.id, self.texture.target))
+            return hash((self.texture.key, self.texture.target))
 
 That same group with Pyglet 3.0 look like this::
 
@@ -421,6 +421,14 @@ Additional changes not covered above:
 * ``pyglet.graphics.Texture``:
   ``Texture.blit_into`` was renamed to ``Texture.upload`` and
   ``Texture.get_image_data`` was renamed to ``Texture.fetch`` to better reflect that these involve GPU requests.
+
+* Graphics resource identities:
+  Backend-created resources such as textures, buffers, shaders, shader programs,
+  framebuffers, renderbuffers, and vertex arrays now separate their backend
+  ``handle`` from their stable pyglet ``key``. Use ``resource.handle`` when
+  passing a resource to a backend API, and ``resource.key`` for equality,
+  hashing, batching, or cache keys. The read-only ``resource.id`` alias is
+  deprecated; replace it with ``handle``.
 
 * Fonts and text:
   ``pyglet.font.manager`` now supports custom font-name callbacks,

@@ -389,7 +389,7 @@ A :py:class:`~pyglet.graphics.texture.Texture` has a ``target`` and ``id``:
 ::
 
     from pyglet.graphics.api.gl import *
-    glBindTexture(texture.target, texture.id)
+    glBindTexture(texture.target, texture.handle)
 
 .. _OpenGL Programming Guide: http://www.opengl-redbook.com/
 
