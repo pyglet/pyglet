@@ -129,7 +129,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
                  anchor_x: AnchorX = 'left', anchor_y: AnchorY = 'bottom', rotation: float = 0, multiline: bool = False,
                  dpi: float | None = None, batch: Batch | None = None, group: Group | None = None,
                  program: ShaderProgram | None = None, decoration_shader: ShaderProgram | None = None,
-                 effect_shader: ShaderProgram | None = None, wrap_lines: bool = True) -> None:
+                 effect_shader: ShaderProgram | None = None, wrap_lines: bool = True,
+                 depth_sorting: bool = False) -> None:
 
         if width is None or height is None:
             msg = "Invalid size. IncrementalTextLayout width or height cannot be None."
@@ -156,7 +157,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
         super().__init__(document, x, y, z, width, height, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
                          program or get_default_scrollable_layout_shader(), decoration_shader, effect_shader,
-                         wrap_lines=wrap_lines)
+                         wrap_lines=wrap_lines, depth_sorting=depth_sorting)
 
     def _update_scissor_area(self) -> None:
         area = (self.left, self.bottom, self._width, self._height)

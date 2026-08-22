@@ -46,7 +46,8 @@ class ImageElement(pyglet.text.document.InlineElement):
     def place(self, layout: TextLayout, x: float, y: float, z: float, line_x: float, line_y: float, rotation: float,
               visible: bool, anchor_x: float, anchor_y: float) -> None:
         program = pyglet.text.layout.get_default_image_layout_shader()
-        group = _InlineElementGroup(self.image.get_texture(), program, 0, layout.group)
+        group = _InlineElementGroup(self.image.get_texture(), program, 3 if layout.depth_sorting else 0, layout.group)
+        layout._set_depth_test(group)  # noqa: SLF001
         x1 = line_x
         y1 = line_y + self.descent
         x2 = line_x + self.width
@@ -55,7 +56,7 @@ class ImageElement(pyglet.text.document.InlineElement):
         vertex_list = program.vertex_list_indexed(4, GeometryMode.TRIANGLES, [0, 1, 2, 0, 2, 3],
                                                   layout.batch, group,
                                                   position=(x1, y1, z, x2, y1, z, x2, y2, z, x1, y2, z),
-                                                  translation=(x, y, z) * 4,
+                                                  translation=(x, y, z, layout.get_depth_offset(0)) * 4,
                                                   tex_coords=self.image.tex_coords,
                                                   visible=(visible,) * 4,
                                                   rotation=(rotation,) * 4,
@@ -67,9 +68,9 @@ class ImageElement(pyglet.text.document.InlineElement):
         self.vertex_lists[layout] = vertex_list
 
     def update_translation(self, x: float, y: float, z: float) -> None:
-        translation = (x, y, z)
         for _vertex_list in self.vertex_lists.values():
-            _vertex_list.translation[:] = translation * _vertex_list.count
+            depth_offset = _vertex_list.translation[3]
+            _vertex_list.translation[:] = (x, y, z, depth_offset) * _vertex_list.count
 
     def update_color(self, color: list[int]) -> None:
         # No color blending in shader. Optional.
@@ -119,7 +120,7 @@ class HorizontalRuleElement(pyglet.text.document.InlineElement):
             layout.batch,
             layout.foreground_decoration_group,
             position=(line_x, line_y, z, right, line_y, z),
-            translation=(x, y, z) * 2,
+            translation=(x, y, z, layout.get_depth_offset(1)) * 2,
             colors=self.color * 2,
             visible=(visible,) * 2,
             rotation=(rotation,) * 2,
@@ -128,9 +129,9 @@ class HorizontalRuleElement(pyglet.text.document.InlineElement):
         self.vertex_lists[layout] = vertex_list
 
     def update_translation(self, x: float, y: float, z: float) -> None:
-        translation = (x, y, z)
         for vertex_list in self.vertex_lists.values():
-            vertex_list.translation[:] = translation * vertex_list.count
+            depth_offset = vertex_list.translation[3]
+            vertex_list.translation[:] = (x, y, z, depth_offset) * vertex_list.count
 
     def update_color(self, color: list[int]) -> None:
         self.color = tuple(color[:4])
