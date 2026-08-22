@@ -1,6 +1,13 @@
+from dataclasses import dataclass
+
 import pytest
 
-from pyglet.graphics.resource import BufferKey, GraphicsResource, ShaderKey, ShaderProgramKey, TextureKey
+from pyglet.graphics.resource import BufferKey, GraphicsResource, ResourceKey, ShaderKey, ShaderProgramKey, TextureKey
+
+
+@dataclass(frozen=True, slots=True)
+class SharedTestKey(ResourceKey):
+    pass
 
 
 class TextureResource(GraphicsResource[object, TextureKey]):
@@ -35,15 +42,15 @@ def test_resource_key_is_hashable_when_handle_is_not() -> None:
     assert resource.handle == []
 
 
-def test_sibling_resource_classes_have_independent_key_counters() -> None:
-    class FirstResource(GraphicsResource[object, TextureKey]):
-        key_type = TextureKey
+def test_resources_with_the_same_key_type_have_unique_keys() -> None:
+    class FirstResource(GraphicsResource[object, SharedTestKey]):
+        key_type = SharedTestKey
 
         def delete(self) -> None:
             self._handle = None
 
-    class SecondResource(GraphicsResource[object, TextureKey]):
-        key_type = TextureKey
+    class SecondResource(GraphicsResource[object, SharedTestKey]):
+        key_type = SharedTestKey
 
         def delete(self) -> None:
             self._handle = None
@@ -52,9 +59,9 @@ def test_sibling_resource_classes_have_independent_key_counters() -> None:
     second = FirstResource()
     sibling = SecondResource()
 
-    assert first.key == TextureKey(1)
-    assert second.key == TextureKey(2)
-    assert sibling.key == TextureKey(1)
+    assert first.key == SharedTestKey(1)
+    assert second.key == SharedTestKey(2)
+    assert sibling.key == SharedTestKey(3)
 
 
 def test_resource_key_types_do_not_compare_equal() -> None:

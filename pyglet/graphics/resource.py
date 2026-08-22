@@ -5,7 +5,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from itertools import count
-from typing import Any, ClassVar, Generic, TypeVar, cast
+from typing import Any, ClassVar, Generic, TypeVar
 
 
 @dataclass(frozen=True, slots=True)
@@ -58,20 +58,21 @@ class GraphicsResource(ABC, Generic[HandleT, KeyT]):
     """A graphics resource with separate backend and pyglet identities."""
 
     key_type: ClassVar[type[ResourceKey]]
-    _key_counter: ClassVar[count[int]]
+    _key_counters: ClassVar[dict[type[ResourceKey], count[int]]] = {}
     _handle: HandleT | None
     _key: KeyT
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
-        cls._key_counter = count(1)
 
     def __init__(self, *, key: KeyT | None = None) -> None:
         """Create a resource identity."""
         try:
             existing_key = object.__getattribute__(self, "_key")
         except AttributeError:
-            self._key = key if key is not None else self.key_type(next(self._key_counter))
+            key_type = self.key_type
+            counter = self._key_counters.setdefault(key_type, count(1))
+            self._key = key if key is not None else key_type(next(counter))
         else:
             if key is not None and key != existing_key:
                 raise ValueError("A graphics resource key cannot be replaced.")

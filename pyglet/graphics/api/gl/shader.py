@@ -66,7 +66,7 @@ if TYPE_CHECKING:
 _debug_api_shaders = pyglet.options.debug_api_shaders
 _debug_api_shader_print = debug_print('debug_api_shaders')
 
-GLDataType = Union[Type[gl.GLint], Type[gl.GLfloat], Type[gl.GLboolean], int]
+GLDataType = Union[Type[gl.GLint], Type[gl.GLuint], Type[gl.GLfloat], Type[gl.GLboolean], int]
 GLFunc = Callable
 
 _c_types: dict[int, CType] = {
