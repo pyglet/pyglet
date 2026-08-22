@@ -68,13 +68,17 @@ class GraphicsResource(ABC, Generic[HandleT, KeyT]):
 
     def __init__(self, *, key: KeyT | None = None) -> None:
         """Create a resource identity."""
-        if hasattr(self, "_key"):
-            if key is not None and key != self._key:
-                raise ValueError("A graphics resource key cannot be replaced.")
+        try:
+            existing_key = object.__getattribute__(self, "_key")
+        except AttributeError:
+            self._key = key if key is not None else self.key_type(next(self._key_counter))
         else:
-            self._key = key if key is not None else cast("KeyT", self.key_type(next(self._key_counter)))
+            if key is not None and key != existing_key:
+                raise ValueError("A graphics resource key cannot be replaced.")
 
-        if not hasattr(self, "_handle"):
+        try:
+            object.__getattribute__(self, "_handle")
+        except AttributeError:
             self._handle = None
 
     @property
