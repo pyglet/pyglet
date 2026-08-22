@@ -218,6 +218,14 @@ class GLInstanceVertexList(GLVertexList):
     def create_instance(self, **attributes: Any) -> VertexInstance:
         return self.instance_bucket.create_instance(**attributes)
 
+    def create_instances(self, count: int, **attributes: Any) -> list[VertexInstance]:
+        """Create several instances with a single instance-buffer upload."""
+        return self.instance_bucket.create_instances(count, **attributes)
+
+    def set_instance_attribute_data(self, name: str, data: Any, start: int = 0, count: int | None = None) -> None:
+        """Replace one attribute over a contiguous range of instances."""
+        self.instance_bucket.set_instance_attribute_data(name, data, start, count)
+
     @property
     def instance_count(self) -> int:
         """Number of active instances in this vertex list."""
@@ -362,6 +370,14 @@ class GLInstanceIndexedVertexList(GLVertexList):
 
     def create_instance(self, **attributes: Any) -> VertexInstance:
         return self.instance_bucket.create_instance(**attributes)
+
+    def create_instances(self, count: int, **attributes: Any) -> list[VertexInstance]:
+        """Create several instances with a single instance-buffer upload."""
+        return self.instance_bucket.create_instances(count, **attributes)
+
+    def set_instance_attribute_data(self, name: str, data: Any, start: int = 0, count: int | None = None) -> None:
+        """Replace one attribute over a contiguous range of instances."""
+        self.instance_bucket.set_instance_attribute_data(name, data, start, count)
 
     @property
     def instance_count(self) -> int:

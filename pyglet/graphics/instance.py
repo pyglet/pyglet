@@ -111,6 +111,31 @@ class InstanceBucket:
             self.stream.set_region(slot, 1, attributes)
         return v_instance
 
+    def create_instances(self, count: int, **attributes: Any) -> list[VertexInstance]:
+        """Create several instances with a single instance-buffer upload."""
+        if count < 0:
+            msg = f"Instance count must be non-negative. Received: {count}"
+            raise ValueError(msg)
+        if count == 0:
+            return []
+
+        start = self.allocator.count
+        instances = []
+        for _ in range(count):
+            instance = self._InstanceCls(weakref.ref(self), slot=-1)
+            instance.slot = self.allocator.add(instance)
+            instances.append(instance)
+
+        self.stream.alloc(count)
+        if attributes:
+            self.stream.set_region(start, count, attributes)
+        return instances
+
+    def set_instance_attribute_data(self, name: str, data: Any, start: int = 0, count: int | None = None) -> None:
+        """Replace one attribute over a contiguous range of instances."""
+        count = self.allocator.count - start if count is None else count
+        self.stream.set_attribute_region(name, start, count, data)
+
     def get_instance_by_index(self, index: int) -> VertexInstance | None:
         """Return the instance currently stored at ``index`` or ``None``."""
         return self.allocator.slot_to_inst.get(index)
