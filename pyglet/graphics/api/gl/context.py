@@ -348,6 +348,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
     def _get_uniform_func_tables(self):
         _uniform_getters: dict[GLDataType, Callable] = {
             gl.GLint: self.glGetUniformiv,
+            gl.GLuint: self.glGetUniformuiv,
             gl.GLfloat: self.glGetUniformfv,
             gl.GLboolean: self.glGetUniformiv,
         }
@@ -363,6 +364,11 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
             gl.GL_INT_VEC2: (gl.GLint, self.glUniform2iv, self.glProgramUniform2iv, 2),
             gl.GL_INT_VEC3: (gl.GLint, self.glUniform3iv, self.glProgramUniform3iv, 3),
             gl.GL_INT_VEC4: (gl.GLint, self.glUniform4iv, self.glProgramUniform4iv, 4),
+
+            gl.GL_UNSIGNED_INT: (gl.GLuint, self.glUniform1uiv, self.glProgramUniform1uiv, 1),
+            gl.GL_UNSIGNED_INT_VEC2: (gl.GLuint, self.glUniform2uiv, self.glProgramUniform2uiv, 2),
+            gl.GL_UNSIGNED_INT_VEC3: (gl.GLuint, self.glUniform3uiv, self.glProgramUniform3uiv, 3),
+            gl.GL_UNSIGNED_INT_VEC4: (gl.GLuint, self.glUniform4uiv, self.glProgramUniform4uiv, 4),
 
             gl.GL_FLOAT: (gl.GLfloat, self.glUniform1fv, self.glProgramUniform1fv, 1),
             gl.GL_FLOAT_VEC2: (gl.GLfloat, self.glUniform2fv, self.glProgramUniform2fv, 2),
