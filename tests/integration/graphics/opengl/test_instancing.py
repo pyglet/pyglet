@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import ctypes
 import random
 
 import pytest
-import ctypes
 
-from tests.annotations import skip_graphics_api, GraphicsAPIGroups
+from pyglet.enums import GeometryMode
+from tests.annotations import GraphicsAPIGroups, skip_graphics_api
 
 
 pytestmark = [skip_graphics_api(GraphicsAPIGroups.GL2)]
@@ -122,7 +123,66 @@ def test_instancing_count(vlist_factory):
     assert vlist.instance_bucket.instance_count == instance_count  # the initial list
 
 
+def test_bulk_instance_collection(vlist_factory):
+    """Ensure bulk collections manage their data, count, and storage lifetime."""
+    vlist = vlist_factory((0.0,) * 12)
+    collection = vlist.create_instance_collection(
+        3,
+        capacity=8,
+        colors=(1.0, 0.0, 0.0, 1.0) * 3,
+        translate=(0.0, 0.0, 0.0, 10.0, 0.0, 0.0, 20.0, 0.0, 0.0),
+    )
+
+    assert vlist.instance_bucket.stream.allocator.get_allocated_regions() == ([0], [8])
+    assert collection.count == 3
+    assert collection.capacity == 8
+    assert len(collection) == 3
+    assert vlist.instance_count == 3
+
+    collection.set_count(1)
+    assert vlist.instance_count == 1
+    assert collection.capacity == 8
+
+    collection.set_count(3)
+    collection.set(
+        start=1,
+        count=2,
+        translate=(11.0, 0.0, 0.0, 21.0, 0.0, 0.0),
+    )
+    assert tuple(collection.get("translate")) == (0.0, 0.0, 0.0, 11.0, 0.0, 0.0, 21.0, 0.0, 0.0)
+
+    collection.insert(
+        1,
+        colors=(0.0, 1.0, 0.0, 1.0),
+        translate=(5.0, 0.0, 0.0),
+    )
+    assert collection.count == 4
+    assert tuple(collection.get("translate")) == (
+        0.0, 0.0, 0.0,
+        5.0, 0.0, 0.0,
+        11.0, 0.0, 0.0,
+        21.0, 0.0, 0.0,
+    )
+
+    collection.remove(2)
+    assert collection.count == 3
+    assert tuple(collection.get("translate")) == (
+        0.0, 0.0, 0.0,
+        5.0, 0.0, 0.0,
+        21.0, 0.0, 0.0,
+    )
+    vlist.draw(GeometryMode.TRIANGLES)
+
+    with pytest.raises(RuntimeError):
+        vlist.create_instance(colors=(1.0, 1.0, 1.0, 1.0), translate=(0.0, 0.0, 0.0))
+
+    collection.delete()
+    assert vlist.instance_count == 0
+    assert vlist.instance_bucket.stream.allocator.get_allocated_regions() == ([], [])
+
+
 def test_get_instance_by_index_non_indexed(vlist_non_indexed_factory):
+    """Ensure non-indexed lists maintain instance lookup after deletion."""
     vlist = vlist_non_indexed_factory(
         (
             0.0, 0.0, 0.0,
@@ -155,6 +215,7 @@ def test_get_instance_by_index_non_indexed(vlist_non_indexed_factory):
 
 
 def test_get_instance_by_index_indexed(vlist_factory):
+    """Ensure indexed lists maintain instance lookup after deletion."""
     vlist = vlist_factory((0.0,) * 12)
 
     inst0 = vlist.create_instance(colors=(1, 0, 0, 1), translate=(0, 0, 0))
@@ -188,6 +249,7 @@ def _assert_instance_order(vlist, expected) -> None:
 
 
 def test_instance_reorder_helpers_non_indexed(vlist_non_indexed_factory):
+    """Ensure non-indexed instance ordering helpers preserve requested order."""
     vlist = vlist_non_indexed_factory(
         (
             0.0, 0.0, 0.0,
@@ -226,6 +288,7 @@ def test_instance_reorder_helpers_non_indexed(vlist_non_indexed_factory):
 
 
 def test_instance_reorder_helpers_indexed(vlist_factory):
+    """Ensure indexed instance ordering helpers preserve requested order."""
     vlist = vlist_factory((0.0,) * 12)
 
     inst_a = vlist.create_instance(colors=(1, 0, 0, 1), translate=(0, 0, 0))
@@ -251,15 +314,23 @@ def test_instance_reorder_helpers_indexed(vlist_factory):
     _assert_instance_order(vlist, [inst_b, inst_a, inst_d, inst_c])
 
 
-def test_instanced_indexed_migrate_moves_instances(shader_program, vlist_factory):
+def test_batch_migrate_instanced_indexed_vertex_list(shader_program, vlist_factory):
+    """Ensure batch migration preserves indexed geometry and instance data."""
     from pyglet.graphics import Batch, ShaderGroup
 
     source_batch = Batch()
     target_batch = Batch()
     source_group = ShaderGroup(program=shader_program)
     target_group = ShaderGroup(program=shader_program)
+    source_vertices = (
+        0.0, 0.0, 0.0,
+        1.0, 0.0, 0.0,
+        1.0, 1.0, 0.0,
+        0.0, 1.0, 0.0,
+    )
+    source_indices = (0, 1, 2, 0, 2, 3)
 
-    source = vlist_factory((0.0,) * 12, batch=source_batch, group=source_group)
+    source = vlist_factory(source_vertices, source_indices, batch=source_batch, group=source_group)
     target = vlist_factory((1.0,) * 12, batch=target_batch, group=target_group)
 
     old_domain = source.domain
@@ -268,26 +339,39 @@ def test_instanced_indexed_migrate_moves_instances(shader_program, vlist_factory
     inst0 = source.create_instance(colors=(1, 0, 0, 1), translate=(0, 0, 0))
     inst1 = source.create_instance(colors=(0, 1, 0, 1), translate=(5, 0, 0))
 
-    source.migrate(target.domain, target.group)
+    source_batch.migrate(source, GeometryMode.TRIANGLES, target_group, target_batch)
 
     assert source.domain is target.domain
+    assert source.group is target_group
+    assert tuple(source.position[:]) == pytest.approx(source_vertices)
+    assert tuple(source.indices) == source_indices
     assert source.instance_bucket is not old_bucket
     assert source.instance_bucket.instance_count == 2
     assert old_bucket.instance_count == 0
+    assert old_bucket.stream.allocator.get_allocated_regions() == ([], [])
+    assert source.instance_bucket.stream.allocator.get_allocated_regions() == ([0], [2])
     assert source.get_instance_by_index(0) is inst0
     assert source.get_instance_by_index(1) is inst1
     assert inst0.bucket is source.instance_bucket
     assert inst1.bucket is source.instance_bucket
+    assert tuple(inst0.colors[:]) == pytest.approx((1, 0, 0, 1))
+    assert tuple(inst0.translate[:]) == pytest.approx((0, 0, 0))
+    assert tuple(inst1.colors[:]) == pytest.approx((0, 1, 0, 1))
+    assert tuple(inst1.translate[:]) == pytest.approx((5, 0, 0))
     assert source.domain is not old_domain
+    assert source.domain._instance_map[(source.index_start, source.index_count)] is source.instance_bucket
+    source.draw(GeometryMode.TRIANGLES)
 
 
 def test_instanced_indexed_vertex_list_delete_clears_instances(vlist_factory):
+    """Ensure deleting an indexed list releases all of its instance storage."""
     vlist = vlist_factory((0.0,) * 12)
 
     inst0 = vlist.create_instance(colors=(1, 0, 0, 1), translate=(0, 0, 0))
     inst1 = vlist.create_instance(colors=(0, 1, 0, 1), translate=(10, 0, 0))
 
     assert vlist.instance_bucket.instance_count == 2
+    assert vlist.instance_bucket.stream.allocator.get_allocated_regions() == ([0], [2])
 
     vlist.delete()
 
@@ -297,9 +381,29 @@ def test_instanced_indexed_vertex_list_delete_clears_instances(vlist_factory):
     assert vlist.get_instance_index(inst1) is None
     assert inst0.slot == -1
     assert inst1.slot == -1
+    assert vlist.instance_bucket.stream.allocator.get_allocated_regions() == ([], [])
+
+
+def test_instanced_nonindexed_vertex_list_delete_releases_instance_range(vlist_non_indexed_factory):
+    """Ensure deleting a non-indexed list releases its instance stream range."""
+    vlist = vlist_non_indexed_factory((0.0,) * 9)
+    vlist.create_instances(
+        3,
+        colors=(1.0, 1.0, 1.0, 1.0) * 3,
+        translate=(0.0, 0.0, 0.0) * 3,
+    )
+
+    allocator = vlist.instance_bucket.stream.allocator
+    assert allocator.get_allocated_regions() == ([0], [3])
+    vlist.draw(GeometryMode.TRIANGLES)
+
+    vlist.delete()
+
+    assert allocator.get_allocated_regions() == ([], [])
 
 
 def test_instanced_vertex_list_migrate_new_domain_and_group(shader_program, vlist_non_indexed_factory):
+    """Ensure migration moves non-indexed geometry and instances to a new domain."""
     from pyglet.enums import GeometryMode
     from pyglet.graphics import Batch, ShaderGroup
 
@@ -317,6 +421,8 @@ def test_instanced_vertex_list_migrate_new_domain_and_group(shader_program, vlis
     target = vlist_non_indexed_factory(verts, batch=target_batch, group=target_group)
 
     old_domain = source.domain
+    old_instance_bucket = source.instance_bucket
+    instance = source.create_instance(colors=(1.0, 0.0, 0.0, 1.0), translate=(5.0, 0.0, 0.0))
 
     source_batch.migrate(source, GeometryMode.TRIANGLES, target_group, target_batch)
 
@@ -326,9 +432,16 @@ def test_instanced_vertex_list_migrate_new_domain_and_group(shader_program, vlis
     assert source.bucket is source.domain.get_drawable_bucket(target_group)
     assert (source.start, source.count) in source.bucket.ranges
     assert old_domain.get_drawable_bucket(source_group) is None
+    assert source.instance_bucket is not old_instance_bucket
+    assert old_instance_bucket.stream.allocator.get_allocated_regions() == ([], [])
+    assert source.instance_bucket.stream.allocator.get_allocated_regions() == ([0], [1])
+    assert instance.bucket is source.instance_bucket
+    assert source.domain._instance_map[(source.start, source.count)] is source.instance_bucket
+    source.draw(GeometryMode.TRIANGLES)
 
 
 def test_instanced_vertex_list_migrate_new_group_same_domain(shader_program, vlist_non_indexed_factory):
+    """Ensure changing groups retains non-indexed instance storage in its domain."""
     from pyglet.enums import GeometryMode
     from pyglet.graphics import Batch, ShaderGroup
 
@@ -395,6 +508,7 @@ def test_instance_deletion(shader_program, vlist_factory):
         instances.append(vlist.create_instance(colors=(1, 1, 1, 1), translate=(100 * i, 100, 0)))
 
     assert [inst.slot for inst in instances] == list(range(10))
+    assert vlist.instance_bucket.stream.allocator.get_allocated_regions() == ([0], [10])
 
     last_instance = instances[-1]
 
@@ -408,3 +522,4 @@ def test_instance_deletion(shader_program, vlist_factory):
 
     # Last instance should move to fill the spot.
     assert last_instance.slot == 5
+    assert vlist.instance_bucket.stream.allocator.get_allocated_regions() == ([0], [9])
