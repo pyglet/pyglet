@@ -520,7 +520,7 @@ class _CameraViewBase:
 
     def get_group_scissor_area(self) -> ScissorProtocol | None:
         """Resolve effective scissor object for group camera scopes."""
-        if self._camera._resolve_scissor_area(self) is None:  # noqa: SLF001
+        if not self._camera._has_scissor_in_chain(self):  # noqa: SLF001
             return None
         if self._group_scissor is None:
             self._group_scissor = _ResolvedGroupScissor(self)
@@ -804,6 +804,16 @@ class BaseCamera(Generic[ViewT]):
         for scoped_view in reversed(chain):
             scissor = self._intersect_scissor_areas(scissor, scoped_view.scissor_area)
         return scissor
+
+    @staticmethod
+    def _has_scissor_in_chain(view: _CameraViewBase) -> bool:
+        """Return whether a view or any ancestor supplies scissor clipping."""
+        current: _CameraViewBase | None = view
+        while current is not None:
+            if current.scissor is not None:
+                return True
+            current = current.parent
+        return False
 
     def _apply_cpu_data(
         self,

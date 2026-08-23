@@ -165,11 +165,14 @@ class Group:
                 begins and ends its drawing scope, and may provide a scissor
                 area for this group.
         """
-        self.set_state(CameraScopeState(camera))
         if isinstance(camera, CameraScissorProviderProtocol):
             scissor = camera.get_group_scissor_area()
-            if scissor is not None:
-                self.set_state(ScissorState(scissor, owned_by_camera=True))
+        else:
+            scissor = None
+
+        self.set_state(CameraScopeState(camera, scissor_managed=scissor is not None))
+        if scissor is not None:
+            self.set_state(ScissorState(scissor, owned_by_camera=True))
 
     def set_blend(self, blend_src: BlendFactor, blend_dst: BlendFactor, blend_op: BlendOp = BlendOp.ADD) -> None:
         """Set the blend state.
@@ -502,7 +505,7 @@ class DrawContext(Generic[SurfaceContextT, BackendContextT]):
             return self.scissor_stack[-1]
         return None
 
-    def apply_camera_scope(self, *, commit: bool = True) -> None:
+    def apply_camera_scope(self, *, commit: bool = True, apply_scissor: bool = True) -> None:
         if not self.camera_stack:
             return
         camera = self.active_camera
@@ -511,7 +514,8 @@ class DrawContext(Generic[SurfaceContextT, BackendContextT]):
         camera.begin(draw_context=self, commit=commit)
         self._applied_camera = camera
         self.apply_viewport()
-        self.apply_scissor()
+        if apply_scissor:
+            self.apply_scissor()
 
     def apply_viewport(self) -> None:
         viewport_state = self.active_viewport
@@ -994,32 +998,31 @@ class _BucketBatch(Batch):
             if not group.visible:
                 return draw_list
 
-            is_drawable = False
             for domain_key, domain in self._domain_registry.items():
-                if domain.is_empty or not domain.get_drawable_bucket(group):
+                if domain.is_empty:
                     self._empty_domains.add(domain_key)
                     continue
-                is_drawable = True
-                break
 
-            if not is_drawable and not self.group_children.get(group):
+                bucket = domain.get_drawable_bucket(group)
+                if bucket:
+                    draw_list.append((domain, domain_key.mode, group))
+                else:
+                    self._empty_domains.add(domain_key)
+
+            children = self.group_children.get(group, [])
+            if not draw_list and not children:
                 self._cleanup_groups(group)
                 return []
 
-            if is_drawable:
-                for domain_key, domain in self._domain_registry.items():
-                    bucket = domain.get_drawable_bucket(group)
-                    if not bucket:
-                        continue
-
-                    draw_list.append((domain, domain_key.mode, group))
-
-            children = self.group_children.get(group, [])
-            for child in sorted(children):
+            if len(children) <= 1:
+                ordered_children = children
+            else:
+                ordered_children = sorted(children)
+            for child in ordered_children:
                 if child.visible:
                     draw_list.extend(visit(child))
 
-            if children or is_drawable:
+            if draw_list:
                 return [(None, "set", group), *draw_list, (None, "unset", group)]
 
             return draw_list
