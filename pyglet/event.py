@@ -121,13 +121,13 @@ from __future__ import annotations
 import inspect
 import os.path
 
-from typing import TYPE_CHECKING, Literal, Union
+from typing import TYPE_CHECKING, Any, Literal, Union
 from weakref import WeakMethod
 
 import pyglet
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, Generator
+    from collections.abc import Callable, Generator
 
 
 EVENT_HANDLED = True
@@ -437,10 +437,10 @@ class EventDispatcher:
     def _dump_handlers(self) -> None:
 
         for level, handlers in enumerate(self._event_stack):
-            print(f"level: {level}")
+            print(f"level: {level}")  # noqa: T201
 
             for event_type, handler in handlers.items():
-                print(f" - '{event_type}': {handler}")
+                print(f" - '{event_type}': {handler}")  # noqa: T201
 
     # Decorator
 

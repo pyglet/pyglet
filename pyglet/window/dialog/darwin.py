@@ -4,7 +4,7 @@ from pathlib import Path
 
 from pyglet.libs.darwin import ObjCClass, ns_to_py, nsstr_to_py, AutoReleasePool, pystr_to_ns, py_to_ns
 from pyglet.libs.darwin.cocoapy.runtime import get_callback_block, ObjCBlock
-from pyglet.window.dialog.base import FileOpenDialogBase, FileSaveDialogBase
+from pyglet.window.dialog.base import FileOpenDialogBase, FileSaveDialogBase, _split_filetype_patterns
 
 NSOpenPanel = ObjCClass('NSOpenPanel')
 NSSavePanel = ObjCClass('NSSavePanel')
@@ -35,7 +35,7 @@ class MacOSFileOpenDialog(FileOpenDialogBase):
             if self.filetypes:
                 allowed = []
                 for name, exts in self.filetypes:
-                    for ext in exts.split(" "):
+                    for ext in _split_filetype_patterns(exts):
                         strip_endings = ext.lstrip("*").lstrip(".")
                         allowed.append(pystr_to_ns(strip_endings))  # mac wants extension without "."
                 panel.setAllowedFileTypes_(py_to_ns(allowed))
@@ -86,7 +86,7 @@ class MacOSFileSaveDialog(FileSaveDialogBase):
             if self.filetypes:
                 allowed = []
                 for name, exts in self.filetypes:
-                    for ext in exts.split(" "):
+                    for ext in _split_filetype_patterns(exts):
                         strip_endings = ext.lstrip("*").lstrip(".")
                         allowed.append(pystr_to_ns(strip_endings))  # mac wants extension without "."
                 panel.setAllowedFileTypes_(py_to_ns(allowed))

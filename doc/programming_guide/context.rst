@@ -267,6 +267,49 @@ or config, pyglet will use a default backend config with the following propertie
         * - depth_size
           - 24
 
+Recommended OpenGL-family versions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For new applications, prefer a modern backend: use the driver's default/latest
+desktop OpenGL context (selected by default), or OpenGL ES 3.1 or
+newer. The ``gl2`` and ``gles2`` backends remain
+compatibility paths for systems that cannot run a modern backend; they are not
+the recommended target and are increasingly difficult to test on current
+hardware.
+
+The supported backend/version combinations are:
+
+    .. list-table::
+        :header-rows: 1
+
+        * - Backend
+          - Supported versions
+          - Recommendation
+        * - ``opengl``
+          - OpenGL 3.3 and newer
+          - Driver default/latest
+        * - ``gles3``
+          - OpenGL ES 3.0, 3.1, and 3.2
+          - OpenGL ES 3.1 or newer
+        * - ``gl2``
+          - OpenGL 2.0 and 2.1
+          - Use ``opengl`` 3.3+ when available
+        * - ``gles2``
+          - OpenGL ES 2.0
+          - Use ``gles3`` 3.1+ when available
+
+Drivers differ in how they interpret a requested version; notably, some
+Windows drivers return a newer desktop context when a legacy 2.x context is
+requested. Treat the returned context as authoritative rather than relying on
+that upgrade behavior.
+
+.. note::
+
+   Use the :ref:`pyglet-info` graphics probe on the target computer to test
+   supported requests and obtain a recommendation.
+
+
+
 .. _guide_simple-context-configuration:
 
 Simple context configuration

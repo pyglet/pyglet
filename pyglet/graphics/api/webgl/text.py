@@ -7,7 +7,7 @@ import pyglet
 if TYPE_CHECKING:
     from pyglet.graphics.api.webgl import ShaderProgram
 
-layout_vertex_source = """#version 330 core
+scrollable_layout_vertex_source = """#version 330 core
     in vec3 position;
     in vec4 colors;
     in vec3 tex_coords;
@@ -51,6 +51,14 @@ layout_vertex_source = """#version 330 core
         texture_coords = tex_coords.xy;
     }
 """
+
+layout_vertex_source = scrollable_layout_vertex_source.replace(
+    "    in vec3 view_translation;\n", "",
+).replace(
+    "position + \n        view_translation + v_anchor", "position + v_anchor",
+).replace(
+    "position + translation + view_translation + v_anchor", "position + translation + v_anchor",
+)
 
 layout_fragment_source = """#version 330 core
     in vec4 text_colors;
@@ -166,16 +174,25 @@ def get_default_layout_shader() -> ShaderProgram:
         "default_text_layout",
         (layout_vertex_source, "vertex"),
         (layout_fragment_source, "fragment"),
-    )
+    ).create_vertex_layout(colors="Bn")
+
+
+def get_default_scrollable_layout_shader() -> ShaderProgram:
+    """Return the default text shader used by scrolling layouts."""
+    return pyglet.graphics.api.core.get_cached_shader(
+        "default_scrollable_text_layout",
+        (scrollable_layout_vertex_source, "vertex"),
+        (layout_fragment_source, "fragment"),
+    ).create_vertex_layout(colors="Bn")
 
 
 def get_default_image_layout_shader() -> ShaderProgram:
     """The default shader used for an InlineElement image. Used for HTML Labels that insert images via <img> tag."""
     return pyglet.graphics.api.core.get_cached_shader(
         "default_text_image",
-        (layout_vertex_source, "vertex"),
+        (scrollable_layout_vertex_source, "vertex"),
         (layout_fragment_image_source, "fragment"),
-    )
+    ).create_vertex_layout(colors="Bn")
 
 
 def get_default_decoration_shader() -> ShaderProgram:
@@ -184,4 +201,4 @@ def get_default_decoration_shader() -> ShaderProgram:
         "default_text_decoration",
         (decoration_vertex_source, "vertex"),
         (decoration_fragment_source, "fragment"),
-    )
+    ).create_vertex_layout(colors="Bn")

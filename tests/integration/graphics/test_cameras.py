@@ -1,11 +1,19 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import pytest
 
 import pyglet
 from pyglet.math import Mat4, Vec3
 from pyglet.graphics.draw import DrawContext, DrawPass
-from pyglet.window.camera.base import BaseCamera, CameraViewStorageFactory, UniformSetCameraRegion
+from pyglet.window.camera import base as camera_base
+from pyglet.window.camera.base import (
+    BaseCamera,
+    CameraViewStorageFactory,
+    UniformBufferCameraRegion,
+    UniformSetCameraRegion,
+)
 from tests.annotations import GraphicsAPIGroups, require_graphics_api
 
 
@@ -68,33 +76,66 @@ def _set_default_view_storage(monkeypatch: pytest.MonkeyPatch, storage: Recordin
     monkeypatch.setattr(
         BaseCamera,
         "_create_default_view_storage",
-        lambda self, **_kwargs: storage,
+        lambda self, _window, **_kwargs: storage,
     )
 
 
-def test_camera2d_auto_viewport_tracks_internal_resize(gl3_context):
-    window = gl3_context
-    camera = pyglet.window.camera.Camera2D(window)
-    framebuffer_width, framebuffer_height = window.get_framebuffer_size()
+@pytest.mark.parametrize("uniform_buffers", [False, True])
+def test_default_camera_storage_uniform_buffer_capability(
+    monkeypatch: pytest.MonkeyPatch,
+    uniform_buffers: bool,
+) -> None:
+    window = SimpleNamespace(
+        context=SimpleNamespace(
+            info=SimpleNamespace(features=SimpleNamespace(uniform_buffers=uniform_buffers)),
+        ),
+    )
 
-    camera._on_internal_resize(*window.get_size())
+    if not uniform_buffers:
+        storage = BaseCamera._create_default_view_storage(SimpleNamespace(), window)
+        assert isinstance(storage, UniformSetCameraRegion)
+        return
+
+    ubo = object()
+
+    class RecordingUniformBufferCameraRegion:
+        def __init__(self, *, ubo, copies_per_resource) -> None:
+            self.ubo = ubo
+            self.copies_per_resource = copies_per_resource
+
+    monkeypatch.setattr(camera_base, "_create_default_camera_ubo", lambda *_args, **_kwargs: ubo)
+    monkeypatch.setattr(camera_base, "UniformBufferCameraRegion", RecordingUniformBufferCameraRegion)
+
+    storage = BaseCamera._create_default_view_storage(SimpleNamespace(), window, copies_per_resource=5)
+
+    assert isinstance(storage, RecordingUniformBufferCameraRegion)
+    assert storage.ubo is ubo
+    assert storage.copies_per_resource == 5
+
+
+def test_camera2d_auto_viewport_tracks_internal_resize(test_window):
+    test_window = test_window
+    camera = pyglet.window.camera.Camera2D(test_window)
+    framebuffer_width, framebuffer_height = test_window.get_framebuffer_size()
+
+    camera._on_internal_resize(*test_window.get_size())
 
     assert camera.viewport == (0, 0, framebuffer_width, framebuffer_height)
 
 
-def test_camera2d_manual_viewport_is_not_overwritten_by_internal_resize(gl3_context):
-    window = gl3_context
-    camera = pyglet.window.camera.Camera2D(window)
+def test_camera2d_manual_viewport_is_not_overwritten_by_internal_resize(test_window):
+    test_window = test_window
+    camera = pyglet.window.camera.Camera2D(test_window)
     camera.viewport = (32, 48, 320, 180)
 
-    camera._on_internal_resize(*window.get_size())
+    camera._on_internal_resize(*test_window.get_size())
 
     assert camera.viewport == (32, 48, 320, 180)
 
 
-def test_camera2d_root_view_coordinate_conversions(gl3_context, monkeypatch):
+def test_camera2d_root_view_coordinate_conversions(test_window, monkeypatch):
     _set_default_view_storage(monkeypatch, RecordingStorage())
-    camera = pyglet.window.camera.Camera2D(gl3_context)
+    camera = pyglet.window.camera.Camera2D(test_window)
     camera.viewport = (10, 20, 200, 100)
     camera.position = (5.0, 10.0)
     camera.zoom = 2.0
@@ -105,9 +146,9 @@ def test_camera2d_root_view_coordinate_conversions(gl3_context, monkeypatch):
     _assert_vec3_close(camera.screen_to_world(50.0, 60.0), Vec3(25.0, 30.0, 0.0))
 
 
-def test_camera2d_child_view_coordinate_conversions_use_child_viewport(gl3_context, monkeypatch):
+def test_camera2d_child_view_coordinate_conversions_use_child_viewport(test_window, monkeypatch):
     _set_default_view_storage(monkeypatch, RecordingStorage())
-    camera = pyglet.window.camera.Camera2D(gl3_context)
+    camera = pyglet.window.camera.Camera2D(test_window)
     camera.viewport = (0, 0, 800, 600)
 
     child = camera.create_view(inherit=True)
@@ -118,10 +159,10 @@ def test_camera2d_child_view_coordinate_conversions_use_child_viewport(gl3_conte
     _assert_vec3_close(child.screen_to_world(115.0, 215.0), Vec3(25.0, 35.0, 0.0))
 
 
-def test_camera2d_create_view_inheritance_and_storage_creation(gl3_context, monkeypatch):
+def test_camera2d_create_view_inheritance_and_storage_creation(test_window, monkeypatch):
     storage = RecordingStorage()
     _set_default_view_storage(monkeypatch, storage)
-    camera = pyglet.window.camera.Camera2D(gl3_context)
+    camera = pyglet.window.camera.Camera2D(test_window)
 
     root_view = camera.view
     inherited = root_view.create_view(inherit=True)
@@ -135,10 +176,10 @@ def test_camera2d_create_view_inheritance_and_storage_creation(gl3_context, monk
     assert non_inherited.storage is not inherited.storage
 
 
-def test_uniform_set_camera_region_creates_per_view_storage(gl3_context, monkeypatch):
+def test_uniform_set_camera_region_creates_per_view_storage(test_window, monkeypatch):
     storage = UniformSetCameraRegion()
     _set_default_view_storage(monkeypatch, storage)
-    camera = pyglet.window.camera.Camera2D(gl3_context)
+    camera = pyglet.window.camera.Camera2D(test_window)
 
     child = camera.create_view(inherit=True)
 
@@ -146,9 +187,9 @@ def test_uniform_set_camera_region_creates_per_view_storage(gl3_context, monkeyp
     assert isinstance(child.storage, UniformSetCameraRegion)
 
 
-def test_camera2d_world_matrix_accumulates_local_and_parent_views(gl3_context, monkeypatch):
+def test_camera2d_world_matrix_accumulates_local_and_parent_views(test_window, monkeypatch):
     _set_default_view_storage(monkeypatch, RecordingStorage())
-    camera = pyglet.window.camera.Camera2D(gl3_context)
+    camera = pyglet.window.camera.Camera2D(test_window)
 
     root = camera.view
     root.position = (12.0, -6.0)
@@ -176,10 +217,10 @@ def test_camera2d_world_matrix_accumulates_local_and_parent_views(gl3_context, m
     _assert_mat4_close(grandchild_world, expected_grandchild)
 
 
-def test_camera2d_begin_applies_target_view_storage(gl3_context, monkeypatch):
+def test_camera2d_begin_applies_target_view_storage(test_window, monkeypatch):
     storage = RecordingStorage()
     _set_default_view_storage(monkeypatch, storage)
-    camera = pyglet.window.camera.Camera2D(gl3_context)
+    camera = pyglet.window.camera.Camera2D(test_window)
     child = camera.create_view(inherit=True)
     assert child.storage is not None
 
@@ -198,10 +239,10 @@ def test_camera2d_begin_applies_target_view_storage(gl3_context, monkeypatch):
     _assert_mat4_close(camera.view_matrix, applied_view)
 
 
-def test_camera2d_begin_bind_does_not_commit_changed_storage(gl3_context, monkeypatch):
+def test_camera2d_begin_bind_does_not_commit_changed_storage(test_window, monkeypatch):
     storage = RecordingStorage()
     _set_default_view_storage(monkeypatch, storage)
-    camera = pyglet.window.camera.Camera2D(gl3_context)
+    camera = pyglet.window.camera.Camera2D(test_window)
     draw_context = DummyDrawContext()
 
     camera.begin(draw_context=draw_context)
@@ -220,9 +261,9 @@ def test_camera2d_begin_bind_does_not_commit_changed_storage(gl3_context, monkey
     assert storage.bind_count == 2
 
 
-def test_group_camera_viewport_is_applied_to_draw_context_stack(gl3_context, monkeypatch):
+def test_group_camera_viewport_is_applied_to_draw_context_stack(test_window, monkeypatch):
     _set_default_view_storage(monkeypatch, RecordingStorage())
-    camera = pyglet.window.camera.Camera2D(gl3_context)
+    camera = pyglet.window.camera.Camera2D(test_window)
     camera.viewport = (10, 20, 300, 200)
     child = camera.create_view(inherit=True)
     child.viewport = (30, 40, 160, 90)
@@ -231,7 +272,7 @@ def test_group_camera_viewport_is_applied_to_draw_context_stack(gl3_context, mon
     group.set_camera(child)
     renderer = RecordingRenderer()
     draw_context = DrawContext(
-        surface_ctx=gl3_context.context,
+        surface_ctx=test_window.context,
         backend_ctx=None,
         draw_pass=DrawPass(
             framebuffer=None,
@@ -250,16 +291,16 @@ def test_group_camera_viewport_is_applied_to_draw_context_stack(gl3_context, mon
 
 
 @require_graphics_api(GraphicsAPIGroups.GL3)
-def test_camera_ubo_views_do_not_overwrite_stable_parent_range(gl3_context, monkeypatch):
-    gl3_context.switch_to()
-    ctx = gl3_context.context
+def test_camera_ubo_views_do_not_overwrite_stable_parent_range(test_window, monkeypatch):
+    test_window.switch_to()
+    ctx = test_window.context
     ctx.frame_resources.delete()
 
     monkeypatch.setattr(ctx, "create_frame_fence", object)
     monkeypatch.setattr(ctx, "poll_frame_fence", lambda _fence: True)
     monkeypatch.setattr(ctx, "delete_frame_fence", lambda _fence: None)
 
-    camera = pyglet.window.camera.Camera2D(gl3_context)
+    camera = pyglet.window.camera.Camera2D(test_window)
     outer = camera.create_view(inherit=True)
     inner = outer.create_view(inherit=True)
     draw_context = DummyDrawContext()
@@ -292,9 +333,9 @@ def test_camera_ubo_views_do_not_overwrite_stable_parent_range(gl3_context, monk
         ctx.frame_resources.delete()
 
 
-def test_camera2d_scissor_inheritance_intersects_parent_and_child(gl3_context, monkeypatch):
+def test_camera2d_scissor_inheritance_intersects_parent_and_child(test_window, monkeypatch):
     _set_default_view_storage(monkeypatch, RecordingStorage())
-    camera = pyglet.window.camera.Camera2D(gl3_context)
+    camera = pyglet.window.camera.Camera2D(test_window)
     root = camera.view
     root.set_scissor_area(0, 0, 100, 80)
 
@@ -311,10 +352,10 @@ def test_camera2d_scissor_inheritance_intersects_parent_and_child(gl3_context, m
     assert grandchild_scissor.area == (20, 10, 80, 70)
 
 
-def test_camera3d_create_view_inheritance_and_storage_creation(gl3_context, monkeypatch):
+def test_camera3d_create_view_inheritance_and_storage_creation(test_window, monkeypatch):
     storage = RecordingStorage()
     _set_default_view_storage(monkeypatch, storage)
-    camera = pyglet.window.camera.Camera3D(gl3_context)
+    camera = pyglet.window.camera.Camera3D(test_window)
 
     root_view = camera.view
     inherited = root_view.create_view(inherit=True)
@@ -328,9 +369,9 @@ def test_camera3d_create_view_inheritance_and_storage_creation(gl3_context, monk
     assert non_inherited.storage is not inherited.storage
 
 
-def test_camera3d_world_offset_and_view_matrix_accumulation(gl3_context, monkeypatch):
+def test_camera3d_world_offset_and_view_matrix_accumulation(test_window, monkeypatch):
     _set_default_view_storage(monkeypatch, RecordingStorage())
-    camera = pyglet.window.camera.Camera3D(gl3_context, position=Vec3(10.0, 20.0, 30.0))
+    camera = pyglet.window.camera.Camera3D(test_window, position=Vec3(10.0, 20.0, 30.0))
 
     root = camera.view
     root.offset = Vec3(1.0, 2.0, 3.0)
@@ -356,10 +397,10 @@ def test_camera3d_world_offset_and_view_matrix_accumulation(gl3_context, monkeyp
     _assert_mat4_close(camera._build_view_matrix(grandchild), expected_grandchild)  # noqa: SLF001
 
 
-def test_camera3d_begin_applies_target_view_storage(gl3_context, monkeypatch):
+def test_camera3d_begin_applies_target_view_storage(test_window, monkeypatch):
     storage = RecordingStorage()
     _set_default_view_storage(monkeypatch, storage)
-    camera = pyglet.window.camera.Camera3D(gl3_context, position=Vec3(5.0, 6.0, 7.0))
+    camera = pyglet.window.camera.Camera3D(test_window, position=Vec3(5.0, 6.0, 7.0))
     child = camera.create_view(inherit=True)
     assert child.storage is not None
     child.offset = Vec3(2.0, 0.0, -3.0)
@@ -372,15 +413,15 @@ def test_camera3d_begin_applies_target_view_storage(gl3_context, monkeypatch):
     assert len(storage.applies) == 0
 
 
-def test_camera_factory_default_view_storages_are_created(gl3_context):
-    camera2d = pyglet.window.camera.Camera2D(gl3_context)
+def test_camera_factory_default_view_storages_are_created(test_window):
+    camera2d = pyglet.window.camera.Camera2D(test_window)
     assert camera2d.view.storage is not None
     camera2d_child = camera2d.create_view(inherit=True)
     assert camera2d_child.storage is not None
     if isinstance(camera2d.view.storage, CameraViewStorageFactory):
         assert camera2d_child.storage is not camera2d.view.storage
 
-    camera3d = pyglet.window.camera.Camera3D(gl3_context)
+    camera3d = pyglet.window.camera.Camera3D(test_window)
     assert camera3d.view.storage is not None
     camera3d_child = camera3d.create_view(inherit=True)
     assert camera3d_child.storage is not None

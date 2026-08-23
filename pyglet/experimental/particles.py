@@ -176,12 +176,13 @@ fragment_source = """#version 150
 
 
 def get_default_shader():
-    return pyglet.graphics.api.get_cached_shader(
+    program = pyglet.graphics.api.get_cached_shader(
         "default_particles",
         (vertex_source, 'vertex'),
         (geometry_source, 'geometry'),
         (fragment_source, 'fragment'),
     )
+    return program.create_vertex_layout(color_start="Bn", color_end="Bn")
 
 
 class EmitterGroup(graphics.Group):
@@ -248,19 +249,19 @@ class Emitter(event.EventDispatcher):
         count = self._count
         self._vertex_list = self.program.vertex_list(
             count, GeometryMode.POINTS, self._batch, self._group,
-            position=('f', (self._x, self._y, self._z) * count),
+            position=(self._x, self._y, self._z) * count,
 
-            size=('f', (texture.width, texture.height, texture.anchor_x, texture.anchor_y) * count),
-            scale=('f', (self._scale_start + self._scale_end) * count),
+            size=(texture.width, texture.height, texture.anchor_x, texture.anchor_y) * count,
+            scale=(self._scale_start + self._scale_end) * count,
 
-            velocity=('f', self._velocity * count),
+            velocity=self._velocity * count,
 
-            color_start=('Bn', self._color_start * count),
-            color_end=('Bn', self._color_end * count),
+            color_start=self._color_start * count,
+            color_end=self._color_end * count,
 
-            texture_uv=('f', texture.uv * count),
-            rotation=('f', (self._rotation,) * count),
-            birth=('f', (time.perf_counter(),) * count))
+            texture_uv=texture.uv * count,
+            rotation=(self._rotation,) * count,
+            birth=(time.perf_counter(),) * count)
 
     @property
     def program(self):
@@ -318,7 +319,7 @@ class Emitter(event.EventDispatcher):
             self.dispatch_event('on_animation_end')
 
     def _set_texture(self, texture):
-        if texture.id is not self._texture.id:
+        if texture.key != self._texture.key:
             self._group = self._group.__class__(texture,
                                                 self._group.blend_src,
                                                 self._group.blend_dest,

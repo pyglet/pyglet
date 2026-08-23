@@ -16,6 +16,7 @@ from pyglet.text.layout.base import (
     _is_pyglet_doc_run,
     _LayoutContext,
     _Line,
+    get_default_scrollable_layout_shader,
 )
 from pyglet.text.layout import ScrollableTextLayoutGroup, ScrollableTextDecorationGroup
 
@@ -25,6 +26,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.shader import ShaderProgram
     from pyglet.graphics.vertexdomain import VertexList
     from pyglet.text.document import AbstractDocument
+    from pyglet.text.runlist import AbstractRunIterator, RunIterator
 
 
 class _IncrementalLayoutContext(_LayoutContext):
@@ -33,6 +35,20 @@ class _IncrementalLayoutContext(_LayoutContext):
     # boxes are kept alive. This also allows the Layout to determine word wraps and line lengths without a vertex list.
 
     line = None
+
+    def __init__(
+        self,
+        layout: TextLayout,
+        document: AbstractDocument,
+        colors_iter: RunIterator,
+        background_iter: AbstractRunIterator,
+        has_selection: bool,
+    ) -> None:
+        self._has_selection = has_selection
+        super().__init__(layout, document, colors_iter, background_iter)
+
+    def _uses_background_override(self) -> bool:
+        return self._has_selection
 
     def add_list(self, vertex_list: VertexList) -> None:
         self.line.vertex_lists.append(vertex_list)
@@ -89,6 +105,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     _selection_background_color: tuple[int, int, int, int] = (46, 106, 197, 255)
 
     group_class: ClassVar[type[IncrementalTextLayoutGroup]] = IncrementalTextLayoutGroup
+    effect_group_class: ClassVar[type[IncrementalTextLayoutGroup]] = IncrementalTextLayoutGroup
     decoration_class: ClassVar[type[IncrementalTextDecorationGroup]] = IncrementalTextDecorationGroup
 
     _translate_x: int = 0
@@ -111,7 +128,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
                  width: int | None = None, height: int | None = None,
                  anchor_x: AnchorX = 'left', anchor_y: AnchorY = 'bottom', rotation: float = 0, multiline: bool = False,
                  dpi: float | None = None, batch: Batch | None = None, group: Group | None = None,
-                 program: ShaderProgram | None = None, wrap_lines: bool = True) -> None:
+                 program: ShaderProgram | None = None, decoration_shader: ShaderProgram | None = None,
+                 effect_shader: ShaderProgram | None = None, wrap_lines: bool = True) -> None:
 
         if width is None or height is None:
             msg = "Invalid size. IncrementalTextLayout width or height cannot be None."
@@ -137,12 +155,15 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         self._owner_runs = runlist.RunList(0, None)
 
         super().__init__(document, x, y, z, width, height, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
-                         program, wrap_lines)
+                         program or get_default_scrollable_layout_shader(), decoration_shader, effect_shader,
+                         wrap_lines=wrap_lines)
 
     def _update_scissor_area(self) -> None:
         area = (self.left, self.bottom, self._width, self._height)
 
         for group in self.group_cache.values():
+            group.uniforms["scissor_area"] = area
+        for group in self.effect_group_cache.values():
             group.uniforms["scissor_area"] = area
         self.background_decoration_group.uniforms["scissor_area"] = area
         self.foreground_decoration_group.uniforms["scissor_area"] = area
@@ -440,7 +461,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
         colors_iter = self.document.get_style_runs("color")
         background_iter = self.document.get_style_runs("background_color")
-        if self._selection_end - self._selection_start > 0:
+        has_selection = self._selection_end - self._selection_start > 0
+        if has_selection:
             colors_iter = runlist.OverriddenRunIterator(
                 colors_iter,
                 self._selection_start,
@@ -452,7 +474,13 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
                 self._selection_end,
                 self._selection_background_color)
 
-        context = _IncrementalLayoutContext(self, self._document, colors_iter, background_iter)
+        context = _IncrementalLayoutContext(
+            self,
+            self._document,
+            colors_iter,
+            background_iter,
+            has_selection,
+        )
 
         lines = self.lines[invalid_start:invalid_end]
         self._line_count = len(self.lines)

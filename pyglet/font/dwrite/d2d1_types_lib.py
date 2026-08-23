@@ -32,6 +32,49 @@ class D2D1_POINT_2F(Structure):
         ("y", FLOAT),
     ]
 
+
+class D2D1_BEZIER_SEGMENT(Structure):
+    _fields_ = [
+        ("point1", D2D1_POINT_2F),
+        ("point2", D2D1_POINT_2F),
+        ("point3", D2D1_POINT_2F),
+    ]
+
+
+class D2D1_TRIANGLE(Structure):
+    _fields_ = [
+        ("point1", D2D1_POINT_2F),
+        ("point2", D2D1_POINT_2F),
+        ("point3", D2D1_POINT_2F),
+    ]
+
+
+class D2D1_MATRIX_3X2_F(Structure):
+    _fields_ = [
+        ("m11", FLOAT),
+        ("m12", FLOAT),
+        ("m21", FLOAT),
+        ("m22", FLOAT),
+        ("dx", FLOAT),
+        ("dy", FLOAT),
+    ]
+
+
+class D2D1_BEZIER_SEGMENT(Structure):
+    _fields_ = [
+        ("point1", D2D1_POINT_2F),
+        ("point2", D2D1_POINT_2F),
+        ("point3", D2D1_POINT_2F),
+    ]
+
+
+class D2D1_TRIANGLE(Structure):
+    _fields_ = [
+        ("point1", D2D1_POINT_2F),
+        ("point2", D2D1_POINT_2F),
+        ("point3", D2D1_POINT_2F),
+    ]
+
 class D2D1_COLOR_F(Structure):
     _fields_ = (
         ("r", FLOAT),

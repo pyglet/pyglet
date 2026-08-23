@@ -301,9 +301,12 @@ on the property by passing a list or tuple of the correct length. For example::
     # or slightly faster to update in-place:
     vlist.position[:] = (100, 300, 200, 250, 200, 350)
 
-The default data format is single precision floats, but it is possible to specify a
-format using a "format string". This is passed on creation as a Python keyword
-argument. The following formats are available:
+The default data format is single precision floats. To use another storage format,
+create a :class:`~pyglet.graphics.shader.ShaderProgramView` with
+:py:meth:`~pyglet.graphics.shader.ShaderProgram.create_vertex_layout`. A view
+uses the same linked shader program and uniforms as its owner, but has its own
+cached vertex formats and vertex domains.
+The following formats are available:
 
 .. list-table::
     :header-rows: 1
@@ -338,9 +341,10 @@ argument. The following formats are available:
 
 
 For example, if you would like to pass the `position` data as a signed int, you
-can pass the "i" format string as a Python keyword argument::
+can create a configured program view before creating vertex lists::
 
-    vlist = program.vertex_list(3, pyglet.enums.GeometryMode.TRIANGLES, position='i')
+    int_positions = program.create_vertex_layout(position='i')
+    vlist = int_positions.vertex_list(3, pyglet.enums.GeometryMode.TRIANGLES)
 
 By appending ``"n"`` to the format string, you can also specify that the passed
 data should be "normalized" to the range ``[0, 1]``. The value is used as-is if
@@ -348,23 +352,45 @@ the data type is floating-point. If the data type is byte, short or int, the val
 is divided by the maximum value representable by that type.  For example, unsigned
 bytes are divided by 255 to get the normalised value.
 
-A common case is to use normalized unsigned bytes for the color data. Simply
-pass "Bn" as the format::
+A common case is to use normalized unsigned bytes for the color data. A program
+can have multiple format views at once::
 
-    vlist = program.vertex_list(3, pyglet.enums.GeometryMode.TRIANGLES, colors='Bn')
+    byte_colors = program.create_vertex_layout(colors='Bn')
+    float_colors = program.create_vertex_layout(colors='f')
+
+    # Repeated requests for the same configuration return the same view.
+    assert program.create_vertex_layout(colors='Bn') is byte_colors
+
+Views expose the same rendering and vertex-list API as shader programs, so each
+can be used where a ShaderProgram is accepted::
+
+    byte_list = byte_colors.vertex_list(3, pyglet.enums.GeometryMode.TRIANGLES,
+                                        position=positions, colors=byte_color_data)
+    float_list = float_colors.vertex_list(3, pyglet.enums.GeometryMode.TRIANGLES,
+                                          position=positions, colors=float_color_data)
+
+Views can also carry a divisor configuration without changing the original
+program or another view::
+
+    instanced = byte_colors.set_instance_attributes(translation=1)
+    vlist = instanced.vertex_list_instanced(3, pyglet.enums.GeometryMode.TRIANGLES,
+                                            position=positions,
+                                            colors=colors,
+                                            translation=translations)
 
 
 Passing Initial Data
 ~~~~~~~~~~~~~~~~~~~~
 
 Rather than setting the data *after* creation of a VertexList, you can also
-easily pass initial arrays of data on creation. You do this by passing the format
-and the data as a tuple, using a keyword argument as above. To set the position
-and color data on creation::
+pass initial arrays of data on creation. Attribute formats are configured on a
+ShaderProgram view, while vertex-list keyword arguments contain only data. To set the
+position and normalized-byte color data on creation::
 
-    vlist = program.vertex_list(3, pyglet.enums.GeometryMode.TRIANGLES,
-                                position=('f', (200, 400, 300, 350, 300, 450)),
-                                colors=('Bn', (255, 0, 0, 255,  0, 255, 0, 255,  75, 75, 255, 255),)
+    byte_colors = program.create_vertex_layout(colors='Bn')
+    vlist = byte_colors.vertex_list(3, pyglet.enums.GeometryMode.TRIANGLES,
+                                position=(200, 400, 300, 350, 300, 450),
+                                colors=(255, 0, 0, 255,  0, 255, 0, 255,  75, 75, 255, 255))
 
 
 Indexed Rendering
@@ -383,27 +409,30 @@ and the shared vertices are reused::
 
     vlist = program.vertex_list_indexed(4, pyglet.enums.GeometryMode.TRIANGLES,
         [0, 1, 2, 0, 2, 3],
-        position=('i', (100, 100,  150, 100,  150, 150,  100, 150)),
+        position=(100, 100,  150, 100,  150, 150,  100, 150),
     )
 
 Note that the first argument gives the number of vertices in the data, not the
 number of indices (which is implicit on the length of the index list given in
 the third argument).
 
+.. _guide_instanced-rendering:
+
 Instanced Rendering
 ~~~~~~~~~~~~~~~~~~~
 
 Instanced rendering lets you draw many copies of the same geometry with a single
 draw call by providing *per-instance* attributes (such as translation, color,
-or scale). In pyglet, you declare which attributes are instanced when creating
-the vertex list, and then create instances to populate the per-instance data.
+or scale). In pyglet, configure an attribute's divisor on the shader program
+before creating an instanced vertex list, then create instances to populate the
+per-instance data.
 
 There are two instanced creation methods:
 
 * :py:meth:`~pyglet.graphics.shader.ShaderProgram.vertex_list_instanced`
 * :py:meth:`~pyglet.graphics.shader.ShaderProgram.vertex_list_instanced_indexed`
 
-Both accept an ``instance_attributes`` mapping of attribute name to divisor.
+Configure instanced attributes on the program before creating instanced vertex lists.
 For normal per-instance behavior, use a divisor of ``1`` (one attribute row per
 instance). The instanced attributes must exist in your shader just like regular
 attributes.
@@ -422,22 +451,33 @@ the original vertex list mesh.
 Each created instance adds another row to the instance buffer and increases the
 instance count used for drawing.
 
+When several independently managed instances are needed at once, use
+``vlist.create_instances(count, **attributes)``. It allocates and uploads the
+instance data in bulk, then returns a list of individual ``VertexInstance``
+objects. Each attribute must contain flattened data for all ``count``
+instances.
+
 Example (indexed instancing)::
 
+    program.set_instance_attributes(translate=1, colors=1)
     vlist = program.vertex_list_instanced_indexed(
         4,
         mode=pyglet.enums.GeometryMode.TRIANGLES,
         indices=[0, 1, 2, 0, 2, 3],
-        instance_attributes={"translate": 1, "colors": 1},
-        position=('f', (0, 0, 0,  32, 0, 0,  32, 32, 0,  0, 32, 0)),
-        translate=('f', (0, 0, 0)),
-        colors=('f', (1, 0, 0, 1)),
+        position=(0, 0, 0,  32, 0, 0,  32, 32, 0,  0, 32, 0),
+        translate=(0, 0, 0),
+        colors=(1, 0, 0, 1),
         batch=batch,
     )
 
     # Create additional instances:
     instance1 = vlist.create_instance(translate=(64, 0, 0), colors=(0, 1, 0, 1))
     instance2 = vlist.create_instance(translate=(0, 64, 0), colors=(0, 0, 1, 1))
+
+If a different divisor configuration must coexist with the program's default,
+configure it on a view instead::
+
+    instanced_colors = program.create_vertex_layout(colors='Bn').set_instance_attributes(colors=1)
 
 
 If you lose track of your instances or wish to get them by index, you can do so via the helper method on the mesh
@@ -458,6 +498,66 @@ Instanced vertex lists also provide helper APIs for ordering:
 Groups control draw order between different vertex lists, but not between
 instances inside the same instanced vertex list. Use the ordering helpers above
 when you need explicit ordering among instances of a single mesh.
+
+Instance collections
+^^^^^^^^^^^^^^^^^^^^
+
+Individual :py:class:`~pyglet.graphics.instance.VertexInstance` objects are a
+good fit when each rendered object has its own lifetime and is updated
+independently. ``create_instances`` reduces upload overhead when creating many
+of these objects, but it still returns and tracks one Python object per
+instance.
+
+Use :py:class:`~pyglet.graphics.instance.InstanceCollection` when the instance
+data is naturally managed as arrays. Common examples include glyph runs,
+particle systems, tile maps, and vegetation. A collection avoids the Python
+object cost and supports whole-range attribute updates::
+
+    translations = (0, 0, 0,  32, 0, 0,  64, 0, 0)
+    colors = (1, 0, 0, 1,  0, 1, 0, 1,  0, 0, 1, 1)
+
+    instances = vlist.create_instance_collection(
+        3,
+        capacity=128,
+        translate=translations,
+        colors=colors,
+    )
+
+    # Replace one attribute for every active instance with one upload.
+    instances.set(translate=new_translations)
+
+Individual instances can also be updated by index. Pass ``start`` and
+``count=1`` to replace attributes for one instance; attributes that are not
+provided remain unchanged::
+
+    # Change only the translation of instance 5.
+    instances.set(start=5, count=1, translate=(100, 200, 0))
+
+The same arguments update any contiguous range when the attribute data contains
+one flattened row per selected instance::
+
+    instances.set(
+        start=5,
+        count=3,
+        translate=(100, 200, 0,  110, 200, 0,  120, 200, 0),
+    )
+
+The active ``count`` is separate from reserved ``capacity``. This is useful
+when data is regenerated frequently: reducing the count renders fewer
+instances without reallocating the buffers, and later growth can reuse the
+reserved slots::
+
+    instances.set_count(2)
+    instances.set_count(80)
+    instances.set(translate=translations_for_80, colors=colors_for_80)
+
+``insert`` and ``remove`` are available for occasional structural changes,
+but they shift following instance data. Replacing ranges with ``set`` and
+changing ``count`` is preferable for frequently rebuilt collections.
+
+An instanced vertex list uses either individual ``VertexInstance`` objects or
+one ``InstanceCollection``; the two ownership models cannot be mixed on the
+same vertex list.
 
 Resource Management
 ~~~~~~~~~~~~~~~~~~~
@@ -518,7 +618,7 @@ a texture requires the following before drawing::
 
     from pyglet.graphics.api.gl import *
     glActiveTexture(GL_TEXTURE0)
-    glBindTexture(texture.target, texture.id)
+    glBindTexture(texture.target, texture.handle)
 
 With a :py:class:`~pyglet.graphics.Group` these state changes can be
 encapsulated and associated with the vertex lists they affect.
@@ -534,7 +634,7 @@ and `Group.unset_state` methods to perform the required state changes::
         def set_state(self):
             self.program.use()
             glActiveTexture(GL_TEXTURE0)
-            glBindTexture(self.texture.target, self.texture.id)
+            glBindTexture(self.texture.target, self.texture.handle)
 
         def unset_state(self):
             self.program.stop()
@@ -543,8 +643,8 @@ An instance of this group can now be attached to vertex lists::
 
     custom_group = CustomGroup()
     vertex_list = program.vertex_list(2, pyglet.enums.GeometryMode.POINTS, batch, custom_group,
-        position=('i', (10, 15, 30, 35)),
-        colors=('Bn', (0, 0, 255, 0, 255, 0))
+        position=(10, 15, 30, 35),
+        colors=(0, 0, 255, 0, 255, 0)
     )
 
 The :py:class:`~pyglet.graphics.Batch` ensures that the appropriate

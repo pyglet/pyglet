@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from pyglet.enums import GraphicsAPI
 from pyglet.graphics.api.gl import OpenGLSurfaceContext
 from pyglet.graphics.api.gl.base import ContextException
-import pyglet.libs.linux.egl as egl
+import pyglet.libs.egl as egl
 
 if TYPE_CHECKING:
     from pyglet.config.gl.egl import EGLSurfaceConfig

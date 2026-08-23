@@ -34,14 +34,20 @@ if TYPE_CHECKING:
     from pyglet.enums import GraphicsAPI
     from pyglet.graphics import api  # noqa: F401
     from pyglet.graphics.draw import Group, ShaderGroup, Batch  # noqa: F401
-    from pyglet.graphics.shader import Shader, ShaderProgram, ComputeShaderProgram, TransformFeedbackShaderProgram  # noqa: F401
+    from pyglet.graphics.shader import (  # noqa: F401
+        ComputeShaderProgram, Shader, ShaderProgram, ShaderProgramView, TransformFeedbackShaderProgram,
+    )
     from pyglet.graphics.state import State, Viewport, ViewportProtocol  # noqa: F401
     from pyglet.graphics.shader import get_default_shader  # noqa: F401
     from pyglet.graphics.buffer import UniformBufferRegion  # noqa: F401
+    from pyglet.graphics.resource import (  # noqa: F401
+        BufferKey, FramebufferKey, FramebufferResource, GraphicsResource, RenderbufferKey, RenderbufferResource,
+        ResourceKey, ShaderKey, ShaderProgramKey, TextureKey, VertexArrayKey, VertexArrayResource,
+    )
     from pyglet.graphics.draw import get_default_batch  # noqa: F401
-    from pyglet.graphics.texture import Texture, TextureGrid, Texture3D, TextureArray  # noqa: F401
+    from pyglet.graphics.texture import PixelData, Texture, TextureGrid, Texture3D, TextureArray  # noqa: F401
     from pyglet.graphics.atlas import TextureBin, TextureArrayBin, TextureAtlas  # noqa: F401
-    from pyglet.graphics.framebuffer import Framebuffer, Renderbuffer  # noqa: F401
+    from pyglet.graphics.framebuffer import Framebuffer, RenderTexture, Renderbuffer, TextureRenderTarget  # noqa: F401
 else:
     from pyglet.graphics import api  # noqa: F401
     from pyglet.graphics.draw import Group, ShaderGroup, Batch, get_default_batch  # noqa: F401
@@ -50,11 +56,16 @@ else:
         ShaderProgram,
         ComputeShaderProgram,
         TransformFeedbackShaderProgram,
+        ShaderProgramView,
         get_default_shader,
     )
     from pyglet.graphics.state import State, Viewport, ViewportProtocol  # noqa: F401
     from pyglet.graphics.api import core  # noqa: F401
     from pyglet.graphics.buffer import UniformBufferRegion  # noqa: F401
-    from pyglet.graphics.texture import Texture, TextureGrid, Texture3D, TextureArray  # noqa: F401
+    from pyglet.graphics.resource import (  # noqa: F401
+        BufferKey, FramebufferKey, FramebufferResource, GraphicsResource, RenderbufferKey, RenderbufferResource,
+        ResourceKey, ShaderKey, ShaderProgramKey, TextureKey, VertexArrayKey, VertexArrayResource,
+    )
+    from pyglet.graphics.texture import PixelData, Texture, TextureGrid, Texture3D, TextureArray  # noqa: F401
     from pyglet.graphics.atlas import TextureBin, TextureArrayBin, TextureAtlas  # noqa: F401
-    from pyglet.graphics.framebuffer import Framebuffer, Renderbuffer  # noqa: F401
+    from pyglet.graphics.framebuffer import Framebuffer, RenderTexture, Renderbuffer, TextureRenderTarget  # noqa: F401

@@ -6,7 +6,6 @@ import weakref
 from typing import TYPE_CHECKING, Any, Generic, Protocol, TypeVar, overload, runtime_checkable
 
 import pyglet
-from pyglet.enums import GraphicsAPI
 from pyglet.graphics.buffer import UniformBufferRegion
 from pyglet.math import Vec3, Vec4
 
@@ -37,7 +36,7 @@ class CameraScissor:
     width: int
     height: int
 
-    __slots__ = ("height", "width", "x", "y")
+    __slots__ = ("x", "y", "width", "height")
 
     def __init__(self, x: int, y: int, width: int, height: int) -> None:
         self.x = int(x)
@@ -58,6 +57,10 @@ class CameraScissor:
         self.y = int(y)
         self.width = max(0, int(width))
         self.height = max(0, int(height))
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(x={self.x}, y={self.y}, width={self.width}, height={self.height})"
+
 
 @runtime_checkable
 class CameraViewStorage(Protocol):
@@ -572,6 +575,7 @@ class BaseCamera(Generic[ViewT]):
         view_storage: CameraViewStorage | None = None,
         *,
         viewport: ViewportType | None = None,
+        register_handlers: bool = True,
     ) -> None:
         """Initialize a camera.
 
@@ -585,6 +589,9 @@ class BaseCamera(Generic[ViewT]):
                 Optional fixed viewport for the root view. If ``None``, the
                 root view defaults to the full framebuffer viewport and tracks
                 resize/scale events.
+            register_handlers:
+                If ``True``, register the camera for window resize and scale
+                events. Disable this for fixed-size offscreen cameras.
         """
         self._window = weakref.proxy(window)
 
@@ -607,10 +614,12 @@ class BaseCamera(Generic[ViewT]):
 
         self._resolved_viewport: tuple[int, int, int, int] | None = None
 
-        window.push_handlers(self)
+        if register_handlers:
+            window.push_handlers(self)
 
     def _create_default_view_storage(
         self,
+        window: Window,
         *,
         window_block: UniformBlock | None = None,
         copies_per_resource: int = 3,
@@ -618,7 +627,7 @@ class BaseCamera(Generic[ViewT]):
         view_uniform: str = "u_view",
     ) -> CameraViewStorage:
         """Create the root view storage for this camera."""
-        if pyglet.options.backend in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
+        if not window.context.info.features.uniform_buffers:
             return UniformSetCameraRegion(
                 projection_uniform=projection_uniform,
                 view_uniform=view_uniform,

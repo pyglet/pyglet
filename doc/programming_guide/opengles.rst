@@ -4,9 +4,15 @@
 OpenGL ES
 =========
 
-Pyglet has experimental support for OpenGL ES 3.2, with some limitations. Devices like Raspberry Pi 4
-and 5 supports OpenGL ES 3.1 with extensions covering most of the missing 3.2 features (with the
-exception of tessellation shaders). There are likely other devices with ES support that can run Pyglet.
+Pyglet has experimental support for OpenGL ES 3.0, 3.1, and 3.2, with some limitations. OpenGL ES 3.1 or
+higher is recommended. Devices such as
+Raspberry Pi 4 and 5 commonly expose OpenGL ES 3.1, often with extensions covering portions of ES 3.2.
+
+.. tip::
+
+   Use the :ref:`pyglet-info` graphics probe on the target machine before
+   choosing a context version. It verifies candidate configurations and
+   reports a recommended request.
 
 Creating a window / context
 ---------------------------
@@ -23,8 +29,7 @@ Example::
     # Select OpenGL ES backend:
     pyglet.options.backend = "gles3"
 
-    # Specify that we want to use OpenGL ES 3.1:
-    # This is very specific to the Raspberry Pi 4 and 5. Use 3.2 if you can.
+    # Raspberry Pi 4 and 5 commonly use OpenGL ES 3.1.
     config = pyglet.config.Config()
     config.gles3.major_version = 3
     config.gles3.minor_version = 1
@@ -45,45 +50,69 @@ the default configuration will not have multisampling enabled.
 Textures
 ~~~~~~~~
 
-Pixel format for textures and images are limited to ``RGBA``. If you try to
-load any other pixel format through pyglet's image loading functions you
-will get an error when they are turned into OpenGL textures later.
+Textures created from pyglet images are not limited to ``RGBA``. The upload
+path retains directly supported component orders, including ``RGB`` and
+``RGBA``, and converts source data to a compatible order when necessary. In
+particular, ``BGR`` and ``BGRA`` data is uploaded directly only when the GLES
+implementation advertises a BGRA texture-format extension; otherwise pyglet
+converts it to ``RGB`` or ``RGBA`` before the upload. Legacy ``L`` and ``LA``
+images are represented with red and red/green components and texture swizzles.
 
-The reason for this limitation is that OpenGL ES does not support pixel
-format conversion during pixel transfer, meaning when calling ``glTexImage``
-to upload pixel data to the GPU, the pixel format must match the internalformat.
-In desktop OpenGL an RGB image will be automatically converted to RGBA during
-this transfer. This is not supported in OpenGL ES.
+OpenGL ES does not perform arbitrary component-order conversion as part of
+``glTexImage`` or ``glTexSubImage``. The external pixel format must be
+compatible with the texture's storage format. Pyglet therefore chooses a
+compatible external format and performs any required conversion on the CPU.
+Applications using the GL bindings directly must make the same choice and
+should check for a BGRA extension before using ``GL_BGRA``.
 
-You are, however, free to create your own textures with any pixel format
-using the gl bindings directly.
+When an image decoder can select its output format, pyglet normally requests
+``RGBA`` for OpenGL ES contexts. The exception is Windows, where pyglet may
+prefer ``BGRA`` when the active context supports direct BGRA uploads. This
+matches the native Windows decoder format and avoids a CPU conversion. Decoders
+are not required to produce the preferred format.
 
 Compute Shader
 ~~~~~~~~~~~~~~
 
-If you are planning to bind textures to image units with the intention of
-using them in a compute shader, you need to create these textures yourself
-using the gl bindings and allocate space using ``glTexStorage``. Pyglet is
-using ``glTexImage`` to allocate space and upload the pixel data for textures.
+Textures used as image units in a compute shader require immutable storage on
+OpenGL ES 3.1. Create them with ``immutable=True``::
 
-The difference here is that ``glTexStorage`` creates immutable storage. You can
-only call it once and then fill the allocated space with pixel data using
-``glTexSubImage``. ``glTexImage`` on the other hand can be called multiple times
-reallocating the texture storage each time. Likely OpenGL ES doesn't want to
-deal with the extra complexity of validating the texture storage of images
-every time a compute shader is dispatched.
+    from pyglet.enums import ComponentFormat
+    from pyglet.graphics import Texture
 
-In short: Create your own textures with immutable storage if you are planning
-to use them in a compute shader.
+    texture = Texture.create(
+        512,
+        512,
+        internal_format=ComponentFormat.RGBA,
+        internal_format_size=32,
+        internal_format_type="f",
+        blank_data=False,
+        immutable=True,
+    )
+
+The texture's dimensions, internal format, and number of mipmap levels are
+then fixed. You can still upload and update its pixel data normally. The
+texture format must match the image format declared in the shader.
+
+For GLSL ES 3.10, image formats other than ``r32f``, ``r32i``, and ``r32ui``
+also need an access qualifier. An ``rgba32f`` output image is typically
+declared as::
+
+    layout(rgba32f) writeonly uniform highp image2D output_image;
 
 Shaders
 -------
 
 Pyglet's shader system supports basic conversion between GLSL 1.5/3.3 shaders
-to GLES 3.2 shaders when running in OpenGL ES mode. This is to ensure that
-pyglet's built-in shaders also works with GL ES. This system is not perfect
-and are likely to have some flaws.
+and GLES shaders when running in OpenGL ES mode. Built-in shaders are converted
+to GLSL ES 3.00 on GLES 3.0 and GLSL ES 3.10 on GLES 3.1 or newer. Precision
+qualifiers are injected using ``mediump`` by default.
 
-Currently the shaders are converted to ES 3.1 shaders as a careful approach
-manually enabling extensions needed for ES 3.2. Precisions qualifiers are
-injected using ``mediump`` by default.
+Use ``window.context.info.features`` for functionality that is not guaranteed
+by every supported ES version. For example, compute shaders and shader-storage
+buffers require GLES 3.1 (or a supported desktop equivalent)::
+
+    features = window.context.info.features
+    if features.compute_shaders and features.shader_storage_buffers:
+        # Safe to create pyglet ComputeShaderProgram objects.
+        pass

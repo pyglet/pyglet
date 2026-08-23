@@ -54,6 +54,7 @@ from ctypes.wintypes import (
     POINT,
     POINTL,
     RECT,
+    SIZE,
     UINT,
     ULARGE_INTEGER,
     ULONG,

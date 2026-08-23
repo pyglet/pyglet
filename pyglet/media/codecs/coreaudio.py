@@ -54,9 +54,11 @@ class CoreAudioSource(StreamingSource):
         if file is None:
             fn_str = CFSTR(filename)
             url_ref = cf.CFURLCreateWithFileSystemPath(None, fn_str, kCFURLPOSIXPathStyle, False)
-
-            err_check(ca.ExtAudioFileOpenURL(url_ref, byref(audref)))
-            cf.CFRelease(fn_str)
+            try:
+                err_check(ca.ExtAudioFileOpenURL(url_ref, byref(audref)))
+            finally:
+                cf.CFRelease(url_ref)
+                cf.CFRelease(fn_str)
         else:
             self.file_obj = MemoryFileObject(file)
 
@@ -133,7 +135,7 @@ class CoreAudioSource(StreamingSource):
             err_check(ca.ExtAudioFileDispose(self._audref))
             self._audref = None
 
-    def get_audio_data(self, num_bytes, compensation_time=0.0):
+    def get_audio_data(self, num_bytes):
         num_frames = c_uint32(num_bytes // self.convert_desc.mBytesPerFrame)
 
         if not self._bl:
@@ -153,7 +155,7 @@ class CoreAudioSource(StreamingSource):
 
             data = cast(self._bl.mBuffers[0].mData, POINTER(c_char))
             slice = data[:size]
-            return AudioData(slice, size, 0.0, size / self.audio_format.sample_rate, [])
+            return AudioData(slice, size)
 
         return None
 

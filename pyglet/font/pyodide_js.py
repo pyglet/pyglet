@@ -3,9 +3,10 @@ from __future__ import annotations
 import asyncio
 import math
 from asyncio import Task
-from typing import TYPE_CHECKING, ClassVar
+from typing import ClassVar
 
 import pyglet
+from pyglet.enums import Stretch, Style, Weight
 from pyglet.font.ttf import TruetypeInfoBytes
 from pyglet.font import base, FontManager
 from pyglet.font.base import Glyph, FontException, GlyphPosition
@@ -15,8 +16,8 @@ from pyglet.image import ImageData
 _debug = pyglet.options.debug_font
 
 try:
-    import js
-    import pyodide.ffi
+    import js  # noqa: F821
+    import pyodide.ffi  # noqa: F401, F821
 except ImportError:
     raise ImportError
 
@@ -35,10 +36,19 @@ class PyodideGlyphRenderer(base.GlyphRenderer):
         self.temp_save = []
 
     def render(self, text: str) -> Glyph:
+        return self._render(text)
+
+    def render_stroke(self, text: str, size: float, join: str) -> Glyph | None:
+        """Rasterize a text outline with CanvasRenderingContext2D.strokeText."""
+        return self._render(text, size, join)
+
+    def _render(self, text: str, stroke_size: float = 0, stroke_join: str = "round") -> Glyph | None:
         _font_context.font = self.font.js_name
         metrics = _font_context.measureText(text)
-        w = max(1, int(math.ceil(metrics.width)))
-        h = max(1, int(math.ceil(metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent)))
+        padding = math.ceil(stroke_size * (10 if stroke_join == "miter" else 1)) + 1 if stroke_size else 0
+        w = max(1, int(math.ceil(metrics.width)) + padding * 2)
+        h = max(1, int(math.ceil(metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent)) + padding * 2)
+        baseline_y = max(1, int(math.ceil(metrics.actualBoundingBoxAscent)) + padding)
 
         # Setting the canvas size seems to reset the context settings?
         _font_canvas.width = w
@@ -49,22 +59,51 @@ class PyodideGlyphRenderer(base.GlyphRenderer):
         #_font_context.msImageSmoothingEnabled = False
         _font_context.font = self.font.js_name
         _font_context.fillStyle = 'white'
+        _font_context.strokeStyle = 'white'
+        _font_context.lineWidth = stroke_size * 2
+        _font_context.lineJoin = stroke_join
+        _font_context.miterLimit = 10
 
         _font_context.translate(0, h)  # Move down
         _font_context.scale(1, -1)  # Flip vertically
 
-        # Draw to context
-        _font_context.fillText(text, 0, max(1, int(math.ceil(metrics.actualBoundingBoxAscent))))
+        if stroke_size:
+            _font_context.strokeText(text, padding, baseline_y)
+        else:
+            _font_context.fillText(text, 0, baseline_y)
 
         image_data = _font_context.getImageData(0, 0, w, h)
-        pixel_data = image_data.data  # Uint8Array
+        if stroke_size:
+            left, top, right, bottom = self._get_alpha_bounds(image_data.data, w, h)
+            if right < left or bottom < top:
+                return None
+            image_data = _font_context.getImageData(left, top, right - left + 1, bottom - top + 1)
+            # The context is flipped before drawing because ImageData is
+            # supplied to pyglet with a positive (bottom-to-top) pitch.
+            # Therefore Canvas's top rows are the glyph's bottom rows.
+            baseline = int(math.ceil(metrics.actualBoundingBoxDescent)) + padding - top
+            left_side_bearing = left - padding
+        else:
+            baseline = int(math.ceil(metrics.actualBoundingBoxDescent))
+            left_side_bearing = 0
 
-        image = ImageData(w, h, 'RGBA', pixel_data)
-
+        image = ImageData(image_data.width, image_data.height, 'RGBA', image_data.data)
         glyph = self.font.create_glyph(image)
-        glyph.set_bearings(int(math.ceil(metrics.actualBoundingBoxDescent)), 0, w)
+        glyph.set_bearings(baseline, left_side_bearing, math.ceil(metrics.width))
         return glyph
 
+    @staticmethod
+    def _get_alpha_bounds(pixel_data, width: int, height: int) -> tuple[int, int, int, int]:
+        """Return the bounds of non-transparent Canvas pixels."""
+        left, top, right, bottom = width, height, -1, -1
+        for y in range(height):
+            for x in range(width):
+                if pixel_data[(y * width + x) * 4 + 3]:
+                    left = min(left, x)
+                    top = min(top, y)
+                    right = max(right, x)
+                    bottom = max(bottom, y)
+        return left, top, right, bottom
 
 def _measure_font_width(font_family: str) -> int:
     """Use a DOM element to measure the text width of a given string using a font family."""
@@ -90,25 +129,46 @@ class JavascriptPyodideFont(base.Font):
     # Cache font data by the loaded name dict.
     _font_data_cache: ClassVar[dict] = {}
     _name_font_cache: ClassVar[dict] = {}
+    _full_name_aliases: ClassVar[dict[str, tuple[str, int, str, str]]] = {}
+    _custom_character_maps: ClassVar[dict[str, set[str]]] = {}
 
-    def __init__(self, name: str, size: float, weight: str = "normal", style: str = "normal", stretch: str = "normal",
+    def __init__(self, name: str, size: float, weight: Weight | str = Weight.NORMAL,
+                 style: Style | str = Style.NORMAL, stretch: Stretch | str = Stretch.NORMAL,
                  dpi: int | None = None) -> None:
         self._glyph_renderer = None
+        self._glyph_sources = {}
+        self._stroke_glyphs = {}
         super().__init__(name, size, weight, style, stretch, dpi)
 
-        if isinstance(weight, str):
-            self._weight = name_to_weight.get(weight.lower(), "normal")
+        full_name_alias = None
+        if pyglet.options.font_name_compatibility:
+            full_name_alias = self._full_name_aliases.get(name.casefold())
+
+        if full_name_alias:
+            family, self._weight, self._italic, self._stretch = full_name_alias
+            # A full name identifies one concrete face. Use its canonical CSS
+            # family and embedded traits, rather than synthesizing a different
+            # face from separately requested traits.
+            self._name = family
         else:
-            self._weight = "bold" if weight is True else "normal"
+            if isinstance(weight, str):
+                self._weight = name_to_weight.get(weight.lower(), "normal")
+            else:
+                self._weight = "bold" if weight is True else "normal"
 
-        if isinstance(stretch, str):
-            self._stretch = _name_to_stretch.get(stretch.lower(), "normal")
-        else:
-            self._stretch = "normal"
+            if isinstance(stretch, str):
+                self._stretch = _name_to_stretch.get(stretch.lower(), "normal")
+            else:
+                self._stretch = "normal"
 
-        self._italic = "italic" if style is True else "normal"
+            if style is True:
+                self._italic = "italic"
+            elif isinstance(style, str) and style.lower() in ("italic", "oblique"):
+                self._italic = style.lower()
+            else:
+                self._italic = "normal"
 
-        self.js_name = f"{self._italic} {self._weight} {self.pixel_size}px '{name}'"
+        self.js_name = f"{self._italic} {self._weight} {self.pixel_size}px '{self._name}'"
 
         _font_context.font = self.js_name
         metrics = _font_context.measureText("A")
@@ -125,7 +185,7 @@ class JavascriptPyodideFont(base.Font):
     @classmethod
     def add_font_data(cls, data: bytes, manager: FontManager) -> Task:
         ttf_info = TruetypeInfoBytes(data)
-        family = ttf_info.get_name("family")  # Family Name
+        family = ttf_info.get_font_family_name()
         if family is None:
             raise FontException("Could not read the font family name.")
 
@@ -133,9 +193,8 @@ class JavascriptPyodideFont(base.Font):
         if subfamily is None:
             raise FontException("Could not read the font subfamily name.")
 
-        fullname = ttf_info.get_name("name")  # Usually combines Family + Subfamily, but not always.
-        #if fullname is None:
-        #    raise FontException("Could not read the font name.")
+        fullname = ttf_info.get_full_font_name()
+        supported_characters = set(ttf_info.get_character_map())
 
         weight = ttf_info.get_weight_class()  # TTF weight value like 700.
         clamped_weight = min(max(weight, 100), 900)  # clamp 100-900.
@@ -172,22 +231,18 @@ class JavascriptPyodideFont(base.Font):
                 return False
 
             js.document.fonts.add(fam_font)
-            # js.document.body.style.fontFamily = family
-            # if _debug:
-            #     js.console.log(f"Loaded Family Font: {family}")
+
+            cls._custom_character_maps.setdefault(family.casefold(), set()).update(supported_characters)
+
+            if fullname and fullname.casefold() != family.casefold():
+                cls._full_name_aliases[fullname.casefold()] = (
+                    family,
+                    clamped_weight,
+                    italic,
+                    _width_class_to_js_stretch.get(ttf_stretch_id, "normal"),
+                )
 
             manager._add_loaded_font({(family, weight_name, italic, stretch_name)})  # noqa: SLF001
-
-            # if family != fullname:
-            #     try:
-            #         await full_font.load()
-            #     except Exception as e:
-            #         print("Exception occurred loading Name Font:", e)
-            #         return False
-            #     js.document.fonts.add(full_font)
-            #     if _debug:
-            #         js.console.log(f"Loaded Named Font: {fullname}")
-            #
             return True
 
         return asyncio.create_task(_load_fonts())
@@ -206,12 +261,31 @@ class JavascriptPyodideFont(base.Font):
                 c = " "  # noqa: PLW2901
             if c not in self.glyphs:
                 self.glyphs[c] = self._glyph_renderer.render(c)
+                self._glyph_sources[id(self.glyphs[c])] = c
             glyphs.append(self.glyphs[c])
             offsets.append(GlyphPosition(0, 0, 0, 0))
         return glyphs, offsets
 
+    def get_stroke_glyph(self, glyph: Glyph, size: float, join: str = "round") -> Glyph | None:
+        if size <= 0 or (text := self._glyph_sources.get(id(glyph))) is None:
+            return None
+        cache_key = id(glyph), size, join
+        if stroked := self._stroke_glyphs.get(cache_key):
+            return stroked
+        stroked = self._glyph_renderer.render_stroke(text, size, join)
+        if stroked is not None:
+            self._stroke_glyphs[cache_key] = stroked
+        return stroked
+
     def get_glyphs_for_width(self, text: str, width: int) -> list[Glyph]:
         return super().get_glyphs_for_width(text, width)
+
+    def has_character(self, character: str) -> bool:
+        # Browser APIs do not expose a way to do this for system fonts.
+        # For custom fonts, we utilize the glyph table from our ttf inspector.
+        super().has_character(character)
+        custom_characters = self._custom_character_maps.get(self._name.casefold())
+        return custom_characters is None or character in custom_characters
 
     @classmethod
     def have_font(cls: type[JavascriptPyodideFont], name: str) -> bool:
@@ -225,6 +299,9 @@ class JavascriptPyodideFont(base.Font):
         Therefore, a hidden element will be used to measure a string to check for a size match between the above
         font families. If the text matches, then a fallback font was used.
         """
+        if pyglet.options.font_name_compatibility and name.casefold() in cls._full_name_aliases:
+            return True
+
         match_serif_name = f"'{name}', serif"
         match_sans_serif_name = f"'{name}', sans-serif"
 

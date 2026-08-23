@@ -127,9 +127,6 @@ Classes
   :members:
   :undoc-members:
 
-.. autoclass:: pyglet.media.drivers.base.MediaEvent
-    :members:
-
 Functions
 ---------
 

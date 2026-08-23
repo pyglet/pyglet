@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from enum import Enum, auto
 
 
@@ -23,6 +24,7 @@ class GeometryMode(Enum):
     TRIANGLES = auto()
     TRIANGLE_STRIP = auto()
     TRIANGLE_FAN = auto()
+    PATCHES = auto()
 
 
 class BlendFactor(Enum):
@@ -106,6 +108,18 @@ class ComponentFormat(str, Enum):
     BGRA = 'BGRA'
     L = 'L'  # Luminance (R) - Deprecated
     LA = 'LA'  # Luminance Alpha (LA) - Deprecated
+
+
+class PixelFormat(str, Enum):
+    """Sized byte formats used for image decode and pixel-transfer preferences."""
+
+    RGBA8 = "RGBA8"
+    BGRA8 = "BGRA8"
+
+    @property
+    def component_format(self) -> str:
+        """Return the corresponding :class:`ImageData` component-order string."""
+        return self.value.removesuffix("8")
 
 
 class TextureType(Enum):

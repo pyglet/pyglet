@@ -54,10 +54,6 @@ class CocoaContext(OpenGLSurfaceContext):
         # changes size or location.
         self._nscontext.update()
 
-    def set_full_screen(self) -> None:
-        self._nscontext.makeCurrentContext()
-        self._nscontext.setFullScreen()
-
     def destroy(self) -> None:
         super().destroy()
         self._nscontext.release()

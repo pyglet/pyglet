@@ -7,19 +7,25 @@ To develop pyglet, you need an environment with at least the following:
     - `pytest <https://pytest.org>`_
     - Your favorite Python editor or IDE
 
-All requirements should already be located in ``doc/requirements.txt``
-and ``tests/requirements.txt``.
+Development dependencies are defined in the ``[dependency-groups]`` table in
+``pyproject.toml``. Install pyglet from the checkout, together with the common
+test and documentation dependencies, using the ``dev`` group::
 
-.. code::
+    python -m pip install -e . --group dev
 
-    pip install -r doc/requirements.txt
-    pip install -r tests/requirements.txt
+The ``test-all`` group adds `Pillow <https://pillow.readthedocs.io>`_, which is
+needed for the image tests that use it::
+
+    python -m pip install -e . --group test-all
+
+You can install only the dependencies needed for a specific task instead::
+
+    python -m pip install -e . --group test
+    python -m pip install -e . --group docs
 
 To use and test all pyglet functionality you should also have:
 
     - `FFmpeg <https://www.ffmpeg.org/download.html>`_
-    - `Pillow <https://pillow.readthedocs.io>`_
-    - `coverage <https://coverage.readthedocs.io>`_
 
 To build packages for distribution you need to install:
 
@@ -79,15 +85,14 @@ Activate the virtual environment ::
 You will see the name of the virtual environment at the start of the
 command prompt.
 
-[Optional] Make sure pip is the latest version::
+[Optional] Make sure pip is the latest version. Dependency groups require
+pip 25.1 or newer::
 
-    pip install --upgrade pip
+    python -m pip install --upgrade pip
 
-Now install dependencies in ``doc/requirements.txt`` and
-``tests/requirements.txt``::
+Now install pyglet and the development dependencies::
 
-    pip install -r doc/requirements.txt
-    pip install -r tests/requirements.txt
+    python -m pip install -e . --group dev
 
 Finishing
 '''''''''
@@ -130,16 +135,15 @@ Activate the virtual environment ::
 You will see the name of the virtual environment at the start of the
 command prompt.
 
-[Optional] Make sure pip is the latest version::
+[Optional] Make sure pip is the latest version. Dependency groups require
+pip 25.1 or newer::
 
-   pip install --upgrade pip
+   python -m pip install --upgrade pip
 
 
-Now install dependencies in ``doc/requirements.txt`` and
-``tests/requirements.txt``::
+Now install pyglet and the development dependencies::
 
-    pip install -r doc/requirements.txt
-    pip install -r tests/requirements.txt
+    python -m pip install -e . --group dev
 
 Finishing
 '''''''''

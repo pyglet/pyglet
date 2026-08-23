@@ -22,6 +22,7 @@ Some of the major changes include::
 * Removal of image.blit, and some other legacy patterns.
 * Separation of Audio and Video media Players.
 * Changes to Groups, including how custom Groups are made.
+* Built-in 2D and 3D cameras with managed shader state.
 * Resource image loading improvements.
 * Clearer separation of raw ImageData and Textures.
 
@@ -76,6 +77,48 @@ Common migrations:
 If you still use raw OpenGL calls directly, you can continue to use ``GL_*``
 constants from ``pyglet.graphics.api.gl``. But for pyglet's high-level APIs
 and new rendering helpers, refer to the enums.
+
+
+Shader vertex formats
+^^^^^^^^^^^^^^^^^^^^^
+Vertex-list creation no longer accepts ``(format, values)`` tuples. Configure
+non-default vertex-buffer storage formats on a ShaderProgram view before creating
+vertex lists instead. For example, replace::
+
+    program.vertex_list(3, GeometryMode.TRIANGLES, colors=('Bn', colors))
+
+with::
+
+    byte_colors = program.create_vertex_layout(colors='Bn')
+    byte_colors.vertex_list(3, GeometryMode.TRIANGLES, colors=colors)
+
+This is especially useful for normalized color attributes: the ``"Bn"`` format
+stores colors as unsigned bytes and normalizes them for a ``vec4`` shader input.
+
+Instance attribute divisors are also configured once on the program. Replace::
+
+    program.vertex_list_instanced(3, GeometryMode.TRIANGLES,
+                                  instance_attributes={'translation': 1},
+                                  translation=translations)
+
+with::
+
+    program.set_instance_attributes(translation=1)
+    program.vertex_list_instanced(3, GeometryMode.TRIANGLES,
+                                  translation=translations)
+
+Use ``program.create_vertex_layout(...)`` when one linked shader program needs
+multiple vertex formats. It returns an interned
+:class:`~pyglet.graphics.shader.ShaderProgramView`, which can be used anywhere
+a ShaderProgram is accepted. Equivalent configurations return the same view::
+
+    byte_colors = program.create_vertex_layout(colors='Bn')
+    float_colors = program.create_vertex_layout(colors='f')
+
+To keep a different divisor configuration alongside the program's default,
+configure it on a view::
+
+    instanced_byte_colors = byte_colors.set_instance_attributes(colors=1)
 
 
 Image changes and removal of image.blit
@@ -153,7 +196,7 @@ for textures. This will allow you to use an already existing texture, such as on
 
 Separation of Media Players
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The former ``pyglet.media.Player` class has been split into two dedicated classes: :py:class:`~pyglet.media.AudioPlayer`
+The former ``pyglet.media.Player`` class has been split into two dedicated classes: :py:class:`~pyglet.media.AudioPlayer`
 and :py:class:`~pyglet.media.VideoPlayer`. This separation makes the API clearer by distinguishing pure audio playback
 from video playback, which requires GPU-accelerated rendering and integration with the graphics system.
 
@@ -190,12 +233,104 @@ the amount of driver related bugs and exceptions.
 
 This change should only affect you if you attempt to load resources before a Window is created.
 
-If your application still needs this behavior, it can still be done by creating your own hidden window, and
-assigning the new window the same graphical context as the shadow window.::
+If your application needs to load resources before showing its window, the simplest approach is to
+create the *actual* window hidden, load the resources while its context is current, then show that
+same window.::
+
+    window = pyglet.window.Window(800, 600, visible=False)
+    window.switch_to()
+    batch = pyglet.graphics.Batch()
+    # Load textures and create other resources here.
+    window.set_visible(True)
+
+Alternatively, a hidden window can still be used as a shadow context for assets that OpenGL permits
+contexts to share, such as textures, buffers, shaders, and programs. Passing its context when
+creating the visible window creates a new context in the same sharing group; it does not make both
+windows use one context. Explicitly switch to the visible window before creating context-local
+objects such as :class:`~pyglet.graphics.Batch` data and vertex array objects (VAOs).::
 
     shadow_window = pyglet.window.Window(1, 1, visible=False)
-    actual_window = pyglet.window.Window(800, 600, context=shadow_window.context)
+    shadow_window.switch_to()
+    texture = pyglet.resource.texture("player.png")  # A shareable resource.
 
+    actual_window = pyglet.window.Window(800, 600, context=shadow_window.context)
+    actual_window.switch_to()
+    batch = pyglet.graphics.Batch()  # Bound to actual_window's context.
+
+VAOs are not shared between OpenGL contexts. A batch created while ``shadow_window`` is current
+therefore cannot safely be drawn through ``actual_window``, even though the two contexts share
+textures and other shareable resources. The same separation applies to other context-local OpenGL
+objects.
+
+
+Migrating custom cameras
+^^^^^^^^^^^^^^^^^^^^^^^^
+pyglet 2.x did not provide a public camera component, so applications commonly implemented one by
+constructing projection and view matrices, assigning ``window.projection`` or ``window.view``, and
+restoring those matrices around each draw. Older camera examples followed similar patterns. In
+pyglet 3.0, use the cameras in :py:mod:`pyglet.window.camera` instead. Every window has a default
+:py:class:`~pyglet.window.camera.Camera2D` available as
+:py:attr:`~pyglet.window.Window.camera`, and additional 2D or 3D cameras can be created for world,
+UI, split-screen, minimap, and render-pass views.
+
+This is more than a convenience wrapper around matrix calculations. A camera owns the per-camera
+matrix state and applies it at the correct point in a draw, preventing one view or render pass from
+overwriting data still needed by another. Managing that storage directly can overwrite data that the
+GPU is still reading, introduce synchronization stalls, or leave a later batch using the wrong matrices.
+Applications should therefore select a camera for a draw rather than manually managing the matrix state
+around it. See :ref:`guide_camera` for the shader integration and other camera implementation details.
+
+For example, a typical custom 2D camera previously changed global window matrices around a batch
+draw::
+
+    # Typical pyglet 2.x application pattern:
+    camera.apply(window)
+    world_batch.draw()
+    camera.reset(window)
+    ui_batch.draw()
+
+Replace that matrix/state management with a :class:`~pyglet.window.camera.Camera2D` and select it
+for the batch draw::
+
+    from pyglet.window.camera import Camera2D
+
+    world_camera = Camera2D(
+        window,
+        scroll_speed=400.0,
+        min_zoom=0.25,
+        max_zoom=4.0,
+    )
+    world_camera.position = (camera_x, camera_y)
+    world_camera.zoom = zoom
+
+    @window.event
+    def on_draw():
+        window.clear()
+        with world_batch.draw_with_options() as options:
+            options.camera = world_camera
+        ui_batch.draw()  # Uses window.camera by default.
+
+If world and UI objects share one batch, attach cameras to groups instead::
+
+    world_group = pyglet.graphics.Group(order=0)
+    world_group.set_camera(world_camera)
+
+    ui_group = pyglet.graphics.Group(order=1)
+    ui_group.set_camera(window.camera)
+
+    world_sprite = pyglet.sprite.Sprite(image, batch=batch, group=world_group)
+    ui_label = pyglet.text.Label("Score: 0", batch=batch, group=ui_group)
+
+Camera views can be created with ``camera.create_view()`` for parallax layers, nested transforms, minimaps, and
+independent viewports without manually swapping global matrices.
+
+Simple existing code that assigns :py:attr:`~pyglet.window.Window.projection`,
+:py:attr:`~pyglet.window.Window.view`, or :py:attr:`~pyglet.window.Window.viewport` remains valid.
+These properties now proxy the root view of ``window.camera``. They are useful when an application
+must preserve custom matrices. Prefer camera position, zoom, orientation, viewport, and view APIs
+whenever possible so matrix storage is committed at the correct point in the draw operation. See
+:ref:`guide_camera` for camera views, coordinate conversion, scoped drawing, viewport, and scissor
+examples.
 
 pyglet.graphics.Group changes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -233,19 +368,19 @@ Previously to apply a state, your group might look like this::
             self.texture = texture
 
         def set_state(self):
-            glBindTexture(GL_TEXTURE_2D, self.texture.id)
+            glBindTexture(GL_TEXTURE_2D, self.texture.handle)
 
         def unset_state(self):
             # not required
 
         def __eq__(self, other):
             return (self.__class__ is other.__class__ and
-                    self.texture.id == other.texture.id and
+                    self.texture.key == other.texture.key and
                     self.texture.target == other.texture.target and
                     self.parent == other.parent)
 
         def __hash__(self):
-            return hash((self.texture.id, self.texture.target))
+            return hash((self.texture.key, self.texture.target))
 
 That same group with Pyglet 3.0 look like this::
 
@@ -287,16 +422,27 @@ Additional changes not covered above:
   ``Texture.blit_into`` was renamed to ``Texture.upload`` and
   ``Texture.get_image_data`` was renamed to ``Texture.fetch`` to better reflect that these involve GPU requests.
 
+* Graphics resource identities:
+  Backend-created resources such as textures, buffers, shaders, shader programs,
+  framebuffers, renderbuffers, and vertex arrays now separate their backend
+  ``handle`` from their stable pyglet ``key``. Use ``resource.handle`` when
+  passing a resource to a backend API, and ``resource.key`` for equality,
+  hashing, batching, or cache keys. The read-only ``resource.id`` alias is
+  deprecated; replace it with ``handle``.
+
 * Fonts and text:
   ``pyglet.font.manager`` now supports custom font-name callbacks,
   ``pyglet.font.get_custom_font_names`` was added, and ``pyglet.font.FontGroup``
   allows grouped font fallbacks. ``Label.font_name`` now returns the resolved
-  font family name, not the style string passed in.
+  font family name, not the style string passed in. The Windows-only
+  ``pyglet.options.dw_legacy_naming`` option was removed; use the
+  cross-platform ``pyglet.options.font_name_compatibility`` option instead.
 
 * ``pyglet.window``:
   ``Window.set_mouse_visible`` was renamed to
   ``Window.set_mouse_cursor_visible``, and ``Window.set_mouse_platform_visible``
   was renamed to ``Window.set_mouse_cursor_platform_visible``.
+  ``MouseCursor.gl_drawable`` was renamed to ``MouseCursor.api_drawable``.
 
 * ``pyglet.input``:
   Controllers now dispatch separate events for left/right sticks and

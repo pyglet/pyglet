@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.api.webgl.shader import ShaderProgram
     from pyglet.graphics.draw import DrawContext
     from pyglet.graphics.texture import Texture
+    from pyglet.graphics.resource import TextureKey
 
 
 @dataclass(frozen=True)
@@ -27,11 +28,8 @@ class ActiveTextureState(State):
 
 @dataclass(frozen=True)
 class TextureState(State):  # noqa: D101
-    texture: tuple[int, int]
-    # WebGL doesn't expose the actual texture ID, so we use the python memory ID instead to consolidate the types
-    # as Python doesn't allow the JS Proxy to be hashable.
-    # However, the actual WebGL object needs to be passed for the function.
-    webgl_texture: Any = field(hash=False, compare=False)
+    texture: tuple[int, TextureKey]
+    handle: Any = field(hash=False, compare=False)
     binding: int = 0
     set_id: int = 0
 
@@ -40,13 +38,13 @@ class TextureState(State):  # noqa: D101
 
     @classmethod
     def from_texture(cls, texture: Texture, binding: int, set_id: int) -> TextureState:
-        return cls((texture.target, id(texture.id)),
-                   webgl_texture=texture.id,
+        return cls((texture.target, texture.key),
+                   handle=texture.handle,
                    binding=binding,
                    set_id=set_id)
 
     def set_state(self, ctx: DrawContext) -> None:
-        ctx.surface_ctx.gl.bindTexture(self.texture[0], self.webgl_texture)
+        ctx.surface_ctx.gl.bindTexture(self.texture[0], self.handle)
 
     def generate_parent_states(self) -> Generator[State, None, None]:
         yield ActiveTextureState(self.binding)
@@ -56,9 +54,9 @@ class TextureState(State):  # noqa: D101
 class MultiTextureSamplerState(State):
     """Texture bindings and sampler uniforms for multi-texture draws."""
     program: ShaderProgram
-    textures: tuple[tuple[tuple[int, int], int, int], ...]
+    textures: tuple[tuple[tuple[int, TextureKey], int, int], ...]
     uniforms: tuple[tuple[str, int], ...]
-    webgl_textures: tuple[Any, ...] = field(hash=False, compare=False)
+    handles: tuple[Any, ...] = field(hash=False, compare=False)
 
     sets_state: bool = True
 
@@ -70,17 +68,17 @@ class MultiTextureSamplerState(State):
             first_texture_unit: int = 0,
             set_id: int = 0) -> MultiTextureSamplerState:
         texture_states = tuple(
-            ((texture.target, id(texture.id)), texture_unit, set_id)
+            ((texture.target, texture.key), texture_unit, set_id)
             for texture_unit, texture in enumerate(textures.values(), first_texture_unit)
         )
         uniforms = tuple((name, idx) for idx, name in enumerate(textures, first_texture_unit))
-        webgl_textures = tuple(texture.id for texture in textures.values())
-        return cls(program, texture_states, uniforms, webgl_textures)
+        handles = tuple(texture.handle for texture in textures.values())
+        return cls(program, texture_states, uniforms, handles)
 
     def set_state(self, ctx: DrawContext) -> None:
-        for (texture, texture_unit, _set_id), webgl_texture in zip(self.textures, self.webgl_textures):
+        for (texture, texture_unit, _set_id), handle in zip(self.textures, self.handles):
             ctx.surface_ctx.gl.activeTexture(GL_TEXTURE0 + texture_unit)
-            ctx.surface_ctx.gl.bindTexture(texture[0], webgl_texture)
+            ctx.surface_ctx.gl.bindTexture(texture[0], handle)
 
         for uniform_name, texture_unit in self.uniforms:
             self.program[uniform_name] = texture_unit

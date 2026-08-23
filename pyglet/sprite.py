@@ -391,7 +391,7 @@ class Sprite(event.EventDispatcher):
         self._update_position()
 
     def _set_texture(self, texture: Texture) -> None:
-        texture_changed = texture.id != self._texture.id
+        texture_changed = texture.key != self._texture.key
         self._texture = texture
 
         if texture_changed:
@@ -408,12 +408,12 @@ class Sprite(event.EventDispatcher):
     def _create_vertex_list(self) -> None:
         self._vertex_list = self.program.vertex_list_indexed(
             4, GeometryMode.TRIANGLES, [0, 1, 2, 0, 2, 3], self._batch, self._group,
-            position=('f', self._get_vertices()),
-            colors=('Bn', self._rgba * 4),
-            translate=('f', (self._x, self._y, self._z) * 4),
-            scale=('f', (self._scale * self._scale_x, self._scale * self._scale_y) * 4),
-            rotation=('f', (self._rotation,) * 4),
-            tex_coords=('f', self._texture.tex_coords))
+            position=self._get_vertices(),
+            colors=self._rgba * 4,
+            translate=(self._x, self._y, self._z) * 4,
+            scale=(self._scale * self._scale_x, self._scale * self._scale_y) * 4,
+            rotation=(self._rotation,) * 4,
+            tex_coords=self._texture.tex_coords)
 
     def _get_vertices(self) -> tuple:
         if not self._visible:
@@ -916,7 +916,7 @@ class MultiTextureSprite(Sprite):
             self.dispatch_event('on_animation_end')
 
     def _set_multi_texture(self, key: str, new_tex: Texture) -> None:
-        if new_tex.id != self._textures[key].id:
+        if new_tex.key != self._textures[key].key:
             # Copy so this instance can diverge from grouped peers on migration.
             self._textures = self._textures.copy()
             self._textures[key] = new_tex
@@ -935,15 +935,15 @@ class MultiTextureSprite(Sprite):
     def _create_vertex_list(self) -> None:
         tex_coords = {}
         for name, tex in self._textures.items():
-            tex_coords[f"{name}_coords"] = ('f', tex.tex_coords)
+            tex_coords[f"{name}_coords"] = tex.tex_coords
 
         self._vertex_list = self._program.vertex_list_indexed(
             4, GeometryMode.TRIANGLES, [0, 1, 2, 0, 2, 3], self._batch, self._group,
-            position=('f', self._get_vertices()),
-            colors=('Bn', self._rgba * 4),
-            translate=('f', (self._x, self._y, self._z) * 4),
-            scale=('f', (self._scale * self._scale_x, self._scale * self._scale_y) * 4),
-            rotation=('f', (self._rotation,) * 4),
+            position=self._get_vertices(),
+            colors=self._rgba * 4,
+            translate=(self._x, self._y, self._z) * 4,
+            scale=(self._scale * self._scale_x, self._scale * self._scale_y) * 4,
+            rotation=(self._rotation,) * 4,
             **tex_coords)
 
     def _get_base_texture(self) -> Texture:
@@ -986,7 +986,7 @@ class MultiTextureSprite(Sprite):
         self._set_multi_texture(name, texture)
 
         base_texture = self._get_base_texture()
-        if base_texture.id != self._texture.id:
+        if base_texture.key != self._texture.key:
             self._texture = base_texture
             self._update_position()
 

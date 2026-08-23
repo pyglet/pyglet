@@ -111,6 +111,7 @@ rst_epilog = rf"""
 .. |min_python_version| replace:: {pyglet.MIN_PYTHON_VERSION_STR}
 .. |min_python_version_package_name| replace:: ``python{pyglet.MIN_PYTHON_VERSION_STR}``
 .. |min_python_version_fancy_str| replace:: Python {pyglet.MIN_PYTHON_VERSION_STR}\+
+.. |pyodide_version| replace:: {pyglet.PYODIDE_VERSION}
 """
 
 implementations = ["cocoa", "win32", "xlib"]

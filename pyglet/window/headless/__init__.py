@@ -3,17 +3,7 @@ from __future__ import annotations
 from typing import Sequence
 
 import pyglet
-# from pyglet.window import key
-# from pyglet.window import mouse
 from pyglet.event import EventDispatcher
-from pyglet.libs.linux.egl import (
-    eglCreatePbufferSurface,
-    EGLint,
-    EGL_WIDTH,
-    EGL_HEIGHT,
-    EGL_NONE,
-    eglDestroySurface,
-)
 from pyglet.window import (
     BaseWindow,
     _PlatformEventHandler,
@@ -26,8 +16,12 @@ ViewEventHandler = _ViewEventHandler
 
 
 class HeadlessWindow(BaseWindow):
-    egl_display_connection = None
-    egl_surface = None
+    """Backend-neutral headless window.
+
+    This class provides a no-OS-window shell around a graphics context.
+    It is suitable for Vulkan offscreen rendering paths where no native
+    window system surface is required.
+    """
 
     def _recreate(self, changes: Sequence[str]) -> None:
         if 'fullscreen' in changes:
@@ -48,7 +42,10 @@ class HeadlessWindow(BaseWindow):
         pass
 
     def set_size(self, width: int, height: int) -> None:
-        pass
+        self._width = int(width)
+        self._height = int(height)
+        self.dispatch_event('_on_internal_resize', self._width, self._height)
+        self.dispatch_event('on_resize', self._width, self._height)
 
     def get_size(self) -> tuple[int, int]:
         return self._width, self._height
@@ -100,14 +97,39 @@ class HeadlessWindow(BaseWindow):
         pass
 
     def _create(self) -> None:
+        if pyglet.options.backend and not self._shadow:
+            self._assign_config()
+            self.context.attach(self)
+
+
+class EGLHeadlessWindow(HeadlessWindow):
+    """EGL-backed headless window for OpenGL/EGL rendering backends."""
+
+    egl_display_connection = None
+    egl_surface = None
+
+    def _create(self) -> None:
+        if not pyglet.options.backend or self._shadow:
+            return
+
+        from pyglet.libs.egl import (  # noqa: PLC0415
+            EGLint,
+            EGL_WIDTH,
+            EGL_HEIGHT,
+            EGL_NONE,
+            eglCreatePbufferSurface,
+        )
+
         self.egl_display_connection = self.display._display_connection  # noqa: SLF001
-        if pyglet.options.backend and not self.egl_surface and not self._shadow:
+        if not self.egl_surface:
             self._assign_config()
             pbuffer_attribs = (EGL_WIDTH, self._width, EGL_HEIGHT, self._height, EGL_NONE)
             pbuffer_attrib_array = (EGLint * len(pbuffer_attribs))(*pbuffer_attribs)
-            self.egl_surface = eglCreatePbufferSurface(self.egl_display_connection,
-                                                       self.config._egl_config,  # noqa: SLF001
-                                                       pbuffer_attrib_array)
+            self.egl_surface = eglCreatePbufferSurface(
+                self.egl_display_connection,
+                self.config._egl_config,  # noqa: SLF001
+                pbuffer_attrib_array,
+            )
 
             if not self.egl_surface:
                 raise Exception("Failed to create EGL Surface.")
@@ -116,9 +138,11 @@ class HeadlessWindow(BaseWindow):
     def close(self) -> None:
         super().close()
         if self.egl_surface:
+            from pyglet.libs.egl import eglDestroySurface  # noqa: PLC0415
+
             eglDestroySurface(self.egl_display_connection, self.egl_surface)
             self.egl_surface = None
         self.egl_display_connection = None
 
 
-__all__ = ['HeadlessWindow']
+__all__ = ['EGLHeadlessWindow', 'HeadlessWindow']

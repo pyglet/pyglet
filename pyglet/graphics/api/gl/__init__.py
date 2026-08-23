@@ -52,7 +52,7 @@ import pyglet as _pyglet
 from pyglet import compat_platform
 from pyglet.graphics.api.gl.gl import *  # Must always be imported before gl_info or bad things happen.  # noqa: F403
 from pyglet.graphics.api.gl.lib import GLException  # noqa: F401
-from .base import ObjectSpace  # noqa: F401
+from .base import GLSharedObjectSpace  # noqa: F401
 from .context import OpenGLSurfaceContext
 
 _is_pyglet_doc_run = hasattr(_sys, "is_pyglet_doc_run") and _sys.is_pyglet_doc_run

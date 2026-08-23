@@ -5,6 +5,7 @@ from ctypes import POINTER, byref, c_ubyte, cast, memmove, string_at, Array
 from typing import NamedTuple, Sequence, TYPE_CHECKING
 
 import pyglet
+from pyglet.enums import Stretch, Style, Weight
 from pyglet import image
 from pyglet.font import base
 from pyglet.font.base import GlyphPosition
@@ -19,6 +20,9 @@ from pyglet.font.freetype_lib import (
     FT_Done_Face,
     FT_Face,
     FT_GlyphSlot,
+    FT_Glyph,
+    FT_Stroker,
+    FT_BitmapGlyph,
     FT_Load_Glyph,
     FT_New_Face,
     FT_New_Memory_Face,
@@ -36,6 +40,7 @@ from pyglet.font.freetype_lib import (
     FT_PIXEL_MODE_BGRA,
     FT_Get_Char_Index,
     FT_LOAD_NO_BITMAP,
+    FT_LOAD_DEFAULT,
     FT_Load_Char,
     FT_FACE_FLAG_SFNT,
     FT_SfntName,
@@ -43,6 +48,20 @@ from pyglet.font.freetype_lib import (
     FT_Get_Sfnt_Name,
     TT_NAME_ID_FULL_NAME,
     TT_NAME_ID_FONT_FAMILY,
+    FT_Get_Glyph,
+    FT_Done_Glyph,
+    FT_Glyph_To_Bitmap,
+    FT_Glyph_StrokeBorder,
+    FT_Stroker_New,
+    FT_Stroker_Set,
+    FT_Stroker_Done,
+    FT_RENDER_MODE_NORMAL,
+    FT_RENDER_MODE_MONO,
+    FT_STROKER_LINECAP_ROUND,
+    FT_STROKER_LINEJOIN_ROUND,
+    FT_STROKER_LINEJOIN_BEVEL,
+    FT_STROKER_LINEJOIN_MITER_VARIABLE,
+    FreeTypeError,
 )
 from pyglet.font.harfbuzz import harfbuzz_available, get_resource_from_ft_font, get_harfbuzz_shaped_glyphs
 from pyglet.util import asbytes, asstr, debug_print
@@ -236,6 +255,75 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
         self._get_bitmap_data()
         return self._create_glyph()
 
+    def render_stroke(self, glyph_index: int, size: float, join: str, advance: int) -> base.Glyph | None:
+        """Rasterize the outside border of an outline glyph."""
+        self.font.face.set_char_size(self.font.size, self.font.dpi)
+        glyph = FT_Glyph()
+        stroker = None
+        try:
+            flags = FT_LOAD_DEFAULT | FT_LOAD_NO_BITMAP
+            if pyglet.options.text_antialiasing is False:
+                flags |= FT_LOAD_TARGET_MONO
+            FT_Load_Glyph(self.font.face.ft_face, glyph_index, flags)
+            FT_Get_Glyph(self.font.face.ft_face.contents.glyph, byref(glyph))
+
+            stroker = self.font.face.new_stroker(size, join)
+            # ``inside=0`` retains only the border outside the filled glyph.
+            FT_Glyph_StrokeBorder(byref(glyph), stroker, 0, 1)
+            FT_Stroker_Done(stroker)
+            stroker = None
+            FT_Glyph_To_Bitmap(
+                byref(glyph),
+                FT_RENDER_MODE_MONO if pyglet.options.text_antialiasing is False else FT_RENDER_MODE_NORMAL,
+                None, 1,
+            )
+        except FreeTypeError:
+            # Bitmap, SVG, and other non-outline glyphs cannot be stroked by
+            # FreeType's outline stroker.
+            if glyph:
+                FT_Done_Glyph(glyph)
+            return None
+        finally:
+            if stroker:
+                FT_Stroker_Done(stroker)
+
+        try:
+            bitmap_glyph = cast(glyph, FT_BitmapGlyph).contents
+            bitmap = bitmap_glyph.bitmap
+            width, height = bitmap.width, bitmap.rows
+            if width == 0 or height == 0:
+                data = bytes(4)
+                width = height = 1
+            elif bitmap.pixel_mode == FT_PIXEL_MODE_GRAY:
+                raw = string_at(bitmap.buffer, abs(bitmap.pitch) * height)
+                data = bytearray(width * height * 4)
+                for y in range(height):
+                    row = raw[y * abs(bitmap.pitch):y * abs(bitmap.pitch) + width]
+                    for x, alpha in enumerate(row):
+                        offset = (y * width + x) * 4
+                        data[offset:offset + 4] = (255, 255, 255, alpha)
+            elif bitmap.pixel_mode == FT_PIXEL_MODE_MONO:
+                raw = string_at(bitmap.buffer, abs(bitmap.pitch) * height)
+                data = bytearray(width * height * 4)
+                for y in range(height):
+                    row = raw[y * abs(bitmap.pitch):(y + 1) * abs(bitmap.pitch)]
+                    for x in range(width):
+                        alpha = 255 if row[x // 8] & (0x80 >> (x % 8)) else 0
+                        offset = (y * width + x) * 4
+                        data[offset:offset + 4] = (255, 255, 255, alpha)
+            else:
+                return None
+
+            image_data = image.ImageData(width, height, "BGRA", bytes(data), width * 4)
+            stroked = self.font.create_glyph(image_data)
+            stroked.set_bearings(height - bitmap_glyph.top, bitmap_glyph.left, advance)
+            # FreeType bitmap rows run from top to bottom.
+            tex_coords = list(stroked.tex_coords)
+            stroked.tex_coords = tex_coords[9:12] + tex_coords[6:9] + tex_coords[3:6] + tex_coords[:3]
+            return stroked
+        finally:
+            FT_Done_Glyph(glyph)
+
 
 class FreeTypeFontMetrics(NamedTuple):
     ascent: int
@@ -244,18 +332,36 @@ class FreeTypeFontMetrics(NamedTuple):
 
 class MemoryFaceStore:
     _dict: dict[tuple[str, str, str, str], FreeTypeMemoryFace]
+    _full_name_aliases: dict[str, FreeTypeMemoryFace]
 
     def __init__(self) -> None:
         self._dict = {}
+        self._full_name_aliases = {}
 
     def add(self, face: FreeTypeMemoryFace) -> None:
         self._dict[face.name, face.weight, face.style, face.stretch] = face
+        if full_name := face.full_name:
+            self._full_name_aliases[full_name.casefold()] = face
 
     def contains(self, name: str) -> bool:
-        return len([fn_name for fn_name, _, _, _ in self._dict if name.lower() == fn_name.lower()]) > 0
+        return (
+            (pyglet.options.font_name_compatibility and name.casefold() in self._full_name_aliases)
+            or any(name.casefold() == family_name.casefold() for family_name, _, _, _ in self._dict)
+        )
 
-    def get(self, name: str, weight: str, style: str, stretch: str) -> FreeTypeMemoryFace | None:
-        return self._dict.get((name, weight, style, stretch), None)
+    def get(self, name: str, weight: Weight | str, style: Style | str,
+            stretch: Stretch | str) -> FreeTypeMemoryFace | None:
+        # A full name identifies one concrete face, including its traits. A
+        # family name remains trait-sensitive, so callers can select variants.
+        if pyglet.options.font_name_compatibility and (face := self._full_name_aliases.get(name.casefold())):
+            return face
+
+        for (family_name, face_weight, face_style, face_stretch), face in self._dict.items():
+            if (family_name.casefold() == name.casefold()
+                    and (face_weight, face_style, face_stretch) == (weight, style, stretch)):
+                return face
+
+        return None
 
     def all_keys(self) -> list[tuple[str, str, str, str]]:
         return list(self._dict.keys())
@@ -270,13 +376,15 @@ class FreeTypeFont(base.Font):
     face: FreeTypeFace
 
     def __init__(self, name: str, size: float,
-                 weight: str = "normal",
-                 style: str = "normal",
-                 stretch: str = "normal", dpi: int | None = None) -> None:
+                 weight: Weight | str = Weight.NORMAL,
+                 style: Style | str = Style.NORMAL,
+                 stretch: Stretch | str = Stretch.NORMAL, dpi: int | None = None) -> None:
         super().__init__(name, size, weight, style, stretch, dpi)
 
         self._load_font_face()
         self.metrics = self.face.get_font_metrics(self.size, self.dpi)
+        self._glyph_sources: dict[int, int] = {}
+        self._stroke_glyphs: dict[tuple[int, float, str], base.Glyph] = {}
 
         if pyglet.options.text_shaping == 'harfbuzz' and harfbuzz_available():
             self.hb_resource = get_resource_from_ft_font(self)
@@ -301,6 +409,10 @@ class FreeTypeFont(base.Font):
         glyph_index = self.face.get_character_index(character)
         self.face.set_char_size(self.size, self.dpi)
         return self.face.get_glyph_slot(glyph_index)
+
+    def has_character(self, character: str) -> bool:
+        super().has_character(character)
+        return self.face.get_character_index(character) != 0
 
     def _load_font_face(self) -> None:
         self.face = self._memory_faces.get(self._name, self.weight, self.style, self.stretch)
@@ -350,7 +462,9 @@ class FreeTypeFont(base.Font):
 
         # Missing glyphs, get their info.
         for glyph_indice in missing:
-            self.glyphs[glyph_indice] = self._glyph_renderer.render_index(glyph_indice)
+            glyph = self._glyph_renderer.render_index(glyph_indice)
+            self.glyphs[glyph_indice] = glyph
+            self._glyph_sources[id(glyph)] = glyph_indice
 
     def get_glyphs(self, text: str, shaping: bool) -> tuple[list[base.Glyph], list[base.GlyphPosition]]:
         """Create and return a list of Glyphs for `text`.
@@ -375,10 +489,26 @@ class FreeTypeFont(base.Font):
             if c == "\t":
                 c = " "  # noqa: PLW2901
             if c not in self.glyphs:
-                self.glyphs[c] = self._glyph_renderer.render(c)
+                glyph = self._glyph_renderer.render(c)
+                self.glyphs[c] = glyph
+                self._glyph_sources[id(glyph)] = self.face.get_character_index(c)
             glyphs.append(self.glyphs[c])
 
         return glyphs, [GlyphPosition(0, 0, 0, 0)] * len(text)
+
+    def get_stroke_glyph(self, glyph: base.Glyph, size: float, join: str = "round") -> base.Glyph | None:
+        if size <= 0 or (glyph_index := self._glyph_sources.get(id(glyph))) is None:
+            return None
+
+        cache_key = id(glyph), size, join
+        if stroked := self._stroke_glyphs.get(cache_key):
+            return stroked
+
+        self._initialize_renderer()
+        stroked = self._glyph_renderer.render_stroke(glyph_index, size, join, glyph.advance)
+        if stroked is not None:
+            self._stroke_glyphs[cache_key] = stroked
+        return stroked
 
     def get_text_size(self, text: str) -> tuple[int, int]:
         width = 0
@@ -535,6 +665,18 @@ class FreeTypeFace:
         FT_Load_Glyph(self.ft_face, glyph_index, flags)
         return self.ft_face.contents.glyph.contents
 
+    def new_stroker(self, size: float, join: str):
+        stroker = FT_Stroker()
+        # A stroke radius is specified in 26.6 pixels. Its miter limit is 16.16
+        FT_Stroker_New(ft_get_library(), byref(stroker))
+        line_joins = {
+            "round": FT_STROKER_LINEJOIN_ROUND,
+            "bevel": FT_STROKER_LINEJOIN_BEVEL,
+            "miter": FT_STROKER_LINEJOIN_MITER_VARIABLE,
+        }
+        FT_Stroker_Set(stroker, float_to_f26p6(size), FT_STROKER_LINECAP_ROUND, line_joins[join], 10 << 16)
+        return stroker
+
     def get_font_metrics(self, size: float, dpi: int) -> FreeTypeFontMetrics:
         if self.set_char_size(size, dpi):
             metrics = self.ft_face.contents.size.contents.metrics
@@ -572,25 +714,36 @@ class FreeTypeFace:
         """Return the value from the TTF/OTF/AAT font table for the specified TT_NAME_ID."""
         if self.face_flags & FT_FACE_FLAG_SFNT:
             name_count = FT_Get_Sfnt_Name_Count(self.ft_face)
+            fallback_name = None
             for i in range(name_count):
                 name = FT_SfntName()
                 FT_Get_Sfnt_Name(self.ft_face, i, name)
-                if name.platform_id == name_id:
+                if name.name_id == name_id:
                     raw = string_at(name.string, name.string_len)
 
-                    # First try decoding with UTF-16BE (used by Windows name table)
+                    # Microsoft and Unicode name records are UTF-16BE. The
+                    # first matching record is not necessarily one of those.
                     try:
-                        full_name = raw.decode("utf-16-be")
+                        font_name = raw.decode("utf-16-be") if name.platform_id in (0, 3) else raw.decode("mac_roman")
                     except UnicodeDecodeError:
-                        full_name = raw.decode("latin1", errors="replace")
+                        font_name = raw.decode("latin1", errors="replace")
 
-                    return full_name
+                    if name.platform_id == 3:
+                        return font_name
+                    fallback_name = fallback_name or font_name
+
+            return fallback_name
 
         return None
 
     def _get_full_name(self) -> str | None:
         """Checks the font naming table."""
         return self._get_ttf_string(TT_NAME_ID_FULL_NAME)
+
+    @property
+    def full_name(self) -> str | None:
+        """Return the OpenType full name when one is present."""
+        return self._get_full_name()
 
 
 

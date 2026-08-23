@@ -6,8 +6,9 @@ import sys
 from functools import lru_cache
 from typing import TYPE_CHECKING, Sequence
 
-import js
-import pyodide.ffi
+import js  # noqa: F821
+
+from pyglet.libs.emscripten import PersistentBufferView, copy_to_js_uint8_array
 
 from pyglet.graphics.api.webgl.gl import (
     GL_ARRAY_BUFFER,
@@ -25,7 +26,6 @@ from pyglet.graphics import UnsupportedBackendError
 from pyglet.graphics.buffer import (
     AbstractBuffer,
     BackedBufferObject as BaseBackedBufferObject,
-    BufferDataStore,
     CTypeDataStore,
     DrawIndirectBuffer,
     MappedBufferObject as BaseMappedBufferObject,
@@ -45,9 +45,41 @@ if TYPE_CHECKING:
     from pyglet.graphics.shader import GraphicsAttribute
 
 
-def _to_js_uint8(data: bytes) -> js.Uint8Array:
-    buffer = pyodide.ffi.to_js(memoryview(data))
-    return js.Uint8Array.new(buffer)
+class WebGLDataStore(CTypeDataStore):
+    """ctypes-backed host store with a persistent JavaScript byte view.
+
+    Allows us to pass a view to JS functions without having to copy data.
+    """
+
+    _view: PersistentBufferView | None
+
+    def __init__(self, size: int, data_type: DataTypes, stride: int, element_count: int) -> None:
+        super().__init__(size, data_type, stride, element_count)
+        self._view = PersistentBufferView(self.get_memoryview())
+
+    @property
+    def view(self) -> PersistentBufferView:
+        assert self._view is not None, "WebGLDataStore has been released."
+        return self._view
+
+    def resize(self, size: int) -> None:
+        # Do not release a view if the base store will reject a resize.
+        assert self._owns_memory, "Cannot resize an externally backed store. Use rebind_external instead."
+        self.release()
+        super().resize(size)
+        self._view = PersistentBufferView(self.get_memoryview())
+
+    def release(self) -> None:
+        """Release the persistent view before discarding its ctypes memory."""
+        if self._view is not None:
+            self._view.release()
+            self._view = None
+
+    def __del__(self) -> None:
+        try:
+            self.release()
+        except AttributeError:
+            pass
 
 
 class WebGLBufferObject(AbstractBuffer):
@@ -56,7 +88,7 @@ class WebGLBufferObject(AbstractBuffer):
     This class intentionally treats data as bytes for GPU transfer.
     """
 
-    id: WebGLBuffer | None
+    handle: WebGLBuffer | None
     usage: int
     target: int
 
@@ -80,7 +112,7 @@ class WebGLBufferObject(AbstractBuffer):
         self._context = context
         self._gl = context.gl
 
-        self.id = self._gl.createBuffer()
+        self._handle = self._gl.createBuffer()
         self._allocated = False
         self._data_uploaded = False
 
@@ -91,7 +123,7 @@ class WebGLBufferObject(AbstractBuffer):
         )
 
     def bind(self) -> None:
-        self._gl.bindBuffer(self.target, self.id)
+        self._gl.bindBuffer(self.target, self._handle)
 
     def unbind(self) -> None:
         self._gl.bindBuffer(self.target, None)
@@ -136,7 +168,7 @@ class WebGLBufferObject(AbstractBuffer):
         raw = bytes(data)
         assert len(raw) == self.size, f"Expected {self.size} bytes for full upload, got {len(raw)}."
         self.bind()
-        self._gl.bufferData(self.target, _to_js_uint8(raw), self.usage)
+        self._gl.bufferData(self.target, copy_to_js_uint8_array(raw), self.usage)
         self._set_data_uploaded()
 
     def set_bytes_region(self, offset: int, data: bytes | bytearray | memoryview) -> None:
@@ -155,18 +187,18 @@ class WebGLBufferObject(AbstractBuffer):
         self._data_uploaded = False
 
     def delete(self) -> None:
-        if self.id is None:
+        if self._handle is None:
             return
-        self._gl.deleteBuffer(self.id)
-        self.id = None
+        self._gl.deleteBuffer(self._handle)
+        self._handle = None
         self._allocated = False
         self._data_uploaded = False
 
     def __del__(self) -> None:
-        if self.id is not None:
+        if self._handle is not None:
             try:
-                self._context.delete_buffer(self.id)
-                self.id = None
+                self._context.delete_buffer(self._handle)
+                self._handle = None
             except (AttributeError, ImportError):
                 pass  # Interpreter is shutting down
 
@@ -179,7 +211,7 @@ class WebGLBufferObject(AbstractBuffer):
             return
 
         # Copy data from old buffer into new buffer, then replace.
-        old_id = self.id
+        old_id = self._handle
         new_id = self._gl.createBuffer()
         copy_size = min(self.size, size) if self._data_uploaded else 0
 
@@ -195,13 +227,13 @@ class WebGLBufferObject(AbstractBuffer):
                 copy_size,
             )
         self._gl.deleteBuffer(old_id)
-        self.id = new_id
+        self._handle = new_id
         self.size = size
         self._allocated = True
         self._data_uploaded = copy_size > 0
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(id={self.id}, size={self.size})"
+        return f"{self.__class__.__name__}(handle={self._handle}, size={self.size})"
 
 
 class WebGLMappedBufferObject(WebGLBufferObject, BaseMappedBufferObject):
@@ -220,6 +252,7 @@ class WebGLMappedBufferObject(WebGLBufferObject, BaseMappedBufferObject):
 class WebGLBackedBufferObject(BaseBackedBufferObject, WebGLBufferObject):
     """Buffer with host-side mirrored store and deferred GPU commit."""
 
+    store: WebGLDataStore
     data: object
     data_ptr: int | None
     _dirty_min: int
@@ -235,11 +268,13 @@ class WebGLBackedBufferObject(BaseBackedBufferObject, WebGLBufferObject):
         element_count: int,
         usage: int = GL_DYNAMIC_DRAW,
         target: int = GL_ARRAY_BUFFER,
-        store: BufferDataStore | None = None,
+        store: WebGLDataStore | None = None,
     ) -> None:
         WebGLBufferObject.__init__(self, context, size, target=target, usage=usage)
 
-        store = store or CTypeDataStore(size, data_type, stride, element_count)
+        store = store or WebGLDataStore(size, data_type, stride, element_count)
+        if not isinstance(store, WebGLDataStore):
+            raise TypeError("WebGLBackedBufferObject requires a WebGLDataStore.")
         assert store.size == size and store.stride == stride and store.element_count == element_count, (
             "Store layout mismatch. "
             f"Expected size={size}, stride={stride}, element_count={element_count}; "
@@ -279,12 +314,12 @@ class WebGLBackedBufferObject(BaseBackedBufferObject, WebGLBufferObject):
         self.bind()
         size = self._dirty_max - self._dirty_min
         if not self._allocated or not self._data_uploaded or size == self.size:
-            self._gl.bufferData(self.target, _to_js_uint8(self.store.get_bytes()), self.usage)
+            self._gl.bufferData(self.target, self.store.view.data, self.usage)
         else:
             self._gl.bufferSubData(
                 self.target,
                 self._dirty_min,
-                _to_js_uint8(self.store.get_bytes(self._dirty_min, size)),
+                self.store.view.subarray(self._dirty_min, size),
             )
         self._set_data_uploaded()
 
@@ -312,6 +347,10 @@ class WebGLBackedBufferObject(BaseBackedBufferObject, WebGLBufferObject):
         self._dirty = True
         self.get_region.cache_clear()
 
+    def delete(self) -> None:
+        self.store.release()
+        super().delete()
+
 
 class WebGLAttributeBufferObject(WebGLBackedBufferObject):
     """A backed buffer used for shader attributes."""
@@ -321,7 +360,7 @@ class WebGLAttributeBufferObject(WebGLBackedBufferObject):
         context: OpenGLSurfaceContext,
         size: int,
         graphics_attr: GraphicsAttribute,
-        store: BufferDataStore | None = None,
+        store: WebGLDataStore | None = None,
     ) -> None:
         super().__init__(
             context,
@@ -344,7 +383,7 @@ class WebGLIndexedBufferObject(WebGLBackedBufferObject):
         stride: int,
         count: int,
         usage: int = GL_DYNAMIC_DRAW,
-        store: BufferDataStore | None = None,
+        store: WebGLDataStore | None = None,
     ) -> None:
         super().__init__(
             context,
@@ -358,7 +397,7 @@ class WebGLIndexedBufferObject(WebGLBackedBufferObject):
         )
 
     def bind_to_index_buffer(self) -> None:
-        self._gl.bindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.id)
+        self._gl.bindBuffer(GL_ELEMENT_ARRAY_BUFFER, self._handle)
 
 
 class WebGLPixelBufferObject(WebGLBufferObject, PixelBuffer):
@@ -423,13 +462,13 @@ class WebGLTransformFeedbackBufferObject(WebGLBufferObject, TransformFeedbackBuf
 
     def bind_base(self, index: int) -> None:
         self._ensure_allocated()
-        self._gl.bindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, index, self.id)
+        self._gl.bindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, index, self._handle)
         self._data_uploaded = True
 
     def bind_range(self, index: int, offset: int, size: int) -> None:
         self._validate_byte_range(offset, size)
         self._ensure_allocated()
-        self._gl.bindBufferRange(GL_TRANSFORM_FEEDBACK_BUFFER, index, self.id, offset, size)
+        self._gl.bindBufferRange(GL_TRANSFORM_FEEDBACK_BUFFER, index, self._handle, offset, size)
         self._data_uploaded = True
 
 
@@ -483,7 +522,7 @@ class WebGLUniformBufferObject(UniformBufferObject):
         return WebGLBufferObject(context, buffer_size, target=GL_UNIFORM_BUFFER)
 
     def _bind_range(self, binding: int, offset: int, size: int) -> None:
-        self._gl.bindBufferRange(GL_UNIFORM_BUFFER, binding, self.buffer.id, offset, size)
+        self._gl.bindBufferRange(GL_UNIFORM_BUFFER, binding, self.buffer.handle, offset, size)
 
 
 class WebGLPersistentBufferObject(BaseMappedBufferObject):

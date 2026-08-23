@@ -41,6 +41,9 @@ _CATEGORY_EXTEND = {"Me", "Mn"}
 _CATEGORY_CONTROL = {"ZI", "Zp", "Cc", "Cf"}
 _CATEGORY_SPACING_MARK = {"Mc"}
 
+# ASCII space through tilde: letters, digits, keyboard punctuation, and space.
+_DEFAULT_PRELOAD_GLYPHS = "".join(chr(codepoint) for codepoint in range(0x20, 0x7f))
+
 
 def grapheme_break(left: str, left_cc: str, right: str, right_cc: str) -> bool:
     """Determines if there should be a break between characters."""
@@ -295,7 +298,7 @@ class Font:
     # The size of the font in pixels.
     pixel_size: float
 
-    def __init__(self, name: str, size: float, weight: str | Weight, style: str | Style, stretch: str | Stretch,
+    def __init__(self, name: str, size: float, weight: Weight | str, style: Style | str, stretch: Stretch | str,
                  dpi: int | None) -> None:
         """Initialize a font that can be used with Pyglet.
 
@@ -456,6 +459,43 @@ class Font:
             offsets.append(GlyphPosition(0, 0, 0, 0))
 
         return glyphs, offsets
+
+    def preload_glyphs(self, characters: str = _DEFAULT_PRELOAD_GLYPHS) -> None:
+        """Rasterize characters and add their glyphs to this font's texture cache.
+
+        By default, this preloads the 95 printable ASCII characters: space,
+        letters, digits, and keyboard punctuation. Pass a string to preload
+        the characters an application uses in addition to, or instead of,
+        that default set.
+
+        .. versionadded:: 3.0.0
+
+        Args:
+            characters:
+                Characters whose glyph bitmaps should be preloaded.
+        """
+        self.get_glyphs(characters, shaping=False)
+
+    def has_character(self, character: str) -> bool:
+        """Return whether this font face contains a glyph for one character.
+
+        This query only considers the selected face. It does not report glyphs
+        that a platform renderer might obtain through system font fallback.
+
+        .. versionadded:: 3.0.0
+
+        Args:
+            character:
+                A single Unicode character.
+
+        ``character`` must contain exactly one Unicode character.
+        """
+        assert len(character) == 1, "At least one Unicode character is expected."
+        return False
+
+    def get_stroke_glyph(self, glyph: Glyph, size: float, join: str = "round") -> Glyph | None:  # noqa: ARG002
+        """Return a stroked bitmap for ``glyph`` when the backend supports it."""
+        return None
 
     @abc.abstractmethod
     def get_text_size(self, text: str) -> tuple[int, int]:

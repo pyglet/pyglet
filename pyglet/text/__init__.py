@@ -43,9 +43,10 @@ from os.path import splitext as _splitext
 from typing import TYPE_CHECKING, Any, BinaryIO, Literal
 
 import pyglet
+from pyglet.enums import Stretch, Style, Weight
+from pyglet.text.effects import DropShadow, LinearGradient, Stroke
 
-from pyglet.text import caret, document, layout  # noqa: F401
-
+from pyglet.text import caret, document, layout # noqa: F401
 
 if TYPE_CHECKING:
     from pyglet.font import base
@@ -77,6 +78,7 @@ class DocumentDecoder:
 
 
 SupportedMimeTypes = Literal["text/plain", "text/html", "text/vnd.pyglet-attributed"]
+
 
 
 def get_decoder(filename: str | None, mimetype: SupportedMimeTypes | None = None) -> DocumentDecoder:
@@ -197,6 +199,7 @@ class DocumentLabel(layout.TextLayout):
             multiline: bool = False, dpi: int | None = None,
             batch: Batch | None = None, group: Group | None = None,
             program: ShaderProgram | None = None,
+            decoration_shader: ShaderProgram | None = None, effect_shader: ShaderProgram | None = None,
             shaping: bool = True,
             init_document: bool = True,
     ) -> None:
@@ -227,16 +230,22 @@ class DocumentLabel(layout.TextLayout):
             batch: Optional graphics batch to add the label to.
             group: Optional graphics group to use.
             program: Optional graphics shader to use. Will affect all glyphs.
+            decoration_shader: Optional graphics shader to use for all text decorations.
+            effect_shader: Optional graphics shader to use for all glyph-backed text effects.
             shaping:
-                If the text should use proper positioning and typography according to the font and global
-                ``pyglet.options.text_shaping`` option. If ``False``, metrics will instead be tied to the glyph sizes.
+                Whether this label should use text shaping. The shaping backend is selected globally with
+                ``pyglet.options.text_shaping``. If ``False``, glyph positions are based on their unshaped metrics.
             init_document:
                 If ``True``, the document will be initialized. If you
                 are passing an already-initialized document, then you can
                 avoid duplicating work by setting this to ``False``.
+
+        .. versionchanged:: 3.0
+            Added the *shaping* parameter.
         """
         super().__init__(document, x, y, z, width, height, anchor_x, anchor_y, rotation,
-                         multiline, dpi, batch, group, program, shaping=shaping, init_document=init_document)
+                         multiline, dpi, batch, group, program, decoration_shader, effect_shader,
+                         shaping=shaping, init_document=init_document)
 
     @property
     def text(self) -> str:
@@ -248,15 +257,18 @@ class DocumentLabel(layout.TextLayout):
         self.document.text = text
 
     @property
-    def color(self) -> tuple[int, int, int, int]:
+    def color(self) -> tuple[int, int, int, int] | LinearGradient:
         """Text color.
 
-        Color is a 4-tuple of RGBA components, each in range [0, 255].
+        Color is an RGBA tuple or a :class:`LinearGradient`.
         """
         return self.document.get_style("color")
 
     @color.setter
-    def color(self, color: tuple[int, int, int, int]) -> None:
+    def color(self, color: tuple[int, int, int, int] | LinearGradient) -> None:
+        if isinstance(color, LinearGradient):
+            self.document.set_style(0, len(self.document.text), {"color": color})
+            return
         r, g, b, *a = color
         color = r, g, b, a[0] if a else 255
         self.document.set_style(0, len(self.document.text), {"color": color})
@@ -272,12 +284,38 @@ class DocumentLabel(layout.TextLayout):
         An opacity of 255 (the default) has no effect.  An opacity of 128 will
         make the label appear semi-translucent.
         """
-        return self.color[3]
+        color = self.color
+        return color.start[3] if isinstance(color, LinearGradient) else color[3]
 
     @opacity.setter
     def opacity(self, alpha: int) -> None:
-        if alpha != self.color[3]:
-            self.color = list(map(int, (*self.color[:3], alpha)))
+        color = self.color
+        if isinstance(color, LinearGradient):
+            if alpha != color.start[3] or alpha != color.end[3]:
+                self.color = LinearGradient((*color.start[:3], alpha), (*color.end[:3], alpha))
+        elif alpha != color[3]:
+            self.color = list(map(int, (*color[:3], alpha)))
+
+    @property
+    def shadow(self) -> DropShadow | None:
+        """Drop-shadow style, or ``None`` to disable it.
+
+        .. versionadded: 3.0
+        """
+        return self.document.get_style("shadow")
+
+    @shadow.setter
+    def shadow(self, shadow: DropShadow | None) -> None:
+        self.document.set_style(0, len(self.document.text), {"shadow": shadow})
+
+    @property
+    def stroke(self) -> Stroke | None:
+        """Text stroke style, or ``None`` to disable it."""
+        return self.document.get_style("stroke")
+
+    @stroke.setter
+    def stroke(self, stroke: Stroke | None) -> None:
+        self.document.set_style(0, len(self.document.text), {"stroke": stroke})
 
     @property
     def font_name(self) -> str:
@@ -325,7 +363,7 @@ class DocumentLabel(layout.TextLayout):
         self.document.set_style(0, len(self.document.text), {"font_size": font_size})
 
     @property
-    def weight(self) -> str:
+    def weight(self) -> Weight | str:
         """The font weight (boldness or thickness), as a string.
 
         See the :py:class:`~Weight` enum for valid cross-platform
@@ -334,7 +372,7 @@ class DocumentLabel(layout.TextLayout):
         return self.document.get_style("weight")
 
     @weight.setter
-    def weight(self, weight: str) -> None:
+    def weight(self, weight: Weight | str) -> None:
         self.document.set_style(0, len(self.document.text), {"weight": str(weight)})
 
     @property
@@ -384,12 +422,15 @@ class Label(DocumentLabel):
             anchor_x: AnchorX = "left", anchor_y: AnchorY = "baseline", rotation: float = 0.0,
             multiline: bool = False, dpi: int | None = None,
             font_name: str | None = None, font_size: float | None = None,
-            weight: str = "normal", style: str = "normal", stretch: str = "normal",
-            color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            weight: Weight | str = Weight.NORMAL, style: Style | str = Style.NORMAL,
+            stretch: Stretch | str = Stretch.NORMAL,
+            color: tuple[int, int, int, int] | tuple[int, int, int] | LinearGradient = (255, 255, 255, 255),
+            shadow: DropShadow | None = None, stroke: Stroke | None = None,
             align: HorizontalAlign = "left",
-            shaping: bool = True,
             batch: Batch | None = None, group: Group | None = None,
             program: ShaderProgram | None = None,
+            decoration_shader: ShaderProgram | None = None, effect_shader: ShaderProgram | None = None,
+            shaping: bool = True,
     ) -> None:
         """Create a plain text label.
 
@@ -436,37 +477,75 @@ class Label(DocumentLabel):
                  style names.
             color:
                 Font color as RGBA or RGB components, each within
-                ``0 <= component <= 255``.
+                ``0 <= component <= 255``, or a :class:`LinearGradient`.
+            shadow:
+                Optional :class:`DropShadow` style. ``None`` (the default)
+                disables the shadow.
+            stroke:
+                Optional :class:`Stroke` style. ``None`` (the default) disables
+                the stroke.
             align:
                 Horizontal alignment of text on a line, only applies if
                 a width is supplied. One of ``"left"``, ``"center"``
                 or ``"right"``.
-            shaping:
-                If the text should use proper positioning and typography according to the font and global
-                ``pyglet.options.text_shaping`` option. If ``False``, metrics will instead be tied to the glyph sizes.
             batch:
                 Optional graphics batch to add the label to.
             group:
                 Optional graphics group to use.
             program:
                 Optional graphics shader to use. Will affect all glyphs.
+            decoration_shader:
+                Optional graphics shader to use for all text decorations.
+            effect_shader:
+                Optional graphics shader to use for all glyph-backed text effects.
+            shaping:
+                Whether this label should use text shaping. The shaping backend is selected globally with
+                ``pyglet.options.text_shaping``. If ``False``, glyph positions are based on their unshaped metrics.
+
+        .. versionchanged:: 3.0
+            Added the *shaping* parameter.
         """
         doc = decode_text(text)
-        r, g, b, *a = color
-        rgba = r, g, b, a[0] if a else 255
-
-        super().__init__(doc, x, y, z, width, height, anchor_x, anchor_y, rotation,
-                         multiline, dpi, batch, group, program, init_document=False)
-
-        self.document.set_style(0, len(self.document.text), {
+        if isinstance(color, LinearGradient):
+            rgba = color
+        else:
+            r, g, b, *a = color
+            rgba = r, g, b, a[0] if a else 255
+        # This document has no listeners yet, so initialize its uniform style
+        # before attaching it to the layout. This avoids dispatching a style
+        # event solely to perform the initial layout.
+        doc._set_style(0, len(doc.text), {  # noqa: SLF001
             "font_name": font_name,
             "font_size": font_size,
             "weight": weight,
             "style": style,
             "stretch": stretch,
             "color": rgba,
+            "stroke": stroke,
+            "shadow": shadow,
             "align": align,
         })
+
+        super().__init__(
+            doc,
+            x,
+            y,
+            z,
+            width,
+            height,
+            anchor_x,
+            anchor_y,
+            rotation,
+            multiline,
+            dpi,
+            batch,
+            group,
+            program,
+            decoration_shader,
+            effect_shader,
+            shaping=shaping,
+            init_document=True,
+        )
 
 
 class HTMLLabel(DocumentLabel):
@@ -482,7 +561,9 @@ class HTMLLabel(DocumentLabel):
                  multiline: bool = False, dpi: float | None = None,
                  location: Location | None = None,
                  batch: Batch | None = None, group: Group | None = None,
-                 program: ShaderProgram | None = None) -> None:
+                 program: ShaderProgram | None = None,
+                 decoration_shader: ShaderProgram | None = None, effect_shader: ShaderProgram | None = None,
+                 shaping: bool = True) -> None:
         """Create a label with an HTML string.
 
         Args:
@@ -522,13 +603,23 @@ class HTMLLabel(DocumentLabel):
                 Optional graphics group to use.
             program:
                 Optional graphics shader to use. Will affect all glyphs.
+            decoration_shader:
+                Optional graphics shader to use for all text decorations.
+            effect_shader:
+                Optional graphics shader to use for all glyph-backed text effects.
+            shaping:
+                Whether this label should use text shaping. The shaping backend is selected globally with
+                ``pyglet.options.text_shaping``. If ``False``, glyph positions are based on their unshaped metrics.
 
+        .. versionchanged:: 3.0
+            Added the *shaping* parameter.
         """
         self._text = text
         self._location = location
         doc = decode_html(text, location)
         super().__init__(doc, x, y, z, width, height, anchor_x, anchor_y, rotation,
-                         multiline, dpi, batch, group, program, init_document=True)
+                         multiline, dpi, batch, group, program, decoration_shader, effect_shader,
+                         shaping=shaping, init_document=True)
 
     @property
     def text(self) -> str:
@@ -544,16 +635,19 @@ class HTMLLabel(DocumentLabel):
 __all__ = [
     "DocumentDecodeException",
     "DocumentDecoder",
-    "SupportedMimeTypes",
-    "get_decoder",
-    "load",
-    "decode_html",
-    "decode_attributed",
-    "decode_text",
     "DocumentLabel",
-    "Label",
+    "DropShadow",
     "HTMLLabel",
+    "Label",
+    "LinearGradient",
+    "Stroke",
+    "SupportedMimeTypes",
+    "decode_attributed",
+    "decode_html",
+    "decode_text",
     # imported from lower
     "document",
+    "get_decoder",
     "layout",
+    "load",
 ]

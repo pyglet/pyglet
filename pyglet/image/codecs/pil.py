@@ -1,7 +1,7 @@
 import os.path
 
-from pyglet.image import *
-from pyglet.image.codecs import *
+from pyglet.image import ImageData
+from pyglet.image.codecs import ImageDecodeException, ImageDecoder, ImageEncodeException, ImageEncoder
 
 from PIL import Image
 

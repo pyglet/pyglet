@@ -33,7 +33,7 @@ vertex_source = """#version 110
     }
 """
 
-fragment_source = """#version 150 core
+fragment_source = """#version 110
     varying vec4 vertex_colors;
 
     void main()
@@ -48,4 +48,4 @@ def get_default_shader() -> ShaderProgram:
         "default_shapes",
         (vertex_source, 'vertex'),
         (fragment_source, 'fragment'),
-    )
+    ).create_vertex_layout(colors="Bn")

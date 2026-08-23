@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import struct
 import sys
-from typing import Generic, Iterator, Literal, Protocol, Sequence, TYPE_CHECKING, TypeVar, overload
+from dataclasses import dataclass
+from abc import ABC, abstractmethod
+from typing import Any, Generic, Iterator, Literal, Protocol, Sequence, TYPE_CHECKING, TypeVar, overload
 
 import pyglet
 from pyglet.enums import AddressMode, ComponentFormat, TextureFilter, TextureType, GraphicsAPI
+from pyglet.graphics.resource import GraphicsResource, TextureKey
 from pyglet.image.base import (
     _AbstractImage,
     _AbstractImageSequence,
@@ -14,9 +18,11 @@ from pyglet.image.base import (
     ImageGrid,
     _AbstractGrid,
     CompressionFormat,
+    CompressedImageData,
 )
 
 if TYPE_CHECKING:
+    from pyglet.customtypes import Buffer, DataTypes
     from pyglet.graphics.api.base import SurfaceContext
 
 
@@ -29,6 +35,48 @@ class TextureArrayDepthExceeded(ImageException):
 
 
 TTexture = TypeVar("TTexture", bound="Texture")
+
+class PixelReadback(ABC):
+    """Base interface for backend-owned texture pixel readback resources."""
+
+    def __init__(self, context: SurfaceContext) -> None:
+        self._context = context
+
+    @abstractmethod
+    def read_texture(self, *args: Any, **kwargs: Any) -> tuple[int, int, Any]:
+        """Read one texture image or layer into backend-owned CPU memory."""
+
+
+@dataclass(frozen=True)
+class PixelData:
+    """Typed pixel data read from GPU memory.
+
+    Unlike :class:`~pyglet.image.ImageData`, this class does not perform image
+    format conversions. Its data is stored as tightly packed native values of
+    ``data_type``.
+    """
+
+    width: int
+    height: int
+    format: ComponentFormat
+    data_type: DataTypes
+    data: Buffer
+
+    @property
+    def pitch(self) -> int:
+        """Number of bytes in one tightly packed row."""
+        return self.width * len(self.format.value) * struct.calcsize(self.data_type)
+
+    def __bytes__(self) -> bytes:
+        return bytes(self.data)
+
+    def to_image_data(self) -> ImageData:
+        """Return an :class:`~pyglet.image.ImageData` view of this pixel data.
+
+        No pixel conversion is performed. ``ImageData`` retains this object's
+        underlying buffer until it needs to convert or repack it.
+        """
+        return ImageData(self.width, self.height, self.format.value, self.data, self.pitch, self.data_type)
 
 
 class TextureSequence(_AbstractImageSequence, Generic[TTexture]):
@@ -70,7 +118,7 @@ class TextureSequence(_AbstractImageSequence, Generic[TTexture]):
         return self
 
 
-class Texture(_AbstractImage):
+class Texture(_AbstractImage, GraphicsResource[Any, TextureKey]):
     """An image loaded into GPU memory.
 
     Typically, you will get an instance of Texture by accessing calling
@@ -101,6 +149,7 @@ class Texture(_AbstractImage):
     """The GL texture target (e.g., ``GL_TEXTURE_2D``)."""
 
     images = 1
+    key_type = TextureKey
 
     default_filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR, TextureFilter.LINEAR
     """The default minification and magnification filters, as a tuple.
@@ -112,7 +161,7 @@ class Texture(_AbstractImage):
     y: int = 0
     z: int = 0
 
-    def __init__(self, width: int, height: int, tex_id: int,
+    def __init__(self, width: int, height: int, handle: Any,
                  tex_type: TextureType = TextureType.TYPE_2D,
                  internal_format: ComponentFormat = ComponentFormat.RGBA,
                  internal_format_size: int = 8,
@@ -120,10 +169,14 @@ class Texture(_AbstractImage):
                  filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT,
                  anisotropic_level: int = 0,
+                 *,
+                 key: TextureKey | None = None,
                  ) -> None:
         super().__init__(width, height)
-        self.id = tex_id
+        GraphicsResource.__init__(self, key=key)
+        self._handle = handle
         self.tex_type = tex_type
+        self.immutable = False
         self._mipmap_levels = 1
         self._valid_mipmaps: set[int] = set()
 
@@ -147,10 +200,10 @@ class Texture(_AbstractImage):
 
         Textures are invalid after deletion, and may no longer be used.
         """
-        self.id = None
+        self._handle = None
 
     def __del__(self) -> None:
-        if self.id is not None:
+        if self._handle is not None:
             try:
                 self._delete_resource()
             except (AttributeError, ImportError, NotImplementedError):
@@ -172,11 +225,14 @@ class Texture(_AbstractImage):
     def create(cls, width: int, height: int,
                tex_type: TextureType = TextureType.TYPE_2D,
                internal_format: ComponentFormat = ComponentFormat.RGBA,
-               data_type: str = "b",
+               internal_format_size: int = 8,
+               internal_format_type: str = "B",
                filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                address_mode: AddressMode = AddressMode.REPEAT,
                anisotropic_level: int = 0,
                blank_data: bool = True,
+               immutable: bool = False,
+               mipmap_levels: int = 1,
                context: SurfaceContext | None = None) -> Texture:
         """Create a Texture.
 
@@ -192,8 +248,10 @@ class Texture(_AbstractImage):
                 The type of texture.
             internal_format:
                 The components of the internal format.
-            data_type:
-                The data type of the internal format, as a struct string value.
+            internal_format_size:
+                Bit size of each component in the internal format.
+            internal_format_type:
+                Internal format type, as a struct string value.
             filters:
                 The texture filter for the min and mag filters. If a single value is passed, both values will
                 be used as the filter.
@@ -203,6 +261,10 @@ class Texture(_AbstractImage):
                 The anisotropic level of the texture.
             blank_data:
                 If True, initialize the texture data with all zeros. If False, do not pass initial data.
+            immutable:
+                If True, allocate immutable-format texture storage.
+            mipmap_levels:
+                Number of mipmap levels to allocate. Immutable textures cannot add levels later.
             context:
                 If multiple contexts are being used, a specified context the texture is tied to.
         """
@@ -255,17 +317,37 @@ class Texture(_AbstractImage):
         raise NotImplementedError("This method has been removed. See the 3.0 migration documentation.")
 
     def fetch(self, z: int = 0, level: int = 0) -> ImageData:
-        """Fetch the image data of this texture by reading pixel data back from the GPU.
+        """Fetch an image-oriented copy of this texture from the GPU.
 
-        This can be a somewhat costly operation.
+        Reading data back from the GPU can be a costly operation.
 
         Modifying the returned ImageData object has no effect on the
         texture itself. Uploading ImageData back to the GPU/texture
         can be done with the :py:meth:`~Texture.upload` method.
 
+        The returned :class:`~pyglet.image.ImageData` uses unsigned-byte image
+        components. Floating-point and integer textures are unsupported here;
+        use :meth:`read_pixels` to retrieve their typed pixel values instead.
+
         Args:
             z:
                 For 3D textures, the image slice to retrieve.
+            level:
+                The mipmap level of the texture to retrieve.
+        """
+        raise NotImplementedError
+
+    def read_pixels(self, z: int = 0, level: int = 0) -> PixelData:
+        """Read typed pixel values from this texture.
+
+        Floating-point and integer textures retain their numeric data type;
+        normalized textures use unsigned-byte components. Unlike
+        :meth:`fetch`, this method does not provide general-purpose image
+        conversion.
+
+        Args:
+            z:
+                For 3D or array textures, the image layer to retrieve.
             level:
                 The mipmap level of the texture to retrieve.
         """
@@ -374,6 +456,12 @@ class Texture(_AbstractImage):
                 If True, initialize levels with zeroed data. If False, allocate the
                 levels without initializing their contents.
         """
+        if self.immutable:
+            raise ImageException(
+                "Immutable texture mipmap levels are fixed at creation. "
+                "Pass mipmap_levels to Texture.create()."
+            )
+
         max_levels = self._compute_mipmap_count()
         target_levels = levels if levels is not None else max_levels
         if target_levels < 1:
@@ -407,7 +495,8 @@ class Texture(_AbstractImage):
         """Generate mipmaps for this texture from the base level."""
         self.bind()
         self._generate_mipmaps()
-        self._mipmap_levels = max(self._mipmap_levels, self._compute_mipmap_count())
+        if not self.immutable:
+            self._mipmap_levels = max(self._mipmap_levels, self._compute_mipmap_count())
         self._valid_mipmaps = set(range(self._mipmap_levels))
 
     def get_mipmapped_texture(self) -> Texture:
@@ -568,7 +657,8 @@ class _TextureRegionShared:
     z: int
     _width: int
     _height: int
-    id: int | None
+    handle: Any | None
+    key: TextureKey
     width: int
     height: int
     owner: Texture
@@ -599,6 +689,21 @@ class _TextureRegionShared:
     def fetch(self, _z: int = 0, level: int = 0) -> ImageDataRegion:
         image_data = self.owner.fetch(self.z, level)
         return image_data.get_region(self.x, self.y, self.width, self.height)
+
+    def read_pixels(self, _z: int = 0, level: int = 0) -> PixelData:
+        """Read typed pixel values for this region from its owning texture."""
+        pixels = self.owner.read_pixels(self.z, level)
+        component_size = struct.calcsize(pixels.data_type)
+        pixel_size = len(pixels.format.value) * component_size
+        width = max(1, self.width >> level)
+        height = max(1, self.height >> level)
+        x = self.x >> level
+        y = self.y >> level
+        rows = []
+        for row in range(y, y + height):
+            start = row * pixels.pitch + x * pixel_size
+            rows.append(pixels.data[start:start + width * pixel_size])
+        return PixelData(width, height, pixels.format, pixels.data_type, b"".join(rows))
 
     def get_image_data(self) -> ImageDataRegion:
         return self.fetch()
@@ -748,9 +853,9 @@ class TextureRegion(Texture, _TextureRegionShared):
     """A rectangular region of a texture, presented as if it were a separate texture."""
 
     def __init__(self, x: int, y: int, z: int, width: int, height: int, owner: Texture):
-        super().__init__(width, height, owner.id, owner.tex_type, owner.internal_format,
+        super().__init__(width, height, owner.handle, owner.tex_type, owner.internal_format,
                          owner.internal_format_size, owner.internal_format_type, owner.filters, owner.address_mode,
-                         owner.anisotropic_level)
+                         owner.anisotropic_level, key=owner.key)
         self._init_region(x, y, z, width, height, owner)
 
     @property
@@ -952,7 +1057,7 @@ TextureArray.region_class = TextureArrayRegion
 TextureArrayRegion.region_class = TextureArrayRegion
 
 
-class CompressedTexture(_AbstractImage):
+class CompressedTexture(_AbstractImage, GraphicsResource[Any, TextureKey]):
     tex_coords = (0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0)
     """12-tuple of float, named (u1, v1, r1, u2, v2, r2, ...).
     ``u, v, r`` give the 3D texture coordinates for vertices 1-4. The vertices
@@ -971,22 +1076,29 @@ class CompressedTexture(_AbstractImage):
     """The mipmap level of this texture."""
 
     images = 1
+    key_type = TextureKey
     default_filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR, TextureFilter.LINEAR
 
     x: int = 0
     y: int = 0
     z: int = 0
 
-    def __init__(self, width: int, height: int, tex_id: int,
+    def __init__(self, width: int, height: int, handle: Any,
                  compression_format: CompressionFormat,
                  tex_type: TextureType = TextureType.TYPE_2D,
                  filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT,
                  anisotropic_level: int = 0,
+                 *,
+                 key: TextureKey | None = None,
                  ) -> None:
         super().__init__(width, height)
-        self.id = tex_id
+        GraphicsResource.__init__(self, key=key)
+        self._handle = handle
         self.tex_type = tex_type
+        self.immutable = False
+        self._mipmap_levels = 1
+        self._valid_mipmaps: set[int] = set()
 
         filters = filters or self.default_filters
         if isinstance(filters, TextureFilter):
@@ -1011,14 +1123,23 @@ class CompressedTexture(_AbstractImage):
         raise NotImplementedError(msg)
 
 
+class UnsupportedCompressedTexture(CompressedTexture):
+    """Placeholder used by backends without compressed-texture support."""
+
+    @classmethod
+    def create_from_image(cls, image_data: CompressedImageData, *args, **kwargs) -> CompressedTexture:
+        from pyglet.graphics import UnsupportedBackendError  # noqa: PLC0415
+
+        raise UnsupportedBackendError("CompressedTexture")
+
+
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 if not _is_pyglet_doc_run:
-    if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2, GraphicsAPI.OPENGL_ES_3):
+    if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
         from pyglet.graphics.api.gl.framebuffer import (  # noqa: F401
             GLFramebuffer as Framebuffer,
             GLRenderbuffer as Renderbuffer,
-            get_max_color_attachments,
             get_screenshot,
         )
         from pyglet.graphics.api.gl.texture import (
@@ -1036,17 +1157,38 @@ if not _is_pyglet_doc_run:
             GLTextureArrayRegion as TextureArrayRegion,  # noqa: F401
             GLTextureGrid,
             GLTextureGrid as TextureGrid,  # noqa: F401
-            get_max_texture_size,
-            get_max_array_texture_layers,
+        )
+    elif pyglet.options.backend in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
+        from pyglet.graphics.api.gl2.framebuffer import (  # noqa: F401
+            GL2Framebuffer as Framebuffer,
+            GLRenderbuffer as Renderbuffer,
+            get_screenshot,
+        )
+        from pyglet.graphics.api.gl.texture import (
+            GLCompressedTexture,
+            GLCompressedTexture as CompressedTexture,  # noqa: F401
+            GLTexture,
+            GLTexture as Texture,  # noqa: F401
+            GLTextureRegion,
+            GLTextureRegion as TextureRegion,  # noqa: F401
+            GLTexture3D,
+            GLTexture3D as Texture3D,  # noqa: F401
+            GLTextureArray,
+            GLTextureArray as TextureArray,  # noqa: F401
+            GLTextureArrayRegion,
+            GLTextureArrayRegion as TextureArrayRegion,  # noqa: F401
+            GLTextureGrid,
+            GLTextureGrid as TextureGrid,  # noqa: F401
         )
     elif pyglet.options.backend == GraphicsAPI.WEBGL:
         from pyglet.graphics.api.webgl.framebuffer import (  # noqa: F401
             WebGLFramebuffer as Framebuffer,
             WebGLRenderbuffer as Renderbuffer,
-            get_max_color_attachments,
             get_screenshot,
         )
         from pyglet.graphics.api.webgl.texture import (
+            WebGLCompressedTexture,
+            WebGLCompressedTexture as CompressedTexture,  # noqa: F401
             WebGLTexture,
             WebGLTexture as Texture,  # noqa: F401
             WebGLTextureRegion as TextureRegion,  # noqa: F401
@@ -1058,8 +1200,6 @@ if not _is_pyglet_doc_run:
             WebGLTextureArrayRegion as TextureArrayRegion,  # noqa: F401
             WebGLTextureGrid,
             WebGLTextureGrid as TextureGrid,  # noqa: F401
-            get_max_texture_size,  # noqa: F401
-            get_max_array_texture_layers,  # noqa: F401
         )
     elif pyglet.options.backend == GraphicsAPI.VULKAN:
         raise NotImplementedError("Vulkan is not yet implemented")

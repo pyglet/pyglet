@@ -2,7 +2,7 @@ import math
 import ctypes
 
 from . import interface
-from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer, MediaEvent
+from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.drivers.listener import AbstractListener
 from pyglet.media.player_worker_thread import PlayerWorkerThread
 from pyglet.util import debug_print
@@ -191,8 +191,6 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         assert self._playing
 
         self._update_play_cursor()
-        self.dispatch_media_events(self._play_cursor)
-
         if self._eos_cursor is None:
             self._maybe_fill()
             return
@@ -201,7 +199,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         if not self._has_underrun and self._play_cursor > self._eos_cursor:
             self._has_underrun = True
             assert _debug('DirectSoundAudioPlayer: Dispatching eos')
-            MediaEvent('on_eos').sync_dispatch_to_player(self.player)
+            self.dispatch_eos()
 
         # While we are still playing / waiting for the on_eos to be dispatched for
         # the player to stop, the buffer continues playing. Ensure that silence is
@@ -226,7 +224,6 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
 
         else:
             assert _debug(f'DirectSoundAudioPlayer: Got {audio_data.length} bytes of audio data')
-            self.append_events(self._write_cursor, audio_data.events)
             self._write(audio_data, size)
 
     def _update_play_cursor(self):

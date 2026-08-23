@@ -301,7 +301,7 @@ class SVG:
                 GeometryMode.LINES,
                 self.batch,
                 self.line_group,
-                position=('f', positions),
+                position=positions,
             )
             self.drawables.append((curve, vertex_list))
 

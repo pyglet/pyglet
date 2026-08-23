@@ -61,6 +61,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, ClassVar, Protocol
 
 import pyglet
+from pyglet.enums import Stretch, Style, Weight
 from pyglet.font import base
 
 SCALING_ENABLED = False
@@ -108,7 +109,8 @@ class UserDefinedFontBase(base.Font):
 
     def __init__(
             self, name: str, default_char: str, size: int, ascent: int | None = None, descent: int | None = None,
-            weight: str = "normal", style: str = "normal", stretch: str = "normal", dpi: int = 96, locale: str | None = None,
+            weight: Weight | str = Weight.NORMAL, style: Style | str = Style.NORMAL,
+            stretch: Stretch | str = Stretch.NORMAL, dpi: int = 96, locale: str | None = None,
     ) -> None:
         """Initialize a user defined font.
 
@@ -165,6 +167,17 @@ class UserDefinedFontBase(base.Font):
         if not self._glyph_renderer:
             self._glyph_renderer = self.glyph_renderer_class(self)
 
+    def get_text_size(self, text: str) -> tuple[int, int]:
+        """Return the bounds of the rendered user-font glyphs."""
+        if not text:
+            return 0, 0
+
+        glyphs, _ = self.get_glyphs(text, shaping=False)
+        width = sum(glyph.advance for glyph in glyphs)
+        top = max(glyph.vertices[3] for glyph in glyphs)
+        bottom = min(glyph.vertices[1] for glyph in glyphs)
+        return width, top - bottom
+
 class UserDefinedFontException(Exception):  # noqa: N818
     """An exception related to user font creation."""
 
@@ -183,7 +196,8 @@ class UserDefinedMappingFont(UserDefinedFontBase):
 
     def __init__(self, name: str, default_char: str, size: int, mappings: DictLikeObject,
             ascent: int | None = None, descent: int | None = None,
-            weight: str = "normal", style: str = "normal", stretch: str = "normal",
+            weight: Weight | str = Weight.NORMAL, style: Style | str = Style.NORMAL,
+            stretch: Stretch | str = Stretch.NORMAL,
             dpi: int = 96, locale: str | None = None) -> None:
         """Initialize the default parameters of your font.
 
@@ -263,6 +277,10 @@ class UserDefinedMappingFont(UserDefinedFontBase):
             glyphs.append(self.glyphs[c])
             offsets.append(base.GlyphPosition(0, 0, 0, 0))
         return glyphs, offsets
+
+    def has_character(self, character: str) -> bool:
+        super().has_character(character)
+        return self.mappings.get(character) is not None
 
 
 def get_scaled_user_font(font_base: UserDefinedMappingFont, size: int) -> UserDefinedMappingFont:

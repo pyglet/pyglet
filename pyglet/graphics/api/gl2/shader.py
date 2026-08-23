@@ -239,8 +239,9 @@ _default_fragment_source: str = """#version 110
 
 def get_default_shader() -> ShaderProgram:
     """A default basic shader for default batches."""
-    return pyglet.graphics.api.core.get_cached_shader(
+    program = pyglet.graphics.api.core.get_cached_shader(
         "default_graphics",
         (_default_vertex_source, 'vertex'),
         (_default_fragment_source, 'fragment'),
     )
+    return program

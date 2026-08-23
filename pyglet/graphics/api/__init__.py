@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Sequence
 import pyglet
 
 from pyglet.enums import GraphicsAPI
-from pyglet.graphics.api.base import ResourceManagement, NullBackend
+from pyglet.graphics.api.base import NullBackend
 
 if TYPE_CHECKING:
     from pyglet.graphics.api.base import GraphicsConfig
@@ -13,8 +13,6 @@ if TYPE_CHECKING:
     from pyglet.graphics.shader import ShaderType, ShaderProgram
 
 core = NullBackend()
-
-resource_manager = ResourceManagement()
 
 
 # Enforce WebGL if emscripten is detected.

@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from pyglet.customtypes import ScissorProtocol
     from pyglet.graphics.shader import ShaderProgram
     from pyglet.graphics.texture import Texture
-    from pyglet.graphics.vertexdomain import IndexedVertexList, VertexDomain, VertexList
+    from pyglet.graphics.vertexdomain import DomainAttributes, IndexedVertexList, VertexDomain, VertexList
 
 
 
@@ -60,9 +60,11 @@ class Group:
         def on_draw():
             batch.draw()
     """
-    states: list[State]
+    _state_names: dict[str, State]
+    _expanded_states: list[State]
     _hash: int
-    _hashable_states: tuple
+    _hashable_states: tuple[State, ...]
+    _state_cache_dirty: bool
 
     def __init__(self, order: int = 0, parent: Group | None = None) -> None:
         """Initialize a rendering group.
@@ -84,9 +86,12 @@ class Group:
         self._expanded_states = []
         self._comparisons = []
 
-        # Default hash
+        # Preserve the default hash for an unconfigured Group. Once state is
+        # added, expansion and re-hashing are deferred until the group is
+        # compared, hashed, or rendered.
         self._hashable_states = ()
         self._hash = hash((self._order, self.parent))
+        self._state_cache_dirty = False
 
         if parent and parent.has_enforced_states:
             for p_state in parent._enforced_states:  # noqa: SLF001
@@ -106,18 +111,27 @@ class Group:
             state:
                 State instance to apply when this group is drawn. States of
                 the same concrete type replace any previously assigned state
-                of that type.
+                of that type. Derived state order and hashing are deferred
+                until the group is first used.
         """
-        assert not self.batches, "New states cannot be set once a group is in a batch."
+        assert not self._assigned_batches, "New states cannot be set once a group is in a batch."
         state_type = type(state)
         self._state_names[state_type.__name__] = state
-        group_states = self._state_names.values()
-        self._expanded_states = _expand_states_in_order(group_states)
         if state.enforced_state:
             self._enforced_states.append(state)
 
+        self._state_cache_dirty = True
+
+    def _ensure_state_cache(self) -> None:
+        """Build derived state data at the first point where it is required."""
+        if not self._state_cache_dirty:
+            return
+
+        group_states = self._state_names.values()
+        self._expanded_states = _expand_states_in_order(group_states)
         self._hashable_states = tuple({state for state in group_states if state.group_hash is True})
         self._hash = hash((self._order, self.parent, self._hashable_states))
+        self._state_cache_dirty = False
 
     @property
     def states(self) -> tuple[State, ...]:
@@ -242,6 +256,7 @@ class Group:
             set_id:
                 The set that the sampler belongs to. Only applicable in Vulkan.
         """
+        assert not self._assigned_batches, "New states cannot be set once a group is in a batch."
         self._state_names.pop(MultiTextureSamplerState.__name__, None)
         self.set_state(TextureState.from_texture(texture, texture_unit, set_id))
 
@@ -263,6 +278,7 @@ class Group:
             set_id:
                 The set that the sampler belongs to. Only applicable in Vulkan.
         """
+        assert not self._assigned_batches, "New states cannot be set once a group is in a batch."
         self._state_names.pop(TextureState.__name__, None)
         self.set_state(MultiTextureSamplerState.from_textures(program, textures, first_texture_unit, set_id))
 
@@ -311,8 +327,12 @@ class Group:
 
         :see: ``__hash__`` function, both must be implemented.
         """
-        return (self.__class__ is other.__class__ and
-                self._order == other.order and
+        if self.__class__ is not other.__class__:
+            return False
+
+        self._ensure_state_cache()
+        other._ensure_state_cache()
+        return (self._order == other.order and
                 self.parent == other.parent and
                 self._hashable_states == other._hashable_states and
                 self._comparisons == other._comparisons)
@@ -324,10 +344,12 @@ class Group:
 
         For simplicity, the hash should be a tuple containing your unique identifiers of your Group.
 
-        By default, this is (``order``, ``parent``).
+        By default, this includes ``order``, ``parent``, and all states that
+        participate in group hashing.
 
         :see: ``__eq__`` function, both must be implemented.
         """
+        self._ensure_state_cache()
         return self._hash
 
     def __repr__(self) -> str:
@@ -340,12 +362,14 @@ class Group:
             ctx:
                 Draw context that receives the group's state changes.
         """
+        self._ensure_state_cache()
         for state in self._expanded_states:
             if state.sets_state:
                 state.set_state(ctx)
 
     def unset_state_all(self, ctx: DrawContext) -> None:
         """Calls all unset states of the underlying Group."""
+        self._ensure_state_cache()
         for state in self._expanded_states:
             if state.unsets_state:
                 state.unset_state(ctx)
@@ -682,12 +706,28 @@ class Batch:
             return False
 
         drawable_attributes = {name: attributes[name] for name in vertex_list.initial_attribs}
-        domain = self.get_domain(vertex_list.indexed, vertex_list.instanced, mode, group, drawable_attributes)
 
-        # TODO: Allow migration if we can restore original vertices somehow. Much faster.
-        # If the domain's don't match, we need to re-create the vertex list. Tell caller no match.
-        if domain != vertex_list.domain:
+        # Attribute locations may change between linked programs, but the GPU
+        # data can be copied directly when each existing attribute retains the
+        # same storage shape. ``_normalized_shader_attributes`` has already
+        # restored the source data type, normalization, and divisor.
+        if incompatible := [
+            name for name, initial in vertex_list.initial_attribs.items()
+            if initial.fmt != drawable_attributes[name].fmt
+        ]:
+            if _debug_graphics_batch:
+                warnings.warn(f"Incompatible shader attributes for update: {incompatible}")
             return False
+
+        domain = self.get_domain(
+            vertex_list.indexed, vertex_list.instanced, mode, group,
+            program.derive_domain_attributes(drawable_attributes),
+        )
+
+        if domain != vertex_list.domain:
+            vertex_list.migrate(domain, group)
+            self._draw_list_dirty = True
+            return True
 
         # Same domain, but state can still differ (for example, a different program).
         if vertex_list.group != group:
@@ -724,8 +764,10 @@ class Batch:
                 The batch to migrate to (or the current batch).
 
         """
-        attributes = vertex_list.domain.attribute_meta
-        domain = batch.get_domain(vertex_list.indexed, vertex_list.instanced, mode, group, attributes)
+        domain = batch.get_domain(
+            vertex_list.indexed, vertex_list.instanced, mode, group,
+            vertex_list.domain.domain_attributes,
+        )
 
         if domain != vertex_list.domain:
             vertex_list.migrate(domain, group)
@@ -738,7 +780,7 @@ class Batch:
 
 
     def get_domain(self, indexed: bool, instanced: bool, mode: GeometryMode, group: Group,
-                   attributes: dict[str, Any]) -> VertexDomain:
+                   domain_attributes: DomainAttributes) -> VertexDomain:
         """Get, or create, the vertex domain corresponding to the given arguments.
 
         mode is the render mode such as GL_LINES or GL_TRIANGLES
@@ -749,18 +791,24 @@ class Batch:
 
         # If instanced, ensure a separate domain, as multiple instance sources can match the key.
         # Find domain given formats, indices and mode
-        key = _DomainKey(indexed, instanced, mode, self._attributes_key(attributes))
+        key = _DomainKey(indexed, instanced, mode, domain_attributes.key)
 
         try:
             domain = self._domain_registry[key]
         except KeyError:
             # Create domain
-            domain = self._domain_class_map[(indexed, instanced)](self._context, self.initial_count, attributes)
+            domain = self._domain_class_map[(indexed, instanced)](
+                self._context, self.initial_count, domain_attributes.attributes
+            )
+            domain.domain_attributes = domain_attributes
             self._domain_registry[key] = domain
             self._draw_list_dirty = True
         return domain
 
     def _add_group(self, group: Group) -> None:
+        # Subclasses may override __hash__ for identity semantics, so hashing
+        # during dictionary insertion is not a reliable finalization boundary.
+        group._ensure_state_cache()  # noqa: SLF001
         self.group_map[group] = {}
         if group.parent is None:
             self.top_groups.append(group)
@@ -1005,7 +1053,8 @@ class _BucketBatch(Batch):
         active_states: dict[type, State] = {}
 
         def _next_same_type_set(idx: int, state_type: type) -> None | State:
-            for dom2, mode2, group2 in draw_list[idx + 1:]:
+            for next_idx in range(idx + 1, len(draw_list)):
+                dom2, mode2, group2 = draw_list[next_idx]
                 if dom2 is None and mode2 == "set":
                     for state in group2._expanded_states:  # noqa: SLF001
                         if type(state) is state_type:

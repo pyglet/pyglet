@@ -4,9 +4,9 @@ import re
 import warnings
 from typing import Literal
 
-import js
-from js import console, navigator
-from pyodide.ffi import create_proxy
+import js  # noqa: F821
+from js import console, navigator  # noqa: F821
+from pyodide.ffi import create_proxy  # noqa: F821
 
 import pyglet
 from pyglet.input import Button, Device

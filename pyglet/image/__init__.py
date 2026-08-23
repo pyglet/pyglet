@@ -60,7 +60,7 @@ form).  To use a texture with pyglet.gl::
 
     from pyglet.graphics.api.gl import *
     glEnable(texture.target)        # typically target is GL_TEXTURE_2D
-    glBindTexture(texture.target, texture.id)
+    glBindTexture(texture.target, texture.handle)
     # ... draw with the texture
 
 Pixel access
@@ -96,11 +96,12 @@ use of the data in this arbitrary format).
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, BinaryIO
 
-import pyglet
 
 if TYPE_CHECKING:
+    from pyglet.enums import PixelFormat
     from pyglet.customtypes import RGBAColor
 
 from pyglet.image import animation  # noqa: F401
@@ -111,6 +112,31 @@ from pyglet.image.base import ImageGrid, ImagePattern, _color_as_bytes  # noqa: 
 from pyglet.image.codecs import ImageDecoder
 from pyglet.image.codecs import add_default_codecs as _add_default_codecs
 from pyglet.image.codecs import registry as _codec_registry
+
+
+@dataclass(frozen=True)
+class ImageDecodePolicy:
+    """Backend-optimal 32-bit output format for decoders to choose efficiently."""
+
+    preferred_format: PixelFormat | None = None
+
+
+_default_decode_policy = ImageDecodePolicy()
+
+
+def get_default_decode_policy() -> ImageDecodePolicy:
+    """Return the process-wide format policy used by image decoders."""
+    return _default_decode_policy
+
+
+def set_default_decode_policy(policy: ImageDecodePolicy) -> None:
+    """Set decoder output preferences."""
+    # This avoids coupling image codecs to a graphics backend.
+    if not isinstance(policy, ImageDecodePolicy):
+        raise TypeError("Policy must be an ImageDecodePolicy.")
+
+    global _default_decode_policy  # noqa: PLW0603
+    _default_decode_policy = policy
 
 
 def load(filename: str, file: BinaryIO | None = None, decoder: ImageDecoder | None = None) -> ImageData:

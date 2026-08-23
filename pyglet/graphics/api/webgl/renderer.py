@@ -20,4 +20,4 @@ class WebGLRenderer(BackendRenderer):
         self.surface_ctx.gl.scissor(int(x), int(y), int(width), int(height))
 
     def set_clear_color(self, r: float, g: float, b: float, a: float) -> None:
-        self.surface_ctx._clear_color = (r, g, b, a)
+        self.surface_ctx.gl.clearColor(r, g, b, a)

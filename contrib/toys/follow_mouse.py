@@ -38,8 +38,8 @@ class Line:
     batch = pyglet.graphics.Batch()
     program = pyglet.shapes.get_default_shader()
     lines = program.vertex_list(100, GeometryMode.LINES, batch=batch,
-                                position=('f', (0, 0) * 100),
-                                colors=('Bn', (255, 255, 255, 255) * 100))
+                                position=(0, 0) * 100,
+                                colors=(255, 255, 255, 255) * 100)
     black = pyglet.shapes.Rectangle(0, 0, window.width, window.height, color=(0, 0, 0, 32), batch=batch)
     unallocated = list(range(100))
     active = []

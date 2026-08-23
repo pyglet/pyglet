@@ -1,6 +1,7 @@
 import unittest
 
-from pyglet.graphics import Texture
+from pyglet.enums import ComponentFormat
+from pyglet.graphics import Texture, PixelData
 from pyglet.image import ImageData
 from pyglet.window import Window
 
@@ -33,6 +34,7 @@ class TestTextureUploadFetch(unittest.TestCase):
         fetched = texture.get_image_data()
         fetched_bytes = bytes(fetched.get_bytes('RGBA', fetched.width * 4))
         self.assertEqual(fetched_bytes, data)
+
 
     def test_region_upload_fetch(self):
         width, height = 4, 4
@@ -72,3 +74,17 @@ class TestTextureUploadFetch(unittest.TestCase):
         texture = Texture.create(4, 4, blank_data=True)
         with self.assertRaisesRegex(Exception, "Mipmap level must be non-negative"):
             texture.upload(self.create_image(2, 2, 1), 0, 0, 0, level=-1)
+
+
+
+def test_pixel_data_pitch_bytes_and_image_view():
+    data = bytearray(3 * 2 * 4 * 4)
+    pixels = PixelData(3, 2, ComponentFormat.RGBA, "f", data)
+
+    assert pixels.pitch == 3 * 4 * 4
+    assert bytes(pixels) == bytes(data)
+
+    image_data = pixels.to_image_data()
+    assert image_data._current_data is data  # noqa: SLF001
+    assert image_data.data_type == "f"
+    assert image_data.pitch == pixels.pitch

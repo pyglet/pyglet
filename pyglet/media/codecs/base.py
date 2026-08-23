@@ -1,9 +1,12 @@
+"""Base data types and source abstractions for media codecs."""
+
 from __future__ import annotations
 
 import ctypes
 import io
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, BinaryIO, Optional, Union, ClassVar
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import TYPE_CHECKING, BinaryIO, ClassVar
 
 from pyglet.media.exceptions import MediaException, CannotSeekException
 
@@ -11,10 +14,18 @@ if TYPE_CHECKING:
     from pyglet.graphics import Texture
     from pyglet.image.animation import Animation
     from pyglet.media.codecs import MediaEncoder
-    from pyglet.media.drivers.base import MediaEvent
     from pyglet.media.player import AudioPlayer
 
 
+class SampleType(str, Enum):
+    """The numeric representation used by audio samples."""
+
+    INT = "int"
+    UINT = "uint"
+    FLOAT = "float"
+
+
+@dataclass
 class AudioFormat:
     """Audio details.
 
@@ -22,46 +33,39 @@ class AudioFormat:
     should not modify the fields, as they are used internally to describe the
     format of data provided by the source.
     """
-    SAMPLE_TYPE_INT = 'int'
-    SAMPLE_TYPE_UINT = 'uint'
-    SAMPLE_TYPE_FLOAT = 'float'
 
-    _VALID_TYPES = (SAMPLE_TYPE_INT, SAMPLE_TYPE_UINT, SAMPLE_TYPE_FLOAT)
+    #: The number of channels: 1 for mono or 2 for stereo
+    #: (pyglet does not yet support surround-sound sources).
+    channels: int
 
-    def __init__(self, channels: int, sample_size: int, sample_rate: int, sample_type: str | None = None) -> None:
-        """Specify the audio format properties.
+    #: Bits per sample; only 8 or 16 are supported.
+    sample_size: int
 
-        Args:
-            channels:
-                The number of channels: 1 for mono or 2 for stereo
-                (pyglet does not yet support surround-sound sources).
-            sample_size:
-                Bits per sample; only 8 or 16 are supported.
-            sample_rate:
-                Samples per second (in Hertz).
-            sample_type:
-                The sample type, such as int, unit, or float.
-        """
-        self.channels = channels
-        self.sample_size = sample_size
-        self.sample_rate = sample_rate
-        if sample_type is None:
+    #: Samples per second (in Hertz).
+    sample_rate: int
+
+    #: The sample type, such as int, unit, or float.
+    sample_type: SampleType | None = None
+    sample_format: str = field(init=False, compare=False)
+    bytes_per_frame: int = field(init=False, compare=False)
+    bytes_per_second: int = field(init=False, compare=False)
+    bytes_per_sample: int = field(init=False, compare=False)
+
+    def __post_init__(self) -> None:
+        if self.sample_type is None:
             if self.sample_size == 8:
-                sample_type = self.SAMPLE_TYPE_UINT
+                self.sample_type = SampleType.UINT
             else:
-                sample_type = self.SAMPLE_TYPE_INT
-        if sample_type not in self._VALID_TYPES:
-            raise ValueError(f"sample_type must be one of {self._VALID_TYPES}")
-        self.sample_type = sample_type
+                self.sample_type = SampleType.INT
+        else:
+            self.sample_type = SampleType(self.sample_type)
 
         # Convenience
-        prefixes = {self.SAMPLE_TYPE_INT: "S",
-                    self.SAMPLE_TYPE_UINT: "U",
-                    self.SAMPLE_TYPE_FLOAT: "F"}
+        prefixes = {SampleType.INT: "S", SampleType.UINT: "U", SampleType.FLOAT: "F"}
         self.sample_format = f"{prefixes[self.sample_type]}{self.sample_size}"
 
-        self.bytes_per_frame = (sample_size // 8) * channels
-        self.bytes_per_second = self.bytes_per_frame * sample_rate
+        self.bytes_per_frame = (self.sample_size // 8) * self.channels
+        self.bytes_per_second = self.bytes_per_frame * self.sample_rate
 
         self.bytes_per_sample = self.bytes_per_frame
         """This attribute is kept for compatibility and should not be used due
@@ -73,37 +77,31 @@ class AudioFormat:
         """
 
     def align(self, num_bytes: int) -> int:
-        """Align a given amount of bytes to the audio frame size of this
-        audio format, downwards.
+        """Align a given amount of bytes to the audio frame size.
+
+        Align downwards.
         """
         return num_bytes - (num_bytes % self.bytes_per_frame)
 
     def align_ceil(self, num_bytes: int) -> int:
-        """Align a given amount of bytes to the audio frame size of this
-        audio format, upwards.
+        """Align a given amount of bytes to the audio frame size.
+
+        Align upwards.
         """
         return num_bytes + (-num_bytes % self.bytes_per_frame)
 
     def timestamp_to_bytes_aligned(self, timestamp: float) -> int:
-        """Given a timestamp, return the amount of bytes that an emitter with
-        this audio format would have to have played to reach it, aligned
-        to the audio frame size.
+        """Convert a timestamp to a frame-aligned byte offset.
+
+        The returned offset corresponds to playback at the given timestamp.
         """
         return self.align(int(timestamp * self.bytes_per_second))
 
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, AudioFormat):
-            return (self.channels == other.channels and
-                    self.sample_size == other.sample_size and
-                    self.sample_rate == other.sample_rate and
-                    self.sample_type == other.sample_type)
-        return NotImplemented
-
     def __repr__(self) -> str:
         return (
-            '%s(channels=%d, sample_size=%d, sample_rate=%d, sample_type=%s)'
-            % (self.__class__.__name__, self.channels, self.sample_size,
-               self.sample_rate, self.sample_type)
+            f"{self.__class__.__name__}(channels={self.channels}, "
+            f"sample_size={self.sample_size}, sample_rate={self.sample_rate}, "
+            f"sample_type={self.sample_type.value})"
         )
 
 
@@ -119,7 +117,7 @@ class VideoFormat:
     should be displayed at 1280x480.  It is the responsibility of the
     application to perform this scaling.
 
-        Args:
+    Args:
             width:
                 Width of video image, in pixels.
             height:
@@ -131,6 +129,7 @@ class VideoFormat:
 
             .. versionadded:: 1.2
     """
+
     width: int
     height: int
     sample_aspect: float = 0.0
@@ -143,32 +142,20 @@ class AudioData:
     This class is used internally by pyglet.
     """
 
-    __slots__ = 'data', 'duration', 'events', 'length', 'pointer', 'timestamp'
+    __slots__ = 'data', 'length', 'pointer'
 
     def __init__(
         self,
         data: bytes | ctypes.Array,
         length: int,
-        timestamp: float = 0.0,
-        duration: float = 0.0,
-        events: list[MediaEvent] | None = None,
     ) -> None:
         """Create an audio packet.
 
         Args:
             data:
-                (bytes, ctypes array, or supporting buffer protocol): Sample data.
+                Sample data.
             length:
                 Size of sample data, in bytes.
-            timestamp:
-                Time of the first sample, in seconds.
-            duration:
-                Total data duration, in seconds.
-            events:
-                List of events contained within this packet. Events are timestamped relative to this audio packet.
-
-        .. deprecated:: 2.0.10
-           `timestamp` and `duration` are unused and will be removed eventually.
         """
         if isinstance(data, bytes):
             # bytes are treated specially by ctypes and can be cast to a void pointer, get
@@ -179,17 +166,14 @@ class AudioData:
         else:
             try:
                 self.pointer = ctypes.addressof(ctypes.c_int.from_buffer(data))
-            except TypeError:
-                raise TypeError("Unsupported AudioData type.")
+            except TypeError as err:
+                raise TypeError("Unsupported AudioData type.") from err
 
         self.data = data
         # In any case, `data` will support the buffer protocol by delivering at least
         # a readable buffer.
 
         self.length = length
-        self.timestamp = timestamp
-        self.duration = duration
-        self.events = [] if events is None else events
 
 
 @dataclass
@@ -210,6 +194,7 @@ class SourceInfo:
 
     .. versionadded:: 1.2
     """
+
     title: str = ''
     author: str = ''
     copyright: str = ''
@@ -269,14 +254,14 @@ class Source:
         Returns:
             :class:`.Player`
         """
-        from pyglet.media.player import AudioPlayer  # XXX Nasty circular dependency
+        from pyglet.media.player import AudioPlayer  # noqa: PLC0415
 
         player = AudioPlayer()
         player.queue(self)
         player.play()
         Source._players.append(player)
 
-        def _on_player_eos():
+        def _on_player_eos() -> None:
             Source._players.remove(player)
             # There is a closure on player. To break up that reference, delete this function.
             player.on_player_eos = None
@@ -298,10 +283,10 @@ class Source:
 
         .. versionadded:: 1.1
         """
-        from pyglet.image import Animation, AnimationFrame
+        from pyglet.image import Animation, AnimationFrame  # noqa: PLC0415
 
         if not self.video_format:
-            # XXX: This causes an assertion in the constructor of Animation
+            # Animation requires at least one frame.
             return Animation([])
         frames = []
         last_ts = 0
@@ -339,7 +324,7 @@ class Source:
         """Save this Source to a file.
 
         Args:
-            filename
+            filename:
                 Used to set the file format, and to open the output file
                 if `file` is unspecified.
             file:
@@ -352,14 +337,14 @@ class Source:
         """
         if encoder:
             return encoder.encode(self, filename, file)
-        import pyglet.media.codecs
+        import pyglet.media.codecs  # noqa: PLC0415
 
         return pyglet.media.codecs.registry.encode(self, filename, file)
 
     # Internal methods that Player calls on the source:
 
     def is_precise(self) -> bool:
-        """Whether this source is considered precise.
+        r"""Whether this source is considered precise.
 
         ``x`` bytes on source ``s`` are considered aligned if
         ``x % s.audio_format.bytes_per_frame == 0``, so there'd be no partial
@@ -403,7 +388,8 @@ class Source:
             timestamp (float): Time where to seek in the source. The
                 ``timestamp`` will be clamped to the duration of the source.
         """
-        raise CannotSeekException()
+        del timestamp
+        raise CannotSeekException
 
     def get_queue_source(self) -> Source:
         """Return the ``Source`` to be used as the queue source for a player.
@@ -415,22 +401,18 @@ class Source:
         """
         return self
 
-    def get_audio_data(self, num_bytes: int, compensation_time=0.0) -> AudioData | None:
+    def get_audio_data(self, num_bytes: int) -> AudioData | None:
         """Get next packet of audio data.
 
         Args:
             num_bytes (int): A size hint for the amount of bytes to return,
                 but the returned amount may be lower or higher.
-            compensation_time (float): Time in sec to compensate due to a
-                difference between the master clock and the audio clock.
-
-        .. deprecated:: 2.0.10
-            compensation_time: Will always be given as ``0.0``.
 
         Returns:
             :class:`.AudioData`: Next packet of audio data, or ``None`` if
             there is no (more) data.
         """
+        del num_bytes
         return None
 
 
@@ -472,6 +454,7 @@ class StaticSource(Source):
     """
 
     def __init__(self, source: Source) -> None:
+        """Read a source into an in-memory buffer."""
         source = source.get_queue_source()
         if source.video_format:
             raise NotImplementedError('Static sources not supported for video.')
@@ -497,12 +480,12 @@ class StaticSource(Source):
 
         self._duration = len(self._data) / self.audio_format.bytes_per_second
 
-    def get_queue_source(self) -> Optional[StaticMemorySource]:
+    def get_queue_source(self) -> StaticMemorySource | None:
         if self._data is not None:
             return StaticMemorySource(self._data, self.audio_format)
         return None
 
-    def get_audio_data(self, num_bytes: float, compensation_time: float = 0.0) -> Optional[AudioData]:
+    def get_audio_data(self, num_bytes: int) -> AudioData | None:
         """The StaticSource does not provide audio data.
 
         When the StaticSource is queued on a
@@ -513,6 +496,7 @@ class StaticSource(Source):
         Raises:
             RuntimeError
         """
+        del num_bytes
         raise RuntimeError('StaticSource cannot be queued.')
 
 
@@ -526,7 +510,7 @@ class StaticMemorySource(StaticSource):
         audio_format (AudioFormat): The audio format.
     """
 
-    def __init__(self, data, audio_format: AudioFormat) -> None:
+    def __init__(self, data: bytes | bytearray | memoryview, audio_format: AudioFormat) -> None:
         """Construct a memory source over the given data buffer."""
         self._file = io.BytesIO(data)
         self._max_offset = len(data)
@@ -546,7 +530,7 @@ class StaticMemorySource(StaticSource):
         # Align to audio frame to not corrupt audio data.
         self._file.seek(self.audio_format.align(offset))
 
-    def get_audio_data(self, num_bytes: float, compensation_time: float = 0.0) -> Optional[AudioData]:
+    def get_audio_data(self, num_bytes: int) -> AudioData | None:
         """Get next packet of audio data.
 
         Args:
@@ -556,15 +540,11 @@ class StaticMemorySource(StaticSource):
             :class:`.AudioData`: Next packet of audio data, or ``None`` if
             there is no (more) data.
         """
-        offset_before = self._file.tell()
-
         data = self._file.read(num_bytes)
         if not data:
             return None
 
-        timestamp = float(offset_before) / self.audio_format.bytes_per_second
-        duration = len(data) / self.audio_format.bytes_per_second
-        return AudioData(data, len(data), timestamp, duration)
+        return AudioData(data, len(data))
 
 
 class SourceGroup:
@@ -576,12 +556,11 @@ class SourceGroup:
     """
 
     def __init__(self) -> None:
+        """Create an empty source group."""
         self.audio_format = None
         self.video_format = None
         self.info = None
         self.duration = 0.0
-        self._timestamp_offset = 0.0
-        self._dequeued_durations = []
         self._sources = []
         self.is_player_source = False
 
@@ -596,9 +575,11 @@ class SourceGroup:
         self.audio_format = self.audio_format or source.audio_format
         self.info = self.info or source.info
         source = source.get_queue_source()
-        assert source.audio_format == self.audio_format, "Sources must share the same audio format."
+        if source.audio_format != self.audio_format:
+            raise MediaException("Sources must share the same audio format.")
         self._sources.append(source)
-        self.duration += source.duration
+        if self.duration is not None:
+            self.duration = None if source.duration is None else self.duration + source.duration
 
     def has_next(self) -> bool:
         return len(self._sources) > 1
@@ -608,19 +589,18 @@ class SourceGroup:
 
     def _advance(self) -> None:
         if self._sources:
-            self._timestamp_offset += self._sources[0].duration
-            self._dequeued_durations.insert(0, self._sources[0].duration)
             old_source = self._sources.pop(0)
-            self.duration -= old_source.duration
+            if old_source.duration is not None and self.duration is not None:
+                self.duration -= old_source.duration
 
             if isinstance(old_source, StreamingSource):
                 old_source.delete()
 
-    def get_audio_data(self, num_bytes: float, compensation_time=0.0) -> Optional[AudioData]:
+    def get_audio_data(self, num_bytes: int) -> AudioData | None:
         """Get next audio packet.
 
         Args:
-            `num_bytes` : int
+            num_bytes:
                 Hint for preferred size of audio packet; may be ignored.
 
         Returns:
@@ -630,16 +610,14 @@ class SourceGroup:
             return None
 
         buffer = b""
-        duration = 0.0
-        timestamp = 0.0
 
         while len(buffer) < num_bytes and self._sources:
-            audiodata = self._sources[0].get_audio_data(num_bytes)
+            audiodata = self._sources[0].get_audio_data(num_bytes - len(buffer))
             if audiodata:
                 buffer += audiodata.data
-                duration += audiodata.duration
-                timestamp += self._timestamp_offset
             else:
                 self._advance()
 
-        return AudioData(buffer, len(buffer), timestamp, duration)
+        if not buffer:
+            return None
+        return AudioData(buffer, len(buffer))

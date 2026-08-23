@@ -21,7 +21,13 @@ if TYPE_CHECKING:
 
 
 class Camera2DView(_CameraViewBase):
-    """A per-camera 2D view node."""
+    """A transform and viewport scope belonging to a :class:`Camera2D`.
+
+    Views can add position, zoom, viewport, and scissor state while inheriting
+    transforms from a parent view. Create them with :meth:`Camera2D.create_view`.
+
+    .. versionadded:: 3.0
+    """
 
     def __init__(
         self,
@@ -143,7 +149,14 @@ class Camera2DView(_CameraViewBase):
 
 
 class Camera2D(BaseCamera[Camera2DView]):
-    """A scoped 2D camera."""
+    """Manage an orthographic projection and movable 2D view.
+
+    A ``Camera2D`` keeps position, zoom, viewport, coordinate conversion, and
+    shader matrix storage together. Select it for a batch or group to draw a
+    world, UI layer, minimap, or other 2D rendering scope.
+
+    .. versionadded:: 3.0
+    """
 
     def __init__(
         self,
@@ -154,14 +167,53 @@ class Camera2D(BaseCamera[Camera2DView]):
         max_zoom: float = 4.0,
         zoom_speed: float = 1.0,
         viewport: ViewportType | None = None,
+        register_handlers: bool = True,
         window_block: UniformBlock | None = None,
         copies_per_resource: int = 3,
         projection_uniform: str = "u_projection",
         view_uniform: str = "u_view",
     ) -> None:
+        """Create a 2D camera for a window.
+
+        The root view initially uses a lower-left origin and a zoom of ``1.0``.
+        Unless an explicit viewport is supplied, it follows the full framebuffer
+        as the window is resized or its scale changes.
+
+        Args:
+            window:
+                Window whose graphics context and framebuffer dimensions are
+                used by this camera.
+            scroll_speed:
+                Distance applied to each axis by :meth:`move`. Scale input by
+                elapsed time when using it for continuous movement.
+            min_zoom:
+                Minimum value accepted by :attr:`zoom`.
+            max_zoom:
+                Maximum value accepted by :attr:`zoom`.
+            zoom_speed:
+                Suggested zoom-rate scalar for application input handling.
+            viewport:
+                Optional fixed root viewport as ``(x, y, width, height)`` in
+                framebuffer coordinates. ``None`` tracks the full framebuffer.
+            register_handlers:
+                If ``True``, register for window resize and scale events.
+                Disable this for fixed-size offscreen cameras.
+            window_block:
+                Optional shader ``WindowBlock`` used to create the camera's
+                uniform-buffer storage on modern graphics backends. By default,
+                the block is obtained from pyglet's default shader.
+            copies_per_resource:
+                Number of ring-buffered matrix copies reserved for this camera
+                on uniform-buffer backends.
+            projection_uniform:
+                Projection-matrix uniform name used when uniform buffers are unavailable.
+            view_uniform:
+                View-matrix uniform name used when uniform buffers are unavailable.
+        """
         assert min_zoom <= max_zoom, "Minimum zoom must not be greater than maximum zoom."
 
         view_storage = self._create_default_view_storage(
+            window,
             window_block=window_block,
             copies_per_resource=copies_per_resource,
             projection_uniform=projection_uniform,
@@ -171,6 +223,7 @@ class Camera2D(BaseCamera[Camera2DView]):
             window,
             view_storage,
             viewport=viewport,
+            register_handlers=register_handlers,
         )
 
         self.scroll_speed = scroll_speed

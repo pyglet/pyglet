@@ -1,14 +1,24 @@
+"""Information about the active WebGL implementation."""
+
 from __future__ import annotations
+
+import sys
 from typing import TYPE_CHECKING
 
-from pyglet.graphics.api.base import SurfaceInfo
+from pyglet.enums import PixelFormat
+from pyglet.graphics.api.base import (
+    PixelFormatPreferences,
+    PixelTransferFeatures,
+    SurfaceFeatures,
+    SurfaceInfo,
+)
 from pyglet.graphics.api.webgl.gl import GL_VENDOR, GL_RENDERER, GL_VERSION, GL_SHADING_LANGUAGE_VERSION
 
 if TYPE_CHECKING:
     from pyglet.graphics.api.webgl.webgl_js import WebGLRenderingContext
 
 
-class GLInfo(SurfaceInfo):
+class WebGLInfo(SurfaceInfo):
     """Information interface for a single GL context.
 
     A default instance is created automatically when the first OpenGL context
@@ -77,4 +87,40 @@ class GLInfo(SurfaceInfo):
         self.MAX_UNIFORM_BLOCK_SIZE = self._get_parameter(gl, "MAX_UNIFORM_BLOCK_SIZE")
         self.MAX_VERTEX_ATTRIBS = self._get_parameter(gl, "MAX_VERTEX_ATTRIBS")
 
+        self.update_features()
         self.was_queried = True
+
+    def update_features(self) -> None:
+        """Populate WebGL-specific feature support."""
+        is_webgl2 = self.have_version(2, 0)
+        self.features = SurfaceFeatures(
+            uniform_buffers=is_webgl2,
+            pixel_buffer_objects=(
+                is_webgl2
+                or self.have_extension("GL_ARB_pixel_buffer_object")
+                or self.have_extension("GL_EXT_pixel_buffer_object")
+                or self.have_extension("GL_NV_pixel_buffer_object")
+            ),
+        )
+
+        bgra_upload = any(
+            self.have_extension(extension)
+            for extension in (
+                "GL_EXT_texture_format_BGRA8888",
+                "GL_APPLE_texture_format_BGRA8888",
+                "GL_IMG_texture_format_BGRA8888",
+            )
+        )
+        self.pixel_transfer = PixelTransferFeatures(
+            bgra_upload=bgra_upload,
+            bgra_readback=self.have_extension("GL_EXT_read_format_bgra"),
+            unpack_row_length=is_webgl2 or self.have_extension("GL_EXT_unpack_subimage"),
+            pack_row_length=is_webgl2 or self.have_extension("GL_NV_pack_subimage"),
+        )
+
+        prefer_bgra = sys.platform == "win32" and bgra_upload
+        self.pixel_format_preferences = PixelFormatPreferences(
+            preferred_decode_format=PixelFormat.BGRA8 if prefer_bgra else PixelFormat.RGBA8,
+            readback_format=PixelFormat.RGBA8,
+        )
+        self._apply_image_decode_policy()

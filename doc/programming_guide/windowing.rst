@@ -402,11 +402,12 @@ Both :py:class:`~pyglet.window.dialog.FileOpenDialog` and :py:class:`~pyglet.win
 ``filetypes`` as a list of ``(label, pattern)`` tuples.
 
 Use wildcard patterns (recommended), and separate multiple extensions in one
-entry with spaces::
+entry with semicolons. Whitespace-separated patterns are accepted for
+compatibility, but semicolons work consistently across platforms::
 
     filetypes = [
         ("PNG Image", "*.png"),
-        ("Images", "*.png *.jpg *.bmp"),
+        ("Images", "*.png;*.jpg;*.bmp"),
         ("All Files", "*.*"),
     ]
 
@@ -422,7 +423,7 @@ Open file dialog example::
 
     open_dialog = FileOpenDialog(
         title="Open image(s)",
-        filetypes=[("Images", "*.png *.jpg *.bmp"), ("All Files", "*.*")],
+        filetypes=[("Images", "*.png;*.jpg;*.bmp"), ("All Files", "*.*")],
         multiple=True,
     )
 

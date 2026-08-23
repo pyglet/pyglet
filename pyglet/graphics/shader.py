@@ -8,12 +8,14 @@ import warnings
 import weakref
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from copy import copy
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Literal, Protocol, Sequence, overload
 
 import pyglet
-from pyglet.enums import GraphicsAPI
+from pyglet.enums import GeometryMode, GraphicsAPI
 from pyglet.graphics.buffer import UniformBufferRegion
+from pyglet.graphics.resource import GraphicsResource, ShaderKey, ShaderProgramKey
 
 if TYPE_CHECKING:
     from _weakref import CallableProxyType
@@ -23,6 +25,7 @@ if TYPE_CHECKING:
     from pyglet.graphics import Batch, Group
     from pyglet.graphics.buffer import UniformBufferObject
     from pyglet.graphics.vertexdomain import (
+        DomainAttributes,
         IndexedVertexList,
         InstanceIndexedVertexList,
         InstanceVertexList,
@@ -84,18 +87,29 @@ class Sampler:
     stages: Sequence[ShaderType] = ("fragment",)
 
 
-class _AbstractShaderProgram(ABC):
-    _id: int | None
+class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
+    key_type = ShaderProgramKey
     _attributes: dict[str, Attribute]
     _uniforms: dict[str, Any]
     _uniform_blocks: dict[str, UniformBlock]
     _samplers: dict[str, Sampler]
+    _attribute_key: str
+    _attribute_keys: tuple[tuple[Any, ...], ...]
+    _domain_attributes: DomainAttributes
+    _instanced_domain_attributes: DomainAttributes | None
+    _instance_attributes: dict[str, int]
+    _vertex_layouts: dict[tuple[Any, ...], ShaderProgramView]
 
     def __init__(self, *shaders: Shader) -> None:
-        self._id = None
+        GraphicsResource.__init__(self)
 
         # Attribute description
         self._attributes = {}
+        self._attribute_key = str(())
+        self._attribute_keys = ()
+        self._instanced_domain_attributes = None
+        self._instance_attributes = {}
+        self._vertex_layouts = {}
 
         # Uniform description
         self._uniforms = {}
@@ -105,10 +119,6 @@ class _AbstractShaderProgram(ABC):
 
         # Sampler descriptions
         self._samplers = {}
-
-    @property
-    def id(self) -> int | None:
-        return self._id
 
     @property
     def is_defined(self) -> bool:
@@ -123,6 +133,110 @@ class _AbstractShaderProgram(ABC):
         """
         for attrib in attributes:
             self._attributes[attrib.fmt.name] = attrib
+        self._update_attribute_key()
+
+    def _update_attribute_key(self) -> None:
+        """Cache the platform-independent key used to look up vertex domains."""
+        self._attribute_keys = tuple(
+            attribute.key for attribute in sorted(self._attributes.values(), key=lambda attribute: attribute.location)
+        )
+        self._attribute_key = str(self._attribute_keys)
+        self._domain_attributes = self.derive_domain_attributes(self._attributes, self._attribute_key)
+        self._instanced_domain_attributes = (
+            self._derive_instanced_domain_attributes(self._attributes, self._instance_attributes)
+            if self._instance_attributes else None
+        )
+
+    @staticmethod
+    def derive_domain_attributes(attributes: dict[str, Attribute], key: str | None = None) -> DomainAttributes:
+        """Create domain metadata for an attribute layout."""
+        from pyglet.graphics.vertexdomain import DomainAttributes
+
+        if key is None:
+            return DomainAttributes.from_attributes(attributes)
+        return DomainAttributes(attributes, key)
+
+    @property
+    def attribute_key(self) -> str:
+        """Stable, cached key describing all attributes, sorted by location."""
+        return self._attribute_key
+
+    @property
+    def domain_attributes(self) -> DomainAttributes:
+        """Cached attributes and lookup key used for vertex domains."""
+        return self._domain_attributes
+
+    @property
+    def instanced_domain_attributes(self) -> DomainAttributes:
+        """Cached attributes and lookup key used for instanced vertex domains."""
+        assert self._instanced_domain_attributes is not None, (
+            "Configure instance attributes with set_instance_attributes first."
+        )
+        return self._instanced_domain_attributes
+
+    def _derive_instanced_domain_attributes(self, attributes: dict[str, Attribute],
+                                             instances: dict[str, int]) -> DomainAttributes:
+        adjusted = attributes.copy()
+        for name, divisor in sorted(instances.items()):
+            attribute = copy(attributes[name])
+            attribute.set_divisor(divisor)
+            adjusted[name] = attribute
+        return self.derive_domain_attributes(adjusted)
+
+    def set_instance_attributes(self, **attributes: int) -> _AbstractShaderProgram:
+        """Configure the attributes and divisors used by instanced vertex lists."""
+        for name, divisor in attributes.items():
+            if name not in self._attributes:
+                msg = f"Attribute {name} not found. Existing attributes: {list(self._attributes.keys())}"
+                raise MissingAttributeException(msg)
+            if divisor < 1:
+                raise ValueError(f"Instance divisor for {name!r} must be greater than zero.")
+
+        if attributes != self._instance_attributes:
+            self._instance_attributes = attributes.copy()
+            self._instanced_domain_attributes = (
+                self._derive_instanced_domain_attributes(self._attributes, attributes) if attributes else None
+            )
+        return self
+
+    def create_vertex_layout(self, **formats: str) -> ShaderProgramView:
+        """Return the interned shader-program view for the requested vertex formats."""
+        attributes = self._copy_attributes_with_formats(self._attributes, formats)
+        return self._get_vertex_layout(attributes, self._instance_attributes)
+
+    def _get_vertex_layout(self, attributes: dict[str, Attribute],
+                           instances: dict[str, int]) -> ShaderProgramView:
+        attribute_key = tuple(
+            attribute.key for attribute in sorted(attributes.values(), key=lambda attribute: attribute.location)
+        )
+        key = attribute_key, tuple(sorted(instances.items()))
+        try:
+            return self._vertex_layouts[key]
+        except KeyError:
+            layout = ShaderProgramView(self, attributes, instances)
+            self._vertex_layouts[key] = layout
+            return layout
+
+    @staticmethod
+    def _copy_attributes_with_formats(attributes: dict[str, Attribute], formats: dict[str, str]) -> dict[str, Attribute]:
+        adjusted = attributes.copy()
+        for name, fmt in formats.items():
+            valid = (
+                isinstance(fmt, str)
+                and len(fmt) in (1, 2)
+                and fmt[0] in DataTypeTuple
+                and (len(fmt) == 1 or fmt[1] == 'n')
+            )
+            if not valid:
+                raise ValueError(f"Invalid vertex format {fmt!r} for attribute {name!r}.")
+            try:
+                attribute = copy(attributes[name])
+            except KeyError:
+                msg = f"Attribute {name} not found. Existing attributes: {list(attributes.keys())}"
+                raise MissingAttributeException(msg) from None
+            attribute.set_data_type(fmt[0], len(fmt) == 2)
+            adjusted[name] = attribute
+        return adjusted
 
     def set_uniform_blocks(self, *uniform_blocks: UniformBlockDesc) -> None:
         for ub in uniform_blocks:
@@ -148,7 +262,7 @@ class _AbstractShaderProgram(ABC):
     @property
     def attribute_keys(self) -> tuple[tuple[Any, ...], ...]:
         """Stable tuple describing all attributes, sorted by attribute location."""
-        return tuple(attribute.key for attribute in sorted(self._attributes.values(), key=lambda attribute: attribute.location))
+        return self._attribute_keys
 
     @property
     def uniform_blocks(self) -> dict[str, UniformBlock]:
@@ -255,32 +369,56 @@ class _AbstractShaderProgram(ABC):
 
     @overload
     def _vertex_list_create(self, count: int, mode: GeometryMode, indices: None = None,
-                            instances: None = None, batch: Batch | None = None, group: Group | None = None,
+                            instanced: Literal[False] = False, batch: Batch | None = None, group: Group | None = None,
                             **data: Any) -> VertexList:
         ...
 
     @overload
     def _vertex_list_create(self, count: int, mode: GeometryMode, indices: Sequence[int] = ...,
-                            instances: None = None, batch: Batch | None = None, group: Group | None = None,
+                            instanced: Literal[False] = False, batch: Batch | None = None, group: Group | None = None,
                             **data: Any) -> IndexedVertexList:
         ...
 
     @overload
     def _vertex_list_create(self, count: int, mode: GeometryMode, indices: None = None,
-                            instances: dict[str, int] = ..., batch: Batch | None = None, group: Group | None = None,
+                            instanced: Literal[True] = True, batch: Batch | None = None, group: Group | None = None,
                             **data: Any) -> InstanceVertexList:
         ...
 
     @overload
     def _vertex_list_create(self, count: int, mode: GeometryMode, indices: Sequence[int] = ...,
-                            instances: dict[str, int] = ..., batch: Batch | None = None, group: Group | None = None,
+                            instanced: Literal[True] = True, batch: Batch | None = None, group: Group | None = None,
                             **data: Any) -> InstanceIndexedVertexList:
         ...
 
     def _vertex_list_create(self, count: int, mode: GeometryMode, indices: Sequence[int] | None = None,
-                            instances: dict[str, int] | None = None, batch: Batch | None = None, group: Group | None = None,
+                            instanced: bool = False, batch: Batch | None = None, group: Group | None = None,
+                            layout: _AbstractShaderProgram | ShaderProgramView | None = None,
                             **data: Any) -> VertexList | InstanceVertexList | IndexedVertexList | InstanceIndexedVertexList:
-        raise NotImplementedError
+        assert isinstance(mode, GeometryMode), f"Mode {mode} is not geometry mode."
+        layout = layout or self
+
+        initial_arrays = []
+        for name, array in data.items():
+            if name not in layout._attributes:
+                msg = f"Attribute {name} not found. Existing attributes: {list(layout._attributes.keys())}"
+                raise MissingAttributeException(msg) from None
+            initial_arrays.append((name, array))
+
+        domain_attributes = layout.instanced_domain_attributes if instanced else layout.domain_attributes
+        if pyglet.options.debug_api_shaders:
+            if missing_data := [name for name in domain_attributes.attributes if name not in data]:
+                warnings.warn(f"No data was supplied for the following found attributes: `{missing_data}`.\n")
+
+        batch = batch or pyglet.graphics.get_default_batch()
+        group = group or pyglet.graphics.ShaderGroup(program=layout)
+        domain = batch.get_domain(indices is not None, instanced, mode, group, domain_attributes)
+        vertex_list = domain.create(group, count, indices)
+
+        for name, array in initial_arrays:
+            vertex_list.set_attribute_data(name, array)
+
+        return vertex_list
 
     def vertex_list(self, count: int, mode: GeometryMode, batch: Batch | None = None, group: Group | None = None,
                     **data: Any) -> VertexList:
@@ -299,15 +437,17 @@ class _AbstractShaderProgram(ABC):
             group:
                 Group to add the VertexList to, or ``None`` if no group is required.
             data:
-                Attribute formats and initial data for the vertex list.
+                Initial data for each vertex attribute.
 
         """
-        return self._vertex_list_create(count, mode, None, None, batch=batch, group=group, **data)
+        return self._vertex_list_create(count, mode, None, False, batch=batch, group=group, **data)
 
-    def vertex_list_instanced(self, count: int, mode: GeometryMode, instance_attributes: dict[str, int],
-                              batch: Batch | None = None, group: Group | None = None, **data: Any) -> InstanceVertexList:
-        assert len(instance_attributes) > 0, "You must provide at least one attribute name to be instanced."
-        return self._vertex_list_create(count, mode, None, instance_attributes, batch=batch, group=group, **data)
+    def vertex_list_instanced(self, count: int, mode: GeometryMode, batch: Batch | None = None,
+                              group: Group | None = None, **data: Any) -> InstanceVertexList:
+        assert self._instance_attributes, "Configure instance attributes with set_instance_attributes first."
+        return self._vertex_list_create(
+            count, mode, None, True, batch=batch, group=group, **data
+        )
 
     def vertex_list_indexed(self, count: int, mode: GeometryMode, indices: Sequence[int], batch: Batch | None = None,
                             group: Group | None = None, **data: Any) -> IndexedVertexList:
@@ -328,18 +468,20 @@ class _AbstractShaderProgram(ABC):
             group:
                 Group to add the VertexList to, or ``None`` if no group is required.
             data:
-                Attribute formats and initial data for the vertex list.
+                Initial data for each vertex attribute.
         """
-        return self._vertex_list_create(count, mode, indices, None, batch=batch, group=group, **data)
+        return self._vertex_list_create(count, mode, indices, False, batch=batch, group=group, **data)
 
     def vertex_list_instanced_indexed(self, count: int, *, mode: GeometryMode, indices: Sequence[int],
-                                      instance_attributes: dict[str, int], batch: Batch | None = None, group: Group | None = None,
+                                      batch: Batch | None = None, group: Group | None = None,
                                       **data: Any) -> InstanceIndexedVertexList:
-        assert len(instance_attributes) > 0, "You must provide at least one attribute name to be instanced."
-        return self._vertex_list_create(count, mode, indices, instance_attributes, batch=batch, group=group, **data)
+        assert self._instance_attributes, "Configure instance attributes with set_instance_attributes first."
+        return self._vertex_list_create(
+            count, mode, indices, True, batch=batch, group=group, **data
+        )
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(id={self.id})"
+        return f"{self.__class__.__name__}(handle={self._handle})"
 
 
 class ShaderProgram(_AbstractShaderProgram):
@@ -351,16 +493,136 @@ class ShaderProgram(_AbstractShaderProgram):
     """
 
     def __init__(self, *shaders: _AbstractShader) -> None:
-        """Initialize a shader program from one or more Shader objects.
-
-        Args:
-            shaders:
-                One or more :py:class:`~pyglet.graphics.shader.Shader`
-                instances to be linked into a program by the active backend.
-                At least one shader is required.
-        """
+        """Initialize a shader program from one or more Shader objects."""
         assert shaders, "At least one Shader object is required."
         super().__init__(*shaders)
+
+
+class ShaderProgramView(ShaderProgram):
+    """An interned ShaderProgram view with a specific vertex layout.
+
+    A view shares its owning program's linked shader and uniforms, but caches
+    its own vertex formats, instance divisors, and vertex-domain metadata.
+    """
+
+    def __init__(self, program: _AbstractShaderProgram, attributes: dict[str, Attribute],
+                 instances: dict[str, int]) -> None:
+        GraphicsResource.__init__(self, key=program.key)
+        self._program = program
+        self._attributes = attributes
+        self._instance_attributes = instances.copy()
+        self._attribute_keys = tuple(
+            attribute.key for attribute in sorted(attributes.values(), key=lambda attribute: attribute.location)
+        )
+        self._attribute_key = str(self._attribute_keys)
+        self._domain_attributes = program.derive_domain_attributes(attributes, self._attribute_key)
+        self._instanced_domain_attributes = (
+            program._derive_instanced_domain_attributes(attributes, instances) if instances else None
+        )
+
+    @property
+    def program(self) -> _AbstractShaderProgram:
+        """The ShaderProgram that owns this layout."""
+        return self._program
+
+    @property
+    def handle(self) -> Any:
+        """Backend handle of the program this view represents."""
+        return self._program.handle
+
+    def delete(self) -> None:
+        """Release this view without affecting its owning shader program."""
+
+    @property
+    def attributes(self) -> dict[str, Attribute]:
+        return self._attributes.copy()
+
+    @property
+    def attribute_keys(self) -> tuple[tuple[Any, ...], ...]:
+        return self._attribute_keys
+
+    @property
+    def attribute_key(self) -> str:
+        return self._attribute_key
+
+    @property
+    def domain_attributes(self) -> DomainAttributes:
+        return self._domain_attributes
+
+    @property
+    def instanced_domain_attributes(self) -> DomainAttributes:
+        assert self._instanced_domain_attributes is not None, (
+            "Configure instance attributes with set_instance_attributes first."
+        )
+        return self._instanced_domain_attributes
+
+    def create_vertex_layout(self, **formats: str) -> ShaderProgramView:
+        attributes = self._program._copy_attributes_with_formats(self._attributes, formats)
+        return self._program._get_vertex_layout(attributes, self._instance_attributes)
+
+    def set_instance_attributes(self, **attributes: int) -> ShaderProgramView:
+        for name, divisor in attributes.items():
+            if name not in self._attributes:
+                msg = f"Attribute {name} not found. Existing attributes: {list(self._attributes.keys())}"
+                raise MissingAttributeException(msg)
+            if divisor < 1:
+                raise ValueError(f"Instance divisor for {name!r} must be greater than zero.")
+        return self._program._get_vertex_layout(self._attributes, attributes)
+
+    def vertex_list(self, count: int, mode: GeometryMode, batch: Batch | None = None,
+                    group: Group | None = None, **data: Any) -> VertexList:
+        return self._program._vertex_list_create(
+            count, mode, batch=batch, group=group, layout=self, **data
+        )
+
+    def vertex_list_indexed(self, count: int, mode: GeometryMode, indices: Sequence[int],
+                            batch: Batch | None = None, group: Group | None = None,
+                            **data: Any) -> IndexedVertexList:
+        return self._program._vertex_list_create(
+            count, mode, indices, batch=batch, group=group, layout=self, **data
+        )
+
+    def vertex_list_instanced(self, count: int, mode: GeometryMode, batch: Batch | None = None,
+                              group: Group | None = None, **data: Any) -> InstanceVertexList:
+        assert self._instance_attributes, "Configure instance attributes with set_instance_attributes first."
+        return self._program._vertex_list_create(
+            count, mode, None, True, batch=batch, group=group, layout=self, **data
+        )
+
+    def vertex_list_instanced_indexed(self, count: int, *, mode: GeometryMode, indices: Sequence[int],
+                                      batch: Batch | None = None, group: Group | None = None,
+                                      **data: Any) -> InstanceIndexedVertexList:
+        assert self._instance_attributes, "Configure instance attributes with set_instance_attributes first."
+        return self._program._vertex_list_create(
+            count, mode, indices, True, batch=batch, group=group, layout=self, **data
+        )
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._program, name)
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        self._program[key] = value
+
+    def __getitem__(self, key: str) -> Any:
+        return self._program[key]
+
+    def __enter__(self) -> None:
+        self._program.__enter__()
+
+    def __exit__(self, *args: Any) -> None:
+        self._program.__exit__(*args)
+
+    def use(self) -> None:
+        self._program.use()
+
+    def stop(self) -> None:
+        self._program.stop()
+
+    def delete(self) -> None:
+        self._program.delete()
+
+    def __repr__(self) -> str:
+        return f"ShaderProgramView(program={self._program!r}, attributes={self._attribute_key})"
 
 
 class ComputeShaderProgram(_AbstractShaderProgram):
@@ -404,10 +666,6 @@ class TransformFeedbackShaderProgram(ShaderProgram):
         msg = f"{self.__class__.__name__} is backend-specific and must be provided by the active backend."
         raise NotImplementedError(msg)
 
-    @property
-    def id(self) -> int:
-        return self._id
-
 class ShaderSource(abc.ABC):
     """String source of shader used during load of a Shader instance."""
 
@@ -416,7 +674,7 @@ class ShaderSource(abc.ABC):
         """Return the validated shader source."""
 
 
-class _AbstractShader(abc.ABC):
+class _AbstractShader(GraphicsResource[Any, ShaderKey], abc.ABC):
     """Graphics shader.
 
     Shader objects may be compiled on instantiation if OpenGL or already compiled in Vulkan.
@@ -424,9 +682,11 @@ class _AbstractShader(abc.ABC):
     """
     _src_str: str
     type: ShaderType
+    key_type = ShaderKey
 
     def __init__(self, source_string: str, shader_type: ShaderType) -> None:
         """Initialize a shader type."""
+        GraphicsResource.__init__(self)
         self._src_str = source_string
         self.type = shader_type
 
@@ -953,7 +1213,7 @@ class UniformBlock:
 
     def bind(self, ubo: UniformBufferObject) -> None:
         """Bind a UBO to the binding point of this uniform block."""
-        self._bind_buffer_base(self.binding, ubo.buffer.id)
+        self._bind_buffer_base(self.binding, ubo.buffer.handle)
 
     def create_ubo(
         self,
@@ -1049,7 +1309,7 @@ class UniformBlock:
         raise NotImplementedError
 
     def __repr__(self) -> str:
-        return (f"{self.__class__.__name__}(program={self.program.id}, location={self.index}, size={self.size}, "
+        return (f"{self.__class__.__name__}(program={self.program.handle}, location={self.index}, size={self.size}, "
                 f"binding={self.binding})")
 
 
@@ -1089,3 +1349,7 @@ if not _is_pyglet_doc_run:
     else:
         msg = f"Unsupported backend: {pyglet.options.backend}"
         raise RuntimeError(msg)
+
+    # A view forwards all program operations to its owner, so it is also a
+    # valid program for the active backend at runtime.
+    ShaderProgram.register(ShaderProgramView)

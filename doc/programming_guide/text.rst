@@ -1,17 +1,11 @@
+.. _guide_text:
+
 Displaying text
 ===============
 
-pyglet provides the :py:mod:`~pyglet.font` module for efficiently rendering
-high-quality antialiased Unicode glyphs. pyglet can use any installed font
-on the operating system, or you can provide your own font with your
-application.
-
-Please note that not all font formats are supported,
-see :ref:`guide_supported-font-formats`
-
-Text rendering is performed with the :py:mod:`~pyglet.text` module, which
-can display word-wrapped formatted text.  There is also support for
-interactive editing of text on-screen with a caret.
+pyglet provides the :py:mod:`~pyglet.text` module for displaying and editing
+Unicode text. Font selection, font faces, metrics, and custom font files are
+covered separately in :doc:`fonts`.
 
 Simple text rendering
 ---------------------
@@ -36,8 +30,8 @@ The following complete example creates a window that displays
 The example demonstrates the most common uses of text rendering:
 
 * The font name and size are specified directly in the constructor.
-  Additional parameters exist for setting the bold and italic styles and the
-  color of the text.
+  The ``weight``, ``style``, and ``stretch`` parameters select a font face;
+  see :doc:`fonts`. The ``color`` parameter controls the text color.
 * The position of the text is given by the ``x`` and ``y`` coordinates.  The
   meaning of these coordinates is given by the ``anchor_x`` and ``anchor_y``
   parameters.
@@ -169,6 +163,29 @@ Like labels, layouts are positioned through their `x`, `y`,
 `anchor_x` and `anchor_y` properties.
 The `anchor` properties accept a string such as ``"bottom"`` or ``"center"`` instead of a
 numeric displacement.
+
+Rendering layouts to textures
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:py:meth:`~pyglet.text.layout.TextLayout.get_as_texture` draws a layout into a
+new caller-owned GPU texture. Texture allocation and rendering can be slow when
+performed in bulk or every frame. For an occasional conversion, no additional
+setup is needed::
+
+    texture = layout.get_as_texture()
+
+When converting many layouts, pass a
+:py:class:`~pyglet.graphics.framebuffer.TextureRenderTarget` to reuse its
+framebuffer and camera. This reduces setup overhead, but each result still
+requires a new texture allocation and GPU render::
+
+    target = pyglet.graphics.TextureRenderTarget()
+    textures = [layout.get_as_texture(target) for layout in layouts]
+    target.delete()
+
+Deleting the target does not delete the returned textures. Delete each texture
+when it is no longer needed. See :ref:`guide_drawing-into-a-texture` for render
+target lifecycle and ownership details.
 
 .. _guide_formatted-text:
 
@@ -530,8 +547,8 @@ The :py:class:`~pyglet.text.caret.Caret` class implements an insertion caret
 (cursor) for :py:class:`~pyglet.text.layout.IncrementalTextLayout`.
 This includes displaying the blinking caret at the correct location,
 and handling keyboard, text and mouse events.
-The behaviour in response to the events is very similar to the system GUIs
-on Windows, Mac OS X and GTK.  Using :py:class:`~pyglet.text.caret.Caret`
+The behaviour in response to the events is similar to native text controls on
+Windows, macOS, and Linux. Using :py:class:`~pyglet.text.caret.Caret`
 frees you from using the :py:class:`~pyglet.text.layout.IncrementalTextLayout`
 methods described above directly.
 
@@ -553,288 +570,18 @@ text widgets are to be shown, some mechanism is needed to dispatch events to
 the widget that has keyboard focus.  An example of how to do this is given in
 the `examples/text_input.py` example program.
 
-Loading system fonts
---------------------
-
-The layout classes automatically load fonts as required.  You can also
-explicitly load fonts to implement your own layout algorithms.
-
-To load a font you must know its family name.  This is the name displayed in
-the font dialog of any application.  For example, all operating systems
-include the *Times New Roman* font.  You must also specify the font size to
-load, in points::
-
-    # Load "Times New Roman" at 16pt
-    times = pyglet.font.load('Times New Roman', 16)
-
-Bold and italic variants of the font can specified with keyword parameters::
-
-    times_bold = pyglet.font.load('Times New Roman', 16, bold=True)
-    times_italic = pyglet.font.load('Times New Roman', 16, italic=True)
-    times_bold_italic = pyglet.font.load('Times New Roman', 16,
-                                         bold=True, italic=True)
-
-For maximum compatibility on all platforms, you can specify a list of font
-names to load, in order of preference.  For example, many users will have
-installed the Microsoft Web Fonts pack, which includes `Verdana`, but this
-cannot be guaranteed, so you might specify `Arial` or `Helvetica` as
-suitable alternatives::
-
-    sans_serif = pyglet.font.load(('Verdana', 'Helvetica', 'Arial'), 16)
-
-Also you can check for the availability of a font using
-:py:func:`pyglet.font.have_font`::
-
-    # Will return True
-    pyglet.font.have_font('Times New Roman')
-
-    # Will return False
-    pyglet.font.have_font('missing-font-name')
-
-If you do not particularly care which font is used, and just need to display
-some readable text, you can specify `None` as the family name, which will load
-a default sans-serif font (Helvetica on Mac OS X, Arial on Windows XP)::
-
-    sans_serif = pyglet.font.load(None, 16)
-
-Font groups
------------
-
-:py:class:`~pyglet.font.group.FontGroup` lets you define a named set of font
-fallbacks and assign each fallback to specific Unicode ranges. This is useful
-when one label or layout needs multiple scripts or symbol sets, but you still
-want to refer to the result as one logical font.
-
-Create a group, register it, then use the group name anywhere you would usually
-provide a font family name::
-
-    import pyglet
-
-    ui_font = pyglet.font.FontGroup("ui-font")
-    ui_font.add("Noto Sans", 0x0000, 0x024F)       # Basic Latin + Latin supplements
-    ui_font.add("Noto Sans CJK JP", 0x3040, 0x30FF)  # Hiragana + Katakana
-    ui_font.add("Noto Color Emoji", 0x1F300, 0x1FAFF)
-    pyglet.font.add_group(ui_font)
-
-    label = pyglet.text.Label(
-        "Hello こんにちは 😀",
-        font_name="ui-font",
-        font_size=18,
-    )
-
-HarfBuzz shaping
-----------------
-
-Some platforms like Linux do not have any text shaping capability to provide advanced features
-such as ligatures, substitutions, cluster-aware glyph placement, etc. To provide
-a more cross-platform solution, pyglet can utilize HarfBuzz. To enable it, set
-``pyglet.options.text_shaping`` to ``"harfbuzz"`` before loading fonts or
-creating text layouts::
-
-    import pyglet
-    pyglet.options.text_shaping = "harfbuzz"
-
-If HarfBuzz is not available in your environment, pyglet falls back to
-platform shaping.
-
-Visit the harfbuzz website on installation instructions:: https://harfbuzz.github.io/install-harfbuzz.html
-
-Harfbuzz provides functionality for many font features, so not all files are required to shape text. Pyglet
-does not rely on any of the binaries files such as ``hb-*.exe`` only the ``lib*`` files.
-
-.. note:: On Windows, libharfbuzz-0.dll depends on the ``libglib-*.dll`` and ``libintl-*.dll`` files for shaping.
-
-Font sizes
-----------
-
-When loading a font you must specify the font size it is to be rendered at, in
-points.  Points are a somewhat historical but conventional unit used in both
-display and print media.  There are various conflicting definitions for the
-actual length of a point, but pyglet uses the PostScript definition: 1 point =
-1/72 inches.
-
-Font resolution
-^^^^^^^^^^^^^^^
-
-The actual rendered size of the font on screen depends on the display
-resolution. pyglet uses a default DPI of 96 on all operating systems.  Most
-Mac OS X applications use a DPI of 72, so the font sizes will not match up on
-that operating system.  However, application developers can be assured that
-font sizes remain consistent in pyglet across platforms.
-
-The DPI can be specified directly in the :py:func:`pyglet.font.load`
-function, and as an argument to the :py:func:`~pyglet.text.layout.TextLayout`
-constructor.
-
-Determining font size
-^^^^^^^^^^^^^^^^^^^^^
-
-Once a font is loaded at a particular size, you can query its pixel size with
-the attributes::
-
-    Font.ascent
-    Font.descent
-
-These measurements are shown in the diagram below.
-
-.. figure:: img/font_metrics.png
-
-    Font metrics.  Note that the descent is usually negative as it descends
-    below the baseline.
-
-You can calculate the distance between successive lines of text as::
-
-    ascent - descent + leading
-
-where `leading` is the number of pixels to insert between each line of text.
-
-Loading custom fonts
---------------------
-
-You can supply a font with your application if it's not commonly installed on
-the target platform.  You should ensure you have a license to distribute the
-font -- the terms are often specified within the font file itself, and can be
-viewed with your operating system's font viewer.
-
-Loading a custom font must be performed in two steps:
-
-1. Let pyglet know about the additional font or font files.
-2. Load the font by its family name.
-
-For example, let's say you have the *Action Man* font in a file called
-``action_man.ttf``.  The following code will load an instance of that font::
-
-    pyglet.font.add_file('action_man.ttf')
-    action_man = pyglet.font.load('Action Man')
-
-Similarly, once the font file has been added, the font name can be specified
-as a style on a label or layout::
-
-    label = pyglet.text.Label('Hello', font_name='Action Man')
-
-Fonts are often distributed in separate files for each variant.  *Action Man
-Bold* would probably be distributed as a separate file called
-``action_man_bold.ttf``; you need to let pyglet know about this as well::
-
-    font.add_file('action_man_bold.ttf')
-    action_man_bold = font.load('Action Man', bold=True)
-
-Note that even when you know the filename of the font you want to load, you
-must specify the font's family name to :py:func:`pyglet.font.load`.
-
-You need not have the file on disk to add it to pyglet; you can specify any
-file-like object supporting the `read` method.  This can be useful for
-extracting fonts from a resource archive or over a network.
-
-If the custom font is distributed with your application, consider using the
-:ref:`guide_resources`.
-
-.. _guide_supported-font-formats:
-
-Supported font formats
-^^^^^^^^^^^^^^^^^^^^^^
-
-pyglet can load any font file that the operating system natively supports,
-but not all formats all fully supported.
-
-The list of supported formats is shown in the table below.
-
-    .. list-table::
-        :header-rows: 1
-
-        * - Font Format
-          - Windows
-          - Mac OS X
-          - Linux (FreeType)
-        * - TrueType (.ttf)
-          - X
-          - X
-          - X
-        * - PostScript Type 1 (.pfm, .pfb)
-          - X
-          - X
-          - X
-        * - Windows Bitmap (.fnt)
-          - X
-          -
-          - X
-        * - Mac OS X Data Fork Font (.dfont)
-          -
-          - X
-          -
-        * - OpenType (.otf) [#opentype]_
-          -
-          - X
-          -
-        * - X11 font formats PCF, BDF, SFONT
-          -
-          -
-          - X
-        * - Bitstream PFR (.pfr)
-          -
-          -
-          - X
-
-.. [#opentype] All OpenType fonts are backward compatible with TrueType, so
-               while the advanced OpenType features can only be rendered with
-               Mac OS X, the files can be used on any platform.  pyglet
-               does not currently make use of the additional kerning and
-               ligature information within OpenType fonts.
-               In Windows a few will use the variant DEVICE_FONTTYPE and may
-               render bad, by example inconsolata.otf, from
-               http://levien.com/type/myfonts/inconsolata.html
-
-Some of the fonts found in internet may miss information for some operating
-systems, others may have been written with work in progress tools not fully
-compliant with standards. Using the font with text editors or fonts viewers
-can help to determine if the font is broken.
-
-OpenGL font considerations
---------------------------
-
-Text in pyglet is drawn using textured quads.  Each font maintains a set of
-one or more textures, into which glyphs are uploaded as they are needed.  For
-most applications this detail is transparent and unimportant, however some of
-the details of these glyph textures are described below for advanced users.
-
-Context affinity
-^^^^^^^^^^^^^^^^
-
-When a font is loaded, it immediately creates a texture in the current
-context's object space.  Subsequent textures may need to be created if there
-is not enough room on the first texture for all the glyphs.  This is done when
-the glyph is first requested.
-
-pyglet always assumes that the object space that was active when the font was
-loaded is the active one when any texture operations are performed.  Normally
-this assumption is valid, as pyglet shares object spaces between all contexts
-by default.  There are a few situations in which this will not be the case,
-though:
-
-* When explicitly setting the context share during context creation.
-* When multiple display devices are being used which cannot support a shared
-  context object space.
-
-In any of these cases, you will need to reload the font for each object space
-that it's needed in.  pyglet keeps a cache of fonts, but does so
-per-object-space, so it knows when it can reuse an existing font instance or
-if it needs to load it and create new textures.  You will also need to ensure
-that an appropriate context is active when any glyphs may need to be added.
-
-Blend state
-^^^^^^^^^^^
-
-The glyph textures have an internal format of ``GL_ALPHA``, which provides
-a simple way to recolour and blend antialiased text by changing the
-vertex colors.  pyglet makes very few assumptions about the OpenGL state, and
-will not alter it besides changing the currently bound texture.
-
-The following blend state is used for drawing font glyphs::
-
-    from pyglet.graphics.api.gl import *
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-    glEnable(GL_BLEND)
-
-All glyph textures use the ``GL_TEXTURE_2D`` target, so you should ensure that
-a higher priority target such as ``GL_TEXTURE_3D`` is not enabled before
-trying to render text.
+Choosing fonts
+--------------
+
+Labels and layouts load fonts automatically from their ``font_name``,
+``font_size``, ``weight``, ``style``, and ``stretch`` properties. See
+:doc:`fonts` for family and face names, fallback families, custom font files,
+font groups, sizes, and metrics.
+
+Font shaping
+------------
+
+Shaping controls how a selected font converts text into glyphs. See the
+:ref:`font shaping section <guide_font_shaping>` in :doc:`fonts` for backend
+selection, HarfBuzz, and when to disable shaping for an individual label or
+layout.

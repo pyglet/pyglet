@@ -18,11 +18,14 @@ if TYPE_CHECKING:
     from typing import Any, Callable, ItemsView, Sized
 
 #: The release version
-version = '3.0.dev6'
+version = '3.0.dev9'
 __version__ = version
 
-MIN_PYTHON_VERSION = 3, 8
+MIN_PYTHON_VERSION = 3, 10
 MIN_PYTHON_VERSION_STR = ".".join([str(v) for v in MIN_PYTHON_VERSION])
+
+#: The Pyodide release used to develop and test pyglet's browser support.
+PYODIDE_VERSION = "0.29.4"
 
 if sys.version_info < MIN_PYTHON_VERSION:
     msg = f"pyglet {version} requires Python {MIN_PYTHON_VERSION_STR} or newer."
@@ -55,7 +58,6 @@ class PyodideOptions:
     If the ID is not detected, a canvas will be created with the above. If you have a canvas already embedded in your
     page, and do not want to alter your code, then modify this option.
     """
-
 
 @dataclass
 class Options:
@@ -190,39 +192,48 @@ class Options:
     """
 
     text_shaping: Literal["platform", "harfbuzz", False] = 'platform'
-    """Determines how text is processed and displayed based on features of the font.
+    """Selects the text-shaping backend used by layouts and labels that enable shaping.
+
+    Individual :class:`~pyglet.text.Label`, :class:`~pyglet.text.HTMLLabel`, and
+    :class:`~pyglet.text.DocumentLabel` instances can opt out with ``shaping=False``.
+    This option selects the backend; it does not force shaping on every label.
 
     Valid option names are:
 
-     * ``False``, Disables the shaping process for text. This may increase performance as it reduces the amount
-        of calls during rendering. If your font is simple, monospaced, or you require no advanced OpenType features,
-        this option may be useful.
-     * ``'platform'``, Uses platform's font system for shaping. Supported by Windows (DirectWrite) and Mac (CoreText).
-     * ``'harfbuzz'``, Utilize the harfbuzz library for font shaping. This requires an optional dependency, if not
-     found, it will fallback to platform shaping.
+     * ``False``, Disables shaping for every layout and label. Prefer ``shaping=False`` on individual labels when
+        only frequently-updated text, such as an FPS counter, does not need advanced typography.
+     * ``'platform'``, Uses the platform font system for shaping. Supported by Windows (DirectWrite) and Mac
+        (CoreText); other platforms use unshaped glyph metrics.
+     * ``'harfbuzz'``, Uses the HarfBuzz library for shaping. This is an explicit opt-in because it is an optional
+        dependency and can change text metrics. If it is unavailable, pyglet falls back to platform behavior.
 
     .. versionadded:: 2.0
     """
 
-    dw_legacy_naming: bool = False
-    """If ``True``, will enable legacy naming support for the default Windows font renderer (``DirectWrite``).
-    Attempt to parse fonts by the passed name, to best match legacy RBIZ naming.
+    font_name_compatibility: bool = False
+    """If ``True``, pyglet performs additional compatibility lookup for font names.
+
+    The portable spelling of a font is its family name with explicit ``weight``, ``style``, and ``stretch``. This
+    option additionally accepts OpenType full names and platform compatibility aliases where the backend supports
+    them. For example, it allows ``"Arial Narrow"`` rather than ``"Arial"`` with a ``"condensed"`` stretch, or
+    ``"Arial Black"`` instead of ``"Arial"`` with a weight of ``"black"``.
+
+    This option does not reject full names when disabled: a platform font API may still accept them natively. It only
+    enables pyglet's extra compatibility lookup and mapping, which can improve cross-platform behavior at the cost of
+    slower font resolution.
+
+    On Windows with DirectWrite, GDI/RBIZ aliases are not indexed as family names. Resolving one requires enumerating
+    installed font families and faces, and can be noticeably slow on systems with many installed fonts. Results are
+    cached until a custom font is added.
 
     :see: https://learn.microsoft.com/en-us/windows/win32/directwrite/font-selection#rbiz-font-family-model
 
-    For example, this allows specifying ``"Arial Narrow"`` rather than ``"Arial"`` with a ``"condensed"`` stretch or
-    ``"Arial Black"`` instead of ``"Arial"`` with a weight of ``black``. This may enhance naming compatibility
-    cross-platform for select fonts as older font renderers went by this naming scheme.
-
-    Starts by parsing the string for any known style names, and searches all font collections for a matching RBIZ name.
-    If a perfect match is not found, it will choose a second best match.
-
     .. note:: Due to the high variation of styles and limited capability of some fonts, there is no guarantee the
-       second closest match will be exactly what the user wants.
+       selected face will be exactly what the user wants.
 
     .. note:: The ``debug_font`` option can provide information on what settings are being selected.
 
-    .. versionadded:: 2.0.3
+    .. versionadded:: 3.0
     """
 
     win32_disable_xinput: bool = False
@@ -498,6 +509,7 @@ if TYPE_CHECKING:
         resource,
         shapes,
         sprite,
+        storage,
         text,
         window,
     )
@@ -521,6 +533,7 @@ else:
     resource = _ModuleProxy("resource")  # type: ignore
     sprite = _ModuleProxy("sprite")  # type: ignore
     shapes = _ModuleProxy("shapes")  # type: ignore
+    storage = _ModuleProxy("storage")  # type: ignore
     text = _ModuleProxy("text")  # type: ignore
     window = _ModuleProxy("window")  # type: ignore
 

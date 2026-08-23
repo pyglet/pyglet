@@ -1,13 +1,15 @@
 from __future__ import annotations
 
+import logging
 import os
 import subprocess
-from typing import Union
-
-from pytest import LogCaptureFixture
+from typing import TYPE_CHECKING
 
 import pyglet
 from tests.annotations import Platform, require_platform
+
+if TYPE_CHECKING:
+    import pytest
 
 pytestmark = require_platform(Platform.OSX)
 
@@ -19,30 +21,17 @@ if pyglet.compat_platform in Platform.OSX:
     )
 
 
-def _get_current_process_thread_priority() -> int | None:
-    """Using commandline `ps` retrieves the priority of the current process thread.
-
-    Returns:
-        Priority of current process thread or None if there was an error.
-    """
-    output = subprocess.check_output(["ps", "-o", "pid,pri"]).decode("utf-8")
-
-    pids_to_priorities = [
-        line.split()
-        for line in output.splitlines()[
-            1:
-        ]  # Skip the headers that contain 'PID' and 'PRI'
-    ]
-    priority = None
-    for pid_to_priority in pids_to_priorities:
-        if int(pid_to_priority[0]) == os.getpid():
-            priority = int(pid_to_priority[1])
-
-    return priority
+def _get_current_process_thread_priority() -> int:
+    """Retrieve the current process priority using ``ps``."""
+    output = subprocess.check_output(
+        ["ps", "-p", str(os.getpid()), "-o", "pri="],
+        text=True,
+    )
+    return int(output.strip())
 
 
-def test_get_realtime_thread_policy__call_success__TimeConstraintThreadPolicy_with_values_returned(
-    caplog: LogCaptureFixture,
+def test_get_realtime_thread_policy__call_success__time_constraint_thread_policy_with_values_returned(
+    caplog: pytest.LogCaptureFixture,
 ):
     caplog.set_level(logging.ERROR)
     actual_time_constraint_thread_policy: TimeConstraintThreadPolicy = (
@@ -66,7 +55,7 @@ def test_get_realtime_thread_policy__call_success__TimeConstraintThreadPolicy_wi
 
 
 def test_set_realtime_thread_policy__call_success__current_thread_set_to_realtime_priority(
-    caplog: LogCaptureFixture,
+    caplog: pytest.LogCaptureFixture,
 ):
     caplog.set_level(logging.ERROR)
 

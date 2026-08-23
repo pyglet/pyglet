@@ -24,7 +24,7 @@ from ctypes import (
     create_string_buffer,
     sizeof, c_void_p,
 )
-from typing import TYPE_CHECKING, Any, Callable, Literal, Sequence, Type, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, Literal, Sequence, Type, Union
 
 import pyglet
 from pyglet.graphics.api.gl import GLException, gl, OpenGLSurfaceContext
@@ -50,26 +50,23 @@ from pyglet.graphics.shader import (
     ShaderProgram,
     ShaderSource,
     ShaderType,
-    MissingAttributeException,
     UnsupportedShaderType,
 )
 from pyglet.graphics.shader import ShaderException
 
 from pyglet.graphics.api.gl.buffer import GLUniformBufferObject
-from pyglet.enums import GeometryMode, GraphicsAPI
+from pyglet.enums import GraphicsAPI
 from pyglet.util import debug_print
 
 if TYPE_CHECKING:
     from _weakref import CallableProxyType
     from pyglet.graphics.api.base import NullContext
     from pyglet.customtypes import CTypesPointer, DataTypes, CType
-    from pyglet.graphics import Batch, Group
-    from pyglet.graphics.vertexdomain import IndexedVertexList, VertexList, InstanceVertexList, InstanceIndexedVertexList
 
 _debug_api_shaders = pyglet.options.debug_api_shaders
 _debug_api_shader_print = debug_print('debug_api_shaders')
 
-GLDataType = Union[Type[gl.GLint], Type[gl.GLfloat], Type[gl.GLboolean], int]
+GLDataType = Union[Type[gl.GLint], Type[gl.GLuint], Type[gl.GLfloat], Type[gl.GLboolean], int]
 GLFunc = Callable
 
 _c_types: dict[int, CType] = {
@@ -412,11 +409,11 @@ class GLUniformBlock(BaseUniformBlock):
         )
 
     def _set_block_binding(self) -> None:
-        self._context.glUniformBlockBinding(self.program.id, self.index, self.binding)
+        self._context.glUniformBlockBinding(self.program.handle, self.index, self.binding)
 
     def _introspect_uniforms(self) -> type[Structure]:
         """Introspect the block's structure and return a ctypes struct for manipulating the uniform block's members."""
-        p_id = self.program.id
+        p_id = self.program.handle
         index = self.index
 
         active_count = self.uniform_count
@@ -448,11 +445,11 @@ class GLUniformBlock(BaseUniformBlock):
     def _actual_binding_point(self) -> int:
         """Queries OpenGL to find what the bind point currently is."""
         binding = gl.GLint()
-        gl.glGetActiveUniformBlockiv(self.program.id, self.index, gl.GL_UNIFORM_BLOCK_BINDING, binding)
+        gl.glGetActiveUniformBlockiv(self.program.handle, self.index, gl.GL_UNIFORM_BLOCK_BINDING, binding)
         return binding.value
 
     def __repr__(self) -> str:
-        return (f"{self.__class__.__name__}(program={self.program.id}, location={self.index}, size={self.size}, "
+        return (f"{self.__class__.__name__}(program={self.program.handle}, location={self.index}, size={self.size}, "
                 f"binding={self.binding})")
 
 
@@ -487,11 +484,11 @@ class GLShaderStorageBlock:
     def set_binding(self, binding: int) -> None:
         assert binding >= 0, "Binding index must be non-negative."
         self.binding = binding
-        self._context.glShaderStorageBlockBinding(self.program.id, self.index, binding)
+        self._context.glShaderStorageBlockBinding(self.program.handle, self.index, binding)
 
     def __repr__(self) -> str:
         return (
-            f"{self.__class__.__name__}(program={self.program.id}, name={self.name}, "
+            f"{self.__class__.__name__}(program={self.program.handle}, name={self.name}, "
             f"index={self.index}, size={self.size}, binding={self.binding})"
         )
 
@@ -544,7 +541,7 @@ def _create_program(ctx: OpenGLSurfaceContext, *shaders: GLShader) -> int:
     """
     program_id = ctx.glCreateProgram()
     for shader in shaders:
-        ctx.glAttachShader(program_id, shader.id)
+        ctx.glAttachShader(program_id, shader.handle)
     return program_id
 
 
@@ -567,7 +564,7 @@ def _link_program(ctx: OpenGLSurfaceContext, program_id: int) -> None:
 def _detach_program_shaders(ctx: OpenGLSurfaceContext, program_id: int, *shaders: GLShader) -> None:
     """Detach Shader objects from an already linked program."""
     for shader in shaders:
-        ctx.glDetachShader(program_id, shader.id)
+        ctx.glDetachShader(program_id, shader.handle)
 
 
 def _build_program(ctx: OpenGLSurfaceContext, *shaders: GLShader) -> int:
@@ -651,7 +648,7 @@ def _get_uniform_block_name(ctx, program_id: int, index: int) -> str:
 
 def _introspect_uniform_blocks(ctx, program: GLShaderProgram | GLComputeShaderProgram) -> dict[str, GLUniformBlock]:
     uniform_blocks = {}
-    program_id = program.id
+    program_id = program.handle
 
     for index in range(_get_number(ctx, program_id, gl.GL_ACTIVE_UNIFORM_BLOCKS)):
         name = _get_uniform_block_name(ctx, program_id, index)
@@ -718,9 +715,7 @@ def _introspect_uniform_blocks(ctx, program: GLShaderProgram | GLComputeShaderPr
 
 
 def _supports_shader_storage_blocks() -> bool:
-    return pyglet.graphics.api.have_version(4, 3) or pyglet.graphics.api.have_extension(
-        "GL_ARB_shader_storage_buffer_object",
-    )
+    return pyglet.graphics.api.core.current_context.info.features.shader_storage_buffers
 
 
 def _get_program_resource_name(ctx, program_id: int, interface: int, index: int) -> str:
@@ -779,7 +774,7 @@ def _introspect_shader_storage_blocks(
         return {}
 
     storage_blocks: dict[str, GLShaderStorageBlock] = {}
-    program_id = program.id
+    program_id = program.handle
 
     active_resources = gl.GLint(0)
     ctx.glGetProgramInterfaceiv(program_id, gl.GL_SHADER_STORAGE_BLOCK, gl.GL_ACTIVE_RESOURCES, byref(active_resources))
@@ -901,11 +896,13 @@ class GLShaderSource(ShaderSource):
 
         self._version = self._find_glsl_version()
 
-        if pyglet.graphics.api.core.current_context.info.get_opengl_api() == GraphicsAPI.OPENGL_ES_3:
-            self._lines[0] = "#version 310 es"
+        context_info = pyglet.graphics.api.core.current_context.info
+        if context_info.get_opengl_api() == GraphicsAPI.OPENGL_ES_3:
+            glsl_version = 310 if context_info.have_version(3, 1) else 300
+            self._lines[0] = f"#version {glsl_version} es"
             self._lines.insert(1, "precision mediump float;")
 
-            if self._type == gl.GL_GEOMETRY_SHADER:
+            if self._type == gl.GL_GEOMETRY_SHADER and context_info.features.geometry_shaders:
                 self._lines.insert(1, "#extension GL_EXT_geometry_shader : require")
 
             if self._type == gl.GL_COMPUTE_SHADER:
@@ -975,6 +972,7 @@ class GLShader(_AbstractShader):
 
         shader_id = self._context.glCreateShader(shader_gl_type)
         self._id = shader_id
+        self._handle = shader_id
         self._context.glShaderSource(shader_id, 1, byref(source_buffer_pointer), source_length)
         self._context.glCompileShader(shader_id)
 
@@ -1003,11 +1001,15 @@ class GLShader(_AbstractShader):
 
     @classmethod
     def supported_shaders(cls: type[GLShader]) -> tuple[ShaderType, ...]:
-        return 'vertex', 'fragment', 'compute', 'geometry', 'tesscontrol', 'tessevaluation'
-
-    @property
-    def id(self) -> int:
-        return self._id
+        features = pyglet.graphics.api.core.current_context.info.features
+        shader_types: tuple[ShaderType, ...] = ('vertex', 'fragment')
+        if features.compute_shaders:
+            shader_types += ('compute',)
+        if features.geometry_shaders:
+            shader_types += ('geometry',)
+        if features.tessellation_shaders:
+            shader_types += ('tesscontrol', 'tessevaluation')
+        return shader_types
 
     def _get_shader_log(self, shader_id: int) -> str:
         log_length = c_int(0)
@@ -1035,6 +1037,7 @@ class GLShader(_AbstractShader):
         """
         self._context.glDeleteShader(self._id)
         self._id = None
+        self._handle = None
 
     def __del__(self) -> None:
         if self._id is not None:
@@ -1042,11 +1045,12 @@ class GLShader(_AbstractShader):
                 self._context.delete_shader(self._id)
                 assert _debug_api_shader_print(f"Destroyed {self.type} Shader '{self._id}'")
                 self._id = None
+                self._handle = None
             except (AttributeError, ImportError):
                 pass  # Interpreter is shutting down
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(id={self.id}, type={self.type})"
+        return f"{self.__class__.__name__}(handle={self._handle}, type={self.type})"
 
 
 class GLShaderProgram(ShaderProgram):
@@ -1065,6 +1069,7 @@ class GLShaderProgram(ShaderProgram):
 
         self._context = pyglet.graphics.api.core.current_context
         self._id = _build_program(self._context, *shaders)
+        self._handle = self._id
 
         self._initialize_program_state()
 
@@ -1077,8 +1082,9 @@ class GLShaderProgram(ShaderProgram):
 
         # Query if Direct State Access is available:
 
-        have_dsa = pyglet.graphics.api.have_version(4, 1) or pyglet.graphics.api.have_extension("GL_ARB_separate_shader_objects")
+        have_dsa = self._context.info.features.separate_shader_objects
         self._attributes = _introspect_attributes(self._context, self._id)
+        self._update_attribute_key()
         self._uniforms = _introspect_uniforms(self._context, self._id, have_dsa)
         self._uniform_blocks = self._get_uniform_blocks()
         self._shader_storage_blocks = _introspect_shader_storage_blocks(self._context, self)
@@ -1086,10 +1092,6 @@ class GLShaderProgram(ShaderProgram):
     def _get_uniform_blocks(self) -> dict[str, GLUniformBlock]:
         """Return Uniform Block information."""
         return _introspect_uniform_blocks(self._context, self)
-
-    @property
-    def id(self) -> int:
-        return self._id
 
     @property
     def shader_storage_blocks(self) -> dict[str, GLShaderStorageBlock]:
@@ -1105,93 +1107,17 @@ class GLShaderProgram(ShaderProgram):
     def delete(self) -> None:
         self._context.glDeleteProgram(self._id)
         self._id = None
+        self._handle = None
 
     def __del__(self) -> None:
         if self._id is not None:
             try:
                 self._context.delete_shader_program(self._id)
                 self._id = None
+                self._handle = None
             except (AttributeError, ImportError):
                 pass  # Interpreter is shutting down
 
-    @overload
-    def _vertex_list_create(self, count: int, mode: GeometryMode, indices: None = None,
-                            instances: None = None, batch: Batch | None = None, group: Group | None = None,
-                            **data: Any) -> VertexList:
-        ...
-
-    @overload
-    def _vertex_list_create(self, count: int, mode: GeometryMode, indices: Sequence[int] = ...,
-                            instances: None = None, batch: Batch | None = None, group: Group | None = None,
-                            **data: Any) -> IndexedVertexList:
-        ...
-
-    @overload
-    def _vertex_list_create(self, count: int, mode: GeometryMode, indices: None = None,
-                            instances: dict[str, int] = ..., batch: Batch | None = None, group: Group | None = None,
-                            **data: Any) -> InstanceVertexList:
-        ...
-
-    @overload
-    def _vertex_list_create(self, count: int, mode: GeometryMode, indices: Sequence[int] = ...,
-                            instances: dict[str, int] = ..., batch: Batch | None = None, group: Group | None = None,
-                            **data: Any) -> InstanceIndexedVertexList:
-        ...
-
-    def _vertex_list_create(self, count: int, mode: GeometryMode, indices: Sequence[int] | None = None,
-                            instances: dict[str, int] | None = None,
-                            batch: Batch | None = None, group: Group | None = None,
-                            **data: Any) -> VertexList | InstanceVertexList | IndexedVertexList | InstanceIndexedVertexList:
-        assert isinstance(mode, GeometryMode), f"Mode {mode} is not geometry mode."
-        attributes = {}
-        initial_arrays = []
-
-        indexed = indices is not None
-
-        # Probably just remove all of this?
-        for name, fmt in data.items():
-            try:
-                current_attrib = self._attributes[name]
-            except KeyError:
-                msg = f"Attribute {name} not found. Existing attributes: {list(self._attributes.keys())}"
-                raise MissingAttributeException(msg) from None
-            try:
-                if isinstance(fmt, tuple):
-                    fmt, array = fmt  # noqa: PLW2901
-                    initial_arrays.append((name, array))
-                    normalize = len(fmt) == 2
-                    current_attrib.set_data_type(fmt[0], normalize)
-
-                attributes[name] = current_attrib#, 'format': fmt, 'instance': name in instances if instances else False}
-            except KeyError:
-                if _debug_api_shaders:
-                    msg = (f"The attribute `{name}` was not found in the Shader Program.\n"
-                           f"Please check the spelling, or it may have been optimized out by the OpenGL driver.\n"
-                           f"Valid names: {list(attributes)}")
-                    warnings.warn(msg)
-                continue
-
-        if instances:
-            for name, divisor in instances.items():
-                attributes[name].set_divisor(divisor)
-
-        if _debug_api_shaders and (missing_data := [key for key in attributes if key not in data]):
-            msg = (
-                f"No data was supplied for the following found attributes: `{missing_data}`.\n"
-            )
-            warnings.warn(msg)
-
-        batch = batch or pyglet.graphics.get_default_batch()
-        group = group or pyglet.graphics.ShaderGroup(program=self)
-        domain = batch.get_domain(indexed, bool(instances), mode, group, attributes)
-
-        # Create vertex list and initialize
-        vlist = domain.create(group, count, indices)
-
-        for name, array in initial_arrays:
-            vlist.set_attribute_data(name, array)
-
-        return vlist
 
 
 class GLTransformFeedbackShaderProgram(GLShaderProgram):
@@ -1212,6 +1138,7 @@ class GLTransformFeedbackShaderProgram(GLShaderProgram):
             raise ShaderException(msg)
 
         self._id = _create_program(self._context, *shaders)
+        self._handle = self._id
         self._set_transform_feedback_varyings()
         _link_program(self._context, self._id)
         _detach_program_shaders(self._context, self._id, *shaders)
@@ -1249,21 +1176,22 @@ class GLComputeShaderProgram(_AbstractShaderProgram):
         """Create an OpenGL ComputeShaderProgram from source."""
         super().__init__()
 
-        if not (pyglet.graphics.api.have_version(4, 3) or pyglet.graphics.api.have_extension("GL_ARB_compute_shader")):
+        if not pyglet.graphics.api.core.current_context.info.features.compute_shaders:
             msg = (
-                "Compute Shader not supported. OpenGL Context version must be at least "
-                "4.3 or higher, or 4.2 with the 'GL_ARB_compute_shader' extension."
+                "Compute Shader not supported. It requires desktop OpenGL 4.3, OpenGL ES 3.1, "
+                "or the required driver extension."
             )
             raise ShaderException(msg)
 
         self._shader = GLShader(source, 'compute')
         self._context = pyglet.graphics.api.core.current_context
         self._id = _build_program(self._context, self._shader)
+        self._handle = self._id
 
         if _debug_api_shaders:
             assert _debug_api_shader_print(_get_program_log(self._context, self._id))
 
-        have_dsa = pyglet.graphics.api.have_version(4, 1) or pyglet.graphics.api.have_extension("GL_ARB_separate_shader_objects")
+        have_dsa = self._context.info.features.separate_shader_objects
         self._uniforms = _introspect_uniforms(self._context, self._id, have_dsa)
         self._uniform_blocks = _introspect_uniform_blocks(self._context, self)
         self._shader_storage_blocks = _introspect_shader_storage_blocks(self._context, self)
@@ -1300,10 +1228,6 @@ class GLComputeShaderProgram(_AbstractShaderProgram):
             self._context.glMemoryBarrier(barrier)
 
     @property
-    def id(self) -> int:
-        return self._id
-
-    @property
     def uniform_blocks(self) -> dict[str, GLUniformBlock]:
         return self._uniform_blocks
 
@@ -1327,12 +1251,14 @@ class GLComputeShaderProgram(_AbstractShaderProgram):
     def delete(self) -> None:
         self._context.glDeleteProgram(self._id)
         self._id = None
+        self._handle = None
 
     def __del__(self) -> None:
         if self._id is not None:
             try:
                 self._context.delete_shader_program(self._id)
                 self._id = None
+                self._handle = None
             except (AttributeError, ImportError):
                 pass  # Interpreter is shutting down
 
@@ -1370,8 +1296,9 @@ _default_fragment_source: str = """#version 330 core
 
 def get_default_shader() -> GLShaderProgram:
     """A default basic shader for default batches."""
-    return pyglet.graphics.api.core.get_cached_shader(
+    program = pyglet.graphics.api.core.get_cached_shader(
         "default_graphics",
         (_default_vertex_source, 'vertex'),
         (_default_fragment_source, 'fragment'),
     )
+    return program

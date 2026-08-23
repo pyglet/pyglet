@@ -261,11 +261,11 @@ class MediaPlayer:
         self.open_button.height = self.GUI_BUTTON_HEIGHT
         self.open_button.width = 100
 
-        audio_types = [("Common Audio Files", "*.wav *.mp3")]
+        audio_types = [("Common Audio Files", "*.wav;*.mp3")]
         additional_types = []
         if isinstance(self.player, pyglet.media.VideoPlayer):
-            audio_types = [("Audio Files", "*.wav *.mp3 *.flv *.mov .*ogg")]
-            additional_types.append(("Video/Container Files", "*.mp4 *.mkv *.avi"))
+            audio_types = [("Audio Files", "*.wav;*.mp3;*.flv;*.mov;*.ogg")]
+            additional_types.append(("Video/Container Files", "*.mp4;*.mkv;*.avi"))
 
         file_types = audio_types + additional_types + [("All Files", "*.*")]
         open_dialog = FileOpenDialog(filetypes=file_types, multiple=True)

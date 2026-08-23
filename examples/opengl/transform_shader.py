@@ -113,14 +113,14 @@ capture_vertex_list = program.vertex_list(
     4,
     mode=GeometryMode.POINTS,
     group=capture_group,
-    position=("f", current_positions),
+    position=current_positions,
 )
 
 render_vertex_list = program.vertex_list(
     4,
     mode=GeometryMode.POINTS,
     group=render_group,
-    position=("f", current_positions),
+    position=current_positions,
 )
 
 

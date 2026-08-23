@@ -1,39 +1,3 @@
-#!/usr/bin/env python
-# ----------------------------------------------------------------------------
-# pyglet
-# Copyright (c) 2006-2008 Alex Holkner
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-#  * Neither the name of pyglet nor the names of its
-#    contributors may be used to endorse or promote products
-#    derived from this software without specific prior written
-#    permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-# ----------------------------------------------------------------------------
-# $Id$
-
 import math
 
 import pyglet
@@ -42,7 +6,8 @@ import pyglet
 # pyglet.options.audio = 'openal', 'pulse', 'directsound', 'silent'
 
 from pyglet.graphics import Group
-from pyglet.math import Mat4, Vec3
+from pyglet.shapes import Line, Circle, Sector, Arc, Rectangle
+from pyglet.window.camera import Camera2D
 
 import reader
 
@@ -54,24 +19,10 @@ def orientation_angle(orientation):
     return math.atan2(orientation[2], orientation[0])
 
 
-# Shape hack functions
-def _update_line(line, x, y, x2, y2):
-    line._x = x
-    line._y = y
-    line._x2 = x2
-    line._y2 = y2
-    line._update_translation()
-    line._update_vertices()
-
-
-def _bordered_rect_alpha(rect, inner_alpha, border_alpha):
-    rect._rgba = rect._rgba[:3] + (inner_alpha,)
-    rect._border_rgba = rect._border_rgba[:3] + (border_alpha,)
-    rect._update_color()
-
-
 class Handle:
     tip = ''
+    radius = 0
+    offset = 0
 
     def __init__(self, window, player):
         self.win = window
@@ -81,6 +32,7 @@ class Handle:
         dx, dy, dz = (a - b for a, b in zip(self.pos(), (x, y, z)))
         if dx * dx + dy * dy + dz * dz < self.radius * self.radius:
             return -dx, -dy, -dz
+        return None
 
     def pos(self):
         raise NotImplementedError
@@ -158,14 +110,14 @@ class OrientationHandle(Handle):
 
     def __init__(self, window, player):
         super().__init__(window, player)
-        self._line = pyglet.shapes.Line(0, 0, 0, 0,
-                                        color=(74, 74, 74),
-                                        batch=window.handle_batch,
-                                        group=Group(0, window.hgrp_orientation))
-        self._disc = pyglet.shapes.Circle(0, 0, self.radius,
-                                          color=(255, 255, 0, 255),
-                                          batch=window.handle_batch,
-                                          group=Group(1, window.hgrp_orientation))
+        self._line = Line(0, 0, 0, 0,
+                          color=(74, 74, 74),
+                          batch=window.handle_batch,
+                          group=Group(0, window.hgrp_orientation))
+        self._disc = Circle(0, 0, self.radius,
+                            color=(255, 255, 0, 255),
+                            batch=window.handle_batch,
+                            group=Group(1, window.hgrp_orientation))
 
     def pos(self):
         x, _, z = self.player.position
@@ -183,8 +135,10 @@ class OrientationHandle(Handle):
         px, _, py = self.player.position
         x, _, y = self.pos()
 
-        self._line._thickness = 1.0 / self.win.zoom
-        _update_line(self._line, x, y, px, py)
+        self._line.thickness = 1.0 / self.win.zoom
+        self._line.position = (x, y)
+        self._line.x2 = px
+        self._line.y2 = py
 
         self._disc.position = x, y
 
@@ -225,10 +179,10 @@ class ConeAngleHandle(Handle):
     length = .1
     radius = .1
 
-    def __init__(self, window, player):
+    def __init__(self, window, player, group):
         super().__init__(window, player)
-        self._sector = pyglet.shapes.Sector(0, 0, self.length, color=self.fill_color, batch=window.handle_batch)
-        self._handle = pyglet.shapes.Circle(0, 0, self.radius, color=self.color, batch=window.handle_batch)
+        self._sector = Sector(0, 0, self.length, color=self.fill_color, batch=window.handle_batch, group=group)
+        self._handle = Circle(0, 0, self.radius, color=self.color, batch=window.handle_batch, group=group)
 
     def pos(self):
         px, py, pz = self.player.position
@@ -275,6 +229,9 @@ class ConeInnerAngleHandle(ConeAngleHandle):
     color = (51, 204, 51, 255)
     fill_color = (0, 255, 0, 26)
 
+    def __init__(self, window, player):
+        super().__init__(window, player, window.hgrp_cone_inner)
+
     def get_angle(self):
         return self.player.cone_inner_angle
 
@@ -287,6 +244,9 @@ class ConeOuterAngleHandle(ConeAngleHandle):
     length = 1.2
     color = (51, 51, 204, 255)
     fill_color = (0, 0, 255, 26)
+
+    def __init__(self, window, player):
+        super().__init__(window, player, window.hgrp_cone_outer)
 
     def get_angle(self):
         return self.player.cone_outer_angle
@@ -306,28 +266,26 @@ class MoreHandle(Handle):
     def __init__(self, window, player):
         super().__init__(window, player)
         self._box = pyglet.shapes.BorderedRectangle(0, 0, self.open_width, self.open_height, 1,
-                                                    (255, 255, 255), (0, 0, 0),
+                                                    color=(255, 255, 255, 201),
+                                                    border_color=(0, 0, 0, 255),
                                                     batch=window.handle_batch,
                                                     group=Group(0, window.hgrp_label_more_collapsed))
-        # The BorderedRectangle vehemently defends itself from having differing alpha values,
-        # but hack them in case we want them
-        _bordered_rect_alpha(self._box, 201, 255)
 
-        self._circ = pyglet.shapes.Circle(0, 0, self.radius,
-                                          batch=window.handle_batch,
-                                          group=Group(0, window.hgrp_label_more_collapsed))
-        self._outline = pyglet.shapes.Arc(0, 0, self.radius,
-                                          color=(0, 0, 0, 255),
-                                          batch=window.handle_batch,
-                                          group=Group(1, window.hgrp_label_more_collapsed))
-        self._line0 = pyglet.shapes.Line(0, 0, 0, 0,
-                                         color=(0, 0, 0, 255),
-                                         batch=window.handle_batch,
-                                         group=Group(2, window.hgrp_label_more_collapsed))
-        self._line1 = pyglet.shapes.Line(0, 0, 0, 0,
-                                         color=(0, 0, 0, 255),
-                                         batch=window.handle_batch,
-                                         group=Group(3, window.hgrp_label_more_collapsed))
+        self._circ = Circle(0, 0, self.radius,
+                            batch=window.handle_batch,
+                            group=Group(0, window.hgrp_label_more_collapsed))
+        self._outline = Arc(0, 0, self.radius,
+                            color=(0, 0, 0, 255),
+                            batch=window.handle_batch,
+                            group=Group(1, window.hgrp_label_more_collapsed))
+        self._line0 = Line(0, 0, 0, 0,
+                           color=(0, 0, 0, 255),
+                           batch=window.handle_batch,
+                           group=Group(2, window.hgrp_label_more_collapsed))
+        self._line1 = Line(0, 0, 0, 0,
+                           color=(0, 0, 0, 255),
+                           batch=window.handle_batch,
+                           group=Group(3, window.hgrp_label_more_collapsed))
 
     def pos(self):
         x, y, z = self.player.position
@@ -354,10 +312,14 @@ class MoreHandle(Handle):
             self._outline.position = x, z
             self._outline.thickness = 1.0 / self.win.zoom
             r = self.radius - 0.1
-            self._line0._thickness = 1.0 / self.win.zoom
-            _update_line(self._line0, x - r, z, x + r, z)
-            self._line1._thickness = 1.0 / self.win.zoom
-            _update_line(self._line1, x, z - r, x, z + r)
+            self._line0.thickness = 1.0 / self.win.zoom
+            self._line0.position = (x - r, z)
+            self._line0.x2 = x + r
+            self._line0.y2 = z
+            self._line1.thickness = 1.0 / self.win.zoom
+            self._line1.position = (x, z - r)
+            self._line1.x2 = x
+            self._line1.y2 = z + r
 
     def delete(self):
         self._box.delete()
@@ -391,14 +353,14 @@ class SliderHandle(Handle):
 
     def __init__(self, window, player, x, z):
         super().__init__(window, player)
-        self._groove = pyglet.shapes.Rectangle(0, 0, self.length, self.width,
-                                               color=(127, 127, 127, 255),
-                                               batch=window.handle_batch,
-                                               group=Group(0, window.hgrp_more_expanded))
-        self._thumb = pyglet.shapes.Circle(0, 0, self.radius,
-                                           color=(51, 51, 51, 255),
-                                           batch=window.handle_batch,
-                                           group=Group(1, window.hgrp_more_expanded))
+        self._groove = Rectangle(0, 0, self.length, self.width,
+                                 color=(127, 127, 127, 255),
+                                 batch=window.handle_batch,
+                                 group=Group(0, window.hgrp_more_expanded))
+        self._thumb = Circle(0, 0, self.radius,
+                             color=(51, 51, 51, 255),
+                             batch=window.handle_batch,
+                             group=Group(1, window.hgrp_more_expanded))
         self.x = x
         self.z = z
 
@@ -519,6 +481,11 @@ class SoundSpaceWindow(pyglet.window.Window):
         self.hgrp_label_more_collapsed = Group(4)
         self.hgrp_more_expanded = Group(5)
 
+        self.world_camera = Camera2D(self, min_zoom=10, max_zoom=100)
+        for group in (self.hgrp_position, self.hgrp_orientation, self.hgrp_cone_inner,
+                      self.hgrp_cone_outer, self.hgrp_label_more_collapsed, self.hgrp_more_expanded):
+            group.set_camera(self.world_camera)
+
         self._grid = []
         self._refresh_grid()
         self.players = []
@@ -590,13 +557,11 @@ class SoundSpaceWindow(pyglet.window.Window):
         for handle in self.handles + self.more_handles:
             handle.update_shapes()
 
-        self.view = Mat4()
+        self.world_camera.zoom = self.zoom
+        self.world_camera.position = (-self.tx / self.zoom, -self.ty / self.zoom)
+
         self._grid_batch.draw()
-
-        self.view = Mat4().translate(Vec3(self.tx, self.ty, 0)).scale(Vec3(self.zoom, self.zoom, 0))
         self.handle_batch.draw()
-
-        self.view = Mat4()
         self.text_batch.draw()
 
         if self.tip_player:

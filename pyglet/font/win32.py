@@ -8,13 +8,30 @@ from typing import TYPE_CHECKING, ClassVar, Sequence
 
 import pyglet
 import pyglet.image
-from pyglet.font import base, FontManager
+from pyglet.enums import Stretch, Style, Weight
+from pyglet.font import FontManager, base
 from pyglet.image.codecs.gdiplus import BitmapData, ImageLockModeRead, PixelFormat32bppARGB, Rect, gdiplus
 from pyglet.libs.win32 import _gdi32 as gdi32
 from pyglet.libs.win32 import _user32 as user32
-from pyglet.libs.win32.constants import ANTIALIASED_QUALITY, FW_BOLD, FW_NORMAL
+from pyglet.libs.win32.constants import (
+    ANTIALIASED_QUALITY,
+    FW_BLACK,
+    FW_BOLD,
+    FW_DEMIBOLD,
+    FW_EXTRABOLD,
+    FW_EXTRALIGHT,
+    FW_HEAVY,
+    FW_LIGHT,
+    FW_MEDIUM,
+    FW_NORMAL,
+    FW_REGULAR,
+    FW_SEMIBOLD,
+    FW_THIN,
+    FW_ULTRABOLD,
+    FW_ULTRALIGHT,
+)
 from pyglet.libs.win32.context_managers import device_context
-from pyglet.libs.win32.types import ABC, BYTE, LOGFONTW, TEXTMETRIC
+from pyglet.libs.win32.types import ABC, BYTE, LOGFONTW, SIZE, TEXTMETRIC
 
 if TYPE_CHECKING:
     from pyglet.font.base import Glyph
@@ -31,7 +48,6 @@ TextRenderingHintAntiAliasGridFit = 3
 FontStyleBold = 1
 FontStyleItalic = 2
 UnitPixel = 2
-UnitPoint = 3
 
 StringFormatFlagsDirectionRightToLeft = 0x00000001
 StringFormatFlagsDirectionVertical = 0x00000002
@@ -44,9 +60,30 @@ StringFormatFlagsLineLimit = 0x00002000
 StringFormatFlagsNoClip = 0x00004000
 
 FontFamilyNotFound = 14
+GGI_MARK_NONEXISTING_GLYPHS = 0x0001
 
 
 _debug_font = pyglet.options.debug_font
+
+_font_weights = {
+    True: FW_BOLD,
+    False: FW_NORMAL,
+    None: FW_NORMAL,
+    "thin": FW_THIN,
+    "extralight": FW_EXTRALIGHT,
+    "ultralight": FW_ULTRALIGHT,
+    "light": FW_LIGHT,
+    "normal": FW_NORMAL,
+    "regular": FW_REGULAR,
+    "medium": FW_MEDIUM,
+    "demibold": FW_DEMIBOLD,
+    "semibold": FW_SEMIBOLD,
+    "bold": FW_BOLD,
+    "extrabold": FW_EXTRABOLD,
+    "ultrabold": FW_ULTRABOLD,
+    "black": FW_BLACK,
+    "heavy": FW_HEAVY,
+}
 
 
 class Rectf(ctypes.Structure):
@@ -67,6 +104,9 @@ class GDIPlusGlyphRenderer(base.GlyphRenderer):
 
     def __init__(self, font: GDIPlusFont) -> None:
         self._bitmap = None
+        self._graphics = None
+        self._brush = None
+        self._matrix = None
         self._dc = None
         self._bitmap_rect = None
         super().__init__(font)
@@ -83,20 +123,29 @@ class GDIPlusGlyphRenderer(base.GlyphRenderer):
 
     def __del__(self) -> None:
         try:
-            if self._matrix:
-                gdiplus.GdipDeleteMatrix(self._matrix)
-            if self._brush:
-                gdiplus.GdipDeleteBrush(self._brush)
-            if self._graphics:
-                gdiplus.GdipDeleteGraphics(self._graphics)
-            if self._bitmap:
-                gdiplus.GdipDisposeImage(self._bitmap)
+            self._dispose_bitmap()
             if self._dc:
                 user32.ReleaseDC(0, self._dc)
         except Exception:  # noqa: S110, BLE001
             pass
 
+    def _dispose_bitmap(self) -> None:
+        if self._matrix:
+            gdiplus.GdipDeleteMatrix(self._matrix)
+            self._matrix = None
+        if self._brush:
+            gdiplus.GdipDeleteBrush(self._brush)
+            self._brush = None
+        if self._graphics:
+            gdiplus.GdipDeleteGraphics(self._graphics)
+            self._graphics = None
+        if self._bitmap:
+            gdiplus.GdipDisposeImage(self._bitmap)
+            self._bitmap = None
+
     def _create_bitmap(self, width: int, height: int) -> None:
+        self._dispose_bitmap()
+
         self._data = (BYTE * (4 * width * height))()
         self._bitmap = ctypes.c_void_p()
         self._format = PixelFormat32bppARGB
@@ -108,7 +157,8 @@ class GDIPlusGlyphRenderer(base.GlyphRenderer):
             ctypes.byref(self._graphics))
         gdiplus.GdipSetPageUnit(self._graphics, UnitPixel)
 
-        self._dc = user32.GetDC(0)
+        if not self._dc:
+            self._dc = user32.GetDC(0)
         gdi32.SelectObject(self._dc, self.font.hfont)
 
         gdiplus.GdipSetTextRenderingHint(self._graphics,
@@ -125,11 +175,35 @@ class GDIPlusGlyphRenderer(base.GlyphRenderer):
 
         self._rect = Rect(0, 0, width, height)
 
+        self._bitmap_width = width
         self._bitmap_height = height
+
+    def _ensure_bitmap_size(self, width: int, height: int) -> None:
+        if width <= self._bitmap_width and height <= self._bitmap_height:
+            return
+
+        width = max(width, self._bitmap_width)
+        height = max(height, self._bitmap_height)
+        width = (width | 0x3) + 1
+        height = (height | 0x3) + 1
+        self._create_bitmap(width, height)
+
+    def _get_bitmap_data(self, width: int, height: int) -> pyglet.image.ImageData:
+        bitmap_data = BitmapData()
+        gdiplus.GdipBitmapLockBits(
+            self._bitmap,
+            ctypes.byref(self._rect), ImageLockModeRead, self._format,
+            ctypes.byref(bitmap_data))
+
+        buffer = ctypes.create_string_buffer(bitmap_data.Stride * bitmap_data.Height)
+        ctypes.memmove(buffer, bitmap_data.Scan0, len(buffer))
+        gdiplus.GdipBitmapUnlockBits(self._bitmap, ctypes.byref(bitmap_data))
+
+        return pyglet.image.ImageData(width, height, "BGRA", buffer, -bitmap_data.Stride)
 
     def render(self, text: str) -> Glyph:
         ch = ctypes.create_unicode_buffer(text)
-        len_ch = len(text)
+        len_ch = len(ch) - 1
 
         # Layout rectangle; not clipped against so not terribly important.
         width = 10000
@@ -227,6 +301,12 @@ class GDIPlusGlyphRenderer(base.GlyphRenderer):
                 # Do not enlarge more than the _rect width.
                 width = min(width, self._rect.Width)
 
+        # ABC queries operate on BMP characters and can report the default
+        # glyph for supplementary-plane text. The GDI+ measurement covers the
+        # complete UTF-16 grapheme and prevents those glyphs from being cropped.
+        width = max(1, width, math.ceil(bbox.width))
+        self._ensure_bitmap_size(width, height)
+
         # Draw character to bitmap
         gdiplus.GdipGraphicsClear(self._graphics, 0x00000000)
         gdiplus.GdipDrawString(self._graphics,
@@ -240,23 +320,7 @@ class GDIPlusGlyphRenderer(base.GlyphRenderer):
         gdiplus.GdipFlush(self._graphics, 1)
         gdiplus.GdipDeleteStringFormat(fmt)
 
-        bitmap_data = BitmapData()
-        gdiplus.GdipBitmapLockBits(
-            self._bitmap,
-            ctypes.byref(self._rect), ImageLockModeRead, self._format,
-            ctypes.byref(bitmap_data))
-
-        # Create buffer for RawImage
-        buffer = ctypes.create_string_buffer(
-            bitmap_data.Stride * bitmap_data.Height)
-        ctypes.memmove(buffer, bitmap_data.Scan0, len(buffer))
-
-        # Unlock data
-        gdiplus.GdipBitmapUnlockBits(self._bitmap, ctypes.byref(bitmap_data))
-
-        image = pyglet.image.ImageData(
-            width, height,
-            "BGRA", buffer, -bitmap_data.Stride)
+        image = self._get_bitmap_data(width, height)
 
         glyph = self.font.create_glyph(image)
         # Only pass negative LSB info
@@ -264,24 +328,23 @@ class GDIPlusGlyphRenderer(base.GlyphRenderer):
         glyph.set_bearings(-self.font.descent, lsb, advance)
         return glyph
 
-
 class Win32Font(base.Font):
     glyph_renderer_class = GDIPlusGlyphRenderer
 
     def __init__(
             self,
             name: str, size: float,
-            weight: str = "normal",
-            style: str = "normal",
-            stretch: str = "normal",
+            weight: Weight | str = Weight.NORMAL,
+            style: Style | str = Style.NORMAL,
+            stretch: Stretch | str = Stretch.NORMAL,
             dpi: int | None = None,
     ) -> None:
+        dpi = dpi or 96
         super().__init__(name, size, weight, style, stretch, dpi)
 
-        bold = weight != "normal"
         italic = style != "normal"
 
-        self.logfont = self.get_logfont(name, size, bold, italic, dpi)
+        self.logfont = self.get_logfont(name, size, weight, italic, dpi)
         self.hfont = gdi32.CreateFontIndirectW(ctypes.byref(self.logfont))
 
         # Create a dummy DC for coordinate mapping
@@ -294,13 +357,19 @@ class Win32Font(base.Font):
             self.max_glyph_width = metrics.tmMaxCharWidth
 
     @staticmethod
-    def get_logfont(name: str, size: float, bold: bool, italic: bool, dpi: int | None = None) -> LOGFONTW:
+    def get_logfont(
+            name: str,
+            size: float,
+            weight: Weight | str | int | bool,
+            italic: bool,
+            dpi: int | None = None,
+    ) -> LOGFONTW:
         """Get a raw Win32 :py:class:`.LOGFONTW` struct for the given arguments.
 
         Args:
             name: The name of the font
             size: The font size in points
-            bold: Whether to request the font as bold
+            weight: Font weight name or numeric GDI font weight.
             italic: Whether to request the font as italic
             dpi: The screen dpi
 
@@ -308,30 +377,48 @@ class Win32Font(base.Font):
             LOGFONTW: a ctypes binding of a Win32 LOGFONTW struct
         """
 
-        # Create a dummy DC for coordinate mapping
-        with device_context(None) as dc:
-
-            # Default to 96 DPI unless otherwise specified
-            if dpi is None:
-                dpi = 96
-            log_pixels_y = dpi
-
-            # Create LOGFONTW font description struct
-            logfont = LOGFONTW()
-
-            # Convert point size to actual device pixels
-            logfont.lfHeight = int(-size * log_pixels_y // 72)
-
-            # Configure the LOGFONTW's font properties
-            if bold:
-                logfont.lfWeight = FW_BOLD
-            else:
-                logfont.lfWeight = FW_NORMAL
-            logfont.lfItalic = italic
-            logfont.lfFaceName = name
-            logfont.lfQuality = ANTIALIASED_QUALITY
+        dpi = dpi or 96
+        logfont = LOGFONTW()
+        logfont.lfHeight = -int(size * dpi / 72)
+        if isinstance(weight, int) and not isinstance(weight, bool):
+            logfont.lfWeight = weight
+        else:
+            logfont.lfWeight = _font_weights.get(weight, FW_NORMAL)
+        logfont.lfItalic = italic
+        logfont.lfFaceName = name
+        logfont.lfQuality = ANTIALIASED_QUALITY
 
         return logfont
+
+    def get_text_size(self, text: str) -> tuple[int, int]:
+        """Return the unshaped dimensions of a text string."""
+        size = SIZE()
+        text_buffer = ctypes.create_unicode_buffer(text)
+        with device_context(None) as dc:
+            previous_font = gdi32.SelectObject(dc, self.hfont)
+            try:
+                if not gdi32.GetTextExtentPoint32W(dc, text_buffer, len(text_buffer) - 1, ctypes.byref(size)):
+                    raise ctypes.WinError()
+            finally:
+                gdi32.SelectObject(dc, previous_font)
+        return size.cx, size.cy
+
+    def has_character(self, character: str) -> bool:
+        super().has_character(character)
+
+        glyph_index = ctypes.c_ushort()
+        with device_context(None) as dc:
+            previous_font = gdi32.SelectObject(dc, self.hfont)
+            try:
+                result = gdi32.GetGlyphIndicesW(
+                    dc, character, 1, ctypes.byref(glyph_index), GGI_MARK_NONEXISTING_GLYPHS,
+                )
+            finally:
+                gdi32.SelectObject(dc, previous_font)
+        # GDI_ERROR (0xffffffff) signals a failed query. With
+        # GGI_MARK_NONEXISTING_GLYPHS, 0xffff marks a character that has no
+        # glyph in the selected face rather than returning its default glyph.
+        return result != 0xffffffff and glyph_index.value != 0xffff
 
 
 def _get_font_families(font_collection: ctypes.c_void_p) -> Sequence[ctypes.c_void_p]:
@@ -372,8 +459,12 @@ class GDIPlusFont(Win32Font):
 
     _default_name = "Arial"
 
-    def __init__(self, name: str, size: float, weight: str = "normal", style: str = "normal", stretch: str= "normal",
-                 dpi: int | None=None) -> None:
+    def __init__(self, name: str, size: float, weight: Weight | str = Weight.NORMAL,
+                 style: Style | str = Style.NORMAL, stretch: Stretch | str = Stretch.NORMAL,
+                 dpi: int | None = None) -> None:
+        self.hfont = None
+        self._gdipfont = None
+
         if not name:
             name = self._default_name
 
@@ -390,6 +481,7 @@ class GDIPlusFont(Win32Font):
         # based on that name (???). Here we remove it before checking font collections.
         if name[0] == "@":
             name = name[1:]
+            self._name = name
 
         name = ctypes.c_wchar_p(name)
 
@@ -409,30 +501,50 @@ class GDIPlusFont(Win32Font):
             self._name = self._default_name
             gdiplus.GdipCreateFontFamilyFromName(ctypes.c_wchar_p(self._name), None, ctypes.byref(family))
 
-        if dpi is None:
-            unit = UnitPoint
-            self.dpi = 96
-        else:
-            unit = UnitPixel
-            size = (size * dpi) // 72
-            self.dpi = dpi
+        # Keep the GDI+ rasterizer and the GDI metrics on the exact same
+        # LOGFONT. This also preserves weights other than normal/bold.
+        if self._name != self.logfont.lfFaceName:
+            gdi32.DeleteObject(self.hfont)
+            self.logfont = self.get_logfont(self._name, size, weight, style != "normal", self.dpi)
+            self.hfont = gdi32.CreateFontIndirectW(ctypes.byref(self.logfont))
 
-        gdip_style = 0
-        if weight != "normal":
-            gdip_style |= FontStyleBold
-        if style != "normal":
-            gdip_style |= FontStyleItalic
         self._gdipfont = ctypes.c_void_p()
-        gdiplus.GdipCreateFont(family, ctypes.c_float(size), gdip_style, unit, ctypes.byref(self._gdipfont))
+        with device_context(None) as dc:
+            status = gdiplus.GdipCreateFontFromLogfontW(
+                dc,
+                ctypes.byref(self.logfont),
+                ctypes.byref(self._gdipfont),
+            )
+        if status != 0:
+            gdip_style = 0
+            if self.logfont.lfWeight >= FW_BOLD:
+                gdip_style |= FontStyleBold
+            if self.logfont.lfItalic:
+                gdip_style |= FontStyleItalic
+            status = gdiplus.GdipCreateFont(
+                family,
+                ctypes.c_float(self.pixel_size),
+                gdip_style,
+                UnitPixel,
+                ctypes.byref(self._gdipfont),
+            )
         gdiplus.GdipDeleteFontFamily(family)
+        if status != 0:
+            msg = f"GDI+ could not create font '{self._name}' from LOGFONT (status {status})."
+            raise base.FontException(msg)
 
     @property
     def name(self) -> str:
         return self._name
 
     def __del__(self) -> None:
-        gdi32.DeleteObject(self.hfont)
-        gdiplus.GdipDeleteFont(self._gdipfont)
+        try:
+            if self.hfont:
+                gdi32.DeleteObject(self.hfont)
+            if self._gdipfont:
+                gdiplus.GdipDeleteFont(self._gdipfont)
+        except Exception:  # noqa: S110, BLE001
+            pass
 
     @classmethod
     def add_font_data(cls: type[GDIPlusFont], data: bytes, manager: FontManager) -> None:

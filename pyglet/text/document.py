@@ -79,16 +79,24 @@ The following character style attribute names are recognised by pyglet:
 ``underline``
     4-tuple of ints in range (0, 255) giving RGBA underline color, or None
     (default) for no underline.
+``strikethrough``
+    4-tuple of ints in range (0, 255) giving RGBA strikethrough color, or
+    ``None`` (default) for no strikethrough.
 ``kerning``
     Additional space to insert between glyphs, in points.  Defaults to 0.
 ``baseline``
     Offset of glyph baseline from line baseline, in points.  Positive values
     give a superscript, negative values give a subscript.  Defaults to 0.
 ``color``
-    4-tuple of ints in range (0, 255) giving RGBA text color
+    4-tuple of ints in range (0, 255) giving RGBA text color, or a
+    :class:`~pyglet.text.LinearGradient`.
 ``background_color``
     4-tuple of ints in range (0, 255) giving RGBA text background color; or
     ``None`` for no background fill.
+``shadow``
+    A :class:`~pyglet.text.DropShadow`, or ``None`` (default) for no shadow.
+``stroke``
+    A :class:`~pyglet.text.Stroke`, or ``None`` (default) for no text stroke.
 
 The following paragraph style attribute names are recognised by pyglet.  Note
 that paragraph styles are handled no differently from character styles by the
@@ -295,6 +303,14 @@ class AbstractDocument(event.EventDispatcher):
             attribute:
                 Name of style attribute to query.
         """
+
+    def has_style_run(self, attribute: str) -> bool:  # noqa: ARG002
+        """Return whether this document stores runs for a style attribute.
+
+        This is a fast-path hint. Custom document types return
+        ``True`` by default so callers continue to inspect their style runs.
+        """
+        return True
 
     @abstractmethod
     def get_style(self, attribute: str, position: int = 0) -> Any:
@@ -552,6 +568,9 @@ class UnformattedDocument(AbstractDocument):
         value = self.styles.get(attribute)
         return runlist.ConstRunIterator(len(self.text), value)
 
+    def has_style_run(self, attribute: str) -> bool:
+        return self.styles.get(attribute) is not None
+
     def get_style(self, attribute: str, position: int | None = None) -> Any:  # noqa: ARG002
         return self.styles.get(attribute)
 
@@ -597,6 +616,9 @@ class FormattedDocument(AbstractDocument):
             return self._style_runs[attribute].get_run_iterator()
         except KeyError:
             return _no_style_range_iterator
+
+    def has_style_run(self, attribute: str) -> bool:
+        return attribute in self._style_runs
 
     def get_style(self, attribute: str, position: int = 0) -> Any | None:
         try:

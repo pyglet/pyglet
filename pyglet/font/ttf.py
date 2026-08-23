@@ -38,6 +38,7 @@ class TruetypeInfo:
         "subfamily": 2,
         "identifier": 3,
         "name": 4,
+        "full-name": 4,
         "version": 5,
         "postscript": 6,
         "trademark": 7,
@@ -200,6 +201,7 @@ class TruetypeInfo:
             'subfamily'
             'identifier'
             'name'
+            'full-name'
             'version'
             'postscript'
             'trademark'
@@ -243,7 +245,7 @@ class TruetypeInfo:
                 # Default to english languages for microsoft
                 languages = (0x409, 0x809, 0xc09, 0x1009, 0x1409, 0x1809)
         elif platform == 1:  # setup for macintosh
-            encodings = self.__macintosh_encoding_lookup
+            encodings = self._macintosh_encoding_lookup
             if not languages:
                 # Default to english for macintosh
                 languages = (0,)
@@ -253,6 +255,20 @@ class TruetypeInfo:
                 decoder = codecs.getdecoder(encodings[record[0]])
                 return decoder(record[2])[0]
         return None
+
+    def get_font_family_name(self) -> str | None:
+        """Return the preferred OpenType family name, falling back to the legacy family name.
+
+        Name ID 16 (``preferred-family``) is the typographic family name and
+        is the appropriate family to use with separate weight, style, and
+        stretch descriptors. Name ID 1 is retained as a fallback for older
+        fonts that do not provide the typographic names.
+        """
+        return self.get_name("preferred-family") or self.get_name("family")
+
+    def get_full_font_name(self) -> str | None:
+        """Return the OpenType Full Font Name (name ID 4), if present."""
+        return self.get_name("full-name")
 
     def get_horizontal_metrics(self) -> list:
         """Return all horizontal metric entries in table format."""

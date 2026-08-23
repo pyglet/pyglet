@@ -4,7 +4,7 @@ from collections import namedtuple
 from threading import Event
 from typing import Literal
 
-from pyglet.libs.linux.egl import egl, eglext
+from pyglet.libs.egl import egl, eglext
 from pyglet.libs.linux.wayland.client import Client
 
 from .base import Display, Screen, ScreenMode

@@ -223,10 +223,10 @@ class PygletView_Implementation:
                            superclass_name='NSView',
                            argtypes=[cocoapy.NSSize])
 
-        # This method is called when view is first installed as the
-        # contentView of window.  Don't do anything on first call.
+        # Installing the view as the window's contentView invokes this method,
+        # but that is not a user-visible resize.
         # This also helps ensure correct window creation event ordering.
-        if not self._window.context.window or self._window._shadow:  # noqa: SLF001
+        if self._window._installing_view or self._window._shadow:  # noqa: SLF001
             return
 
         width, height = int(size.width), int(size.height)

@@ -3,6 +3,7 @@ from __future__ import annotations
 import queue
 import sys
 import threading
+from abc import ABC, abstractmethod
 from queue import Queue
 from typing import TYPE_CHECKING, Any, Callable
 
@@ -13,6 +14,57 @@ if TYPE_CHECKING:
     from pyglet.window import BaseWindow
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
+
+
+class WindowDrawSource(ABC):
+    """Control the source of automatic window draw opportunities.
+
+    Application-driven backends (Win32 and X11) use
+    :class:`ClockWindowDrawSource`, which decides when to draw from the pyglet
+    Clock. Display-driven backends can instead provide a source whose native
+    display system or compositor tells pyglet when to prepare the next frame.
+
+    Platform-specific callback and lifecycle details remain behind this common
+    interface.
+
+    Clock-driven sources use the ``interval`` passed to :meth:`start` as their
+    scheduling interval. Display-driven sources treat it as a preferred rate.
+    A draw source only controls when ``Window.draw`` begins. Swapping buffers
+    and reporting whether a frame was presented remain context/backend tasks.
+    """
+
+    @abstractmethod
+    def start(self, interval: float) -> bool:
+        """Start automatic drawing, returning whether the source is usable."""
+
+    @abstractmethod
+    def stop(self) -> None:
+        """Stop automatic drawing and release native resources."""
+
+    def add_window(self, window: BaseWindow) -> bool:
+        """Add a window created while this source is running."""
+        return True
+
+    def remove_window(self, window: BaseWindow) -> None:
+        """Remove a window before its platform resources are destroyed."""
+
+
+class ClockWindowDrawSource(WindowDrawSource):
+    """Application-driven drawing scheduled by the pyglet Clock."""
+
+    def __init__(self, app_clock: clock.Clock, draw_windows: Callable[[float], None]) -> None:
+        self._clock = app_clock
+        self._draw_windows = draw_windows
+
+    def start(self, interval: float) -> bool:
+        if interval == 0:
+            self._clock.schedule(self._draw_windows)
+        else:
+            self._clock.schedule_interval(self._draw_windows, interval)
+        return True
+
+    def stop(self) -> None:
+        self._clock.unschedule(self._draw_windows)
 
 
 class PlatformEventLoop:
@@ -81,9 +133,15 @@ class PlatformEventLoop:
     def set_timer(self, func: Callable, interval: float) -> None:
         pass
 
+    def create_window_draw_source(self, event_loop: EventLoop) -> WindowDrawSource | None:
+        """Create a display-driven draw source, or return ``None``.
+
+        Returning ``None`` selects application-driven Clock drawing.
+        """
+        return None
+
     def stop(self) -> None:
         pass
-
 
 class EventLoop(event.EventDispatcher):
     """The main run loop of the application.
@@ -108,12 +166,68 @@ class EventLoop(event.EventDispatcher):
         self.clock = clock.get_default()
         self.is_running = False
         self._interval = None
+        self._window_draw_source = None
+        self._window_draw_exception = None
 
     @staticmethod
     def _redraw_windows(dt: float) -> None:
         # Redraw all windows
         for window in app.windows:
             window.draw(dt)
+
+    def _schedule_window_draw(self, interval: float | None) -> None:
+        self._interval = interval
+        if interval is None:
+            return
+
+        draw_source = app.platform_event_loop.create_window_draw_source(self)
+        if draw_source is not None:
+            self._window_draw_source = draw_source
+            if draw_source.start(interval):
+                return
+            draw_source.stop()
+
+        self._window_draw_source = ClockWindowDrawSource(self.clock, self._redraw_windows)
+        self._window_draw_source.start(interval)
+
+    def _unschedule_window_draw(self) -> None:
+        if self._window_draw_source is not None:
+            self._window_draw_source.stop()
+            self._window_draw_source = None
+
+    def _add_window_to_draw_source(self, window: BaseWindow) -> None:
+        draw_source = self._window_draw_source
+        if draw_source is None or draw_source.add_window(window):
+            return
+
+        # Keep one pacing model for all windows if a native source cannot
+        # support a window created after EventLoop.run started.
+        draw_source.stop()
+        draw_source = ClockWindowDrawSource(self.clock, self._redraw_windows)
+        assert self._interval is not None
+        draw_source.start(self._interval)
+        self._window_draw_source = draw_source
+
+    def _remove_window_from_draw_source(self, window: BaseWindow) -> None:
+        if self._window_draw_source is not None:
+            self._window_draw_source.remove_window(window)
+
+    def _dispatch_platform_draw(self, window: BaseWindow, dt: float) -> None:
+        try:
+            window.draw(dt)
+        except BaseException:
+            # Native callbacks cannot safely unwind through every platform API.
+            self._window_draw_exception = sys.exc_info()
+            self.exit()
+
+    def _raise_window_draw_exception(self) -> None:
+        if self._window_draw_exception is None:
+            return
+
+        _, exception, traceback = self._window_draw_exception
+        self._window_draw_exception = None
+        assert exception is not None
+        raise exception.with_traceback(traceback)
 
     def run(self, interval: float | None = 1/60) -> None:
         """Begin processing events, scheduled functions and window updates.
@@ -125,8 +239,11 @@ class EventLoop(event.EventDispatcher):
         Args:
             interval:
                 Windows redraw interval, in seconds (framerate).
-                If ``interval == 0``, windows will redraw as fast as possible.
-                This can saturate a CPU core, so do not do this unless GPU bound.
+                Platforms with a display-synchronized drawing source treat this
+                as a preferred rate rather than an exact timer interval.
+                If ``interval == 0``, platforms with a display-synchronized
+                source use its native refresh. Other platforms redraw as fast
+                as possible, which can saturate a CPU core.
                 If ``interval is None``, pyglet will not schedule calls to the
                 :py:meth:`pyglet.window.Window.draw` method. Users must schedule
                 this themselves for each Window (or call it on-demand). This allows
@@ -139,15 +256,6 @@ class EventLoop(event.EventDispatcher):
         Developers are discouraged from overriding the ``run`` method, as the
         implementation is platform-specific.
         """
-        self._interval = interval
-        if interval is None:
-            # User will schedule Window.draw manually
-            pass
-        elif interval == 0:
-            self.clock.schedule(self._redraw_windows)
-        else:
-            self.clock.schedule_interval(self._redraw_windows, interval)
-
         self.has_exit = False
 
         from pyglet.window import Window
@@ -160,6 +268,7 @@ class EventLoop(event.EventDispatcher):
 
         platform_event_loop = app.platform_event_loop
         platform_event_loop.start()
+        self._schedule_window_draw(interval)
         self.dispatch_event('on_enter')
         self.is_running = True
 
@@ -167,9 +276,13 @@ class EventLoop(event.EventDispatcher):
             timeout = self.idle()
             platform_event_loop.step(timeout)
 
-        self.is_running = False
-        self.dispatch_event('on_exit')
-        platform_event_loop.stop()
+        try:
+            self.is_running = False
+            self.dispatch_event('on_exit')
+        finally:
+            self._unschedule_window_draw()
+            platform_event_loop.stop()
+        self._raise_window_draw_exception()
 
     def enter_blocking(self) -> None:
         """Called by pyglet internal processes when the operating system is about to block due to a user interaction.

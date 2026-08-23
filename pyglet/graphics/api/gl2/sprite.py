@@ -70,7 +70,7 @@ def get_default_shader() -> ShaderProgram:
         "default_sprite",
         (vertex_source, 'vertex'),
         (fragment_source, 'fragment'),
-    )
+    ).create_vertex_layout(colors="Bn")
 
 def get_default_array_shader() -> ShaderProgram:
     """Create and return the default array sprite shader.
@@ -163,4 +163,4 @@ def get_default_multitexture_shader(layers: dict[str, Texture]) -> ShaderProgram
         f"default_multitexture_sprite_{shader_key}",
         (vertex_shader_source, 'vertex'),
         (fragment_shader_source, 'fragment'),
-    )
+    ).create_vertex_layout(colors="Bn")

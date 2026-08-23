@@ -1,5 +1,6 @@
 """Test a specific audio driver for platform. Only checks the use of the
 interface. Any playback is silent."""
+import threading
 import time
 
 import pytest
@@ -185,3 +186,79 @@ def test_audio_player_time(driver, player):
 
     finally:
         audio_player.delete()
+
+
+def test_worker_notify_wakes_active_audio_player(driver, player):
+    """A callback handoff must not wait for the worker's polling interval."""
+    source = SilentTestSource(2.)
+    audio_player = driver.create_audio_player(source, player)
+    work_finished = threading.Event()
+    original_work = audio_player.work
+    original_nap_time = driver.worker._nap_time
+
+    audio_player.prefill_audio()
+
+    def observed_work():
+        original_work()
+        work_finished.set()
+
+    audio_player.work = observed_work
+    driver.worker._nap_time = 1.
+
+    try:
+        audio_player.play()
+        player.timer.start()
+        assert work_finished.wait(1.)
+
+        work_finished.clear()
+        driver.worker.notify()
+        assert work_finished.wait(.2)
+        assert driver.worker.is_alive()
+    finally:
+        audio_player.stop()
+        player.timer.pause()
+        audio_player.delete()
+        driver.worker._nap_time = original_nap_time
+
+
+def test_audio_player_controls_while_worker_is_active(driver, player):
+    """Backend voice controls and refill work may run on different threads."""
+    source = SilentTestSource(2.)
+    audio_player = driver.create_audio_player(source, player)
+    audio_player.prefill_audio()
+
+    try:
+        audio_player.play()
+        player.timer.start()
+
+        for index in range(50):
+            alternate = index % 2
+            audio_player.set_volume(.25 + .5 * alternate)
+            audio_player.set_pitch(.9 + .2 * alternate)
+            audio_player.set_position((float(alternate), 0., -1.))
+            audio_player.set_min_distance(1. + alternate)
+            audio_player.set_max_distance(100. + alternate)
+            audio_player.set_cone_orientation((0., 0., -1.))
+            audio_player.set_cone_inner_angle(180. + alternate)
+            audio_player.set_cone_outer_angle(270. + alternate)
+            audio_player.set_cone_outer_gain(.5 + .25 * alternate)
+            time.sleep(.001)
+
+        assert driver.worker.is_alive()
+    finally:
+        audio_player.stop()
+        player.timer.pause()
+        audio_player.delete()
+
+
+def test_audio_player_delete_after_active_driver_shutdown(driver, player):
+    """Players must tolerate deletion after their driver has gone away."""
+    source = SilentTestSource(2.)
+    audio_player = driver.create_audio_player(source, player)
+    audio_player.prefill_audio()
+    audio_player.play()
+    player.timer.start()
+    player.wait(.05)
+
+    driver.delete()
+    audio_player.delete()

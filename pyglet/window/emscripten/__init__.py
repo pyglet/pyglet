@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+import asyncio
 from functools import lru_cache
-from typing import TYPE_CHECKING, Callable
+from typing import Any, TYPE_CHECKING, Callable
 
-import js
-from pyodide.ffi import create_proxy
+import js  # noqa: F821
 
 import pyglet.app
+from pyglet.libs.emscripten.files import import_files
+from pyglet.libs.emscripten.proxies import ProxyRegistry
 from pyglet.window import BaseWindow, DefaultMouseCursor, ImageMouseCursor, MouseCursor, key, mouse
 
 if TYPE_CHECKING:
@@ -328,9 +330,14 @@ class EmscriptenWindow(BaseWindow):
         mode: ScreenMode | None = None,
     ) -> None:
         self._canvas = None
-        self._event_handlers: dict[int, Callable] = {}
-        self._canvas_event_handlers: dict[int, Callable] = {}
+        self._event_handlers: dict[str, Any] = {}
+        self._canvas_event_handlers: dict[str, Any] = {}
+        self._observer = None
+        self._proxy_resize = None
+        self._proxies = ProxyRegistry()
         self._keys_down = set()
+        self._clipboard_text = ""
+        self._file_import_tasks: set[Any] = set()
 
         self._scale = js.window.devicePixelRatio
         super().__init__(
@@ -383,21 +390,33 @@ class EmscriptenWindow(BaseWindow):
             func = getattr(self, func_name)
             for message in func._platform_event_data:  # noqa: SLF001
                 assert message not in self._event_handlers, f"event: '{message}' already exists."
-                proxy = create_proxy(func)
                 if hasattr(func, '_canvas'):
-                    self._canvas_event_handlers[message] = func
-                    if func._passive is not None:
-                        # Not sure what behavior results if we pass None to the JS event handler.
-                        self._canvas.addEventListener(message, proxy, passive=func._passive)
-                    else:
-                        self._canvas.addEventListener(message, proxy)
+                    proxy = self._proxies.add_event_listener(
+                        self._canvas, message, func, passive=func._passive,
+                    )
+                    self._canvas_event_handlers[message] = proxy
                 else:
-                    self._event_handlers[message] = func
-                    js.window.addEventListener(message, proxy)
+                    proxy = self._proxies.add_event_listener(js.window, message, func)
+                    self._event_handlers[message] = proxy
 
-        self._proxy_resize = create_proxy(self._event_resized)
+        self._proxy_resize = self._proxies.create(self._event_resized)
         self._observer = js.ResizeObserver.new(self._proxy_resize)
         self._observer.observe(self._canvas)
+
+    def close(self) -> None:
+        """Remove browser callbacks before releasing the pyglet window."""
+        if not self._context:
+            return
+
+        if self._observer is not None:
+            self._observer.disconnect()
+            self._observer = None
+        self._proxies.destroy()
+        self._proxy_resize = None
+        self._canvas_event_handlers.clear()
+        self._event_handlers.clear()
+
+        super().close()
 
     def set_fullscreen(
         self,
@@ -568,6 +587,19 @@ class EmscriptenWindow(BaseWindow):
     def set_exclusive_keyboard(self, exclusive: bool = True) -> None:
         """Not relevant."""
 
+    def get_clipboard_text(self) -> str:
+        """Return the latest clipboard text received by the browser."""
+        return self._clipboard_text
+
+    def set_clipboard_text(self, text: str) -> None:
+        """Set clipboard text when permitted, and retain it for a copy event."""
+        self._clipboard_text = text
+        try:
+            js.navigator.clipboard.writeText(text)
+        except Exception:
+            # Browsers may deny programmatic clipboard access outside a user gesture.
+            pass
+
     def get_system_mouse_cursor(self, name: str) -> JavascriptCursor:
         if name == self.CURSOR_DEFAULT:
             return DefaultMouseCursor()
@@ -582,7 +614,7 @@ class EmscriptenWindow(BaseWindow):
     def _event_text_motion(symbol: int, modifiers: int) -> int | None:
         if modifiers & key.MOD_ALT:
             return None
-        ctrl = modifiers & key.MOD_CTRL != 0
+        ctrl = modifiers & (key.MOD_CTRL | key.MOD_COMMAND) != 0
         return _motion_map.get((symbol, ctrl), None)
 
     @CanvasEventHandler("keydown")
@@ -600,7 +632,7 @@ class EmscriptenWindow(BaseWindow):
             if symbol:
                 self._keys_down.add(symbol)  # Keep track of pressed internally.
                 self.dispatch_event('on_key_press', symbol, modifiers)
-            if motion:
+            if motion and motion != key.MOTION_PASTE:
                 if modifiers & key.MOD_SHIFT:
                     motion_event = 'on_text_motion_select'
                 else:
@@ -684,17 +716,79 @@ class EmscriptenWindow(BaseWindow):
         print("WebGL context restored!")
 
     @CanvasEventHandler("focus")
-    async def _event_gain_focus(self, event):
-        await pyglet.app.platform_event_loop.post_event(self, 'on_activate')
+    def _event_gain_focus(self, event):
+        pyglet.app.platform_event_loop.post_event(self, 'on_activate')
 
     @CanvasEventHandler("blur")
-    async def _event_lose_focus(self, event):
-        await pyglet.app.platform_event_loop.post_event(self, 'on_deactivate')
+    def _event_lose_focus(self, event):
+        pyglet.app.platform_event_loop.post_event(self, 'on_deactivate')
 
     @CanvasEventHandler("contextmenu", passive=False)
     def _event_contextmenu(self, event):
         # Some keys or mouse presses (right click) can open the browser context menu. Disable this.
         event.preventDefault()
+
+    @CanvasEventHandler("copy", passive=False)
+    def _event_copy(self, event):
+        event.preventDefault()
+        event.clipboardData.setData("text/plain", self._clipboard_text)
+
+    @CanvasEventHandler("paste", passive=False)
+    def _event_paste(self, event):
+        event.preventDefault()
+        text = event.clipboardData.getData("text/plain")
+        self._clipboard_text = text
+        self.dispatch_event("on_text", text)
+
+    def _drop_position(self, event: Any) -> tuple[float, float]:
+        rect = self._canvas.getBoundingClientRect()
+        return (
+            (event.clientX - rect.left) * self._scale,
+            self._canvas.height - (event.clientY - rect.top) * self._scale,
+        )
+
+    @staticmethod
+    def _contains_files(event: Any) -> bool:
+        if event.dataTransfer is None:
+            return False
+        file_types = event.dataTransfer.types
+        try:
+            return bool(file_types.includes("Files"))
+        except AttributeError:
+            return bool(file_types.contains("Files"))
+
+    @CanvasEventHandler("dragenter", passive=False)
+    def _event_file_drag_enter(self, event: Any) -> None:
+        if self._file_drops and self._contains_files(event):
+            event.preventDefault()
+            self.dispatch_event("on_file_drag_enter", *self._drop_position(event), [])
+
+    @CanvasEventHandler("dragleave", passive=False)
+    def _event_file_drag_leave(self, event: Any) -> None:
+        if self._file_drops and self._contains_files(event):
+            event.preventDefault()
+            self.dispatch_event("on_file_drag_exit")
+
+    @CanvasEventHandler("dragover", passive=False)
+    def _event_file_drag_over(self, event: Any) -> None:
+        if self._file_drops and self._contains_files(event):
+            event.preventDefault()
+            event.dataTransfer.dropEffect = "copy"
+            self.dispatch_event("on_file_drag", *self._drop_position(event), [])
+
+    @CanvasEventHandler("drop", passive=False)
+    def _event_file_drop(self, event: Any) -> None:
+        if not self._file_drops or not self._contains_files(event):
+            return
+        event.preventDefault()
+        files = [event.dataTransfer.files.item(index) for index in range(event.dataTransfer.files.length)]
+        task = asyncio.create_task(self._import_dropped_files(*self._drop_position(event), files))
+        self._file_import_tasks.add(task)
+        task.add_done_callback(self._file_import_tasks.discard)
+        self.dispatch_event("on_file_drag_exit")
+
+    async def _import_dropped_files(self, x: float, y: float, files: Any) -> None:
+        self.dispatch_event("on_file_drop", x, y, await import_files(files))
 
     @CanvasEventHandler("fullscreenchange")
     def _event_fullscreen_change(self, event):
@@ -716,7 +810,6 @@ class EmscriptenWindow(BaseWindow):
     def dispatch_pending_events(self) -> None:
         pass
 
-    # copy, cut, paste, dragenter, dragleave,dragover, drop
     # touchmove, touchstart, touchend, touchcancel
 
     def adjust_scale(self, width: int, height: int) -> None:

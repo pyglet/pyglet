@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from pyglet.config.gl import GLSurfaceConfig
     from pyglet.libs.win32.wgl import WGLFunctions
     from pyglet.graphics.shader import ShaderType
-    from pyglet.graphics.api.gl import ObjectSpace, OpenGLSurfaceContext
+    from pyglet.graphics.api.gl import OpenGLSurfaceContext
     from pyglet.window import Window
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
@@ -40,11 +40,6 @@ class OpenGLBackend(BackendGlobalObject):
         self.platform_func = None
         self.platform_exts = []
         super().__init__()
-
-    @property
-    def object_space(self) -> ObjectSpace:
-        # assert self.current_context is not None, "Context has not been created."
-        return self.current_context.object_space
 
     def create_context(self, config: GLSurfaceConfig, shared: OpenGLSurfaceContext | None) -> OpenGLSurfaceContext:
         return config.create_context(self, shared)

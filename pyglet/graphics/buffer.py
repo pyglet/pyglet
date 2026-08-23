@@ -18,6 +18,8 @@ from ctypes import Array
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Sequence, Union
 
+from pyglet.graphics.resource import BufferKey, GraphicsResource
+
 if TYPE_CHECKING:
     from pyglet.customtypes import CType, CTypesPointer, DataTypes
 
@@ -78,12 +80,14 @@ def _align_to(value: int, alignment: int) -> int:
     return (value + alignment - 1) // alignment * alignment
 
 
-class AbstractBuffer(abc.ABC):
+class AbstractBuffer(GraphicsResource[Any, BufferKey], abc.ABC):
     """A backend GPU buffer represented as bytes."""
 
+    key_type = BufferKey
     size: int
 
     def __init__(self, size: int) -> None:
+        GraphicsResource.__init__(self)
         self.size = size
 
     @abc.abstractmethod
@@ -339,8 +343,19 @@ class UniformBufferObject(RingBuffer):
         )
 
     @property
-    def id(self) -> int:
-        return self.buffer.id
+    def handle(self) -> Any:
+        """Opaque handle for the wrapped backend buffer."""
+        return self.buffer.handle
+
+    @property
+    def key(self) -> BufferKey:
+        """Stable pyglet identity for the wrapped buffer."""
+        return self.buffer.key
+
+    @property
+    def id(self) -> Any:
+        """Compatibility alias for :attr:`handle`."""
+        return self.handle
 
     @property
     def size(self) -> int:
@@ -458,7 +473,7 @@ class UniformBufferObject(RingBuffer):
 
     def __repr__(self) -> str:
         return (
-            f"{self.__class__.__name__}(id={self.buffer.id}, binding={self.binding}, size={self.size}, "
+            f"{self.__class__.__name__}(handle={self.buffer.handle}, binding={self.binding}, size={self.size}, "
             f"range_size={self.range_size}, range_stride={self.range_stride}, ranges={len(self._ranges)}, "
             f"strict={self.strict})"
         )
@@ -731,6 +746,14 @@ class CTypeDataStore(BufferDataStore):
             length = self.size - offset
         self._validate_byte_range(offset, length)
         return ctypes.string_at(self._data_ptr + offset, length)
+
+    def get_memoryview(self, offset: int = 0, length: int | None = None) -> memoryview:
+        """Return a byte view of the store without copying its ctypes memory."""
+        if length is None:
+            length = self.size - offset
+        self._validate_byte_range(offset, length)
+        data = (ctypes.c_ubyte * length).from_address(self._data_ptr + offset)
+        return memoryview(data)
 
     def set_bytes(self, offset: int, data: ByteSource) -> None:
         raw = bytes(data)

@@ -437,7 +437,7 @@ class Loader:
             file_location = self._index[name]
             return file_location.open(name, mode)
         except KeyError:
-            raise ResourceNotFoundException(name)
+            raise ResourceNotFoundException(name) from None
 
     def location(self, filename: str) -> FileLocation | URLLocation | ZIPLocation:
         """Get the location of a resource.
@@ -503,7 +503,7 @@ class Loader:
              None if the image should not be placed in an atlas (too big), otherwise the bin (a list of TextureAtlas).
         """
         # Large images are not placed in an atlas
-        max_texture_size = pyglet.graphics.texture.get_max_texture_size()
+        max_texture_size = pyglet.graphics.api.core.current_context.info.MAX_TEXTURE_SIZE
         max_size = min(2048, max_texture_size) - border
         if width > max_size or height > max_size:
             return None

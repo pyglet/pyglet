@@ -7,8 +7,8 @@ from pyodide.ffi import create_proxy  # noqa: F401, F821
 
 from pyglet.graphics.api.base import SurfaceContext, NullContext
 from pyglet.graphics.api.webgl import gl
-from pyglet.graphics.api.webgl.gl import GL_COLOR_BUFFER_BIT
-from pyglet.graphics.api.webgl.gl_info import GLInfo
+from pyglet.graphics.api.webgl.gl import GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT
+from pyglet.graphics.api.webgl.gl_info import WebGLInfo
 from pyglet.graphics.api.webgl.renderer import WebGLRenderer
 
 if TYPE_CHECKING:
@@ -18,19 +18,6 @@ if TYPE_CHECKING:
     from pyglet.graphics.api.webgl.webgl_js import WebGL2RenderingContext
     from pyglet.window import Window
     from pyglet.window.emscripten import EmscriptenWindow
-
-
-class ObjectSpace:
-    """A container to store shared objects that are to be removed."""
-
-    def __init__(self) -> None:
-        """Initialize the context object space."""
-        # Objects scheduled for deletion the next time this object space is active.
-        self.doomed_textures = []
-        self.doomed_buffers = []
-        self.doomed_shader_programs = []
-        self.doomed_shaders = []
-        self.doomed_renderbuffers = []
 
 
 class OpenGLSurfaceContext(SurfaceContext):
@@ -70,13 +57,9 @@ class OpenGLSurfaceContext(SurfaceContext):
         # The GL Context.  Pass through the WebGLConfig settings:
         self.gl = self.window.canvas.getContext("webgl2", **self.config.attributes)
 
-        self._info = GLInfo()
+        self._info = WebGLInfo()
         self._info.query(self.gl)
-        self.object_space = ObjectSpace()
-
         self._draw_proxy = create_proxy(self.window.draw)
-
-        self._clear_color = (0.0, 0.0, 0.0, 1.0)
 
         self.doomed_vaos = []
         self.doomed_framebuffers = []
@@ -86,11 +69,11 @@ class OpenGLSurfaceContext(SurfaceContext):
         self.renderer = WebGLRenderer(self)
 
     @property
-    def info(self) -> GLInfo:
+    def info(self) -> WebGLInfo:
         """Get the :py:class:`~GLInfo` instance for this context."""
         return self._info
 
-    def get_info(self) -> GLInfo:
+    def get_info(self) -> WebGLInfo:
         """Get the :py:class:`~GLInfo` instance for this context."""
         return self.info
 
@@ -109,10 +92,11 @@ class OpenGLSurfaceContext(SurfaceContext):
         return
 
     def set_clear_color(self, r: float, g: float, b: float, a: float) -> None:
-        self._clear_color = (r, g, b, a)
+        self.clear_color = (r, g, b, a)
+        self.gl.clearColor(r, g, b, a)
 
     def clear(self) -> None:
-        self.gl.clear(GL_COLOR_BUFFER_BIT)
+        self.gl.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
     def present(self):
         pass
@@ -139,45 +123,11 @@ class OpenGLSurfaceContext(SurfaceContext):
 
     def frame_begin(self) -> None:
         super().frame_begin()
-        self.gl.clearColor(*self._clear_color)
-        self.gl.clear(GL_COLOR_BUFFER_BIT)
+        self.gl.clearColor(*self.clear_color)
+        self.gl.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
     def set_current(self) -> None:
-        return
-        """Make this the active Context.
-
-        Setting the Context current will also delete any OpenGL
-        objects that have been queued for deletion. IE: any objects
-        that were created in this Context, but have been called for
-        deletion while another Context was active.
-        """
-        assert self.window is not None, "Window has not been attached."
-
-        # Not per-thread
-        self.global_ctx.current_context = self
-        gl.current_context = self
-
-        # Set active context.
-        # gl_info.set_active_context()
-
-        if not self._info.was_queried:
-            self._info.query()
-
-        if self.object_space.doomed_textures:
-            self._delete_objects(self.object_space.doomed_textures, gl.glDeleteTextures)
-        if self.object_space.doomed_buffers:
-            self._delete_objects(self.object_space.doomed_buffers, gl.glDeleteBuffers)
-        if self.object_space.doomed_shader_programs:
-            self._delete_objects_one_by_one(self.object_space.doomed_shader_programs, gl.glDeleteProgram)
-        if self.object_space.doomed_shaders:
-            self._delete_objects_one_by_one(self.object_space.doomed_shaders, gl.glDeleteShader)
-        if self.object_space.doomed_renderbuffers:
-            self._delete_objects(self.object_space.doomed_renderbuffers, gl.glDeleteRenderbuffers)
-
-        if self.doomed_vaos:
-            self._delete_objects(self.doomed_vaos, gl.glDeleteVertexArrays)
-        if self.doomed_framebuffers:
-            self._delete_objects(self.doomed_framebuffers, gl.glDeleteFramebuffers)
+        """WebGL contexts are always current on their owning canvas."""
 
     def _create_uniform_dicts(self) -> None:
         self._uniform_setters: dict[int, tuple[GLDataType, Callable, int]] = {
@@ -190,6 +140,10 @@ class OpenGLSurfaceContext(SurfaceContext):
             gl.GL_INT_VEC2: (gl.GLint, self.gl.uniform2iv, 2),
             gl.GL_INT_VEC3: (gl.GLint, self.gl.uniform3iv, 3),
             gl.GL_INT_VEC4: (gl.GLint, self.gl.uniform4iv, 4),
+            gl.GL_UNSIGNED_INT: (gl.GLuint, self.gl.uniform1ui, 1),
+            gl.GL_UNSIGNED_INT_VEC2: (gl.GLuint, self.gl.uniform2uiv, 2),
+            gl.GL_UNSIGNED_INT_VEC3: (gl.GLuint, self.gl.uniform3uiv, 3),
+            gl.GL_UNSIGNED_INT_VEC4: (gl.GLuint, self.gl.uniform4uiv, 4),
             gl.GL_FLOAT: (gl.GLfloat, self.gl.uniform1f, 1),
             gl.GL_FLOAT_VEC2: (gl.GLfloat, self.gl.uniform2fv, 2),
             gl.GL_FLOAT_VEC3: (gl.GLfloat, self.gl.uniform3fv, 3),

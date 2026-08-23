@@ -62,7 +62,7 @@ def text_entry_handler(widget, text):
 frame = pyglet.gui.Frame(window, order=4)
 
 
-text_button = pyglet.gui.TextButton(100, 500, text="Click me!", batch=batch)
+text_button = pyglet.gui.TextButton(100, 500, text="Click me!", unpressed_color=(0, 0, 0, 255), batch=batch)
 text_button.set_handler('on_press', text_button_handler)
 text_button.set_handler('on_release', text_release_button_handler)
 frame.add_widget(text_button)

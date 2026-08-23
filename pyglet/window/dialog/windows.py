@@ -16,7 +16,7 @@ from pyglet.libs.win32.constants import (
     OFN_FILEMUSTEXIST,
     OFN_ALLOWMULTISELECT,
 )
-from pyglet.window.dialog.base import FileOpenDialogBase, FileSaveDialogBase
+from pyglet.window.dialog.base import FileOpenDialogBase, FileSaveDialogBase, _split_filetype_patterns
 
 
 def _build_filter_string(filetypes: list[tuple[str, str]]) -> str:
@@ -31,7 +31,7 @@ def _build_filter_string(filetypes: list[tuple[str, str]]) -> str:
     for label, exts in filetypes:
         # Normalize to a list
         if isinstance(exts, str):
-            exts = [exts]
+            exts = _split_filetype_patterns(exts)
 
         norm_patterns: list[str] = []
         for ext in exts:

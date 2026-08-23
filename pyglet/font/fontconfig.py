@@ -5,7 +5,8 @@ from collections import OrderedDict
 from ctypes import CDLL, Structure, Union, byref, c_char_p, c_double, c_int, c_uint, c_void_p, POINTER
 from typing import TYPE_CHECKING
 
-from pyglet.enums import Style
+import pyglet
+from pyglet.enums import Stretch, Style, Weight
 from pyglet.font.base import FontException
 from pyglet.lib import load_library
 from pyglet.util import asbytes, asstr
@@ -24,6 +25,7 @@ if TYPE_CHECKING:
 FcResult = c_int
 
 FC_FAMILY = asbytes("family")
+FC_FULLNAME = asbytes("fullname")
 FC_SIZE = asbytes("size")
 FC_SLANT = asbytes("slant")
 FC_WEIGHT = asbytes("weight")
@@ -200,8 +202,9 @@ class FontConfig:
         result = FontConfigSearchResult(self._fontconfig, pattern)
         return result.weight, result.italic, result.stretch
 
-    def find_font(self, name: str, size: float = 12, weight: str = "normal",
-                  italic: str = "normal", stretch: str = "normal") -> FontConfigSearchResult:
+    def find_font(self, name: str, size: float = 12, weight: Weight | str = Weight.NORMAL,
+                  italic: Style | str = Style.NORMAL,
+                  stretch: Stretch | str = Stretch.NORMAL) -> FontConfigSearchResult:
         assert isinstance(weight, str)
         assert isinstance(italic, str)
         if result := self._get_from_search_cache(name, size, weight, italic, stretch):
@@ -217,12 +220,33 @@ class FontConfig:
         result = search_pattern.match()
         self._add_to_search_cache(search_pattern, result)
         search_pattern.dispose()
+
+        # Fontconfig normally resolves a full name through FC_FAMILY, but not
+        # all configurations expose that alias. Retry an apparent fallback as
+        # FC_FULLNAME so a valid OpenType full name loads the intended face.
+        if result and name and not result.matches_name(name) and pyglet.options.font_name_compatibility:
+            full_name_pattern = self.create_search_pattern()
+            full_name_pattern.full_name = name
+            full_name_pattern.size = size
+            full_name_pattern.weight = weight
+            full_name_pattern.italic = italic
+            full_name_pattern.stretch = stretch
+            full_name_result = full_name_pattern.match()
+            full_name_pattern.dispose()
+            if full_name_result and full_name_result.matches_name(name):
+                result.dispose()
+                result = full_name_result
+                cache_key = (name, size, weight, italic, stretch)
+                cached_result = self._search_cache.pop(cache_key)
+                cached_result.dispose()
+                self._add_to_search_cache(search_pattern, result)
+
         return result
 
     def have_font(self, name: str) -> bool:
         if result := self.find_font(name):
             # Check the name matches, fontconfig can return a default
-            if name and result.name and result.name.lower() != name.lower():
+            if name and not result.matches_name(name, include_full_name=pyglet.options.font_name_compatibility):
                 return False
             return True
 
@@ -241,8 +265,8 @@ class FontConfig:
         if len(self._search_cache) > self._cache_size:
             self._search_cache.popitem(last=False)[1].dispose()
 
-    def _get_from_search_cache(self, name: str, size: float, weight: str,
-                               italic: str, stretch: str) -> FontConfigSearchResult | None:
+    def _get_from_search_cache(self, name: str, size: float, weight: Weight | str,
+                               italic: Style | str, stretch: Stretch | str) -> FontConfigSearchResult | None:
         result = self._search_cache.get((name, size, weight, italic, stretch), None)
 
         if result and result.is_valid:
@@ -388,12 +412,14 @@ class FontConfigSearchPattern(FontConfigPattern):
     italic: str
     weight: str
     name: str | None
+    full_name: str | None
     stretch: str
 
     def __init__(self, fontconfig: CDLL, pattern: c_void_p | None = None) -> None:
         super().__init__(fontconfig, pattern)
 
         self.name = None
+        self.full_name = None
         self.weight = "normal"
         self.italic = "normal"
         self.size = None
@@ -412,6 +438,7 @@ class FontConfigSearchPattern(FontConfigPattern):
         if self._pattern is None:
             self._create()
         self._set_string(FC_FAMILY, self.name)
+        self._set_string(FC_FULLNAME, self.full_name)
         self._set_double(FC_SIZE, self.size)
         self._set_double(FC_WEIGHT, name_to_weight[self.weight])
         self._set_integer(FC_SLANT, self._italic_to_slant(self.italic))
@@ -449,6 +476,16 @@ class FontConfigSearchResult(FontConfigPattern):
     @property
     def name(self) -> str:
         return self._get_string(FC_FAMILY)
+
+    @property
+    def full_name(self) -> str | None:
+        return self._get_string(FC_FULLNAME)
+
+    def matches_name(self, name: str, include_full_name: bool = True) -> bool:
+        """Whether a family or OpenType full-name lookup selected this font."""
+        folded_name = name.casefold()
+        candidates = (self.name, self.full_name) if include_full_name else (self.name,)
+        return any(candidate and candidate.casefold() == folded_name for candidate in candidates)
 
     @property
     def size(self) -> int:

@@ -528,8 +528,7 @@ class WMFSource(Source):
             return
 
         # Get Major media type (Audio, Video, etc)
-        # TODO: Make GUID take no arguments for a null version:
-        guid_audio_type = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        guid_audio_type = com.GUID()
 
         imfmedia.GetGUID(MF_MT_MAJOR_TYPE, byref(guid_audio_type))
 
@@ -544,7 +543,7 @@ class WMFSource(Source):
             self._source_reader.SetStreamSelection(MF_SOURCE_READER_FIRST_AUDIO_STREAM, True)
 
             # Check sub media type, AKA what kind of codec
-            source_subtype_guid = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+            source_subtype_guid = com.GUID()
             source_sample_size = c_uint32()
             source_channel_count = c_uint32()
 
@@ -664,7 +663,7 @@ class WMFSource(Source):
         self.video_format.sample_aspect = num / den
         assert _debug(f'WMFVideoDecoder: Pixel Ratio: {num} / {den} = {self.video_format.sample_aspect}')
 
-    def get_audio_data(self, num_bytes, compensation_time=0.0):
+    def get_audio_data(self, num_bytes):
         flags = DWORD()
         timestamp = c_longlong()
 
@@ -701,11 +700,7 @@ class WMFSource(Source):
             imf_buffer.Release()
             imf_sample.Release()
 
-            return AudioData(audio_data,
-                             audio_data_length.value,
-                             timestamp_from_wmf(timestamp.value),
-                             audio_data_length.value / self.audio_format.sample_rate,
-                             [])
+            return AudioData(audio_data, audio_data_length.value)
 
         return None
 
@@ -782,7 +777,7 @@ class WMFSource(Source):
         prop.vt = VT_I8
         prop.llVal = timestamp_to_wmf(timestamp)
 
-        pos_com = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        pos_com = com.GUID()
         try:
             self._source_reader.SetCurrentPosition(pos_com, prop)
         except OSError as err:

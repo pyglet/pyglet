@@ -122,6 +122,7 @@ class PlayerWorkerThread(threading.Thread):
         """
         assert _debug('PlayerWorkerThread: player removed')
 
-        if player in self.players:
-            with self._operation_lock:
-                self.players.remove(player)
+        # Can be reached through stop(), delete(), and
+        # driver shutdown. Discard to instead ignore if it was already removed.
+        with self._operation_lock:
+            self.players.discard(player)

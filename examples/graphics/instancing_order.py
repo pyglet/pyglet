@@ -53,18 +53,18 @@ program = pyglet.graphics.ShaderProgram(
     pyglet.graphics.Shader(vertex_source, "vertex"),
     pyglet.graphics.Shader(fragment_source, "fragment"),
 )
+program.set_instance_attributes(translate=1, colors=1)
 
 group = pyglet.graphics.ShaderGroup(program=program)
 vlist = program.vertex_list_instanced_indexed(
     4,
     mode=GeometryMode.TRIANGLES,
     indices=[0, 1, 2, 0, 2, 3],
-    instance_attributes={"translate": 1, "colors": 1},
     batch=batch,
     group=group,
-    position=("f", (0, 0, 0, 180, 0, 0, 180, 180, 0, 0, 180, 0)),
-    translate=("f", (220, 120, 0)),
-    colors=("f", (1, 0, 0, 1)),
+    position=(0, 0, 0, 180, 0, 0, 180, 180, 0, 0, 180, 0),
+    translate=(220, 120, 0),
+    colors=(1, 0, 0, 1),
 )
 
 instances_by_name = {

@@ -50,16 +50,14 @@ class WaveSource(StreamingSource):
         if hasattr(self, '_file'):
             self._file.close()
 
-    def get_audio_data(self, num_bytes: int, compensation_time: float = 0.0):
+    def get_audio_data(self, num_bytes: int):
         num_frames = max(1, num_bytes // self._bytes_per_frame)
 
         data = self._wave.readframes(num_frames)
         if not data:
             return None
 
-        timestamp = self._wave.tell() / self.audio_format.sample_rate
-        duration = num_frames / self.audio_format.sample_rate
-        return AudioData(data, len(data), timestamp, duration, [])
+        return AudioData(data, len(data))
 
     def seek(self, timestamp: float) -> None:
         timestamp = max(0.0, min(timestamp, self._duration))

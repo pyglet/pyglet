@@ -1,6 +1,6 @@
 import unittest
 
-from pyglet.text import runlist
+from pyglet.text import document, runlist
 from pyglet.text.formats.attributed import AttributedTextDecoder
 
 
@@ -296,6 +296,20 @@ class TestStyleRuns(unittest.TestCase):
         runs = self.create_runs2()
         runs.delete(6, 7)
         self.check_value(runs, 'aaaabbccc')
+
+
+class TestDocumentStyleRuns(unittest.TestCase):
+
+    def test_style_run_presence(self):
+        plain_document = document.UnformattedDocument("text")
+        self.assertFalse(plain_document.has_style_run("stroke"))
+        plain_document.set_style(0, 4, {"stroke": object()})
+        self.assertTrue(plain_document.has_style_run("stroke"))
+
+        formatted_document = document.FormattedDocument("text")
+        self.assertFalse(formatted_document.has_style_run("stroke"))
+        formatted_document.set_style(0, 4, {"stroke": None})
+        self.assertTrue(formatted_document.has_style_run("stroke"))
 
 
 class AttributedTextDecoderTests(unittest.TestCase):

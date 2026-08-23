@@ -1,1 +1,0 @@
-# For OpenGL 3.1+ tests.

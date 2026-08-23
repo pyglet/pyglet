@@ -91,6 +91,7 @@ from pyglet.event import EVENT_HANDLE_STATE, EventDispatcher
 
 from pyglet.window import event, key, dialog
 from pyglet.window.camera import Camera2D
+from pyglet.window.camera.base import BaseCamera
 
 if TYPE_CHECKING:
     from pyglet.math import Mat4
@@ -371,7 +372,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     _context_share: SurfaceContext | None = None
     _projection_matrix: Mat4 = pyglet.math.Mat4()
     _view_matrix: Mat4 = pyglet.math.Mat4()
-    _camera: Camera2D | None = None
+    _camera: BaseCamera[Any] | None = None
 
     # Used to restore window size and position after fullscreen
     _windowed_size: tuple[int, int] | None = None
@@ -1278,11 +1279,12 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         return w / h
 
     @property
-    def camera(self) -> Camera2D:
+    def camera(self) -> BaseCamera[Any]:
         """The window's default camera.
 
-        Read-only handle. Use its ``projection``, ``view``, and ``viewport``
-        attributes to update the default draw camera state.
+        The default is a :class:`~pyglet.window.camera.Camera2D`. Assign a
+        compatible camera, such as :class:`~pyglet.window.camera.Camera3D`,
+        to change the camera used for default drawing.
         """
         if self._camera is None:
             if not self.context:
@@ -1290,6 +1292,16 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                 raise RuntimeError(msg)
             self._camera = self._create_default_camera()
         return self._camera
+
+    @camera.setter
+    def camera(self, value: BaseCamera[Any]) -> None:
+        if not isinstance(value, BaseCamera):
+            msg = "Window camera must be an instance of BaseCamera."
+            raise TypeError(msg)
+        if value._window != self:  # noqa: SLF001
+            msg = "Window camera must be created for this window."
+            raise ValueError(msg)
+        self._camera = value
 
     @property
     def projection(self) -> Mat4:
@@ -1461,7 +1473,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                 paths:
                     File path strings currently being dragged.
 
-            .. note:: On Linux (xlib), paths are not available until ``on_file_drop`` due to OS limitations.
+            .. note:: On Linux (xlib) and in browsers, paths are not available
+                until ``on_file_drop`` due to platform limitations.
 
             .. versionadded:: 3.0
 
@@ -1479,7 +1492,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                 paths:
                     File path strings currently being dragged.
 
-            .. note:: On Linux (xlib), paths are not available until ``on_file_drop`` due to OS limitations.
+            .. note:: On Linux (xlib) and in browsers, paths are not available
+                until ``on_file_drop`` due to platform limitations.
 
             .. versionadded:: 3.0
 
@@ -1862,10 +1876,10 @@ class FPSDisplay:
         """
         from collections import deque  # noqa: PLC0415
         from statistics import mean  # noqa: PLC0415
-        from time import time  # noqa: PLC0415
+        from time import perf_counter  # noqa: PLC0415
 
         from pyglet.text import Label  # noqa: PLC0415
-        self._time = time
+        self._time = perf_counter
         self._mean = mean
 
         if window.context:
@@ -1879,7 +1893,7 @@ class FPSDisplay:
         self.label = Label('', x=10, y=10, font_size=24, weight="bold", color=color, batch=batch)
 
         self._elapsed = 0.0
-        self._last_time = time()
+        self._last_time = perf_counter()
         self._delta_times = deque(maxlen=samples)
 
     def update(self) -> None:
@@ -1927,7 +1941,7 @@ if _is_pyglet_doc_run:
 else:
     # Try to determine which platform to use.
     if pyglet.options.headless:
-        from pyglet.window.headless import HeadlessWindow as Window
+        from pyglet.window.headless import EGLHeadlessWindow as Window
     elif pyglet.compat_platform == 'darwin':
         from pyglet.window.cocoa import CocoaWindow as Window
     elif pyglet.compat_platform in ('win32', 'cygwin'):

@@ -166,7 +166,7 @@ class Screen(abc.ABC):
         """Restore the screen mode to the user's default."""
         raise NotImplementedError('abstract')
 
-    def get_dpi(self):
+    def get_dpi(self) -> int:
         """Get the DPI of the screen."""
         raise NotImplementedError('abstract')
 

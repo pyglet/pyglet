@@ -209,6 +209,14 @@ def add_default_codecs():
     except ImportError:
         pass
 
+    # Browser-native Pyodide fallback. Pillow is preferred when installed;
+    if compat_platform == 'emscripten':
+        try:
+            from pyglet.image.codecs import js_image
+            registry.add_decoders(js_image)
+        except ImportError:
+            pass
+
     # Fallback: PNG loader (slow)
     try:
         from pyglet.image.codecs import png

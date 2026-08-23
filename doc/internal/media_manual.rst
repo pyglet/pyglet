@@ -74,6 +74,11 @@ supported sound drivers are: DirectSound, OpenAL, PulseAudio and XAudio2.
 A silent audio driver that consumes, but does not play back any audio is also
 available.
 
+The public player methods and properties are not thread safe, and should be
+restricted to only be run in the event-loop thread; normally the main thread. Calls
+from other application threads must be posted onto that thread, for example with
+``EventDispatcher.post_event``.
+
 If your source contains video, and you are using a :class:`~pyglet.media.VideoPlayer`
 then the player will contain a :attr:`~pyglet.media.player.VideoPlayer.texture`
 property returning the current video frame.
@@ -181,13 +186,15 @@ thread, implementing it error-free is difficult.
 This method is responsible for refilling audio data if needed and often for
 dispatching the :meth:`~pyglet.media.player.AudioPlayer.on_eos` event.
 
-Implementing this method comes with a lot of pitfalls. The following are free
-to happen in other threads while the method is running:
+Implementing this method comes with a lot of pitfalls. Although public Player
+operations are confined to the event-loop thread, they can run concurrently
+with this worker method. Native audio callbacks may also run on their own
+threads. The following can therefore happen while the method is running:
 
 The player is paused or unpaused.
     Audio backends usually accept data for non-playing streams/sources/etc.,
-    so this is not too much of a problem. Realistically, this won't happen, all
-    current implementations contain a call to
+    so this is not too much of a problem. All current implementations contain
+    a call to
     ``self.driver.worker.remove/add(self)`` snippet in their
     :ref:`audioplayer-play`/:ref:`audioplayer-stop` implementations.
     That call will return only once the ``PlayerWorkerThread`` is done with a
@@ -215,7 +222,6 @@ In pseudocode, the general way this method is implemented is: ::
 
     def work():
         update_play_cursor()
-        dispatch_media_events()
         if not source_exhausted:
             if play_cursor_too_close_to_write_cursor():
                 get_and_submit_new_audio_data()
@@ -234,7 +240,6 @@ tends to be different: ::
 
     def work():
         update_play_cursor()
-        dispatch_media_events()
         if not source_exhausted:
             if play_cursor_too_close_to_write_cursor():
                 get_and_submit_new_audio_data()

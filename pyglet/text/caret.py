@@ -54,6 +54,7 @@ class Caret(EventDispatcher):
     """
     _next_word_re: Pattern[str] = re.compile(r"(?<=\W)\w")
     _previous_word_re: Pattern[str] = re.compile(r"(?<=\W)\w+\W*$")
+    _word_re: Pattern[str] = re.compile(r"\w+")
     _next_para_re: Pattern[str] = re.compile(r"\n", flags=re.DOTALL)
     _previous_para_re: Pattern[str] = re.compile(r"\n", flags=re.DOTALL)
 
@@ -108,13 +109,13 @@ class Caret(EventDispatcher):
         colors = r, g, b, self._visible_alpha, r, g, b, self._visible_alpha
 
         self._list = self._group.program.vertex_list(2, GeometryMode.LINES, self._batch, self._group,
-                                                        position=('f', (0, 0, 0) * 2),
-                                                        translation=('f', (0, 0, 0) * 2),
-                                                        view_translation=('f', (0, 0, 0) * 2),
-                                                        anchor=('f', (0, 0) * 2),
-                                                        rotation=('f', (0, 0)),
-                                                        visible=('f', (1, 1)),
-                                                        colors=("Bn", colors))
+                                                        position=(0, 0, 0) * 2,
+                                                        translation=(0, 0, 0) * 2,
+                                                        view_translation=(0, 0, 0) * 2,
+                                                        anchor=(0, 0) * 2,
+                                                        rotation=(0, 0),
+                                                        visible=(1, 1),
+                                                        colors=colors)
 
         self._ideal_x = None
         self._ideal_line = None
@@ -341,22 +342,21 @@ class Caret(EventDispatcher):
         """Select the word at the given window coordinate."""
         line = self._layout.get_line_from_point(x, y)
         p = self._layout.get_position_on_line(line, x)
-        match1 = self._previous_word_re.search(self._layout.document.text, 0, p + 1)
-        if not match1:
-            mark1 = 0
-        else:
-            mark1 = match1.start()
-        self.mark = mark1
+        word = self._get_word_bounds(self._layout.document.text, p)
+        if word is None:
+            return
 
-        match2 = self._next_word_re.search(self._layout.document.text, p)
-        if not match2:
-            mark2 = len(self._layout.document.text)
-        else:
-            mark2 = match2.start()
-
-        self._position = mark2
+        self.mark, self._position = word
         self._update(line=line)
         self._next_attributes.clear()
+
+    @classmethod
+    def _get_word_bounds(cls, text: str, position: int) -> tuple[int, int] | None:
+        """Return the word containing an insertion position, without trailing whitespace."""
+        for match in cls._word_re.finditer(text):
+            if match.start() <= position <= match.end():
+                return match.span()
+        return None
 
     def select_paragraph(self, x: int, y: int) -> None:
         """Select the paragraph at the given window coordinate."""

@@ -20,7 +20,13 @@ if TYPE_CHECKING:
 
 
 class Camera3DView(_CameraViewBase):
-    """A per-camera 3D view node."""
+    """A positional view scope belonging to a :class:`Camera3D`.
+
+    A view adds a local 3D offset to its camera and can define an independent
+    viewport or scissor. Child views can inherit the offsets of their parents.
+
+    .. versionadded:: 3.0
+    """
 
     __slots__ = ("_offset", "_world_offset")
 
@@ -77,7 +83,14 @@ class Camera3DView(_CameraViewBase):
 
 
 class Camera3D(BaseCamera[Camera3DView]):
-    """A scoped 3D camera with configurable movement and look vectors."""
+    """Manage a perspective projection and an oriented 3D view.
+
+    ``Camera3D`` combines position, pitch/yaw orientation, clipping distances,
+    field of view, coordinate conversion, and shader matrix storage. It can be
+    selected per batch or group for 3D scenes and rendering passes.
+
+    .. versionadded:: 3.0
+    """
 
     UP = Vec3(0.0, 1.0, 0.0)
 
@@ -105,42 +118,58 @@ class Camera3D(BaseCamera[Camera3DView]):
         walk_speed: float = 10.0,
         look_speed: float = 10.0,
         viewport: ViewportType | None = None,
+        register_handlers: bool = True,
         window_block: UniformBlock | None = None,
         copies_per_resource: int = 3,
         projection_uniform: str = "u_projection",
         view_uniform: str = "u_view",
     ) -> None:
-        """Initialize a 3D camera.
+        """Create a perspective 3D camera for a window.
+
+        The initial orientation looks from ``position`` toward ``target``. If
+        no target is provided, the camera looks along the negative Z axis.
+        Unless an explicit viewport is supplied, the root view follows the
+        full framebuffer and updates its aspect ratio automatically.
 
         Args:
             window:
-                Window that this camera controls.
+                Window whose graphics context and framebuffer dimensions are
+                used by this camera.
             position:
-                World-space camera position.
+                Initial world-space camera position. Defaults to the origin.
             target:
-                Optional look target used to initialize yaw/pitch.
+                Optional world-space point used to initialize pitch and yaw.
             near:
-                Near clip distance.
+                Positive distance to the near clipping plane.
             far:
-                Far clip distance.
+                Distance to the far clipping plane. It must be greater than
+                ``near``.
             field_of_view:
                 Vertical field of view in degrees.
             walk_speed:
-                Translation speed scalar.
+                World-space movement rate used by :meth:`apply_movement_input`.
             look_speed:
-                Look-speed scalar for mouse/controller rotation input.
+                Suggested rotation-rate scalar for mouse or controller input.
             viewport:
-                Optional fixed viewport override for the root view.
+                Optional fixed root viewport as ``(x, y, width, height)`` in
+                framebuffer coordinates. ``None`` tracks the full framebuffer.
+            register_handlers:
+                If ``True``, register for window resize and scale events.
+                Disable this for fixed-size offscreen cameras.
             window_block:
-                Optional explicit ``WindowBlock`` used for default UBO storage.
+                Optional shader ``WindowBlock`` used to create the camera's
+                uniform-buffer storage on modern graphics backends. By default,
+                the block is obtained from pyglet's default shader.
             copies_per_resource:
-                Number of buffered matrix copies for default UBO storage.
+                Number of ring-buffered matrix copies reserved for this camera
+                on uniform-buffer backends.
             projection_uniform:
-                Projection uniform name for default GL2 storage.
+                Projection-matrix uniform name used when uniform buffers are unavailable.
             view_uniform:
-                View uniform name for default GL2 storage.
+                View-matrix uniform name used when uniform buffers are unavailable.
         """
         view_storage = self._create_default_view_storage(
+            window,
             window_block=window_block,
             copies_per_resource=copies_per_resource,
             projection_uniform=projection_uniform,
@@ -150,6 +179,7 @@ class Camera3D(BaseCamera[Camera3DView]):
             window,
             view_storage,
             viewport=viewport,
+            register_handlers=register_handlers,
         )
         assert self.view_storage is not None
         self._position = position or Vec3()

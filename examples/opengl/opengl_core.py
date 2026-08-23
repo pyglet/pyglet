@@ -15,8 +15,8 @@ program = pyglet.graphics.get_default_shader()
 label = pyglet.text.Label("Scroll the mouse wheel", x=0, y=180, dpi=200, color=(255, 25, 255, 150), batch=batch)
 
 vertex_list = program.vertex_list(3, GeometryMode.TRIANGLES,
-                                  position=('f', (100, 300, 0,  200, 250, 0,  200, 350, 0)),
-                                  colors=('f', (1, 0, 0, 1,  0, 1, 0, 1,  0.3, 0.3, 1, 1)))
+                                  position=(100, 300, 0,  200, 250, 0,  200, 350, 0),
+                                  colors=(1, 0, 0, 1,  0, 1, 0, 1,  0.3, 0.3, 1, 1))
 
 
 def create_quad_vertex_list(x, y, z, width, height):
@@ -24,15 +24,15 @@ def create_quad_vertex_list(x, y, z, width, height):
 
 
 program.vertex_list_indexed(4, GeometryMode.TRIANGLES, [0, 1, 2, 0, 2, 3], batch, None,
-                            position=('f', create_quad_vertex_list(480, 270, -11, 50, 50)),
-                            colors=('f', (1, 0.5, 0.2, 1) * 4))
+                            position=create_quad_vertex_list(480, 270, -11, 50, 50),
+                            colors=(1, 0.5, 0.2, 1) * 4)
 
 program.vertex_list_indexed(4, GeometryMode.TRIANGLES, [0, 1, 2, 0, 2, 3], batch, None,
-                            position=('f', (400, 400, 0, 400+50, 400, 0, 400+50, 400+50, 0, 400, 400+50, 0)),
-                            colors=('f', (1, 0, 0, 1,
+                            position=(400, 400, 0, 400+50, 400, 0, 400+50, 400+50, 0, 400, 400+50, 0),
+                            colors=(1, 0, 0, 1,
                                           0, 1, 0, 1,
                                           0, 0, 1, 1,
-                                          1, 1, 1, 1)))
+                                          1, 1, 1, 1))
 
 
 img = pyglet.image.load("pyglet.png")

@@ -5,14 +5,14 @@ import os
 import weakref
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Protocol, get_type_hints, Sequence, Callable, NoReturn
+from typing import TYPE_CHECKING, Any, Callable, NoReturn, Protocol, Sequence, get_type_hints
 
-from pyglet.graphics import GraphicsIntegrationError, GraphicsBackendError
+from pyglet.enums import PixelFormat
+from pyglet.graphics import GraphicsBackendError, GraphicsIntegrationError
 from pyglet.util import debug_print
 
 if TYPE_CHECKING:
     from pyglet.config import SurfaceConfig
-    from pyglet.graphics.api.gl import ObjectSpace
     from pyglet.graphics.buffer import BufferRange
     from pyglet.window import Window
 
@@ -33,11 +33,6 @@ class BackendGlobalObject(ABC):  # Temp name for now.
     @property
     def have_context(self) -> bool:
         return self._have_context
-
-    @property
-    @abstractmethod
-    def object_space(self) -> ObjectSpace:
-        ...
 
     @abstractmethod
     def get_surface_context(
@@ -110,10 +105,6 @@ class NullBackend(BackendGlobalObject):  # noqa: D101
     def _raise_no_backend(self) -> NoReturn:
         raise UnavailableBackendError
 
-    @property
-    def object_space(self) -> ObjectSpace:
-        self._raise_no_backend()
-
     def get_surface_context(self, window: Window, config: SurfaceConfig,
                             shared: SurfaceContext | None = None) -> SurfaceContext:
         self._raise_no_backend()
@@ -123,6 +114,59 @@ class NullBackend(BackendGlobalObject):  # noqa: D101
 
     def set_viewport(self, window, x: int, y: int, width: int, height: int) -> None:
         self._raise_no_backend()
+
+
+@dataclass(frozen=True)
+class SurfaceFeatures:
+    """Optional graphics features available to a surface context."""
+    #: Enables GPU compute workloads through compute shaders.
+    compute_shaders: bool = False
+    #: Enables shader programs to access shader storage buffer objects.
+    shader_storage_buffers: bool = False
+    #: Enables sharing uniform data between shaders through uniform buffers.
+    uniform_buffers: bool = False
+    #: Enables GPU synchronization with fence and sync objects.
+    sync_objects: bool = False
+    #: Enables geometry-shader pipeline stages.
+    geometry_shaders: bool = False
+    #: Enables tessellation-control and tessellation-evaluation shader stages.
+    tessellation_shaders: bool = False
+    #: Enables indexed drawing with a per-draw base-vertex offset.
+    base_vertex: bool = False
+    #: Enables persistently mapped GPU buffer storage.
+    persistent_buffers: bool = False
+    #: Enables updating program uniforms without binding the program first.
+    separate_shader_objects: bool = False
+    #: Enables asynchronous pixel transfers through pixel buffer objects.
+    pixel_buffer_objects: bool = False
+    #: Enables immutable-format texture allocation through glTexStorage.
+    texture_storage: bool = False
+
+
+@dataclass(frozen=True)
+class PixelTransferFeatures:
+    """Pixel-transfer operations supported by a surface context."""
+
+    #: Accepts BGRA-ordered source pixels without CPU conversion.
+    bgra_upload: bool = False
+    #: Can return BGRA-ordered pixels from a read operation.
+    bgra_readback: bool = False
+    #: Supports row length and skip state for pixel uploads.
+    unpack_row_length: bool = False
+    #: Supports row length and skip state for pixel readback.
+    pack_row_length: bool = False
+    #: Reads texture storage directly without a framebuffer attachment.
+    direct_texture_readback: bool = False
+
+
+@dataclass(frozen=True)
+class PixelFormatPreferences:
+    """Backend-preferred formats for decoding and reading pixels."""
+
+    #: Preferred 32-bit output for decoders that can choose without slow Python conversion.
+    preferred_decode_format: PixelFormat = PixelFormat.RGBA8
+    #: Preferred component order for GPU pixel readback.
+    readback_format: PixelFormat = PixelFormat.RGBA8
 
 
 class SurfaceInfo(ABC):
@@ -139,6 +183,9 @@ class SurfaceInfo(ABC):
     minor_version: int
     api: str
     was_queried: bool
+    features: SurfaceFeatures
+    pixel_transfer: PixelTransferFeatures
+    pixel_format_preferences: PixelFormatPreferences
 
     # Common capability limits shared by backends these should be automatically queried by the API.
     MAX_ARRAY_TEXTURE_LAYERS: int
@@ -163,6 +210,9 @@ class SurfaceInfo(ABC):
         self.minor_version = 0
         self.api = "unknown"
         self.was_queried = False
+        self.features = SurfaceFeatures()
+        self.pixel_transfer = PixelTransferFeatures()
+        self.pixel_format_preferences = PixelFormatPreferences()
 
         self.MAX_ARRAY_TEXTURE_LAYERS = 0
         self.MAX_TEXTURE_SIZE = 0
@@ -225,6 +275,18 @@ class SurfaceInfo(ABC):
     def get_opengl_api(self) -> str:
         """Compatibility alias for existing OpenGL callers."""
         return self.api
+
+    @abstractmethod
+    def update_features(self) -> None:
+        """Populate backend-specific feature support after querying the device."""
+
+    def _apply_image_decode_policy(self) -> None:
+        """Publish backend preferences without requiring image to import graphics."""
+        from pyglet import image  # noqa: PLC0415
+
+        image.set_default_decode_policy(
+            image.ImageDecodePolicy(self.pixel_format_preferences.preferred_decode_format),
+        )
 
 
 @dataclass
@@ -332,6 +394,7 @@ class SurfaceContext(ABC):  # Temp name for now.
         Default value is black.
         """
         # Backends need to implement setting this value.
+
 
     @abstractmethod
     def attach(self, window: Window) -> None:
@@ -540,61 +603,3 @@ class GraphicsConfig:
     def user_set_attributes(self) -> set[str]:
         """Return a set of attribute names that were explicitly set by the user."""
         return self._user_set_attributes
-
-
-class GraphicsResource(Protocol):  # noqa: D101
-    def delete(self) -> None:
-        ...
-
-
-class ResourceManagement:
-    """A manager to handle the freeing of resources for an API.
-
-    In some graphical API's, the order in which you free resources can be very specific.
-    """
-    managers: list[GraphicsResource]
-    weak_resources: weakref.WeakSet[GraphicsResource]
-
-    def __init__(self) -> None:  # noqa: D107
-        self._func = None
-        self.managers = []
-        self.weak_resources = weakref.WeakSet()
-        atexit.register(self.on_exit_cleanup)
-
-    def set_pre_cleanup_func(self, func: Callable) -> None:
-        """Register a function to be called before cleanup.
-
-        Some API's may need to enforce a sync before cleanup.
-        """
-        self._func = func
-
-    def register_manager(self, resource: GraphicsResource) -> None:
-        """A manager handles multiple resources, these will be called in reverse order on cleanup."""
-        self.managers.append(resource)
-
-    def register_resource(self, resource: GraphicsResource) -> None:
-        """Registers a resource as a weak reference.
-
-        Some resources do not have a manager, but they do need to be freed before others. Keeping them permanently
-        may prevent them from being garbage collected prior to shutdown.
-        """
-        self.weak_resources.add(resource)
-
-    def on_exit_cleanup(self) -> None:
-        """Cleans up all graphical resources that have been registered on application exit."""
-        self.cleanup_all()
-
-    def cleanup_all(self) -> None:
-        """Cleans up all graphical resources that have been registered.
-
-        Weak resources registered are destroyed first.
-
-        Managers are called last, and in reverse order of registered.
-        """
-        if self._func:
-            self._func()
-
-        for resource in self.weak_resources:
-            resource.delete()
-        for resource in reversed(self.managers):
-            resource.delete()

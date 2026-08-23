@@ -246,12 +246,43 @@ class HapticEngine:
             self.engine = None
 
     def __del__(self):
-        self.delete()
+        try:
+            self.delete()
+        except Exception:
+            pass
 
 
 class AppleGamepad(Device):
 
+    weak_motor_engine: HapticEngine | None
+    strong_motor_engine: HapticEngine | None
+
     def __init__(self, manager, controller: _GCController) -> None:
+        # Tracking when the device is deleted. (Disconnected)
+        self._deleted = False
+
+        # Haptic motors.
+        self.weak_motor_engine = None
+        self.strong_motor_engine = None
+
+        # Callback blocks.
+        self._button_cb_block = None
+        self._axes_cb_block = None
+        self._dpad_cb_block = None
+
+        # These all can potentially store references to ObjC instances.
+        self._button_ptrs = {}
+        self._axes_ptrs = {}
+        self._dpad_ptrs = {}
+
+        self.battery = None
+        self.haptics = None
+        self.light = None
+        self.profile = None
+
+        self.buttons = {}
+        self.axes = {}
+        self.dpads = {}
 
         with AutoReleasePool():
             self.manager = weakref.proxy(manager)
@@ -266,9 +297,6 @@ class AppleGamepad(Device):
             self.battery = controller.battery()  # GCDeviceBattery
             self.haptics = controller.haptics()  # GCDeviceHaptics
             self.light = controller.light()  # GCDeviceLight
-
-            self.weak_motor_engine = None
-            self.strong_motor_engine = None
 
             if self.haptics:
                 # self.weak_motor_engine = self._get_motor_engine(GCHapticsLocalityDefault)
@@ -365,6 +393,58 @@ class AppleGamepad(Device):
                 "hat": AbsoluteAxis('hat', 0, 1),
             }
 
+    def _clear_value_changed_handlers(self) -> None:
+        """Clears the various control handlers.
+
+        It seems sometimes these addresses can be re-assigned internally by Apple to
+        another controller instance. Ensure we remove them.
+        """
+        for collection in (self.buttons, self.axes, self.dpads):
+            if not collection:
+                continue
+
+            for objc_input in collection.values():
+                if objc_input and objc_input.is_valid:
+                    objc_input.setValueChangedHandler_(None)
+
+    def delete(self) -> None:
+        if getattr(self, '_deleted', True):
+            return
+
+        self._deleted = True
+        self._clear_value_changed_handlers()
+
+        if self.weak_motor_engine:
+            self.weak_motor_engine.delete()
+            self.weak_motor_engine = None
+
+        if self.strong_motor_engine:
+            self.strong_motor_engine.delete()
+            self.strong_motor_engine = None
+
+        self._button_ptrs.clear()
+        self._axes_ptrs.clear()
+        self._dpad_ptrs.clear()
+
+        self._button_cb_block = None
+        self._axes_cb_block = None
+        self._dpad_cb_block = None
+
+        self.controller = None
+        self.battery = None
+        self.haptics = None
+        self.light = None
+        self.profile = None
+        self.buttons.clear()
+        self.axes.clear()
+        self.dpads.clear()
+
+    def __del__(self):
+        try:
+            self.delete()
+        except Exception:
+            pass
+
     def _axis_changed_callback(self, axes_obj, value):
         name = self._axes_ptrs[axes_obj]
         self.controls[name].value = value
@@ -416,8 +496,7 @@ class AppleGamepad(Device):
             # print("Error starting engine")
             return None
 
-        self.haptic_engine = HapticEngine(locality, engine)
-        return self.haptic_engine
+        return HapticEngine(locality, engine)
 
     def get_controls(self) -> list[Control]:
         return list(self.controls.values())
@@ -501,22 +580,30 @@ class _AppleControllerManager_Implementation(EventDispatcher):
     @_PygletAppleControllerManager.method('v@')
     def controllerConnected_(self, notification: NSNotification):
         device: GCController = notification.object()
+        device_ptr = device.ptr.value
 
         wrapper = AppleGamepad(self, device)
         controller = AppleController(wrapper, {"name": wrapper.device_name, "guid": "MFI_APPLE_CONTROLLER"})
 
-        self.controllers[device] = controller
+        # Shouldn't happen, but just to be safe...
+        if old_controller := self.controllers.get(device_ptr):
+            old_controller.device.delete()
+
+        self.controllers[device_ptr] = controller
 
         self.dispatcher.dispatch_event('on_connect', controller)
 
     @_PygletAppleControllerManager.method('v@')
     def controllerDisconnected_(self, notification: NSNotification):
         device: GCController = notification.object()
+        device_ptr = device.ptr.value
 
-        if device in self.controllers:
-            self.dispatcher.dispatch_event('on_disconnect', self.controllers[device])
+        if device_ptr in self.controllers:
+            controller = self.controllers[device_ptr]
+            self.dispatcher.dispatch_event('on_disconnect', controller)
 
-            del self.controllers[device]
+            del self.controllers[device_ptr]
+            controller.device.delete()
 
     def get_controllers(self):
         return list(self.controllers.values())

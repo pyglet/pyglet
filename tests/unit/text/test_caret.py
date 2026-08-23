@@ -44,7 +44,7 @@ def mock_layout():
     # Allow the shader program to create a mock vertex list on demand
     def _fake_vertex_list_method(count, mode, batch=None, group=None, colors=None, **kwargs):
         vertex_list = NonCallableMock(spec=IndexedVertexList)
-        vertex_list.colors = ListSlicesAsTuple(colors[1])
+        vertex_list.colors = ListSlicesAsTuple(colors)
         vertex_list.visible = (1, 1)
         return vertex_list
 
@@ -93,6 +93,11 @@ def test_color_setter_preserves_alpha_channel_when_setting_rgb_colors(
 ):
     rgb_or_rgba_caret.color = new_rgb_color
     assert rgb_or_rgba_caret.color[3] == original_rgb_or_rgba_expected_alpha
+
+
+def test_word_selection_bounds_exclude_trailing_space():
+    assert caret.Caret._get_word_bounds("This paragraph has text", 8) == (5, 14)
+    assert caret.Caret._get_word_bounds("This paragraph has text", 14) == (5, 14)
 
 
 def test_color_setter_changes_alpha_channel_when_setting_rgba_colors(

@@ -4,9 +4,9 @@ import threading
 import weakref
 from typing import Callable, TYPE_CHECKING
 
-from pyglet.enums import GraphicsAPI
 from pyglet.graphics import GraphicsAPIError, GraphicsIntegrationError
-from pyglet.graphics.api.gl import gl, gl_info, ObjectSpace
+from pyglet.graphics.api.gl import gl, gl_info
+from pyglet.graphics.api.gl.base import GLSharedObjectSpace
 from pyglet.graphics.api.base import SurfaceContext, NullContext
 from pyglet.graphics.api.gl.gl import (
     GL_ALREADY_SIGNALED,
@@ -25,13 +25,13 @@ from pyglet.graphics.api.gl.renderer import GLRenderer
 
 if TYPE_CHECKING:
     from pyglet.config import SurfaceConfig
+    from pyglet.graphics.texture import PixelReadback
     from pyglet.graphics.api.gl.shader import GLDataType, GLFunc
     from ctypes import Array
     from pyglet.window import Window
     from pyglet.graphics.api.gl.xlib.glx_info import GLXInfo
     from pyglet.graphics.api.gl.win32.wgl_info import WGLInfo
     from pyglet.graphics.api.gl.global_opengl import OpenGLBackend
-    from pyglet.graphics.api.gl.framebuffer import GLFramebuffer
 
 
 class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
@@ -39,12 +39,12 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
 
     Use ``DisplayConfig.create_context`` to create a context.
     """
-    gles_pixel_fbo: GLFramebuffer | None
+    _pixel_readback: PixelReadback | None
     #: gl_info.GLInfo instance, filled in on first set_current
     _info: gl_info.GLInfo
 
     #: A container which is shared between all contexts that share GL objects.
-    object_space: ObjectSpace
+    object_space: GLSharedObjectSpace
     config: SurfaceConfig
     context_share: OpenGLSurfaceContext | None
 
@@ -76,13 +76,21 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
         if context_share:
             self.object_space = context_share.object_space
         else:
-            self.object_space = ObjectSpace()
+            self.object_space = GLSharedObjectSpace()
 
         self.cached_programs = weakref.WeakValueDictionary()
         self.renderer = GLRenderer(self)
 
-        # GLES needs an FBO to read pixel data.
-        self.gles_pixel_fbo = None
+        self._pixel_readback = None
+
+    @property
+    def pixel_readback(self) -> PixelReadback:
+        """Return the lazily created texture pixel readback helper."""
+        if self._pixel_readback is None:
+            from pyglet.graphics.api.gl.texture import GLPixelReadback  # noqa: PLC0415
+
+            self._pixel_readback = GLPixelReadback(self)
+        return self._pixel_readback
 
     def resized(self, width, height):
         ...
@@ -100,6 +108,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
         return
 
     def set_clear_color(self, r: float, g: float, b: float, a: float) -> None:
+        self.clear_color = (r, g, b, a)
         self.glClearColor(r, g, b, a)
 
     def clear(self) -> None:
@@ -124,7 +133,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
         super().frame_begin()
 
     def create_frame_fence(self) -> object | None:
-        if not (self.info.have_version(3, 2) or self.info.have_extension("GL_ARB_sync")):
+        if not self.info.features.sync_objects:
             return None
         return self.glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0)
 
@@ -168,21 +177,8 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
                 self.platform_func = self.platform_func_class()
             self.uniform_getters, self.uniform_setters = self._get_uniform_func_tables()
             self._info.query(self)
-            if self.info.get_opengl_api() in (GraphicsAPI.OPENGL_ES_2, GraphicsAPI.OPENGL_ES_3):
-                from pyglet.graphics.api.gl.framebuffer import GLFramebuffer
-                self.gles_pixel_fbo = GLFramebuffer(context=self)
 
-        if self.object_space.doomed_textures:
-            self._delete_objects(self.object_space.doomed_textures, self.glDeleteTextures)
-        if self.object_space.doomed_buffers:
-            self._delete_objects(self.object_space.doomed_buffers, self.glDeleteBuffers)
-        if self.object_space.doomed_shader_programs:
-            self._delete_objects_one_by_one(self.object_space.doomed_shader_programs,
-                                            self.glDeleteProgram)
-        if self.object_space.doomed_shaders:
-            self._delete_objects_one_by_one(self.object_space.doomed_shaders, self.glDeleteShader)
-        if self.object_space.doomed_renderbuffers:
-            self._delete_objects(self.object_space.doomed_renderbuffers, self.glDeleteRenderbuffers)
+        self.object_space.flush(self)
 
         if self.doomed_vaos:
             self._delete_objects(self.doomed_vaos, self.glDeleteVertexArrays)
@@ -268,7 +264,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
         if self._safe_to_operate_on_object_space():
             self.glDeleteTextures(1, GLuint(texture_id))
         else:
-            self.object_space.doomed_textures.append(texture_id)
+            self.object_space.defer_texture(texture_id)
 
     def delete_buffer(self, buffer_id: int) -> None:
         """Safely delete a Buffer belonging to this context's object space.
@@ -279,7 +275,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
         if self._safe_to_operate_on_object_space():
             self.glDeleteBuffers(1, GLuint(buffer_id))
         else:
-            self.object_space.doomed_buffers.append(buffer_id)
+            self.object_space.defer_buffer(buffer_id)
 
     def delete_shader_program(self, program_id: int) -> None:
         """Safely delete a ShaderProgram belonging to this context's object space.
@@ -290,7 +286,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
         if self._safe_to_operate_on_object_space():
             self.glDeleteProgram(GLuint(program_id))
         else:
-            self.object_space.doomed_shader_programs.append(program_id)
+            self.object_space.defer_shader_program(program_id)
 
     def delete_shader(self, shader_id: int) -> None:
         """Safely delete a Shader belonging to this context's object space.
@@ -301,7 +297,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
         if self._safe_to_operate_on_object_space():
             self.glDeleteShader(GLuint(shader_id))
         else:
-            self.object_space.doomed_shaders.append(shader_id)
+            self.object_space.defer_shader(shader_id)
 
     def delete_renderbuffer(self, rbo_id: int) -> None:
         """Safely delete a Renderbuffer belonging to this context's object space.
@@ -312,7 +308,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
         if self._safe_to_operate_on_object_space():
             self.glDeleteRenderbuffers(1, GLuint(rbo_id))
         else:
-            self.object_space.doomed_renderbuffers.append(rbo_id)
+            self.object_space.defer_renderbuffer(rbo_id)
 
     def delete_vao(self, vao_id: int) -> None:
         """Safely delete a Vertex Array Object belonging to this context.
@@ -352,6 +348,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
     def _get_uniform_func_tables(self):
         _uniform_getters: dict[GLDataType, Callable] = {
             gl.GLint: self.glGetUniformiv,
+            gl.GLuint: self.glGetUniformuiv,
             gl.GLfloat: self.glGetUniformfv,
             gl.GLboolean: self.glGetUniformiv,
         }
@@ -367,6 +364,11 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
             gl.GL_INT_VEC2: (gl.GLint, self.glUniform2iv, self.glProgramUniform2iv, 2),
             gl.GL_INT_VEC3: (gl.GLint, self.glUniform3iv, self.glProgramUniform3iv, 3),
             gl.GL_INT_VEC4: (gl.GLint, self.glUniform4iv, self.glProgramUniform4iv, 4),
+
+            gl.GL_UNSIGNED_INT: (gl.GLuint, self.glUniform1uiv, self.glProgramUniform1uiv, 1),
+            gl.GL_UNSIGNED_INT_VEC2: (gl.GLuint, self.glUniform2uiv, self.glProgramUniform2uiv, 2),
+            gl.GL_UNSIGNED_INT_VEC3: (gl.GLuint, self.glUniform3uiv, self.glProgramUniform3uiv, 3),
+            gl.GL_UNSIGNED_INT_VEC4: (gl.GLuint, self.glUniform4uiv, self.glProgramUniform4uiv, 4),
 
             gl.GL_FLOAT: (gl.GLfloat, self.glUniform1fv, self.glProgramUniform1fv, 1),
             gl.GL_FLOAT_VEC2: (gl.GLfloat, self.glUniform2fv, self.glProgramUniform2fv, 2),

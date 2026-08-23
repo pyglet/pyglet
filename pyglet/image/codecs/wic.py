@@ -4,9 +4,9 @@ import os
 from ctypes import byref, memmove
 from typing import BinaryIO, Sequence
 
-import pyglet
-from pyglet.image import ImageData
-from pyglet.image.codecs import ImageDecodeException, ImageDecoder, ImageEncoder
+from pyglet.enums import PixelFormat
+from pyglet.image import ImageData, get_default_decode_policy
+from pyglet.image.codecs import ImageDecodeException, ImageDecoder, ImageEncodeException, ImageEncoder
 from pyglet.libs.win32.wincodec import (
     CLSID_WICImagingFactory1,
     CLSID_WICImagingFactory2,
@@ -44,6 +44,7 @@ from pyglet.libs.win32 import _ole32 as ole32
 from pyglet.libs.win32 import com
 from pyglet.libs.win32.constants import (
     CLSCTX_INPROC_SERVER,
+    GENERIC_READ,
     GENERIC_WRITE,
     GMEM_MOVEABLE,
     STREAM_SEEK_SET,
@@ -96,6 +97,9 @@ def _get_bitmap_frame(bitmap_decoder: IWICBitmapDecoder, frame_index: int) -> IW
     bitmap_decoder.GetFrame(frame_index, byref(bitmap))
     return bitmap
 
+_guid_null = com.GUID()
+
+
 def get_bitmap(width: int, height: int, target_fmt: com.GUID=GUID_WICPixelFormat32bppBGRA) -> IWICBitmap:
     """Create a WIC Bitmap.
 
@@ -109,14 +113,20 @@ def get_bitmap(width: int, height: int, target_fmt: com.GUID=GUID_WICPixelFormat
     return bitmap
 
 
-def extract_image_data(bitmap: IWICBitmap, target_fmt: com.GUID = GUID_WICPixelFormat32bppBGRA) -> ImageData:
+def extract_image_data(bitmap: IWICBitmap, target_fmt: com.GUID | None = None) -> ImageData:
     """Extra image data from IWICBitmap into ImageData, specifying target format.
 
     .. note:: ``bitmap`` is released before this function returns.
     """
-    if "es" in pyglet.options.backend:
-        target_fmt = GUID_WICPixelFormat32bppRGBA
+    if target_fmt is None:
+        pixel_format = get_default_decode_policy().preferred_format or PixelFormat.BGRA8
+        target_fmt = (
+            GUID_WICPixelFormat32bppRGBA if pixel_format == PixelFormat.RGBA8 else GUID_WICPixelFormat32bppBGRA
+        )
+    if target_fmt == GUID_WICPixelFormat32bppRGBA:
         fmt = "RGBA"
+    elif target_fmt == GUID_WICPixelFormat24bppBGR:
+        fmt = "BGR"
     else:
         fmt = "BGRA"
 
@@ -129,7 +139,7 @@ def extract_image_data(bitmap: IWICBitmap, target_fmt: com.GUID = GUID_WICPixelF
     height = int(height.value)
 
     # Get image pixel format
-    pf = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    pf = com.GUID()
     bitmap.GetPixelFormat(byref(pf))
 
     # If target format is not what we want (32bit BGRA) convert it.
@@ -140,11 +150,9 @@ def extract_image_data(bitmap: IWICBitmap, target_fmt: com.GUID = GUID_WICPixelF
         conversion_possible = BOOL()
         converter.CanConvert(pf, target_fmt, byref(conversion_possible))
 
-        # 99% of the time conversion will be possible to default.
-        # However, we check to be safe and fallback to 24 bit BGR if not possible.
+        # 99% of the time conversion will be possible to the preferred format.
+        # However, check and fall back to 24-bit BGR if it is not.
         if not conversion_possible:
-            if "es" in pyglet.options.backend:
-                    raise Exception("Could not convert image to proper format.")
             target_fmt = GUID_WICPixelFormat24bppBGR
             fmt = 'BGR'
 
@@ -207,19 +215,30 @@ class WICDecoder(ImageDecoder):
 
         return decoder, stream
 
+    def _load_bitmap_decoder_from_filename(self, filename: str) -> IWICBitmapDecoder:
+        """Create a decoder directly from a path, without copying it through Python memory."""
+        decoder = IWICBitmapDecoder()
+        self._factory.CreateDecoderFromFilename(
+            filename, _guid_null, GENERIC_READ, WICDecodeMetadataCacheOnDemand, byref(decoder),
+        )
+        return decoder
+
     def decode(self, filename: str, file: BinaryIO | None) -> ImageData:
         if not file:
-            with open(filename, 'rb') as f:
-                bitmap_decoder, stream = self._load_bitmap_decoder(filename, f)
+            bitmap_decoder = self._load_bitmap_decoder_from_filename(filename)
+            try:
                 bitmap = _get_bitmap_frame(bitmap_decoder, 0)
                 image_data = extract_image_data(bitmap)
+            finally:
+                bitmap_decoder.Release()
         else:
             bitmap_decoder, stream = self._load_bitmap_decoder(filename, file)
-            bitmap = _get_bitmap_frame(bitmap_decoder, 0)
-            image_data = extract_image_data(bitmap)
-
-        bitmap_decoder.Release()
-        stream.Release()
+            try:
+                bitmap = _get_bitmap_frame(bitmap_decoder, 0)
+                image_data = extract_image_data(bitmap)
+            finally:
+                bitmap_decoder.Release()
+                stream.Release()
         return image_data
 
     @staticmethod
@@ -278,76 +297,79 @@ class WICEncoder(ImageEncoder):  # noqa: D101
         # Choose container based on extension. Default to PNG.
         container = extension_to_container.get(ext, GUID_ContainerFormatPng)
 
-        _factory.CreateStream(byref(wicstream))
-        # https://docs.microsoft.com/en-us/windows/win32/wic/-wic-codec-native-pixel-formats#native-image-formats
-        if container == GUID_ContainerFormatJpeg:
-            # Expects BGR, no transparency available. Hard coded.
-            fmt = 'BGR'
-            default_format = GUID_WICPixelFormat24bppBGR
-        else:
-            # Windows encodes in BGRA.
-            if len(image.format) == 3:
+        istream = None
+        try:
+            _factory.CreateStream(byref(wicstream))
+            # https://docs.microsoft.com/en-us/windows/win32/wic/-wic-codec-native-pixel-formats#native-image-formats
+            if container == GUID_ContainerFormatJpeg:
+                # Expects BGR, no transparency available. Hard coded.
                 fmt = 'BGR'
                 default_format = GUID_WICPixelFormat24bppBGR
             else:
-                fmt = 'BGRA'
-                default_format = GUID_WICPixelFormat32bppBGRA
+                # Windows encodes in BGRA.
+                if len(image.format) == 3:
+                    fmt = 'BGR'
+                    default_format = GUID_WICPixelFormat24bppBGR
+                else:
+                    fmt = 'BGRA'
+                    default_format = GUID_WICPixelFormat32bppBGRA
 
-        pitch = image.width * len(fmt)
+            pitch = image.width * len(fmt)
+            image_data = image.get_bytes(fmt, -pitch)
+            size = pitch * image.height
 
-        image_data = image.get_bytes(fmt, -pitch)
-
-        size = pitch * image.height
-
-        if file:
-            istream = IStream()
-            ole32.CreateStreamOnHGlobal(None, True, byref(istream))
-            wicstream.InitializeFromIStream(istream)
-        else:
-            istream = None
-            wicstream.InitializeFromFilename(filename, GENERIC_WRITE)
-
-        _factory.CreateEncoder(container, None, byref(encoder))
-
-        encoder.Initialize(wicstream, WICBitmapEncoderNoCache)
-
-        encoder.CreateNewFrame(byref(frame), byref(property_bag))
-
-        frame.Initialize(property_bag)
-
-        frame.SetSize(image.width, image.height)
-
-        frame.SetPixelFormat(byref(default_format))
-
-        data = (BYTE * size).from_buffer(bytearray(image_data))
-
-        frame.WritePixels(image.height, pitch, size, data)
-
-        frame.Commit()
-
-        encoder.Commit()
-
-        if file and istream:
-            sts = STATSTG()
-            istream.Stat(byref(sts), 0)
-            stream_size = sts.cbSize
-            istream.Seek(0, STREAM_SEEK_SET, None)
-
-            buf = (BYTE * stream_size)()
-            written = ULONG()
-            istream.Read(byref(buf), stream_size, byref(written))
-
-            if written.value == stream_size:
-                file.write(buf)
+            if file:
+                istream = IStream()
+                ole32.CreateStreamOnHGlobal(None, True, byref(istream))
+                wicstream.InitializeFromIStream(istream)
             else:
-                print(f"Failed to read all of the data from stream attempting to save {file}")
+                wicstream.InitializeFromFilename(filename, GENERIC_WRITE)
 
-            istream.Release()
+            _factory.CreateEncoder(container, None, byref(encoder))
+            encoder.Initialize(wicstream, WICBitmapEncoderNoCache)
+            encoder.CreateNewFrame(byref(frame), byref(property_bag))
+            frame.Initialize(property_bag)
+            frame.SetSize(image.width, image.height)
 
-        encoder.Release()
-        frame.Release()
-        property_bag.Release()
-        wicstream.Release()
+            # SetPixelFormat is an in/out parameter. Never let WIC overwrite
+            # the module-level GUID constants shared by the decoder.
+            pixel_format = default_format.copy()
+            frame.SetPixelFormat(byref(pixel_format))
+
+            # WritePixels consumes the buffer synchronously. Keep the backing
+            # bytearray alive until it returns.
+            data_buffer = bytearray(image_data)
+            data = (BYTE * size).from_buffer(data_buffer)
+            frame.WritePixels(image.height, pitch, size, data)
+            frame.Commit()
+            encoder.Commit()
+
+            if file and istream:
+                sts = STATSTG()
+                istream.Stat(byref(sts), 0)
+                stream_size = sts.cbSize
+                istream.Seek(0, STREAM_SEEK_SET, None)
+
+                buf = (BYTE * stream_size)()
+                written = ULONG()
+                istream.Read(byref(buf), stream_size, byref(written))
+
+                if written.value == stream_size:
+                    file.write(buf)
+                else:
+                    msg = f"WIC could not read all encoded data for {file!r}"
+                    raise ImageEncodeException(msg)
+        finally:
+            if istream:
+                istream.Release()
+            if frame:
+                frame.Release()
+            if property_bag:
+                property_bag.Release()
+            if encoder:
+                encoder.Release()
+            if wicstream:
+                wicstream.Release()
 
 
 def get_encoders() -> Sequence[ImageEncoder]:  # noqa: D103

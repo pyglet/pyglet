@@ -242,6 +242,8 @@ NSDeviceResolution = c_void_p.in_dll(appkit, 'NSDeviceResolution')
 NSDragOperationGeneric = 4
 
 NSStatusWindowLevel = 25
+NSMainMenuWindowLevel = 24
+NSNormalWindowLevel = 0
 
 
 # /System/Library/Frameworks/AppKit.framework/Headers/NSEvent.h
@@ -472,6 +474,9 @@ quartz.CGGetActiveDisplayList.argtypes = [c_uint32, POINTER(CGDirectDisplayID), 
 quartz.CGDisplayBounds.restype = CGRect
 quartz.CGDisplayBounds.argtypes = [CGDirectDisplayID]
 
+quartz.CGDisplayUnitNumber.restype = c_uint32
+quartz.CGDisplayUnitNumber.argtypes = [CGDirectDisplayID]
+
 quartz.CGImageSourceCreateWithData.restype = c_void_p
 quartz.CGImageSourceCreateWithData.argtypes = [c_void_p, c_void_p]
 
@@ -577,8 +582,29 @@ quartz.CGContextSetShouldAntialias.argtypes = [c_void_p, c_bool]
 quartz.CGContextSetTextDrawingMode.restype = None
 quartz.CGContextSetTextDrawingMode.argtypes = [c_void_p, c_int32]
 
+quartz.CGContextSetLineWidth.restype = None
+quartz.CGContextSetLineWidth.argtypes = [c_void_p, CGFloat]
+
+quartz.CGContextSetLineJoin.restype = None
+quartz.CGContextSetLineJoin.argtypes = [c_void_p, c_int32]
+
+quartz.CGContextSetMiterLimit.restype = None
+quartz.CGContextSetMiterLimit.argtypes = [c_void_p, CGFloat]
+
+quartz.CGContextAddPath.restype = None
+quartz.CGContextAddPath.argtypes = [c_void_p, c_void_p]
+
+quartz.CGContextStrokePath.restype = None
+quartz.CGContextStrokePath.argtypes = [c_void_p]
+
+quartz.CGPathRelease.restype = None
+quartz.CGPathRelease.argtypes = [c_void_p]
+
 quartz.CGContextSetRGBFillColor.restype = None
 quartz.CGContextSetRGBFillColor.argtypes = [c_void_p, CGFloat, CGFloat, CGFloat, CGFloat]
+
+quartz.CGContextSetRGBStrokeColor.restype = None
+quartz.CGContextSetRGBStrokeColor.argtypes = [c_void_p, CGFloat, CGFloat, CGFloat, CGFloat]
 
 quartz.CGFontCopyTableTags.restype = c_void_p
 quartz.CGFontCopyTableTags.argtypes = [c_void_p]
@@ -636,6 +662,9 @@ ct.CTFontGetBoundingRectsForGlyphs.argtypes = [c_void_p, CTFontOrientation, POIN
 
 ct.CTFontGetAdvancesForGlyphs.restype = c_double
 ct.CTFontGetAdvancesForGlyphs.argtypes = [c_void_p, CTFontOrientation, POINTER(CGGlyph), POINTER(CGSize), CFIndex]
+
+ct.CTFontCreatePathForGlyph.restype = c_void_p
+ct.CTFontCreatePathForGlyph.argtypes = [c_void_p, CGGlyph, c_void_p]
 
 ct.CTFontGetAscent.restype = CGFloat
 ct.CTFontGetAscent.argtypes = [c_void_p]

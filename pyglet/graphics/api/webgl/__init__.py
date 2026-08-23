@@ -4,7 +4,7 @@ import sys
 import warnings
 from typing import TYPE_CHECKING, Sequence, cast
 
-import js
+import js  # noqa: F821
 
 import pyglet
 from pyglet.graphics.api.webgl.context import OpenGLSurfaceContext
@@ -24,19 +24,6 @@ if TYPE_CHECKING:
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 
-class ObjectSpace:
-    """A container to store shared objects that are to be removed."""
-
-    def __init__(self) -> None:
-        """Initialize the context object space."""
-        # Objects scheduled for deletion the next time this object space is active.
-        self.doomed_textures = []
-        self.doomed_buffers = []
-        self.doomed_shader_programs = []
-        self.doomed_shaders = []
-        self.doomed_renderbuffers = []
-
-
 class WebGLBackend(BackendGlobalObject):
     current_context: OpenGLSurfaceContext | NullContext
     _have_context: bool = False
@@ -51,11 +38,6 @@ class WebGLBackend(BackendGlobalObject):
         # "real" context's information to prevent any discrepencies.
         # self.gl_info = GLInfo()  # GL Info is a shared info space.
         super().__init__()
-
-    @property
-    def object_space(self) -> ObjectSpace:
-        assert self.current_context is not None, "Context has not been created."
-        return self.current_context.object_space
 
     def create_context(self, config: SurfaceConfig, shared: OpenGLSurfaceContext | None) -> OpenGLSurfaceContext:
         return OpenGLSurfaceContext(self, config._window, config, shared)

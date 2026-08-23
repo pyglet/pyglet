@@ -26,10 +26,11 @@ import pyglet
 from typing import TYPE_CHECKING
 
 from pyglet.customtypes import DataTypes
-from pyglet.enums import FramebufferTarget, FramebufferAttachment, ComponentFormat
+from pyglet.enums import ComponentFormat, FramebufferAttachment, FramebufferTarget
 from pyglet.graphics.api.gl import gl, GL_RGBA, GL_UNSIGNED_BYTE, GLuint
 from pyglet.image.base import ImageData
 from pyglet.graphics.api.gl.texture import _get_internal_format
+from pyglet.graphics.resource import FramebufferResource, RenderbufferResource
 
 if TYPE_CHECKING:
     from pyglet.graphics.api.gl import OpenGLSurfaceContext
@@ -62,6 +63,22 @@ _gl_attachment_map = {
     FramebufferAttachment.DEPTH:         gl.GL_DEPTH_ATTACHMENT,
     FramebufferAttachment.STENCIL:       gl.GL_STENCIL_ATTACHMENT,
     FramebufferAttachment.DEPTH_STENCIL: gl.GL_DEPTH_STENCIL_ATTACHMENT,
+}
+
+_clear_bit_map = {
+    **dict.fromkeys((
+        FramebufferAttachment.COLOR0, FramebufferAttachment.COLOR1,
+        FramebufferAttachment.COLOR2, FramebufferAttachment.COLOR3,
+        FramebufferAttachment.COLOR4, FramebufferAttachment.COLOR5,
+        FramebufferAttachment.COLOR6, FramebufferAttachment.COLOR7,
+        FramebufferAttachment.COLOR8, FramebufferAttachment.COLOR9,
+        FramebufferAttachment.COLOR10, FramebufferAttachment.COLOR11,
+        FramebufferAttachment.COLOR12, FramebufferAttachment.COLOR13,
+        FramebufferAttachment.COLOR14, FramebufferAttachment.COLOR15,
+    ), gl.GL_COLOR_BUFFER_BIT),
+    FramebufferAttachment.DEPTH: gl.GL_DEPTH_BUFFER_BIT,
+    FramebufferAttachment.STENCIL: gl.GL_STENCIL_BUFFER_BIT,
+    FramebufferAttachment.DEPTH_STENCIL: gl.GL_DEPTH_BUFFER_BIT | gl.GL_STENCIL_BUFFER_BIT,
 }
 
 
@@ -97,17 +114,13 @@ def get_screenshot() -> ImageData:
 
 
 
-def get_max_color_attachments() -> int:
-    """Return the maximum number of color attachments supported by the current context."""
-    return pyglet.graphics.api.core.current_context.info.MAX_COLOR_ATTACHMENTS
-
-
-class GLRenderbuffer:
+class GLRenderbuffer(RenderbufferResource):
     """OpenGL Renderbuffer Object."""
 
     def __init__(self, context: OpenGLSurfaceContext, width: int, height: int,
                  component_format: ComponentFormat, bit_size: int, data_type: DataTypes = "I", samples: int = 1) -> None:
         """Create a RenderBuffer instance."""
+        RenderbufferResource.__init__(self)
         self._context = context or pyglet.graphics.api.core.current_context
         self._id = GLuint()
         self._width = width
@@ -115,6 +128,7 @@ class GLRenderbuffer:
         self._internal_format = _get_internal_format(component_format, bit_size, data_type)
 
         self._context.glGenRenderbuffers(1, self._id)
+        self._handle = self._id.value
         self._context.glBindRenderbuffer(gl.GL_RENDERBUFFER, self._id)
 
         if samples > 1:
@@ -123,10 +137,6 @@ class GLRenderbuffer:
             self._context.glRenderbufferStorage(gl.GL_RENDERBUFFER, self._internal_format, width, height)
 
         self._context.glBindRenderbuffer(gl.GL_RENDERBUFFER, 0)
-
-    @property
-    def id(self) -> int:
-        return self._id.value
 
     @property
     def width(self) -> int:
@@ -145,17 +155,19 @@ class GLRenderbuffer:
     def delete(self) -> None:
         self._context.glDeleteRenderbuffers(1, self._id)
         self._id = None
+        self._handle = None
 
     def __del__(self) -> None:
         if self._id is not None:
             try:
                 self._context.delete_renderbuffer(self._id.value)
                 self._id = None
+                self._handle = None
             except (AttributeError, ImportError):
                 pass  # Interpreter is shutting down
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(id={self._id.value})"
+        return f"{self.__class__.__name__}(handle={self._handle})"
 
 
 _status_states = {
@@ -169,25 +181,23 @@ _status_states = {
     gl.GL_FRAMEBUFFER_COMPLETE: "Framebuffer is complete.",
 }
 
-class GLFramebuffer:
+class GLFramebuffer(FramebufferResource):
     """OpenGL Framebuffer Object.
 
     .. versionadded:: 2.0
     """
     def __init__(self, target: FramebufferTarget = FramebufferTarget.FRAMEBUFFER, context: OpenGLSurfaceContext | None = None) -> None:
+        FramebufferResource.__init__(self)
         self._context = context or pyglet.graphics.api.core.current_context
         self._id = GLuint()
         self._context.glGenFramebuffers(1, self._id)
-        self._attachment_types = 0
+        self._handle = self._id.value
+        self._clear_bits = 0
         self._width = 0
         self._height = 0
+        self._binding_stack: list[tuple[int, ...]] = []
         self.target = target
         self._gl_target = _gl_target_map[target]
-
-    @property
-    def id(self) -> int:
-        """The Framebuffer id."""
-        return self._id.value
 
     @property
     def width(self) -> int:
@@ -215,23 +225,62 @@ class GLFramebuffer:
         """
         self._context.glBindFramebuffer(self._gl_target, 0)
 
-    def clear(self) -> None:
-        """Clear the attachments."""
-        if self._attachment_types:
+    def __enter__(self) -> GLFramebuffer:  # noqa: PYI034
+        if self.target == FramebufferTarget.FRAMEBUFFER:
+            draw_binding = gl.GLint()
+            read_binding = gl.GLint()
+            self._context.glGetIntegerv(gl.GL_DRAW_FRAMEBUFFER_BINDING, draw_binding)
+            self._context.glGetIntegerv(gl.GL_READ_FRAMEBUFFER_BINDING, read_binding)
+            self._binding_stack.append((draw_binding.value, read_binding.value))
             self.bind()
-            self._context.glClear(self._attachment_types)
-            self.unbind()
+            return self
+
+        binding_enum = {
+            FramebufferTarget.FRAMEBUFFER: gl.GL_FRAMEBUFFER_BINDING,
+            FramebufferTarget.DRAW: gl.GL_DRAW_FRAMEBUFFER_BINDING,
+            FramebufferTarget.READ: gl.GL_READ_FRAMEBUFFER_BINDING,
+        }[self.target]
+        binding = gl.GLint()
+        self._context.glGetIntegerv(binding_enum, binding)
+        self._binding_stack.append((binding.value,))
+        self.bind()
+        return self
+
+    def __exit__(self, *_args: object) -> None:
+        bindings = self._binding_stack.pop()
+        if len(bindings) == 2:
+            self._context.glBindFramebuffer(gl.GL_DRAW_FRAMEBUFFER, bindings[0])
+            self._context.glBindFramebuffer(gl.GL_READ_FRAMEBUFFER, bindings[1])
+        else:
+            self._context.glBindFramebuffer(self._gl_target, bindings[0])
+
+    def clear(self, color: tuple[float, float, float, float] | None = None) -> None:
+        """Clear the attachments, optionally using a temporary clear color."""
+        if self._clear_bits:
+            previous_color = None
+            if color is not None:
+                previous_color = (gl.GLfloat * 4)()
+                self._context.glGetFloatv(gl.GL_COLOR_CLEAR_VALUE, previous_color)
+                self._context.glClearColor(*color)
+            try:
+                with self:
+                    self._context.glClear(self._clear_bits)
+            finally:
+                if previous_color is not None:
+                    self._context.glClearColor(*previous_color)
 
     def delete(self) -> None:
         """Explicitly delete the Framebuffer."""
         self._context.glDeleteFramebuffers(1, self._id)
         self._id = None
+        self._handle = None
 
     def __del__(self) -> None:
         if self._id is not None:
             try:
                 self._context.delete_framebuffer(self._id.value)
                 self._id = None
+                self._handle = None
             except (AttributeError, ImportError):
                 pass  # Interpreter is shutting down
 
@@ -266,8 +315,8 @@ class GLFramebuffer:
         """
         self.bind()
         gl_attachment = _gl_attachment_map[attachment]
-        self._context.glFramebufferTexture(self._gl_target, gl_attachment, texture.id, level)
-        self._attachment_types |= gl_attachment
+        self._context.glFramebufferTexture(self._gl_target, gl_attachment, texture.handle, level)
+        self._clear_bits |= _clear_bit_map[attachment]
         self._width = max(texture.width, self._width)
         self._height = max(texture.height, self._height)
         self.unbind()
@@ -289,8 +338,8 @@ class GLFramebuffer:
         """
         self.bind()
         gl_attachment = _gl_attachment_map[attachment]
-        self._context.glFramebufferTextureLayer(self._gl_target, gl_attachment, texture.id, level, layer)
-        self._attachment_types |= gl_attachment
+        self._context.glFramebufferTextureLayer(self._gl_target, gl_attachment, texture.handle, level, layer)
+        self._clear_bits |= _clear_bit_map[attachment]
         self._width = max(texture.width, self._width)
         self._height = max(texture.height, self._height)
         self.unbind()
@@ -308,8 +357,8 @@ class GLFramebuffer:
         """
         self.bind()
         gl_attachment = _gl_attachment_map[attachment]
-        self._context.glFramebufferRenderbuffer(self._gl_target, gl_attachment, gl.GL_RENDERBUFFER, renderbuffer.id)
-        self._attachment_types |= gl_attachment
+        self._context.glFramebufferRenderbuffer(self._gl_target, gl_attachment, gl.GL_RENDERBUFFER, renderbuffer.handle)
+        self._clear_bits |= _clear_bit_map[attachment]
         self._width = max(renderbuffer.width, self._width)
         self._height = max(renderbuffer.height, self._height)
         self.unbind()

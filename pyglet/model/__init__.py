@@ -79,19 +79,23 @@ def load(filename: str, file: BinaryIO | TextIO | None = None, decoder: ModelDec
 
 
 def get_default_shader() -> ShaderProgram:
-    return pyglet.graphics.api.get_cached_shader(
+    program = pyglet.graphics.api.get_cached_shader(
         "default_model_material",
         (MaterialGroup.default_vert_src, 'vertex'),
         (MaterialGroup.default_frag_src, 'fragment'),
     )
+    program.set_instance_attributes(TRANSLATION=1, ROTATION=1, SCALE=1)
+    return program
 
 
 def get_default_textured_shader() -> ShaderProgram:
-    return pyglet.graphics.api.get_cached_shader(
+    program = pyglet.graphics.api.get_cached_shader(
         "default_model_textured_material",
         (TexturedMaterialGroup.default_vert_src, 'vertex'),
         (TexturedMaterialGroup.default_frag_src, 'fragment'),
     )
+    program.set_instance_attributes(TRANSLATION=1, ROTATION=1, SCALE=1)
+    return program
 
 
 class Model:
@@ -466,13 +470,12 @@ class Cube(Model):
                                                            mode=GeometryMode.TRIANGLES,
                                                            indices=indices,
                                                            batch=self._batch, group=self._group,
-                                                           instance_attributes={'TRANSLATION': 1, 'ROTATION': 1, 'SCALE': 1},
-                                                           POSITION=('f', vertices),
-                                                           NORMAL=('f', normals),
-                                                           COLOR_0=('f', self._color * (len(vertices) // 3)),
-                                                           TRANSLATION=('f', (0.0, 0.0, 0.0)),
-                                                           ROTATION=('f', (1.0, 0.0, 0.0, 0.0)),
-                                                           SCALE=('f', (1.0, 1.0, 1.0)))
+                                                           POSITION=vertices,
+                                                           NORMAL=normals,
+                                                           COLOR_0=self._color * (len(vertices) // 3),
+                                                           TRANSLATION=(0.0, 0.0, 0.0),
+                                                           ROTATION=(1.0, 0.0, 0.0, 0.0),
+                                                           SCALE=(1.0, 1.0, 1.0))
 
 
 class Sphere(Model):
@@ -528,14 +531,13 @@ class Sphere(Model):
         return self._program.vertex_list_instanced_indexed(len(vertices) // 3,
                                                            mode=GeometryMode.TRIANGLES,
                                                            indices=indices,
-                                                           instance_attributes={'TRANSLATION': 1, 'ROTATION': 1, 'SCALE': 1},
                                                            batch=self._batch, group=self._group,
-                                                           POSITION=('f', vertices),
-                                                           NORMAL=('f', normals),
-                                                           COLOR_0=('f', self._color * (len(vertices) // 3)),
-                                                           TRANSLATION=('f', (0, 0, 0)),
-                                                           ROTATION=('f', (1.0, 0.0, 0.0, 0.0)),
-                                                           SCALE=('f', (1.0, 1.0, 1.0)))
+                                                           POSITION=vertices,
+                                                           NORMAL=normals,
+                                                           COLOR_0=self._color * (len(vertices) // 3),
+                                                           TRANSLATION=(0, 0, 0),
+                                                           ROTATION=(1.0, 0.0, 0.0, 0.0),
+                                                           SCALE=(1.0, 1.0, 1.0))
 
 
 class Capsule(Model):
@@ -651,15 +653,14 @@ class Capsule(Model):
         return self._program.vertex_list_instanced_indexed(len(vertices) // 3,
                                                            mode=GeometryMode.TRIANGLES,
                                                            indices=indices,
-                                                           instance_attributes={'TRANSLATION': 1, 'ROTATION': 1, 'SCALE': 1},
                                                            batch=self._batch,
                                                            group=self._group,
-                                                           POSITION=('f', vertices),
-                                                           NORMAL=('f', normals),
-                                                           COLOR_0=('f', self._color * (len(vertices) // 3)),
-                                                           TRANSLATION=('f', (0, 0, 0)),
-                                                           ROTATION=('f', (1.0, 0.0, 0.0, 0.0)),
-                                                           SCALE=('f', (1.0, 1.0, 1.0)))
+                                                           POSITION=vertices,
+                                                           NORMAL=normals,
+                                                           COLOR_0=self._color * (len(vertices) // 3),
+                                                           TRANSLATION=(0, 0, 0),
+                                                           ROTATION=(1.0, 0.0, 0.0, 0.0),
+                                                           SCALE=(1.0, 1.0, 1.0))
 
 
 _add_default_codecs()

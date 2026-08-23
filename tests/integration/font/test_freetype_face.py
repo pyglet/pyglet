@@ -1,15 +1,17 @@
 """Tests for loading and accessing FreeType font faces."""
 import pytest
+import pyglet
 from pyglet.enums import Weight, Style, Stretch
 
 from tests.annotations import Platform, require_platform
 
 try:
-    from pyglet.font.freetype import FreeTypeFace, FreeTypeMemoryFace
+    from pyglet.font.freetype import FreeTypeFace, FreeTypeMemoryFace, MemoryFaceStore
     from pyglet.font.fontconfig import get_fontconfig
 except ImportError:
     FreeTypeFace = None
     FreeTypeMemoryFace = None
+    MemoryFaceStore = None
     get_fontconfig = None
 
 
@@ -71,6 +73,27 @@ def test_memory_face(test_data, font_file_name, font_name, weight, style):
     assert font.ft_face is not None
 
     del font
+
+
+@require_platform(Platform.LINUX)
+def test_memory_face_full_name_alias(test_data):
+    """A custom face can be selected by its OpenType full name."""
+    with open(test_data.get_file('fonts', 'action_man_bold.ttf'), 'rb') as font_file:
+        face = FreeTypeMemoryFace(font_file.read(), 0)
+
+    store = MemoryFaceStore()
+    store.add(face)
+
+    assert face.full_name == 'Action Man Bold'
+    assert not store.contains('ACTION MAN BOLD')
+
+    original_value = pyglet.options['font_name_compatibility']
+    pyglet.options['font_name_compatibility'] = True
+    try:
+        assert store.contains('ACTION MAN BOLD')
+        assert store.get('Action Man Bold', Weight.NORMAL, Style.NORMAL, Stretch.NORMAL) is face
+    finally:
+        pyglet.options['font_name_compatibility'] = original_value
 
 
 @require_platform(Platform.LINUX)
