@@ -737,6 +737,7 @@ class _GlyphBox(_AbstractBox):
             return
 
         if geometry.background.vertices:
+            bg_layer = layout.get_depth_offset(_BACKGROUND_DEPTH_LAYER)
             bg_count = len(geometry.background.vertices) // 3
             # Needs this split for text highlighting in incremental layer.
             background_indices = [
@@ -752,7 +753,7 @@ class _GlyphBox(_AbstractBox):
                 layout.batch,
                 layout.background_decoration_group,
                 position=geometry.background.vertices,
-                translation=(*translation, layout.get_depth_offset(_BACKGROUND_DEPTH_LAYER)) * bg_count,
+                translation=(*translation, bg_layer) * bg_count,
                 view_translation=(0, 0, 0) * bg_count,
                 colors=geometry.background.colors,
                 rotation=(rotation,) * bg_count,
@@ -761,6 +762,7 @@ class _GlyphBox(_AbstractBox):
             )
             self._add_vertex_list(background_list, context)
 
+        fg_layer = layout.get_depth_offset(_FOREGROUND_DECORATION_DEPTH_LAYER)
         if geometry.underline.vertices:
             ul_count = len(geometry.underline.vertices) // 3
             decoration_program = layout.decoration_shader
@@ -770,7 +772,7 @@ class _GlyphBox(_AbstractBox):
                 layout.batch,
                 layout.foreground_decoration_group,
                 position=geometry.underline.vertices,
-                translation=(*translation, layout.get_depth_offset(_FOREGROUND_DECORATION_DEPTH_LAYER)) * ul_count,
+                translation=(*translation, fg_layer) * ul_count,
                 view_translation=(0, 0, 0) * ul_count,
                 colors=geometry.underline.colors,
                 rotation=(rotation,) * ul_count,
@@ -788,7 +790,7 @@ class _GlyphBox(_AbstractBox):
                 layout.batch,
                 layout.foreground_decoration_group,
                 position=geometry.strikethrough.vertices,
-                translation=(*translation, layout.get_depth_offset(_FOREGROUND_DECORATION_DEPTH_LAYER)) * st_count,
+                translation=(*translation, fg_layer) * st_count,
                 view_translation=(0, 0, 0) * st_count,
                 colors=geometry.strikethrough.colors,
                 rotation=(rotation,) * st_count,

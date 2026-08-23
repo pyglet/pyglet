@@ -246,6 +246,7 @@ class DocumentLabel(layout.TextLayout):
 
         .. versionchanged:: 3.0
             Added the *shaping* parameter.
+            Added the *depth_sorting* parameter.
         """
         super().__init__(document, x, y, z, width, height, anchor_x, anchor_y, rotation,
                          multiline, dpi, batch, group, program, decoration_shader, effect_shader,
@@ -512,6 +513,7 @@ class Label(DocumentLabel):
 
         .. versionchanged:: 3.0
             Added the *shaping* parameter.
+            Added the *depth_sorting* parameter.
         """
         doc = decode_text(text)
         if isinstance(color, LinearGradient):
@@ -625,6 +627,7 @@ class HTMLLabel(DocumentLabel):
 
         .. versionchanged:: 3.0
             Added the *shaping* parameter.
+            Added the *depth_sorting* parameter.
         """
         self._text = text
         self._location = location

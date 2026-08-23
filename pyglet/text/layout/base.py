@@ -227,6 +227,9 @@ class TextLayout(_FlowLayoutBase):
     #: Clip-space depth distance between text layers when ``depth_sorting`` is enabled.
     _depth_layer_offset: ClassVar[float] = 1e-5
 
+    #: Depth comparison used when ``depth_sorting`` is enabled.
+    depth_test_compare_op: ClassVar[CompareOp] = CompareOp.LESS
+
     def __init__(
         self,
         document: AbstractDocument,
@@ -307,12 +310,11 @@ class TextLayout(_FlowLayoutBase):
                 If True, enable depth testing and preserve the text layer order
                 using small clip-space depth offsets. This keeps backgrounds,
                 shadows, strokes, glyphs, and decorations reliably ordered when
-                multiple labels overlap. Custom shaders must provide a
-                ``vec4 translation`` vertex attribute and apply its ``w`` component to
-                ``gl_Position.z`` after projection.
+                multiple labels overlap.
 
         .. versionchanged:: 3.0
             Added the *shaping* parameter.
+            Added the *depth_sorting* parameter.
         """
         self._x = x
         self._y = y
@@ -381,7 +383,7 @@ class TextLayout(_FlowLayoutBase):
 
     def _set_depth_test(self, group: Group) -> None:
         if self._depth_sorting:
-            group.set_depth_test(CompareOp.LESS)
+            group.set_depth_test(self.depth_test_compare_op)
 
     def get_depth_offset(self, layer: int) -> float:
         """Return the clip-space depth offset for a text rendering layer."""
