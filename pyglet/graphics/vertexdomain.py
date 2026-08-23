@@ -205,6 +205,24 @@ class InstanceVertexList(VertexList):
         super().delete()
         self.domain._instance_map.pop(key, None)
 
+    def migrate(self, domain: InstancedVertexDomain, group: Group) -> None:
+        """Move the geometry and its instance data to another domain."""
+        old_domain = self.domain
+        old_key = (self.start, self.count)
+        old_bucket = self.instance_bucket
+
+        super().migrate(domain, group)
+
+        new_bucket = domain.instance_domain.get_arrays_bucket(
+            mode=0,
+            first_vertex=self.start,
+            vertex_count=self.count,
+        )
+        old_domain._instance_map.pop(old_key, None)
+        old_domain.instance_domain.move_all(old_bucket, new_bucket)
+        self.instance_bucket = new_bucket
+        domain._instance_map[(self.start, self.count)] = new_bucket
+
     def create_instance(self, **attributes: Any) -> VertexInstance:
         return self.instance_bucket.create_instance(**attributes)
 
@@ -405,7 +423,8 @@ class _InstancedIndexSupport:
     base_vertex: int
 
     def _migrate_instance_bucket(self, old_domain: InstancedIndexedVertexDomain,
-                                 new_domain: InstancedIndexedVertexDomain) -> None:
+                                 new_domain: InstancedIndexedVertexDomain,
+                                 old_key: tuple[int, int]) -> None:
         base_vertex = self.start if self.supports_base_vertex else 0
         self.base_vertex = base_vertex
         new_bucket = new_domain.instance_domain.get_elements_bucket(
@@ -417,20 +436,24 @@ class _InstancedIndexSupport:
         )
         old_domain.instance_domain.move_all(self.instance_bucket, new_bucket)
         self.instance_bucket = new_bucket
+        old_domain._instance_map.pop(old_key, None)
+        new_domain._instance_map[(self.index_start, self.index_count)] = new_bucket
 
 
 class _InstancedLocalIndexSupport(_LocalIndexSupport, _InstancedIndexSupport):
     def migrate(self, domain: InstancedIndexedVertexDomain, group: Group) -> None:
         old_domain = self.domain
+        old_key = (self.index_start, self.index_count)
         super().migrate(domain, group)
-        self._migrate_instance_bucket(old_domain, domain)
+        self._migrate_instance_bucket(old_domain, domain, old_key)
 
 
 class _InstancedRunningIndexSupport(_RunningIndexSupport, _InstancedIndexSupport):
     def migrate(self, domain: InstancedIndexedVertexDomain, group: Group) -> None:
         old_domain = self.domain
+        old_key = (self.index_start, self.index_count)
         super().migrate(domain, group)
-        self._migrate_instance_bucket(old_domain, domain)
+        self._migrate_instance_bucket(old_domain, domain, old_key)
 
 
 class IndexedVertexList(VertexList):
