@@ -182,7 +182,7 @@ def get_default_shader():
         (geometry_source, 'geometry'),
         (fragment_source, 'fragment'),
     )
-    return program.create_vertex_layout(color_start="Bn", color_end="Bn")
+    return program.get_attribute_view(color_start="Bn", color_end="Bn")
 
 
 class EmitterGroup(graphics.Group):

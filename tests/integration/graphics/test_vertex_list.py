@@ -46,7 +46,7 @@ class VertexListTest(unittest.TestCase):
 
     def test_interned_vertex_layout_creates_vertex_list(self):
         program = pyglet.graphics.api.get_default_shader()
-        layout = program.create_vertex_layout(colors="Bn")
+        layout = program.get_attribute_view(colors="Bn")
 
         vertex_list = layout.vertex_list(
             3,
@@ -55,7 +55,7 @@ class VertexListTest(unittest.TestCase):
             colors=(255, 128, 0, 255) * 3,
         )
 
-        assert program.create_vertex_layout(colors="Bn") is layout
+        assert program.get_attribute_view(colors="Bn") is layout
         assert tuple(vertex_list.colors[:]) == (255, 128, 0, 255) * 3
 
     def test_vertex_list_property_set(self):

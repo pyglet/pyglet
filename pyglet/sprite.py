@@ -200,7 +200,8 @@ class Sprite(event.EventDispatcher):
                 coordinates are restricted to integer values.
             program:
                 A specific shader program to initialize the sprite with. By default, a pre-made shader will be chosen
-                based on the texture type passed.
+                based on the texture type passed. Sprite colors are uploaded as four unsigned bytes; custom programs
+                must use ``program.get_attribute_view(colors="Bn")`` so the values are normalized for the shader.
 
         .. versionadded:: 2.0.16
            The *program* parameter.

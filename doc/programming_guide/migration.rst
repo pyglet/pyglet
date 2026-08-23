@@ -89,11 +89,20 @@ vertex lists instead. For example, replace::
 
 with::
 
-    byte_colors = program.create_vertex_layout(colors='Bn')
+    byte_colors = program.get_attribute_view(colors='Bn')
     byte_colors.vertex_list(3, GeometryMode.TRIANGLES, colors=colors)
 
 This is especially useful for normalized color attributes: the ``"Bn"`` format
 stores colors as unsigned bytes and normalizes them for a ``vec4`` shader input.
+The built-in Sprite and Label classes use this normalized-byte color layout by
+default. If a custom shader is supplied to a Sprite, Label, or related helper,
+request the matching view explicitly::
+
+    shader = shader.get_attribute_view(colors="Bn")
+    sprite = pyglet.sprite.Sprite(image, program=shader)
+
+Otherwise the uploaded ``0``--``255`` color values may be consumed as
+unnormalized floats and clamp to ``1.0``, producing solid white output.
 
 Instance attribute divisors are also configured once on the program. Replace::
 
@@ -107,13 +116,13 @@ with::
     program.vertex_list_instanced(3, GeometryMode.TRIANGLES,
                                   translation=translations)
 
-Use ``program.create_vertex_layout(...)`` when one linked shader program needs
+Use ``program.get_attribute_view(...)`` when one linked shader program needs
 multiple vertex formats. It returns an interned
 :class:`~pyglet.graphics.shader.ShaderProgramView`, which can be used anywhere
 a ShaderProgram is accepted. Equivalent configurations return the same view::
 
-    byte_colors = program.create_vertex_layout(colors='Bn')
-    float_colors = program.create_vertex_layout(colors='f')
+    byte_colors = program.get_attribute_view(colors='Bn')
+    float_colors = program.get_attribute_view(colors='f')
 
 To keep a different divisor configuration alongside the program's default,
 configure it on a view::

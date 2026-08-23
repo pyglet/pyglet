@@ -303,7 +303,7 @@ on the property by passing a list or tuple of the correct length. For example::
 
 The default data format is single precision floats. To use another storage format,
 create a :class:`~pyglet.graphics.shader.ShaderProgramView` with
-:py:meth:`~pyglet.graphics.shader.ShaderProgram.create_vertex_layout`. A view
+:py:meth:`~pyglet.graphics.shader.ShaderProgram.get_attribute_view`. A view
 uses the same linked shader program and uniforms as its owner, but has its own
 cached vertex formats and vertex domains.
 The following formats are available:
@@ -343,7 +343,7 @@ The following formats are available:
 For example, if you would like to pass the `position` data as a signed int, you
 can create a configured program view before creating vertex lists::
 
-    int_positions = program.create_vertex_layout(position='i')
+    int_positions = program.get_attribute_view(position='i')
     vlist = int_positions.vertex_list(3, pyglet.enums.GeometryMode.TRIANGLES)
 
 By appending ``"n"`` to the format string, you can also specify that the passed
@@ -355,11 +355,27 @@ bytes are divided by 255 to get the normalised value.
 A common case is to use normalized unsigned bytes for the color data. A program
 can have multiple format views at once::
 
-    byte_colors = program.create_vertex_layout(colors='Bn')
-    float_colors = program.create_vertex_layout(colors='f')
+    byte_colors = program.get_attribute_view(colors='Bn')
+    float_colors = program.get_attribute_view(colors='f')
 
     # Repeated requests for the same configuration return the same view.
-    assert program.create_vertex_layout(colors='Bn') is byte_colors
+    assert program.get_attribute_view(colors='Bn') is byte_colors
+
+Pyglet's built-in :class:`~pyglet.sprite.Sprite`, :class:`~pyglet.text.Label`,
+and related rendering helpers upload their ``colors`` data as four unsigned
+bytes in the range ``0``--``255``. Their default shaders therefore use a
+normalized-byte view (``get_attribute_view(colors='Bn')``), converting those
+values to the ``0``--``1`` range expected by a GLSL ``vec4``. If you provide a
+custom shader program to one of these classes, create the same view before
+passing it in::
+
+    shader = pyglet.graphics.ShaderProgram(vertex_shader, fragment_shader)
+    shader = shader.get_attribute_view(colors='Bn')
+    sprite = pyglet.sprite.Sprite(image, program=shader)
+
+Without the ``'Bn'`` view, the integer color values can be interpreted as
+unnormalized floats. Values such as ``255`` are then clamped to ``1.0``, which
+can make sprites, labels, and other colored geometry appear solid white.
 
 Views expose the same rendering and vertex-list API as shader programs, so each
 can be used where a ShaderProgram is accepted::
@@ -387,7 +403,7 @@ pass initial arrays of data on creation. Attribute formats are configured on a
 ShaderProgram view, while vertex-list keyword arguments contain only data. To set the
 position and normalized-byte color data on creation::
 
-    byte_colors = program.create_vertex_layout(colors='Bn')
+    byte_colors = program.get_attribute_view(colors='Bn')
     vlist = byte_colors.vertex_list(3, pyglet.enums.GeometryMode.TRIANGLES,
                                 position=(200, 400, 300, 350, 300, 450),
                                 colors=(255, 0, 0, 255,  0, 255, 0, 255,  75, 75, 255, 255))
@@ -477,7 +493,7 @@ Example (indexed instancing)::
 If a different divisor configuration must coexist with the program's default,
 configure it on a view instead::
 
-    instanced_colors = program.create_vertex_layout(colors='Bn').set_instance_attributes(colors=1)
+    instanced_colors = program.get_attribute_view(colors='Bn').set_instance_attributes(colors=1)
 
 
 If you lose track of your instances or wish to get them by index, you can do so via the helper method on the mesh

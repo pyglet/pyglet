@@ -99,6 +99,7 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
     _instanced_domain_attributes: DomainAttributes | None
     _instance_attributes: dict[str, int]
     _vertex_layouts: dict[tuple[Any, ...], ShaderProgramView]
+    _format_layouts: dict[frozenset[tuple[str, str]], ShaderProgramView]
 
     def __init__(self, *shaders: Shader) -> None:
         GraphicsResource.__init__(self)
@@ -110,6 +111,7 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
         self._instanced_domain_attributes = None
         self._instance_attributes = {}
         self._vertex_layouts = {}
+        self._format_layouts = {}
 
         # Uniform description
         self._uniforms = {}
@@ -131,6 +133,9 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
 
         On some backends like OpenGL, this is unnecessary unless you want to redefine the buffers.
         """
+        if self._vertex_layouts:
+            # Layouts may share the base mapping when a format request was a no-op.
+            self._attributes = self._attributes.copy()
         for attrib in attributes:
             self._attributes[attrib.fmt.name] = attrib
         self._update_attribute_key()
@@ -142,8 +147,12 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
         )
         self._attribute_key = str(self._attribute_keys)
         self._domain_attributes = self.derive_domain_attributes(self._attributes, self._attribute_key)
+        self._vertex_layouts.clear()
+        self._format_layouts.clear()
         self._instanced_domain_attributes = (
-            self._derive_instanced_domain_attributes(self._attributes, self._instance_attributes)
+            self._derive_instanced_domain_attributes(
+                self._attributes, self._instance_attributes, self._attribute_keys,
+            )
             if self._instance_attributes else None
         )
 
@@ -174,14 +183,23 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
         )
         return self._instanced_domain_attributes
 
+    @property
+    def _vertex_layout_program(self) -> _AbstractShaderProgram:
+        return self
+
     def _derive_instanced_domain_attributes(self, attributes: dict[str, Attribute],
-                                             instances: dict[str, int]) -> DomainAttributes:
+                                             instances: dict[str, int],
+                                             attribute_keys: tuple[tuple[Any, ...], ...] | None = None,
+                                             ) -> DomainAttributes:
         adjusted = attributes.copy()
-        for name, divisor in sorted(instances.items()):
+        for name, divisor in instances.items():
             attribute = copy(attributes[name])
             attribute.set_divisor(divisor)
             adjusted[name] = attribute
-        return self.derive_domain_attributes(adjusted)
+        if attribute_keys is None:
+            return self.derive_domain_attributes(adjusted)
+        adjusted_keys = tuple(adjusted[key[0]].key for key in attribute_keys)
+        return self.derive_domain_attributes(adjusted, str(adjusted_keys))
 
     def set_instance_attributes(self, **attributes: int) -> _AbstractShaderProgram:
         """Configure the attributes and divisors used by instanced vertex lists."""
@@ -194,32 +212,56 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
 
         if attributes != self._instance_attributes:
             self._instance_attributes = attributes.copy()
+            self._format_layouts.clear()
             self._instanced_domain_attributes = (
-                self._derive_instanced_domain_attributes(self._attributes, attributes) if attributes else None
+                self._derive_instanced_domain_attributes(self._attributes, attributes, self._attribute_keys)
+                if attributes else None
             )
         return self
 
-    def create_vertex_layout(self, **formats: str) -> ShaderProgramView:
-        """Return the interned shader-program view for the requested vertex formats."""
-        attributes = self._copy_attributes_with_formats(self._attributes, formats)
-        return self._get_vertex_layout(attributes, self._instance_attributes)
+    def get_attribute_view(self, **formats: str) -> ShaderProgramView:
+        """Return the interned shader-program view for the requested vertex formats.
+
+        Pyglet's Sprite and Label helpers provide colors as four unsigned bytes.
+        A custom shader used with those helpers should therefore use
+        ``program.get_attribute_view(colors="Bn")`` so the values are normalized
+        before reaching a GLSL ``vec4`` color input.
+        """
+        try:
+            request_key = frozenset(formats.items())
+            return self._format_layouts[request_key]
+        except TypeError:
+            request_key = None
+        except KeyError:
+            pass
+
+        program = self._vertex_layout_program
+        attributes = program._copy_attributes_with_formats(self._attributes, formats)  # noqa: SLF001
+        attribute_keys = tuple(attributes[key[0]].key for key in self._attribute_keys)
+        layout = program._get_vertex_layout(attributes, self._instance_attributes, attribute_keys)  # noqa: SLF001
+        if request_key is not None:
+            self._format_layouts[request_key] = layout
+        return layout
 
     def _get_vertex_layout(self, attributes: dict[str, Attribute],
-                           instances: dict[str, int]) -> ShaderProgramView:
-        attribute_key = tuple(
-            attribute.key for attribute in sorted(attributes.values(), key=lambda attribute: attribute.location)
-        )
-        key = attribute_key, tuple(sorted(instances.items()))
+                           instances: dict[str, int],
+                           attribute_keys: tuple[tuple[Any, ...], ...] | None = None,
+                           ) -> ShaderProgramView:
+        if attribute_keys is None:
+            attribute_keys = tuple(
+                attribute.key for attribute in sorted(attributes.values(), key=lambda attribute: attribute.location)
+            )
+        key = attribute_keys, frozenset(instances.items())
         try:
             return self._vertex_layouts[key]
         except KeyError:
-            layout = ShaderProgramView(self, attributes, instances)
+            layout = ShaderProgramView(self, attributes, instances, attribute_keys)
             self._vertex_layouts[key] = layout
             return layout
 
     @staticmethod
     def _copy_attributes_with_formats(attributes: dict[str, Attribute], formats: dict[str, str]) -> dict[str, Attribute]:
-        adjusted = attributes.copy()
+        adjusted = attributes
         for name, fmt in formats.items():
             valid = (
                 isinstance(fmt, str)
@@ -230,11 +272,17 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
             if not valid:
                 raise ValueError(f"Invalid vertex format {fmt!r} for attribute {name!r}.")
             try:
-                attribute = copy(attributes[name])
+                source = attributes[name]
             except KeyError:
                 msg = f"Attribute {name} not found. Existing attributes: {list(attributes.keys())}"
                 raise MissingAttributeException(msg) from None
-            attribute.set_data_type(fmt[0], len(fmt) == 2)
+            normalized = len(fmt) == 2
+            if source.fmt.data_type == fmt[0] and source.fmt.normalized == normalized:
+                continue
+            if adjusted is attributes:
+                adjusted = attributes.copy()
+            attribute = copy(source)
+            attribute.set_data_type(fmt[0], normalized)
             adjusted[name] = attribute
         return adjusted
 
@@ -506,23 +554,26 @@ class ShaderProgramView(ShaderProgram):
     """
 
     def __init__(self, program: _AbstractShaderProgram, attributes: dict[str, Attribute],
-                 instances: dict[str, int]) -> None:
+                 instances: dict[str, int], attribute_keys: tuple[tuple[Any, ...], ...]) -> None:
         GraphicsResource.__init__(self, key=program.key)
         self._program = program
         self._attributes = attributes
         self._instance_attributes = instances.copy()
-        self._attribute_keys = tuple(
-            attribute.key for attribute in sorted(attributes.values(), key=lambda attribute: attribute.location)
-        )
+        self._attribute_keys = attribute_keys
         self._attribute_key = str(self._attribute_keys)
+        self._format_layouts = {}
         self._domain_attributes = program.derive_domain_attributes(attributes, self._attribute_key)
         self._instanced_domain_attributes = (
-            program._derive_instanced_domain_attributes(attributes, instances) if instances else None
+            program._derive_instanced_domain_attributes(attributes, instances, attribute_keys) if instances else None
         )
 
     @property
     def program(self) -> _AbstractShaderProgram:
         """The ShaderProgram that owns this layout."""
+        return self._program
+
+    @property
+    def _vertex_layout_program(self) -> _AbstractShaderProgram:
         return self._program
 
     @property
@@ -556,10 +607,6 @@ class ShaderProgramView(ShaderProgram):
         )
         return self._instanced_domain_attributes
 
-    def create_vertex_layout(self, **formats: str) -> ShaderProgramView:
-        attributes = self._program._copy_attributes_with_formats(self._attributes, formats)
-        return self._program._get_vertex_layout(attributes, self._instance_attributes)
-
     def set_instance_attributes(self, **attributes: int) -> ShaderProgramView:
         for name, divisor in attributes.items():
             if name not in self._attributes:
@@ -567,7 +614,7 @@ class ShaderProgramView(ShaderProgram):
                 raise MissingAttributeException(msg)
             if divisor < 1:
                 raise ValueError(f"Instance divisor for {name!r} must be greater than zero.")
-        return self._program._get_vertex_layout(self._attributes, attributes)
+        return self._program._get_vertex_layout(self._attributes, attributes, self._attribute_keys)
 
     def vertex_list(self, count: int, mode: GeometryMode, batch: Batch | None = None,
                     group: Group | None = None, **data: Any) -> VertexList:
