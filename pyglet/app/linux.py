@@ -1,7 +1,6 @@
 import ctypes
 
 from os import read as os_read
-from os import EFD_SEMAPHORE, eventfd, eventfd_read, eventfd_write
 
 from time import CLOCK_MONOTONIC
 from select import POLLIN, epoll
@@ -10,9 +9,10 @@ from pyglet import app, lib
 from pyglet.app.base import PlatformEventLoop
 
 try:
+    from os import EFD_SEMAPHORE, eventfd, eventfd_read, eventfd_write
     from os import timerfd_create, timerfd_settime, timerfd_gettime
 except ImportError:
-    # TODO: remove timerfd fallbacks once Python 3.12 is EOL
+    # TODO: remove these fallbacks once Python 3.12 is EOL
 
     class Timespec(ctypes.Structure):
         _fields_ = [('tv_sec', ctypes.c_long), ('tv_nsec', ctypes.c_long)]
@@ -49,6 +49,31 @@ except ImportError:
         time_until_expiry = curr_value.it_value.tv_sec + curr_value.it_value.tv_nsec * 1e-9
         interval = curr_value.it_interval.tv_sec + curr_value.it_interval.tv_nsec * 1e-9
         return time_until_expiry, interval
+
+    libc.eventfd.argtypes = [ctypes.c_uint, ctypes.c_int]
+    libc.eventfd.restype = ctypes.c_int
+    libc.eventfd_read.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_uint64)]
+    libc.eventfd_read.restype = ctypes.c_int
+    libc.eventfd_write.argtypes = [ctypes.c_int, ctypes.c_uint64]
+    libc.eventfd_write.restype = ctypes.c_int
+
+    EFD_SEMAPHORE = 1          # (1 << 0)
+    EFD_CLOEXEC   = 0o2000000  # 524288
+    EFD_NONBLOCK  = 0o4000     # 2048
+
+    def eventfd(initval=0, flags=EFD_CLOEXEC):
+        """Create an eventfd file descriptor (Linux)."""
+        return libc.eventfd(initval, flags)
+
+    def eventfd_read(fd):
+        """Read from an eventfd; returns the 64-bit counter value."""
+        value = ctypes.c_uint64()
+        libc.eventfd_read(fd, ctypes.byref(value))
+        return value.value
+
+    def eventfd_write(fd, value):
+        """Write (add) a 64-bit value to an eventfd."""
+        libc.eventfd_write(fd, value)
 
 
 class LinuxPollDevice:
