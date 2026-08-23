@@ -35,7 +35,7 @@ if TYPE_CHECKING:
     from ctypes import Array
     from pyglet.customtypes import DataTypes
     from pyglet.graphics.api.base import SurfaceContext
-    from pyglet.graphics.instance import InstanceBucket, VertexInstance, InstanceDomain
+    from pyglet.graphics.instance import InstanceBucket, InstanceCollection, VertexInstance, InstanceDomain
     from pyglet.graphics.buffer import AttributeBufferObject, IndexedBufferObject
     from pyglet.graphics import Group
     from pyglet.enums import GeometryMode
@@ -198,12 +198,25 @@ class InstanceVertexList(VertexList):
         super().__init__(domain, group, start, count)
         self.instance_bucket = bucket
 
+    def delete(self) -> None:
+        """Delete this vertex list and its instance storage."""
+        key = (self.start, self.count)
+        self.instance_bucket.clear()
+        super().delete()
+        self.domain._instance_map.pop(key, None)
+
     def create_instance(self, **attributes: Any) -> VertexInstance:
         return self.instance_bucket.create_instance(**attributes)
 
     def create_instances(self, count: int, **attributes: Any) -> list[VertexInstance]:
         """Create several instances with a single instance-buffer upload."""
         return self.instance_bucket.create_instances(count, **attributes)
+
+    def create_instance_collection(
+        self, count: int, capacity: int | None = None, **attributes: Any,
+    ) -> InstanceCollection:
+        """Create a bulk-managed collection without individual instance objects."""
+        return self.instance_bucket.create_instance_collection(count, capacity, **attributes)
 
     def set_instance_attribute_data(self, name: str, data: Any, start: int = 0, count: int | None = None) -> None:
         """Replace one attribute over a contiguous range of instances."""
@@ -484,10 +497,7 @@ class InstanceIndexedVertexList(VertexList):
         """Delete this group."""
         key = (self.index_start, self.index_count)
 
-        # Invalidate all instance handles associated with this list.
-        for instance in list(self.instance_bucket.allocator.slot_to_inst.values()):
-            instance.slot = -1
-        self.instance_bucket.allocator.clear()
+        self.instance_bucket.clear()
 
         super().delete()
         self.domain.index_stream.dealloc(self.index_start, self.index_count)
@@ -515,6 +525,12 @@ class InstanceIndexedVertexList(VertexList):
     def create_instances(self, count: int, **attributes: Any) -> list[VertexInstance]:
         """Create several instances with a single instance-buffer upload."""
         return self.instance_bucket.create_instances(count, **attributes)
+
+    def create_instance_collection(
+        self, count: int, capacity: int | None = None, **attributes: Any,
+    ) -> InstanceCollection:
+        """Create a bulk-managed collection without individual instance objects."""
+        return self.instance_bucket.create_instance_collection(count, capacity, **attributes)
 
     def set_instance_attribute_data(self, name: str, data: Any, start: int = 0, count: int | None = None) -> None:
         """Replace one attribute over a contiguous range of instances."""

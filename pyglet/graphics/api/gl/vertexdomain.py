@@ -49,7 +49,7 @@ from pyglet.graphics.api.gl.enums import geometry_map
 from pyglet.graphics.api.gl.lib import GLException, MissingFunctionException
 from pyglet.graphics.api.gl.shader import GLAttribute
 from pyglet.graphics.buffer import _data_type_size
-from pyglet.graphics.instance import InstanceBucket, InstanceDomain, VertexInstance
+from pyglet.graphics.instance import InstanceBucket, InstanceCollection, InstanceDomain, VertexInstance
 from pyglet.graphics.vertexdomain import (
     VertexStream,
     VertexArrayBinding,
@@ -215,12 +215,25 @@ class GLInstanceVertexList(GLVertexList):
         super().__init__(domain, group, start, count)
         self.instance_bucket = bucket
 
+    def delete(self) -> None:
+        """Delete this vertex list and its instance storage."""
+        key = (self.start, self.count)
+        self.instance_bucket.clear()
+        super().delete()
+        self.domain._instance_map.pop(key, None)
+
     def create_instance(self, **attributes: Any) -> VertexInstance:
         return self.instance_bucket.create_instance(**attributes)
 
     def create_instances(self, count: int, **attributes: Any) -> list[VertexInstance]:
         """Create several instances with a single instance-buffer upload."""
         return self.instance_bucket.create_instances(count, **attributes)
+
+    def create_instance_collection(
+        self, count: int, capacity: int | None = None, **attributes: Any,
+    ) -> InstanceCollection:
+        """Create a bulk-managed collection without individual instance objects."""
+        return self.instance_bucket.create_instance_collection(count, capacity, **attributes)
 
     def set_instance_attribute_data(self, name: str, data: Any, start: int = 0, count: int | None = None) -> None:
         """Replace one attribute over a contiguous range of instances."""
@@ -344,10 +357,7 @@ class GLInstanceIndexedVertexList(GLVertexList):
         """Delete this group."""
         key = (self.index_start, self.index_count)
 
-        # Invalidate all instance handles associated with this list.
-        for instance in list(self.instance_bucket.allocator.slot_to_inst.values()):
-            instance.slot = -1
-        self.instance_bucket.allocator.clear()
+        self.instance_bucket.clear()
 
         super().delete()
         self.domain.index_stream.dealloc(self.index_start, self.index_count)
@@ -374,6 +384,12 @@ class GLInstanceIndexedVertexList(GLVertexList):
     def create_instances(self, count: int, **attributes: Any) -> list[VertexInstance]:
         """Create several instances with a single instance-buffer upload."""
         return self.instance_bucket.create_instances(count, **attributes)
+
+    def create_instance_collection(
+        self, count: int, capacity: int | None = None, **attributes: Any,
+    ) -> InstanceCollection:
+        """Create a bulk-managed collection without individual instance objects."""
+        return self.instance_bucket.create_instance_collection(count, capacity, **attributes)
 
     def set_instance_attribute_data(self, name: str, data: Any, start: int = 0, count: int | None = None) -> None:
         """Replace one attribute over a contiguous range of instances."""
