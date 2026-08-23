@@ -416,6 +416,8 @@ Note that the first argument gives the number of vertices in the data, not the
 number of indices (which is implicit on the length of the index list given in
 the third argument).
 
+.. _guide_instanced-rendering:
+
 Instanced Rendering
 ~~~~~~~~~~~~~~~~~~~
 
@@ -448,6 +450,12 @@ the original vertex list mesh.
 
 Each created instance adds another row to the instance buffer and increases the
 instance count used for drawing.
+
+When several independently managed instances are needed at once, use
+``vlist.create_instances(count, **attributes)``. It allocates and uploads the
+instance data in bulk, then returns a list of individual ``VertexInstance``
+objects. Each attribute must contain flattened data for all ``count``
+instances.
 
 Example (indexed instancing)::
 
@@ -490,6 +498,66 @@ Instanced vertex lists also provide helper APIs for ordering:
 Groups control draw order between different vertex lists, but not between
 instances inside the same instanced vertex list. Use the ordering helpers above
 when you need explicit ordering among instances of a single mesh.
+
+Instance collections
+^^^^^^^^^^^^^^^^^^^^
+
+Individual :py:class:`~pyglet.graphics.instance.VertexInstance` objects are a
+good fit when each rendered object has its own lifetime and is updated
+independently. ``create_instances`` reduces upload overhead when creating many
+of these objects, but it still returns and tracks one Python object per
+instance.
+
+Use :py:class:`~pyglet.graphics.instance.InstanceCollection` when the instance
+data is naturally managed as arrays. Common examples include glyph runs,
+particle systems, tile maps, and vegetation. A collection avoids the Python
+object cost and supports whole-range attribute updates::
+
+    translations = (0, 0, 0,  32, 0, 0,  64, 0, 0)
+    colors = (1, 0, 0, 1,  0, 1, 0, 1,  0, 0, 1, 1)
+
+    instances = vlist.create_instance_collection(
+        3,
+        capacity=128,
+        translate=translations,
+        colors=colors,
+    )
+
+    # Replace one attribute for every active instance with one upload.
+    instances.set(translate=new_translations)
+
+Individual instances can also be updated by index. Pass ``start`` and
+``count=1`` to replace attributes for one instance; attributes that are not
+provided remain unchanged::
+
+    # Change only the translation of instance 5.
+    instances.set(start=5, count=1, translate=(100, 200, 0))
+
+The same arguments update any contiguous range when the attribute data contains
+one flattened row per selected instance::
+
+    instances.set(
+        start=5,
+        count=3,
+        translate=(100, 200, 0,  110, 200, 0,  120, 200, 0),
+    )
+
+The active ``count`` is separate from reserved ``capacity``. This is useful
+when data is regenerated frequently: reducing the count renders fewer
+instances without reallocating the buffers, and later growth can reuse the
+reserved slots::
+
+    instances.set_count(2)
+    instances.set_count(80)
+    instances.set(translate=translations_for_80, colors=colors_for_80)
+
+``insert`` and ``remove`` are available for occasional structural changes,
+but they shift following instance data. Replacing ranges with ``set`` and
+changing ``count`` is preferable for frequently rebuilt collections.
+
+An instanced vertex list uses either individual ``VertexInstance`` objects or
+one ``InstanceCollection``; the two ownership models cannot be mixed on the
+same vertex list.
 
 Resource Management
 ~~~~~~~~~~~~~~~~~~~
