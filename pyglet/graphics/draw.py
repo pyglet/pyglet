@@ -305,6 +305,8 @@ class Group:
 
     @visible.setter
     def visible(self, value: bool) -> None:
+        if self._visible == value:
+            return
         self._visible = value
 
         for batch in self._assigned_batches:
