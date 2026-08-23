@@ -68,6 +68,16 @@ def _get_triangle_vertices(size: int) -> list[int]:
             size, size, 0]
 
 
+def _get_instance_data(columns: int, rows: int, spacing: int, x: int = 0, y: int = 0) -> tuple[list[float], list[int]]:
+    colors = []
+    translations = []
+    for i in range(columns):
+        for j in range(rows):
+            colors.extend((random.random(), random.random(), random.random(), 1.0))
+            translations.extend((x + i * spacing, y + j * spacing, 0))
+    return colors, translations
+
+
 background_group = pyglet.graphics.ShaderGroup(program, order=0)
 BORDER = 25
 
@@ -100,10 +110,8 @@ vlist_1 = program.vertex_list_instanced_indexed(4, mode=GeometryMode.TRIANGLES, 
                                                 colors=(1, 0, 0, 1),
                                                 translate=(0, 0, 0))
 
-for i in range(40):
-    for j in range(40):
-        f = vlist_1.create_instance(colors=(random.random(), random.random(), random.random(), 1),
-                                    translate=(i * vlist_1_size, j * vlist_1_size, 0))
+colors, translations = _get_instance_data(40, 40, vlist_1_size)
+vlist_1.create_instances(40 * 40, colors=colors, translate=translations)
 
 vlist_2_size = 5
 vlist_2 = program.vertex_list_instanced_indexed(4, mode=GeometryMode.TRIANGLES, indices=[0, 1, 2, 0, 2, 3],
@@ -112,10 +120,12 @@ vlist_2 = program.vertex_list_instanced_indexed(4, mode=GeometryMode.TRIANGLES, 
                                                 position=_get_quad_vertices(vlist_2_size),
                                                 colors=(1, 0, 0, 1),
                                                 translate=(0, 0, 0))
-for i in range(40):
-    for j in range(40):
-        m = vlist_2.create_instance(colors=(random.random(), random.random(), random.random(), 1),
-                                    translate=(i * vlist_2_size, j * vlist_2_size, 0))
+colors, translations = _get_instance_data(40, 40, vlist_2_size)
+
+# Use create_instances when the full set of instance data is already known.
+vlist_2.create_instances(40 * 40 - 1, colors=colors[:-4], translate=translations[:-3])
+# Use create_instance when adding a single instance to an existing vertex list.
+vlist_2.create_instance(colors=colors[-4:], translate=translations[-3:])
 
 vlist_2_1_size = 50
 vlist_2_1 = program.vertex_list_instanced_indexed(4, mode=GeometryMode.TRIANGLES, indices=[0, 1, 2, 0, 2, 3],
@@ -124,10 +134,8 @@ vlist_2_1 = program.vertex_list_instanced_indexed(4, mode=GeometryMode.TRIANGLES
                                                   position=_get_quad_vertices(vlist_2_1_size),
                                                   colors=(1, 0, 0, 1),
                                                   translate=(300, 300, 0))
-for i in range(4):
-    for j in range(4):
-        m = vlist_2_1.create_instance(colors=(random.random(), random.random(), random.random(), 1),
-                                      translate=(300 + i * vlist_2_1_size, 300 + j * vlist_2_1_size, 0))
+colors, translations = _get_instance_data(4, 4, vlist_2_1_size, 300, 300)
+vlist_2_1.create_instances(4 * 4, colors=colors, translate=translations)
 
 vlist_3_size = 15
 vlist_3 = program.vertex_list_instanced(3, mode=GeometryMode.TRIANGLES,
@@ -136,11 +144,8 @@ vlist_3 = program.vertex_list_instanced(3, mode=GeometryMode.TRIANGLES,
                                         position=_get_triangle_vertices(vlist_3_size),
                                         colors=(1, 0, 0, 1),
                                         translate=(0, 0, 0))
-for i in range(20):
-    for j in range(20):
-        m = vlist_3.create_instance(colors=(random.random(), random.random(), random.random(), 1),
-                                    translate=(250 + i * vlist_3_size,
-                                               0 + j * vlist_3_size, 0))
+colors, translations = _get_instance_data(20, 20, vlist_3_size, 250)
+vlist_3.create_instances(20 * 20, colors=colors, translate=translations)
 
 
 @window.event

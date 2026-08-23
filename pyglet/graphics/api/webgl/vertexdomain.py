@@ -320,7 +320,7 @@ class GLInstanceDomainArrays(InstanceDomain):  # noqa: D101
 
     def draw_subset(self, mode: int, vertex_list: WebGLInstanceVertexList):
         """Draw a specific VertexList in the domain."""
-        bucket = vertex_list.bucket
+        bucket = vertex_list.instance_bucket
         bucket.vao.bind()
         bucket.stream.commit()
         self._gl.drawArraysInstanced(mode, vertex_list.start, vertex_list.count, bucket.instance_count)
@@ -358,10 +358,13 @@ class GLInstanceDomainElements(InstanceDomain):  # noqa: D101
 
     def draw_subset(self, mode: GeometryMode, vertex_list: WebGLInstanceIndexedVertexList) -> None:
         """Draw a specific VertexList in the domain."""
+        bucket = vertex_list.instance_bucket
+        bucket.vao.bind()
+        bucket.stream.commit()
         byte_offset = vertex_list.index_start * self._elem_size
         self._gl.drawElementsInstanced(
             mode, vertex_list.index_count, self._index_gl_type, byte_offset,
-            vertex_list.bucket.instance_count,
+            bucket.instance_count,
         )
 
     def draw(self, mode: int) -> None:
@@ -417,7 +420,7 @@ class WebGLInstancedVertexDomain(InstancedVertexDomain):  # noqa: D101
 
         """
         self.vertex_buffers.commit()
-        self.instance_buckets.draw(mode)
+        self.instance_domain.draw(mode)
 
     def draw_subset(self, mode: GeometryMode, vertex_list: WebGLInstanceVertexList) -> None:
         """Draw a specific VertexList in the domain.
@@ -432,7 +435,7 @@ class WebGLInstancedVertexDomain(InstancedVertexDomain):  # noqa: D101
                 Vertex list to draw.
         """
         self.vertex_buffers.commit()
-        self.instance_buckets.draw_subset(geometry_map[mode], vertex_list)
+        self.instance_domain.draw_subset(geometry_map[mode], vertex_list)
 
 
 

@@ -49,7 +49,7 @@ from pyglet.graphics.api.gl.enums import geometry_map
 from pyglet.graphics.api.gl.lib import GLException, MissingFunctionException
 from pyglet.graphics.api.gl.shader import GLAttribute
 from pyglet.graphics.buffer import _data_type_size
-from pyglet.graphics.instance import InstanceBucket, InstanceDomain, VertexInstance
+from pyglet.graphics.instance import InstanceBucket, InstanceCollection, InstanceDomain, VertexInstance
 from pyglet.graphics.vertexdomain import (
     VertexStream,
     VertexArrayBinding,
@@ -62,6 +62,8 @@ from pyglet.graphics.vertexdomain import (
     IndexedVertexDomain,
     VertexList,
     IndexedVertexList,
+    InstanceIndexedVertexList,
+    InstanceVertexList,
     InstancedVertexDomain,
     InstancedIndexedVertexDomain,
 )
@@ -207,86 +209,9 @@ class GLVertexList(VertexList):
 
 
 
-class GLInstanceVertexList(GLVertexList):
+class GLInstanceVertexList(InstanceVertexList, GLVertexList):
     """A list of vertices within an :py:class:`InstancedVertexDomain` that are not indexed."""
-    instanced: bool = True
-
-    def __init__(self, domain: GLVertexDomain, group: Group, start: int, count: int, bucket: InstanceBucket) -> None:  # noqa: D107
-        super().__init__(domain, group, start, count)
-        self.instance_bucket = bucket
-
-    def create_instance(self, **attributes: Any) -> VertexInstance:
-        return self.instance_bucket.create_instance(**attributes)
-
-    @property
-    def instance_count(self) -> int:
-        """Number of active instances in this vertex list."""
-        return self.instance_bucket.instance_count
-
-    def get_instance_by_index(self, index: int) -> VertexInstance | None:
-        """Get an instance by its current slot index."""
-        return self.instance_bucket.get_instance_by_index(index)
-
-    def get_instance_index(self, instance: VertexInstance) -> int | None:
-        """Get the current slot index for an instance."""
-        return self.instance_bucket.get_instance_index(instance)
-
-    def swap_instances(self, first: VertexInstance, second: VertexInstance) -> None:
-        """Swap two instances in-place.
-
-        Useful when changing draw order without rebuilding all instance data.
-        This can still be expensive if instance attributes are large.
-        """
-        self.instance_bucket.swap_instances(first, second)
-
-    def move_instance_to_index(self, instance: VertexInstance, index: int) -> None:
-        """Move one instance to a target slot index.
-
-        Other instances shift as needed to keep slots contiguous.
-
-        This may be expensive when moving across many slots.
-        """
-        self.instance_bucket.move_instance_to_index(instance, index)
-
-    def set_instance_order(self, order: Sequence[VertexInstance]) -> None:
-        """Set the exact full order of all active instances.
-
-        This can be expensive for large lists.
-        """
-        self.instance_bucket.set_instance_order(order)
-
-    def move_to_back(self, instances: Sequence[VertexInstance]) -> None:
-        """Move a subset of instances to the back in the given order.
-
-        Back means lower indices (drawn earlier). Unspecified instances remain
-        after the moved prefix. This can be expensive for large lists.
-        """
-        self.instance_bucket.move_to_back(instances)
-
-    def move_to_top(self, instances: Sequence[VertexInstance]) -> None:
-        """Move a subset of instances to the top in the given order.
-
-        Top means higher indices (drawn later). Unspecified instances remain
-        before the moved suffix. This can be expensive for large lists.
-        """
-        self.instance_bucket.move_to_top(instances)
-
-    def set_attribute_data(self, name: str, data: Any) -> None:
-        if self.initial_attribs[name].fmt.is_instanced:
-            stream = self.instance_bucket.stream
-            count = 1
-            start = 0
-        else:
-            stream = self.domain.attrib_name_buffers[name]
-            count = self.count
-            start = self.start
-        buffer = stream.attrib_name_buffers[name]
-
-        try:
-            buffer.set_region(start, count, data)
-        except ValueError:
-            msg = f"Invalid data size for '{buffer}'. Expected {buffer.element_count * count}, got {len(data)}."
-            raise ValueError(msg) from None
+    pass
 
 
 
@@ -306,135 +231,12 @@ class GLIndexedVertexList(IndexedVertexList):
         super().__init__(domain, group, start, count, index_start, index_count)
 
 
-class GLInstanceIndexedVertexList(GLVertexList):
+class GLInstanceIndexedVertexList(InstanceIndexedVertexList, GLVertexList):
     """A list of vertices within an :py:class:`IndexedVertexDomain` that are indexed.
 
     Use :py:meth:`IndexedVertexDomain.create` to construct this list.
     """
-    domain: GLInstancedIndexedVertexDomain
-    indexed: bool = True
-    instanced: bool = True
-
-    index_count: int
-    index_start: int
-
-    instance_bucket: InstanceBucket
-    supports_base_vertex: bool
-
-    def __init__(self, domain: GLInstancedIndexedVertexDomain, group: Group, start: int, count: int,
-                 index_start: int, index_count: int, index_type: DataTypes, base_vertex: int,
-                 instance_bucket: InstanceBucket) -> None:
-        self.index_start = index_start
-        self.index_count = index_count
-        self.index_type = index_type
-        self.base_vertex = base_vertex
-        self.instance_bucket = instance_bucket
-        self.start_base_vertex = start if self.supports_base_vertex else 0
-        super().__init__(domain, group, start, count)
-
-    def delete(self) -> None:
-        """Delete this group."""
-        key = (self.index_start, self.index_count)
-
-        # Invalidate all instance handles associated with this list.
-        for instance in list(self.instance_bucket.allocator.slot_to_inst.values()):
-            instance.slot = -1
-        self.instance_bucket.allocator.clear()
-
-        super().delete()
-        self.domain.index_stream.dealloc(self.index_start, self.index_count)
-        self.domain._instance_map.pop(key, None)
-
-    def migrate(self, domain: GLInstancedIndexedVertexDomain) -> None:
-        old_domain = self.domain
-
-        # Moved vertex data here.
-        super().migrate(domain)
-
-        # Remove from bucket and enter into new bucket.
-        new_bucket = domain.instance_domain.get_elements_bucket(mode=0,
-                                                    first_index=self.index_start,
-                                                   index_count=self.index_count,
-                                                   index_type="I")
-
-        # Move instance data.
-        old_domain.instance_domain.move_all(self.instance_bucket, new_bucket)
-
-    def create_instance(self, **attributes: Any) -> VertexInstance:
-        return self.instance_bucket.create_instance(**attributes)
-
-    @property
-    def instance_count(self) -> int:
-        """Number of active instances in this vertex list."""
-        return self.instance_bucket.instance_count
-
-    def get_instance_by_index(self, index: int) -> VertexInstance | None:
-        """Get an instance by its current slot index."""
-        return self.instance_bucket.get_instance_by_index(index)
-
-    def get_instance_index(self, instance: VertexInstance) -> int | None:
-        """Get the current slot index for an instance."""
-        return self.instance_bucket.get_instance_index(instance)
-
-    def swap_instances(self, first: VertexInstance, second: VertexInstance) -> None:
-        """Swap two instances in-place.
-
-        Useful when changing draw order without rebuilding all instance data.
-        This can still be expensive if instance attributes are large.
-        """
-        self.instance_bucket.swap_instances(first, second)
-
-    def move_instance_to_index(self, instance: VertexInstance, index: int) -> None:
-        """Move one instance to a target slot index.
-
-        Other instances shift as needed to keep slots contiguous.
-        This may be expensive when moving across many slots.
-        """
-        self.instance_bucket.move_instance_to_index(instance, index)
-
-    def set_instance_order(self, order: Sequence[VertexInstance]) -> None:
-        """Set the exact full order of all active instances.
-
-        This can be expensive for large lists.
-        """
-        self.instance_bucket.set_instance_order(order)
-
-    def move_to_back(self, instances: Sequence[VertexInstance]) -> None:
-        """Move a subset of instances to the back in the given order.
-
-        Back means lower indices (drawn earlier). Unspecified instances remain
-        after the moved prefix. This can be expensive for large lists.
-        """
-        self.instance_bucket.move_to_back(instances)
-
-    def move_to_top(self, instances: Sequence[VertexInstance]) -> None:
-        """Move a subset of instances to the top in the given order.
-
-        Top means higher indices (drawn later). Unspecified instances remain
-        before the moved suffix. This can be expensive for large lists.
-        """
-        self.instance_bucket.move_to_top(instances)
-
-    def set_attribute_data(self, name: str, data: Any) -> None:
-        if self.initial_attribs[name].fmt.is_instanced:
-            stream = self.instance_bucket.stream
-            count = 1
-            start = 0
-        else:
-            stream = self.domain.attrib_name_buffers[name]
-            count = self.count
-            start = self.start
-        buffer = stream.attrib_name_buffers[name]
-
-        try:
-            buffer.set_region(start, count, data)
-        except ValueError:
-            msg = f"Invalid data size for '{buffer}'. Expected {buffer.element_count * count}, got {len(data)}."
-            raise ValueError(msg) from None
-
-    def dealloc_from_group(self, vertex_list):
-        """Removes a vertex list from a specific state in this domain."""
-        vertex_list.bucket.remove_vertex_list(vertex_list)
+    pass
 
 class GLVertexDomain(VertexDomain):
     """Management of a set of vertex lists.
@@ -567,7 +369,7 @@ class GLInstanceDomainArrays(InstanceDomain):
 
     def draw_subset(self, mode: int, vertex_list: GLInstanceVertexList):
         """Draw a specific VertexList in the domain."""
-        bucket = vertex_list.bucket
+        bucket = vertex_list.instance_bucket
         bucket.vao.bind()
         bucket.stream.commit()
         self._ctx.glDrawArraysInstanced(mode, vertex_list.start, vertex_list.count, bucket.instance_count)
@@ -592,6 +394,9 @@ class GLInstanceDomainElements(InstanceDomain):
 
     def draw_subset(self, mode: GeometryMode, vertex_list: GLInstanceIndexedVertexList) -> None:
         """Draw a specific VertexList in the domain."""
+        bucket = vertex_list.instance_bucket
+        bucket.vao.bind()
+        bucket.stream.commit()
         byte_offset = vertex_list.index_start * self._elem_size
         if vertex_list.start:
             self._ctx.glDrawElementsInstancedBaseVertex(
@@ -599,7 +404,7 @@ class GLInstanceDomainElements(InstanceDomain):
                 vertex_list.index_count,
                 self._index_gl_type,
                 byte_offset,
-                vertex_list.bucket.instance_count,
+                bucket.instance_count,
                 vertex_list.start,
             )
         else:
@@ -608,7 +413,7 @@ class GLInstanceDomainElements(InstanceDomain):
                 vertex_list.index_count,
                 self._index_gl_type,
                 byte_offset,
-                vertex_list.bucket.instance_count,
+                bucket.instance_count,
             )
 
     def draw_bucket(self, mode: int, bucket: InstanceBucket) -> None:

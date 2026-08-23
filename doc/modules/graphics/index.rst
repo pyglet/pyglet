@@ -10,6 +10,7 @@ pyglet.graphics
    atlas
    draw
    framebuffer
+   instance
    shader
    texture
    vertexbuffer
