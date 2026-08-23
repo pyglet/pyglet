@@ -188,11 +188,16 @@ def _load(filename: str, file: BinaryIO | None = None,
             audio_channels=audio_channels,
             audio_resample_hq=audio_resample_hq)
 
-    return _codec_registry.decode(filename, file, streaming=streaming, media_capabilities=media_capabilities)
+    return _codec_registry.decode(filename, file, streaming=streaming,
+                                  media_capabilities=media_capabilities)
 
 
 def load_audio(filename: str, file: BinaryIO | None = None,
-               streaming: bool = True, decoder: MediaDecoder | None = None) -> Source | StreamingSource:
+               streaming: bool = True, decoder: MediaDecoder | None = None,
+               audio_sample_format: str | None = None,
+               audio_sample_rate: int | None = None,
+               audio_channels: int | None = None,
+               audio_resample_hq: bool=False) -> Source | StreamingSource:
     """Load a Source from disk, or an opened file.
 
     All decoders that are registered for the filename extension are tried.
@@ -211,12 +216,41 @@ def load_audio(filename: str, file: BinaryIO | None = None,
         decoder:
             A specific decoder you wish to use, rather than relying on
             automatic detection. If specified, no other decoders are tried.
+        audio_sample_format:
+            A specific audio sample format you wish the decoder to ouput,
+            rather than relying on automatic detection. For possible values see
+            ``pyglet.media.AUDIO_SAMPLE_FORMAT_*`` constants.
+            NOTE: currently only supported by FFmpegDecoder!
+        audio_sample_rate:
+            A specific audio sample rate (in Hz) you wish the decoder to
+            output, rather than relying on automatic detection. For possible
+            values see ``pyglet.media.AUDIO_SAMPLE_RATE_*`` constants.
+            NOTE: currently only supported by FFmpegDecoder!
+        audio_channels:
+            A specific number of channels you wish the decoder to output,
+            rather than relying on autimatic detection. For possible values see
+            ``pyglet.media.AUDIO_CHANNELS_*`` constants.
+            Note: currently only supported by FFmpegDecoder!
+        audio_resample_hq:
+            Whether to use high-quality resampling when resamplig is required
+            (e.g. when a specific sample rate is requested), at the cost of
+            increased CPU usage.
+            Note: currently only supported by FFmpegDecoder!
     """
-    return _load(filename, file=file, streaming=streaming, decoder=decoder, media_capabilities='audio')
+    return _load(filename, file=file, streaming=streaming, decoder=decoder,
+                 media_capabilities='audio',
+                 audio_sample_format=audio_sample_format,
+                 audio_sample_rate=audio_sample_rate,
+                 audio_channels=audio_channels,
+                 audio_resample_hq=audio_resample_hq)
 
 
 def load_video(filename: str, file: BinaryIO | None = None,
-               streaming: bool = True, decoder: MediaDecoder | None = None) -> Source | StreamingSource:
+               streaming: bool = True, decoder: MediaDecoder | None = None,
+               audio_sample_format: str | None = None,
+               audio_sample_rate: int | None = None,
+               audio_channels: int | None = None,
+               audio_resample_hq: bool=False) -> Source | StreamingSource:
     """Load a Source from disk, or an opened file.
 
     All decoders that are registered for the filename extension are tried.
@@ -235,8 +269,33 @@ def load_video(filename: str, file: BinaryIO | None = None,
         decoder:
             A specific decoder you wish to use, rather than relying on
             automatic detection. If specified, no other decoders are tried.
+        audio_sample_format:
+            A specific audio sample format you wish the decoder to ouput,
+            rather than relying on automatic detection. For possible values see
+            ``pyglet.media.AUDIO_SAMPLE_FORMAT_*`` constants.
+            NOTE: currently only supported by FFmpegDecoder!
+        audio_sample_rate:
+            A specific audio sample rate (in Hz) you wish the decoder to
+            output, rather than relying on automatic detection. For possible
+            values see ``pyglet.media.AUDIO_SAMPLE_RATE_*`` constants.
+            NOTE: currently only supported by FFmpegDecoder!
+        audio_channels:
+            A specific number of channels you wish the decoder to output,
+            rather than relying on autimatic detection. For possible values see
+            ``pyglet.media.AUDIO_CHANNELS_*`` constants.
+            Note: currently only supported by FFmpegDecoder!
+        audio_resample_hq:
+            Whether to use high-quality resampling when resamplig is required
+            (e.g. when a specific sample rate is requested), at the cost of
+            increased CPU usage.
+            Note: currently only supported by FFmpegDecoder!
     """
-    return _load(filename, file=file, streaming=streaming, decoder=decoder, media_capabilities='video')
+    return _load(filename, file=file, streaming=streaming, decoder=decoder,
+                 media_capabilities='video',
+                 audio_sample_format=audio_sample_format,
+                 audio_sample_rate=audio_sample_rate,
+                 audio_channels=audio_channels,
+                 audio_resample_hq=audio_resample_hq)
 
 
 def play_audio(filename: str, file: BinaryIO | None = None,
