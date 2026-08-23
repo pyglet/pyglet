@@ -486,6 +486,7 @@ class DrawContext(Generic[SurfaceContextT, BackendContextT]):
 
     # Keep track of current camera to prevent double applies.
     _applied_camera: CameraScopeProtocol | None = None
+    _applied_viewport: tuple[int, int, int, int] | None = None
 
     def __post_init__(self) -> None:
         if not self.camera_stack and self.draw_pass.camera is not None:
@@ -530,7 +531,12 @@ class DrawContext(Generic[SurfaceContextT, BackendContextT]):
             return
 
         x, y, width, height = viewport
-        self.renderer.set_viewport(int(x), int(y), int(width), int(height))
+        resolved_viewport = int(x), int(y), int(width), int(height)
+        if resolved_viewport == self._applied_viewport:
+            return
+
+        self.renderer.set_viewport(*resolved_viewport)
+        self._applied_viewport = resolved_viewport
 
     def apply_scissor(self) -> None:
         scissor_state = self.active_scissor

@@ -290,6 +290,34 @@ def test_group_camera_viewport_is_applied_to_draw_context_stack(test_window, mon
     assert renderer.viewports[-1] == (30, 40, 160, 90)
 
 
+def test_draw_context_skips_unchanged_viewports(test_window, monkeypatch):
+    _set_default_view_storage(monkeypatch, RecordingStorage())
+    camera = pyglet.window.camera.Camera2D(test_window)
+    camera.viewport = (10, 20, 300, 200)
+    renderer = RecordingRenderer()
+    draw_context = DrawContext(
+        surface_ctx=test_window.context,
+        backend_ctx=None,
+        draw_pass=DrawPass(
+            framebuffer=None,
+            camera=camera,
+            viewport=camera.viewport,
+            scissor=None,
+            clear_color=(0.0, 0.0, 0.0, 1.0),
+        ),
+        renderer=renderer,
+    )
+
+    draw_context.apply_viewport()
+    draw_context.apply_viewport()
+    assert renderer.viewports == [(10, 20, 300, 200)]
+
+    camera.viewport = (30, 40, 160, 90)
+    draw_context.apply_viewport()
+    assert renderer.viewports[-1] == (30, 40, 160, 90)
+    assert len(renderer.viewports) == 2
+
+
 def test_group_camera_scissor_is_applied_once_on_scope_entry(test_window, monkeypatch):
     _set_default_view_storage(monkeypatch, RecordingStorage())
     camera = pyglet.window.camera.Camera2D(test_window)
