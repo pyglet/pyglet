@@ -295,6 +295,7 @@ class FrameSlotData:
 
     fence: Any | None = None
     ubo_ranges: list[BufferRange] = field(default_factory=list)
+    ubo_range_ids: set[int] = field(default_factory=set)
 
 
 class FrameResourceManager:
@@ -317,6 +318,7 @@ class FrameResourceManager:
             ubo_range.frame_use_count = max(0, ubo_range.frame_use_count - 1)
             ubo_range.in_use = ubo_range.frame_use_count > 0
         slot.ubo_ranges.clear()
+        slot.ubo_range_ids.clear()
 
     def frame_begin(self, frame_index: int) -> None:
         slot_index = frame_index % len(self.slots)
@@ -340,12 +342,14 @@ class FrameResourceManager:
         self.use_ubo(ubo_range)
 
     def use_ubo(self, ubo_range: BufferRange) -> None:
-        if any(active_range is ubo_range for active_range in self._active_slot.ubo_ranges):
+        ubo_range_id = id(ubo_range)
+        if ubo_range_id in self._active_slot.ubo_range_ids:
             return
 
         ubo_range.frame_use_count += 1
         ubo_range.in_use = True
         self._active_slot.ubo_ranges.append(ubo_range)
+        self._active_slot.ubo_range_ids.add(ubo_range_id)
 
     def frame_submit(self) -> None:
         if not self._active_slot.ubo_ranges:

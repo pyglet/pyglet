@@ -290,6 +290,87 @@ def test_group_camera_viewport_is_applied_to_draw_context_stack(test_window, mon
     assert renderer.viewports[-1] == (30, 40, 160, 90)
 
 
+def test_draw_context_skips_unchanged_viewports(test_window, monkeypatch):
+    _set_default_view_storage(monkeypatch, RecordingStorage())
+    camera = pyglet.window.camera.Camera2D(test_window)
+    camera.viewport = (10, 20, 300, 200)
+    renderer = RecordingRenderer()
+    draw_context = DrawContext(
+        surface_ctx=test_window.context,
+        backend_ctx=None,
+        draw_pass=DrawPass(
+            framebuffer=None,
+            camera=camera,
+            viewport=camera.viewport,
+            scissor=None,
+            clear_color=(0.0, 0.0, 0.0, 1.0),
+        ),
+        renderer=renderer,
+    )
+
+    draw_context.apply_viewport()
+    draw_context.apply_viewport()
+    assert renderer.viewports == [(10, 20, 300, 200)]
+
+    camera.viewport = (30, 40, 160, 90)
+    draw_context.apply_viewport()
+    assert renderer.viewports[-1] == (30, 40, 160, 90)
+    assert len(renderer.viewports) == 2
+
+
+def test_group_camera_scissor_is_applied_once_on_scope_entry(test_window, monkeypatch):
+    _set_default_view_storage(monkeypatch, RecordingStorage())
+    camera = pyglet.window.camera.Camera2D(test_window)
+    child = camera.create_view(inherit=True)
+    child.set_scissor_area(10, 20, 300, 200)
+
+    group = pyglet.graphics.Group()
+    group.set_camera(child)
+    renderer = RecordingRenderer()
+    draw_context = DrawContext(
+        surface_ctx=test_window.context,
+        backend_ctx=None,
+        draw_pass=DrawPass(
+            framebuffer=None,
+            camera=camera,
+            viewport=camera.viewport,
+            scissor=None,
+            clear_color=(0.0, 0.0, 0.0, 1.0),
+        ),
+        renderer=renderer,
+    )
+
+    group.set_state_all(draw_context)
+
+    assert len(renderer.scissors) == 1
+    assert renderer.scissors[0].area == (10, 20, 300, 200)
+
+
+@pytest.mark.parametrize("hide_camera_group", [False, True])
+def test_hidden_camera_groups_do_not_apply_camera_or_scissor(
+    test_window,
+    monkeypatch,
+    hide_camera_group: bool,
+):
+    storage = RecordingStorage()
+    _set_default_view_storage(monkeypatch, storage)
+    camera = pyglet.window.camera.Camera2D(test_window)
+    view = camera.create_view(inherit=True)
+    view.set_scissor_area(10, 20, 300, 200)
+
+    camera_group = pyglet.graphics.Group()
+    camera_group.set_camera(view)
+    image = pyglet.image.ImageData(2, 2, "RGBA", bytes((255, 255, 255, 255)) * 4)
+    batch = pyglet.graphics.Batch(context=test_window.context)
+    sprite = pyglet.sprite.Sprite(image, batch=batch, group=camera_group)
+    (camera_group if hide_camera_group else sprite._group).visible = False  # noqa: SLF001
+
+    batch.draw()
+
+    assert view.storage.commit_count == 0
+    assert view.storage.bind_count == 0
+
+
 @require_graphics_api(GraphicsAPIGroups.GL3)
 def test_camera_ubo_views_do_not_overwrite_stable_parent_range(test_window, monkeypatch):
     test_window.switch_to()

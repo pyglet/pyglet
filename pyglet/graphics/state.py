@@ -125,13 +125,17 @@ class CameraScopeState(State):
     """State wrapper that applies camera state at draw scope entry."""
 
     camera: CameraScopeProtocol
+    scissor_managed: bool = False
     sets_state: bool = True
     unsets_state: bool = True
     enforced_state: bool = True
 
     def set_state(self, ctx: DrawContext) -> None:
         ctx.camera_stack.append(self.camera)
-        ctx.apply_camera_scope()
+        # Group.set_camera attaches a following camera-owned ScissorState when
+        # clipping is active. Let that state perform scissor
+        # update instead of setting the same area twice.
+        ctx.apply_camera_scope(apply_scissor=not self.scissor_managed)
 
     def unset_state(self, ctx: DrawContext) -> None:
         if ctx.camera_stack:
