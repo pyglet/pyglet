@@ -8,6 +8,8 @@ import time
 import pyglet
 from pyglet import clock, event, graphics, image
 from pyglet.enums import Anchor, BlendFactor, GeometryMode
+from pyglet.graphics import Group
+from pyglet.graphics.draw import DrawContext, BatchDrawOptions
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -82,7 +84,7 @@ geometry_source = """#version 150
         vec2 anchor = geo_size[0].zw;
         vec2 scale_start = geo_scale[0].xy;
         vec2 scale_end = geo_scale[0].zw;
-        
+
         vec2 velocity = geo_velocity[0].xy;
         vec2 spread = geo_velocity[0].zw;
 
@@ -101,11 +103,11 @@ geometry_source = """#version 150
             vec3 center = gl_in[0].gl_Position.xyz;
             center.x += time_scale * velocity.x * (spread.x * cos(vert_id + 1) * sin(i + 1));
             center.y += time_scale * velocity.y * (spread.y * sin(vert_id + 1) * cos(i + 1));
-            
+
             // Interpolate between the start and end colors, based on the lifetime 
             // (end - start) * step + start
             frag_color = (geo_color_end[0] - geo_color_start[0]) * time_scale + geo_color_start[0]; 
-    
+
             // Interpolate between the start and end scale, based on the lifetime 
             // (end - start) * step + start
             mat4 m_scale = mat4(1.0);
@@ -119,17 +121,17 @@ geometry_source = """#version 150
             m_translate[3][2] = center.z;
 
             mat4 m_rotation = mat4(1.0);
-            m_rotation[0][0] =  cos(radians(-rotation)); 
+            m_rotation[0][0] =  cos(radians(-rotation));
             m_rotation[0][1] =  sin(radians(-rotation));
             m_rotation[1][0] = -sin(radians(-rotation));
-            m_rotation[1][1] =  cos(radians(-rotation));    
-    
+            m_rotation[1][1] =  cos(radians(-rotation));
+
             // Final UV coords (left, bottom, right, top):
             float uv_l = geo_tex_coords[0].s;
             float uv_b = geo_tex_coords[0].t;
             float uv_r = geo_tex_coords[0].p;
             float uv_t = geo_tex_coords[0].q;
-    
+
             // Emit a triangle strip to create a quad (4 vertices).
             // Prepare and reuse the transformation matrix and fragment color:
             mat4 m_pv = window.projection * window.view * m_translate * m_rotation * m_scale;
@@ -138,24 +140,24 @@ geometry_source = """#version 150
             gl_Position = m_pv * vec4(vec2(0.0, size.y) - anchor, 0.0, 1.0);
             uv = vec2(uv_l, uv_t);
             EmitVertex();
-    
+
             // lower left
             gl_Position = m_pv * vec4(vec2(0.0, 0.0) - anchor, 0.0, 1.0);
             uv = vec2(uv_l, uv_b);
             EmitVertex();
-    
+
             // upper right
             gl_Position = m_pv * vec4(vec2(size.x, size.y) - anchor, 0.0, 1.0);
             uv = vec2(uv_r, uv_t);
             EmitVertex();
-    
+
             // lower right
             gl_Position = m_pv * vec4(vec2(size.x, 0.0) - anchor, 0.0, 1.0);
             uv = vec2(uv_r, uv_b);
             EmitVertex();
 
             // We are done with this triangle strip now
-            EndPrimitive();    
+            EndPrimitive();
 
         }
     }
@@ -185,17 +187,14 @@ def get_default_shader():
     return program.get_attribute_view(color_start="Bn", color_end="Bn")
 
 
-class EmitterGroup(graphics.Group):
-    blend_src: BlendFactor
-    blend_dest: BlendFactor
+class EmitterGroup(Group):
 
     def __init__(self, texture, blend_src, blend_dest, program, parent=None):
         super().__init__(parent=parent)
         self.texture = texture
         self.set_shader_program(program)
-        self.set_texture(texture)
+        self.set_texture(texture, 0)
         self.set_blend(blend_src, blend_dest)
-        self.program = program
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.texture})"
@@ -252,9 +251,11 @@ class Emitter(event.EventDispatcher):
         self._resolve_anchor()
 
         self._program = program or get_default_shader()
-        self._batch = batch or graphics.get_default_batch()
+        self._batch = batch
+        self._blend_src = blend_src
+        self._blend_dest = blend_dest
         self._user_group = group
-        self._group = self.group_class(self._texture, blend_src, blend_dest, self.program, group)
+        self._group = self.get_emitter_group()
         self._create_vertex_list()
 
     def _create_vertex_list(self):
@@ -284,11 +285,8 @@ class Emitter(event.EventDispatcher):
     def program(self, program):
         if self._program == program:
             return
-        self._group = self.group_class(self._texture,
-                                       self._group.blend_src,
-                                       self._group.blend_dest,
-                                       program,
-                                       self._user_group)
+        self._program = program
+        self._group = self.get_emitter_group()
         if (self._batch and
                 self._batch.update_shader(self._vertex_list, GeometryMode.POINTS, self._group, program)):
             # Exit early if changing domain is not needed.
@@ -312,6 +310,9 @@ class Emitter(event.EventDispatcher):
         self._texture = None
         self._group = None
 
+    def get_emitter_group(self):
+        return self.group_class(self._texture, self._blend_src, self._blend_dest, self._program, self._user_group)
+
     def _animate(self, dt):
         self._frame_index += 1
         if self._frame_index >= len(self._animation.frames):
@@ -333,22 +334,22 @@ class Emitter(event.EventDispatcher):
 
     def _set_texture(self, texture):
         previous_size = self._texture.width, self._texture.height
-        if texture.key != self._texture.key:
-            self._group = self._group.__class__(texture,
-                                                self._group.blend_src,
-                                                self._group.blend_dest,
-                                                self._group.program,
-                                                self._group.parent)
-            self._vertex_list.delete()
-            self._texture = texture
-            self._resolve_anchor()
-            self._create_vertex_list()
-        else:
-            self._texture = texture
-            self._vertex_list.texture_uv[:] = texture.uv
-            self._resolve_anchor()
-            if self._anchor is not None or (texture.width, texture.height) != previous_size:
-                self._update_anchor()
+        texture_changed = texture.key != self._texture.key
+        self._texture = texture
+        self._resolve_anchor()
+
+        if texture_changed:
+            self._group = self.get_emitter_group()
+            if self._batch is not None:
+                self._batch.migrate(self._vertex_list, GeometryMode.POINTS, self._group, self._batch)
+            else:
+                self._vertex_list.delete()
+                self._create_vertex_list()
+                return
+
+        self._vertex_list.texture_uv[:] = texture.uv
+        if self._anchor is not None or (texture.width, texture.height) != previous_size:
+            self._update_anchor()
 
     def _update_anchor(self):
         texture = self._texture
@@ -359,6 +360,56 @@ class Emitter(event.EventDispatcher):
             return
 
         self._anchor_x, self._anchor_y = self._anchor.get_position(self._texture.width, self._texture.height)
+
+    @property
+    def blend_mode(self):
+        """The current blend factors applied to this emitter."""
+        return self._blend_src, self._blend_dest
+
+    @blend_mode.setter
+    def blend_mode(self, modes):
+        src, dst = modes
+        if src == self._blend_src and dst == self._blend_dest:
+            return
+
+        self._blend_src = src
+        self._blend_dest = dst
+        self._group = self.get_emitter_group()
+        if self._batch is not None:
+            self._batch.migrate(self._vertex_list, GeometryMode.POINTS, self._group, self._batch)
+
+    @property
+    def batch(self):
+        """The batch that owns this emitter's vertex list."""
+        return self._batch
+
+    @batch.setter
+    def batch(self, batch):
+        if self._batch == batch:
+            return
+
+        if batch is not None and self._batch is not None:
+            self._batch.migrate(self._vertex_list, GeometryMode.POINTS, self._group, batch)
+            self._batch = batch
+        else:
+            self._vertex_list.delete()
+            self._batch = batch
+            self._create_vertex_list()
+
+    @property
+    def group(self):
+        """The user-supplied parent group."""
+        return self._user_group
+
+    @group.setter
+    def group(self, group):
+        if self._user_group == group:
+            return
+
+        self._user_group = group
+        self._group = self.get_emitter_group()
+        if self._batch is not None:
+            self._batch.migrate(self._vertex_list, GeometryMode.POINTS, self._group, self._batch)
 
     @property
     def anchor(self):
@@ -412,6 +463,20 @@ class Emitter(event.EventDispatcher):
     def position(self, position: tuple[int | float, int | float, int | float]):
         self._x, self._y, self._z = position
         self._vertex_list.position[:] = position
+
+    def draw(self):
+        """Draw the emitter without a batch."""
+        ctx = pyglet.graphics.api.core.current_context
+        draw_ctx = DrawContext(
+            surface_ctx=ctx,
+            backend_ctx=None,
+            draw_pass=BatchDrawOptions().resolve(ctx),
+            renderer=ctx.renderer,
+        )
+        draw_ctx.begin()
+        self._group.set_state_recursive(draw_ctx)
+        self._vertex_list.draw(GeometryMode.POINTS)
+        self._group.unset_state_recursive(draw_ctx)
 
     if _is_pyglet_doc_run:
         def on_animation_end(self):
@@ -510,7 +575,7 @@ class ParticleManager:
         emitter = Emitter(self._img, x, y, z, self.count, self.velocity, self.spread,
                           color_start=self.color_start, color_end=self.color_end,
                           scale_start=self.scale_start, scale_end=self.scale_end, rotation=self.rotation,
-                          batch=self._batch, group=self._group,
+                          batch=self._batch, group=self._group, program=self._program,
                           anchor=self._anchor if self._anchor is not None else self.anchor_position)
         pyglet.clock.schedule_once(self._delete_callback, self.lifespan, emitter)
         return emitter

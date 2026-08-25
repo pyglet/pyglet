@@ -4,9 +4,9 @@ import sys
 
 import pyglet
 from pyglet import clock, event, graphics, image
-from pyglet.enums import Anchor
-from pyglet.enums import GeometryMode
-from pyglet.graphics.api.gl import *
+from pyglet.enums import Anchor, BlendFactor, GeometryMode
+from pyglet.graphics import Group
+from pyglet.graphics.draw import DrawContext, BatchDrawOptions
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -162,7 +162,7 @@ def get_default_array_shader():
     return program.get_attribute_view(color="Bn")
 
 
-class SpriteGroup(graphics.Group):
+class SpriteGroup(Group):
     """Shared sprite rendering group.
 
     The group is automatically coalesced with other sprite groups sharing the
@@ -193,39 +193,9 @@ class SpriteGroup(graphics.Group):
         """
         super().__init__(parent=parent)
         self.texture = texture
-        self.blend_src = blend_src
-        self.blend_dest = blend_dest
-        self.program = program
-
-    def set_state(self):
-        self.program.use()
-
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(self.texture.target, self.texture.handle)
-
-        glEnable(GL_BLEND)
-        glBlendFunc(self.blend_src, self.blend_dest)
-
-    def unset_state(self):
-        glDisable(GL_BLEND)
-        self.program.stop()
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}({self.texture})"
-
-    def __eq__(self, other):
-        return (other.__class__ is self.__class__ and
-                self.program is other.program and
-                self.parent == other.parent and
-                self.texture.target == other.texture.target and
-                self.texture.key == other.texture.key and
-                self.blend_src == other.blend_src and
-                self.blend_dest == other.blend_dest)
-
-    def __hash__(self):
-        return hash((self.program, self.parent,
-                     self.texture.key, self.texture.target,
-                     self.blend_src, self.blend_dest))
+        self.set_shader_program(program)
+        self.set_blend(blend_src, blend_dest)
+        self.set_texture(texture, 0)
 
 
 class Sprite(event.EventDispatcher):
@@ -247,7 +217,7 @@ class Sprite(event.EventDispatcher):
     def __init__(self,
                  img, x=0, y=0, z=0,
                  anchor: Anchor | str | tuple[float, float] | None = None,
-                 blend_src=GL_SRC_ALPHA, blend_dest=GL_ONE_MINUS_SRC_ALPHA,
+                 blend_src=BlendFactor.SRC_ALPHA, blend_dest=BlendFactor.ONE_MINUS_SRC_ALPHA,
                  batch=None, group=None, subpixel=False, program=None):
         """Create a sprite.
 
@@ -317,9 +287,11 @@ class Sprite(event.EventDispatcher):
         else:
             self._program = program
 
-        self._batch = batch or graphics.get_default_batch()
+        self._batch = batch
+        self._blend_src = blend_src
+        self._blend_dest = blend_dest
         self._user_group = group
-        self._group = self.group_class(self._texture, blend_src, blend_dest, self.program, group)
+        self._group = self.get_sprite_group()
         self._subpixel = subpixel
 
         self._create_vertex_list()
@@ -327,7 +299,7 @@ class Sprite(event.EventDispatcher):
     def _create_vertex_list(self):
         texture = self._texture
         self._vertex_list = self.program.vertex_list(
-            1, GL_POINTS, self._batch, self._group,
+            1, GeometryMode.POINTS, self._batch, self._group,
             position=(self._x, self._y, self._z),
             size=(texture.width, texture.height, self._anchor_x, self._anchor_y),
             scale=(self._scale_x, self._scale_y),
@@ -343,13 +315,10 @@ class Sprite(event.EventDispatcher):
     def program(self, program):
         if self._program == program:
             return
-        self._group = self.group_class(self._texture,
-                                       self._group.blend_src,
-                                       self._group.blend_dest,
-                                       program,
-                                       self._user_group)
+        self._program = program
+        self._group = self.get_sprite_group()
         if (self._batch and
-                self._batch.update_shader(self._vertex_list, GL_POINTS, self._group, program)):
+                self._batch.update_shader(self._vertex_list, GeometryMode.POINTS, self._group, program)):
             # Exit early if changing domain is not needed.
             return
 
@@ -371,6 +340,9 @@ class Sprite(event.EventDispatcher):
         self._texture = None
         self._group = None
 
+    def get_sprite_group(self):
+        return self.group_class(self._texture, self._blend_src, self._blend_dest, self._program, self._user_group)
+
     def _animate(self, dt):
         self._frame_index += 1
         if self._frame_index >= len(self._animation.frames):
@@ -391,6 +363,23 @@ class Sprite(event.EventDispatcher):
             self.dispatch_event('on_animation_end')
 
     @property
+    def blend_mode(self):
+        """The current blend factors applied to this sprite."""
+        return self._blend_src, self._blend_dest
+
+    @blend_mode.setter
+    def blend_mode(self, modes):
+        src, dst = modes
+        if src == self._blend_src and dst == self._blend_dest:
+            return
+
+        self._blend_src = src
+        self._blend_dest = dst
+        self._group = self.get_sprite_group()
+        if self._batch is not None:
+            self._batch.migrate(self._vertex_list, GeometryMode.POINTS, self._group, self._batch)
+
+    @property
     def batch(self):
         """Graphics batch.
 
@@ -408,7 +397,7 @@ class Sprite(event.EventDispatcher):
             return
 
         if batch is not None and self._batch is not None:
-            self._batch.migrate(self._vertex_list, GL_POINTS, self._group, batch)
+            self._batch.migrate(self._vertex_list, GeometryMode.POINTS, self._group, batch)
             self._batch = batch
         else:
             self._vertex_list.delete()
@@ -424,18 +413,16 @@ class Sprite(event.EventDispatcher):
 
         :type: :py:class:`pyglet.graphics.Group`
         """
-        return self._group.parent
+        return self._user_group
 
     @group.setter
     def group(self, group):
-        if self._group.parent == group:
+        if self._user_group == group:
             return
-        self._group = self.group_class(self._texture,
-                                       self._group.blend_src,
-                                       self._group.blend_dest,
-                                       self._group.program,
-                                       group)
-        self._batch.migrate(self._vertex_list, GL_POINTS, self._group, self._batch)
+        self._user_group = group
+        self._group = self.get_sprite_group()
+        if self._batch is not None:
+            self._batch.migrate(self._vertex_list, GeometryMode.POINTS, self._group, self._batch)
 
     @property
     def image(self):
@@ -462,22 +449,22 @@ class Sprite(event.EventDispatcher):
 
     def _set_texture(self, texture):
         previous_size = self._texture.width, self._texture.height
-        if texture.key != self._texture.key:
-            self._group = self._group.__class__(texture,
-                                                self._group.blend_src,
-                                                self._group.blend_dest,
-                                                self._group.program,
-                                                self._group.parent)
-            self._vertex_list.delete()
-            self._texture = texture
-            self._resolve_anchor()
-            self._create_vertex_list()
-        else:
-            self._texture = texture
-            self._vertex_list.texture_uv[:] = texture.uv
-            self._resolve_anchor()
-            if self._anchor is not None or (texture.width, texture.height) != previous_size:
-                self._update_anchor()
+        texture_changed = texture.key != self._texture.key
+        self._texture = texture
+        self._resolve_anchor()
+
+        if texture_changed:
+            self._group = self.get_sprite_group()
+            if self._batch is not None:
+                self._batch.migrate(self._vertex_list, GeometryMode.POINTS, self._group, self._batch)
+            else:
+                self._vertex_list.delete()
+                self._create_vertex_list()
+                return
+
+        self._vertex_list.texture_uv[:] = texture.uv
+        if self._anchor is not None or (texture.width, texture.height) != previous_size:
+            self._update_anchor()
 
     def _resolve_anchor(self):
         if self._anchor is not None:
@@ -845,10 +832,10 @@ class Sprite(event.EventDispatcher):
         efficiently.
         """
         ctx = pyglet.graphics.api.core.current_context
-        draw_ctx = pyglet.graphics.draw.DrawContext(
+        draw_ctx = DrawContext(
             surface_ctx=ctx,
             backend_ctx=None,
-            draw_pass=pyglet.graphics.draw.BatchDrawOptions().resolve(ctx),
+            draw_pass=BatchDrawOptions().resolve(ctx),
             renderer=ctx.renderer,
         )
         draw_ctx.begin()
