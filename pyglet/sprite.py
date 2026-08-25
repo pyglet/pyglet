@@ -195,10 +195,10 @@ class Sprite(event.EventDispatcher):
                 :attr:`~pyglet.enums.Anchor.TOP`. Named anchors are
                 recalculated when the image or animation frame changes.
             blend_src:
-                OpenGL blend source mode.  The default is suitable for
+                Blend source factor. The default is suitable for
                 compositing sprites drawn from back-to-front.
             blend_dest:
-                OpenGL blend destination mode.  The default is suitable for
+                Blend destination factor. The default is suitable for
                 compositing sprites drawn from back-to-front.
             batch:
                 Optional batch to add the sprite to.
@@ -903,10 +903,10 @@ class MultiTextureSprite(Sprite):
                 offset, or a named anchor that is recalculated when the
                 anchor texture changes.
             blend_src:
-                OpenGL blend source mode.  The default is suitable for
+                Blend source factor. The default is suitable for
                 compositing sprites drawn from back-to-front.
             blend_dest:
-                OpenGL blend destination mode.  The default is suitable for
+                Blend destination factor. The default is suitable for
                 compositing sprites drawn from back-to-front.
             batch:
                 Optional batch to add the sprite to.

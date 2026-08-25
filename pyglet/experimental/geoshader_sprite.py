@@ -170,27 +170,6 @@ class SpriteGroup(Group):
     """
 
     def __init__(self, texture, blend_src, blend_dest, program, parent=None):
-        """Create a sprite group.
-
-        The group is created internally when a :py:class:`~pyglet.sprite.Sprite`
-        is created; applications usually do not need to explicitly create it.
-
-        :Parameters:
-            `texture` : `~pyglet.graphics.Texture`
-                The (top-level) texture containing the sprite image.
-            `blend_src` : int
-                OpenGL blend source mode; for example,
-                ``GL_SRC_ALPHA``.
-            `blend_dest` : int
-                OpenGL blend destination mode; for example,
-                ``GL_ONE_MINUS_SRC_ALPHA``.
-            `program` : `~pyglet.graphics.ShaderProgram`
-                A custom ShaderProgram.
-            `order` : int
-                Change the order to render above or below other Groups.
-            `parent` : `~pyglet.graphics.Group`
-                Optional parent group.
-        """
         super().__init__(parent=parent)
         self.texture = texture
         self.set_shader_program(program)
@@ -221,34 +200,34 @@ class Sprite(event.EventDispatcher):
                  batch=None, group=None, subpixel=False, program=None):
         """Create a sprite.
 
-        :Parameters:
-            `img` :
+        Args:
+            img:
                 Image or animation to display.
-            `x` : int
+            x:
                 X coordinate of the sprite.
-            `y` : int
+            y:
                 Y coordinate of the sprite.
-            `z` : int
+            z:
                 Z coordinate of the sprite.
-            `anchor` : tuple[float, float] | str | Anchor | None
+            anchor:
                 Anchor offset relative to the image's lower-left corner. Pass
                 a numeric ``(x, y)`` tuple for an explicit offset, or a named
                 anchor such as ``"bottom_center"``. Named anchors are
                 recalculated when the image or animation frame changes.
-            `blend_src` : int
-                OpenGL blend source mode.  The default is suitable for
+            blend_src:
+                Source :class:`~pyglet.enums.BlendFactor`. The default is suitable for
                 compositing sprites drawn from back-to-front.
-            `blend_dest` : int
-                OpenGL blend destination mode.  The default is suitable for
+            blend_dest:
+                Destination :class:`~pyglet.enums.BlendFactor`. The default is suitable for
                 compositing sprites drawn from back-to-front.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Optional batch to add the sprite to.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 Optional parent group of the sprite.
-            `subpixel` : bool
+            subpixel:
                 Allow floating-point coordinates for the sprite. By default,
                 coordinates are restricted to integer values.
-            `program` : `~pyglet.graphics.ShaderProgram`
+            program:
                 A custom shader to use. This shader program must contain the
                 exact same attribute names and types as the default shader.
                 The class methods and properties depend on this, and will
@@ -520,16 +499,7 @@ class Sprite(event.EventDispatcher):
 
     @property
     def position(self):
-        """The (x, y, z) coordinates of the sprite, as a tuple.
-
-        :Parameters:
-            `x` : int
-                X coordinate of the sprite.
-            `y` : int
-                Y coordinate of the sprite.
-            `z` : int
-                Z coordinate of the sprite.
-        """
+        """The ``(x, y, z)`` coordinates of the sprite."""
         return self._x, self._y, self._z
 
     @position.setter
@@ -645,20 +615,20 @@ class Sprite(event.EventDispatcher):
         This method is provided for convenience. There is not much
         performance benefit to updating multiple Sprite attributes at once.
 
-        :Parameters:
-            `x` : int
+        Args:
+            x:
                 X coordinate of the sprite.
-            `y` : int
+            y:
                 Y coordinate of the sprite.
-            `z` : int
+            z:
                 Z coordinate of the sprite.
-            `rotation` : float
+            rotation:
                 Clockwise rotation of the sprite, in degrees.
-            `scale` : float
+            scale:
                 Scaling factor.
-            `scale_x` : float
+            scale_x:
                 Horizontal scaling factor.
-            `scale_y` : float
+            scale_y:
                 Vertical scaling factor.
         """
         translations_outdated = False

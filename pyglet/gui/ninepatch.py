@@ -62,15 +62,14 @@ class NinePatch(Sprite):
                 The desired height of the NinePatch. This must be
                 greater or equal to the provided image height.
             blend_src:
-                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+                Blend source factor.
             blend_dest:
-                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
+                Blend destination factor.
             batch:
                 Optional batch to add the NinePatch to.
             group:
                 Optional parent group of the NinePatch.
         """
-
         self._width = max(width or img.width, img.width)
         self._height = max(height or img.height, img.height)
         super().__init__(img, x, y, z, anchor, blend_src, blend_dest, batch, group)
@@ -102,15 +101,14 @@ class NinePatch(Sprite):
             border:
                 Additional padding, in pixels, to place around the label.
             blend_src:
-                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+                Blend source factor.
             blend_dest:
-                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
+                Blend destination factor.
             batch:
                 Optional batch to add the NinePatch to.
             group:
                 Optional parent group of the NinePatch.
         """
-
         x = layout.left - border
         y = layout.bottom - border
         z = layout.z - 1
