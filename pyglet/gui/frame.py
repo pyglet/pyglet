@@ -39,9 +39,12 @@ class Frame:
         self._enable = enable
         self._cell_size = cell_size
         self._cells = {}
+        self._widgets = set()
+        self._widget_cells = {}
         self._active_widgets = set()
         self._order = order
         self._mouse_pos = 0, 0
+        self._resizing = False
         if self._enable:
             self._window.push_handlers(self)
 
@@ -50,8 +53,36 @@ class Frame:
         return int(x / self._cell_size), int(y / self._cell_size)
 
     def _on_reposition_handler(self, widget):
-        self.remove_widget(widget)
-        self.add_widget(widget)
+        # Do not update hash until after resize.
+        if not self._resizing:
+            self._remove_from_cells(widget)
+            self._add_to_cells(widget)
+
+    def _add_to_cells(self, widget: WidgetBase) -> None:
+        """Add a widget to the cells covered by its current bounds."""
+        min_vec, max_vec = self._hash(*widget.aabb[0:2]), self._hash(*widget.aabb[2:4])
+        cells = set()
+        for i in range(min_vec[0], max_vec[0] + 1):
+            for j in range(min_vec[1], max_vec[1] + 1):
+                cell = i, j
+                self._cells.setdefault(cell, set()).add(widget)
+                cells.add(cell)
+        self._widget_cells[widget] = cells
+
+    def _remove_from_cells(self, widget: WidgetBase) -> None:
+        """Remove a widget from the cells it occupied before its last update."""
+        for cell in self._widget_cells.pop(widget, set()):
+            widgets = self._cells[cell]
+            widgets.remove(widget)
+            if not widgets:
+                del self._cells[cell]
+
+    def _rebuild_cells(self) -> None:
+        """Rebuild the spatial hash from the current widget bounds."""
+        self._cells.clear()
+        self._widget_cells.clear()
+        for widget in self._widgets:
+            self._add_to_cells(widget)
 
     @property
     def enable(self):
@@ -71,21 +102,32 @@ class Frame:
 
     def add_widget(self, widget: WidgetBase) -> None:
         """Add a Widget to the spatial hash."""
-        min_vec, max_vec = self._hash(*widget.aabb[0:2]), self._hash(*widget.aabb[2:4])
-        for i in range(min_vec[0], max_vec[0] + 1):
-            for j in range(min_vec[1], max_vec[1] + 1):
-                self._cells.setdefault((i, j), set()).add(widget)
+        self._widgets.add(widget)
         widget.update_groups(self._order)
         widget.set_handler("on_reposition", self._on_reposition_handler)
+        if not self._resizing:
+            self._add_to_cells(widget)
 
     def remove_widget(self, widget: WidgetBase) -> None:
         """Remove a Widget from the spatial hash."""
-        min_vec, max_vec = self._hash(*widget.aabb[0:2]), self._hash(*widget.aabb[2:4])
-        for i in range(min_vec[0], max_vec[0] + 1):
-            for j in range(min_vec[1], max_vec[1] + 1):
-                self._cells.get((i, j)).remove(widget)
+        self._widgets.remove(widget)
+        self._active_widgets.discard(widget)
+        if not self._resizing:
+            self._remove_from_cells(widget)
 
     # Handlers
+
+    def on_resize(self, width: int, height: int) -> None:
+        """Notify widgets of a frame resize, then rebuild the spatial hash."""
+        # Widgets can update their position/size in response to this event.
+        # Defer the hash rebuild until after processing, to prevent hash issues.
+        self._resizing = True
+        try:
+            for widget in self._widgets:
+                widget.dispatch_event("on_resize", width, height)
+        finally:
+            self._resizing = False
+            self._rebuild_cells()
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         """Pass the event to any widgets within range of the mouse."""

@@ -147,6 +147,13 @@ class WidgetBase(EventDispatcher):
 
     # Handlers
 
+    def on_resize(self, width: int, height: int) -> None:
+        """Handle a resize of the containing frame.
+
+        Subclasses can override this to update their position or size in
+        response to the new frame dimensions.
+        """
+
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         pass
 
@@ -185,6 +192,7 @@ class WidgetBase(EventDispatcher):
 
 
 WidgetBase.register_event_type("on_reposition")
+WidgetBase.register_event_type("on_resize")
 
 
 class PushButton(WidgetBase):
