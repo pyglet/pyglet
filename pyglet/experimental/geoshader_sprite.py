@@ -4,6 +4,7 @@ import sys
 
 import pyglet
 from pyglet import clock, event, graphics, image
+from pyglet.enums import Anchor
 from pyglet.enums import GeometryMode
 from pyglet.graphics.api.gl import *
 
@@ -230,6 +231,9 @@ class SpriteGroup(graphics.Group):
 class Sprite(event.EventDispatcher):
     _batch = None
     _animation = None
+    _anchor_x = 0.0
+    _anchor_y = 0.0
+    _anchor = None
     _frame_index = 0
     _paused = False
     _rotation = 0
@@ -242,6 +246,7 @@ class Sprite(event.EventDispatcher):
 
     def __init__(self,
                  img, x=0, y=0, z=0,
+                 anchor: Anchor | str | tuple[float, float] | None = None,
                  blend_src=GL_SRC_ALPHA, blend_dest=GL_ONE_MINUS_SRC_ALPHA,
                  batch=None, group=None, subpixel=False, program=None):
         """Create a sprite.
@@ -255,6 +260,11 @@ class Sprite(event.EventDispatcher):
                 Y coordinate of the sprite.
             `z` : int
                 Z coordinate of the sprite.
+            `anchor` : tuple[float, float] | str | Anchor | None
+                Anchor offset relative to the image's lower-left corner. Pass
+                a numeric ``(x, y)`` tuple for an explicit offset, or a named
+                anchor such as ``"bottom_center"``. Named anchors are
+                recalculated when the image or animation frame changes.
             `blend_src` : int
                 OpenGL blend source mode.  The default is suitable for
                 compositing sprites drawn from back-to-front.
@@ -278,6 +288,13 @@ class Sprite(event.EventDispatcher):
         self._y = y
         self._z = z
         self._img = img
+        self._anchor_x = 0.0
+        self._anchor_y = 0.0
+        self._anchor = None
+        if isinstance(anchor, tuple):
+            self._anchor_x, self._anchor_y = anchor
+        elif anchor is not None:
+            self._anchor = Anchor(anchor)
 
         self._rgba = [255, 255, 255, 255]
 
@@ -289,6 +306,8 @@ class Sprite(event.EventDispatcher):
                 clock.schedule_once(self._animate, self._next_dt)
         else:
             self._texture = img.get_texture()
+
+        self._resolve_anchor()
 
         if not program:
             if isinstance(img, image.TextureArrayRegion):
@@ -310,7 +329,7 @@ class Sprite(event.EventDispatcher):
         self._vertex_list = self.program.vertex_list(
             1, GL_POINTS, self._batch, self._group,
             position=(self._x, self._y, self._z),
-            size=(texture.width, texture.height, texture.anchor_x, texture.anchor_y),
+            size=(texture.width, texture.height, self._anchor_x, self._anchor_y),
             scale=(self._scale_x, self._scale_y),
             color=self._rgba,
             texture_uv=texture.uv,
@@ -442,6 +461,7 @@ class Sprite(event.EventDispatcher):
             self._set_texture(img.get_texture())
 
     def _set_texture(self, texture):
+        previous_size = self._texture.width, self._texture.height
         if texture.key != self._texture.key:
             self._group = self._group.__class__(texture,
                                                 self._group.blend_src,
@@ -450,10 +470,66 @@ class Sprite(event.EventDispatcher):
                                                 self._group.parent)
             self._vertex_list.delete()
             self._texture = texture
+            self._resolve_anchor()
             self._create_vertex_list()
         else:
+            self._texture = texture
             self._vertex_list.texture_uv[:] = texture.uv
-        self._texture = texture
+            self._resolve_anchor()
+            if self._anchor is not None or (texture.width, texture.height) != previous_size:
+                self._update_anchor()
+
+    def _resolve_anchor(self):
+        if self._anchor is not None:
+            self._anchor_x, self._anchor_y = self._anchor.get_position(self._texture.width, self._texture.height)
+
+    def _update_anchor(self):
+        texture = self._texture
+        self._vertex_list.size[:] = texture.width, texture.height, self._anchor_x, self._anchor_y
+
+    @property
+    def anchor(self):
+        """The named anchor position, or ``None`` when using a numeric anchor."""
+        return self._anchor
+
+    @anchor.setter
+    def anchor(self, anchor):
+        self._anchor = Anchor(anchor) if anchor is not None else None
+        self._resolve_anchor()
+        self._update_anchor()
+
+    @property
+    def anchor_x(self):
+        """X coordinate of the anchor, relative to the image's left edge."""
+        return self._anchor_x
+
+    @anchor_x.setter
+    def anchor_x(self, anchor_x):
+        self._anchor = None
+        self._anchor_x = anchor_x
+        self._update_anchor()
+
+    @property
+    def anchor_y(self):
+        """Y coordinate of the anchor, relative to the image's bottom edge."""
+        return self._anchor_y
+
+    @anchor_y.setter
+    def anchor_y(self, anchor_y):
+        self._anchor = None
+        self._anchor_y = anchor_y
+        self._update_anchor()
+
+    @property
+    def anchor_position(self):
+        """The anchor's ``(x, y)`` offset from the sprite's lower-left corner."""
+        return self._anchor_x, self._anchor_y
+
+    @anchor_position.setter
+    def anchor_position(self, position):
+        self._anchor = None
+        self._anchor_x, self._anchor_y = position
+        self._update_anchor()
 
     @property
     def position(self):
@@ -517,8 +593,7 @@ class Sprite(event.EventDispatcher):
     def rotation(self):
         """Clockwise rotation of the sprite, in degrees.
 
-        The sprite image will be rotated about its image's (anchor_x, anchor_y)
-        position.
+        The sprite image is rotated around its lower-left corner.
 
         :type: float
         """

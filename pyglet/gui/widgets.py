@@ -465,8 +465,6 @@ class Slider(WidgetBase):
         self._knob_img = knob
         self._half_knob_width = knob.width / 2
         self._half_knob_height = knob.height / 2
-        self._knob_img.anchor_y = int(knob.height / 2)
-
         self._min_knob_x = x + edge
         self._max_knob_x = x + base.width - knob.width - edge
 
@@ -474,7 +472,10 @@ class Slider(WidgetBase):
         bg_group = Group(order=0, parent=group)
         fg_group = Group(order=1, parent=group)
         self._base_spr = pyglet.sprite.Sprite(self._base_img, x, y, batch=batch, group=bg_group)
-        self._knob_spr = pyglet.sprite.Sprite(self._knob_img, x+edge, y+base.height/2, batch=batch, group=fg_group)
+        self._knob_spr = pyglet.sprite.Sprite(
+            self._knob_img, x + edge, y + base.height / 2, batch=batch, group=fg_group,
+            anchor_y=int(knob.height / 2),
+        )
 
         self._value = 0
         self._in_update = False

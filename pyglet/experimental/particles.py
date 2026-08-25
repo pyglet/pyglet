@@ -7,7 +7,7 @@ import time
 
 import pyglet
 from pyglet import clock, event, graphics, image
-from pyglet.enums import BlendFactor, GeometryMode
+from pyglet.enums import Anchor, BlendFactor, GeometryMode
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -205,6 +205,9 @@ class Emitter(event.EventDispatcher):
     _batch = None
     _animation = None
     _frame_index = 0
+    _anchor_x = 0.0
+    _anchor_y = 0.0
+    _anchor = None
     _paused = False
     _visible = True
     _vertex_list = None
@@ -214,7 +217,8 @@ class Emitter(event.EventDispatcher):
                  color_start=(255, 255, 255, 255), color_end=(255, 255, 255, 255),
                  scale_start=(1.0, 1.0), scale_end=(1.0, 1.0), rotation=0.0,
                  blend_src=BlendFactor.SRC_ALPHA, blend_dest=BlendFactor.ONE_MINUS_SRC_ALPHA,
-                 batch=None, group=None, program=None):
+                 batch=None, group=None, program=None,
+                 anchor: Anchor | str | tuple[float, float] | None = None):
 
         self._img = img
         self._x = x
@@ -222,6 +226,13 @@ class Emitter(event.EventDispatcher):
         self._z = z
         self._count = count
         self._velocity = velocity + spread
+        self._anchor_x = 0.0
+        self._anchor_y = 0.0
+        self._anchor = None
+        if isinstance(anchor, tuple):
+            self._anchor_x, self._anchor_y = anchor
+        elif anchor is not None:
+            self._anchor = Anchor(anchor)
 
         self._color_start = color_start
         self._color_end = color_end
@@ -238,6 +249,8 @@ class Emitter(event.EventDispatcher):
         else:
             self._texture = img.get_texture()
 
+        self._resolve_anchor()
+
         self._program = program or get_default_shader()
         self._batch = batch or graphics.get_default_batch()
         self._user_group = group
@@ -251,7 +264,7 @@ class Emitter(event.EventDispatcher):
             count, GeometryMode.POINTS, self._batch, self._group,
             position=(self._x, self._y, self._z) * count,
 
-            size=(texture.width, texture.height, texture.anchor_x, texture.anchor_y) * count,
+            size=(texture.width, texture.height, self._anchor_x, self._anchor_y) * count,
             scale=(self._scale_start + self._scale_end) * count,
 
             velocity=self._velocity * count,
@@ -319,6 +332,7 @@ class Emitter(event.EventDispatcher):
             self.dispatch_event('on_animation_end')
 
     def _set_texture(self, texture):
+        previous_size = self._texture.width, self._texture.height
         if texture.key != self._texture.key:
             self._group = self._group.__class__(texture,
                                                 self._group.blend_src,
@@ -327,10 +341,68 @@ class Emitter(event.EventDispatcher):
                                                 self._group.parent)
             self._vertex_list.delete()
             self._texture = texture
+            self._resolve_anchor()
             self._create_vertex_list()
         else:
+            self._texture = texture
             self._vertex_list.texture_uv[:] = texture.uv
-        self._texture = texture
+            self._resolve_anchor()
+            if self._anchor is not None or (texture.width, texture.height) != previous_size:
+                self._update_anchor()
+
+    def _update_anchor(self):
+        texture = self._texture
+        self._vertex_list.size[:] = (texture.width, texture.height, self._anchor_x, self._anchor_y) * self._count
+
+    def _resolve_anchor(self):
+        if self._anchor is None:
+            return
+
+        self._anchor_x, self._anchor_y = self._anchor.get_position(self._texture.width, self._texture.height)
+
+    @property
+    def anchor(self):
+        """The named anchor position, or ``None`` when using a numeric anchor."""
+        return self._anchor
+
+    @anchor.setter
+    def anchor(self, anchor):
+        self._anchor = Anchor(anchor) if anchor is not None else None
+        self._resolve_anchor()
+        self._update_anchor()
+
+    @property
+    def anchor_x(self):
+        """X coordinate of the particle anchor, relative to the image's left edge."""
+        return self._anchor_x
+
+    @anchor_x.setter
+    def anchor_x(self, anchor_x):
+        self._anchor = None
+        self._anchor_x = anchor_x
+        self._update_anchor()
+
+    @property
+    def anchor_y(self):
+        """Y coordinate of the particle anchor, relative to the image's bottom edge."""
+        return self._anchor_y
+
+    @anchor_y.setter
+    def anchor_y(self, anchor_y):
+        self._anchor = None
+        self._anchor_y = anchor_y
+        self._update_anchor()
+
+    @property
+    def anchor_position(self):
+        """The particle anchor's ``(x, y)`` offset from the image's lower-left corner."""
+        return self._anchor_x, self._anchor_y
+
+    @anchor_position.setter
+    def anchor_position(self, position):
+        self._anchor = None
+        self._anchor_x, self._anchor_y = position
+        self._update_anchor()
 
     @property
     def position(self) -> tuple[int | float, int | float, int | float]:
@@ -362,7 +434,8 @@ class ParticleManager:
                  spread=(10.0, 10.0),
                  color_start=(255, 255, 255, 255), color_end=(255, 255, 255, 255),
                  scale_start=(1.0, 1.0), scale_end=(1.0, 1.0), rotation=0.0,
-                 batch=None, group=None):
+                 batch=None, group=None,
+                 anchor: Anchor | str | tuple[float, float] | None = None):
 
         self._img = img
         self.lifespan = lifespan
@@ -374,6 +447,13 @@ class ParticleManager:
         self.scale_start = scale_start
         self.scale_end = scale_end
         self.rotation = rotation
+        self._anchor_x = 0.0
+        self._anchor_y = 0.0
+        self._anchor = None
+        if isinstance(anchor, tuple):
+            self._anchor_x, self._anchor_y = anchor
+        elif anchor is not None:
+            self._anchor = Anchor(anchor)
 
         self._batch = batch
         self._group = group
@@ -383,6 +463,45 @@ class ParticleManager:
     def _update_shader_time(self, dt):
         self._program['time'] = time.perf_counter()
 
+    @property
+    def anchor(self):
+        """The named anchor position, or ``None`` when using a numeric anchor."""
+        return self._anchor
+
+    @anchor.setter
+    def anchor(self, anchor):
+        self._anchor = Anchor(anchor) if anchor is not None else None
+
+    @property
+    def anchor_x(self):
+        """X coordinate of the particle anchor, relative to the image's left edge."""
+        return self._anchor_x
+
+    @anchor_x.setter
+    def anchor_x(self, anchor_x):
+        self._anchor = None
+        self._anchor_x = anchor_x
+
+    @property
+    def anchor_y(self):
+        """Y coordinate of the particle anchor, relative to the image's bottom edge."""
+        return self._anchor_y
+
+    @anchor_y.setter
+    def anchor_y(self, anchor_y):
+        self._anchor = None
+        self._anchor_y = anchor_y
+
+    @property
+    def anchor_position(self):
+        """The particle anchor's ``(x, y)`` offset from the image's lower-left corner."""
+        return self._anchor_x, self._anchor_y
+
+    @anchor_position.setter
+    def anchor_position(self, position):
+        self._anchor = None
+        self._anchor_x, self._anchor_y = position
+
     @staticmethod
     def _delete_callback(dt, emitter):
         emitter.delete()
@@ -391,7 +510,8 @@ class ParticleManager:
         emitter = Emitter(self._img, x, y, z, self.count, self.velocity, self.spread,
                           color_start=self.color_start, color_end=self.color_end,
                           scale_start=self.scale_start, scale_end=self.scale_end, rotation=self.rotation,
-                          batch=self._batch, group=self._group)
+                          batch=self._batch, group=self._group,
+                          anchor=self._anchor if self._anchor is not None else self.anchor_position)
         pyglet.clock.schedule_once(self._delete_callback, self.lifespan, emitter)
         return emitter
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pyglet.enums import BlendFactor, GeometryMode
+from pyglet.enums import Anchor, BlendFactor, GeometryMode
 from pyglet.sprite import Sprite
 
 if TYPE_CHECKING:
@@ -33,6 +33,7 @@ class NinePatch(Sprite):
     def __init__(self,
                  img: _AbstractImage | Animation,
                  x: float = 0, y: float = 0, z: float = 0,
+                 anchor: Anchor | str | tuple[float, float] | None = None,
                  width: int | None = None, height: int | None = None,
                  blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
                  blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
@@ -49,6 +50,11 @@ class NinePatch(Sprite):
                 The Y coordinate of the NinePatch.
             z:
                 The Z coordinate of the NinePatch.
+            anchor:
+                Anchor offset relative to the NinePatch's lower-left corner.
+                Pass a numeric ``(x, y)`` tuple for an explicit offset, or a
+                named anchor such as ``"bottom_center"``. Named anchors are
+                recalculated when the NinePatch dimensions change.
             width:
                 The desired width of the NinePatch. This must be
                 greater or equal to the provided image width.
@@ -65,9 +71,9 @@ class NinePatch(Sprite):
                 Optional parent group of the NinePatch.
         """
 
-        self._width = max(width, img.width)
-        self._height = max(height, img.height)
-        super().__init__(img, x, y, z, blend_src, blend_dest, batch, group)
+        self._width = max(width or img.width, img.width)
+        self._height = max(height or img.height, img.height)
+        super().__init__(img, x, y, z, anchor, blend_src, blend_dest, batch, group)
 
     @classmethod
     def create_around_layout(cls,
@@ -110,7 +116,12 @@ class NinePatch(Sprite):
         z = layout.z - 1
         width = int(layout.right - x + border)
         height = int(layout.top - y + border)
-        return cls(img, x, y, z, width, height, blend_src, blend_dest, batch, group)
+        return cls(img, x, y, z, width=width, height=height, blend_src=blend_src,
+                   blend_dest=blend_dest, batch=batch, group=group)
+
+    def _resolve_anchor(self) -> None:
+        if self._anchor is not None:
+            self._anchor_x, self._anchor_y = self._anchor.get_position(self._width, self._height)
 
     def _create_vertex_list(self) -> None:
         # Vertex layout for 9 quads:
@@ -155,11 +166,11 @@ class NinePatch(Sprite):
             center_width = self._width - edge_width - edge_width
             center_height = self._height - edge_height - edge_height
 
-            x0 = -img.anchor_x
+            x0 = -self._anchor_x
             x1 = x0 + edge_width
             x2 = x1 + center_width
             x3 = x2 + edge_width
-            y0 = -img.anchor_y
+            y0 = -self._anchor_y
             y1 = y0 + edge_height
             y2 = y1 + center_height
             y3 = y2 + edge_height
@@ -214,8 +225,7 @@ class NinePatch(Sprite):
     def rotation(self) -> float:
         """Clockwise rotation of the NinePatch, in degrees.
 
-        The NinePatch will be rotated about its image's (anchor_x, anchor_y)
-        position.
+        The NinePatch is rotated about its :attr:`anchor_position`.
         """
         return self._rotation
 
@@ -250,6 +260,7 @@ class NinePatch(Sprite):
     @width.setter
     def width(self, width: float):
         self._width = width
+        self._resolve_anchor()
         self._update_position()
 
     @property
@@ -263,6 +274,7 @@ class NinePatch(Sprite):
     @height.setter
     def height(self, height: float):
         self._height = height
+        self._resolve_anchor()
         self._update_position()
 
     @property
