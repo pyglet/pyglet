@@ -104,11 +104,11 @@ class _TextureRenderTargetBase:
             or depth_buffer.height != texture.height
         ):
             replacement_depth = Renderbuffer(
-                self.context,
                 texture.width,
                 texture.height,
                 component_format=ComponentFormat.D,
                 bit_size=24,
+                context=self.context,
             )
             depth_buffer = replacement_depth
 

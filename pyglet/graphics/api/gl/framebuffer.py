@@ -117,8 +117,9 @@ def get_screenshot() -> ImageData:
 class GLRenderbuffer(RenderbufferResource):
     """OpenGL Renderbuffer Object."""
 
-    def __init__(self, context: OpenGLSurfaceContext, width: int, height: int,
-                 component_format: ComponentFormat, bit_size: int, data_type: DataTypes = "I", samples: int = 1) -> None:
+    def __init__(self, width: int, height: int, component_format: ComponentFormat, bit_size: int,
+                 data_type: DataTypes = "I", samples: int = 1,
+                 context: OpenGLSurfaceContext | None = None) -> None:
         """Create a RenderBuffer instance."""
         RenderbufferResource.__init__(self)
         self._context = context or pyglet.graphics.api.core.current_context

@@ -69,11 +69,11 @@ def test_framebuffer_attach_depth_renderbuffer(test_window):
     framebuffer = pyglet.graphics.Framebuffer(context=test_window.context)
     texture = pyglet.graphics.Texture.create(4, 4, blank_data=True, context=test_window.context)
     depth_buffer = pyglet.graphics.Renderbuffer(
-        test_window.context,
         4,
         4,
         component_format=ComponentFormat.D,
         bit_size=16,
+        context=test_window.context,
     )
     try:
         framebuffer.attach_texture(texture)

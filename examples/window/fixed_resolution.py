@@ -33,8 +33,9 @@ class FixedResolution:
         self._color_buffer = Texture.create(width, height, filters=TextureFilter.NEAREST)
         self.framebuffer.attach_texture(self._color_buffer)
         # Use a RenderBuffer for the Depth Buffer:
-        self._depth_buffer = Renderbuffer(window.context, width, height,
-                                          component_format=ComponentFormat.D, bit_size=24)
+        self._depth_buffer = Renderbuffer(width, height,
+                                          component_format=ComponentFormat.D, bit_size=24,
+                                          context=window.context)
         self.framebuffer.attach_renderbuffer(self._depth_buffer,
                                              attachment=FramebufferAttachment.DEPTH)
 
