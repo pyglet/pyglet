@@ -621,8 +621,6 @@ class VideoPlayer(AudioPlayer):
 
         # Flip coordinates so output is correct orientation.
         self._texture = self._texture.get_transform(flip_y=True)
-        # After flipping, the anchor_y is set to the top of the image. We want to keep it at the bottom.
-        self._texture.anchor_y = 0
         return self._texture
 
     def _create_sprite(self) -> None:

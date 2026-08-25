@@ -508,9 +508,9 @@ class Texture(_AbstractImage, GraphicsResource[Any, TextureKey]):
 
         You must have this texture bound before uploading data.
 
-        The image's anchor point will be aligned to the given ``x`` and ``y``
-        coordinates.  If this texture is a 3D texture, the ``z``
-        parameter gives the image slice to blit into.
+        The given ``x`` and ``y`` coordinates specify the lower-left pixel of
+        the upload. If this texture is a 3D texture, the ``z`` parameter gives
+        the image slice to upload into.
         The ``level`` parameter specifies the mipmap level to upload to.
         """
         if level < 0:
@@ -518,9 +518,6 @@ class Texture(_AbstractImage, GraphicsResource[Any, TextureKey]):
         if level >= self._mipmap_levels:
             msg = f"Mipmap level {level} is not initialized. Call init_mipmaps or generate_mipmaps first."
             raise ImageException(msg)
-        x -= self.anchor_x
-        y -= self.anchor_y
-
         self._begin_upload(image)
 
         self._update_subregion(image, x, y, z, level=level)
@@ -540,7 +537,7 @@ class Texture(_AbstractImage, GraphicsResource[Any, TextureKey]):
 
         The transformation is applied to the texture coordinates only;
         :py:meth:`~pyglet.graphics.texture.Texture.get_image_data` will fetch the
-        untransformed data from the GPU. The transformation is applied around the anchor point.
+        untransformed data from the GPU.
 
         Args:
             flip_x:
@@ -553,14 +550,10 @@ class Texture(_AbstractImage, GraphicsResource[Any, TextureKey]):
         """
         transform = self.get_region(0, 0, self.width, self.height)
         bl, br, tr, tl = 0, 1, 2, 3
-        transform.anchor_x = self.anchor_x
-        transform.anchor_y = self.anchor_y
         if flip_x:
             bl, br, tl, tr = br, bl, tr, tl
-            transform.anchor_x = self.width - self.anchor_x
         if flip_y:
             bl, br, tl, tr = tl, tr, bl, br
-            transform.anchor_y = self.height - self.anchor_y
         rotate %= 360
         if rotate < 0:
             rotate += 360
@@ -568,14 +561,10 @@ class Texture(_AbstractImage, GraphicsResource[Any, TextureKey]):
             pass
         elif rotate == 90:
             bl, br, tr, tl = br, tr, tl, bl
-            transform.anchor_x, transform.anchor_y = transform.anchor_y, transform.width - transform.anchor_x
         elif rotate == 180:
             bl, br, tr, tl = tr, tl, bl, br
-            transform.anchor_x = transform.width - transform.anchor_x
-            transform.anchor_y = transform.height - transform.anchor_y
         elif rotate == 270:
             bl, br, tr, tl = tl, bl, br, tr
-            transform.anchor_x, transform.anchor_y = transform.height - transform.anchor_y, transform.anchor_x
         else:
             raise ImageException("Only 90 degree rotations are supported.")
         if rotate in (90, 270):
@@ -757,10 +746,10 @@ class _Texture3DShared(_TextureSequenceItems[TRegion], Generic[TRegion]):
             self._bind_sequence_texture()
 
             for item, image in zip(self[index], images):  # Needs a test.
-                self.upload(image, image.anchor_x, image.anchor_y, item.z)
+                self.upload(image, 0, 0, item.z)
         else:
             image: ImageData =value
-            self.upload(image, image.anchor_x, image.anchor_y, self[index].z)
+            self.upload(image, 0, 0, self[index].z)
 
 
 class _TextureArrayShared(_TextureSequenceItems[TArrayRegion], Generic[TArrayRegion]):
@@ -795,7 +784,7 @@ class _TextureArrayShared(_TextureSequenceItems[TArrayRegion], Generic[TArrayReg
         start_length = len(self.items)
         item = self.region_class(0, 0, start_length, image.width, image.height, self)
 
-        self.upload(image, image.anchor_x, image.anchor_y, start_length)
+        self.upload(image, 0, 0, start_length)
         self.items.append(item)
         return item
 
@@ -839,13 +828,13 @@ class _TextureArrayShared(_TextureSequenceItems[TArrayRegion], Generic[TArrayReg
             for old_item, image in zip(self[index], images):
                 self._verify_size(image)
                 item = self.region_class(0, 0, old_item.z, image.width, image.height, self)
-                self.upload(image, image.anchor_x, image.anchor_y, old_item.z)
+                self.upload(image, 0, 0, old_item.z)
                 self.items[old_item.z] = item
         else:
             image: ImageData = value
             self._verify_size(image)
             item = self.region_class(0, 0, index, image.width, image.height, self)
-            self.upload(image, image.anchor_x, image.anchor_y, index)
+            self.upload(image, 0, 0, index)
             self.items[index] = item
 
 

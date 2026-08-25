@@ -39,12 +39,6 @@ class ImageException(Exception):
 class _AbstractImage(ABC):
     """Abstract class representing an image."""
 
-    anchor_x: int = 0
-    """X coordinate of anchor, relative to left edge of image data."""
-
-    anchor_y: int = 0
-    """Y coordinate of anchor, relative to bottom edge of image data."""
-
     def __init__(self, width: int, height: int) -> None:
         """Initialized in subclass."""
         self.width = width
@@ -261,13 +255,7 @@ class ImageData(_AbstractImage):
 
     def create_texture(self, cls: type[Texture]) -> Texture:
         """Given a texture class, create a texture containing this image."""
-        texture = cls.create_from_image(self)
-
-        if self.anchor_x or self.anchor_y:
-            texture.anchor_x = self.anchor_x
-            texture.anchor_y = self.anchor_y
-
-        return texture
+        return cls.create_from_image(self)
 
     def get_texture(self) -> Texture:
         if not self._current_texture:
@@ -475,13 +463,7 @@ class CompressedImageData(_AbstractImage):
 
     def create_texture(self, cls: type[CompressedTexture]) -> Texture:
         """Given a texture class, create a texture containing this image."""
-        texture = cls.create_from_image(self)
-
-        if self.anchor_x or self.anchor_y:
-            texture.anchor_x = self.anchor_x
-            texture.anchor_y = self.anchor_y
-
-        return texture
+        return cls.create_from_image(self)
 
     def get_texture(self) -> CompressedTexture:
         if not self._current_texture:
