@@ -33,9 +33,8 @@ sub-pixel artifacts.  If you require to use floats, for example for smoother
 animations, you can set the ``subpixel`` parameter to ``True`` when creating
 the sprite (:since: pyglet 1.2).
 
-The sprite's positioning, rotation and scaling all honor the original
-image's anchor (:py:attr:`~pyglet.image.ImageData.anchor_x`,
-:py:attr:`~pyglet.image.ImageData.anchor_y`).
+The sprite's positioning, rotation and scaling honor its
+:py:attr:`~pyglet.sprite.Sprite.anchor_position`.
 
 
 Drawing multiple sprites
@@ -81,7 +80,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.shader import ShaderProgram
 
 from pyglet.graphics import Group
-from pyglet.enums import BlendFactor, GeometryMode, GraphicsAPI
+from pyglet.enums import Anchor, BlendFactor, GeometryMode, GraphicsAPI
 from pyglet.image.base import Animation, ImageData
 from pyglet.graphics.texture import TextureArrayRegion
 
@@ -152,6 +151,9 @@ class Sprite(event.EventDispatcher):
 
     _batch = None
     _animation = None
+    _anchor_x = 0.0
+    _anchor_y = 0.0
+    _anchor: Anchor | None = None
     _frame_index = 0
     _paused = False
     _rotation = 0
@@ -168,6 +170,7 @@ class Sprite(event.EventDispatcher):
     def __init__(self,
                  img: ImageData | Texture | Animation,
                  x: float = 0, y: float = 0, z: float = 0,
+                 anchor: Anchor | str | tuple[float, float] | None = None,
                  blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
                  blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
                  batch: Batch | None = None,
@@ -185,6 +188,12 @@ class Sprite(event.EventDispatcher):
                 Y coordinate of the sprite.
             z:
                 Z coordinate of the sprite.
+            anchor:
+                Anchor offset relative to the image's lower-left corner. Pass
+                a numeric ``(x, y)`` tuple for an explicit offset, or a named
+                anchor such as ``"bottom_center"`` or
+                :attr:`~pyglet.enums.Anchor.TOP`. Named anchors are
+                recalculated when the image or animation frame changes.
             blend_src:
                 OpenGL blend source mode.  The default is suitable for
                 compositing sprites drawn from back-to-front.
@@ -202,13 +211,21 @@ class Sprite(event.EventDispatcher):
                 A specific shader program to initialize the sprite with. By default, a pre-made shader will be chosen
                 based on the texture type passed. Sprite colors are uploaded as four unsigned bytes; custom programs
                 must use ``program.get_attribute_view(colors="Bn")`` so the values are normalized for the shader.
-
-        .. versionadded:: 2.0.16
-           The *program* parameter.
+        .. versionchanged:: 2.0.16
+           Added *program* parameter.
+        .. versionchanged:: 3.0
+           Added *anchor* parameter.
         """
         self._x = x
         self._y = y
         self._z = z
+        self._anchor_x = 0.0
+        self._anchor_y = 0.0
+        self._anchor = None
+        if isinstance(anchor, tuple):
+            self._anchor_x, self._anchor_y = anchor
+        elif anchor is not None:
+            self._anchor = Anchor(anchor)
 
         if isinstance(img, Animation):
             self._animation = img
@@ -218,6 +235,8 @@ class Sprite(event.EventDispatcher):
                 clock.schedule_once(self._animate, self._next_dt)
         else:
             self._texture = img.get_texture()
+
+        self._resolve_anchor()
 
         if not program:
             if isinstance(img, TextureArrayRegion):
@@ -389,11 +408,12 @@ class Sprite(event.EventDispatcher):
                 clock.schedule_once(self._animate, self._next_dt)
         else:
             self._set_texture(img.get_texture())
-        self._update_position()
 
     def _set_texture(self, texture: Texture) -> None:
+        previous_size = self._texture.width, self._texture.height
         texture_changed = texture.key != self._texture.key
         self._texture = texture
+        self._resolve_anchor()
 
         if texture_changed:
             self._group = self.get_sprite_group()
@@ -405,6 +425,10 @@ class Sprite(event.EventDispatcher):
                 return
 
         self._vertex_list.tex_coords[:] = texture.tex_coords
+
+        # Vertices need to be updated when texture size or anchor differs.
+        if self._anchor is not None or (texture.width, texture.height) != previous_size:
+            self._update_position()
 
     def _create_vertex_list(self) -> None:
         self._vertex_list = self.program.vertex_list_indexed(
@@ -421,8 +445,8 @@ class Sprite(event.EventDispatcher):
             return 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
         img = self._texture
-        x1 = -img.anchor_x
-        y1 = -img.anchor_y
+        x1 = -self._anchor_x
+        y1 = -self._anchor_y
         x2 = x1 + img.width
         y2 = y1 + img.height
 
@@ -434,6 +458,56 @@ class Sprite(event.EventDispatcher):
 
     def _update_position(self) -> None:
         self._vertex_list.position[:] = self._get_vertices()
+
+    def _resolve_anchor(self) -> None:
+        if self._anchor is None:
+            return
+
+        self._anchor_x, self._anchor_y = self._anchor.get_position(self._texture.width, self._texture.height)
+
+    @property
+    def anchor(self) -> Anchor | None:
+        """The named anchor position, or ``None`` when using a numeric anchor."""
+        return self._anchor
+
+    @anchor.setter
+    def anchor(self, anchor: Anchor | str | None) -> None:
+        self._anchor = Anchor(anchor) if anchor is not None else None
+        self._resolve_anchor()
+        self._update_position()
+
+    @property
+    def anchor_x(self) -> float:
+        """X coordinate of the anchor, relative to the image's left edge."""
+        return self._anchor_x
+
+    @anchor_x.setter
+    def anchor_x(self, anchor_x: float) -> None:
+        self._anchor = None
+        self._anchor_x = anchor_x
+        self._update_position()
+
+    @property
+    def anchor_y(self) -> float:
+        """Y coordinate of the anchor, relative to the image's bottom edge."""
+        return self._anchor_y
+
+    @anchor_y.setter
+    def anchor_y(self, anchor_y: float) -> None:
+        self._anchor = None
+        self._anchor_y = anchor_y
+        self._update_position()
+
+    @property
+    def anchor_position(self) -> tuple[float, float]:
+        """The anchor's ``(x, y)`` offset from the sprite's lower-left corner."""
+        return self._anchor_x, self._anchor_y
+
+    @anchor_position.setter
+    def anchor_position(self, position: tuple[float, float]) -> None:
+        self._anchor = None
+        self._anchor_x, self._anchor_y = position
+        self._update_position()
 
     def get_sprite_group(self) -> SpriteGroup | Group:
         """Creates and returns a group to be used to render the sprite.
@@ -491,8 +565,7 @@ class Sprite(event.EventDispatcher):
     def rotation(self) -> float:
         """Clockwise rotation of the sprite, in degrees.
 
-        The sprite image will be rotated about its image's (anchor_x, anchor_y)
-        position.
+        The sprite is rotated about its :attr:`anchor_position`.
         """
         return self._rotation
 
@@ -805,6 +878,7 @@ class MultiTextureSprite(Sprite):
     def __init__(self,
                  images: dict[str, ImageData | Texture | Animation],
                  x: float = 0, y: float = 0, z: float = 0,
+                 anchor: Anchor | str | tuple[float, float] | None = None,
                  blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
                  blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
                  batch: Batch | None = None,
@@ -823,6 +897,11 @@ class MultiTextureSprite(Sprite):
                 Y coordinate of the sprite.
             z:
                 Z coordinate of the sprite.
+            anchor:
+                Anchor offset relative to the largest layer's lower-left
+                corner. Pass a numeric ``(x, y)`` tuple for an explicit
+                offset, or a named anchor that is recalculated when the
+                anchor texture changes.
             blend_src:
                 OpenGL blend source mode.  The default is suitable for
                 compositing sprites drawn from back-to-front.
@@ -841,7 +920,6 @@ class MultiTextureSprite(Sprite):
                 a generated multi-texture shader will be chosen based on the layer types passed.
 
         .. versionadded:: 3.0
-           The MultiTextureSprite class.
         """
         if not images:
             msg = "MultiTextureSprite requires at least one layer."
@@ -870,7 +948,7 @@ class MultiTextureSprite(Sprite):
         if program is None:
             program = get_default_multitexture_shader(self._textures)
 
-        super().__init__(self._texture, x, y, z, blend_src, blend_dest, batch, group, subpixel, program)
+        super().__init__(self._texture, x, y, z, anchor, blend_src, blend_dest, batch, group, subpixel, program)
         self._schedule_all_animations()
 
     def _schedule_all_animations(self) -> None:

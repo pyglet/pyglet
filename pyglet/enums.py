@@ -3,6 +3,44 @@ from __future__ import annotations
 from enum import Enum, auto
 
 
+class Anchor(str, Enum):
+    """Named two-dimensional anchor positions for display objects."""
+
+    BOTTOM_LEFT = "bottom_left"
+    BOTTOM_CENTER = "bottom_center"
+    BOTTOM_RIGHT = "bottom_right"
+    CENTER_LEFT = "center_left"
+    CENTER = "center"
+    CENTER_RIGHT = "center_right"
+    TOP_LEFT = "top_left"
+    TOP_CENTER = "top_center"
+    TOP_RIGHT = "top_right"
+
+    BOTTOM = "bottom"
+    LEFT = "left"
+    RIGHT = "right"
+    TOP = "top"
+
+    def get_position(self, width: float, height: float) -> tuple[float, float]:
+        """Return this anchor's offset for an image of the given dimensions."""
+        positions = {
+            Anchor.BOTTOM_LEFT: (0, 0),
+            Anchor.BOTTOM_CENTER: (width / 2, 0),
+            Anchor.BOTTOM_RIGHT: (width, 0),
+            Anchor.CENTER_LEFT: (0, height / 2),
+            Anchor.CENTER: (width / 2, height / 2),
+            Anchor.CENTER_RIGHT: (width, height / 2),
+            Anchor.TOP_LEFT: (0, height),
+            Anchor.TOP_CENTER: (width / 2, height),
+            Anchor.TOP_RIGHT: (width, height),
+            Anchor.BOTTOM: (width / 2, 0),
+            Anchor.LEFT: (0, height / 2),
+            Anchor.RIGHT: (width, height / 2),
+            Anchor.TOP: (width / 2, height),
+        }
+        return positions[self]
+
+
 class GraphicsAPI(str, Enum):
     """Supported graphics backends."""
     OPENGL = "opengl"
