@@ -1603,6 +1603,31 @@ class Line(ShapeBase):
         self._vertex_list.position[:] = self._get_vertices()
 
     @property
+    def points(self) -> list[tuple[float, float]]:
+        """Get/set the two endpoints of the line.
+
+        .. versionadded:: 3.0
+        """
+        return [(self._x, self._y), (self._x2, self._y2)]
+
+    @points.setter
+    def points(self, value: Sequence[Sequence[float]]) -> None:
+        if len(value) != 2:
+            raise ValueError("Line requires exactly two points")
+        self._x, self._y = value[0]
+        self._x2, self._y2 = value[1]
+        self._update_vertices()
+        self._update_translation()
+
+    def __getitem__(self, index: int) -> tuple[float, float]:
+        return self.points[index]
+
+    def __setitem__(self, idx: int, point: Sequence[float]) -> None:
+        points = self.points
+        points[idx] = tuple(point)
+        self.points = points
+
+    @property
     def thickness(self) -> float:
         """The thickness of the line."""
         return self._thickness
@@ -2828,6 +2853,35 @@ class MultiLine(ShapeBase):
 
     def _update_vertices(self) -> None:
         self._vertex_list.position[:] = self._get_vertices()
+
+    @property
+    def points(self) -> list[tuple[float, float]]:
+        """Get/set the points that make up the multi-line.
+
+        .. versionadded:: 3.0
+        """
+        count = len(self._coordinates) - 1 if self._closed else len(self._coordinates)
+        return list(self._coordinates[:count])
+
+    @points.setter
+    def points(self, value: Sequence[Sequence[float]]) -> None:
+        coordinates = [tuple(point) for point in value]
+        if not coordinates:
+            raise ValueError("MultiLine requires at least one point")
+        if self._closed:
+            coordinates.append(coordinates[0])
+        self._coordinates = coordinates
+        self._x, self._y = coordinates[0]
+        self._update_vertices()
+        self._update_translation()
+
+    def __getitem__(self, index: int) -> tuple[float, float]:
+        return self.points[index]
+
+    def __setitem__(self, index: int, point: Sequence[float]) -> None:
+        points = self.points
+        points[index] = tuple(point)
+        self.points = points
 
     @property
     def thickness(self) -> float:

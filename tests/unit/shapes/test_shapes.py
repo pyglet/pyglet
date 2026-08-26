@@ -129,6 +129,16 @@ def test_hit_testing_respects_rotation_and_anchor():
 def test_line_coordinate_movement():
     line = Line(0, 0, 10, 0, thickness=2)
 
+    line.x = 5
+    line.y = 6
+    assert (line.x, line.y, line.x2, line.y2) == (5, 6, 15, 6)
+
+    line[0] = 2, 3
+    assert line.points == [(2, 3), (15, 6)]
+    line[1] = 8, 9
+    assert line.points == [(2, 3), (8, 9)]
+
+    line = Line(0, 0, 10, 0, thickness=2)
     line.position = 5, 5
     assert line.x2 == 15
     assert line.y2 == 5
@@ -147,6 +157,24 @@ def test_triangle_coordinate_movement_and_rotated_contains():
     triangle = Triangle(0, 0, 2, 0, 0, 2)
     triangle.rotation = 90
     assert (0.75, -0.75) in triangle
+
+
+def test_multiline_points_can_be_read_and_updated():
+    multiline = MultiLine((0, 0), (5, 5), (10, 0))
+
+    assert multiline.points == [(0, 0), (5, 5), (10, 0)]
+    assert multiline[1] == (5, 5)
+
+    multiline[1] = (5, 8)
+    assert multiline.points == [(0, 0), (5, 8), (10, 0)]
+
+
+def test_closed_multiline_points_exclude_and_update_closing_point():
+    multiline = MultiLine((0, 0), (5, 5), (10, 0), closed=True)
+
+    multiline.points = [(1, 1), (5, 5), (10, 0)]
+    assert multiline.points == [(1, 1), (5, 5), (10, 0)]
+    assert multiline._coordinates[-1] == (1, 1)  # noqa: SLF001
 
 
 def test_setting_color_sets_color_rgb_channels(rgb_or_rgba_shape, new_rgb_or_rgba_color):
