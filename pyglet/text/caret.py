@@ -110,7 +110,7 @@ class Caret(EventDispatcher):
 
         self._list = self._group.program.vertex_list(2, GeometryMode.LINES, self._batch, self._group,
                                                         position=(0, 0, 0) * 2,
-                                                        translation=(0, 0, 0) * 2,
+                                                        translation=(0, 0, 0, layout.get_depth_offset(2)) * 2,
                                                         view_translation=(0, 0, 0) * 2,
                                                         anchor=(0, 0) * 2,
                                                         rotation=(0, 0),
@@ -391,7 +391,8 @@ class Caret(EventDispatcher):
         self._list.position[:] = [x, y + font.descent, z, x, y + font.ascent, z]
 
     def on_translation_update(self) -> None:
-        self._list.translation[:] = (-self._layout.view_x, -self._layout.view_y, 0) * 2
+        depth_offset = self._list.translation[3]
+        self._list.translation[:] = (-self._layout.view_x, -self._layout.view_y, 0, depth_offset) * 2
 
     def on_layout_update(self) -> None:
         """Handler for the `IncrementalTextLayout.on_layout_update` event."""

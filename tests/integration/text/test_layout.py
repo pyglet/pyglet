@@ -7,7 +7,7 @@ import unittest
 import pyglet
 import pytest
 
-from pyglet.text import document, decode_text, decode_attributed
+from pyglet.text import caret, document, decode_text, decode_attributed
 from pyglet.text import layout
 
 WIDTH = 500
@@ -123,6 +123,23 @@ def test_incremental_layout_selection_creates_background_decoration(test_window)
         vertex_list.count == 4 and tuple(vertex_list.colors[:4]) == text_layout.selection_background_color
         for vertex_list in decoration_lists
     )
+
+
+def test_caret_selection_scrolls_incremental_layout(test_window):
+    text_layout = layout.IncrementalTextLayout(
+        document.UnformattedDocument('A long line that must scroll'),
+        width=50,
+        height=100,
+        multiline=False,
+        depth_sorting=True,
+    )
+    text_caret = caret.Caret(text_layout)
+
+    text_caret.mark = 0
+    text_caret.position = len(text_layout.document.text)
+
+    assert text_layout.view_x > 0
+    assert text_caret._list.translation[3] == pytest.approx(text_layout.get_depth_offset(2))  # noqa: SLF001
 
 
 class TestIssues(unittest.TestCase):
