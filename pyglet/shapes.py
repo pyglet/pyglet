@@ -2449,6 +2449,29 @@ class Triangle(ShapeBase):
         self._vertex_list.position[:] = self._get_vertices()
 
     @property
+    def points(self) -> list[tuple[float, float]]:
+        """Get/set the three vertices of the triangle."""
+        return [(self._x, self._y), (self._x2, self._y2), (self._x3, self._y3)]
+
+    @points.setter
+    def points(self, value: Sequence[Sequence[float]]) -> None:
+        if len(value) != 3:
+            raise ValueError("Triangle requires exactly three points")
+        self._x, self._y = value[0]
+        self._x2, self._y2 = value[1]
+        self._x3, self._y3 = value[2]
+        self._update_vertices()
+        self._update_translation()
+
+    def __getitem__(self, index: int) -> tuple[float, float]:
+        return self.points[index]
+
+    def __setitem__(self, index: int, point: Sequence[float]) -> None:
+        points = self.points
+        points[index] = tuple(point)
+        self.points = points
+
+    @property
     def x2(self) -> float:
         """Get/set the X coordinate of the triangle's 2nd vertex."""
         return self._x2

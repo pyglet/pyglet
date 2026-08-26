@@ -154,6 +154,11 @@ def test_triangle_coordinate_movement_and_rotated_contains():
     assert (triangle.x2, triangle.y2, triangle.x3, triangle.y3) == (7, 5, 5, 7)
     assert (6, 5.5) in triangle
 
+    triangle[1] = 8, 5
+    assert triangle.points == [(5, 5), (8, 5), (5, 7)]
+    triangle[2] = 5, 9
+    assert triangle.points == [(5, 5), (8, 5), (5, 9)]
+
     triangle = Triangle(0, 0, 2, 0, 0, 2)
     triangle.rotation = 90
     assert (0.75, -0.75) in triangle
