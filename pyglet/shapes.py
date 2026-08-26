@@ -88,8 +88,8 @@ elif pyglet.options.backend in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
     from pyglet.graphics.api.gl2.shapes import get_default_shader
 elif pyglet.options.backend == GraphicsAPI.WEBGL:
     from pyglet.graphics.api.webgl.shapes import get_default_shader
-elif pyglet.options.backend == GraphicsAPI.VULKAN:
-    from pyglet.graphics.api.vulkan.shapes import get_default_shader
+# elif pyglet.options.backend == GraphicsAPI.VULKAN:
+#     from pyglet.graphics.api.vulkan.shapes import get_default_shader
 
 
 def _rotate_point(center: tuple[float, float], point: tuple[float, float], angle: float) -> tuple[float, float]:
@@ -121,6 +121,41 @@ def _point_in_polygon(polygon: Sequence[tuple[float, float]], point: tuple[float
             odd = not odd
         j = i
     return odd
+
+
+def _angle_in_sweep(angle: float, start_angle: float, sweep: float) -> bool:
+    """Return whether ``angle`` is covered by a clockwise or counter-clockwise sweep."""
+    if abs(sweep) >= 360:
+        return True
+
+    angle %= 360
+    start_angle %= 360
+    end_angle = (start_angle + sweep) % 360
+    if sweep >= 0:
+        return start_angle <= angle <= end_angle if start_angle <= end_angle else angle >= start_angle or angle <= end_angle
+    return end_angle <= angle <= start_angle if end_angle <= start_angle else angle >= end_angle or angle <= start_angle
+
+
+def _point_on_segment(point: tuple[float, float], start: tuple[float, float], end: tuple[float, float],
+                      thickness: float) -> bool:
+    """Return whether a point is within ``thickness / 2`` of a line segment."""
+    dx = end[0] - start[0]
+    dy = end[1] - start[1]
+    length_squared = dx * dx + dy * dy
+    if length_squared == 0:
+        return math.dist(point, start) <= thickness / 2
+
+    t = max(0.0, min(1.0, ((point[0] - start[0]) * dx + (point[1] - start[1]) * dy) / length_squared))
+    nearest = start[0] + t * dx, start[1] + t * dy
+    return math.dist(point, nearest) <= thickness / 2
+
+
+def _normalise_coordinates(coordinates: Sequence[Sequence[float]]) -> list[tuple[float, float]]:
+    """Accept individual point pairs or a single sequence of point pairs."""
+    if len(coordinates) == 1 and all(
+            isinstance(point, Sequence) and len(point) == 2 for point in coordinates[0]):
+        coordinates = coordinates[0]  # type: ignore[assignment]
+    return [tuple(point) for point in coordinates]  # type: ignore[misc]
 
 
 def _get_segment(p0: tuple[float, float] | list[float], p1: tuple[float, float] | list[float],
@@ -810,8 +845,8 @@ class Arc(ShapeBase):
         self._thickness = thickness
         self._angle = angle
         self._start_angle = start_angle
-        # Only set closed if the angle isn't tau
-        self._closed = closed if abs(math.tau - self._angle) > 1e-9 else False
+        # A complete circle already joins its endpoints.
+        self._closed = closed if abs(360.0 - self._angle) > 1e-9 else False
         self._rotation = 0
 
         super().__init__(
@@ -819,6 +854,12 @@ class Arc(ShapeBase):
             self._segments * 6 + (6 if self._closed else 0),
             blend_src, blend_dest, batch, group, program,
         )
+
+    def __contains__(self, point: tuple[float, float]) -> bool:
+        # Arc containment deliberately uses a fast circular approximation, not its exact stroke geometry.
+        assert len(point) == 2
+        center = self._x - self._anchor_x, self._y - self._anchor_y
+        return math.dist(center, point) < self._radius
 
     def _create_vertex_list(self) -> None:
         self._vertex_list = self._program.vertex_list(
@@ -837,7 +878,7 @@ class Arc(ShapeBase):
         y = -self._anchor_y
         r = self._radius
         segment_radians = math.radians(self._angle) / self._segments
-        start_radians = math.radians(self._start_angle - self._rotation)
+        start_radians = math.radians(self._start_angle)
 
         # Calculate the outer points of the arc:
         points = [(x + (r * math.cos((i * segment_radians) + start_radians)),
@@ -854,14 +895,14 @@ class Arc(ShapeBase):
                 prev_point = points[i - 1]
             elif self._closed:
                 prev_point = points[-1]
-            elif abs(self._angle - math.tau) <= 1e-9:
+            elif abs(self._angle - 360.0) <= 1e-9:
                 prev_point = points[-2]
 
             if i + 2 < len(points):
                 next_point = points[i + 2]
             elif self._closed:
                 next_point = points[0]
-            elif abs(self._angle - math.tau) <= 1e-9:
+            elif abs(self._angle - 360.0) <= 1e-9:
                 next_point = points[1]
 
             prev_miter, prev_scale, *segment = _get_segment(prev_point, points[i], points[i + 1], next_point,
@@ -971,7 +1012,7 @@ class BezierCurve(ShapeBase):
             program:
                 Optional shader program of the shape.
         """
-        self._points = list(points)
+        self._points = _normalise_coordinates(points)
         self._x, self._y = self._points[0]
         self._t = t
         self._segments = segments
@@ -1385,18 +1426,7 @@ class Sector(ShapeBase):
             return False
         angle = math.degrees(math.atan2(point[1] - self._y + self._anchor_y, point[0] - self._x + self._anchor_x))
         angle = angle % 360
-        start_angle = self._start_angle % 360
-        end_angle = (start_angle + self._angle) % 360
-        if self._angle >= 0:
-            if start_angle <= end_angle:
-                return start_angle <= angle <= end_angle
-            else:
-                return angle >= start_angle or angle <= end_angle
-        else:
-            if end_angle <= start_angle:
-                return end_angle <= angle <= start_angle
-            else:
-                return angle >= end_angle or angle <= start_angle
+        return _angle_in_sweep(angle, self._start_angle, self._angle)
 
     def _create_vertex_list(self) -> None:
         self._vertex_list = self._program.vertex_list(
@@ -1527,20 +1557,13 @@ class Line(ShapeBase):
 
     def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
-        vec_ab = Vec2(self._x2 - self._x, self._y2 - self._y)
-        vec_ba = Vec2(self._x - self._x2, self._y - self._y2)
-        vec_ap = Vec2(point[0] - self._x - self._anchor_x, point[1] - self._y + self._anchor_y)
-        vec_bp = Vec2(point[0] - self._x2 - self._anchor_x, point[1] - self._y2 + self._anchor_y)
-        if vec_ab.dot(vec_ap) * vec_ba.dot(vec_bp) < 0:
-            return False
-
-        a, b = point[0] + self._anchor_x, point[1] - self._anchor_y
-        x1, y1, x2, y2 = self._x, self._y, self._x2, self._y2
-        # The following is the expansion of the determinant of a 3x3 matrix
-        # used to calculate the area of a triangle.
-        double_area = abs(a * y1 + b * x2 + x1 * y2 - x2 * y1 - a * y2 - b * x1)
-        h = double_area / math.dist((self._x, self._y), (self._x2, self._y2))
-        return h < self._thickness / 2
+        point = _rotate_point((self._x, self._y), point, math.radians(self._rotation))
+        return _point_on_segment(
+            point,
+            (self._x - self._anchor_x, self._y - self._anchor_y),
+            (self._x2 - self._anchor_x, self._y2 - self._anchor_y),
+            self._thickness,
+        )
 
     def _create_vertex_list(self) -> None:
         self._vertex_list = self._program.vertex_list(
@@ -1588,6 +1611,38 @@ class Line(ShapeBase):
     def thickness(self, thickness: float) -> None:
         self._thickness = thickness
         self._update_vertices()
+
+    @property
+    def x(self) -> float:
+        return self._x
+
+    @x.setter
+    def x(self, value: float) -> None:
+        self._x2 += value - self._x
+        self._x = value
+        self._update_translation()
+
+    @property
+    def y(self) -> float:
+        return self._y
+
+    @y.setter
+    def y(self, value: float) -> None:
+        self._y2 += value - self._y
+        self._y = value
+        self._update_translation()
+
+    @property
+    def position(self) -> tuple[float, float]:
+        return self._x, self._y
+
+    @position.setter
+    def position(self, values: tuple[float, float]) -> None:
+        x, y = values
+        self._x2 += x - self._x
+        self._y2 += y - self._y
+        self._x, self._y = x, y
+        self._update_translation()
 
     @property
     def x2(self) -> float:
@@ -2337,8 +2392,12 @@ class Triangle(ShapeBase):
 
     def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
+        point = _rotate_point((self._x, self._y), point, math.radians(self._rotation))
         return _point_in_polygon(
-            [(self._x, self._y), (self._x2, self._y2), (self._x3, self._y3), (self._x, self._y)],
+            [(self._x - self._anchor_x, self._y - self._anchor_y),
+             (self._x2 - self._anchor_x, self._y2 - self._anchor_y),
+             (self._x3 - self._anchor_x, self._y3 - self._anchor_y),
+             (self._x - self._anchor_x, self._y - self._anchor_y)],
             point)
 
     def _create_vertex_list(self) -> None:
@@ -2367,7 +2426,7 @@ class Triangle(ShapeBase):
     @property
     def x2(self) -> float:
         """Get/set the X coordinate of the triangle's 2nd vertex."""
-        return self._x + self._x2
+        return self._x2
 
     @x2.setter
     def x2(self, value: float) -> None:
@@ -2377,7 +2436,7 @@ class Triangle(ShapeBase):
     @property
     def y2(self) -> float:
         """Get/set the Y coordinate of the triangle's 2nd vertex."""
-        return self._y + self._y2
+        return self._y2
 
     @y2.setter
     def y2(self, value: float) -> None:
@@ -2387,7 +2446,7 @@ class Triangle(ShapeBase):
     @property
     def x3(self) -> float:
         """Get/set the X coordinate of the triangle's 3rd vertex."""
-        return self._x + self._x3
+        return self._x3
 
     @x3.setter
     def x3(self, value: float) -> None:
@@ -2397,12 +2456,51 @@ class Triangle(ShapeBase):
     @property
     def y3(self) -> float:
         """Get/set the Y value of the triangle's 3rd vertex."""
-        return self._y + self._y3
+        return self._y3
 
     @y3.setter
     def y3(self, value: float) -> None:
         self._y3 = value
         self._update_vertices()
+
+    @property
+    def x(self) -> float:
+        return self._x
+
+    @x.setter
+    def x(self, value: float) -> None:
+        delta = value - self._x
+        self._x = value
+        self._x2 += delta
+        self._x3 += delta
+        self._update_translation()
+
+    @property
+    def y(self) -> float:
+        return self._y
+
+    @y.setter
+    def y(self, value: float) -> None:
+        delta = value - self._y
+        self._y = value
+        self._y2 += delta
+        self._y3 += delta
+        self._update_translation()
+
+    @property
+    def position(self) -> tuple[float, float]:
+        return self._x, self._y
+
+    @position.setter
+    def position(self, values: tuple[float, float]) -> None:
+        x, y = values
+        dx, dy = x - self._x, y - self._y
+        self._x, self._y = x, y
+        self._x2 += dx
+        self._y2 += dy
+        self._x3 += dx
+        self._y3 += dy
+        self._update_translation()
 
 
 class Star(ShapeBase):
@@ -2586,7 +2684,7 @@ class Polygon(ShapeBase):
         """
         # len(self._coordinates) = the number of vertices and sides in the shape.
         self._rotation = 0
-        self._coordinates = list(coordinates)
+        self._coordinates = _normalise_coordinates(coordinates)
         self._x, self._y = self._coordinates[0]
 
         r, g, b, *a = color
