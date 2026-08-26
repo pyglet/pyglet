@@ -230,9 +230,9 @@ class _ShapeGroup(Group):
 
         Args:
             blend_src:
-                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+                Blend source factor.
             blend_dest:
-                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
+                Blend destination factor.
             program:
                 The ShaderProgram to use.
             parent:
@@ -286,9 +286,9 @@ class ShapeBase(ABC):
             vertex_count:
                 The amount of vertices this Shape object has.
             blend_src:
-                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+                Blend source factor.
             blend_dest:
-                OpenGL blend destination mode; for example, ``ONE_MINUS_SRC_ALPHA``.
+                Blend destination factor.
             batch:
                 Optional batch object.
             group:
@@ -651,7 +651,7 @@ class ShapeBase(ABC):
 
         Opacity is implemented as the alpha component of a shape's
         :py:attr:`.color`. When part of a group with a default blend
-        mode of ``(GL_SRC_ALPHA, ONE_MINUS_SRC_ALPHA)``, opacities
+        mode of ``(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)``, opacities
         below ``255`` draw with fractional opacity over the background:
 
         .. list-table:: Example Values & Effects
@@ -787,9 +787,9 @@ class Arc(ShapeBase):
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having opacity of 255.
             blend_src:
-                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+                Blend source factor.
             blend_dest:
-                OpenGL blend destination mode; for example, ``ONE_MINUS_SRC_ALPHA``.
+                Blend destination factor.
             batch:
                 Optional batch to add the shape to.
             group:
@@ -945,8 +945,9 @@ class BezierCurve(ShapeBase):
 
         Args:
             points:
-                Control points of the curve. Points can be specified as multiple
-                lists or tuples of point pairs. Ex. (0,0), (2,3), (1,9)
+                Control points of the curve. Supply point pairs as separate
+                positional arguments, for example ``(0, 0), (2, 3), (1, 9)``,
+                or supply one sequence of point pairs.
             t:
                 Draw `100*t` percent of the curve. 0.5 means the curve
                 is half drawn and 1.0 means draw the whole curve.
@@ -960,9 +961,9 @@ class BezierCurve(ShapeBase):
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
             blend_src:
-                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+                Blend source factor.
             blend_dest:
-                OpenGL blend destination mode; for example, ``ONE_MINUS_SRC_ALPHA``.
+                Blend destination factor.
             batch:
                 Optional batch to add the shape to.
             group:
@@ -1104,9 +1105,9 @@ class Circle(ShapeBase):
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
             blend_src:
-                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+                Blend source factor.
             blend_dest:
-                OpenGL blend destination mode; for example, ``ONE_MINUS_SRC_ALPHA``.
+                Blend destination factor.
             batch:
                 Optional batch to add the shape to.
             group:
@@ -1214,9 +1215,9 @@ class Ellipse(ShapeBase):
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
             blend_src:
-                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+                Blend source factor.
             blend_dest:
-                OpenGL blend destination mode; for example, ``ONE_MINUS_SRC_ALPHA``.
+                Blend destination factor.
             batch:
                 Optional batch to add the shape to.
             group:
@@ -1349,9 +1350,9 @@ class Sector(ShapeBase):
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
             blend_src:
-                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+                Blend source factor.
             blend_dest:
-                OpenGL blend destination mode; for example, ``ONE_MINUS_SRC_ALPHA``.
+                Blend destination factor.
             batch:
                 Optional batch to add the shape to.
             group:
@@ -1500,9 +1501,9 @@ class Line(ShapeBase):
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
             blend_src:
-                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+                Blend source factor.
             blend_dest:
-                OpenGL blend destination mode; for example, ``ONE_MINUS_SRC_ALPHA``.
+                Blend destination factor.
             batch:
                 Optional batch to add the shape to.
             group:
@@ -1641,9 +1642,9 @@ class Rectangle(ShapeBase):
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
             blend_src:
-                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+                Blend source factor.
             blend_dest:
-                OpenGL blend destination mode; for example, ``ONE_MINUS_SRC_ALPHA``.
+                Blend destination factor.
             batch:
                 Optional batch to add the shape to.
             group:
@@ -1759,9 +1760,9 @@ class BorderedRectangle(ShapeBase):
                 as a tuple of 3 or 4 ints in the range of 0-255. RGB
                 colors will be treated as having an opacity of 255.
             blend_src:
-                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+                Blend source factor.
             blend_dest:
-                OpenGL blend destination mode; for example, ``ONE_MINUS_SRC_ALPHA``.
+                Blend destination factor.
             batch:
                 Optional batch to add the shape to.
             group:
@@ -1973,9 +1974,9 @@ class Box(ShapeBase):
                 of 3 or 4 ints in the range of 0-255. RGB colors will
                 be treated as having an opacity of 255.
             blend_src:
-                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+                Blend source factor.
             blend_dest:
-                OpenGL blend destination mode; for example, ``ONE_MINUS_SRC_ALPHA``.
+                Blend destination factor.
             batch:
                 Optional batch to add the shape to.
             group:
@@ -2130,9 +2131,9 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
             blend_src:
-                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+                Blend source factor.
             blend_dest:
-                OpenGL blend destination mode; for example, ``ONE_MINUS_SRC_ALPHA``.
+                Blend destination factor.
             batch:
                 Optional batch to add the shape to.
             group:
@@ -2310,9 +2311,9 @@ class Triangle(ShapeBase):
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
             blend_src:
-                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+                Blend source factor.
             blend_dest:
-                OpenGL blend destination mode; for example, ``ONE_MINUS_SRC_ALPHA``.
+                Blend destination factor.
             batch:
                 Optional batch to add the shape to.
             group:
@@ -2444,9 +2445,9 @@ class Star(ShapeBase):
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
             blend_src:
-                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+                Blend source factor.
             blend_dest:
-                OpenGL blend destination mode; for example, ``ONE_MINUS_SRC_ALPHA``.
+                Blend destination factor.
             batch:
                 Optional batch to add the shape to.
             group:
@@ -2565,17 +2566,17 @@ class Polygon(ShapeBase):
 
         Args:
             coordinates:
-                The coordinates for each point in the polygon. Each one
-                must be able to unpack to a pair of float-like X and Y
-                values.
+                Point pairs for the polygon. Supply them as separate positional
+                arguments or as one sequence of point pairs. Every point must
+                unpack to float-like X and Y values.
             color:
                 The RGB or RGBA color of the polygon, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
             blend_src:
-                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+                Blend source factor.
             blend_dest:
-                OpenGL blend destination mode; for example, ``ONE_MINUS_SRC_ALPHA``.
+                Blend destination factor.
             batch:
                 Optional batch to add the shape to.
             group:
@@ -2662,9 +2663,9 @@ class MultiLine(ShapeBase):
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
             blend_src:
-                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+                Blend source factor.
             blend_dest:
-                OpenGL blend destination mode; for example, ``ONE_MINUS_SRC_ALPHA``.
+                Blend destination factor.
             batch:
                 Optional batch to add the shape to.
             group:
