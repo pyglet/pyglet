@@ -83,9 +83,8 @@ class Animation:
         The transformation is performed by manipulating the texture coordinates,
         which limits this operation to increments of 90 degrees.
 
-        The transformation is applied around the image's anchor point of
-        each frame.  The texture data is shared between the original animation
-        and the transformed animation.
+        The texture data is shared between the original animation and the
+        transformed animation.
         """
         frames = [AnimationFrame(frame.image.get_texture().get_transform(flip_x, flip_y, rotate),
                                  frame.duration) for frame in self.frames]
@@ -98,18 +97,14 @@ class Animation:
     def get_max_width(self) -> int:
         """Get the maximum image frame width.
 
-        This method is useful for determining texture space requirements: due
-        to the use of ``anchor_x`` the actual required viewing area during
-        playback may be larger.
+        This method is useful for determining texture space requirements.
         """
         return max([frame.image.width for frame in self.frames])
 
     def get_max_height(self) -> int:
         """Get the maximum image frame height.
 
-        This method is useful for determining texture space requirements: due
-        to the use of ``anchor_y`` the actual required viewing area during
-        playback may be larger.
+        This method is useful for determining texture space requirements.
         """
         return max([frame.image.height for frame in self.frames])
 

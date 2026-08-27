@@ -169,14 +169,10 @@ All loaded images have the following attributes:
     The width of the image, in pixels.
 `height`
     The height of the image, in pixels.
-`anchor_x`
-    Distance of the anchor point from the left edge of the image, in pixels.
-`anchor_y`
-    Distance of the anchor point from the bottom edge of the image, in pixels.
 
-The anchor point defaults to (0, 0), though some image formats may contain an
-intrinsic anchor point.  The anchor point is used to align the image to a
-point in space when drawing it.
+Positioning state belongs to the object displaying the image. For example,
+:class:`~pyglet.sprite.Sprite` provides ``anchor_x``, ``anchor_y``, and
+``anchor_position`` properties.
 
 You may only want to use a portion of an image. You can use
 :py:meth:`~pyglet.image.ImageData.get_region` to return a region::

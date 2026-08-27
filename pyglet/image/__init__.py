@@ -32,20 +32,15 @@ Remember that y-coordinates are always increasing upwards.
 Drawing images
 --------------
 
-To draw an image at some point on the screen::
+Images are displayed with sprites. The sprite owns positioning state such as
+its anchor point::
 
-    pic.blit(x, y, z)
-
-This assumes an appropriate view transform and projection have been applied.
-
-Some images have an intrinsic "anchor point": this is the point which will be
-aligned to the ``x`` and ``y`` coordinates when the image is drawn.  By
-default, the anchor point is the lower-left corner of the image.  You can use
-the anchor point to center an image at a given point, for example::
-
-    pic.anchor_x = pic.width // 2
-    pic.anchor_y = pic.height // 2
-    pic.blit(x, y, z)
+    sprite = pyglet.sprite.Sprite(
+        pic, x, y, z,
+        anchor_x=pic.width // 2,
+        anchor_y=pic.height // 2,
+    )
+    sprite.draw()
 
 Texture access
 --------------

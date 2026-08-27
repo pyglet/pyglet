@@ -4,8 +4,9 @@ import sys
 
 import pyglet
 from pyglet import clock, event, graphics, image
-from pyglet.enums import GeometryMode
-from pyglet.graphics.api.gl import *
+from pyglet.enums import Anchor, BlendFactor, GeometryMode
+from pyglet.graphics import Group
+from pyglet.graphics.draw import DrawContext, BatchDrawOptions
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -161,7 +162,7 @@ def get_default_array_shader():
     return program.get_attribute_view(color="Bn")
 
 
-class SpriteGroup(graphics.Group):
+class SpriteGroup(Group):
     """Shared sprite rendering group.
 
     The group is automatically coalesced with other sprite groups sharing the
@@ -169,67 +170,19 @@ class SpriteGroup(graphics.Group):
     """
 
     def __init__(self, texture, blend_src, blend_dest, program, parent=None):
-        """Create a sprite group.
-
-        The group is created internally when a :py:class:`~pyglet.sprite.Sprite`
-        is created; applications usually do not need to explicitly create it.
-
-        :Parameters:
-            `texture` : `~pyglet.graphics.Texture`
-                The (top-level) texture containing the sprite image.
-            `blend_src` : int
-                OpenGL blend source mode; for example,
-                ``GL_SRC_ALPHA``.
-            `blend_dest` : int
-                OpenGL blend destination mode; for example,
-                ``GL_ONE_MINUS_SRC_ALPHA``.
-            `program` : `~pyglet.graphics.ShaderProgram`
-                A custom ShaderProgram.
-            `order` : int
-                Change the order to render above or below other Groups.
-            `parent` : `~pyglet.graphics.Group`
-                Optional parent group.
-        """
         super().__init__(parent=parent)
         self.texture = texture
-        self.blend_src = blend_src
-        self.blend_dest = blend_dest
-        self.program = program
-
-    def set_state(self):
-        self.program.use()
-
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(self.texture.target, self.texture.handle)
-
-        glEnable(GL_BLEND)
-        glBlendFunc(self.blend_src, self.blend_dest)
-
-    def unset_state(self):
-        glDisable(GL_BLEND)
-        self.program.stop()
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}({self.texture})"
-
-    def __eq__(self, other):
-        return (other.__class__ is self.__class__ and
-                self.program is other.program and
-                self.parent == other.parent and
-                self.texture.target == other.texture.target and
-                self.texture.key == other.texture.key and
-                self.blend_src == other.blend_src and
-                self.blend_dest == other.blend_dest)
-
-    def __hash__(self):
-        return hash((self.program, self.parent,
-                     self.texture.key, self.texture.target,
-                     self.blend_src, self.blend_dest))
+        self.set_shader_program(program)
+        self.set_blend(blend_src, blend_dest)
+        self.set_texture(texture, 0)
 
 
 class Sprite(event.EventDispatcher):
     _batch = None
     _animation = None
+    _anchor_x = 0.0
+    _anchor_y = 0.0
+    _anchor = None
     _frame_index = 0
     _paused = False
     _rotation = 0
@@ -242,33 +195,39 @@ class Sprite(event.EventDispatcher):
 
     def __init__(self,
                  img, x=0, y=0, z=0,
-                 blend_src=GL_SRC_ALPHA, blend_dest=GL_ONE_MINUS_SRC_ALPHA,
+                 anchor: Anchor | str | tuple[float, float] | None = None,
+                 blend_src=BlendFactor.SRC_ALPHA, blend_dest=BlendFactor.ONE_MINUS_SRC_ALPHA,
                  batch=None, group=None, subpixel=False, program=None):
         """Create a sprite.
 
-        :Parameters:
-            `img` :
+        Args:
+            img:
                 Image or animation to display.
-            `x` : int
+            x:
                 X coordinate of the sprite.
-            `y` : int
+            y:
                 Y coordinate of the sprite.
-            `z` : int
+            z:
                 Z coordinate of the sprite.
-            `blend_src` : int
-                OpenGL blend source mode.  The default is suitable for
+            anchor:
+                Anchor offset relative to the image's lower-left corner. Pass
+                a numeric ``(x, y)`` tuple for an explicit offset, or a named
+                anchor such as ``"bottom_center"``. Named anchors are
+                recalculated when the image or animation frame changes.
+            blend_src:
+                Source :class:`~pyglet.enums.BlendFactor`. The default is suitable for
                 compositing sprites drawn from back-to-front.
-            `blend_dest` : int
-                OpenGL blend destination mode.  The default is suitable for
+            blend_dest:
+                Destination :class:`~pyglet.enums.BlendFactor`. The default is suitable for
                 compositing sprites drawn from back-to-front.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Optional batch to add the sprite to.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 Optional parent group of the sprite.
-            `subpixel` : bool
+            subpixel:
                 Allow floating-point coordinates for the sprite. By default,
                 coordinates are restricted to integer values.
-            `program` : `~pyglet.graphics.ShaderProgram`
+            program:
                 A custom shader to use. This shader program must contain the
                 exact same attribute names and types as the default shader.
                 The class methods and properties depend on this, and will
@@ -278,6 +237,13 @@ class Sprite(event.EventDispatcher):
         self._y = y
         self._z = z
         self._img = img
+        self._anchor_x = 0.0
+        self._anchor_y = 0.0
+        self._anchor = None
+        if isinstance(anchor, tuple):
+            self._anchor_x, self._anchor_y = anchor
+        elif anchor is not None:
+            self._anchor = Anchor(anchor)
 
         self._rgba = [255, 255, 255, 255]
 
@@ -290,6 +256,8 @@ class Sprite(event.EventDispatcher):
         else:
             self._texture = img.get_texture()
 
+        self._resolve_anchor()
+
         if not program:
             if isinstance(img, image.TextureArrayRegion):
                 self._program = get_default_array_shader()
@@ -298,9 +266,11 @@ class Sprite(event.EventDispatcher):
         else:
             self._program = program
 
-        self._batch = batch or graphics.get_default_batch()
+        self._batch = batch
+        self._blend_src = blend_src
+        self._blend_dest = blend_dest
         self._user_group = group
-        self._group = self.group_class(self._texture, blend_src, blend_dest, self.program, group)
+        self._group = self.get_sprite_group()
         self._subpixel = subpixel
 
         self._create_vertex_list()
@@ -308,9 +278,9 @@ class Sprite(event.EventDispatcher):
     def _create_vertex_list(self):
         texture = self._texture
         self._vertex_list = self.program.vertex_list(
-            1, GL_POINTS, self._batch, self._group,
+            1, GeometryMode.POINTS, self._batch, self._group,
             position=(self._x, self._y, self._z),
-            size=(texture.width, texture.height, texture.anchor_x, texture.anchor_y),
+            size=(texture.width, texture.height, self._anchor_x, self._anchor_y),
             scale=(self._scale_x, self._scale_y),
             color=self._rgba,
             texture_uv=texture.uv,
@@ -324,13 +294,10 @@ class Sprite(event.EventDispatcher):
     def program(self, program):
         if self._program == program:
             return
-        self._group = self.group_class(self._texture,
-                                       self._group.blend_src,
-                                       self._group.blend_dest,
-                                       program,
-                                       self._user_group)
+        self._program = program
+        self._group = self.get_sprite_group()
         if (self._batch and
-                self._batch.update_shader(self._vertex_list, GL_POINTS, self._group, program)):
+                self._batch.update_shader(self._vertex_list, GeometryMode.POINTS, self._group, program)):
             # Exit early if changing domain is not needed.
             return
 
@@ -352,6 +319,9 @@ class Sprite(event.EventDispatcher):
         self._texture = None
         self._group = None
 
+    def get_sprite_group(self):
+        return self.group_class(self._texture, self._blend_src, self._blend_dest, self._program, self._user_group)
+
     def _animate(self, dt):
         self._frame_index += 1
         if self._frame_index >= len(self._animation.frames):
@@ -372,6 +342,23 @@ class Sprite(event.EventDispatcher):
             self.dispatch_event('on_animation_end')
 
     @property
+    def blend_mode(self):
+        """The current blend factors applied to this sprite."""
+        return self._blend_src, self._blend_dest
+
+    @blend_mode.setter
+    def blend_mode(self, modes):
+        src, dst = modes
+        if src == self._blend_src and dst == self._blend_dest:
+            return
+
+        self._blend_src = src
+        self._blend_dest = dst
+        self._group = self.get_sprite_group()
+        if self._batch is not None:
+            self._batch.migrate(self._vertex_list, GeometryMode.POINTS, self._group, self._batch)
+
+    @property
     def batch(self):
         """Graphics batch.
 
@@ -389,7 +376,7 @@ class Sprite(event.EventDispatcher):
             return
 
         if batch is not None and self._batch is not None:
-            self._batch.migrate(self._vertex_list, GL_POINTS, self._group, batch)
+            self._batch.migrate(self._vertex_list, GeometryMode.POINTS, self._group, batch)
             self._batch = batch
         else:
             self._vertex_list.delete()
@@ -405,18 +392,16 @@ class Sprite(event.EventDispatcher):
 
         :type: :py:class:`pyglet.graphics.Group`
         """
-        return self._group.parent
+        return self._user_group
 
     @group.setter
     def group(self, group):
-        if self._group.parent == group:
+        if self._user_group == group:
             return
-        self._group = self.group_class(self._texture,
-                                       self._group.blend_src,
-                                       self._group.blend_dest,
-                                       self._group.program,
-                                       group)
-        self._batch.migrate(self._vertex_list, GL_POINTS, self._group, self._batch)
+        self._user_group = group
+        self._group = self.get_sprite_group()
+        if self._batch is not None:
+            self._batch.migrate(self._vertex_list, GeometryMode.POINTS, self._group, self._batch)
 
     @property
     def image(self):
@@ -442,31 +427,79 @@ class Sprite(event.EventDispatcher):
             self._set_texture(img.get_texture())
 
     def _set_texture(self, texture):
-        if texture.key != self._texture.key:
-            self._group = self._group.__class__(texture,
-                                                self._group.blend_src,
-                                                self._group.blend_dest,
-                                                self._group.program,
-                                                self._group.parent)
-            self._vertex_list.delete()
-            self._texture = texture
-            self._create_vertex_list()
-        else:
-            self._vertex_list.texture_uv[:] = texture.uv
+        previous_size = self._texture.width, self._texture.height
+        texture_changed = texture.key != self._texture.key
         self._texture = texture
+        self._resolve_anchor()
+
+        if texture_changed:
+            self._group = self.get_sprite_group()
+            if self._batch is not None:
+                self._batch.migrate(self._vertex_list, GeometryMode.POINTS, self._group, self._batch)
+            else:
+                self._vertex_list.delete()
+                self._create_vertex_list()
+                return
+
+        self._vertex_list.texture_uv[:] = texture.uv
+        if self._anchor is not None or (texture.width, texture.height) != previous_size:
+            self._update_anchor()
+
+    def _resolve_anchor(self):
+        if self._anchor is not None:
+            self._anchor_x, self._anchor_y = self._anchor.get_position(self._texture.width, self._texture.height)
+
+    def _update_anchor(self):
+        texture = self._texture
+        self._vertex_list.size[:] = texture.width, texture.height, self._anchor_x, self._anchor_y
+
+    @property
+    def anchor(self):
+        """The named anchor position, or ``None`` when using a numeric anchor."""
+        return self._anchor
+
+    @anchor.setter
+    def anchor(self, anchor):
+        self._anchor = Anchor(anchor) if anchor is not None else None
+        self._resolve_anchor()
+        self._update_anchor()
+
+    @property
+    def anchor_x(self):
+        """X coordinate of the anchor, relative to the image's left edge."""
+        return self._anchor_x
+
+    @anchor_x.setter
+    def anchor_x(self, anchor_x):
+        self._anchor = None
+        self._anchor_x = anchor_x
+        self._update_anchor()
+
+    @property
+    def anchor_y(self):
+        """Y coordinate of the anchor, relative to the image's bottom edge."""
+        return self._anchor_y
+
+    @anchor_y.setter
+    def anchor_y(self, anchor_y):
+        self._anchor = None
+        self._anchor_y = anchor_y
+        self._update_anchor()
+
+    @property
+    def anchor_position(self):
+        """The anchor's ``(x, y)`` offset from the sprite's lower-left corner."""
+        return self._anchor_x, self._anchor_y
+
+    @anchor_position.setter
+    def anchor_position(self, position):
+        self._anchor = None
+        self._anchor_x, self._anchor_y = position
+        self._update_anchor()
 
     @property
     def position(self):
-        """The (x, y, z) coordinates of the sprite, as a tuple.
-
-        :Parameters:
-            `x` : int
-                X coordinate of the sprite.
-            `y` : int
-                Y coordinate of the sprite.
-            `z` : int
-                Z coordinate of the sprite.
-        """
+        """The ``(x, y, z)`` coordinates of the sprite."""
         return self._x, self._y, self._z
 
     @position.setter
@@ -517,8 +550,7 @@ class Sprite(event.EventDispatcher):
     def rotation(self):
         """Clockwise rotation of the sprite, in degrees.
 
-        The sprite image will be rotated about its image's (anchor_x, anchor_y)
-        position.
+        The sprite image is rotated around its lower-left corner.
 
         :type: float
         """
@@ -583,20 +615,20 @@ class Sprite(event.EventDispatcher):
         This method is provided for convenience. There is not much
         performance benefit to updating multiple Sprite attributes at once.
 
-        :Parameters:
-            `x` : int
+        Args:
+            x:
                 X coordinate of the sprite.
-            `y` : int
+            y:
                 Y coordinate of the sprite.
-            `z` : int
+            z:
                 Z coordinate of the sprite.
-            `rotation` : float
+            rotation:
                 Clockwise rotation of the sprite, in degrees.
-            `scale` : float
+            scale:
                 Scaling factor.
-            `scale_x` : float
+            scale_x:
                 Horizontal scaling factor.
-            `scale_y` : float
+            scale_y:
                 Vertical scaling factor.
         """
         translations_outdated = False
@@ -770,10 +802,10 @@ class Sprite(event.EventDispatcher):
         efficiently.
         """
         ctx = pyglet.graphics.api.core.current_context
-        draw_ctx = pyglet.graphics.draw.DrawContext(
+        draw_ctx = DrawContext(
             surface_ctx=ctx,
             backend_ctx=None,
-            draw_pass=pyglet.graphics.draw.BatchDrawOptions().resolve(ctx),
+            draw_pass=BatchDrawOptions().resolve(ctx),
             renderer=ctx.renderer,
         )
         draw_ctx.begin()

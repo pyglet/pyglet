@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 import pyglet
+from pyglet.enums import Anchor
 from pyglet.graphics.texture import TextureArrayRegion
 
 
@@ -223,8 +224,6 @@ def test_init_uses_array_shader_for_texture_array_region(monkeypatch):
     texture = MagicMock()
     texture.width = 1
     texture.height = 1
-    texture.anchor_x = 0
-    texture.anchor_y = 0
     texture.tex_coords = (0.0,) * 12
     texture.id = 1
 
@@ -245,8 +244,6 @@ def _mock_texture(texture_id: int = 1, width: int = 32, height: int = 32, target
     texture.id = texture_id
     texture.width = width
     texture.height = height
-    texture.anchor_x = 0
-    texture.anchor_y = 0
     texture.target = target
     texture.tex_coords = (0.0,) * 12
     texture.get_texture.return_value = texture
@@ -257,6 +254,89 @@ def _mock_image(texture):
     image = MagicMock()
     image.get_texture.return_value = texture
     return image
+
+
+def test_sprite_owns_anchor():
+    sprite = pyglet.sprite.Sprite(_mock_image(_mock_texture(width=32, height=24)), anchor=(4, 6))
+    try:
+        assert sprite.anchor_position == (4, 6)
+        assert sprite._get_vertices() == (-4, -6, 0, 28, -6, 0, 28, 18, 0, -4, 18, 0)  # noqa: SLF001
+    finally:
+        sprite.delete()
+
+
+def test_sprite_anchor_properties_update_vertices():
+    sprite = pyglet.sprite.Sprite(_mock_image(_mock_texture()))
+    try:
+        sprite._update_position = MagicMock()  # noqa: SLF001
+
+        sprite.anchor_x = 3
+        sprite.anchor_y = 5
+        sprite.anchor_position = (7, 11)
+
+        assert sprite.anchor_x == 7
+        assert sprite.anchor_y == 11
+        assert sprite._update_position.call_count == 3  # noqa: SLF001
+    finally:
+        sprite.delete()
+
+
+def test_named_sprite_anchor_tracks_replacement_image_dimensions():
+    texture = _mock_texture(texture_id=1, width=32, height=24)
+    texture.key = 1
+    sprite = pyglet.sprite.Sprite(_mock_image(texture), anchor="bottom_center")
+    try:
+        assert sprite.anchor is Anchor.BOTTOM_CENTER
+        assert sprite.anchor_position == (16, 0)
+
+        replacement = _mock_texture(texture_id=2, width=48, height=18)
+        replacement.key = 2
+        sprite.image = _mock_image(replacement)
+
+        assert sprite.anchor_position == (24, 0)
+
+        sprite.anchor = "top"
+        assert sprite.anchor is Anchor.TOP
+        assert sprite.anchor_position == (24, 18)
+
+        sprite.anchor_x = 5
+        assert sprite.anchor is None
+        assert sprite.anchor_position == (5, 18)
+    finally:
+        sprite.delete()
+
+
+def test_same_size_image_replacement_without_named_anchor_skips_position_update():
+    texture = _mock_texture(texture_id=1)
+    texture.key = 1
+    sprite = pyglet.sprite.Sprite(_mock_image(texture), batch=MagicMock())
+    try:
+        sprite._update_position = MagicMock()  # noqa: SLF001
+        replacement = _mock_texture(texture_id=2)
+        replacement.key = 2
+
+        sprite.image = _mock_image(replacement)
+
+        sprite._update_position.assert_not_called()  # noqa: SLF001
+    finally:
+        sprite.delete()
+
+
+def test_different_size_image_replacement_updates_position_without_named_anchor():
+    texture = _mock_texture(texture_id=1)
+    texture.key = 1
+    sprite = pyglet.sprite.Sprite(_mock_image(texture), batch=MagicMock())
+    try:
+        sprite._update_position = MagicMock()  # noqa: SLF001
+        replacement = _mock_texture(texture_id=2, width=48, height=24)
+        replacement.key = 2
+
+        sprite.image = _mock_image(replacement)
+
+        sprite._update_position.assert_called_once()  # noqa: SLF001
+    finally:
+        sprite.delete()
+
 
 
 def test_multitexture_init_uses_multitexture_shader_getter(monkeypatch):

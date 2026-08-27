@@ -831,11 +831,6 @@ class GLTexture3D(_Texture3DShared[GLTextureRegion], GLTexture, UniformTextureSe
         ctx.glTexParameteri(target, GL_TEXTURE_MIN_FILTER, texture._gl_min_filter)
         ctx.glTexParameteri(target, GL_TEXTURE_MAG_FILTER, texture._gl_mag_filter)
 
-        base_image = images[0]
-        if base_image.anchor_x or base_image.anchor_y:
-            texture.anchor_x = base_image.anchor_x
-            texture.anchor_y = base_image.anchor_y
-
         texture.images = len(images)
 
         size = texture.width * texture.height * texture.images * len(internal_format)
@@ -849,7 +844,7 @@ class GLTexture3D(_Texture3DShared[GLTextureRegion], GLTexture, UniformTextureSe
         for i, image in enumerate(images):
             item = cls.region_class(0, 0, i, item_width, item_height, texture)
             items.append(item)
-            texture.upload(image, image.anchor_x, image.anchor_y, z=i)
+            texture.upload(image, 0, 0, z=i)
         ctx.glFlush()
 
         texture.items = items
@@ -997,7 +992,7 @@ class GLTextureArray(_TextureArrayShared[GLTextureArrayRegion], GLTexture, Unifo
         self._context.glBindTexture(self.target, self._handle)
 
     def _allocate_image(self, image: ImageData, layer: int) -> None:
-        self.upload(image, image.anchor_x, image.anchor_y, layer)
+        self.upload(image, 0, 0, layer)
 
     @classmethod
     def create_for_images(cls, images: Sequence[ImageData],
@@ -1029,11 +1024,6 @@ class GLTextureArray(_TextureArrayShared[GLTextureArrayRegion], GLTexture, Unifo
         ctx.glTexParameteri(target, GL_TEXTURE_MIN_FILTER, texture._gl_min_filter)
         ctx.glTexParameteri(target, GL_TEXTURE_MAG_FILTER, texture._gl_mag_filter)
 
-        base_image = images[0]
-        if base_image.anchor_x or base_image.anchor_y:
-            texture.anchor_x = base_image.anchor_x
-            texture.anchor_y = base_image.anchor_y
-
         texture.images = len(images)
 
         size = (texture.width * texture.height * texture.images * len(internal_format))
@@ -1045,7 +1035,7 @@ class GLTextureArray(_TextureArrayShared[GLTextureArrayRegion], GLTexture, Unifo
         for i, image in enumerate(images):
             item = cls.region_class(0, 0, i, item_width, item_height, texture)
             items.append(item)
-            texture.upload(image, image.anchor_x, image.anchor_y, z=i)
+            texture.upload(image, 0, 0, z=i)
         ctx.glFlush()
 
         texture.items = items
