@@ -73,6 +73,115 @@ def test_rotation_prop_sets_rotation(rgb_or_rgba_shape, new_nonzero_rotation):
     assert rgb_or_rgba_shape.rotation == new_nonzero_rotation
 
 
+def test_curve_and_polygon_accept_a_single_sequence_of_points():
+    points = [(0, 0), (5, 10), (10, 0)]
+
+    assert BezierCurve(points).points == points
+    assert Polygon(points)._coordinates == points  # noqa: SLF001
+
+
+def test_arc_contains_uses_a_circular_approximation():
+    arc = Arc(0, 0, 10, angle=90, thickness=2)
+
+    assert (0, 0) in arc
+    assert (-5, 0) in arc
+    assert (10, 0) not in arc
+
+
+def test_sector_contains_the_entire_circle_for_a_full_sweep():
+    sector = Sector(0, 0, 10, angle=360)
+    assert (-5, 0) in sector
+
+
+@pytest.mark.parametrize(("shape_class", "args", "kwargs", "inside", "outside"), [
+    (Circle, (0, 0, 10), {}, (0, 0), (11, 0)),
+    (Ellipse, (0, 0, 10, 5), {}, (5, 0), (0, 6)),
+    (Sector, (0, 0, 10), {"angle": 90}, (5, 5), (-5, 5)),
+    (Line, (0, 0, 10, 0), {"thickness": 2}, (5, 0), (5, 2)),
+    (Rectangle, (0, 0, 10, 10), {}, (5, 5), (11, 5)),
+    (BorderedRectangle, (0, 0, 10, 10), {}, (5, 5), (11, 5)),
+    (Box, (0, 0, 10, 10), {}, (5, 5), (11, 5)),
+    (RoundedRectangle, (0, 0, 10, 10), {"radius": 2}, (5, 5), (11, 5)),
+    (Triangle, (0, 0, 10, 0, 0, 10), {}, (2, 2), (8, 8)),
+    (Star, (0, 0, 10, 5, 5), {}, (0, 0), (11, 0)),
+    (Polygon, ((0, 0), (10, 0), (0, 10)), {}, (2, 2), (8, 8)),
+])
+def test_shapes_containment(shape_class, args, kwargs, inside, outside):
+    shape = shape_class(*args, **kwargs)
+    assert inside in shape
+    assert outside not in shape
+
+
+def test_hit_testing_respects_rotation_and_anchor():
+    rectangle = Rectangle(0, 0, 10, 10)
+    rectangle.rotation = 90
+    assert (5, -5) in rectangle
+
+    ellipse = Ellipse(0, 0, 10, 5)
+    ellipse.rotation = 90
+    assert (0, -5) in ellipse
+
+    circle = Circle(0, 0, 10)
+    circle.anchor_x = 2
+    assert (-2, 0) in circle
+
+
+def test_line_coordinate_movement():
+    line = Line(0, 0, 10, 0, thickness=2)
+
+    line.x = 5
+    line.y = 6
+    assert (line.x, line.y, line.x2, line.y2) == (5, 6, 15, 6)
+
+    line[0] = 2, 3
+    assert line.points == [(2, 3), (15, 6)]
+    line[1] = 8, 9
+    assert line.points == [(2, 3), (8, 9)]
+
+    line = Line(0, 0, 10, 0, thickness=2)
+    line.position = 5, 5
+    assert line.x2 == 15
+    assert line.y2 == 5
+    assert (10, 5) in line
+
+    line.rotation = 90
+    assert (5, 0) in line
+
+
+def test_triangle_coordinate_movement_and_rotated_contains():
+    triangle = Triangle(0, 0, 2, 0, 0, 2)
+    triangle.position = 5, 5
+    assert (triangle.x2, triangle.y2, triangle.x3, triangle.y3) == (7, 5, 5, 7)
+    assert (6, 5.5) in triangle
+
+    triangle[1] = 8, 5
+    assert triangle.points == [(5, 5), (8, 5), (5, 7)]
+    triangle[2] = 5, 9
+    assert triangle.points == [(5, 5), (8, 5), (5, 9)]
+
+    triangle = Triangle(0, 0, 2, 0, 0, 2)
+    triangle.rotation = 90
+    assert (0.75, -0.75) in triangle
+
+
+def test_multiline_points_can_be_read_and_updated():
+    multiline = MultiLine((0, 0), (5, 5), (10, 0))
+
+    assert multiline.points == [(0, 0), (5, 5), (10, 0)]
+    assert multiline[1] == (5, 5)
+
+    multiline[1] = (5, 8)
+    assert multiline.points == [(0, 0), (5, 8), (10, 0)]
+
+
+def test_closed_multiline_points_exclude_and_update_closing_point():
+    multiline = MultiLine((0, 0), (5, 5), (10, 0), closed=True)
+
+    multiline.points = [(1, 1), (5, 5), (10, 0)]
+    assert multiline.points == [(1, 1), (5, 5), (10, 0)]
+    assert multiline._coordinates[-1] == (1, 1)  # noqa: SLF001
+
+
 def test_setting_color_sets_color_rgb_channels(rgb_or_rgba_shape, new_rgb_or_rgba_color):
     rgb_or_rgba_shape.color = new_rgb_or_rgba_color
     assert rgb_or_rgba_shape.color[:3] == new_rgb_or_rgba_color[:3]
