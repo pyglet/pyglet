@@ -104,7 +104,8 @@ class Frame:
         """Add a Widget to the spatial hash."""
         self._widgets.add(widget)
         widget.update_groups(self._order)
-        widget.set_handler("on_reposition", self._on_reposition_handler)
+        # Preserve handlers already registered for this event.
+        widget.push_handlers(on_reposition=self._on_reposition_handler)
         if not self._resizing:
             self._add_to_cells(widget)
 
@@ -112,6 +113,7 @@ class Frame:
         """Remove a Widget from the spatial hash."""
         self._widgets.remove(widget)
         self._active_widgets.discard(widget)
+        widget.remove_handler("on_reposition", self._on_reposition_handler)
         if not self._resizing:
             self._remove_from_cells(widget)
 
