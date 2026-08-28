@@ -10,7 +10,7 @@ from typing import (
 import pyglet
 
 from pyglet import graphics
-from pyglet.enums import BlendFactor, GraphicsAPI
+from pyglet.enums import BlendFactor, CompareOp, GraphicsAPI
 from pyglet.graphics import Group, ShaderProgram
 from pyglet.text.effects import LinearGradient
 from pyglet.text.layout.boxes import (
@@ -224,6 +224,12 @@ class TextLayout(_FlowLayoutBase):
     _multiline: bool = False
     _visible: bool = True
 
+    #: Clip-space depth distance between text layers when ``depth_sorting`` is enabled.
+    _depth_layer_offset: ClassVar[float] = 1e-5
+
+    #: Depth comparison used when ``depth_sorting`` is enabled.
+    depth_test_compare_op: ClassVar[CompareOp] = CompareOp.LESS
+
     def __init__(
         self,
         document: AbstractDocument,
@@ -245,6 +251,7 @@ class TextLayout(_FlowLayoutBase):
         wrap_lines: bool = True,
         shaping: bool = True,
         init_document: bool = True,
+        depth_sorting: bool = False,
     ) -> None:
         """Create a text layout.
 
@@ -299,9 +306,15 @@ class TextLayout(_FlowLayoutBase):
             init_document:
                 If True the document will be initialized. If subclassing then
                 you may want to avoid duplicate initializations by changing to False.
+            depth_sorting:
+                If True, enable depth testing and preserve the text layer order
+                using small clip-space depth offsets. This keeps backgrounds,
+                shadows, strokes, glyphs, and decorations reliably ordered when
+                multiple labels overlap.
 
         .. versionchanged:: 3.0
             Added the *shaping* parameter.
+            Added the *depth_sorting* parameter.
         """
         self._x = x
         self._y = y
@@ -314,6 +327,7 @@ class TextLayout(_FlowLayoutBase):
         self._multiline = multiline
         self._dpi = dpi or 96
         self._shaping = shaping
+        self._depth_sorting = depth_sorting
 
         self._content_width = 0
         self._content_height = 0
@@ -357,13 +371,23 @@ class TextLayout(_FlowLayoutBase):
         self._foreground_decoration_group = None
         self.effect_group_cache = {}
 
-    def get_effect_group(self, texture: Texture) -> TextLayoutGroup:
+    def get_effect_group(self, texture: Texture, order: int = 0) -> TextLayoutGroup:
+        cache_key = texture, order
         try:
-            return self.effect_group_cache[texture]
+            return self.effect_group_cache[cache_key]
         except KeyError:
-            group = self.effect_group_class(texture, self.effect_shader, order=0, parent=self._user_group)
-            self.effect_group_cache[texture] = group
+            group = self.effect_group_class(texture, self.effect_shader, order=order, parent=self._user_group)
+            self._set_depth_test(group)
+            self.effect_group_cache[cache_key] = group
             return group
+
+    def _set_depth_test(self, group: Group) -> None:
+        if self._depth_sorting:
+            group.set_depth_test(self.depth_test_compare_op)
+
+    def get_depth_offset(self, layer: int) -> float:
+        """Return the clip-space depth offset for a text rendering layer."""
+        return layer * self._depth_layer_offset if self._depth_sorting else 0.0
 
     @property
     def background_decoration_group(self) -> TextDecorationGroup:
@@ -373,6 +397,7 @@ class TextLayout(_FlowLayoutBase):
                 order=0,
                 parent=self._user_group,
             )
+            self._set_depth_test(self._background_decoration_group)
         return self._background_decoration_group
 
     @background_decoration_group.setter
@@ -384,9 +409,10 @@ class TextLayout(_FlowLayoutBase):
         if self._foreground_decoration_group is None:
             self._foreground_decoration_group = self.decoration_class(
                 self.decoration_shader,
-                order=2,
+                order=4 if self._depth_sorting else 2,
                 parent=self._user_group,
             )
+            self._set_depth_test(self._foreground_decoration_group)
         return self._foreground_decoration_group
 
     @foreground_decoration_group.setter
@@ -441,6 +467,21 @@ class TextLayout(_FlowLayoutBase):
             return
         self._effect_shader = shader
         self.effect_group_cache.clear()
+        self._update()
+
+    @property
+    def depth_sorting(self) -> bool:
+        """Whether this layout uses depth testing and depth-safe text layers."""
+        return self._depth_sorting
+
+    @depth_sorting.setter
+    def depth_sorting(self, enabled: bool) -> None:
+        enabled = bool(enabled)
+        if self._depth_sorting == enabled:
+            return
+        self._depth_sorting = enabled
+        self._initialize_groups()
+        self.group_cache.clear()
         self._update()
 
     @property

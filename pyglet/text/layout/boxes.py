@@ -14,6 +14,12 @@ from pyglet.text.effects import LinearGradient
 
 _VertexData = dict[str, Sequence[float | int | bool]]
 
+_BACKGROUND_DEPTH_LAYER = -3
+_SHADOW_DEPTH_LAYER = -2
+_STROKE_DEPTH_LAYER = -1
+_GLYPH_DEPTH_LAYER = 0
+_FOREGROUND_DECORATION_DEPTH_LAYER = 1
+
 
 class _DecorationData(NamedTuple):
     vertices: list[float]
@@ -414,7 +420,7 @@ class _GlyphBox(_AbstractBox):
     ) -> _VertexData:
         vertex_data: _VertexData = {
             "position": vertices,
-            "translation": translation * vertex_count,
+            "translation": (*translation, layout.get_depth_offset(_GLYPH_DEPTH_LAYER)) * vertex_count,
             "colors": colors,
             "tex_coords": tex_coords,
             "rotation": (rotation,) * vertex_count,
@@ -424,6 +430,16 @@ class _GlyphBox(_AbstractBox):
         if "view_translation" in layout.program.attributes:
             vertex_data["view_translation"] = (0, 0, 0) * vertex_count
         return vertex_data
+
+    @staticmethod
+    def _set_depth_layer(
+        layout: TextLayout,
+        vertex_data: _VertexData,
+        vertex_count: int,
+        layer: int,
+    ) -> _VertexData:
+        translation = vertex_data["translation"]
+        return vertex_data | {"translation": (*translation[:3], layout.get_depth_offset(layer)) * vertex_count}
 
     def _place_shadow(
         self,
@@ -465,13 +481,18 @@ class _GlyphBox(_AbstractBox):
             return
 
         assert shadow_vertices is not None
-        shadow_data = vertex_data | {"position": shadow_vertices, "colors": shadow_colors}
+        shadow_data = self._set_depth_layer(
+            layout,
+            vertex_data | {"position": shadow_vertices, "colors": shadow_colors},
+            self.length * 4,
+            _SHADOW_DEPTH_LAYER,
+        )
         shadow_list = layout.program.vertex_list_indexed(
             self.length * 4,
             GeometryMode.TRIANGLES,
             indices,
             layout.batch,
-            layout.get_effect_group(self.owner),
+            layout.get_effect_group(self.owner, order=1 if layout.depth_sorting else 0),
             **shadow_data,
         )
         self._add_vertex_list(shadow_list, context)
@@ -558,12 +579,18 @@ class _GlyphBox(_AbstractBox):
                         anchor_y,
                         4,
                     )
+                    stroke_data = self._set_depth_layer(
+                        layout,
+                        stroke_data,
+                        4,
+                        _STROKE_DEPTH_LAYER,
+                    )
                     stroke_list = layout.program.vertex_list_indexed(
                         4,
                         GeometryMode.TRIANGLES,
                         (0, 1, 2, 0, 2, 3),
                         layout.batch,
-                        layout.get_effect_group(stroke_glyph.owner),
+                        layout.get_effect_group(stroke_glyph.owner, order=2 if layout.depth_sorting else 0),
                         **stroke_data,
                     )
                     self._add_vertex_list(stroke_list, context)
@@ -710,6 +737,7 @@ class _GlyphBox(_AbstractBox):
             return
 
         if geometry.background.vertices:
+            bg_layer = layout.get_depth_offset(_BACKGROUND_DEPTH_LAYER)
             bg_count = len(geometry.background.vertices) // 3
             # Needs this split for text highlighting in incremental layer.
             background_indices = [
@@ -725,7 +753,7 @@ class _GlyphBox(_AbstractBox):
                 layout.batch,
                 layout.background_decoration_group,
                 position=geometry.background.vertices,
-                translation=translation * bg_count,
+                translation=(*translation, bg_layer) * bg_count,
                 view_translation=(0, 0, 0) * bg_count,
                 colors=geometry.background.colors,
                 rotation=(rotation,) * bg_count,
@@ -734,6 +762,7 @@ class _GlyphBox(_AbstractBox):
             )
             self._add_vertex_list(background_list, context)
 
+        fg_layer = layout.get_depth_offset(_FOREGROUND_DECORATION_DEPTH_LAYER)
         if geometry.underline.vertices:
             ul_count = len(geometry.underline.vertices) // 3
             decoration_program = layout.decoration_shader
@@ -743,7 +772,7 @@ class _GlyphBox(_AbstractBox):
                 layout.batch,
                 layout.foreground_decoration_group,
                 position=geometry.underline.vertices,
-                translation=translation * ul_count,
+                translation=(*translation, fg_layer) * ul_count,
                 view_translation=(0, 0, 0) * ul_count,
                 colors=geometry.underline.colors,
                 rotation=(rotation,) * ul_count,
@@ -761,7 +790,7 @@ class _GlyphBox(_AbstractBox):
                 layout.batch,
                 layout.foreground_decoration_group,
                 position=geometry.strikethrough.vertices,
-                translation=translation * st_count,
+                translation=(*translation, fg_layer) * st_count,
                 view_translation=(0, 0, 0) * st_count,
                 colors=geometry.strikethrough.colors,
                 rotation=(rotation,) * st_count,
@@ -792,7 +821,8 @@ class _GlyphBox(_AbstractBox):
         try:
             group = layout.group_cache[self.owner]
         except KeyError:
-            group = layout.group_class(self.owner, layout.program, order=1, parent=layout.group)
+            group = layout.group_class(self.owner, layout.program, order=3 if layout.depth_sorting else 1, parent=layout.group)
+            layout._set_depth_test(group)  # noqa: SLF001
             layout.group_cache[self.owner] = group
 
         vertices, tex_coords, baseline = self._create_glyph_geometry(layout, i, line_x, line_y, context)
@@ -854,9 +884,9 @@ class _GlyphBox(_AbstractBox):
         )
 
     def update_translation(self, x: float, y: float, z: float) -> None:
-        translation = (x, y, z)
         for _vertex_list in self.vertex_lists:
-            _vertex_list.translation[:] = translation * _vertex_list.count
+            depth_offset = _vertex_list.translation[3]
+            _vertex_list.translation[:] = (x, y, z, depth_offset) * _vertex_list.count
 
     def update_colors(self, colors: list[int], start: int, end: int) -> None:
         """Update the glyph colors only when specified by a single color attribute in set_style.
