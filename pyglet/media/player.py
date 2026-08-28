@@ -16,6 +16,7 @@ _debug = debug_print('debug_media')
 if TYPE_CHECKING:
     from pyglet.graphics.draw import Batch
     from pyglet.graphics import Texture
+    from pyglet.media.drivers.base import AbstractAudioPlayer
 
 
 class PlaybackTimer:
@@ -62,36 +63,6 @@ class PlaybackTimer:
         self._elapsed = value
 
 
-class _PlayerProperty:
-    """Descriptor for Player attributes to forward to the AudioPlayer.
-
-    We want the Player to have attributes like volume, pitch, etc. These are
-    actually implemented by the AudioPlayer. So this descriptor will forward
-    an assignment to one of the attributes to the AudioPlayer. For example
-    `player.volume = 0.5` will call `player._audio_player.set_volume(0.5)`.
-
-    The Player class has default values at the class level which are retrieved
-    if not found on the instance.
-    """
-
-    def __init__(self, attribute, doc=None):
-        self.private_name = '_' + attribute
-        self.setter_name = 'set_' + attribute
-        self.__doc__ = doc or ''
-
-    def __get__(self, obj, objtype=None):
-        if obj is None:
-            return self
-        if self.private_name in obj.__dict__:
-            return obj.__dict__[self.private_name]
-        return getattr(objtype, self.private_name)
-
-    def __set__(self, obj, value):
-        obj.__dict__[self.private_name] = value
-        if obj._audio_player:
-            getattr(obj._audio_player, self.setter_name)(value)
-
-
 class AudioPlayer(pyglet.event.EventDispatcher):
     """High-level sound player."""
 
@@ -107,6 +78,9 @@ class AudioPlayer(pyglet.event.EventDispatcher):
     _cone_inner_angle = 360.0
     _cone_outer_angle = 360.0
     _cone_outer_gain = 1.0
+
+    _source: Source | None
+    _audio_player: AbstractAudioPlayer | None
 
     def __init__(self) -> None:
         """Initialize the Player with a MasterClock."""
@@ -367,76 +341,154 @@ class AudioPlayer(pyglet.event.EventDispatcher):
         """
         return self._timer.get_time()
 
-    volume = _PlayerProperty('volume', doc="""
-    The volume level of sound playback.
+    @property
+    def volume(self) -> float:
+        """The volume level of sound playback.
 
-    The nominal level is 1.0, and 0.0 is silence.
+        The nominal level is 1.0, and 0.0 is silence. The volume level is
+        affected by the distance from the listener (if positioned).
+        """
+        return self._volume
 
-    The volume level is affected by the distance from the listener (if
-    positioned).
-    """)
-    min_distance = _PlayerProperty('min_distance', doc="""
-    The distance beyond which the sound volume drops by half, and within
-    which no attenuation is applied.
+    @volume.setter
+    def volume(self, value: float) -> None:
+        self._volume = value
+        if self._audio_player:
+            self._audio_player.set_volume(value)
 
-    The minimum distance controls how quickly a sound is attenuated as it
-    moves away from the listener. The gain is clamped at the nominal value
-    within the min distance. By default the value is 1.0.
+    @property
+    def min_distance(self) -> float:
+        """The distance beyond which the sound volume drops by half, and within which no attenuation is applied.
 
-    The unit defaults to meters, but can be modified with the listener
-    properties. """)
-    max_distance = _PlayerProperty('max_distance', doc="""
-    The distance at which no further attenuation is applied.
+        The minimum distance controls how quickly a sound is attenuated as it
+        moves away from the listener. The gain is clamped at the nominal value
+        within the min distance. By default the value is 1.0.
 
-    When the distance from the listener to the player is greater than this
-    value, attenuation is calculated as if the distance were value. By
-    default the maximum distance is infinity.
+        The unit defaults to meters, but can be modified with the listener
+        properties.
+        """
+        return self._min_distance
 
-    The unit defaults to meters, but can be modified with the listener
-    properties.
-    """)
-    position = _PlayerProperty('position', doc="""
-    The position of the sound in 3D space.
+    @min_distance.setter
+    def min_distance(self, value: float) -> None:
+        self._min_distance = value
+        if self._audio_player:
+            self._audio_player.set_min_distance(value)
 
-    The position is given as a tuple of floats (x, y, z). The unit
-    defaults to meters, but can be modified with the listener properties.
-    """)
-    pitch = _PlayerProperty('pitch', doc="""
-    The pitch shift to apply to the sound.
+    @property
+    def max_distance(self) -> float:
+        """The distance at which no further attenuation is applied.
 
-    The nominal pitch is 1.0. A pitch of 2.0 will sound one octave higher,
-    and play twice as fast. A pitch of 0.5 will sound one octave lower, and
-    play twice as slow. A pitch of 0.0 is not permitted.
-    """)
-    cone_orientation = _PlayerProperty('cone_orientation', doc="""
-    The direction of the sound in 3D space.
+        When the distance from the listener to the player is greater than this
+        value, attenuation is calculated as if the distance were value. By
+        default the maximum distance is infinity.
 
-    The direction is specified as a tuple of floats (x, y, z), and has no
-    unit. The default direction is (0, 0, -1). Directional effects are only
-    noticeable if the other cone properties are changed from their default
-    values.
-    """)
-    cone_inner_angle = _PlayerProperty('cone_inner_angle', doc="""
-    The interior angle of the inner cone.
+        The unit defaults to meters, but can be modified with the listener
+        properties.
+        """
+        return self._max_distance
 
-    The angle is given in degrees, and defaults to 360. When the listener
-    is positioned within the volume defined by the inner cone, the sound is
-    played at normal gain (see :attr:`volume`).
-    """)
-    cone_outer_angle = _PlayerProperty('cone_outer_angle', doc="""
-    The interior angle of the outer cone.
+    @max_distance.setter
+    def max_distance(self, value: float) -> None:
+        self._max_distance = value
+        if self._audio_player:
+            self._audio_player.set_max_distance(value)
 
-    The angle is given in degrees, and defaults to 360. When the listener
-    is positioned within the volume defined by the outer cone, but outside
-    the volume defined by the inner cone, the gain applied is a smooth
-    interpolation between :attr:`volume` and :attr:`cone_outer_gain`.
-    """)
-    cone_outer_gain = _PlayerProperty('cone_outer_gain', doc="""
-    The gain applied outside the cone.
+    @property
+    def position(self) -> tuple[float, float, float]:
+        """The position of the sound in 3D space.
 
-    When the listener is positioned outside the volume defined by the outer
-    cone, this gain is applied instead of :attr:`volume`.
-    """)
+        The position is given as a tuple of floats (x, y, z). The unit
+        defaults to meters, but can be modified with the listener properties.
+        """
+        return self._position
+
+    @position.setter
+    def position(self, value: tuple[float, float, float]) -> None:
+        self._position = value
+        if self._audio_player:
+            self._audio_player.set_position(value)
+
+    @property
+    def pitch(self) -> float:
+        """The pitch shift to apply to the sound.
+
+        The nominal pitch is 1.0. A pitch of 2.0 will sound one octave higher,
+        and play twice as fast. A pitch of 0.5 will sound one octave lower, and
+        play twice as slow. A pitch of 0.0 is not permitted.
+        """
+        return self._pitch
+
+    @pitch.setter
+    def pitch(self, value: float) -> None:
+        self._pitch = value
+        if self._audio_player:
+            self._audio_player.set_pitch(value)
+
+    @property
+    def cone_orientation(self) -> tuple[float, float, float]:
+        """The direction of the sound in 3D space.
+
+        The direction is specified as a tuple of floats (x, y, z), and has no
+        unit. The default direction is (0, 0, -1). Directional effects are only
+        noticeable if the other cone properties are changed from their default
+        values.
+        """
+        return self._cone_orientation
+
+    @cone_orientation.setter
+    def cone_orientation(self, value: tuple[float, float, float]) -> None:
+        self._cone_orientation = value
+        if self._audio_player:
+            self._audio_player.set_cone_orientation(value)
+
+    @property
+    def cone_inner_angle(self) -> float:
+        """The interior angle of the inner cone.
+
+        The angle is given in degrees, and defaults to 360. When the listener
+        is positioned within the volume defined by the inner cone, the sound is
+        played at normal gain (see :attr:`volume`).
+        """
+        return self._cone_inner_angle
+
+    @cone_inner_angle.setter
+    def cone_inner_angle(self, value: float) -> None:
+        self._cone_inner_angle = value
+        if self._audio_player:
+            self._audio_player.set_cone_inner_angle(value)
+
+    @property
+    def cone_outer_angle(self) -> float:
+        """The interior angle of the outer cone.
+
+        The angle is given in degrees, and defaults to 360. When the listener
+        is positioned within the volume defined by the outer cone, but outside
+        the volume defined by the inner cone, the gain applied is a smooth
+        interpolation between :attr:`volume` and :attr:`cone_outer_gain`.
+        """
+        return self._cone_outer_angle
+
+    @cone_outer_angle.setter
+    def cone_outer_angle(self, value: float) -> None:
+        self._cone_outer_angle = value
+        if self._audio_player:
+            self._audio_player.set_cone_outer_angle(value)
+
+    @property
+    def cone_outer_gain(self) -> float:
+        """The gain applied outside the cone.
+
+        When the listener is positioned outside the volume defined by the outer
+        cone, this gain is applied instead of :attr:`volume`.
+        """
+        return self._cone_outer_gain
+
+    @cone_outer_gain.setter
+    def cone_outer_gain(self, value: float) -> None:
+        self._cone_outer_gain = value
+        if self._audio_player:
+            self._audio_player.set_cone_outer_gain(value)
 
     # Events
 
