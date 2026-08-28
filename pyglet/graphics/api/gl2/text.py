@@ -11,7 +11,7 @@ scrollable_layout_vertex_source = """#version 110
     attribute vec3 position;
     attribute vec4 colors;
     attribute vec3 tex_coords;
-    attribute vec4 translation;
+    attribute vec3 translation;
     attribute vec3 view_translation;
     attribute vec2 anchor;
     attribute float rotation;
@@ -42,9 +42,8 @@ scrollable_layout_vertex_source = """#version 110
 
         gl_Position = u_projection * u_view * m_translate * m_anchor * m_rotation * vec4(position + 
         view_translation + v_anchor, 1.0) * visible;
-        gl_Position.z -= translation.w * gl_Position.w;
 
-        vert_position = vec4(position + translation.xyz + view_translation + v_anchor, 1.0);
+        vert_position = vec4(position + translation + view_translation + v_anchor, 1.0);
         text_colors = colors;
         texture_coords = tex_coords.xy;
     }
@@ -55,7 +54,7 @@ layout_vertex_source = scrollable_layout_vertex_source.replace(
 ).replace(
     "position + \n        view_translation + v_anchor", "position + v_anchor",
 ).replace(
-    "position + translation.xyz + view_translation + v_anchor", "position + translation.xyz + v_anchor",
+    "position + translation + view_translation + v_anchor", "position + translation + v_anchor",
 )
 
 layout_fragment_source = """#version 110
@@ -70,7 +69,6 @@ layout_fragment_source = """#version 110
     void main()
     {
         gl_FragColor = vec4(text_colors.rgb, texture2D(text, texture_coords).a * text_colors.a);
-        if (gl_FragColor.a < 0.01) discard;
         if (scissor == true) {
             if (vert_position.x < scissor_area[0]) discard;                     // left
             if (vert_position.y < scissor_area[1]) discard;                     // bottom
@@ -92,7 +90,6 @@ layout_fragment_image_source = """#version 110
     void main()
     {
         gl_FragColor = texture2D(image_texture, texture_coords.xy);
-        if (gl_FragColor.a < 0.01) discard;
         if (scissor == true) {
             if (vert_position.x < scissor_area[0]) discard;                     // left
             if (vert_position.y < scissor_area[1]) discard;                     // bottom
@@ -104,7 +101,7 @@ layout_fragment_image_source = """#version 110
 decoration_vertex_source = """#version 110
     attribute vec3 position;
     attribute vec4 colors;
-    attribute vec4 translation;
+    attribute vec3 translation;
     attribute vec3 view_translation;
     attribute vec2 anchor;
     attribute float rotation;
@@ -134,9 +131,8 @@ decoration_vertex_source = """#version 110
 
         gl_Position = u_projection * u_view * m_translate * m_anchor * m_rotation * vec4(position + 
         view_translation + v_anchor, 1.0) * visible;
-        gl_Position.z -= translation.w * gl_Position.w;
 
-        vert_position = vec4(position + translation.xyz + view_translation + v_anchor, 1.0);
+        vert_position = vec4(position + translation + view_translation + v_anchor, 1.0);
         vert_colors = colors;
     }
 """
@@ -150,7 +146,6 @@ decoration_fragment_source = """#version 110
     void main()
     {
         gl_FragColor = vert_colors;
-        if (gl_FragColor.a < 0.01) discard;
         if (scissor == true) {
             if (vert_position.x < scissor_area[0]) discard;                     // left
             if (vert_position.y < scissor_area[1]) discard;                     // bottom
