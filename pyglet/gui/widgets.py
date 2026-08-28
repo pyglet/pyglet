@@ -347,13 +347,16 @@ class TextButton(WidgetBase):
         self._user_group = group
         fg_group = Group(order=1, parent=group)
         self._label = pyglet.text.Label(
-            text=self._text, x=x, y=y, color=self.style.unpressed_color, batch=batch, group=fg_group,
+            text=self._text, x=x, y=y, anchor_x="center", anchor_y="center",
+            color=self.style.unpressed_color, batch=batch, group=fg_group,
         )
         super().__init__(x, y, self._label.content_width, self._label.content_height)
         self._pressed_color = self.style.pressed_color
         self._unpressed_color = self.style.unpressed_color
         self._hover_color = self.style.hover_color
+        self._display_color = self._unpressed_color
         self._pressed = False
+        self._update_position()
 
     @property
     def text(self) -> str:
@@ -364,8 +367,35 @@ class TextButton(WidgetBase):
         self._text = text
         self._label.text = text
 
+    @property
+    def width(self) -> int:
+        """Width of the button hit area."""
+        return self._width
+
+    @width.setter
+    def width(self, value: int) -> None:
+        self._width = value
+        self._update_position()
+
+    @property
+    def height(self) -> int:
+        """Height of the button hit area."""
+        return self._height
+
+    @height.setter
+    def height(self, value: int) -> None:
+        self._height = value
+        self._update_position()
+
     def _update_position(self) -> None:
-        self._label.position = self._x, self._y, 0
+        self._label.position = self._x + self._width / 2, self._y + self._height / 2, 0
+
+    def _set_display_color(self, color: RGBColor | RGBAColor) -> None:
+        """Update text color only when the visible state has changed."""
+        if self._display_color == color:
+            return
+        self._label.color = color
+        self._display_color = color
 
     @property
     def value(self) -> bool:
@@ -376,7 +406,7 @@ class TextButton(WidgetBase):
     def value(self, value: bool) -> None:
         assert type(value) is bool, "This Widget's value must be True or False."
         self._pressed = value
-        self._label.color = self._pressed_color if self._pressed else self._unpressed_color
+        self._set_display_color(self._pressed_color if self._pressed else self._unpressed_color)
 
     def update_groups(self, order: int) -> None:
         self._label.group = Group(order=order + 1, parent=self._user_group)
@@ -384,33 +414,33 @@ class TextButton(WidgetBase):
     def on_mouse_press(self, x: int, y: int, buttons: int, modifiers: int) -> None:
         if not self.enabled or not self._check_hit(x, y):
             return
-        self._label.color = self._pressed_color
+        self._set_display_color(self._pressed_color)
         self._pressed = True
         self.dispatch_event('on_press', self)
 
     def on_mouse_release(self, x: int, y: int, buttons: int, modifiers: int) -> None:
         if not self.enabled or not self._pressed:
             return
-        self._label.color = self._hover_color if self._check_hit(x, y) else self._unpressed_color
+        self._set_display_color(self._hover_color if self._check_hit(x, y) else self._unpressed_color)
         self._pressed = False
         self.dispatch_event('on_release', self)
 
     def on_mouse_leave(self, x: int, y: int) -> None:
         if not self.enabled or not self._pressed:
             return
-        self._label.color = self._unpressed_color
+        self._set_display_color(self._unpressed_color)
         self._pressed = False
         self.dispatch_event('on_release')
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> None:
         if not self.enabled or self._pressed:
             return
-        self._label.color = self._hover_color if self._check_hit(x, y) else self._unpressed_color
+        self._set_display_color(self._hover_color if self._check_hit(x, y) else self._unpressed_color)
 
     def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int) -> None:
         if not self.enabled or self._pressed:
             return
-        self._label.color = self._hover_color if self._check_hit(x, y) else self._unpressed_color
+        self._set_display_color(self._hover_color if self._check_hit(x, y) else self._unpressed_color)
 
     def on_press(self, widget: TextButton) -> None:
         """Event: Dispatched when the button is clicked."""
@@ -826,6 +856,10 @@ class ScrollableRegion(WidgetBase, LayoutCell[LayoutCellStyle]):
     def _update_position(self) -> None:
         pass
 
+    def on_resize(self, width: int, height: int) -> None:
+        """Forward the parent frame's resize event through the region layout."""
+        LayoutCell.on_resize(self, width, height)
+
     def realign(self, new_rect: tuple[float, float, float, float] | None = None) -> None:
         old_rect = getattr(self, "_rect", None)
         if new_rect is not None:
@@ -858,7 +892,10 @@ class ScrollableRegion(WidgetBase, LayoutCell[LayoutCellStyle]):
         if self.content is None: return 0.0, 0.0
         return max(0.0, self.content.width - self.width), max(0.0, self.content.height - self.height)
 
-    def _content_coordinates(self, x: float, y: float) -> tuple[float, float]: return x + self._scroll_x, y + self._scroll_y
+    def _content_coordinates(self, x: float, y: float) -> tuple[float, float]:
+        """Convert a window coordinate to the child view's content space."""
+        point = self.view.screen_to_world(x, y)
+        return point[0], point[1]
     def _check_hit(self, x: float, y: float) -> bool: return self.x <= x <= self.x + self.width and self.y <= y <= self.y + self.height
 
     def on_mouse_scroll(self, x: int, y: int, scroll_x: float, scroll_y: float) -> None:

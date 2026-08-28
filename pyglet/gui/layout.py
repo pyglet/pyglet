@@ -44,6 +44,7 @@ class LayoutCell(Generic[StyleT]):
         self._rect = (0, 0, 1, 1)
         self._style: StyleT = style if style is not None else cast(StyleT, LayoutCellStyle())
         self._span = (1, 1)
+        self._update_background()
 
     @property
     def x(self) -> float:
@@ -88,6 +89,11 @@ class LayoutCell(Generic[StyleT]):
         self._style = style
         self._update_background()
         self.realign()
+
+    def on_resize(self, width: int, height: int) -> None:
+        """Forward a window resize event to this cell's content, if supported."""
+        if self._content is not None and hasattr(self._content, "on_resize"):
+            self._content.on_resize(width, height)
 
     def _update_background(self) -> None:
         background = self._style.background
@@ -262,6 +268,13 @@ class _Grid:
             for column, cell in enumerate(cells):
                 if isinstance(cell, LayoutCell):
                     cell.realign(self._cell_rect(row, column))
+
+    def on_resize(self, width: int, height: int) -> None:
+        """Forward a resize event through every cell in this grid."""
+        for row in self._cells:
+            for cell in row:
+                if isinstance(cell, LayoutCell):
+                    cell.on_resize(width, height)
 
     @property
     def calculated_width(self) -> float:
