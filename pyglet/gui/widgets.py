@@ -8,6 +8,7 @@ import pyglet
 
 from pyglet.event import EventDispatcher
 from pyglet.graphics import Batch, Group
+from pyglet.gui import LayoutCell
 from pyglet.text.caret import Caret
 from pyglet.text.layout import IncrementalTextLayout
 
@@ -725,3 +726,166 @@ class TextEntry(WidgetBase):
 
 
 TextEntry.register_event_type('on_commit')
+
+
+class ScrollableRegion(WidgetBase, LayoutCell):
+    """Clip and scroll content using a child camera view.
+
+    Add the region to the application's existing :class:`~pyglet.gui.Frame`.
+    Child widgets are added with :meth:`add_widget`; their input is translated
+    after the parent frame dispatches to the region.  No nested ``Frame`` is
+    created. Pass a ``camera`` or ``view`` (or a window with a ``camera``
+    attribute). ``content_group`` applies the child view and clip to content.
+    """
+
+    def __init__(self, x, y, width, height, window=None, *, frame=None, camera=None, view=None,
+                 batch=None, group=None, horizontal: bool = True, vertical: bool = True,
+                 scroll_step: float = 40) -> None:
+        if camera is not None and view is not None:
+            raise ValueError("pass a camera or a view, not both")
+        if window is None and frame is not None:
+            window = frame._window  # noqa: SLF001
+        parent_view = view or (camera.view if camera is not None else getattr(window, "camera", None))
+        if parent_view is None:
+            raise TypeError("ScrollableRegion requires a camera or view")
+
+        WidgetBase.__init__(self, x, y, width, height)
+        LayoutCell.__init__(self, {"content-alignment": ("left", "top")}, batch, group)
+        self.view = parent_view.create_view(inherit=True)
+        self.content_group = Group(order=1, parent=group)
+        self.content_group.set_camera(self.view)
+        self.horizontal = horizontal
+        self.vertical = vertical
+        self.scroll_step = scroll_step
+        self._scroll_x = self._scroll_y = 0.0
+        self._widgets: set[WidgetBase] = set()
+        self._active_widgets: set[WidgetBase] = set()
+        self._mouse_pos = x, y
+        self.realign((x, y, width, height))
+        if frame is not None:
+            frame.add_widget(self)
+        elif window is not None:
+            window.push_handlers(self)
+
+    @property
+    def x(self): return self._rect[0]
+    @x.setter
+    def x(self, value): self.realign((value, self.y, self.width, self.height))
+    @property
+    def y(self): return self._rect[1]
+    @y.setter
+    def y(self, value): self.realign((self.x, value, self.width, self.height))
+    @property
+    def position(self): return self.x, self.y
+    @position.setter
+    def position(self, value): self.realign((*value, self.width, self.height))
+    @property
+    def width(self): return self._rect[2]
+    @width.setter
+    def width(self, value): self.realign((self.x, self.y, value, self.height))
+    @property
+    def height(self): return self._rect[3]
+    @height.setter
+    def height(self, value): self.realign((self.x, self.y, self.width, value))
+    @property
+    def size(self): return self.width, self.height
+    @size.setter
+    def size(self, value): self.realign((self.x, self.y, *value))
+    @property
+    def aabb(self): return self.x, self.y, self.x + self.width, self.y + self.height
+    @property
+    def content(self): return LayoutCell.content.fget(self)
+    @content.setter
+    def content(self, value):
+        LayoutCell.content.fset(self, value)
+        self.set_scroll(self._scroll_x, self._scroll_y)
+    @property
+    def scroll_x(self): return self._scroll_x
+    @property
+    def scroll_y(self): return self._scroll_y
+
+    def update_groups(self, order: int) -> None:
+        """The region has no drawable of its own; content uses ``content_group``."""
+
+    def _update_position(self) -> None:
+        pass
+
+    def realign(self, new_rect=None) -> None:
+        old_rect = getattr(self, "_rect", None)
+        if new_rect is not None:
+            self._rect = tuple(new_rect)
+            self._x, self._y, self._width, self._height = self._rect
+        LayoutCell.realign(self, self._rect if new_rect is not None else None)
+        if hasattr(self, "view"):
+            self.view.set_scissor_area(int(self.x), int(self.y), int(self.width), int(self.height))
+            self.set_scroll(self._scroll_x, self._scroll_y)
+        if old_rect is not None and old_rect != self._rect:
+            self.dispatch_event("on_reposition", self)
+
+    def add_widget(self, widget: WidgetBase) -> None:
+        """Register a child widget. Do not add it directly to the parent frame."""
+        self._widgets.add(widget)
+        widget.parent = self
+
+    def remove_widget(self, widget: WidgetBase) -> None:
+        self._widgets.remove(widget)
+        self._active_widgets.discard(widget)
+        widget.parent = None
+
+    def set_scroll(self, x: float | None = None, y: float | None = None) -> None:
+        max_x, max_y = self._scroll_limits()
+        if x is not None: self._scroll_x = min(max(0.0, x), max_x)
+        if y is not None: self._scroll_y = min(max(0.0, y), max_y)
+        self.view.position = -self._scroll_x, -self._scroll_y
+
+    def _scroll_limits(self):
+        if self.content is None: return 0.0, 0.0
+        return max(0.0, self.content.width - self.width), max(0.0, self.content.height - self.height)
+
+    def _content_coordinates(self, x, y): return x + self._scroll_x, y + self._scroll_y
+    def _check_hit(self, x, y): return self.x <= x <= self.x + self.width and self.y <= y <= self.y + self.height
+
+    def on_mouse_scroll(self, x, y, scroll_x, scroll_y) -> None:
+        if not self._check_hit(x, y): return
+        if self.vertical: self.set_scroll(y=self._scroll_y - scroll_y * self.scroll_step)
+        if self.horizontal and scroll_x: self.set_scroll(x=self._scroll_x - scroll_x * self.scroll_step)
+        cx, cy = self._content_coordinates(x, y)
+        for widget in self._widgets: widget.on_mouse_scroll(cx, cy, scroll_x, scroll_y)
+
+    def on_mouse_press(self, x, y, buttons, modifiers) -> None:
+        if not self._check_hit(x, y): return
+        cx, cy = self._content_coordinates(x, y)
+        for widget in self._widgets:
+            if widget._check_hit(cx, cy):  # noqa: SLF001
+                widget.on_mouse_press(cx, cy, buttons, modifiers)
+                self._active_widgets.add(widget)
+
+    def on_mouse_release(self, x, y, buttons, modifiers) -> None:
+        cx, cy = self._content_coordinates(x, y)
+        for widget in self._active_widgets: widget.on_mouse_release(cx, cy, buttons, modifiers)
+        self._active_widgets.clear()
+
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers) -> None:
+        cx, cy = self._content_coordinates(x, y)
+        for widget in self._active_widgets: widget.on_mouse_drag(cx, cy, dx, dy, buttons, modifiers)
+        self._mouse_pos = x, y
+
+    def on_mouse_motion(self, x, y, dx, dy) -> None:
+        if not self._check_hit(x, y): return
+        cx, cy = self._content_coordinates(x, y)
+        for widget in self._widgets: widget.on_mouse_motion(cx, cy, dx, dy)
+        self._mouse_pos = x, y
+
+    def _for_mouse_widgets(self, method, *args) -> None:
+        cx, cy = self._content_coordinates(*self._mouse_pos)
+        for widget in self._widgets:
+            if widget._check_hit(cx, cy):  # noqa: SLF001
+                getattr(widget, method)(*args)
+
+    def on_text(self, text): self._for_mouse_widgets("on_text", text)
+    def on_text_motion(self, motion): self._for_mouse_widgets("on_text_motion", motion)
+    def on_text_motion_select(self, motion): self._for_mouse_widgets("on_text_motion_select", motion)
+    def on_key_press(self, symbol, modifiers):
+        for widget in self._widgets: widget.on_key_press(symbol, modifiers)
+    def on_key_release(self, symbol, modifiers):
+        for widget in self._widgets: widget.on_key_release(symbol, modifiers)
