@@ -1,3 +1,5 @@
+import gc
+import weakref
 from unittest.mock import MagicMock
 
 import pyglet
@@ -14,6 +16,11 @@ class VideoTestPlayer(VideoPlayer):
 
     @staticmethod
     def _check_ffmpeg_availability() -> None:
+        pass
+
+
+class SeekableSource(Source):
+    def seek(self, timestamp: float) -> None:
         pass
 
 
@@ -731,6 +738,70 @@ class PlayerTestCase(unittest.TestCase):
         self.mock_get_audio_driver.return_value = None
         self.audio_player.queue(mock_source)
         self.audio_player.play()
+
+
+class SourcePlayTestCase(unittest.TestCase):
+    def test_eos_releases_fire_and_forget_player(self):
+        """A real AudioPlayer releases its EOS callback and is collectable after EOS."""
+        source = SeekableSource()
+        source.video_format = VideoFormat(1, 1)
+        player = source.play()
+
+        player_ref = weakref.ref(player)
+        self.assertIn(player, Source._players)
+
+        player.next_source()
+
+        self.assertNotIn(player, Source._players)
+        self.assertFalse(any('on_player_eos' in handlers for handlers in player._event_stack))
+
+        del player
+        gc.collect()
+        self.assertIsNone(player_ref())
+
+    def test_overriding_eos_handler_does_not_prevent_cleanup(self):
+        """Ensure user setting an EOS callback cannot replace cleanup."""
+        source = SeekableSource()
+        source.video_format = VideoFormat(1, 1)
+        player = source.play()
+        eos_callbacks = []
+
+        def on_player_eos():
+            eos_callbacks.append(True)
+
+        player.on_player_eos = on_player_eos
+        player_ref = weakref.ref(player)
+        player.next_source()
+
+        self.assertEqual(eos_callbacks, [True])
+        self.assertNotIn(player, Source._players)
+        self.assertFalse(any('on_player_eos' in handlers for handlers in player._event_stack))
+
+        del player
+        gc.collect()
+        self.assertIsNone(player_ref())
+
+    def test_handling_eos_event_does_not_prevent_cleanup(self):
+        """Ensure an event handler cannot intercept fire-and-forget cleanup."""
+        source = SeekableSource()
+        source.video_format = VideoFormat(1, 1)
+        player = source.play()
+        eos_callbacks = []
+
+        def on_player_eos():
+            eos_callbacks.append(True)
+            return pyglet.event.EVENT_HANDLED
+
+        player.push_handlers(on_player_eos=on_player_eos)
+        player_ref = weakref.ref(player)
+        player.next_source()
+
+        self.assertEqual(eos_callbacks, [True])
+        self.assertNotIn(player, Source._players)
+
+        del player
+        gc.collect()
+        self.assertIsNone(player_ref())
 
 
 class PlayerGroupTestCase(unittest.TestCase):

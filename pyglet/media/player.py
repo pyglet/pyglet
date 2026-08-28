@@ -257,7 +257,10 @@ class AudioPlayer(pyglet.event.EventDispatcher):
         if new_source is None:
             self._source = None
             self.delete()
-            self.dispatch_event('on_player_eos')
+            try:
+                self.dispatch_event('on_player_eos')
+            finally:
+                self._on_player_eos_cleanup()
         else:
             # Keeping a strong reference to old source directly as `_audio_player` only has
             # a weakref and still accesses it in `set_source`
@@ -495,6 +498,11 @@ class AudioPlayer(pyglet.event.EventDispatcher):
     def on_player_eos(self):
         """The player ran out of sources. The playlist is empty."""
         assert _debug('Player.on_player_eos')
+
+    def _on_player_eos_cleanup(self) -> None:
+        """Run private cleanup after the public player-EOS event."""
+        if self in Source._players:  # noqa: SLF001
+            Source._players.remove(self)  # noqa: SLF001
 
     def on_eos(self):
         """The current source ran out of data.
