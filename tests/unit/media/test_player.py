@@ -716,7 +716,8 @@ class PlayerTestCase(unittest.TestCase):
         self.mock_audio_driver_player.can_dispatch_eos = False
         self.video_player.dispatch_event = MagicMock()
 
-        self.video_player._video_finished(0)
+        with mock.patch.object(self.video_player._timer, 'get_time', return_value=3.):
+            self.video_player._video_finished(0)
 
         callback, delay = self.mock_clock.schedule_once.call_args.args
         self.assertEqual(callback, self.video_player._video_finished)
