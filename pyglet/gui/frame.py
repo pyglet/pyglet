@@ -1,6 +1,7 @@
 """WIP."""
 from __future__ import annotations
 
+from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -84,6 +85,14 @@ class Frame:
         for widget in self._widgets:
             self._add_to_cells(widget)
 
+    def _widgets_at(self, x: float, y: float) -> Iterable[WidgetBase]:
+        """Return the unique widgets in the spatial-hash cell at a point."""
+        return self._cells.get(self._hash(x, y), ())
+
+    def _all_widgets(self) -> Iterable[WidgetBase]:
+        """Return every registered widget once, regardless of its cell coverage."""
+        return self._widgets
+
     @property
     def enable(self):
         """Whether to enable frame.
@@ -125,7 +134,7 @@ class Frame:
         # Defer the hash rebuild until after processing, to prevent hash issues.
         self._resizing = True
         try:
-            for widget in self._widgets:
+            for widget in self._all_widgets():
                 widget.dispatch_event("on_resize", width, height)
         finally:
             self._resizing = False
@@ -133,17 +142,17 @@ class Frame:
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         """Pass the event to any widgets within range of the mouse."""
-        for widget in self._cells.get(self._hash(*self._mouse_pos), set()):
+        for widget in self._widgets_at(*self._mouse_pos):
             widget.on_key_press(symbol, modifiers)
 
     def on_key_release(self, symbol: int, modifiers: int) -> None:
         """Pass the event to any widgets within range of the mouse."""
-        for widget in self._cells.get(self._hash(*self._mouse_pos), set()):
+        for widget in self._widgets_at(*self._mouse_pos):
             widget.on_key_release(symbol, modifiers)
 
     def on_mouse_press(self, x: int, y: int, buttons: int, modifiers: int) -> None:
         """Pass the event to any widgets within range of the mouse."""
-        for widget in self._cells.get(self._hash(x, y), set()):
+        for widget in self._widgets_at(x, y):
             widget.on_mouse_press(x, y, buttons, modifiers)
             self._active_widgets.add(widget)
 
@@ -161,29 +170,34 @@ class Frame:
 
     def on_mouse_scroll(self, x: int, y: int, scroll_x: float, scroll_y: float) -> None:
         """Pass the event to any widgets within range of the mouse."""
-        for widget in self._cells.get(self._hash(x, y), set()):
+        for widget in self._widgets_at(x, y):
             widget.on_mouse_scroll(x, y, scroll_x, scroll_y)
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> None:
-        """Pass the event to any widgets within range of the mouse"""
-        for cell in self._cells.values():
-            for widget in cell:
-                widget.on_mouse_motion(x, y, dx, dy)
+        """Dispatch widget enter/leave transitions and motion within the spatial hash."""
+        current_widgets = {widget for widget in self._widgets_at(x, y) if widget._check_hit(x, y)}  # noqa: SLF001
+        previous_widgets = {widget for widget in self._widgets_at(*self._mouse_pos) if widget._check_hit(*self._mouse_pos)}  # noqa: SLF001
+        for widget in current_widgets - previous_widgets:
+            widget.dispatch_event("on_mouse_enter_widget", x, y)
+        for widget in previous_widgets - current_widgets:
+            widget.dispatch_event("on_mouse_leave_widget", x, y)
+        for widget in current_widgets:
+            widget.on_mouse_motion(x, y, dx, dy)
         self._mouse_pos = x, y
 
     def on_text(self, text: str) -> None:
         """Pass the event to any widgets within range of the mouse."""
-        for widget in self._cells.get(self._hash(*self._mouse_pos), set()):
+        for widget in self._widgets_at(*self._mouse_pos):
             widget.on_text(text)
 
     def on_text_motion(self, motion: int) -> None:
         """Pass the event to any widgets within range of the mouse."""
-        for widget in self._cells.get(self._hash(*self._mouse_pos), set()):
+        for widget in self._widgets_at(*self._mouse_pos):
             widget.on_text_motion(motion)
 
     def on_text_motion_select(self, motion: int) -> None:
         """Pass the event to any widgets within range of the mouse."""
-        for widget in self._cells.get(self._hash(*self._mouse_pos), set()):
+        for widget in self._widgets_at(*self._mouse_pos):
             widget.on_text_motion_select(motion)
 
 
@@ -228,7 +242,7 @@ class MovableFrame(Frame):
 
     def on_mouse_press(self, x: int, y: int, buttons: int, modifiers: int) -> None:
         if self._modifier & modifiers > 0:
-            for widget in self._cells.get(self._hash(x, y), set()):
+            for widget in self._widgets_at(x, y):
                 if widget._check_hit(x, y):     # noqa: SLF001
                     self._moving_widgets.add(widget)
             for widget in self._moving_widgets:

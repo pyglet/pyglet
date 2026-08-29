@@ -181,11 +181,11 @@ class WidgetBase(EventDispatcher):
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> None:
         pass
 
-    def on_mouse_enter(self, x: int, y: int) -> None:
-        pass
+    def on_mouse_enter_widget(self, x: int, y: int) -> None:
+        """Event handler called when the cursor enters this widget."""
 
-    def on_mouse_leave(self, x: int, y: int) -> None:
-        pass
+    def on_mouse_leave_widget(self, x: int, y: int) -> None:
+        """Event handler called when the cursor leaves this widget."""
 
     def on_text(self, text: str) -> None:
         pass
@@ -199,6 +199,8 @@ class WidgetBase(EventDispatcher):
 
 WidgetBase.register_event_type("on_reposition")
 WidgetBase.register_event_type("on_resize")
+WidgetBase.register_event_type("on_mouse_enter_widget")
+WidgetBase.register_event_type("on_mouse_leave_widget")
 
 
 class PushButton(WidgetBase):
@@ -277,12 +279,18 @@ class PushButton(WidgetBase):
         self._pressed = False
         self.dispatch_event('on_release', self)
 
-    def on_mouse_leave(self, x: int, y: int) -> None:
-        if not self.enabled or not self._pressed:
+    def on_mouse_enter_widget(self, x: int, y: int) -> None:
+        if not self.enabled or self._pressed:
+            return
+        self._sprite.image = self._hover_img
+
+    def on_mouse_leave_widget(self, x: int, y: int) -> None:
+        if not self.enabled:
             return
         self._sprite.image = self._unpressed_img
-        self._pressed = False
-        self.dispatch_event('on_release', self)
+        if self._pressed:
+            self._pressed = False
+            self.dispatch_event('on_release', self)
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> None:
         if not self.enabled or self._pressed:
@@ -425,12 +433,18 @@ class TextButton(WidgetBase):
         self._pressed = False
         self.dispatch_event('on_release', self)
 
-    def on_mouse_leave(self, x: int, y: int) -> None:
-        if not self.enabled or not self._pressed:
+    def on_mouse_enter_widget(self, x: int, y: int) -> None:
+        if not self.enabled or self._pressed:
+            return
+        self._set_display_color(self._hover_color)
+
+    def on_mouse_leave_widget(self, x: int, y: int) -> None:
+        if not self.enabled:
             return
         self._set_display_color(self._unpressed_color)
-        self._pressed = False
-        self.dispatch_event('on_release')
+        if self._pressed:
+            self._pressed = False
+            self.dispatch_event('on_release', self)
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> None:
         if not self.enabled or self._pressed:
@@ -806,7 +820,7 @@ class ScrollableRegion(WidgetBase, LayoutCell[LayoutCellStyle]):
         self._scroll_x = self._scroll_y = 0.0
         self._widgets: set[WidgetBase] = set()
         self._active_widgets: set[WidgetBase] = set()
-        self._mouse_pos = x, y
+        self._mouse_pos: tuple[int, int] | None = None
         self.realign((x, y, width, height))
         if frame is not None:
             frame.add_widget(self)
@@ -867,7 +881,10 @@ class ScrollableRegion(WidgetBase, LayoutCell[LayoutCellStyle]):
             self._x, self._y, self._width, self._height = self._rect
         LayoutCell.realign(self, self._rect if new_rect is not None else None)
         if hasattr(self, "view"):
-            self.view.set_scissor_area(int(self.x), int(self.y), int(self.width), int(self.height))
+            content_x, content_y, content_width, content_height = self._content_rect()
+            self.view.set_scissor_area(
+                int(content_x), int(content_y), int(content_width), int(content_height)
+            )
             self.set_scroll(self._scroll_x, self._scroll_y)
         if old_rect is not None and old_rect != self._rect:
             self.dispatch_event("on_reposition", self)
@@ -888,9 +905,20 @@ class ScrollableRegion(WidgetBase, LayoutCell[LayoutCellStyle]):
         if y is not None: self._scroll_y = min(max(0.0, y), max_y)
         self.view.position = -self._scroll_x, -self._scroll_y
 
+    def _content_rect(self) -> tuple[float, float, float, float]:
+        """Return the inner viewport after applying the region's padding."""
+        top, right, bottom, left = self.style.padding
+        return (
+            self.x + left,
+            self.y + bottom,
+            max(0.0, self.width - left - right),
+            max(0.0, self.height - top - bottom),
+        )
+
     def _scroll_limits(self) -> tuple[float, float]:
         if self.content is None: return 0.0, 0.0
-        return max(0.0, self.content.width - self.width), max(0.0, self.content.height - self.height)
+        _, _, viewport_width, viewport_height = self._content_rect()
+        return max(0.0, self.content.width - viewport_width), max(0.0, self.content.height - viewport_height)
 
     def _content_coordinates(self, x: float, y: float) -> tuple[float, float]:
         """Convert a window coordinate to the child view's content space."""
@@ -924,10 +952,29 @@ class ScrollableRegion(WidgetBase, LayoutCell[LayoutCellStyle]):
         self._mouse_pos = x, y
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> None:
-        if not self._check_hit(x, y): return
+        current_widgets = self._hover_widgets_at(x, y)
+        previous_widgets = self._hover_widgets_at(*self._mouse_pos) if self._mouse_pos is not None else set()
         cx, cy = self._content_coordinates(x, y)
-        for widget in self._widgets: widget.on_mouse_motion(cx, cy, dx, dy)
+        for widget in current_widgets - previous_widgets:
+            widget.dispatch_event("on_mouse_enter_widget", cx, cy)
+        for widget in previous_widgets - current_widgets:
+            widget.dispatch_event("on_mouse_leave_widget", cx, cy)
+        for widget in current_widgets:
+            widget.on_mouse_motion(cx, cy, dx, dy)
         self._mouse_pos = x, y
+
+    def on_mouse_leave_widget(self, x: int, y: int) -> None:
+        """Clear hover state for children when the cursor leaves this region."""
+        cx, cy = self._content_coordinates(*self._mouse_pos)
+        for widget in self._hover_widgets_at(*self._mouse_pos):
+            widget.dispatch_event("on_mouse_leave_widget", cx, cy)
+        self._mouse_pos = None
+
+    def _hover_widgets_at(self, x: int, y: int) -> set[WidgetBase]:
+        if not self._check_hit(x, y):
+            return set()
+        cx, cy = self._content_coordinates(x, y)
+        return {widget for widget in self._widgets if widget._check_hit(cx, cy)}  # noqa: SLF001
 
     def _for_mouse_widgets(self, method: str, *args) -> None:
         cx, cy = self._content_coordinates(*self._mouse_pos)
