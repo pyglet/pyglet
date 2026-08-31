@@ -1944,6 +1944,8 @@ else:
         from pyglet.window.headless import EGLHeadlessWindow as Window
     elif pyglet.compat_platform == 'darwin':
         from pyglet.window.cocoa import CocoaWindow as Window
+    elif pyglet.compat_platform == 'ios':
+        from pyglet.window.ios import IOSWindow as Window
     elif pyglet.compat_platform in ('win32', 'cygwin'):
         from pyglet.window.win32 import Win32Window as Window
     elif pyglet.compat_platform == 'linux' and pyglet.options.wayland:
@@ -1982,7 +1984,7 @@ class _ShadowWindow(Window):
 
 def _create_shadow_window() -> Window | None:
     # MacOS and browsers don't need a shadow window.
-    if pyglet.compat_platform not in ('darwin', 'emscripten'):
+    if pyglet.compat_platform not in ('darwin', 'ios', 'emscripten'):
         shadow_window = _ShadowWindow()
 
         from pyglet import app  # noqa: PLC0415

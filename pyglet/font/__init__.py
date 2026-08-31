@@ -162,7 +162,7 @@ class FontManager(pyglet.event.EventDispatcher):
         """Return a font name that should be guaranteed to exist on a particular platform."""
         if pyglet.compat_platform == "win32":
             return self.default_win32_font
-        if pyglet.compat_platform == "darwin":
+        if pyglet.compat_platform in ("darwin", "ios"):
             return self.default_darwin_font
         if pyglet.compat_platform == "linux":
             return self.default_linux_font
@@ -224,7 +224,7 @@ def _get_system_font_class() -> type[Font]:
 
     Pyglet relies on OS dependent font systems for loading fonts and glyph creation.
     """
-    if pyglet.compat_platform == "darwin":
+    if pyglet.compat_platform in ("darwin", "ios"):
         from pyglet.font.quartz import QuartzFont
 
         _font_class = QuartzFont
