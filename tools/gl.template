@@ -4,15 +4,19 @@ Do not modify this file.
 """
 from __future__ import annotations
 
-from ctypes import *
+from ctypes import (
+    CFUNCTYPE, POINTER, Structure, c_char, c_double, c_float, c_int,
+    c_int64, c_short, c_ubyte, c_uint, c_uint64, c_ushort,
+)
 from pyglet.graphics.api.gl.lib import link_GL as _link_function
+from pyglet.graphics.api.gl.lib import link_GL_proxy as _link_function_proxy
 from pyglet.graphics.api.gl.lib import c_ptrdiff_t
 
 class struct___GLsync(Structure):
     __slots__ = [
     ]
 struct___GLsync._fields_ = [
-    ('_opaque_struct', c_int)
+    ('_opaque_struct', c_int),
 ]
 
 # END OF gl.template
