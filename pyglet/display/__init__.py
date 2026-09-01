@@ -38,6 +38,9 @@ else:
     elif compat_platform == 'darwin':
         from pyglet.display.cocoa import CocoaDisplay as Display
         from pyglet.display.cocoa import CocoaScreen as Screen
+    elif compat_platform == 'ios':
+        from pyglet.display.ios import IOSDisplay as Display
+        from pyglet.display.ios import IOSScreen as Screen
     elif compat_platform in ('win32', 'cygwin'):
         from pyglet.display.win32 import Win32Display as Display
         from pyglet.display.win32 import Win32Screen as Screen
