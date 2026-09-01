@@ -239,7 +239,7 @@ class PygletGLWriter:
 
     def write_enums(self, fp: TextIO) -> None:
         """Write all enums."""
-        self.write_lines(fp, ["# GL enumerant (token) definitions"])
+        self.write_lines(fp, ["# GL enumerant/constant definitions"])
         self.write_lines(fp, [
             f"{e.name} = {e.value_int}"
             for e in sorted(self._registry.enums.values())
@@ -249,7 +249,7 @@ class PygletGLWriter:
 
     def write_enum_stubs(self, fp: TextIO) -> None:
         """Write type annotations for all enums."""
-        self.write_lines(fp, ["# GL enumerant (token) definitions"])
+        self.write_lines(fp, ["# GL enumerant/constant definitions"])
         self.write_lines(fp, [
             f"{e.name}: int"  # assume all enums values are integers
             for e in sorted(self._registry.enums.values())

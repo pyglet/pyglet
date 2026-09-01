@@ -55,7 +55,7 @@ wl_resource = c_byte
 EGLDEBUGPROCKHR = CFUNCTYPE(None, EGLenum, c_char_p, EGLint, EGLLabelKHR, EGLLabelKHR, c_char_p)
 __eglMustCastToProperFunctionPointerType = CFUNCTYPE(None)
 
-# EGL enumerant (token) definitions
+# EGL enumerant/constant definitions
 EGL_ALPHA_FORMAT = 0x3088
 EGL_ALPHA_FORMAT_NONPRE = 0x308B
 EGL_ALPHA_FORMAT_PRE = 0x308C

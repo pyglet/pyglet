@@ -19,5 +19,3 @@ struct___GLsync._fields_ = [
     ('_opaque_struct', c_int),
 ]
 
-# END OF gl.template
-

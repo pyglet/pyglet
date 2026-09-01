@@ -29,7 +29,7 @@ INT = c_int
 PROC = CFUNCTYPE(c_int)
 VOID = None
 
-# WGL enumerant (token) definitions
+# WGL enumerant/constant definitions
 ERROR_INCOMPATIBLE_AFFINITY_MASKS_NV = 0x20D0
 ERROR_INVALID_PROFILE_ARB = 0x2096
 ERROR_INVALID_VERSION_ARB = 0x2095
@@ -253,28 +253,14 @@ class WGLFunctions(WGLFunctionsARB):
         super().__init__()
 
 __all__ = [
-    'BOOL',
-    'COLORREF',
-    'DWORD',
-    'FLOAT',
     'GLbitfield',
     'GLenum',
     'GLint',
     'GLsizei',
     'GLuint',
-    'HANDLE',
-    'HDC',
-    'HENHMETAFILE',
-    'HGPUNV',
     'HGLRC',
     'INT',
-    'LAYERPLANEDESCRIPTOR',
-    'LPCSTR',
-    'LPGLYPHMETRICSFLOAT',
-    'PIXELFORMATDESCRIPTOR',
-    'PGPU_DEVICE',
     'PROC',
-    'UINT',
     'VOID',
     'WGL_FONT_LINES',
     'WGL_FONT_POLYGONS',

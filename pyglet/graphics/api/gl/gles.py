@@ -19,8 +19,6 @@ struct___GLsync._fields_ = [
     ('_opaque_struct', c_int),
 ]
 
-# END OF gl.template
-
 # GL type definitions
 GLenum = c_uint
 GLboolean = c_ubyte
@@ -47,7 +45,7 @@ GLuint64EXT = c_uint64
 GLsync = POINTER(struct___GLsync)
 GLDEBUGPROC = CFUNCTYPE(None, GLenum, GLenum, GLuint, GLenum, GLsizei, POINTER(GLchar), POINTER(GLvoid))
 
-# GL enumerant (token) definitions
+# GL enumerant/constant definitions
 GL_FALSE = 0
 GL_POINTS = 0
 GL_ZERO = 0
