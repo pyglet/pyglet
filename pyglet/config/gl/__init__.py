@@ -120,6 +120,11 @@ def get_surface_config(user_config: UserConfig, surface: pyglet.window.Window) -
 
         return match(user_config, surface)
 
+    if pyglet.compat_platform == "ios":
+        from pyglet.config.gl.ios import match  # noqa: PLC0415
+
+        return match(user_config, surface)
+
     if pyglet.compat_platform == "emscripten":
         from pyglet.config.gl.webgl import match  # noqa: PLC0415
 
