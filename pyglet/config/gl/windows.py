@@ -6,7 +6,7 @@ from dataclasses import asdict
 
 from typing import TYPE_CHECKING
 from pyglet.config.gl import GLSurfaceConfig
-from pyglet.libs.win32 import PIXELFORMATDESCRIPTOR, _gdi32, wglext_arb, wgl
+from pyglet.libs.win32 import PIXELFORMATDESCRIPTOR, _gdi32, wgl
 from pyglet.libs.win32.constants import PFD_DRAW_TO_WINDOW, PFD_SUPPORT_OPENGL, PFD_DOUBLEBUFFER, \
     PFD_DOUBLEBUFFER_DONTCARE, PFD_STEREO, PFD_STEREO_DONTCARE, PFD_DEPTH_DONTCARE, PFD_TYPE_RGBA
 from pyglet.libs.win32.wgl import WGLFunctions
@@ -221,22 +221,22 @@ class GLLegacyConfig(GLSurfaceConfig):
 
 class GLSurfaceConfig(GLSurfaceConfig):
     attribute_ids = {  # noqa: RUF012
-        'double_buffer': wglext_arb.WGL_DOUBLE_BUFFER_ARB,
-        'stereo': wglext_arb.WGL_STEREO_ARB,
-        'buffer_size': wglext_arb.WGL_COLOR_BITS_ARB,
-        'aux_buffers': wglext_arb.WGL_AUX_BUFFERS_ARB,
-        'sample_buffers': wglext_arb.WGL_SAMPLE_BUFFERS_ARB,
-        'samples': wglext_arb.WGL_SAMPLES_ARB,
-        'red_size': wglext_arb.WGL_RED_BITS_ARB,
-        'green_size': wglext_arb.WGL_GREEN_BITS_ARB,
-        'blue_size': wglext_arb.WGL_BLUE_BITS_ARB,
-        'alpha_size': wglext_arb.WGL_ALPHA_BITS_ARB,
-        'depth_size': wglext_arb.WGL_DEPTH_BITS_ARB,
-        'stencil_size': wglext_arb.WGL_STENCIL_BITS_ARB,
-        'accum_red_size': wglext_arb.WGL_ACCUM_RED_BITS_ARB,
-        'accum_green_size': wglext_arb.WGL_ACCUM_GREEN_BITS_ARB,
-        'accum_blue_size': wglext_arb.WGL_ACCUM_BLUE_BITS_ARB,
-        'accum_alpha_size': wglext_arb.WGL_ACCUM_ALPHA_BITS_ARB,
+        'double_buffer': wgl.WGL_DOUBLE_BUFFER_ARB,
+        'stereo': wgl.WGL_STEREO_ARB,
+        'buffer_size': wgl.WGL_COLOR_BITS_ARB,
+        'aux_buffers': wgl.WGL_AUX_BUFFERS_ARB,
+        'sample_buffers': wgl.WGL_SAMPLE_BUFFERS_ARB,
+        'samples': wgl.WGL_SAMPLES_ARB,
+        'red_size': wgl.WGL_RED_BITS_ARB,
+        'green_size': wgl.WGL_GREEN_BITS_ARB,
+        'blue_size': wgl.WGL_BLUE_BITS_ARB,
+        'alpha_size': wgl.WGL_ALPHA_BITS_ARB,
+        'depth_size': wgl.WGL_DEPTH_BITS_ARB,
+        'stencil_size': wgl.WGL_STENCIL_BITS_ARB,
+        'accum_red_size': wgl.WGL_ACCUM_RED_BITS_ARB,
+        'accum_green_size': wgl.WGL_ACCUM_GREEN_BITS_ARB,
+        'accum_blue_size': wgl.WGL_ACCUM_BLUE_BITS_ARB,
+        'accum_alpha_size': wgl.WGL_ACCUM_ALPHA_BITS_ARB,
     }
 
     def __init__(self, window: Win32Window, pf: int, user_config: OpenGLUserConfig) -> None:

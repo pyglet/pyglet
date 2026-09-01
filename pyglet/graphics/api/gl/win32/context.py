@@ -6,7 +6,7 @@ from pyglet.enums import GraphicsAPI
 from pyglet.graphics.api.base import NullContext
 from pyglet.graphics.api.gl.base import ContextException
 from pyglet.graphics.api.gl.context import OpenGLSurfaceContext
-from pyglet.libs.win32 import wglext_arb, wgl
+from pyglet.libs.win32 import wgl
 from pyglet.libs.win32.wgl import WGLFunctions
 from pyglet.graphics.api.gl.win32.wgl_info import WGLInfo
 from pyglet.libs.win32 import _gdi32
@@ -87,18 +87,18 @@ class Win32ARBContext(_Win32Context):
         attribs = []
         user_config = self.config.config
         if user_config.major_version is not None:
-            attribs.extend([wglext_arb.WGL_CONTEXT_MAJOR_VERSION_ARB, user_config.major_version])
+            attribs.extend([wgl.WGL_CONTEXT_MAJOR_VERSION_ARB, user_config.major_version])
         if user_config.minor_version is not None:
-            attribs.extend([wglext_arb.WGL_CONTEXT_MINOR_VERSION_ARB, user_config.minor_version])
+            attribs.extend([wgl.WGL_CONTEXT_MINOR_VERSION_ARB, user_config.minor_version])
         flags = 0
         if user_config.forward_compatible and not user_config.api:
-            flags |= wglext_arb.WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB
+            flags |= wgl.WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB
         if user_config.debug:
-            flags |= wglext_arb.WGL_CONTEXT_DEBUG_BIT_ARB
+            flags |= wgl.WGL_CONTEXT_DEBUG_BIT_ARB
         if user_config.api in (GraphicsAPI.OPENGL_ES_2, GraphicsAPI.OPENGL_ES_3):
-            attribs.extend([wglext_arb.WGL_CONTEXT_PROFILE_MASK_ARB, wglext_arb.WGL_CONTEXT_ES2_PROFILE_BIT_EXT])
+            attribs.extend([wgl.WGL_CONTEXT_PROFILE_MASK_ARB, wgl.WGL_CONTEXT_ES2_PROFILE_BIT_EXT])
         if flags:
-            attribs.extend([wglext_arb.WGL_CONTEXT_FLAGS_ARB, flags])
+            attribs.extend([wgl.WGL_CONTEXT_FLAGS_ARB, flags])
         attribs.append(0)
         attribs = (c_int * len(attribs))(*attribs)
 

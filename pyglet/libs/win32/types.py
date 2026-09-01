@@ -34,6 +34,7 @@ from ctypes.wintypes import (
     DOUBLE,  # noqa: F401
     DWORD,
     FILETIME,
+    FLOAT,
     HANDLE,
     HBITMAP,
     HBRUSH,
@@ -118,6 +119,71 @@ HDROP = HANDLE
 LPTSTR = LPWSTR
 LPSTREAM = c_void_p
 CLSID = com.GUID
+
+
+class POINTFLOAT(Structure):
+    _fields_ = [
+        ('x', FLOAT),
+        ('y', FLOAT),
+    ]
+
+
+class GLYPHMETRICSFLOAT(Structure):
+    _fields_ = [
+        ('gmfBlackBoxX', FLOAT),
+        ('gmfBlackBoxY', FLOAT),
+        ('gmfptGlyphOrigin', POINTFLOAT),
+        ('gmfCellIncX', FLOAT),
+        ('gmfCellIncY', FLOAT),
+    ]
+
+
+LPGLYPHMETRICSFLOAT = POINTER(GLYPHMETRICSFLOAT)
+
+
+class LAYERPLANEDESCRIPTOR(Structure):
+    _fields_ = [
+        ('nSize', WORD),
+        ('nVersion', WORD),
+        ('dwFlags', DWORD),
+        ('iPixelType', BYTE),
+        ('cColorBits', BYTE),
+        ('cRedBits', BYTE),
+        ('cRedShift', BYTE),
+        ('cGreenBits', BYTE),
+        ('cGreenShift', BYTE),
+        ('cBlueBits', BYTE),
+        ('cBlueShift', BYTE),
+        ('cAlphaBits', BYTE),
+        ('cAlphaShift', BYTE),
+        ('cAccumBits', BYTE),
+        ('cAccumRedBits', BYTE),
+        ('cAccumGreenBits', BYTE),
+        ('cAccumBlueBits', BYTE),
+        ('cAccumAlphaBits', BYTE),
+        ('cDepthBits', BYTE),
+        ('cStencilBits', BYTE),
+        ('cAuxBuffers', BYTE),
+        ('iLayerPlane', BYTE),
+        ('bReserved', BYTE),
+        ('crTransparent', COLORREF),
+    ]
+
+
+HGPUNV = HANDLE
+
+
+class GPU_DEVICE(Structure):
+    _fields_ = [
+        ('cb', DWORD),
+        ('DeviceName', c_char * 32),
+        ('DeviceString', c_char * 128),
+        ('Flags', DWORD),
+        ('rcVirtualScreen', RECT),
+    ]
+
+
+PGPU_DEVICE = POINTER(GPU_DEVICE)
 
 INT8 = c_int8
 UINT8 = c_uint8
