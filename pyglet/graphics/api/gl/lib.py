@@ -110,7 +110,7 @@ link_GL_proxy: GLLinkFunction
 
 if pyglet.compat_platform in ('win32', 'cygwin'):
     from pyglet.libs.win32.lib_wgl import link_GL, link_GL_proxy, link_WGL
-elif pyglet.compat_platform == 'darwin':
+elif pyglet.compat_platform in ('darwin', 'ios'):
     from pyglet.libs.darwin.lib_agl import link_GL, link_GL_proxy, link_AGL
 elif pyglet.compat_platform.startswith('linux'):
     from pyglet.libs.linux.glx.lib_glx import link_GL, link_GL_proxy, link_GLX  # noqa: F401

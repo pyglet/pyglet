@@ -96,7 +96,7 @@ class LibraryLoader:  # noqa: D101
         if _is_pyglet_doc_run:
             return LibraryMock()
 
-        if 'framework' in kwargs and self.platform == 'darwin':
+        if 'framework' in kwargs and self.platform in ('darwin', 'ios'):
             return self.load_framework(kwargs['framework'])
 
         if not names:
@@ -240,15 +240,10 @@ class MacOSLibraryLoader(LibraryLoader):  # noqa: D101
     def load_framework(name: str) -> ctypes.CDLL | _TraceLibrary:
         path = ctypes.util.find_library(name)
 
-        # Hack for compatibility with macOS > 11.0  # noqa: FIX004
+        # ``ctypes.util.find_library`` may not reliably locate Apple system
+        # frameworks on modern macOS 11+ or iOS.
         if path is None:
-            frameworks = {
-                'AGL': '/System/Library/Frameworks/AGL.framework/AGL',
-                'IOKit': '/System/Library/Frameworks/IOKit.framework/IOKit',
-                'OpenAL': '/System/Library/Frameworks/OpenAL.framework/OpenAL',
-                'OpenGL': '/System/Library/Frameworks/OpenGL.framework/OpenGL',
-            }
-            path = frameworks.get(name)
+            path = f'/System/Library/Frameworks/{name}.framework/{name}'
 
         if path:
             lib = ctypes.cdll.LoadLibrary(path)
@@ -330,7 +325,7 @@ class LinuxLibraryLoader(LibraryLoader):  # noqa: D101
         return self._ld_so_cache.get(path)
 
 
-if pyglet.compat_platform == 'darwin':
+if pyglet.compat_platform in ('darwin', 'ios'):
     loader = MacOSLibraryLoader()
 elif pyglet.compat_platform.startswith('linux'):
     loader = LinuxLibraryLoader()
