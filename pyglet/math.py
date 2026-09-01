@@ -1054,10 +1054,11 @@ class Mat3(_typing.NamedTuple):
         # get determinant reciprocal
         rep = 1.0 / det
 
-        # get inverse: A^-1 = def(A)^-1 * adj(A)
-        return Mat3(*(a * rep, b * rep, c * rep,
-                      d * rep, e * rep, f * rep,
-                      g * rep, h * rep, i * rep))
+        # get inverse: A^-1 = det(A)^-1 * adj(A).
+        # adj(A) is the transpose of the cofactor matrix computed above.
+        return Mat3(*(a * rep, d * rep, g * rep,
+                      b * rep, e * rep, h * rep,
+                      c * rep, f * rep, i * rep))
 
     def __round__(self, ndigits: int | None = None) -> Mat3:
         return Mat3(*(round(v, ndigits) for v in self))
