@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ctypes import POINTER, c_ubyte, CFUNCTYPE, cast, pointer, create_string_buffer
+from ctypes import POINTER, CFUNCTYPE, c_char_p, cast
 from typing import Any, Callable, Sequence
 
 import pyglet
@@ -18,7 +18,7 @@ else:
 # Look for eglGetProcAddress
 eglGetProcAddress = getattr(egl_lib, 'eglGetProcAddress')
 eglGetProcAddress.restype = POINTER(CFUNCTYPE(None))
-eglGetProcAddress.argtypes = [POINTER(c_ubyte)]
+eglGetProcAddress.argtypes = [c_char_p]
 
 
 def link_EGL(name: str, restype: Any, argtypes: Any, requires: str | None = None,
@@ -29,8 +29,7 @@ def link_EGL(name: str, restype: Any, argtypes: Any, requires: str | None = None
         func.argtypes = argtypes
         return func
     except AttributeError:
-        bname = cast(pointer(create_string_buffer(pyglet.util.asbytes(name))), POINTER(c_ubyte))
-        addr = eglGetProcAddress(bname)
+        addr = eglGetProcAddress(pyglet.util.asbytes(name))
         if addr:
             ftype = CFUNCTYPE(*(restype, *tuple(argtypes)))
             func = cast(addr, ftype)
