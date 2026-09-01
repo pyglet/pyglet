@@ -26,6 +26,7 @@ NSArray = cocoapy.ObjCClass('NSArray')
 NSImage = cocoapy.ObjCClass('NSImage')
 NSPasteboard = cocoapy.ObjCClass('NSPasteboard')
 
+cg = cocoapy.cg
 quartz = cocoapy.quartz
 cf = cocoapy.cf
 
@@ -449,12 +450,12 @@ class CocoaWindow(BaseWindow):
         # explicit Core Foundation lifetime.
         cfdata = c_void_p(cf.CFDataCreate(None, data, len(data)))
 
-        provider = c_void_p(quartz.CGDataProviderCreateWithCFData(cfdata))
+        provider = c_void_p(cg.CGDataProviderCreateWithCFData(cfdata))
 
-        colorSpace = c_void_p(quartz.CGColorSpaceCreateDeviceRGB())
+        colorSpace = c_void_p(cg.CGColorSpaceCreateDeviceRGB())
 
         # Then create a CGImage from the provider.
-        cgimage = c_void_p(quartz.CGImageCreate(
+        cgimage = c_void_p(cg.CGImageCreate(
             image.width, image.height, 8, 32, bytesPerRow,
             colorSpace,
             cocoapy.kCGImageAlphaFirst,
@@ -464,8 +465,8 @@ class CocoaWindow(BaseWindow):
             cocoapy.kCGRenderingIntentDefault))
 
         cf.CFRelease(cfdata)
-        quartz.CGDataProviderRelease(provider)
-        quartz.CGColorSpaceRelease(colorSpace)
+        cg.CGDataProviderRelease(provider)
+        cg.CGColorSpaceRelease(colorSpace)
 
         if not cgimage:
             return
@@ -473,7 +474,7 @@ class CocoaWindow(BaseWindow):
         # Turn the CGImage into an NSImage.
         size = cocoapy.NSMakeSize(image.width, image.height)
         nsimage = NSImage.alloc().initWithCGImage_size_(cgimage, size)
-        quartz.CGImageRelease(cgimage)
+        cg.CGImageRelease(cgimage)
         if not nsimage:
             return
 

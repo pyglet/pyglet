@@ -1416,7 +1416,7 @@ class ObjCInstance:
 
         if self.objc_class.name == b'NSCFString':
             # Display contents of NSString objects
-            from .cocoalibs import cfstring_to_string
+            from .lib_corefoundation import cfstring_to_string
             string = cfstring_to_string(self)
             return "<ObjCInstance %#x: %s (%s) at %s>" % (id(self), self.objc_class.name, string, str(self.ptr.value))
 
