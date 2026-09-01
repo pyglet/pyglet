@@ -9,7 +9,7 @@ from pyglet.graphics.api import gl
 from pyglet.graphics.api.gl import lib, OpenGLSurfaceContext
 from pyglet.graphics.api.gl.base import ContextException
 from pyglet.graphics.api.gl.xlib import glx_info
-from pyglet.libs.linux.glx import glxext_arb, glx, glxext_mesa
+from pyglet.libs.linux.glx import glx
 
 if TYPE_CHECKING:
     from pyglet.config.gl.x11 import XlibGLSurfaceConfig
@@ -79,14 +79,14 @@ class XlibContext(OpenGLSurfaceContext):
 
         attribs = []
         if user_config.major_version is not None:
-            attribs.extend([glxext_arb.GLX_CONTEXT_MAJOR_VERSION_ARB, user_config.major_version])
+            attribs.extend([glx.GLX_CONTEXT_MAJOR_VERSION_ARB, user_config.major_version])
         if user_config.minor_version is not None:
-            attribs.extend([glxext_arb.GLX_CONTEXT_MINOR_VERSION_ARB, user_config.minor_version])
+            attribs.extend([glx.GLX_CONTEXT_MINOR_VERSION_ARB, user_config.minor_version])
 
         if user_config.api == GraphicsAPI.OPENGL:
-            attribs.extend([glxext_arb.GLX_CONTEXT_PROFILE_MASK_ARB, glxext_arb.GLX_CONTEXT_CORE_PROFILE_BIT_ARB])
+            attribs.extend([glx.GLX_CONTEXT_PROFILE_MASK_ARB, glx.GLX_CONTEXT_CORE_PROFILE_BIT_ARB])
         elif user_config.api in (GraphicsAPI.OPENGL_ES_2, GraphicsAPI.OPENGL_ES_3):
-            attribs.extend([glxext_arb.GLX_CONTEXT_PROFILE_MASK_ARB, glxext_arb.GLX_CONTEXT_ES2_PROFILE_BIT_EXT])
+            attribs.extend([glx.GLX_CONTEXT_PROFILE_MASK_ARB, glx.GLX_CONTEXT_ES2_PROFILE_BIT_EXT])
         elif user_config.api == GraphicsAPI.OPENGL_2:
             pass
         else:
@@ -95,17 +95,17 @@ class XlibContext(OpenGLSurfaceContext):
 
         flags = 0
         if user_config.forward_compatible:
-            flags |= glxext_arb.GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB
+            flags |= glx.GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB
         if user_config.debug:
-            flags |= glxext_arb.GLX_CONTEXT_DEBUG_BIT_ARB
+            flags |= glx.GLX_CONTEXT_DEBUG_BIT_ARB
 
         if flags:
-            attribs.extend([glxext_arb.GLX_CONTEXT_FLAGS_ARB, flags])
+            attribs.extend([glx.GLX_CONTEXT_FLAGS_ARB, flags])
         attribs.append(0)
         attribs = (c_int * len(attribs))(*attribs)
 
-        return glxext_arb.glXCreateContextAttribsARB(self.window._x_display, self.config.fbconfig,  # noqa: SLF001
-                                                     share_context, True, attribs)
+        return glx.glXCreateContextAttribsARB(self.window._x_display, self.config.fbconfig,  # noqa: SLF001
+                                               share_context, True, attribs)
 
     def attach(self, window: XlibWindow) -> None:
         if self.attached:
@@ -153,11 +153,11 @@ class XlibContext(OpenGLSurfaceContext):
         interval = (vsync and 1) or 0
         try:
             if not self._use_video_sync and self._have_EXT_swap_control:
-                glxext_arb.glXSwapIntervalEXT(self.x_display, glx.glXGetCurrentDrawable(), interval)
+                glx.glXSwapIntervalEXT(self.x_display, glx.glXGetCurrentDrawable(), interval)
             elif not self._use_video_sync and self._have_MESA_swap_control:
-                glxext_mesa.glXSwapIntervalMESA(interval)
+                glx.glXSwapIntervalMESA(interval)
             elif self._have_SGI_swap_control:
-                glxext_arb.glXSwapIntervalSGI(interval)
+                glx.glXSwapIntervalSGI(interval)
         except lib.MissingFunctionException as e:
             warnings.warn(str(e))
 
@@ -167,8 +167,8 @@ class XlibContext(OpenGLSurfaceContext):
     def _wait_vsync(self) -> None:
         if self._vsync and self._have_SGI_video_sync and self._use_video_sync:
             count = c_uint()
-            glxext_arb.glXGetVideoSyncSGI(byref(count))
-            glxext_arb.glXWaitVideoSyncSGI(2, (count.value + 1) % 2, byref(count))
+            glx.glXGetVideoSyncSGI(byref(count))
+            glx.glXWaitVideoSyncSGI(2, (count.value + 1) % 2, byref(count))
 
     def present(self) -> None:
         if not self.glx_window:
