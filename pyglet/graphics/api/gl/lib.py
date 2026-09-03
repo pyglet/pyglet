@@ -4,28 +4,12 @@ import ctypes
 from typing import Any, Callable, NoReturn, Protocol, Sequence
 
 import pyglet
+from pyglet.libs import MissingFunctionException, missing_function
 
 
 _debug_api = pyglet.options.debug_api
 _debug_api_trace = pyglet.options.debug_api_trace
 _debug_api_trace_args = pyglet.options.debug_api_trace_args
-
-
-class MissingFunctionException(Exception):  # noqa: N818
-    def __init__(self, name: str, requires: str | None = None, suggestions: Sequence[str] | None=None) -> None:
-        msg = f'{name} is not exported by the available OpenGL driver.'
-        if requires:
-            msg += f'  {requires} is required for this functionality.'
-        if suggestions:
-            msg += '  Consider alternative(s) {}.'.format(', '.join(suggestions))
-        Exception.__init__(self, msg)
-
-
-def missing_function(name: str, requires: str | None =None, suggestions: Sequence[str] | None=None) -> Callable:
-    def MissingFunction(*_args, **_kwargs) -> NoReturn:  # noqa: ANN002, ANN003, N802
-        raise MissingFunctionException(name, requires, suggestions)
-
-    return MissingFunction
 
 
 _int_types = (ctypes.c_int16, ctypes.c_int32)

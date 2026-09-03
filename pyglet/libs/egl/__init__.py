@@ -1,2 +1,1 @@
-from pyglet.libs.egl.egl import *
-from pyglet.libs.egl.eglext import *
+from pyglet.libs.egl.egl import *  # noqa: F403

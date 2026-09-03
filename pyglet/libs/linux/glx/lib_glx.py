@@ -4,7 +4,8 @@ from ctypes import CFUNCTYPE, POINTER, c_ubyte, cast, create_string_buffer, poin
 from typing import Any, Callable, Sequence
 
 import pyglet.lib
-from pyglet.graphics.api.gl.lib import decorate_function, missing_function
+from pyglet.graphics.api.gl.lib import decorate_function
+from pyglet.libs import missing_function
 from pyglet.util import asbytes
 
 __all__ = ['link_GL', 'link_GL_proxy', 'link_GLX']

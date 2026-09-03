@@ -1,135 +1,76 @@
 ctypes Wrapper Generation
 =========================
 
-The following modules in pyglet are entirely (or mostly) generated from one or
-more C header files:
+Pyglet has two ctypes-generation processes. The OpenGL-family
+bindings use Khronos XML registries. The remaining legacy wrappers parse local
+C headers.
 
-* pyglet.graphics.api.gl.gl
-* pyglet.graphics.api.gl1.gl_compat
-* pyglet.libs.darwin.agl
-* pyglet.libs.linux.glx.glx
-* pyglet.libs.linux.glx.glxext_arb
-* pyglet.libs.linux.glx.glxext_nv
-* pyglet.libs.linux.glx.glxext_mesa
-* pyglet.libs.win32.wgl
-* pyglet.libs.win32.wglext_arb
-* pyglet.libs.linux.x11.xlib
-* pyglet.libs.linux.x11.xinerama
+Khronos XML registry bindings
+-----------------------------
 
-The wrapping framework is in ``tools/wraptypes``, and pyglet-specialised batch
-scripts are ``tools/genwrappers.py`` (generates xlib wrappers) and
-``tools/gengl.py`` (generates gl wrappers).
+The XML registry generators live in ``tools/gen_opengl``:
 
-Generating GL wrappers (new version)
-------------------------------------
+* ``gengl.py`` generates OpenGL core, compatibility, and OpenGL ES bindings
+  from ``gl.xml``.
+* ``gen_egl.py``, ``gen_glx.py``, and ``gen_wgl.py`` generate the EGL, GLX,
+  and WGL bindings from ``egl.xml``, ``glx.xml``, and ``wgl.xml``.
+* There is no agl.xml file available, and is therefore no longer generated.
+  Since AGL is deprecated, it will not require any future updates.
 
-The new ``gengl.py`` script only generates the following modules:
+Run the generators from the repository root::
 
-* ``pyglet/graphics/api/gl/gl.py``: OpenGL 4.6 core profile enums and functions.
-  All deprecated enums and functions are not included.
-* ``pyglet/graphics/api/gl1/gl_compat.py``: OpenGL 4.6 compatibility profile
-  with all enums and functions all the way back to OpenGL 1.0.
+    python tools/gen_opengl/gengl.py --source local
+    python tools/gen_opengl/gen_egl.py
+    python tools/gen_opengl/gen_glx.py
+    python tools/gen_opengl/gen_wgl.py
 
-Running the script:
+``gengl.py`` can also retrieve the current ``gl.xml`` with ``--source url``.
+The generated OpenGL modules are ``pyglet.graphics.api.gl.gl``,
+``pyglet.graphics.api.gl.gl_compat``, and ``pyglet.graphics.api.gl.gles``.
 
-    # Fetch latest gl.xml from Khronos github and generate new modules
-    python tools/gengl.py
-    python tools/gengl.py --source url
+Extension bindings
+------------------
 
-    # Read the local gl.xml version
-    python tools/gengl.py --source local
+Each generator has an ``EXTENSIONS`` list. It contains extensions pyglet uses
+or that are common enough for the normal binding module. The
+registry contains many legacy and vendor specific extensions, so generating all
+of them by default would substantially increase module size, increase time
+spent linking/importing, and may require additional platform specific ctypes
+declarations.
 
-The old ``gengl.py`` script also handled agl, wgl and glx.
-The section below is still present for historical reasons
-and the old script is still around in the tools directory.
+EGL, GLX, and WGL can write selected extensions to a sibling ``*_ext.py``
+module instead::
 
-Generating GL wrappers (old version)
-------------------------------------
+    python tools/gen_opengl/gen_egl.py --extensions-file
+    python tools/gen_opengl/gen_glx.py --extensions-file
+    python tools/gen_opengl/gen_wgl.py --extensions-file
 
-This process needs to be followed when the wraptypes is updated, the header
-files are updated (e.g., a new release of the operating system), or the GL
-extensions are updated.  Each file can only be generated a a specific
-platform.
+Use ``--extra-extensions`` with ``--extensions-file`` to generate all unlisted
+registry extensions into that extra module. Add any required type mappings and
+template imports before enabling an extension that uses platform specific
+types.
 
-Before beginning, remove the file ``tools/.gengl.cache`` if it exists.  This
-merely caches header files so they don't need to be repeatedly downloaded (but
-you'd prefer to use the most recent uncached copies if you're reading this,
-presumably).
+If an extension is useful to pyglet and broadly supported, add it to the
+relevant ``EXTENSIONS`` list. For experimental, legacy, or application specific
+extensions, prefer separate extension output.
 
-On Linux, generate ``pyglet.graphics.api.gl.gl`` and
-``pyglet.graphics.api.gl1.gl_compat`` (the complete user-visible GL
-package)::
+If there is a commonly used extension, or your application relies on a specific
+extension that pyglet does not include by default, we can include it. Feel free
+to open an issue or pull request with the specific extension.
 
-    python tools/gengl.py
+C-header wrapper bindings
+-------------------------
 
-The header files for ``pyglet.graphics.api.gl.gl`` are located in
-``/usr/include/GL``.  Ensure your Linux distribution has recent versions
-of these files (unfortunately they do not seem to be accessible outside of a
-distribution or OS).
+``tools/genwrappers.py`` invokes the ``tools/wraptypes`` preprocessor
+and C parser over headers installed on the local system. Unlike the XML
+generators, it is platform and development header dependent. It is used for
+X11 and a small number of other platform libraries, not EGL, GLX, or WGL.
 
-On Linux still, generate ``pyglet.libs.linux.glx.glx``,
-``pyglet.libs.linux.glx.glxext_arb``, ``pyglet.libs.linux.glx.glxext_nv``
-and ``pyglet.libs.linux.glx.glxext_mesa``::
+On Linux, request the wrappers to generate explicitly::
 
-    python tools/gengl.py glx glxext_arb glxext_nv glxext_mesa
+    python tools/genwrappers.py xlib xinerama
 
-The header file for ``pyglet.libs.linux.glx.glx`` is in ``/usr/include/GL``, and
-is expected to depend on X11 header files from ``/usr/include/X11``.
-``glxext_arb``, ``glxext_nv`` and ``glxext_mesa`` header files are downloaded from the above
-websites.
-
-On OS X, generate ``pyglet.libs.darwin.agl``::
-
-    python tools/gengl.py agl
-
-Watch a movie while you wait -- it uses virtually every header file on the
-system.  Expect to see one syntax error in ``PictUtils.h`` line 67, it is
-unimportant.
-
-On Windows, generate ``pyglet.libs.win32.wgl`` and
-``pyglet.libs.win32.wglext_arb``::
-
-    python tools/gengl.py wgl wglext_arb
-
-You do not need to have a development environment installed on Windows.
-``pyglet.libs.win32.wgl`` is generated from ``tools/wgl.h``, which is a hand-coded
-header file containing the prototypes and constants for WGL and its
-dependencies.  In a real development environment you would find these mostly
-in ``WinGDI.h``, but wraptypes is not quite sophisticated enough to parse
-Windows system headers (see below for what needs implementing).  It is
-extremely unlikely this header will ever need to change (excepting a bug fix).
-
-The headers for ``pyglet.libs.win32.wglext_arb`` are
-downloaded from the same websites as for GL and GLX.
-
-Generated GL wrappers
----------------------
-
-Each generated file contains a pair of markers ``# BEGIN GENERATED CONTENT``
-and ``# END GENERATED CONTENT`` which are searched for when replacing the
-file.  If either marker is missing or corrupt, the file will not be modified.
-This allows for custom content around the generated content.  Only ``glx.py``
-makes use of this, to include some additional enumerators that are not
-generated by default.
-
-If a generating process is interrupted (either you get sick of it, or it
-crashes), it will leave a partially-complete file written, which will not
-include both markers.  It is up to you to restore the file or otherwise
-reinsert the markers.
-
-Generating Xlib wrappers
-------------------------
-
-On Linux with the Xinerama extension installed (doesn't have to be in use,
-just available), run::
-
-    python tools/genwrappers.py
-
-This generates ``pyglet.libs.linux.x11.xlib`` and
-``pyglet.libs.linux.x11.xinerama``.
-
-Note that this process, as well as the generated modules, depend on
-``pyglet.libs.linux.glx.glx``.  So, you should always run this `after` the above GL
-generation.
-
-
+This requires the corresponding X11 and Xinerama development headers. The
+current script still contains output paths from the former X11 package layout;
+update those paths before regenerating the relocated
+``pyglet.libs.linux.x11`` modules.
