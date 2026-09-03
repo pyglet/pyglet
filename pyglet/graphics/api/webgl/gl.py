@@ -34,7 +34,7 @@ GLuint64 = ctypes.c_uint64
 GLuint64EXT = ctypes.c_uint64
 
 
-# GL enumerant (token) definitions
+# GL enumerant/constant definitions
 GL_FALSE = 0
 GL_POINTS = 0
 GL_ZERO = 0

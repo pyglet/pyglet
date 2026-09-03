@@ -3,7 +3,8 @@ from __future__ import annotations
 from typing import Any, Callable, Sequence
 
 import pyglet.lib
-from pyglet.graphics.api.gl.lib import decorate_function, missing_function
+from pyglet.graphics.api.gl.lib import decorate_function
+from pyglet.libs import missing_function
 
 gl_lib = pyglet.lib.load_library(framework='OpenGL')
 agl_lib = pyglet.lib.load_library(framework='AGL')
