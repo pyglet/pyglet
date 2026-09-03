@@ -21,7 +21,7 @@ from pyglet.libs.darwin.cocoapy import ObjCClass
 if TYPE_CHECKING:
     from pyglet.config.gl.ios import IOSGLSurfaceConfig
     from pyglet.graphics.api.gl.global_opengl import OpenGLBackend
-    from pyglet.window.ios import IOSWindow
+    from pyglet.window.apple.ios import IOSWindow
 
 # Embedded Apple GL Context.
 EAGLContext = ObjCClass('EAGLContext')

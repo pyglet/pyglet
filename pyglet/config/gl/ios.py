@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from pyglet.config import OpenGLUserConfig
     from pyglet.graphics.api.gl.global_opengl import OpenGLBackend
     from pyglet.graphics.api.gl.ios.context import IOSContext
-    from pyglet.window.ios import IOSWindow
+    from pyglet.window.apple.ios import IOSWindow
 
 
 def match(config: OpenGLUserConfig, window: IOSWindow) -> IOSGLSurfaceConfig | None:

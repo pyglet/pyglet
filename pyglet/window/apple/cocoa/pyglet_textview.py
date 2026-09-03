@@ -16,7 +16,7 @@ from pyglet.libs.darwin.cocoapy import (
 from pyglet.window import key
 
 if TYPE_CHECKING:
-    from pyglet.window.cocoa import CocoaWindow
+    from pyglet.window.apple.cocoa import CocoaWindow
 
 NSArray = ObjCClass('NSArray')
 NSApplication = ObjCClass('NSApplication')

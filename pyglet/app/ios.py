@@ -47,7 +47,6 @@ class _IOSRunLoopTargetImplementation:
     def tick_(self, _timer: ObjCInstance) -> None:
         if not getattr(self, '_did_tick', False):
             self._did_tick = True
-            print('pyglet iOS event loop started')
         self._event_loop._tick()
 
 _IOSRunLoopTarget = ObjCClass('PygletIOSRunLoopTarget')
@@ -94,8 +93,12 @@ class IOSEventLoop(EventLoop):
 
     def run(self, interval: float | None = 1 / 60) -> None:
         # Check for XCode environment as XCTest essentially owns the app lifetime
-        # Without this it will basically lock up the test bench as this is blocking.
+        # XCTest owns the application lifetime and finalizes its embedded
+        # interpreter after the test returns.  It must not receive native
+        # callbacks from a pyglet timer after that point.
         if _is_xctest():
+            # Tick app once during test to ensure at least one draw.
+            self._tick_app()
             self.has_exit = True
             return
 
@@ -114,6 +117,9 @@ class IOSEventLoop(EventLoop):
     def _tick(self) -> None:
         if not self.is_running or self.has_exit:
             return
+        self._tick_app()
+
+    def _tick_app(self):
         app.platform_event_loop.dispatch_posted_events()
         dt = self.clock.update_time()
         self.clock.call_scheduled_functions(dt)

@@ -1943,9 +1943,9 @@ else:
     if pyglet.options.headless:
         from pyglet.window.headless import EGLHeadlessWindow as Window
     elif pyglet.compat_platform == 'darwin':
-        from pyglet.window.cocoa import CocoaWindow as Window
+        from pyglet.window.apple.cocoa import CocoaWindow as Window
     elif pyglet.compat_platform == 'ios':
-        from pyglet.window.ios import IOSWindow as Window
+        from pyglet.window.apple.ios import IOSWindow as Window
     elif pyglet.compat_platform in ('win32', 'cygwin'):
         from pyglet.window.win32 import Win32Window as Window
     elif pyglet.compat_platform == 'linux' and pyglet.options.wayland:

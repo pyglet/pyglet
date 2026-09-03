@@ -8,7 +8,7 @@ from pyglet.event import EventDispatcher
 from pyglet.libs.darwin import AutoReleasePool, CGPoint, cocoapy
 from pyglet.window import BaseWindow, DefaultMouseCursor, MouseCursor
 
-from ...libs import darwin
+from pyglet.libs import darwin
 from .pyglet_delegate import PygletDelegate
 from .pyglet_textview import PygletTextView
 from .pyglet_view import PygletView

@@ -10,7 +10,7 @@ from pyglet.libs.darwin import cocoapy
 
 if TYPE_CHECKING:
     from pyglet.graphics.api.gl.global_opengl import OpenGLBackend
-    from pyglet.window.cocoa import CocoaWindow
+    from pyglet.window.apple.cocoa import CocoaWindow
 
 NSOpenGLPixelFormat = cocoapy.ObjCClass('NSOpenGLPixelFormat')
 NSOpenGLContext = cocoapy.ObjCClass('NSOpenGLContext')

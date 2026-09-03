@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import time
 import warnings
 import weakref
 from ctypes import cdll, util, c_void_p, byref
@@ -10,16 +9,15 @@ from typing import Protocol
 import pyglet
 from pyglet.event import EventDispatcher
 from pyglet.libs.darwin import ObjCSubclass, ObjCInstance, send_super, \
-    AutoReleasePool, ns_to_py, nsdict_to_py, PyObjectEncoding, nsnum_to_py
+    AutoReleasePool, ns_to_py, PyObjectEncoding
 from pyglet.libs.darwin.cocoapy.runtime import get_callback_block
-from pyglet.math import Vec2
-
-from pyglet.window.cocoa.pyglet_delegate import NSNotification
 
 from pyglet.input.base import Device, Control, Controller, Button, AbsoluteAxis, ControllerManager, Sign
 
 from pyglet.libs.darwin import ObjCClass, get_selector
-from pyglet.window.cocoa.pyglet_view import NSNotificationCenter
+
+NSNotification = ObjCClass('NSNotification')
+NSNotificationCenter = ObjCClass('NSNotificationCenter')
 
 lib = util.find_library('GameController')
 
