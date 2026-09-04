@@ -379,7 +379,11 @@ class PygletGLWriter:
                 f"{name}: {f'{arg} | {self.pythontypes[arg]}' if arg in self.pythontypes else arg}" for name, arg in
                 zip(names, arguments, strict=True))
 
-            function_stub = f"def {cmd.name}({argannotations}) -> {self.pythontypes.get(restype, restype)}: ..."
+            function_stub = (
+                f"def {cmd.name}(self, {argannotations}) -> {self.pythontypes.get(restype, restype)}: ..."
+                if argannotations
+                else f"def {cmd.name}(self) -> {self.pythontypes.get(restype, restype)}: ..."
+            )
             self.write_lines(fp, [f"    {function_stub}"])
 
         self.write_lines(fp, [""])
