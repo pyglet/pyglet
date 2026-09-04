@@ -1,3 +1,7 @@
+from tests.annotations import require_graphics_api, GraphicsAPIGroups
+
+pytestmark = require_graphics_api(GraphicsAPIGroups.GL3)
+
 from pyglet.graphics.api.gl.gl_fallback import apply_extension_function_fallbacks
 
 
