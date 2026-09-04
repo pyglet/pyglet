@@ -1,6 +1,7 @@
 import random
 
 import pyglet
+from pyglet.enums import Anchor
 from pyglet.graphics.draw import Batch
 
 window = pyglet.window.Window(vsync=False)
@@ -14,11 +15,6 @@ pyglet.resource.reindex()
 # Resource will load images into a texture atlas, allowing significantly faster performance.
 image = pyglet.resource.texture("pyglet.png")
 
-# Anchor point on an image is bottom left corner by default.
-# Set to center point with anchor properties.
-image.anchor_x = image.width // 2
-image.anchor_y = image.height // 2
-
 # Batching allows rendering groups of objects all at once instead of drawing one by one.
 batch = Batch()
 
@@ -31,6 +27,7 @@ for i in range(1000):
     sprite = pyglet.sprite.Sprite(image,
                                   x=random.randint(0, window.width),
                                   y=random.randint(0, window.height),
+                                  anchor=Anchor.CENTER,
                                   batch=batch)  # specify the batch to enter the sprites in.
 
     # Randomize scale.

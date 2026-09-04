@@ -258,8 +258,6 @@ print(controls)
 
 image = pyglet.image.load(filename)
 
-image.anchor_x = image.width // 2
-image.anchor_y = image.height // 2
-sprite = DistFieldSprite(image, program=dist_shader)
+sprite = DistFieldSprite(image, anchor=(image.width // 2, image.height // 2), program=dist_shader)
 
 pyglet.app.run()

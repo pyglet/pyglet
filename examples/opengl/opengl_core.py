@@ -36,17 +36,15 @@ program.vertex_list_indexed(4, GeometryMode.TRIANGLES, [0, 1, 2, 0, 2, 3], batch
 
 
 img = pyglet.image.load("pyglet.png")
-img.anchor_x = img.width // 2
-img.anchor_y = img.height // 2
 red = pyglet.image.SolidColorImagePattern((255, 0, 0, 255)).create_image(50, 50)
 green = pyglet.image.SolidColorImagePattern((0, 255, 0, 255)).create_image(50, 50)
 blue = pyglet.image.SolidColorImagePattern((0, 0, 255, 255)).create_image(50, 50)
 white = pyglet.image.SolidColorImagePattern((255, 255, 255, 255)).create_image(50, 50)
 
-sprites = [pyglet.sprite.Sprite(img=img, x=60, y=80, batch=batch),
-           pyglet.sprite.Sprite(img=img, x=110, y=90, batch=batch),
-           pyglet.sprite.Sprite(img=img, x=160, y=100, batch=batch),
-           pyglet.sprite.Sprite(img=img, x=210, y=110, batch=batch)]
+sprites = [pyglet.sprite.Sprite(img=img, x=60, y=80, anchor=(img.width // 2, img.height // 2), batch=batch),
+           pyglet.sprite.Sprite(img=img, x=110, y=90, anchor=(img.width // 2, img.height // 2), batch=batch),
+           pyglet.sprite.Sprite(img=img, x=160, y=100, anchor=(img.width // 2, img.height // 2), batch=batch),
+           pyglet.sprite.Sprite(img=img, x=210, y=110, anchor=(img.width // 2, img.height // 2), batch=batch)]
 for sprite in sprites:
     sprite.opacity = 220
 

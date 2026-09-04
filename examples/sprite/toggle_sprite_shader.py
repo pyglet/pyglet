@@ -1,5 +1,6 @@
 """Simple example showing how to change the shader of a sprite."""
 import pyglet
+from pyglet.enums import Anchor
 from pyglet.window import key
 
 
@@ -10,10 +11,8 @@ pyglet.resource.path = ["../resources"]
 pyglet.resource.reindex()
 
 image = pyglet.resource.texture("pyglet.png")
-image.anchor_x = image.width // 2
-image.anchor_y = image.height // 2
 
-sprite = pyglet.sprite.Sprite(image, x=window.width // 2, y=window.height // 2, batch=batch)
+sprite = pyglet.sprite.Sprite(image, x=window.width // 2, y=window.height // 2, anchor=Anchor.CENTER, batch=batch)
 sprite.scale = 2.0
 
 # Keep the built-in default sprite program.

@@ -1,4 +1,5 @@
 import pyglet
+from pyglet.enums import Anchor
 import math
 from pyglet.window import key
 from . import bullet, physicalobject, util
@@ -8,10 +9,12 @@ class Player(physicalobject.PhysicalObject):
     """Physical object that responds to user input"""
 
     def __init__(self, *args, **kwargs):
-        super().__init__(img=util.load_centered('player.png'), *args, **kwargs)
+        super().__init__(img=pyglet.resource.image('player.png'), anchor=Anchor.CENTER, *args, **kwargs)
 
         # Create a child sprite to show when the ship is thrusting
-        self.engine_sprite = pyglet.sprite.Sprite(img=util.load_centered('engine_flame.png', x_divisor=0.6), *args, **kwargs)
+        image = pyglet.resource.image('engine_flame.png')
+        self.engine_sprite = pyglet.sprite.Sprite(img=image,
+                                                   anchor=(image.width / 0.6, image.height / 2), *args, **kwargs)
         self.engine_sprite.visible = False
 
         # Set some easy-to-tweak constants

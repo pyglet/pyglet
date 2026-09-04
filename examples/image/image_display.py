@@ -36,14 +36,12 @@ if __name__ == '__main__':
     filename = sys.argv[1]
 
     img = pyglet.image.load(filename)
-    img.anchor_x = img.width // 2
-    img.anchor_y = img.height // 2
 
     # Make a batch to contain all drawable objects.
     # In this case, only a single Sprite will be in it:
     batch = pyglet.graphics.Batch()
     # Make a Sprite so that the image can be displayed & manipulated:
-    image_sprite = pyglet.sprite.Sprite(img=img, batch=batch)
+    image_sprite = pyglet.sprite.Sprite(img=img, anchor=(img.width // 2, img.height // 2), batch=batch)
 
     # Set the initial Window size to match the image:
     window.width = img.width
