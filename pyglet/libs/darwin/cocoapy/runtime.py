@@ -1223,6 +1223,16 @@ class ObjCClass:
     def __repr__(self):
         return "<ObjCClass: %s at %s>" % (self.name, str(self.ptr.value))
 
+    def __mro_entries__(self, bases: tuple[Any, ...]) -> tuple[type, ...]:
+        """Allow an Objective-C class to be used as a Python class base.
+
+        The replacement base records this class as the Objective-C superclass.
+        :class:`_ObjCSubclassProxyMeta` registers the native subclass when the
+        Python class statement finishes executing.
+        """
+        # ObjCClass is a proxy object, so it cannot be a class base directly.
+        return (_objc_declaration_base(self),)
+
     def cache_instance_methods(self):
         """Create and store python representations of all instance methods
         implemented by this class (but does not find methods of superclass)."""
@@ -1596,7 +1606,7 @@ class ObjCSubclass:
 
     def method(self, encoding: bytes | str):
         """Function decorator for instance methods."""
-        # Add encodings for hidden self and cmd arguments.
+        # Add encodings for hidden self and cmd arguments once at registration.
         encoding_bytes = ensure_bytes(encoding)
         typecodes = parse_type_encoding(encoding_bytes)
         typecodes.insert(1, b'@:')
@@ -1646,6 +1656,107 @@ class ObjCSubclass:
             return objc_class_method
 
         return decorator
+
+
+class _ObjCMethodDefinition:
+    """Used to identify declared subclassed ObjC methods."""
+
+    def __init__(self, function: Callable[..., Any], encoding: bytes | str) -> None:
+        self.function = function
+        self.encoding = encoding
+
+    def register(self, subclass: ObjCSubclass) -> Callable[..., Any]:
+        return subclass.method(self.encoding)(self.function)
+
+
+def objc_method(encoding: bytes | str) -> Callable[[Callable[..., Any]], _ObjCMethodDefinition]:
+    """Declare an Objective-C instance method in a Python class body.
+
+    This is used when subclassing :class:`ObjCClass` as a base::
+
+        NSView = ObjCClass('NSView')
+
+        class PygletView(NSView):
+            @objc_method('v@')
+            def mouseDown_(self, event):
+                pass
+
+    The resulting Python class forwards Objective-C class messages such as
+    ``alloc`` to the registered native subclass.
+
+    Args:
+        encoding:
+            Describes the return value and explicit arguments.
+    """
+    # Leave a declaration in the class namespace for the metaclass to find.
+    def decorator(function: Callable[..., Any]) -> _ObjCMethodDefinition:
+        return _ObjCMethodDefinition(function, encoding)
+
+    return decorator
+
+
+class _ObjCSubclassProxyMeta(type):
+    """Registers subclasses and forwards class messages to ObjC."""
+
+    def __new__(
+        mcls,
+        name: str,
+        bases: tuple[type, ...],
+        namespace: dict[str, Any],
+        **kwargs: Any,
+    ) -> type:
+        declaration_base = namespace.pop('_objc_declaration_base', False)
+        python_class = super().__new__(mcls, name, bases, namespace, **kwargs)
+        if declaration_base:
+            return python_class
+
+        superclass = next(
+            (getattr(base, '_objc_superclass', None) for base in bases
+             if getattr(base, '_objc_superclass', None) is not None),
+            None,
+        )
+        if superclass is None:
+            return python_class
+
+        # Register all declared objc methods before registering the class.
+        subclass = ObjCSubclass(superclass.name, name, register=False)
+        for attr_name, value in namespace.items():
+            if isinstance(value, _ObjCMethodDefinition):
+                setattr(python_class, attr_name, value.register(subclass))
+        subclass.register()
+        # ObjCSubclass owns the ctypes callback references.
+        python_class._objc_subclass = subclass
+        python_class._objc_class = ObjCClass(name)
+        return python_class
+
+    def __getattr__(cls, name: str) -> Any:
+        """Forward native class messages (alloc) to ObjC."""
+        objc_class = cls.__dict__.get('_objc_class')
+        if objc_class is None:
+            raise AttributeError(f'{cls.__name__} has no attribute {name}')
+        return getattr(objc_class, name)
+
+
+_objc_declaration_bases: dict[int, type] = {}
+
+
+def _objc_declaration_base(superclass: ObjCClass) -> type:
+    """Return the Python placeholder used for ``class Child(ObjCClass(...))``."""
+    try:
+        return _objc_declaration_bases[superclass.ptr.value]
+    except KeyError:
+        # Share one Python base for each native superclass.
+        base_name = f'_{ensure_bytes(superclass.name).decode()}DeclarationBase'
+        base = _ObjCSubclassProxyMeta(
+            base_name,
+            (),
+            {
+                '_objc_declaration_base': True,
+                '_objc_superclass': superclass,
+            },
+        )
+        _objc_declaration_bases[superclass.ptr.value] = base
+        return base
 
 
 ######################################################################
