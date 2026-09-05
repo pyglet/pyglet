@@ -1,4 +1,5 @@
 import pyglet
+from pyglet.enums import Anchor
 import random
 import math
 from . import util
@@ -18,8 +19,8 @@ def asteroids(num_asteroids, player_position):
         while distance((asteroid_x, asteroid_y), player_position) < 100:
             asteroid_x = random.randint(0, 800)
             asteroid_y = random.randint(0, 600)
-        new_asteroid = pyglet.sprite.Sprite(img=util.load_centered('asteroid.png'),
-                                            x=asteroid_x, y=asteroid_y)
+        new_asteroid = pyglet.sprite.Sprite(img=pyglet.resource.image('asteroid.png'),
+                                            x=asteroid_x, y=asteroid_y, anchor=Anchor.CENTER)
         new_asteroid.rotation = random.randint(0, 360)
         asteroids.append(new_asteroid)
     return asteroids

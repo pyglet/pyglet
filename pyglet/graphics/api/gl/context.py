@@ -7,6 +7,7 @@ from typing import Callable, TYPE_CHECKING
 from pyglet.graphics import GraphicsAPIError, GraphicsIntegrationError
 from pyglet.graphics.api.gl import gl, gl_info
 from pyglet.graphics.api.gl.base import GLSharedObjectSpace
+from pyglet.graphics.api.gl.gl_fallback import apply_extension_function_fallbacks
 from pyglet.graphics.api.base import SurfaceContext, NullContext
 from pyglet.graphics.api.gl.gl import (
     GL_ALREADY_SIGNALED,
@@ -175,8 +176,9 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
             # Move this later to a better platform implementation.
             if not self.platform_func and self.platform_func_class:
                 self.platform_func = self.platform_func_class()
-            self.uniform_getters, self.uniform_setters = self._get_uniform_func_tables()
             self._info.query(self)
+            apply_extension_function_fallbacks(self.info, self)
+            self.uniform_getters, self.uniform_setters = self._get_uniform_func_tables()
 
         self.object_space.flush(self)
 

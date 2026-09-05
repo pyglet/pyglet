@@ -18,17 +18,16 @@ label = pyglet.text.Label('Press Any Key To Add A Sprite!',
 # Packaged by ``resources`` in pyproject.toml and loaded from the Pyodide VFS.
 image = pyglet.resource.image("pyglet.png")
 
-image.anchor_x = image.width // 2
-image.anchor_y = image.height // 2
-
 sprites = [pyglet.sprite.Sprite(image,
                                 x=random.randint(0, window.width),
-                                y=random.randint(0, window.height), batch=batch)]
+                                y=random.randint(0, window.height),
+                                anchor=(image.width // 2, image.height // 2), batch=batch)]
 
 @window.event
 def on_key_press(symbol, modifiers):
     sprite = pyglet.sprite.Sprite(
-        image, x=random.randint(0, window.width), y=random.randint(0, window.height), batch=batch
+        image, x=random.randint(0, window.width), y=random.randint(0, window.height),
+        anchor=(image.width // 2, image.height // 2), batch=batch
     )
     sprite.color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
     sprites.append(sprite)

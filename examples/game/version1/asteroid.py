@@ -1,4 +1,5 @@
 import pyglet
+from pyglet.enums import Anchor
 
 from game import util, load
 
@@ -11,7 +12,7 @@ level_label = pyglet.text.Label(text="Version 1: Static Graphics",
                                 x=400, y=575, anchor_x='center')
 
 # Initialize the player sprite
-player_ship = pyglet.sprite.Sprite(img=util.load_centered('player.png'), x=400, y=300)
+player_ship = pyglet.sprite.Sprite(img=pyglet.resource.image('player.png'), x=400, y=300, anchor=Anchor.CENTER)
 
 # Make three asteroids so we have something to shoot at
 asteroids = load.asteroids(num_asteroids=3, player_position=player_ship.position)
