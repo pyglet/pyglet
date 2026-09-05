@@ -1,8 +1,7 @@
-"""UIKit run-loop integration for pyglet on iOS."""
+"""UIKit app loop integration on iOS."""
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING
 
 from pyglet import app
 from pyglet.app.base import EventLoop, PlatformEventLoop, WindowDrawSource
@@ -31,14 +30,11 @@ NSObject = ObjCClass('NSObject')
 NSRunLoop = ObjCClass('NSRunLoop')
 CADisplayLink = ObjCClass('CADisplayLink')
 
-if TYPE_CHECKING:
-    from pyglet.window import BaseWindow
-
 
 class _PygletIOSDisplayLinkTarget(NSObject):
 
     @objc_method(b'@' + PyObjectEncoding)
-    def initWithDrawSource_(self, draw_source: 'IOSDisplayLinkDrawSource') -> ObjCInstance | None:
+    def initWithDrawSource_(self, draw_source: IOSDisplayLinkDrawSource) -> ObjCInstance | None:
         self = ObjCInstance(send_super(self, 'init'))
         if not self:
             return None
@@ -100,7 +96,7 @@ class IOSDisplayLinkDrawSource(WindowDrawSource):
         if self._display_link is None or not self._event_loop.is_running:
             return
         self._last_timestamp, dt = get_display_link_dt(display_link, self._last_timestamp)
-        self._event_loop._tick_app(dt)
+        self._event_loop._tick_app(dt)  # noqa: SLF001
 
 class IOSPlatformEventLoop(PlatformEventLoop):
     """Schedules pyglet work from UIKit's already-running main run loop."""
@@ -139,8 +135,7 @@ class IOSEventLoop(EventLoop):
 
         self.has_exit = False
         from pyglet.window import Window  # noqa: PLC0415
-
-        Window._enable_event_queue = False
+        Window._enable_event_queue = False # noqa: SLF001
         for window in app.windows:
             window.dispatch_pending_events()
 
