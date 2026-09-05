@@ -9,9 +9,10 @@ from pyglet.libs.darwin.cocoapy import (
     NSRectEncoding,
     ObjCClass,
     ObjCInstance,
-    ObjCSubclass,
     PyObjectEncoding,
     CGRect,
+    objc_classmethod,
+    objc_method,
     send_super,
 )
 from pyglet.window import BaseWindow
@@ -21,24 +22,24 @@ if TYPE_CHECKING:
 
 
 UIWindow = ObjCClass('UIWindow')
+UIView = ObjCClass('UIView')
 UIViewController = ObjCClass('UIViewController')
 UIScreen = ObjCClass('UIScreen')
 CAMetalLayer = ObjCClass('CAMetalLayer')
 CAEAGLLayer = ObjCClass('CAEAGLLayer')
 
 
-class _PygletViewImplementation:
-    PygletView = ObjCSubclass('UIView', 'PygletIOSView')
+class PygletIOSView(UIView):
 
-    @PygletView.classmethod(b'@')
-    def layerClass(cls) -> ObjCInstance:
+    @objc_classmethod(b'@')
+    def layerClass(cls) -> ObjCClass:
         """Use the graphics API's native UIKit backing layer."""
         return CAEAGLLayer if pyglet.options.backend in (
                     GraphicsAPI.OPENGL_ES_2,
                     GraphicsAPI.OPENGL_ES_3,
                 ) else CAMetalLayer
 
-    @PygletView.method(b'@' + NSRectEncoding + PyObjectEncoding)
+    @objc_method(b'@' + NSRectEncoding + PyObjectEncoding)
     def initWithFrame_iosWindow_(self, frame: CGRect, window: IOSWindow) -> ObjCInstance | None:
         self = ObjCInstance(send_super(self, 'initWithFrame:', frame, argtypes=[CGRect]))
         if not self:
@@ -46,15 +47,11 @@ class _PygletViewImplementation:
         self._window = window
         return self
 
-    @PygletView.method('v')
+    @objc_method('v')
     def layoutSubviews(self) -> None:
         # Recreate the drawable area after UIKit has assigned the view its size.
         send_super(self, 'layoutSubviews')
         self._window._view_did_resize()
-
-
-PygletIOSView = ObjCClass('PygletIOSView')
-
 
 class IOSWindow(BaseWindow):
     """A UIKit-backed window.

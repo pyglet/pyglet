@@ -1230,7 +1230,7 @@ class ObjCClass:
         :class:`_ObjCSubclassProxyMeta` registers the native subclass when the
         Python class statement finishes executing.
         """
-        # ObjCClass is a proxy object, so it cannot be a class base directly.
+        # ObjCClass is a wrapper, so use a small Python base for the class statement.
         return (_objc_declaration_base(self),)
 
     def cache_instance_methods(self):
@@ -1669,6 +1669,13 @@ class _ObjCMethodDefinition:
         return subclass.method(self.encoding)(self.function)
 
 
+class _ObjCClassMethodDefinition(_ObjCMethodDefinition):
+    """Used to identify declared subclassed ObjC class methods."""
+
+    def register(self, subclass: ObjCSubclass) -> Callable[..., Any]:
+        return subclass.classmethod(self.encoding)(self.function)
+
+
 def objc_method(encoding: bytes | str) -> Callable[[Callable[..., Any]], _ObjCMethodDefinition]:
     """Declare an Objective-C instance method in a Python class body.
 
@@ -1688,9 +1695,17 @@ def objc_method(encoding: bytes | str) -> Callable[[Callable[..., Any]], _ObjCMe
         encoding:
             Describes the return value and explicit arguments.
     """
-    # Leave a declaration in the class namespace for the metaclass to find.
+    # Keep the method until the class is ready to register it.
     def decorator(function: Callable[..., Any]) -> _ObjCMethodDefinition:
         return _ObjCMethodDefinition(function, encoding)
+
+    return decorator
+
+
+def objc_classmethod(encoding: bytes | str) -> Callable[[Callable[..., Any]], _ObjCClassMethodDefinition]:
+    """Declare an Objective-C class method in a Python class body."""
+    def decorator(function: Callable[..., Any]) -> _ObjCClassMethodDefinition:
+        return _ObjCClassMethodDefinition(function, encoding)
 
     return decorator
 
@@ -1718,13 +1733,21 @@ class _ObjCSubclassProxyMeta(type):
         if superclass is None:
             return python_class
 
-        # Register all declared objc methods before registering the class.
+        # Register instance methods before registering the class.
         subclass = ObjCSubclass(superclass.name, name, register=False)
+        for value in namespace.values():
+            if isinstance(value, _ObjCMethodDefinition) and not isinstance(value, _ObjCClassMethodDefinition):
+                value.register(subclass)
+        subclass.register()
+        # Class methods need the metaclass, which is created when the class is registered.
+        for value in namespace.values():
+            if isinstance(value, _ObjCClassMethodDefinition):
+                value.register(subclass)
+        # Remove these temporary method objects so calls go directly Objective-C.
         for attr_name, value in namespace.items():
             if isinstance(value, _ObjCMethodDefinition):
-                setattr(python_class, attr_name, value.register(subclass))
-        subclass.register()
-        # ObjCSubclass owns the ctypes callback references.
+                delattr(python_class, attr_name)
+        # Keep the subclass because it keeps the callback functions alive.
         python_class._objc_subclass = subclass
         python_class._objc_class = ObjCClass(name)
         return python_class
@@ -1745,7 +1768,7 @@ def _objc_declaration_base(superclass: ObjCClass) -> type:
     try:
         return _objc_declaration_bases[superclass.ptr.value]
     except KeyError:
-        # Share one Python base for each native superclass.
+        # Reuse one helper class for each Objective-C base class.
         base_name = f'_{ensure_bytes(superclass.name).decode()}DeclarationBase'
         base = _ObjCSubclassProxyMeta(
             base_name,
