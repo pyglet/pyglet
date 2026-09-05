@@ -92,8 +92,7 @@ class IOSEventLoop(EventLoop):
     """Event loop similar to what we did for alt macos loop.."""
 
     def run(self, interval: float | None = 1 / 60) -> None:
-        # Check for XCode environment as XCTest essentially owns the app lifetime
-        # XCTest owns the application lifetime and finalizes its embedded
+        # Check for XCode environment as it owns the app lifetime and finalizes its embedded
         # interpreter after the test returns.  It must not receive native
         # callbacks from a pyglet timer after that point.
         if _is_xctest():
