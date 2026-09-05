@@ -68,6 +68,7 @@ class Options:
     win32_disable_xinput: bool
     com_mta: bool
     osx_alt_loop: bool
+    osx_displaylink: bool
     dpi_scaling: Literal["platform", "stretch"]
     shader_bind_management: bool
     wayland: bool

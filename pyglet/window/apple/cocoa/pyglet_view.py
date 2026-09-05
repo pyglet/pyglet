@@ -214,6 +214,11 @@ class PygletView(NSView):
     def isOpaque(self) -> bool:
         return True
 
+    @cocoapy.objc_method('v@')
+    def displayLinkFired_(self, display_link: cocoapy.ObjCInstance) -> None:
+        if self._window is not None:
+            self._window._display_link_tick(display_link)
+
     ## Event responders.
 
     # This method is called whenever the view changes size.
