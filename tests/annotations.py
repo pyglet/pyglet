@@ -22,6 +22,9 @@ class Platform:
     OSX = ('darwin',)
     """Mac OS X platforms"""
 
+    IOS = ('ios',)
+    """iOS and iPadOS"""
+
     EMSCRIPTEN = ('emscripten',)
     """Pyodide browser platform"""
 
