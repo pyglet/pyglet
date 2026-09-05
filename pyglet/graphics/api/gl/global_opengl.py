@@ -58,12 +58,15 @@ class OpenGLBackend(BackendGlobalObject):
         # On Windows if you specify GLES but set 3.3 as major/minor version, it will upgrade to a full context.
         # Version 3.2 needs to be specified explicitly.
         if self.gl_api == GraphicsAPI.OPENGL_ES_3:
+            # EAGL exposes OpenGL ES 3.0 on iOS. Other GLES 3 platforms can
+            # use the newer 3.2 default.
+            minor_version = 0 if pyglet.compat_platform == "ios" else 2
             configs = [
                 pyglet.config.OpenGLUserConfig(
-                    double_buffer=True, depth_size=24, major_version=3, minor_version=2, api=self.gl_api,
+                    double_buffer=True, depth_size=24, major_version=3, minor_version=minor_version, api=self.gl_api,
                 ),
                 pyglet.config.OpenGLUserConfig(
-                    double_buffer=True, depth_size=16, major_version=3, minor_version=2, api=self.gl_api,
+                    double_buffer=True, depth_size=16, major_version=3, minor_version=minor_version, api=self.gl_api,
                 ),
             ]
         else:

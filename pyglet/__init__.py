@@ -361,6 +361,11 @@ for _option_name, _type_str in options.__annotations__.items():
         else:
             warnings.warn(f"Invalid value '{_value}' for {_option_name}. Expecting {_type_str}")
 
+# UIKit supports OpenGL ES rather than desktop OpenGL. Leave an explicit
+# PYGLET_BACKEND selection alone, but use GLES 3 when no backend is provided.
+if compat_platform == "ios" and "PYGLET_BACKEND" not in os.environ:
+    options.backend = GraphicsAPI.OPENGL_ES_3
+
 
 if (__debug__ is False) or getattr(sys, "frozen", False):
     options.debug_gl = False
