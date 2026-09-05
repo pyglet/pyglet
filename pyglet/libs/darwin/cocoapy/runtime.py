@@ -46,7 +46,7 @@ from ctypes import (
 from typing import Type, TypeVar, Sequence, Any, Callable, List
 
 from .cocoatypes import (
-    Block_descriptor_1, Block_literal_1, CGImageEncoding, NSPoint,
+    Block_descriptor_1, Block_literal_1, CAFrameRateRange, CAFrameRateRangeEncoding, CGImageEncoding, NSPoint,
     NSPointEncoding, NSRange, NSRangeEncoding, NSRect, NSRectEncoding, NSSize,
     NSSizeEncoding, NSZoneEncoding, PyObjectEncoding, encoding_for_ctype,
 )
@@ -948,6 +948,7 @@ def cfunctype_for_encoding(encoding):
                  b'f': c_float, b'd': c_double, b'B': c_bool, b'v': None, b'*': c_char_p,
                  b'@': c_void_p, b'#': c_void_p, b':': c_void_p, NSPointEncoding: NSPoint,
                  NSSizeEncoding: NSSize, NSRectEncoding: NSRect, NSRangeEncoding: NSRange,
+                 CAFrameRateRangeEncoding: CAFrameRateRange,
                  PyObjectEncoding: py_object}
     argtypes = []
     for code in parse_type_encoding(encoding):
@@ -1031,6 +1032,7 @@ class ObjCMethod:
                  b'@': c_void_p, b'#': c_void_p, b':': c_void_p, b'^v': c_void_p, b'?': c_void_p,
                  NSPointEncoding: NSPoint, NSSizeEncoding: NSSize, NSRectEncoding: NSRect,
                  NSRangeEncoding: NSRange,
+                 CAFrameRateRangeEncoding: CAFrameRateRange,
                  PyObjectEncoding: py_object}
 
     cfunctype_table = {}

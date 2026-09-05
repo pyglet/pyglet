@@ -66,6 +66,7 @@ CGFloatEncoding = encoding_for_ctype(CGFloat)
 CGImageEncoding = b'{CGImage=}'
 
 NSZoneEncoding = b'{_NSZone=}'
+CAFrameRateRangeEncoding = b'{CAFrameRateRange=fff}'
 
 # from /System/Library/Frameworks/Foundation.framework/Headers/NSGeometry.h
 class NSPoint(Structure):
@@ -83,6 +84,14 @@ CGSize = NSSize
 class NSRect(Structure):
     _fields_ = [ ("origin", NSPoint), ("size", NSSize) ]
 CGRect = NSRect
+
+
+class CAFrameRateRange(Structure):
+    _fields_ = [
+        ("minimum", c_float),
+        ("maximum", c_float),
+        ("preferred", c_float)
+    ]
 
 def NSMakeSize(w, h):
     return NSSize(w, h)
@@ -133,4 +142,3 @@ class Block_literal_1(Structure):
         ("invoke", c_void_p),  # Invoke function
         ("descriptor", Block_descriptor_1),
     ]
-

@@ -237,7 +237,7 @@ def cfarray_to_list(cfarray: ObjCInstance) -> list[ObjCInstance]:
     count = cf.CFArrayGetCount(cfarray)
     return [cftype_to_value(c_void_p(cf.CFArrayGetValueAtIndex(cfarray, i))) for i in range(count)]
 
-
+NSRunLoopCommonModes = c_void_p.in_dll(cf, 'kCFRunLoopCommonModes')
 kCFRunLoopDefaultMode = c_void_p.in_dll(cf, 'kCFRunLoopDefaultMode')
 
 cf.CFRunLoopGetCurrent.restype = c_void_p
