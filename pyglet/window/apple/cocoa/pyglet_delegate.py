@@ -8,12 +8,12 @@ from pyglet.libs.darwin.cocoapy import (
     NSApplicationDidUnhideNotification,
     ObjCClass,
     ObjCInstance,
-    ObjCSubclass,
     PyObjectEncoding,
     appkit,
     get_selector,
     quartz,
     send_super,
+    objc_method,
 )
 
 from .systemcursor import SystemCursor
@@ -22,16 +22,16 @@ if TYPE_CHECKING:
     from . import CocoaWindow
 
 NSNotificationCenter = ObjCClass('NSNotificationCenter')
+NSObject = ObjCClass('NSObject')
 NSApplication = ObjCClass('NSApplication')
 NSNotification = ObjCClass('NSNotification')
 
 NSBackingPropertyOldScaleFactorKey = c_void_p.in_dll(appkit, 'NSBackingPropertyOldScaleFactorKey')
 
 
-class PygletDelegate_Implementation:
-    PygletDelegate = ObjCSubclass('NSObject', 'PygletDelegate')
+class PygletDelegate(NSObject):
 
-    @PygletDelegate.method(b'@' + PyObjectEncoding)
+    @objc_method(b'@' + PyObjectEncoding)
     def initWithWindow_(self, window: CocoaWindow) -> ObjCInstance | None:
         self = ObjCInstance(send_super(self, 'init'))
 
@@ -59,7 +59,7 @@ class PygletDelegate_Implementation:
         self.did_pause_exclusive_mouse = False
         return self
 
-    @PygletDelegate.method('v')
+    @objc_method('v')
     def dealloc(self) -> None:
         # Unregister delegate from notification center.
         notificationCenter = NSNotificationCenter.defaultCenter()
@@ -67,11 +67,11 @@ class PygletDelegate_Implementation:
         self._window = None
         send_super(self, 'dealloc')
 
-    @PygletDelegate.method('v@')
+    @objc_method('v@')
     def applicationDidHide_(self, notification: NSNotification) -> None:
         self._window.dispatch_event('on_hide')
 
-    @PygletDelegate.method('v@')
+    @objc_method('v@')
     def applicationDidUnhide_(self, notification: NSNotification) -> None:
         if self._window._mouse_exclusive and quartz.CGCursorIsVisible():
             # The cursor should be hidden, but for some reason it's not;
@@ -80,18 +80,18 @@ class PygletDelegate_Implementation:
             SystemCursor.hide()
         self._window.dispatch_event('on_show')
 
-    @PygletDelegate.method('B@')
+    @objc_method('B@')
     def windowShouldClose_(self, sender: ObjCInstance) -> bool:
         # The method is not called if [NSWindow close] was used.
         self._window.dispatch_event('on_close')
         return False
 
-    @PygletDelegate.method('v@')
+    @objc_method('v@')
     def windowDidMove_(self, notification: NSNotification) -> None:
         x, y = self._window.get_location()
         self._window.dispatch_event('on_move', x, y)
 
-    @PygletDelegate.method('v@')
+    @objc_method('v@')
     def windowDidBecomeKey_(self, notification: NSNotification) -> None:
         # Restore exclusive mouse mode if it was active before we lost key status.
         if self.did_pause_exclusive_mouse:
@@ -102,7 +102,7 @@ class PygletDelegate_Implementation:
         self._window.set_mouse_cursor_platform_visible()
         self._window.dispatch_event('on_activate')
 
-    @PygletDelegate.method('v@')
+    @objc_method('v@')
     def windowDidResignKey_(self, notification: NSNotification) -> None:
         # Pause exclusive mouse mode if it is active.
         if self._window._mouse_exclusive:  # noqa: SLF001
@@ -116,11 +116,11 @@ class PygletDelegate_Implementation:
         self._window.set_mouse_cursor_platform_visible(True)
         self._window.dispatch_event('on_deactivate')
 
-    @PygletDelegate.method('v@')
+    @objc_method('v@')
     def windowDidMiniaturize_(self, notification: NSNotification) -> None:
         self._window.dispatch_event('on_hide')
 
-    @PygletDelegate.method('v@')
+    @objc_method('v@')
     def windowDidDeminiaturize_(self, notification: NSNotification) -> None:
         if self._window._mouse_exclusive and quartz.CGCursorIsVisible():  # noqa: SLF001
             # The cursor should be hidden, but for some reason it's not;
@@ -129,23 +129,23 @@ class PygletDelegate_Implementation:
             SystemCursor.hide()
         self._window.dispatch_event('on_show')
 
-    @PygletDelegate.method('v@')
+    @objc_method('v@')
     def windowDidExpose_(self, notification: NSNotification) -> None:
         self._window.dispatch_event('on_expose')
 
-    @PygletDelegate.method('v@')
+    @objc_method('v@')
     def terminate_(self, sender: ObjCInstance) -> None:
         NSApp = NSApplication.sharedApplication()
         NSApp.terminate_(self)
 
-    @PygletDelegate.method('B@')
+    @objc_method('B@')
     def validateMenuItem_(self, menuitem: ObjCInstance) -> bool:
         # Disable quitting with command-q when in keyboard exclusive mode.
         if menuitem.action() == get_selector('terminate:'):
             return not self._window._keyboard_exclusive  # noqa: SLF001
         return True
 
-    @PygletDelegate.method('v@')
+    @objc_method('v@')
     def windowDidChangeBackingProperties_(self, notification):
         if not self._window._shadow:
             user_info = notification.userInfo()
@@ -159,7 +159,3 @@ class PygletDelegate_Implementation:
                 self._window.switch_to()
                 self._window._update_geometry()  # noqa: SLF001
                 self._window.dispatch_event("_on_internal_scale", new_scale, new_dpi)
-
-
-
-PygletDelegate = ObjCClass('PygletDelegate')

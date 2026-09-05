@@ -8,9 +8,9 @@ from pyglet.app.base import EventLoop, PlatformEventLoop
 from pyglet.libs.darwin.cocoapy import (
     ObjCClass,
     ObjCInstance,
-    ObjCSubclass,
     PyObjectEncoding,
     get_selector,
+    objc_method,
     send_super,
 )
 
@@ -24,12 +24,12 @@ def _is_xctest() -> bool:
     return any(name in os.environ for name in _XCTEST_ENVIRONMENT)
 
 NSTimer = ObjCClass('NSTimer')
+NSObject = ObjCClass('NSObject')
 
 
-class _IOSRunLoopTargetImplementation:
-    Target = ObjCSubclass('NSObject', 'PygletIOSRunLoopTarget')
+class _PygletIOSRunLoopTarget(NSObject):
 
-    @Target.method(b'@' + PyObjectEncoding)
+    @objc_method(b'@' + PyObjectEncoding)
     def initWithEventLoop_(self, event_loop: 'IOSEventLoop') -> ObjCInstance | None:
         self = ObjCInstance(send_super(self, 'init'))
         if not self:
@@ -37,12 +37,9 @@ class _IOSRunLoopTargetImplementation:
         self._event_loop = event_loop
         return self
 
-    @Target.method('v@')
+    @objc_method('v@')
     def tick_(self, _timer: ObjCInstance) -> None:
         self._event_loop._tick()
-
-_IOSRunLoopTarget = ObjCClass('PygletIOSRunLoopTarget')
-
 
 class IOSPlatformEventLoop(PlatformEventLoop):
     """Schedules pyglet work from UIKit's already-running main run loop."""
@@ -58,7 +55,7 @@ class IOSPlatformEventLoop(PlatformEventLoop):
     def start(self, event_loop: IOSEventLoop, interval: float | None = 1 / 60) -> None:
         if self._timer is not None:
             return
-        self._target = _IOSRunLoopTarget.alloc().initWithEventLoop_(event_loop)
+        self._target = _PygletIOSRunLoopTarget.alloc().initWithEventLoop_(event_loop)
         self._timer = NSTimer.scheduledTimerWithTimeInterval_target_selector_userInfo_repeats_(
             1 / 60 if interval is None else interval,
             self._target,

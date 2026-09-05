@@ -5,10 +5,11 @@ import time
 
 from pyglet import app
 from pyglet.app.base import EventLoop, PlatformEventLoop
-from pyglet.libs.darwin import cocoapy, AutoReleasePool, ObjCSubclass, PyObjectEncoding, ObjCInstance, send_super, \
-    ObjCClass, get_selector, set_realtime_thread_policy
+from pyglet.libs.darwin import cocoapy, AutoReleasePool, PyObjectEncoding, ObjCInstance, send_super, \
+    ObjCClass, get_selector, objc_method, set_realtime_thread_policy
 
 NSApplication = cocoapy.ObjCClass('NSApplication')
+NSObject = cocoapy.ObjCClass('NSObject')
 NSMenu = cocoapy.ObjCClass('NSMenu')
 NSMenuItem = cocoapy.ObjCClass('NSMenuItem')
 NSDate = cocoapy.ObjCClass('NSDate')
@@ -54,25 +55,24 @@ def create_menu():
         appMenuItem.release()
 
 
-class _AppDelegate_Implementation:
-    _AppDelegate = ObjCSubclass('NSObject', '_AppDelegate')
+class _AppDelegate(NSObject):
 
-    @_AppDelegate.method(b'@' + PyObjectEncoding)
+    @objc_method(b'@' + PyObjectEncoding)
     def init(self, pyglet_loop):
         objc = ObjCInstance(send_super(self, 'init'))
         self._pyglet_loop = pyglet_loop
         return objc  # objc is self
 
-    @_AppDelegate.method('v')
+    @objc_method('v')
     def updatePyglet_(self):
         self._pyglet_loop.nsapp_step()
 
-    @_AppDelegate.method('v@')
+    @objc_method('v@')
     def applicationWillTerminate_(self, notification):
         self._pyglet_loop.is_running = False
         self._pyglet_loop.has_exit = True
 
-    @_AppDelegate.method('v@')
+    @objc_method('v@')
     def applicationDidFinishLaunching_(self, notification):
         self._pyglet_loop._finished_launching = True
 
@@ -96,15 +96,13 @@ class _AppDelegate_Implementation:
 
         NSApp.activateIgnoringOtherApps_(True)
 
-    @_AppDelegate.method('v@')
+    @objc_method('v@')
     def applicationWillFinishLaunching_(self, notification):
         pass
 
-    @_AppDelegate.method('B')
+    @objc_method('B')
     def applicationSupportsSecureRestorableState_(self):
         return True
-
-_AppDelegate = ObjCClass('_AppDelegate')  # the actual class
 
 class CocoaAlternateEventLoop(EventLoop):
     """This is an alternate loop developed mainly for ARM64 variants of macOS.
