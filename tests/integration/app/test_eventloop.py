@@ -75,7 +75,7 @@ def test_sleep(performance):
     assert _sleep.returned.wait(1.)
 
 
-@skip_platform(Platform.EMSCRIPTEN)
+@skip_platform(Platform.HOST_DRIVEN)
 def test_documented_custom_event_loop_pumps_events_and_draws():
     """A bounded version of the documented manual event loop works."""
     window = Window(width=64, height=64, visible=False, vsync=False)

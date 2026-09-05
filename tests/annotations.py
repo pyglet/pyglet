@@ -28,6 +28,9 @@ class Platform:
     EMSCRIPTEN = ('emscripten',)
     """Pyodide browser platform"""
 
+    HOST_DRIVEN = ('emscripten', 'ios')
+    """A platform where the application loop is owned by the host."""
+
 
 class GraphicsAPIGroups:
     GL3 = ("opengl", "gles3")
