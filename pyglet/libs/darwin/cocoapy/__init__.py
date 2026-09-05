@@ -33,7 +33,8 @@ import sys
 
 from .runtime import objc, send_message, send_super, AutoReleasePool, ObjCBlock  # noqa: F401
 from .runtime import get_selector  # noqa: F401
-from .runtime import ObjCClass, ObjCInstance, ObjCSubclass, objc_classmethod, objc_method  # noqa: F401
+from .runtime import (ObjCClass, ObjCInstance, ObjCSubclass, objc_classmethod, objc_ivar,
+                      objc_method, objc_rawmethod)  # noqa: F401
 
 from .cocoatypes import *  # noqa: F403
 from .cocoahelpers import *  # noqa: F403
