@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
     from pyglet.customtypes import CType, DataTypes
     from pyglet.enums import GeometryMode
-    from pyglet.graphics import Batch, Group
+    from pyglet.graphics import Batch, Group, VertexStorage
     from pyglet.graphics.buffer import UniformBufferObject
     from pyglet.graphics.vertexdomain import (
         DomainAttributes,
@@ -272,26 +272,24 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
     def _copy_attributes_with_formats(attributes: dict[str, Attribute], formats: dict[str, str]) -> dict[str, Attribute]:
         adjusted = attributes
         for name, fmt in formats.items():
-            valid = (
-                isinstance(fmt, str)
-                and len(fmt) in (1, 2)
-                and fmt[0] in DataTypeTuple
-                and (len(fmt) == 1 or fmt[1] == 'n')
-            )
-            if not valid:
+            match = re.fullmatch(r"([1-4]?)([?fihHbBIqdQ])(n?)", fmt) if isinstance(fmt, str) else None
+            if match is None:
                 raise ValueError(f"Invalid vertex format {fmt!r} for attribute {name!r}.")
             try:
                 source = attributes[name]
             except KeyError:
                 msg = f"Attribute {name} not found. Existing attributes: {list(attributes.keys())}"
                 raise MissingAttributeException(msg) from None
-            normalized = len(fmt) == 2
-            if source.fmt.data_type == fmt[0] and source.fmt.normalized == normalized:
+            components_text, data_type, normalized_text = match.groups()
+            if components_text and source.fmt.components != int(components_text):
+                raise ValueError(f"Geometry format {fmt!r} for {name!r} is incompatible with the shader input.")
+            normalized = bool(normalized_text)
+            if source.fmt.data_type == data_type and source.fmt.normalized == normalized:
                 continue
             if adjusted is attributes:
                 adjusted = attributes.copy()
             attribute = copy(source)
-            attribute.set_data_type(fmt[0], normalized)
+            attribute.set_data_type(data_type, normalized)
             adjusted[name] = attribute
         return adjusted
 
@@ -451,6 +449,7 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
     def _vertex_list_create(self, count: int, mode: GeometryMode, indices: Sequence[int] | None = None,
                             instanced: bool = False, batch: Batch | None = None, group: Group | None = None,
                             layout: _AbstractShaderProgram | ShaderProgramView | None = None,
+                            storage: VertexStorage | None = None, vertex_layout: VertexLayout | None = None,
                             **data: Any) -> VertexList | InstanceVertexList | IndexedVertexList | InstanceIndexedVertexList:
         assert isinstance(mode, GeometryMode), f"Mode {mode} is not geometry mode."
         layout = layout or self
@@ -468,8 +467,12 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
                 warnings.warn(f"No data was supplied for the following found attributes: `{missing_data}`.\n")
 
         batch = batch or pyglet.graphics.get_default_batch()
+        if storage is not None:
+            storage = batch._resolve_storage(storage)  # noqa: SLF001
+            geometry_layout = storage.get_geometry_layout(layout, vertex_layout)
+            domain_attributes = geometry_layout.instanced_domain_attributes if instanced else geometry_layout.domain_attributes
         group = group or pyglet.graphics.ShaderGroup(program=layout)
-        domain = batch.get_domain(indices is not None, instanced, mode, group, domain_attributes)
+        domain = batch.get_domain(indices is not None, instanced, mode, group, domain_attributes, storage=storage)
         vertex_list = domain.create(group, count, indices)
 
         for name, array in initial_arrays:
@@ -478,6 +481,7 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
         return vertex_list
 
     def vertex_list(self, count: int, mode: GeometryMode, batch: Batch | None = None, group: Group | None = None,
+                    storage: VertexStorage | None = None, vertex_layout: VertexLayout | None = None,
                     **data: Any) -> VertexList:
         """Create a VertexList.
 
@@ -497,7 +501,8 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
                 Initial data for each vertex attribute.
 
         """
-        return self._vertex_list_create(count, mode, None, False, batch=batch, group=group, **data)
+        return self._vertex_list_create(count, mode, None, False, batch=batch, group=group, storage=storage,
+                                        vertex_layout=vertex_layout, **data)
 
     def vertex_list_instanced(self, count: int, mode: GeometryMode, batch: Batch | None = None,
                               group: Group | None = None, **data: Any) -> InstanceVertexList:
@@ -849,6 +854,18 @@ class AttributeFormat:
     @property
     def is_instanced(self) -> bool:
         return self.divisor != 0
+
+
+@dataclass(frozen=True)
+class VertexLayout:
+    """Geometry-owned complete vertex storage formats, such as ``"4Bn"``."""
+    formats: dict[str, str]
+
+    def __init__(self, **formats: str) -> None:
+        for name, fmt in formats.items():
+            if not isinstance(fmt, str) or re.fullmatch(r"[1-4][?fihHbBIqdQ]n?", fmt) is None:
+                raise ValueError(f"Invalid vertex format {fmt!r} for attribute {name!r}.")
+        object.__setattr__(self, "formats", formats)
 
 @dataclass(frozen=True)
 class AttributeView:

@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.api.base import SurfaceContext
     from pyglet.graphics.instance import InstanceBucket, InstanceCollection, VertexInstance, InstanceDomain
     from pyglet.graphics.buffer import AttributeBufferObject, IndexedBufferObject
-    from pyglet.graphics.draw import Batch, DrawPass, Group, _PassRegistration
+    from pyglet.graphics.draw import Batch, DrawPass, Group, VertexStorage, _PassRegistration
     from pyglet.enums import GeometryMode
     from pyglet.graphics.shader import ShaderProgram
 
@@ -683,6 +683,7 @@ class VertexDomain(ABC):
 
     _vertex_class: type[VertexList] = VertexList
     batch: Batch
+    storage: VertexStorage
     mode: GeometryMode
 
     def __init__(self, context: SurfaceContext, initial_count: int, attribute_meta: dict[str, Attribute]) -> None:

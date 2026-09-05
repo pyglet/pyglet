@@ -4,6 +4,7 @@ import contextlib
 import sys
 import warnings
 import weakref
+from collections.abc import Iterable
 from copy import copy
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Sequence, TypeVar, Generator
@@ -32,7 +33,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.buffer import UniformBufferRegion
     from pyglet.window.camera.base import BaseCamera, CameraScissor
     from pyglet.customtypes import ScissorProtocol
-    from pyglet.graphics.shader import ShaderProgram
+    from pyglet.graphics.shader import ShaderProgram, VertexLayout
     from pyglet.graphics.texture import Texture
     from pyglet.graphics.vertexdomain import (
         DomainAttributes, IndexedVertexGroupBucket, IndexedVertexList, VertexDomain, VertexGroupBucket, VertexList,
@@ -421,6 +422,40 @@ class _DomainKey:
     instanced: bool
     mode: GeometryMode
     attributes: str
+    storage: VertexStorage | None = None
+
+
+class VertexStorage:
+    """A Batch-owned namespace for reusable, layout-compatible geometry."""
+
+    def __init__(self, batch: Batch, layouts: Iterable[VertexLayout] = (), *, chunk_size: int = 4096) -> None:
+        if chunk_size < 1:
+            raise ValueError("chunk_size must be positive.")
+        self._batch = batch
+        self.chunk_size = chunk_size
+        self.layouts: list[VertexLayout] = []
+        self.attribute_formats: dict[str, set[str]] = {}
+        for layout in layouts:
+            self.add_layout(layout)
+
+    def add_layout(self, layout: VertexLayout) -> VertexLayout:
+        from pyglet.graphics.shader import VertexLayout
+        if not isinstance(layout, VertexLayout):
+            raise TypeError("layout must be a VertexLayout")
+        if layout not in self.layouts:
+            self.layouts.append(layout)
+            for name, fmt in layout.formats.items():
+                self.attribute_formats.setdefault(name, set()).add(fmt)
+        return layout
+
+    def get_geometry_layout(self, shader_layout, vertex_layout: VertexLayout | None = None):  # noqa: ANN001
+        if vertex_layout is not None:
+            self.add_layout(vertex_layout)
+        elif len(self.layouts) == 1:
+            vertex_layout = self.layouts[0]
+        elif len(self.layouts) > 1:
+            raise ValueError("Specify vertex_layout when a VertexStorage supports multiple layouts.")
+        return shader_layout.get_attribute_view(**vertex_layout.formats) if vertex_layout else shader_layout
 
 @dataclass
 class BatchDrawOptions:
@@ -642,6 +677,8 @@ class Batch:
 
         # Mapping of DomainKey to a VertexDomain
         self._domain_registry = {}
+        self._default_storage = VertexStorage(self)
+        self._storages = {self._default_storage}
 
         # Keep empty domains around for a little to prevent possible.
         self._empty_domains = set()
@@ -653,6 +690,19 @@ class Batch:
         self._pass_registrations: dict[DrawPass, list[_PassRegistration]] = {}
 
         self.initial_count = initial_count
+
+    def create_vertex_storage(
+            self, *, layouts: Iterable[VertexLayout] = (), chunk_size: int = 4096,
+    ) -> VertexStorage:
+        storage = VertexStorage(self, layouts, chunk_size=chunk_size)
+        self._storages.add(storage)
+        return storage
+
+    def _resolve_storage(self, storage: VertexStorage | None) -> VertexStorage:
+        storage = storage or self._default_storage
+        if storage._batch is not self or storage not in self._storages:  # noqa: SLF001
+            raise ValueError("VertexStorage was not created by this Batch.")
+        return storage
 
     def add_pass(self, draw_pass: DrawPass) -> DrawPass:
         """Register an additional ordered rendering pass.
@@ -875,7 +925,7 @@ class Batch:
 
 
     def get_domain(self, indexed: bool, instanced: bool, mode: GeometryMode, group: Group,
-                   domain_attributes: DomainAttributes) -> VertexDomain:
+                   domain_attributes: DomainAttributes, *, storage: VertexStorage | None = None) -> VertexDomain:
         """Get, or create, the vertex domain corresponding to the given arguments.
 
         mode is the render mode such as GL_LINES or GL_TRIANGLES
@@ -886,7 +936,8 @@ class Batch:
 
         # If instanced, ensure a separate domain, as multiple instance sources can match the key.
         # Find domain given formats, indices and mode
-        key = _DomainKey(indexed, instanced, mode, domain_attributes.key)
+        storage = self._resolve_storage(storage)
+        key = _DomainKey(indexed, instanced, mode, domain_attributes.key, storage)
 
         try:
             domain = self._domain_registry[key]
@@ -897,6 +948,7 @@ class Batch:
             )
             domain.domain_attributes = domain_attributes
             domain.batch = self
+            domain.storage = storage
             domain.mode = mode
             self._domain_registry[key] = domain
             self._draw_list_dirty = True

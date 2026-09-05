@@ -33,9 +33,9 @@ class UnsupportedBackendError(Exception):
 if TYPE_CHECKING:
     from pyglet.enums import GraphicsAPI
     from pyglet.graphics import api  # noqa: F401
-    from pyglet.graphics.draw import BatchDrawOptions, DrawPass, Group, ShaderGroup, Batch  # noqa: F401
+    from pyglet.graphics.draw import BatchDrawOptions, DrawPass, Group, ShaderGroup, VertexStorage, Batch  # noqa: F401
     from pyglet.graphics.shader import (  # noqa: F401
-        AttributeLayout, ComputeShaderProgram, Shader, ShaderProgram, ShaderProgramView, TransformFeedbackShaderProgram,
+        AttributeLayout, ComputeShaderProgram, Shader, ShaderProgram, ShaderProgramView, TransformFeedbackShaderProgram, VertexLayout,
     )
     from pyglet.graphics.state import State, Viewport, ViewportProtocol  # noqa: F401
     from pyglet.graphics.shader import get_default_shader  # noqa: F401
@@ -50,7 +50,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.framebuffer import Framebuffer, RenderTexture, Renderbuffer, TextureRenderTarget  # noqa: F401
 else:
     from pyglet.graphics import api  # noqa: F401
-    from pyglet.graphics.draw import BatchDrawOptions, DrawPass, Group, ShaderGroup, Batch, get_default_batch  # noqa: F401
+    from pyglet.graphics.draw import BatchDrawOptions, DrawPass, Group, ShaderGroup, VertexStorage, Batch, get_default_batch  # noqa: F401
     from pyglet.graphics.shader import (  # noqa: F401
         AttributeLayout,
         Shader,
@@ -58,6 +58,7 @@ else:
         ComputeShaderProgram,
         TransformFeedbackShaderProgram,
         ShaderProgramView,
+        VertexLayout,
         get_default_shader,
     )
     from pyglet.graphics.state import State, Viewport, ViewportProtocol  # noqa: F401
