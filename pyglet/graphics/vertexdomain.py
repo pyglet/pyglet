@@ -37,8 +37,9 @@ if TYPE_CHECKING:
     from pyglet.graphics.api.base import SurfaceContext
     from pyglet.graphics.instance import InstanceBucket, InstanceCollection, VertexInstance, InstanceDomain
     from pyglet.graphics.buffer import AttributeBufferObject, IndexedBufferObject
-    from pyglet.graphics import Group
+    from pyglet.graphics.draw import Batch, DrawPass, Group, _PassRegistration
     from pyglet.enums import GeometryMode
+    from pyglet.graphics.shader import ShaderProgram
 
 
 @dataclass(frozen=True)
@@ -93,14 +94,32 @@ class VertexList:
     indexed: bool = False
     instanced: bool = False
     initial_attribs: dict
+    mode: GeometryMode
+    _pass_registrations: list[_PassRegistration]
 
     def __init__(self, domain: VertexDomain, group: Group, start: int, count: int) -> None:  # noqa: D107
         self.domain = domain
         self.group = group
         self.start = start
         self.count = count
+        self.mode = domain.mode
         self.initial_attribs = domain.attribute_meta
         self.bucket = None
+        self._pass_registrations = []
+
+    def add_pass(self, draw_pass: DrawPass, *, group: Group) -> None:
+        """Draw this geometry again in an additional :class:`DrawPass`.
+
+        The additional registration owns no vertex storage.  Its shader is
+        validated against this list's geometry and receives a VAO/input
+        binding over the existing attribute buffers.
+        """
+        try:
+            batch = self.domain.batch
+        except AttributeError as exc:
+            raise RuntimeError("VertexList is not owned by a Batch.") from exc
+        registration = batch._add_vertex_list_to_pass(self, draw_pass, group)  # noqa: SLF001
+        self._pass_registrations.append(registration)
 
     def draw(self, mode: GeometryMode) -> None:
         """Draw this vertex list in the given OpenGL mode.
@@ -130,6 +149,7 @@ class VertexList:
                 Ignored for non indexed VertexDomains
 
         """
+        old_start, old_count = self.start, self.count
         new_start = self.domain.safe_realloc(self.start, self.count, count)
         if new_start != self.start:
             # Copy contents to new location
@@ -138,9 +158,14 @@ class VertexList:
                 buffer.set_region(new_start, self.count, old_data)
         self.start = new_start
         self.count = count
+        if self._pass_registrations:
+            self.domain.batch._update_vertex_list_in_passes(self, old_start, old_count)  # noqa: SLF001
 
     def delete(self) -> None:
         """Delete this group."""
+        if self._pass_registrations:
+            self.domain.batch._remove_vertex_list_from_passes(self)  # noqa: SLF001
+            self._pass_registrations.clear()
         self.domain.vertex_buffers.allocator.dealloc(self.start, self.count)
         self.domain.dealloc_from_group(self)
 
@@ -159,6 +184,13 @@ class VertexList:
         assert list(domain.attribute_names.keys()) == list(self.domain.attribute_names.keys()), (
             'Domain attributes must match.'
         )
+
+        if self._pass_registrations:
+            # Alternate input bindings are domain-local VAOs.  Keeping an old
+            # registration after storage migration would silently bind stale
+            # buffers, so make the ownership change explicit for now.
+            self.domain.batch._remove_vertex_list_from_passes(self)  # noqa: SLF001
+            self._pass_registrations.clear()
 
         new_start = domain.safe_alloc(self.count)
         # Copy data to new stream.
@@ -650,6 +682,8 @@ class VertexDomain(ABC):
     _vertexlist_class: type
 
     _vertex_class: type[VertexList] = VertexList
+    batch: Batch
+    mode: GeometryMode
 
     def __init__(self, context: SurfaceContext, initial_count: int, attribute_meta: dict[str, Attribute]) -> None:
         self._context = context or pyglet.graphics.api.core.current_context
@@ -691,6 +725,25 @@ class VertexDomain(ABC):
     @abstractmethod
     def _create_vao(self) -> VertexArrayBinding:
         ...
+
+    def get_vertex_input_binding(self, program: ShaderProgram) -> VertexInputBinding:
+        """Return a binding for ``program`` over this domain's geometry.
+
+        Backends that support multiple VAOs override this.  The base check is
+        still useful to non-GL backends: a shader may consume a subset, but it
+        may not require geometry that was never allocated.
+        """
+        required = program.attributes
+        missing = [name for name in required if name not in self.attribute_meta]
+        if missing:
+            raise ValueError(f"Shader requires attributes not provided by this geometry: {missing}")
+        incompatible = [
+            name for name, shader_attribute in required.items()
+            if self.attribute_meta[name].fmt.components != shader_attribute.fmt.components
+        ]
+        if incompatible:
+            raise ValueError(f"Shader attributes incompatible with this geometry: {incompatible}")
+        return self.vao
 
     def bind_vao(self) -> None:
         """Binds the VAO as well as commit any pending buffer changes to the GPU."""
@@ -1174,6 +1227,13 @@ class IndexStream(Stream):
 class VertexArrayProtocol(Protocol):
     def bind(self): ...
     def unbind(self): ...
+
+
+class VertexInputBinding(Protocol):
+    """The vertex-input state required to issue a draw call."""
+
+    def bind(self) -> None:
+        """Make this vertex-input state current."""
 
 
 class VertexArrayBinding:

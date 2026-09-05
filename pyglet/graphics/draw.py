@@ -34,7 +34,9 @@ if TYPE_CHECKING:
     from pyglet.customtypes import ScissorProtocol
     from pyglet.graphics.shader import ShaderProgram
     from pyglet.graphics.texture import Texture
-    from pyglet.graphics.vertexdomain import DomainAttributes, IndexedVertexList, VertexDomain, VertexList
+    from pyglet.graphics.vertexdomain import (
+        DomainAttributes, IndexedVertexGroupBucket, IndexedVertexList, VertexDomain, VertexGroupBucket, VertexList,
+    )
 
 
 
@@ -449,7 +451,7 @@ class BatchDrawOptions:
             clear_color=self.clear_color or ctx.clear_color,
         )
 
-@dataclass
+@dataclass(eq=False)
 class DrawPass:
     """This is the resolved state of the DrawPass.
 
@@ -460,6 +462,26 @@ class DrawPass:
     viewport: tuple
     scissor: CameraScissor
     clear_color: tuple[float, float, float, float]
+
+    # Passes are deliberately identity objects.  Two passes can have identical
+    # render-target state but still be distinct ordered submissions.
+    order: int = 0
+    name: str | None = None
+
+
+@dataclass
+class _PassRegistration:
+    """One domain/group submission in an additional draw pass.
+
+    ``bucket`` is a normal range bucket.  It is intentionally shared by all
+    compatible logical vertex lists in this registration, which retains the
+    normal Batch draw-call coalescing behaviour.
+    """
+    domain: VertexDomain
+    mode: GeometryMode
+    group: Group
+    binding: Any
+    bucket: VertexGroupBucket | IndexedVertexGroupBucket
 
 SurfaceContextT = TypeVar("SurfaceContextT", bound=SurfaceContext)
 BackendContextT = TypeVar("BackendContextT")
@@ -624,7 +646,68 @@ class Batch:
         # Keep empty domains around for a little to prevent possible.
         self._empty_domains = set()
 
+        # The implicit/default pass continues to use the historical draw list.
+        # Additional passes have their own registrations so their groups never
+        # leak into the default pass.
+        self._passes: list[DrawPass] = []
+        self._pass_registrations: dict[DrawPass, list[_PassRegistration]] = {}
+
         self.initial_count = initial_count
+
+    def add_pass(self, draw_pass: DrawPass) -> DrawPass:
+        """Register an additional ordered rendering pass.
+
+        A pass contains pass-global state (camera, framebuffer, viewport,
+        etc.).  Geometry is added to it with :meth:`VertexList.add_pass`.
+        The default geometry registration made by ``batch=`` is unchanged.
+        """
+        if draw_pass not in self._pass_registrations:
+            self._passes.append(draw_pass)
+            self._pass_registrations[draw_pass] = []
+        return draw_pass
+
+    def _add_vertex_list_to_pass(
+            self, vertex_list: VertexList, draw_pass: DrawPass, group: Group,
+    ) -> _PassRegistration:
+        if draw_pass not in self._pass_registrations:
+            raise ValueError("DrawPass must be added to this Batch before adding geometry to it.")
+
+        group._ensure_state_cache()  # noqa: SLF001
+        program = next((state.program for state in group._expanded_states  # noqa: SLF001
+                        if isinstance(state, ShaderProgramState)), None)
+        if program is None:
+            raise ValueError("A secondary draw-pass group must contain a ShaderProgramState.")
+
+        binding = vertex_list.domain.get_vertex_input_binding(program)
+        registrations = self._pass_registrations[draw_pass]
+        registration = next((entry for entry in registrations
+                             if entry.domain is vertex_list.domain and entry.group is group
+                             and entry.mode is vertex_list.mode and entry.binding is binding), None)
+        if registration is None:
+            from pyglet.graphics.vertexdomain import IndexedVertexGroupBucket, VertexGroupBucket
+            bucket = IndexedVertexGroupBucket() if vertex_list.indexed else VertexGroupBucket()
+            registration = _PassRegistration(vertex_list.domain, vertex_list.mode, group, binding, bucket)
+            registrations.append(registration)
+        registration.bucket.add_vertex_list(vertex_list)
+        return registration
+
+    def _remove_vertex_list_from_passes(self, vertex_list: VertexList) -> None:
+        for registrations in self._pass_registrations.values():
+            for registration in registrations[:]:
+                try:
+                    registration.bucket.remove_vertex_list(vertex_list)
+                except (KeyError, ValueError):
+                    continue
+                if registration.bucket.is_empty:
+                    registrations.remove(registration)
+
+    def _update_vertex_list_in_passes(self, vertex_list: VertexList, old_start: int, old_count: int) -> None:
+        """Keep pass-local range buckets synchronized after a realloc."""
+        for registrations in self._pass_registrations.values():
+            for registration in registrations:
+                if registration in vertex_list._pass_registrations:  # noqa: SLF001
+                    registration.bucket.remove(old_start, old_count)
+                    registration.bucket.add(vertex_list.start, vertex_list.count)
 
     def invalidate(self) -> None:
         """Force the batch to update the draw list.
@@ -813,6 +896,8 @@ class Batch:
                 self._context, self.initial_count, domain_attributes.attributes
             )
             domain.domain_attributes = domain_attributes
+            domain.batch = self
+            domain.mode = mode
             self._domain_registry[key] = domain
             self._draw_list_dirty = True
         return domain
@@ -879,13 +964,34 @@ class Batch:
         """Create temporary backend-specific data for one draw."""
         return None
 
-    def _create_draw_context(self, draw_pass: BatchDrawOptions) -> DrawContext:
+    def _create_draw_context(self, draw_pass: BatchDrawOptions | DrawPass) -> DrawContext:
         return DrawContext(
             surface_ctx=self._context,
             backend_ctx=self._create_backend_draw_context(),
-            draw_pass=draw_pass.resolve(self._context),
+            draw_pass=draw_pass.resolve(self._context) if isinstance(draw_pass, BatchDrawOptions) else draw_pass,
             renderer=self._context.renderer,
         )
+
+    def _draw_registered_pass(self, draw_pass: DrawPass) -> None:
+        draw_ctx = self._create_draw_context(draw_pass)
+        draw_ctx.begin()
+        for registration in sorted(self._pass_registrations[draw_pass], key=lambda entry: entry.group):
+            registration.group.set_state_recursive(draw_ctx)
+            registration.binding.bind()
+            registration.domain.draw_buckets(self._geometry_map[registration.mode], [registration.bucket])
+            registration.group.unset_state_recursive(draw_ctx)
+
+    def draw_pass(self, draw_pass: DrawPass) -> None:
+        """Draw one registered additional rendering pass.
+
+        Args:
+            draw_pass: The pass to draw. It must have been registered with
+                :meth:`add_pass`.
+        """
+        if draw_pass not in self._pass_registrations:
+            raise ValueError("DrawPass is not registered with this Batch.")
+        self._draw_registered_pass(draw_pass)
+        self.delete_empty_domains()
 
     def draw(self) -> None:
         """Draw the batch.
@@ -893,12 +999,13 @@ class Batch:
         If the draw list is dirty, a new one will be created and applied.
         """
         self._update_draw_list()
-        draw_options = BatchDrawOptions()
-        draw_ctx = self._create_draw_context(draw_options)
+        draw_ctx = self._create_draw_context(BatchDrawOptions())
         draw_ctx.begin()
-
         for func in self._draw_list:
             func(draw_ctx)
+
+        for draw_pass in sorted(self._passes, key=lambda current: current.order):
+            self._draw_registered_pass(draw_pass)
 
         self.delete_empty_domains()
 
