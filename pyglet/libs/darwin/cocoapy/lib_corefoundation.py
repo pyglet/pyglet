@@ -1,9 +1,33 @@
-from ctypes import *
+from __future__ import annotations
+
+from ctypes import (
+    c_void_p,
+    c_int,
+    c_uint32,
+    c_int8,
+    POINTER,
+    c_buffer,
+    c_uint8,
+    c_int16,
+    c_int32,
+    c_byte,
+    byref,
+    c_int64,
+    c_char_p,
+    c_bool,
+    c_ubyte,
+    c_float,
+    c_double,
+    c_short,
+    c_long,
+    c_longlong,
+)
+from typing import Any
 
 import pyglet.lib
 
 from .runtime import ObjCInstance
-from .cocoatypes import *
+from .cocoatypes import CFIndex, CFTypeID, CFRange, CFNumberType, CGFloat, NSPoint, NSRect
 
 ######################################################################
 
@@ -48,6 +72,7 @@ cf.CFShow.argtypes = [c_void_p]
 
 # Core Foundation type to Python type conversion functions
 
+
 def CFSTR(string: str):
     """Create a CFStringRef object.
 
@@ -55,22 +80,21 @@ def CFSTR(string: str):
     """
     return cf.CFStringCreateWithCString(None, string.encode('utf8'), kCFStringEncodingUTF8)
 
-# Other possible names for this method:
-# at, ampersat, arobe, apenstaartje (little monkey tail), strudel,
-# klammeraffe (spider monkey), little_mouse, arroba, sobachka (doggie)
-# malpa (monkey), snabel (trunk), papaki (small duck), afna (monkey),
-# kukac (caterpillar).
-def get_NSString(string):
+
+def get_NSString(string: str) -> ObjCInstance:
     """Autoreleased version of CFSTR"""
     return ObjCInstance(c_void_p(CFSTR(string))).autorelease()
 
-def cfstring_to_string(cfstring):
+
+def cfstring_to_string(cfstring: ObjCInstance) -> str | None:
     length = cf.CFStringGetLength(cfstring)
     size = cf.CFStringGetMaximumSizeForEncoding(length, kCFStringEncodingUTF8)
     buffer = c_buffer(size + 1)
     result = cf.CFStringGetCString(cfstring, buffer, len(buffer), kCFStringEncodingUTF8)
     if result:
         return str(buffer.value, 'utf-8')
+    return None
+
 
 cf.CFDataCreate.restype = c_void_p
 cf.CFDataCreate.argtypes = [c_void_p, c_void_p, CFIndex]
@@ -113,50 +137,64 @@ cf.CFURLCreateWithFileSystemPath.argtypes = [CFAllocatorRef, CFStringRef, CFURLP
 
 
 # CFNumber.h
-kCFNumberSInt8Type     = 1
-kCFNumberSInt16Type    = 2
-kCFNumberSInt32Type    = 3
-kCFNumberSInt64Type    = 4
-kCFNumberFloat32Type   = 5
-kCFNumberFloat64Type   = 6
-kCFNumberCharType      = 7
-kCFNumberShortType     = 8
-kCFNumberIntType       = 9
-kCFNumberLongType      = 10
-kCFNumberLongLongType  = 11
-kCFNumberFloatType     = 12
-kCFNumberDoubleType    = 13
-kCFNumberCFIndexType   = 14
+kCFNumberSInt8Type = 1
+kCFNumberSInt16Type = 2
+kCFNumberSInt32Type = 3
+kCFNumberSInt64Type = 4
+kCFNumberFloat32Type = 5
+kCFNumberFloat64Type = 6
+kCFNumberCharType = 7
+kCFNumberShortType = 8
+kCFNumberIntType = 9
+kCFNumberLongType = 10
+kCFNumberLongLongType = 11
+kCFNumberFloatType = 12
+kCFNumberDoubleType = 13
+kCFNumberCFIndexType = 14
 kCFNumberNSIntegerType = 15
-kCFNumberCGFloatType   = 16
-kCFNumberMaxType       = 16
+kCFNumberCGFloatType = 16
+kCFNumberMaxType = 16
 
-def cfnumber_to_number(cfnumber):
+
+def cfnumber_to_number(cfnumber: ObjCInstance) -> float | None:
     """Convert CFNumber to python int or float."""
     numeric_type = cf.CFNumberGetType(cfnumber)
-    cfnum_to_ctype = {kCFNumberSInt8Type:c_int8, kCFNumberSInt16Type:c_int16,
-                      kCFNumberSInt32Type:c_int32, kCFNumberSInt64Type:c_int64,
-                      kCFNumberFloat32Type:c_float, kCFNumberFloat64Type:c_double,
-                      kCFNumberCharType:c_byte, kCFNumberShortType:c_short,
-                      kCFNumberIntType:c_int, kCFNumberLongType:c_long,
-                      kCFNumberLongLongType:c_longlong, kCFNumberFloatType:c_float,
-                      kCFNumberDoubleType:c_double, kCFNumberCFIndexType:CFIndex,
-                      kCFNumberCGFloatType:CGFloat}
+    cfnum_to_ctype = {
+        kCFNumberSInt8Type: c_int8,
+        kCFNumberSInt16Type: c_int16,
+        kCFNumberSInt32Type: c_int32,
+        kCFNumberSInt64Type: c_int64,
+        kCFNumberFloat32Type: c_float,
+        kCFNumberFloat64Type: c_double,
+        kCFNumberCharType: c_byte,
+        kCFNumberShortType: c_short,
+        kCFNumberIntType: c_int,
+        kCFNumberLongType: c_long,
+        kCFNumberLongLongType: c_longlong,
+        kCFNumberFloatType: c_float,
+        kCFNumberDoubleType: c_double,
+        kCFNumberCFIndexType: CFIndex,
+        kCFNumberCGFloatType: CGFloat,
+    }
 
     if numeric_type in cfnum_to_ctype:
         t = cfnum_to_ctype[numeric_type]
         result = t()
         if cf.CFNumberGetValue(cfnumber, numeric_type, byref(result)):
             return result.value
-    else:
-        raise Exception('cfnumber_to_number: unhandled CFNumber type %d' % numeric_type)
+        return None
+
+    msg = f'cfnumber_to_number: unhandled CFNumber type {numeric_type:d}'
+    raise Exception(msg)
+
 
 # Dictionary of cftypes matched to the method converting them to python values.
-known_cftypes = { cf.CFStringGetTypeID() : cfstring_to_string,
-                  cf.CFNumberGetTypeID() : cfnumber_to_number
-                  }
+known_cftypes = {
+    cf.CFStringGetTypeID(): cfstring_to_string,
+    cf.CFNumberGetTypeID(): cfnumber_to_number,
+}
 
-def cftype_to_value(cftype):
+def cftype_to_value(cftype: c_void_p) -> Any:
     """Convert a CFType into an equivalent python type.
     The convertible CFTypes are taken from the known_cftypes
     dictionary, which may be added to if another library implements
@@ -167,8 +205,8 @@ def cftype_to_value(cftype):
     if typeID in known_cftypes:
         convert_function = known_cftypes[typeID]
         return convert_function(cftype)
-    else:
-        return cftype
+    return cftype
+
 
 cf.CFSetGetCount.restype = CFIndex
 cf.CFSetGetCount.argtypes = [c_void_p]
@@ -178,12 +216,14 @@ cf.CFSetGetValues.restype = None
 # but CPython ctypes 1.1.0 complains, so just use c_void_p.
 cf.CFSetGetValues.argtypes = [c_void_p, c_void_p]
 
-def cfset_to_set(cfset):
+
+def cfset_to_set(cfset: ObjCInstance) -> set[Any]:
     """Convert CFSet to python set."""
     count = cf.CFSetGetCount(cfset)
     buffer = (c_void_p * count)()
     cf.CFSetGetValues(cfset, byref(buffer))
-    return set([ cftype_to_value(c_void_p(buffer[i])) for i in range(count) ])
+    return {cftype_to_value(c_void_p(buffer[i])) for i in range(count)}
+
 
 cf.CFArrayGetCount.restype = CFIndex
 cf.CFArrayGetCount.argtypes = [c_void_p]
@@ -191,11 +231,11 @@ cf.CFArrayGetCount.argtypes = [c_void_p]
 cf.CFArrayGetValueAtIndex.restype = c_void_p
 cf.CFArrayGetValueAtIndex.argtypes = [c_void_p, CFIndex]
 
-def cfarray_to_list(cfarray):
+
+def cfarray_to_list(cfarray: ObjCInstance) -> list[ObjCInstance]:
     """Convert CFArray to python list."""
     count = cf.CFArrayGetCount(cfarray)
-    return [ cftype_to_value(c_void_p(cf.CFArrayGetValueAtIndex(cfarray, i)))
-             for i in range(count) ]
+    return [cftype_to_value(c_void_p(cf.CFArrayGetValueAtIndex(cfarray, i))) for i in range(count)]
 
 
 kCFRunLoopDefaultMode = c_void_p.in_dll(cf, 'kCFRunLoopDefaultMode')

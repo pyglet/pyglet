@@ -1,6 +1,6 @@
 """macOS only (scheduling)."""
 import logging
-from ctypes import *
+from ctypes import byref, c_int, c_uint, Structure
 
 import pyglet.lib
 

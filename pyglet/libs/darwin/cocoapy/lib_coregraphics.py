@@ -1,9 +1,9 @@
 """CoreGraphics and ImageIO bindings."""
-from ctypes import *
+from ctypes import POINTER, c_bool, c_int, c_int32, c_size_t, c_uint32, c_void_p
 
 import pyglet.lib
 
-from .cocoatypes import *
+from .cocoatypes import CGFloat, CGGlyph, CGPoint, CGRect
 
 cg = pyglet.lib.load_library(framework='CoreGraphics')
 

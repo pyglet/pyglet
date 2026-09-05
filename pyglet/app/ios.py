@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import os
-import sys
 
 from pyglet import app
 from pyglet.app.base import EventLoop, PlatformEventLoop
@@ -38,15 +37,8 @@ class _IOSRunLoopTargetImplementation:
         self._event_loop = event_loop
         return self
 
-    # ``NSTimer`` invokes ``tick:`` with the timer as its explicit argument.
-    # ObjCSubclass.method adds the hidden ``self`` and ``_cmd`` parameters,
-    # therefore the method encoding must still include the final ``@``.  If it
-    # is omitted, Objective-C calls a ctypes closure with an incompatible ABI
-    # on arm64 and the process eventually faults in ``ffi_closure_SYSV``.
     @Target.method('v@')
     def tick_(self, _timer: ObjCInstance) -> None:
-        if not getattr(self, '_did_tick', False):
-            self._did_tick = True
         self._event_loop._tick()
 
 _IOSRunLoopTarget = ObjCClass('PygletIOSRunLoopTarget')
@@ -61,7 +53,6 @@ class IOSPlatformEventLoop(PlatformEventLoop):
         self._target = None
 
     def notify(self) -> None:
-        # The timer polls posted events on the next UIKit run-loop turn.
         return None
 
     def start(self, event_loop: IOSEventLoop, interval: float | None = 1 / 60) -> None:

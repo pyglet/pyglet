@@ -1,1 +1,1 @@
-from .cocoapy import *
+from .cocoapy import *  # noqa: F403

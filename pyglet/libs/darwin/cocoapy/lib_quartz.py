@@ -1,5 +1,5 @@
 """macOS Quartz Display Services."""
-from ctypes import *
+from ctypes import POINTER, c_bool, c_double, c_int32, c_size_t, c_uint32, c_void_p
 
 import pyglet.lib
 

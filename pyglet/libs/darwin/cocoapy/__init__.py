@@ -29,20 +29,22 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-from .runtime import objc, send_message, send_super, AutoReleasePool, ObjCBlock
-from .runtime import get_selector
-from .runtime import ObjCClass, ObjCInstance, ObjCSubclass
+import sys
 
-from .cocoatypes import *
-from .cocoahelpers import *
+from .runtime import objc, send_message, send_super, AutoReleasePool, ObjCBlock  # noqa: F401
+from .runtime import get_selector  # noqa: F401
+from .runtime import ObjCClass, ObjCInstance, ObjCSubclass  # noqa: F401
 
-from .lib_corefoundation import *
-from .lib_coregraphics import *
-from .lib_coretext import *
+from .cocoatypes import *  # noqa: F403
+from .cocoahelpers import *  # noqa: F403
+
+from .lib_corefoundation import *  # noqa: F403
+from .lib_coregraphics import *  # noqa: F403
+from .lib_coretext import *  # noqa: F403
 
 if sys.platform == 'darwin':
-    from .lib_appkit import *
-    from .lib_cocoa import *
-    from .lib_quartz import *
+    from .lib_appkit import *  # noqa: F403
+    from .lib_cocoa import *  # noqa: F403
+    from .lib_quartz import *  # noqa: F403
 elif sys.platform == 'ios':
-    from .lib_uikit import *
+    from .lib_uikit import *  # noqa: F403

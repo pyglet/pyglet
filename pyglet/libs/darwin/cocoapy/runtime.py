@@ -36,11 +36,20 @@ import struct
 import weakref
 from contextlib import contextmanager
 
-from ctypes import *
-from ctypes import util
+from ctypes import (
+    ArgumentError, CFUNCTYPE, POINTER, Structure, addressof, alignment, byref,
+    c_bool, c_buffer, c_byte, c_char, c_char_p, c_double, c_float, c_int, c_int32,
+    c_int64, c_long, c_longdouble, c_longlong, c_short, c_size_t, c_ubyte,
+    c_uint, c_uint8, c_ulong, c_ulonglong, c_ushort, c_void_p, cast, cdll,
+    create_string_buffer, py_object, sizeof, util,
+)
 from typing import Type, TypeVar, Sequence, Any, Callable, List
 
-from .cocoatypes import *
+from .cocoatypes import (
+    Block_descriptor_1, Block_literal_1, CGImageEncoding, NSPoint,
+    NSPointEncoding, NSRange, NSRangeEncoding, NSRect, NSRectEncoding, NSSize,
+    NSSizeEncoding, NSZoneEncoding, PyObjectEncoding, encoding_for_ctype,
+)
 
 __LP64__ = (8 * struct.calcsize("P") == 64)
 __i386__ = (platform.machine() == 'i386')
