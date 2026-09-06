@@ -17,7 +17,7 @@ from pyglet.media.synthesis import Silence
 from .mock_player import MockPlayer
 
 
-pytestmark = [skip_if_continuous_integration(), require_platform(Platform.WINDOWS)]
+pytestmark = [skip_if_continuous_integration()]
 
 
 class _FakeDispatchEvent:
