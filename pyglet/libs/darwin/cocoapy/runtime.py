@@ -1314,31 +1314,8 @@ class ObjCClass:
 
 ######################################################################
 
-
-class _AutoreleasepoolManager:
-    def __init__(self):
-        self.current = 0  # Current Pool ID. 0 is Global and not removed.
-        self.pools = [None]  # List of NSAutoreleasePools.
-
-    @property
-    def count(self):
-        """Number of total pools. Not including global."""
-        return len(self.pools) - 1
-
-    def create(self, pool):
-        self.pools.append(pool)
-        self.current = self.pools.index(pool)
-
-    def delete(self, pool):
-        self.pools.remove(pool)
-        self.current = len(self.pools) - 1
-
-
-_arp_manager = _AutoreleasepoolManager()
-
 class ObjCInstance:
     """Python wrapper for an Objective-C instance."""
-    pool = 0  # What pool id this belongs in.
     _retained = False  # If instance is kept even if pool is wiped.
 
     _cached_objects = weakref.WeakValueDictionary()
@@ -1485,7 +1462,7 @@ class ObjCInstance:
 def get_cached_instances():
     """For debug purposes, return a list of instance names.
     Useful for debugging if an object is leaking."""
-    return [(obj.objc_class.name, obj._retained, obj.pool, obj) for obj in ObjCInstance._cached_objects.values()]
+    return [(obj.objc_class.name, obj._retained, obj) for obj in ObjCInstance._cached_objects.values()]
 
 
 def convert_method_arguments(arg_encodings, args):

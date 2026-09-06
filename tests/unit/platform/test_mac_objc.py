@@ -74,7 +74,7 @@ class ObjCIntegrationTest(unittest.TestCase):
 
     @staticmethod
     def _has_cached_pointer(ptr):
-        return any(obj.ptr.value == ptr for _, _, _, obj in get_cached_instances())
+        return any(obj.ptr.value == ptr for _, _, obj in get_cached_instances())
 
     def test_objc_leak_gc(self):
         """Test deleting """
@@ -212,7 +212,7 @@ class ObjCIntegrationTest(unittest.TestCase):
         self.assertFalse(self._has_cached_pointer(ptr))
 
     def test_objc_tagged_pointer_churn_does_not_grow_cache(self):
-        """Repeated tagged values should not accumulate cached wrappers like the old pool tracking did."""
+        """Repeated tagged values should not accumulate cached wrappers."""
         start_count = len(get_cached_instances())
         saw_tagged_date = False
 
