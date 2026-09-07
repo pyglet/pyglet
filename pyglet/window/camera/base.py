@@ -84,7 +84,8 @@ class CameraViewStorageFactory(Protocol):
         """Create storage for a child camera view."""
 
 
-ViewT = TypeVar("ViewT", bound="_CameraViewBase")
+CameraT = TypeVar("CameraT", bound="BaseCamera[Any]")
+ViewT = TypeVar("ViewT", bound="_CameraViewBase[Any]")
 
 
 def _create_default_camera_ubo(
@@ -219,7 +220,7 @@ class _ResolvedGroupScissor:
         return resolved
 
 
-class _CameraViewBase:
+class _CameraViewBase(Generic[CameraT]):
     """Base class for per-camera views."""
 
     __slots__ = (
@@ -240,14 +241,14 @@ class _CameraViewBase:
 
     def __init__(
         self,
-        camera: BaseCamera[Any],
+        camera: CameraT,
         storage: CameraViewStorage | None,
         *,
-        parent: _CameraViewBase | None = None,
+        parent: _CameraViewBase[CameraT] | None = None,
     ) -> None:
         self._camera = camera
         self._parent = parent
-        self._children: list[_CameraViewBase] = []
+        self._children: list[_CameraViewBase[CameraT]] = []
         if parent is not None:
             parent._children.append(self)
         self.storage = storage
@@ -257,7 +258,7 @@ class _CameraViewBase:
         self._viewport: ViewportType | None = None
         if parent is None:
             self._auto_viewport = camera._initial_auto_viewport  # noqa: SLF001
-            self._viewport = camera._initial_viewport  # noqa: SLF001
+            self._viewport = camera._initial_viewport  # type: ignore[assignment] # noqa: SLF001
         self._world_dirty = True
         self._view_dirty = True
         self._view_matrix: Mat4 | None = None
@@ -267,11 +268,11 @@ class _CameraViewBase:
         self._applied_view: Mat4 | None = None
 
     @property
-    def parent(self) -> _CameraViewBase | None:
+    def parent(self) -> _CameraViewBase[CameraT] | None:
         return self._parent
 
     @property
-    def view(self) -> _CameraViewBase:
+    def view(self) -> _CameraViewBase[CameraT]:
         return self
 
     @property
@@ -538,7 +539,7 @@ class _CameraViewBase:
     def end(self) -> None:
         self._camera.end()
 
-    def create_view(self, inherit: bool = True) -> _CameraViewBase:
+    def create_view(self: ViewT, inherit: bool = True) -> ViewT:
         """Create a child view.
 
         Args:
@@ -568,6 +569,25 @@ class BaseCamera(Generic[ViewT]):
     Viewports are stored by camera views. The camera-level ``viewport`` property
     is a convenience proxy for the root view's viewport.
     """
+
+    if TYPE_CHECKING:
+        @property
+        def projection(self) -> Mat4:
+            """The camera projection matrix."""
+            ...
+
+        @projection.setter
+        def projection(self, matrix: Mat4) -> None:
+            ...
+
+        @property
+        def view_matrix(self) -> Mat4:
+            """The camera view matrix."""
+            ...
+
+        @view_matrix.setter
+        def view_matrix(self, matrix: Mat4) -> None:
+            ...
 
     def __init__(
         self,
@@ -609,7 +629,7 @@ class BaseCamera(Generic[ViewT]):
         framebuffer_width, framebuffer_height = window.get_framebuffer_size()
         default_viewport = (0, 0, max(1, int(framebuffer_width)), max(1, int(framebuffer_height)))
         self._initial_auto_viewport = viewport is None
-        self._initial_viewport = default_viewport if viewport is None else tuple(map(int, viewport))
+        self._initial_viewport = default_viewport if viewport is None else tuple(map(int, viewport))  # type: ignore[assignment]
         self._view: ViewT | None = None
 
         self._resolved_viewport: tuple[int, int, int, int] | None = None

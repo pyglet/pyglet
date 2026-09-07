@@ -40,7 +40,7 @@ from pyglet.graphics.buffer import (
 
 if TYPE_CHECKING:
     from pyglet.customtypes import DataTypes
-    from pyglet.graphics.api.webgl import OpenGLSurfaceContext
+    from pyglet.graphics.api.webgl import WebGL2SurfaceContext
     from pyglet.graphics.api.webgl.webgl_js import WebGLBuffer
     from pyglet.graphics.attributes import GraphicsAttribute
 
@@ -97,11 +97,11 @@ class WebGLBufferObject(AbstractBuffer):
 
     # Even if it's allocated, there may be garbage in there. Mark when actual data exists.
     _data_uploaded: bool
-    _context: OpenGLSurfaceContext
+    _context: WebGL2SurfaceContext
 
     def __init__(
         self,
-        context: OpenGLSurfaceContext,
+        context: WebGL2SurfaceContext,
         size: int,
         target: int = GL_ARRAY_BUFFER,
         usage: int = GL_DYNAMIC_DRAW,
@@ -261,7 +261,7 @@ class WebGLBackedBufferObject(BaseBackedBufferObject, WebGLBufferObject):
 
     def __init__(
         self,
-        context: OpenGLSurfaceContext,
+        context: WebGL2SurfaceContext,
         size: int,
         data_type: DataTypes,
         stride: int,
@@ -357,7 +357,7 @@ class WebGLAttributeBufferObject(WebGLBackedBufferObject):
 
     def __init__(
         self,
-        context: OpenGLSurfaceContext,
+        context: WebGL2SurfaceContext,
         size: int,
         graphics_attr: GraphicsAttribute,
         store: WebGLDataStore | None = None,
@@ -377,7 +377,7 @@ class WebGLIndexedBufferObject(WebGLBackedBufferObject):
 
     def __init__(
         self,
-        context: OpenGLSurfaceContext,
+        context: WebGL2SurfaceContext,
         size: int,
         data_type: DataTypes,
         stride: int,
@@ -405,7 +405,7 @@ class WebGLPixelBufferObject(WebGLBufferObject, PixelBuffer):
 
     def __init__(
         self,
-        context: OpenGLSurfaceContext,
+        context: WebGL2SurfaceContext,
         size: int,
         *,
         pack: bool = False,
@@ -418,14 +418,14 @@ class WebGLPixelBufferObject(WebGLBufferObject, PixelBuffer):
 class WebGLPixelPackBufferObject(WebGLPixelBufferObject, PixelPackBuffer):
     """WebGL pixel pack buffer object (readback path)."""
 
-    def __init__(self, context: OpenGLSurfaceContext, size: int, usage: int = GL_DYNAMIC_DRAW) -> None:
+    def __init__(self, context: WebGL2SurfaceContext, size: int, usage: int = GL_DYNAMIC_DRAW) -> None:
         super().__init__(context, size, pack=True, usage=usage)
 
 
 class WebGLPixelUnpackBufferObject(WebGLPixelBufferObject, PixelUnpackBuffer):
     """WebGL pixel unpack buffer object (upload path)."""
 
-    def __init__(self, context: OpenGLSurfaceContext, size: int, usage: int = GL_DYNAMIC_DRAW) -> None:
+    def __init__(self, context: WebGL2SurfaceContext, size: int, usage: int = GL_DYNAMIC_DRAW) -> None:
         super().__init__(context, size, pack=False, usage=usage)
 
 
@@ -434,7 +434,7 @@ class WebGLTransformFeedbackBufferObject(WebGLBufferObject, TransformFeedbackBuf
 
     def __init__(
         self,
-        context: OpenGLSurfaceContext,
+        context: WebGL2SurfaceContext,
         size: int,
         usage: int = GL_DYNAMIC_DRAW,
         data_type: DataTypes = "b",
@@ -475,14 +475,14 @@ class WebGLTransformFeedbackBufferObject(WebGLBufferObject, TransformFeedbackBuf
 class WebGLTextureBufferObject(WebGLBufferObject, TextureBuffer):
     """WebGL texture buffer object (TBO)."""
 
-    def __init__(self, context: OpenGLSurfaceContext, size: int, usage: int = GL_DYNAMIC_DRAW) -> None:
+    def __init__(self, context: WebGL2SurfaceContext, size: int, usage: int = GL_DYNAMIC_DRAW) -> None:
         super().__init__(context, size, target=GL_TEXTURE_BUFFER, usage=usage)
 
 
 class WebGLDrawIndirectBufferObject(WebGLBufferObject, DrawIndirectBuffer):
     """WebGL draw indirect buffer object."""
 
-    def __init__(self, context: OpenGLSurfaceContext, size: int, usage: int = GL_DYNAMIC_DRAW) -> None:
+    def __init__(self, context: WebGL2SurfaceContext, size: int, usage: int = GL_DYNAMIC_DRAW) -> None:
         super().__init__(context, size, target=GL_DRAW_INDIRECT_BUFFER, usage=usage)
 
 
@@ -495,7 +495,7 @@ class WebGLUniformBufferObject(UniformBufferObject):
 
     def __init__(
         self,
-        context: OpenGLSurfaceContext,
+        context: WebGL2SurfaceContext,
         view_class: type,
         buffer_size: int,
         binding: int,
@@ -518,7 +518,7 @@ class WebGLUniformBufferObject(UniformBufferObject):
             strict=strict,
         )
 
-    def _create_buffer(self, context: OpenGLSurfaceContext, buffer_size: int) -> WebGLBufferObject:
+    def _create_buffer(self, context: WebGL2SurfaceContext, buffer_size: int) -> WebGLBufferObject:
         return WebGLBufferObject(context, buffer_size, target=GL_UNIFORM_BUFFER)
 
     def _bind_range(self, binding: int, offset: int, size: int) -> None:

@@ -4,21 +4,20 @@
 """
 from __future__ import annotations
 
-import sys
 import enum
 import warnings
 
 from typing import TYPE_CHECKING, Literal
 from dataclasses import dataclass
 
+from pyglet import IS_DOC_BUILD
 from pyglet.math import Vec2
 from pyglet.event import EventDispatcher
 
 if TYPE_CHECKING:
-    from pyglet.window import BaseWindow
+    from pyglet.window import Window
     from pyglet.display.base import Display
 
-_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 
 class DeviceException(Exception):
@@ -72,7 +71,7 @@ class Device:
     def is_open(self) -> bool:
         return self._is_open
 
-    def open(self, window: None | BaseWindow = None, exclusive: bool = False) -> None:
+    def open(self, window: None | Window = None, exclusive: bool = False) -> None:
         """Open the device to begin receiving input from it.
 
         Args:
@@ -242,7 +241,7 @@ class Button(Control):
         else:
             self.dispatch_event('on_release')
 
-    if _is_pyglet_doc_run:
+    if IS_DOC_BUILD:
         # Events
 
         def on_press(self):
@@ -420,7 +419,7 @@ class Joystick(EventDispatcher):
             elif isinstance(ctrl, Button):
                 add_button(ctrl)
 
-    def open(self, window: BaseWindow | None = None, exclusive: bool = False) -> None:
+    def open(self, window: Window | None = None, exclusive: bool = False) -> None:
         """Open the joystick device.  See `Device.open`."""
         self.device.open(window, exclusive)
 
@@ -801,7 +800,7 @@ class Controller(EventDispatcher):
                 warnings.warn(f"Could not map physical Control '{relation}' to '{name}'")
                 continue
 
-    def open(self, window: None | BaseWindow = None, exclusive: bool = False) -> None:
+    def open(self, window: None | Window = None, exclusive: bool = False) -> None:
         """Open the controller.  See `Device.open`. """
         self.device.open(window, exclusive)
 
@@ -945,7 +944,7 @@ class AppleRemote(EventDispatcher):
                                 'menu', 'select', 'menu_hold', 'select_hold'):
                 _add_button(control)
 
-    def open(self, window: BaseWindow, exclusive: bool = False):
+    def open(self, window: Window, exclusive: bool = False):
         """Open the device.  See `Device.open`. """
         self.device.open(window, exclusive)
 
@@ -1001,7 +1000,7 @@ class Tablet:
     undefined.
     """
 
-    def open(self, window: BaseWindow) -> TabletCanvas:
+    def open(self, window: Window) -> TabletCanvas:
         """Open a tablet device for a window.
 
         Args:
@@ -1029,7 +1028,7 @@ class TabletCanvas(EventDispatcher):
     # Note that this means enter/leave pairs are not always consistent (normal
     # usage).
 
-    def __init__(self, window: BaseWindow):
+    def __init__(self, window: Window):
         """Create a TabletCanvas.
 
         Args:
@@ -1042,7 +1041,7 @@ class TabletCanvas(EventDispatcher):
         """Close the tablet device for this window."""
         raise NotImplementedError('abstract')
 
-    if _is_pyglet_doc_run:
+    if IS_DOC_BUILD:
         # Events
 
         def on_enter(self, cursor: TabletCursor):

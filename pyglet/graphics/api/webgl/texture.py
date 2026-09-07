@@ -96,7 +96,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.api.base import SurfaceContext
     from typing import Callable
 
-    from pyglet.graphics.api.webgl import OpenGLSurfaceContext
+    from pyglet.graphics.api.webgl import WebGL2SurfaceContext
     from pyglet.graphics.api.webgl.webgl_js import WebGL2RenderingContext
     from pyglet.graphics.resource import TextureKey
 
@@ -239,7 +239,7 @@ def _get_webgl_compression_format(fmt: CompressionFormat) -> tuple[int, str]:
 class WebGLCompressedTexture(CompressedTexture):
     """A WebGL texture created from GPU-ready compressed image data."""
 
-    def __init__(self, context: OpenGLSurfaceContext, width: int, height: int, handle: Any,
+    def __init__(self, context: WebGL2SurfaceContext, width: int, height: int, handle: Any,
                  compression_fmt: CompressionFormat,
                  tex_type: TextureType = TextureType.TYPE_2D,
                  filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
@@ -267,7 +267,7 @@ class WebGLCompressedTexture(CompressedTexture):
                           filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                           address_mode: AddressMode = AddressMode.REPEAT,
                           anisotropic_level: int = 0,
-                          context: OpenGLSurfaceContext | None = None) -> WebGLCompressedTexture:
+                          context: WebGL2SurfaceContext | None = None) -> WebGLCompressedTexture:
         ctx = context or pyglet.graphics.api.core.current_context
         tex_id = ctx.gl.createTexture()
         texture = cls(ctx, image_data.width, image_data.height, tex_id, image_data.fmt, tex_type,
@@ -335,10 +335,10 @@ class WebGLTexture(Texture):
      The class should be a subclass of TextureRegion.
     """
 
-    _ctx: OpenGLSurfaceContext
+    _ctx: WebGL2SurfaceContext
     _gl: WebGL2RenderingContext
 
-    def __init__(self, context: OpenGLSurfaceContext, width: int, height: int, handle: Any,
+    def __init__(self, context: WebGL2SurfaceContext, width: int, height: int, handle: Any,
                  tex_type: TextureType = TextureType.TYPE_2D,
                  internal_format: ComponentFormat = ComponentFormat.RGBA,
                  internal_format_size: int = 8,
@@ -518,7 +518,7 @@ class WebGLTexture(Texture):
                           filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                           address_mode: AddressMode = AddressMode.REPEAT,
                           anisotropic_level: int = 0,
-                          context: OpenGLSurfaceContext | None = None,
+                          context: WebGL2SurfaceContext | None = None,
                           ) -> WebGLTexture:
         """Create a Texture from image data.
 
@@ -635,7 +635,7 @@ class WebGLTexture(Texture):
         if mipmap_levels != 1:
             raise NotImplementedError("Explicit mipmap allocation is not implemented by the WebGL backend.")
 
-        ctx = cast("OpenGLSurfaceContext", context or pyglet.graphics.api.core.current_context)
+        ctx = cast("WebGL2SurfaceContext", context or pyglet.graphics.api.core.current_context)
         gl = ctx.gl
 
         tex_id = gl.createTexture()
@@ -732,12 +732,12 @@ class WebGLTexture3D(_Texture3DShared[WebGLTextureRegion], WebGLTexture, Uniform
 
     @classmethod
     def create_for_images(cls, images,
-                 internal_format_size: int = 8,
-                 internal_format_type: str = "b",
-                 filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
-                 address_mode: AddressMode = AddressMode.REPEAT,
-                 anisotropic_level: int = 0,
-                 context: OpenGLSurfaceContext | None = None) -> WebGLTexture3D:
+                          internal_format_size: int = 8,
+                          internal_format_type: str = "b",
+                          filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
+                          address_mode: AddressMode = AddressMode.REPEAT,
+                          anisotropic_level: int = 0,
+                          context: WebGL2SurfaceContext | None = None) -> WebGLTexture3D:
         ctx = context or pyglet.graphics.api.core.current_context
         gl = ctx.gl
         item_width = images[0].width
@@ -829,7 +829,7 @@ class WebGLTextureArrayRegion(WebGLTextureRegion):
 class WebGLTextureArray(_TextureArrayShared[WebGLTextureArrayRegion], WebGLTexture, UniformTextureSequence[WebGLTextureArrayRegion]):
     items: list[WebGLTextureArrayRegion]
 
-    def __init__(self, context: OpenGLSurfaceContext, width, height, tex_id, max_depth,
+    def __init__(self, context: WebGL2SurfaceContext, width, height, tex_id, max_depth,
                  internal_format: ComponentFormat = ComponentFormat.RGBA,
                  internal_format_size: int = 8,
                  internal_format_type: str = "b",
@@ -850,7 +850,7 @@ class WebGLTextureArray(_TextureArrayShared[WebGLTextureArrayRegion], WebGLTextu
                filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                address_mode: AddressMode = AddressMode.REPEAT,
                anisotropic_level: int = 0,
-               context: OpenGLSurfaceContext | None = None) -> WebGLTextureArray:
+               context: WebGL2SurfaceContext | None = None) -> WebGLTextureArray:
         """Create an empty TextureArray.
 
         You may specify the maximum depth, or layers, the Texture Array should have. This defaults
@@ -896,7 +896,7 @@ class WebGLTextureArray(_TextureArrayShared[WebGLTextureArrayRegion], WebGLTextu
                           filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                           address_mode: AddressMode = AddressMode.REPEAT,
                           anisotropic_level: int = 0,
-                          context: OpenGLSurfaceContext | None = None) -> WebGLTextureArray:
+                          context: WebGL2SurfaceContext | None = None) -> WebGLTextureArray:
         """Create a texture array and populate it with equally-sized images."""
         item_width = images[0].width
         item_height = images[0].height

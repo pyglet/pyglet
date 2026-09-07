@@ -10,7 +10,7 @@ from pyglet.graphics.api.webgl.enums import geometry_map
 from pyglet.graphics.draw import _BucketBatch
 
 if TYPE_CHECKING:
-    from pyglet.graphics.api.webgl.context import OpenGLSurfaceContext
+    from pyglet.graphics.api.webgl.context import WebGL2SurfaceContext
 
 
 def get_default_batch() -> WebGLBatch:
@@ -33,6 +33,6 @@ class WebGLBatch(_BucketBatch):
     _domain_class_map = _domain_class_map
     _geometry_map = geometry_map
 
-    def __init__(self, context: OpenGLSurfaceContext | None = None, initial_count: int = 32) -> None:
+    def __init__(self, context: WebGL2SurfaceContext | None = None, initial_count: int = 32) -> None:
         """Initialize the batch for use."""
         super().__init__(context, initial_count)

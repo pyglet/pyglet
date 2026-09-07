@@ -329,7 +329,7 @@ class Font:
         self.weight = weight
         self.style = style
         self.stretch = stretch
-        self.dpi = dpi
+        self.dpi = dpi or 96
 
         # From DPI to DIP (Device Independent Pixels)
         self.pixel_size = (self.size * self.dpi) // 72

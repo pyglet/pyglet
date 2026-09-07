@@ -3,9 +3,11 @@
 This module provides classes to efficiently pack small images into larger Textures.
 This can have major performance benefits when dealing with a large number of images.
 
-:py:class:`~pyglet.image.atlas.TextureAtlas` maintains one texture; :py:class:`TextureBin`
-manages a collection of atlases of a given size. :py:class:`TextureArrayBin` works similarly
-except for :py:class:`~pyglet.graphics.texture.TextureArray`s instead of altases.
+:py:class:`~pyglet.graphics.atlas.TextureAtlas` maintains one texture;
+:py:class:`~pyglet.graphics.atlas.TextureBin` manages a collection of atlases
+of a given size. :py:class:`~pyglet.graphics.atlas.TextureArrayBin` works similarly,
+except with :py:class:`~pyglet.graphics.texture.TextureArray` objects instead
+of atlases.
 
 This module is used internally by the :py:mod:`~pyglet.resource` module.
 
@@ -20,7 +22,7 @@ Example usage::
     car_texture = bin.add(car_image)
     boat_texture = bin.add(boat_image)
 
-The result of :py:meth:`TextureBin.add` is a :py:class:`TextureRegion`
+The result of :py:meth:`TextureBin.add` is a :py:class:`~pyglet.graphics.texture.TextureRegion`
 containing the image. Once added, an image cannot be removed from a bin (or an
 atlas); nor can a list of images be obtained from a given bin or atlas -- it is
 the application's responsibility to keep track of the regions returned by the
@@ -218,7 +220,7 @@ class TextureBin:
 class TextureArrayBin:
     """Collection of texture arrays.
 
-    :py:class:`~pyglet.image.atlas.TextureArrayBin` maintains a collection of
+    :py:class:`~pyglet.graphics.atlas.TextureArrayBin` maintains a collection of
     texture arrays, and creates new ones as necessary as the depth is exceeded.
     This works similarly to TextureBin, but it manages TextureArrays instead of
     TextureAtlases.
@@ -234,8 +236,7 @@ class TextureArrayBin:
     def add(self, img: ImageData) -> TextureArrayRegion:
         """Add an image into this texture array bin.
 
-        This method calls :py:meth:`~pyglet.graphics.texture.TextureArray.add` for the first
-        array that has room for the image.
+        This method adds the image to the first texture array that has room.
 
         ``TextureArraySizeExceeded`` is raised if the image exceeds the dimensions of
         ``texture_width`` and ``texture_height``.

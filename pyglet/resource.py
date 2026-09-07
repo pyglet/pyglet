@@ -54,7 +54,7 @@ import sys
 import weakref
 import zipfile
 from io import BytesIO, StringIO
-from typing import IO, TYPE_CHECKING, Literal, overload
+from typing import BinaryIO, IO, TYPE_CHECKING, Literal, cast, overload
 
 import pyglet
 
@@ -62,7 +62,7 @@ if TYPE_CHECKING:
     from pyglet.customtypes import MediaTypes
     from pyglet.graphics.texture import Texture, TextureRegion, TextureArrayRegion
 
-    from pyglet.graphics.shader import Shader
+    from pyglet.graphics.shader import Shader, ShaderType
     from pyglet.image import ImageData
     from pyglet.image.animation import Animation
     from pyglet.graphics.atlas import TextureBin, TextureArrayBin
@@ -117,8 +117,9 @@ def get_script_home() -> str:
         # py2app
         return os.environ['RESOURCEPATH']
     main = sys.modules['__main__']
-    if hasattr(main, '__file__'):
-        return os.path.dirname(os.path.abspath(main.__file__))
+    main_file = getattr(main, '__file__', None)
+    if isinstance(main_file, str):
+        return os.path.dirname(os.path.abspath(main_file))
     if 'python' in os.path.basename(sys.executable):
         # interactive
         return os.getcwd()
@@ -301,6 +302,17 @@ class Loader:
     The loader contains a search path which can include filesystem
     directories, ZIP archives, URLs, and Python packages.
     """
+
+    path: list[str]
+    _script_home: str
+    _index: dict[str, Location] | None
+    _texture_atlas_bins: dict[int, TextureBin]
+    _texture_array_bins: dict[tuple[int, int], TextureArrayBin]
+    _cached_images: weakref.WeakValueDictionary[str, ImageData]
+    _cached_textures: weakref.WeakValueDictionary[str, Texture | TextureRegion]
+    _cached_texture_arrays: weakref.WeakValueDictionary[str, TextureArrayRegion]
+    _cached_animations: weakref.WeakValueDictionary[str, Animation]
+
     def __init__(self, pathlist: list[str] | None = None, script_home: str | None = None) -> None:
         """Create a loader for the given path.
 
@@ -323,7 +335,7 @@ class Loader:
 
         self.path = list(pathlist)
         self._script_home = script_home or get_script_home()
-        self._index: dict | None = None
+        self._index = None
 
         # Map bin size to list of atlases
         self._texture_atlas_bins = {}
@@ -340,6 +352,7 @@ class Loader:
             self.reindex()
 
     def _index_file(self, name: str, locationobj: Location) -> None:
+        assert self._index is not None
         if name not in self._index:
             self._index[name] = locationobj
 
@@ -361,8 +374,9 @@ class Loader:
                     continue
                 for component in module_name.split('.')[1:]:
                     module = getattr(module, component)
-                if hasattr(module, '__file__'):
-                    _path_name = os.path.dirname(module.__file__)
+                module_file = getattr(module, '__file__', None)
+                if isinstance(module_file, str):
+                    _path_name = os.path.dirname(module_file)
                 else:
                     _path_name = ''  # interactive
 
@@ -419,8 +433,8 @@ class Loader:
                         filename = fileinfo.filename.lstrip(zip_directory)
                         filename = filename.lstrip('/')
 
-                        file_location = ZIPLocation(zipfileobj, zip_directory)
-                        self._index_file(filename, file_location)
+                        zip_location = ZIPLocation(zipfileobj, zip_directory)
+                        self._index_file(filename, zip_location)
 
     def file(self, name: str, mode: str = 'rb') -> BytesIO | StringIO | IO:
         """Load a file-like object.
@@ -435,13 +449,14 @@ class Loader:
                 with the meaning as for the builtin ``open`` function.
         """
         self._ensure_index()
+        assert self._index is not None
         try:
             file_location = self._index[name]
             return file_location.open(name, mode)
         except KeyError:
             raise ResourceNotFoundException(name) from None
 
-    def location(self, filename: str) -> FileLocation | URLLocation | ZIPLocation:
+    def location(self, filename: str) -> Location:
         """Get the location of a resource.
 
         This method is useful for opening files referenced from a resource.
@@ -450,6 +465,7 @@ class Loader:
         looked up individually in the loader's path.
         """
         self._ensure_index()
+        assert self._index is not None
         try:
             return self._index[filename]
         except KeyError:
@@ -468,7 +484,7 @@ class Loader:
 
         """
         self._ensure_index()
-        from pyglet import font
+        from pyglet import font  # noqa: PLC0415
         fileobj = self.file(filename)
         try:
             font.add_file(fileobj)
@@ -478,7 +494,7 @@ class Loader:
     def _alloc_texture(self, name: str, use_atlas: bool, border: int) -> Texture | TextureRegion:
         fileobj = self.file(name)
         try:
-            img = pyglet.image.load(name, file=fileobj)
+            img = pyglet.image.load(name, file=cast(BinaryIO, fileobj))
         finally:
             fileobj.close()
 
@@ -632,17 +648,17 @@ class Loader:
         else:
             fileobj = self.file(name)
             try:
-                img = pyglet.image.load(name, file=fileobj)
+                img = pyglet.image.load(name, file=cast(BinaryIO, fileobj))
             finally:
                 fileobj.close()
 
             _bin = self._get_texture_array_bin(img.width, img.height)
-            identity = self._cached_texture_arrays[name] = _bin.add(img)
+            identity = self._cached_texture_arrays[name] = cast(TextureArrayRegion, _bin.add(img))
 
         if not rotate and not flip_x and not flip_y:
             return identity
 
-        return identity.get_transform(flip_x, flip_y, rotate)
+        return cast(TextureArrayRegion, identity.get_transform(flip_x, flip_y, rotate))
 
     def animation(self, name: str, flip_x: bool = False, flip_y: bool = False,
                   rotate: Literal[0, 90, 180, 270, 360] = 0, border: int = 1) -> Animation:
@@ -721,6 +737,7 @@ class Loader:
 
     def _load_media_resource(self, name: str, streaming: bool, media_capability: MediaTypes) -> Source:
         self._ensure_index()
+        assert self._index is not None
         from pyglet import media  # noqa: PLC0415
 
         try:
@@ -740,7 +757,7 @@ class Loader:
 
             fileobj = file_location.open(name)
             if streaming:
-                return load_func(name, file=fileobj, streaming=True)
+                return load_func(name, file=cast(BinaryIO, fileobj), streaming=True)
             try:
                 return load_func(name, file=fileobj, streaming=False)
             finally:
@@ -783,7 +800,9 @@ class Loader:
     def scene(self, name: str) -> Scene:
         """Load a 3D Scene."""
         self._ensure_index()
-        abspathname = os.path.join(os.path.abspath(self.location(name).path), name)
+        file_location = self.location(name)
+        assert isinstance(file_location, FileLocation)
+        abspathname = os.path.join(os.path.abspath(file_location.path), name)
         fileobj = self.file(name)
         try:
             return pyglet.model.load(filename=abspathname, file=fileobj)
@@ -794,7 +813,7 @@ class Loader:
         """Load an HTML document."""
         self._ensure_index()
         fileobj = self.file(name)
-        return pyglet.text.load(name, fileobj, 'text/html')
+        return pyglet.text.load(name, cast(BinaryIO, fileobj), 'text/html')
 
     def attributed(self, name: str) -> AbstractDocument:
         """Load an attributed text document.
@@ -803,13 +822,13 @@ class Loader:
         """
         self._ensure_index()
         fileobj = self.file(name)
-        return pyglet.text.load(name, fileobj, 'text/vnd.pyglet-attributed')
+        return pyglet.text.load(name, cast(BinaryIO, fileobj), 'text/vnd.pyglet-attributed')
 
     def text(self, name: str) -> AbstractDocument:
         """Load a plain text document."""
         self._ensure_index()
         fileobj = self.file(name)
-        return pyglet.text.load(name, fileobj, 'text/plain')
+        return pyglet.text.load(name, cast(BinaryIO, fileobj), 'text/plain')
 
     def shader(self, name: str, shader_type: str | None = None) -> Shader:
         """Load a Shader object.
@@ -846,7 +865,9 @@ class Loader:
         if shader_type not in shader_extensions.values():
             raise UndetectableShaderType(name=name)
 
-        return pyglet.graphics.Shader(source_string, shader_type)
+        return pyglet.graphics.Shader(  # type: ignore[abstract, arg-type]
+            cast(str, source_string), cast(ShaderType, shader_type),
+        )
 
 
 #: Default resource search path.
@@ -857,17 +878,17 @@ class Loader:
 #: See the module documentation for details on the path format.
 #:
 #: :type: list of str
-path = []
+path: list[str] = []
 
 
 class _DefaultLoader(Loader):
 
     @property
-    def path(self):
+    def path(self) -> list[str]:
         return path
 
     @path.setter
-    def path(self, value):
+    def path(self, value: list[str]) -> None:
         global path
         path = value
 

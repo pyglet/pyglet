@@ -1,11 +1,20 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, cast
 
 import pyglet
 
 from pyglet.enums import GraphicsAPI
 from pyglet.config.base import UserConfig, SurfaceConfig
+
+if TYPE_CHECKING:
+    from pyglet.window.apple.cocoa import CocoaWindow
+    from pyglet.window.apple.ios import IOSWindow
+    from pyglet.window.headless import HeadlessWindow
+    from pyglet.window.wayland import WaylandWindow
+    from pyglet.window.win32 import Win32Window
+    from pyglet.window.xlib import XlibWindow
 
 
 class GLSurfaceConfig(SurfaceConfig):
@@ -98,36 +107,31 @@ class WebGLUserConfig(UserConfig):
         return False
 
 
-def get_surface_config(user_config: UserConfig, surface: pyglet.window.Window) -> SurfaceConfig | None:
+def get_surface_config(user_config: OpenGLUserConfig, surface: pyglet.window.Window) -> SurfaceConfig | None:
 
     if pyglet.options.headless or pyglet.options.wayland:
-        from pyglet.config.gl.egl import match
+        from pyglet.config.gl.egl import match as match_egl  # noqa: PLC0415
 
-        return match(user_config, surface)
+        return match_egl(user_config, cast("HeadlessWindow | WaylandWindow", surface))
 
     if pyglet.compat_platform == "win32":
-        from pyglet.config.gl.windows import match  # noqa: PLC0415
+        from pyglet.config.gl.windows import match as match_windows  # noqa: PLC0415
 
-        return match(user_config, surface)
+        return match_windows(user_config, cast("Win32Window", surface))
 
     if pyglet.compat_platform.startswith("linux"):
-        from pyglet.config.gl.x11 import match  # noqa: PLC0415
+        from pyglet.config.gl.x11 import match as match_x11  # noqa: PLC0415
 
-        return match(user_config, surface)
+        return match_x11(user_config, cast("XlibWindow", surface))
 
     if pyglet.compat_platform == "darwin":
-        from pyglet.config.gl.macos import match  # noqa: PLC0415
+        from pyglet.config.gl.macos import match as match_macos  # noqa: PLC0415
 
-        return match(user_config, surface)
+        return match_macos(user_config, cast("CocoaWindow", surface))
 
     if pyglet.compat_platform == "ios":
-        from pyglet.config.gl.ios import match  # noqa: PLC0415
+        from pyglet.config.gl.ios import match as match_ios  # noqa: PLC0415
 
-        return match(user_config, surface)
-
-    if pyglet.compat_platform == "emscripten":
-        from pyglet.config.gl.webgl import match  # noqa: PLC0415
-
-        return match(user_config, surface)
+        return match_ios(user_config, cast("IOSWindow", surface))
 
     return None

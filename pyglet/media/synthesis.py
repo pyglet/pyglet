@@ -254,8 +254,8 @@ class SynthesisSource(Source):
         samples = num_bytes >> 1
         generator = self._generator
         envelope = self._envelope_generator
-        data = (int(next(generator) * next(envelope) * 0x7fff) for _ in range(samples))
-        data = _struct.pack(f"{samples}h", *data)
+        sample_data = (int(next(generator) * next(envelope) * 0x7fff) for _ in range(samples))
+        data = _struct.pack(f"{samples}h", *sample_data)
 
         return AudioData(data, num_bytes)
 

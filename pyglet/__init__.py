@@ -8,6 +8,8 @@ import os
 import sys
 import warnings
 
+IS_DOC_BUILD = os.environ.get("PYGLET_DOC_BUILD") == "1"
+
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Literal, Sequence
 

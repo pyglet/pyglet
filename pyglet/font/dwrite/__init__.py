@@ -1259,7 +1259,7 @@ class Win32DirectWriteFont(base.Font):
         return stroked
 
 
-    def get_glyphs(self, text: str, shaping: bool) -> tuple[list[Glyph], list[base.GlyphPosition]]:
+    def get_glyphs(self, text: str, shaping: bool = False) -> tuple[list[Glyph], list[base.GlyphPosition]]:
         self._initialize_renderer()
 
         if shaping:

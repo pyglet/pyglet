@@ -66,7 +66,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.shader import ShaderProgram
     from pyglet.customtypes import DataTypes
     from pyglet.enums import GeometryMode
-    from pyglet.graphics.api.webgl.context import OpenGLSurfaceContext
+    from pyglet.graphics.api.webgl.context import WebGL2SurfaceContext
 
 _gl_types = {
     'b': GL_BYTE,
@@ -80,10 +80,10 @@ _gl_types = {
 }
 
 class _GLVertexStreamMix(VertexStream):
-    _ctx: OpenGLSurfaceContext
+    _ctx: WebGL2SurfaceContext
     attrib_name_buffers: dict[str, WebGLAttributeBufferObject]
 
-    def __init__(self, ctx: OpenGLSurfaceContext, initial_size: int, attrs: Sequence[AttributeFormat],
+    def __init__(self, ctx: WebGL2SurfaceContext, initial_size: int, attrs: Sequence[AttributeFormat],
                  *, divisor: int = 0):
         super().__init__(ctx, initial_size, attrs, divisor=divisor)
 
@@ -129,7 +129,7 @@ class _GLVertexStreamMix(VertexStream):
             self._set_attribute_divisor(location, graphics_attribute)
 
 class GLVertexStream(_GLVertexStreamMix, VertexStream):  # noqa: D101
-    def __init__(self, ctx: OpenGLSurfaceContext, initial_size: int, attrs: Sequence[AttributeFormat]) -> None:
+    def __init__(self, ctx: WebGL2SurfaceContext, initial_size: int, attrs: Sequence[AttributeFormat]) -> None:
         """Contains data for vertex stream.
 
         Args:
@@ -143,9 +143,9 @@ class GLVertexStream(_GLVertexStreamMix, VertexStream):  # noqa: D101
         super().__init__(ctx, initial_size, attrs)
 
 class GLInstanceStream(_GLVertexStreamMix, InstanceStream):  # noqa: D101
-    _ctx: OpenGLSurfaceContext
+    _ctx: WebGL2SurfaceContext
 
-    def __init__(self, ctx: OpenGLSurfaceContext, initial_size: int, attrs: Sequence[AttributeFormat],  # noqa: D107
+    def __init__(self, ctx: WebGL2SurfaceContext, initial_size: int, attrs: Sequence[AttributeFormat],  # noqa: D107
                  *, divisor: int = 0) -> None:
         super().__init__(ctx, initial_size, attrs, divisor=divisor)
 
@@ -190,7 +190,7 @@ class GLIndexStream(IndexStream):  # noqa: D101
     index_element_size: int
     gl_type: int
 
-    def __init__(self, ctx: OpenGLSurfaceContext, data_type: DataTypes, initial_elems: int) -> None:  # noqa: D107
+    def __init__(self, ctx: WebGL2SurfaceContext, data_type: DataTypes, initial_elems: int) -> None:  # noqa: D107
         self.gl_type = _gl_types[data_type]
         super().__init__(ctx, data_type, initial_elems)
         self.index_element_size = self.buffer.element_size
@@ -247,7 +247,7 @@ class WebGLVertexDomain(VertexDomain):
     def _create_vertex_class(self) -> type:
         return type(self._vertex_class.__name__, (self._vertex_class,), self.vertex_buffers._property_dict)
 
-    def _has_multi_draw_extension(self, ctx: OpenGLSurfaceContext) -> bool:
+    def _has_multi_draw_extension(self, ctx: WebGL2SurfaceContext) -> bool:
         return ctx.gl.getExtension("WEBGL_multi_draw")
 
     def _create_vao(self) -> GLVertexArrayBinding:
@@ -372,7 +372,7 @@ class GLInstanceDomainArrays(InstanceDomain):  # noqa: D101
         self._gl.drawArraysInstanced(mode, first_vertex, vertex_count, bucket.instance_count)
 
 class GLInstanceDomainElements(InstanceDomain):  # noqa: D101
-    _ctx: OpenGLSurfaceContext
+    _ctx: WebGL2SurfaceContext
 
     def __init__(self, domain: Any, initial_instances: int, index_stream: GLIndexStream) -> None:
         super().__init__(domain, initial_instances)
@@ -557,7 +557,7 @@ class WebGLIndexedVertexDomain(IndexedVertexDomain):
                 self._gl.drawElements(mode, size, self.index_stream.gl_type,
                                       start * self.index_stream.index_element_size)
 
-    def _has_multi_draw_extension(self, ctx: OpenGLSurfaceContext) -> bool:
+    def _has_multi_draw_extension(self, ctx: WebGL2SurfaceContext) -> bool:
         return ctx.gl.getExtension("WEBGL_multi_draw")
 
     def draw(self, mode: int) -> None:

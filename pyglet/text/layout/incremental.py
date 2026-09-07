@@ -5,15 +5,17 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 import unicodedata
 
+from pyglet import IS_DOC_BUILD
 from pyglet.event import EventDispatcher
 from pyglet.font.base import grapheme_break, GlyphPosition
 from pyglet.text import runlist
 from pyglet.text.layout.base import (
+    TextDecorationGroup,
     TextLayout,
+    TextLayoutGroup,
     _AbstractBox,
     _InlineElementBox,
     _InvalidRange,
-    _is_pyglet_doc_run,
     _LayoutContext,
     _Line,
     get_default_scrollable_layout_shader,
@@ -23,12 +25,12 @@ from pyglet.text.layout.base import (
 from pyglet.text.layout import ScrollableTextLayoutGroup, ScrollableTextDecorationGroup
 
 if TYPE_CHECKING:
+    from pyglet.text.layout.boxes import _LayoutVertexList
     from pyglet.customtypes import AnchorX, AnchorY
     from pyglet.graphics import Batch, Group
     from pyglet.graphics.shader import ShaderProgram
-    from pyglet.graphics.vertexdomain import VertexList
     from pyglet.text.document import AbstractDocument
-    from pyglet.text.runlist import AbstractRunIterator, RunIterator
+    from pyglet.text.runlist import AbstractRunIterator
 
 
 class _IncrementalLayoutContext(_LayoutContext):
@@ -36,13 +38,13 @@ class _IncrementalLayoutContext(_LayoutContext):
     # IncrementalLayout only handles lines that are visible. When lines change, the vertex lists are destroyed, but
     # boxes are kept alive. This also allows the Layout to determine word wraps and line lengths without a vertex list.
 
-    line = None
+    line: _Line | None = None
 
     def __init__(
         self,
         layout: TextLayout,
         document: AbstractDocument,
-        colors_iter: RunIterator,
+        colors_iter: AbstractRunIterator,
         background_iter: AbstractRunIterator,
         has_selection: bool,
     ) -> None:
@@ -52,7 +54,8 @@ class _IncrementalLayoutContext(_LayoutContext):
     def _uses_background_override(self) -> bool:
         return self._has_selection
 
-    def add_list(self, vertex_list: VertexList) -> None:
+    def add_list(self, vertex_list: _LayoutVertexList) -> None:
+        assert self.line is not None
         self.line.vertex_lists.append(vertex_list)
 
     def add_box(self, box: _AbstractBox) -> None:
@@ -99,6 +102,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     """
 
     glyphs: list[Any]
+    offsets: list[GlyphPosition]
     lines: list[_Line]
 
     _selection_start: int = 0
@@ -106,9 +110,11 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     _selection_color: tuple[int, int, int, int] = (255, 255, 255, 255)
     _selection_background_color: tuple[int, int, int, int] = (46, 106, 197, 255)
 
-    group_class: ClassVar[type[IncrementalTextLayoutGroup]] = IncrementalTextLayoutGroup
-    effect_group_class: ClassVar[type[IncrementalTextLayoutGroup]] = IncrementalTextLayoutGroup
-    decoration_class: ClassVar[type[IncrementalTextDecorationGroup]] = IncrementalTextDecorationGroup
+    group_class: ClassVar[type[TextLayoutGroup | ScrollableTextLayoutGroup]] = IncrementalTextLayoutGroup
+    effect_group_class: ClassVar[type[TextLayoutGroup | ScrollableTextLayoutGroup]] = IncrementalTextLayoutGroup
+    decoration_class: ClassVar[type[TextDecorationGroup | ScrollableTextDecorationGroup]] = (
+        IncrementalTextDecorationGroup
+    )
 
     _translate_x: int = 0
     _translate_y: int = 0
@@ -137,7 +143,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
                  x: float = 0, y: float = 0, z: float = 0,
                  width: int | None = None, height: int | None = None,
                  anchor_x: AnchorX = 'left', anchor_y: AnchorY = 'bottom', rotation: float = 0, multiline: bool = False,
-                 dpi: float | None = None, batch: Batch | None = None, group: Group | None = None,
+                 dpi: int | None = None, batch: Batch | None = None, group: Group | None = None,
                  program: ShaderProgram | None = None, decoration_shader: ShaderProgram | None = None,
                  effect_shader: ShaderProgram | None = None, wrap_lines: bool = True,
                  depth_sorting: bool = False) -> None:
@@ -192,7 +198,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     def delete(self) -> None:
         for line in self.lines:
             line.delete(self)
-        self._batch = None
+        del self._batch
         if self._document:
             self._document.remove_handlers(self)
         self._document = None
@@ -421,10 +427,10 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
         if content_width_invalid or len(self.lines) == 1:
             # Rescan all lines to look for the new maximum content width
-            content_width = 0
+            content_width: float = 0
             for line in self.lines:
                 content_width = max(line.width + line.margin_left, content_width)
-            self._content_width = content_width
+            self._content_width = round(content_width)
 
     def _update_flow_lines(self) -> None:
         invalid_start, invalid_end = self._invalid_lines.validate()
@@ -485,6 +491,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
                 self._selection_end,
                 self._selection_background_color)
 
+        assert self._document is not None
         context = _IncrementalLayoutContext(
             self,
             self._document,
@@ -963,9 +970,9 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         y1 = line.y + line.ascent
         y2 = line.y + line.descent
         if y1 > self.view_y:
-            self.view_y = y1
+            self.view_y = round(y1)
         elif y2 < self.view_y - self.height:
-            self.view_y = y2 + self.height
+            self.view_y = round(y2 + self.height)
         elif abs(self.view_y) > self.content_height - self.height:
             self.view_y = -self.content_height
 
@@ -977,15 +984,15 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         x -= self.left
 
         if x <= self.view_x:
-            self.view_x = x
+            self.view_x = round(x)
 
         elif x >= self.view_x + self.width or ((x >= self.view_x + self.width) and (self._content_width > self.width)):
-            self.view_x = x - self.width
+            self.view_x = round(x - self.width)
 
         elif self.view_x + self.width > self._content_width:
             self.view_x = self._content_width
 
-    if _is_pyglet_doc_run:
+    if IS_DOC_BUILD:
         def on_layout_update(self) -> None:
             """Some or all of the layout text was reflowed.
 

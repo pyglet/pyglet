@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 import warnings
 from typing import Sequence, TYPE_CHECKING
 
@@ -21,7 +20,6 @@ if TYPE_CHECKING:
     from pyglet.graphics.api.gl import OpenGLSurfaceContext
     from pyglet.window import Window
 
-_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 
 class OpenGLBackend(BackendGlobalObject):

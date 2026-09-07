@@ -28,6 +28,7 @@ class BackendGlobalObject(ABC):  # Temp name for now.
     """
     windows: weakref.WeakKeyDictionary[Window, SurfaceContext]
     _have_context: bool = False
+    current_context: Any
 
     def __init__(self) -> None:
         self.windows = weakref.WeakKeyDictionary()
@@ -51,6 +52,35 @@ class BackendGlobalObject(ABC):  # Temp name for now.
     @abstractmethod
     def get_default_configs(self) -> Sequence:
         """Configs to use if none specified."""
+
+    def get_config(self, **_kwargs: float | str | None) -> GraphicsConfig:
+        """Create a backend-specific graphics configuration."""
+        raise NotImplementedError
+
+    @property
+    def info(self) -> SurfaceInfo:
+        """Return information about the active backend context."""
+        raise NotImplementedError
+
+    def get_info(self) -> SurfaceInfo:
+        """Return information about the active backend context."""
+        return self.info
+
+    def have_extension(self, _extension_name: str) -> bool:
+        """Determine whether an extension is available."""
+        raise NotImplementedError
+
+    def have_version(self, _major: int, _minor: int = 0) -> bool:
+        """Determine whether a backend version is available."""
+        raise NotImplementedError
+
+    def get_cached_shader(self, _name: str, *_sources: tuple[str, ShaderType]) -> ShaderProgram:
+        """Return a cached shader program for the active backend."""
+        raise NotImplementedError
+
+    def get_default_batch(self) -> Batch:
+        """Return the default batch for the active backend."""
+        raise NotImplementedError
 
     @abstractmethod
     def set_viewport(self, window, x: int, y: int, width: int, height: int) -> None:
@@ -105,6 +135,8 @@ class UnavailableBackendError(GraphicsBackendError):
 
 
 class NullBackend(BackendGlobalObject):  # noqa: D101
+    current_context: NullContext
+
     def __init__(self) -> None:
         super().__init__()
         self.current_context = NullContext()
@@ -147,6 +179,25 @@ class NullBackend(BackendGlobalObject):  # noqa: D101
         self._raise_no_backend()
 
     def get_default_configs(self) -> Sequence:
+        self._raise_no_backend()
+
+    @property
+    def info(self) -> NoReturn:
+        self._raise_no_backend()
+
+    def get_info(self) -> NoReturn:
+        self._raise_no_backend()
+
+    def have_extension(self, _extension_name: str) -> NoReturn:
+        self._raise_no_backend()
+
+    def have_version(self, _major: int, _minor: int = 0) -> NoReturn:
+        self._raise_no_backend()
+
+    def get_cached_shader(self, _name: str, *_sources: tuple[str, ShaderType]) -> NoReturn:
+        self._raise_no_backend()
+
+    def get_default_batch(self) -> NoReturn:
         self._raise_no_backend()
 
     def set_viewport(self, window, x: int, y: int, width: int, height: int) -> None:
@@ -525,7 +576,7 @@ class NullContext:
     def _raise_no_context() -> NoReturn:
         raise UnavailableContextError
 
-    def __getattribute__(self, item):
+    def __getattribute__(self, item: str) -> NoReturn:
         object.__getattribute__(self, "_raise_no_context")()
 
     def __enter__(self) -> NoReturn:

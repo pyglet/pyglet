@@ -45,7 +45,7 @@ If you are migrating from an older version of pyglet, please read through
 
 .. toctree::
    :maxdepth: 3
-  :caption: Application Fundamentals
+   :caption: Application Fundamentals
 
    programming_guide/windowing
    programming_guide/eventloop

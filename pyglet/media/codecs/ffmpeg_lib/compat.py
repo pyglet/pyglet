@@ -70,7 +70,7 @@ def add_version_changes(  # noqa: D103
         raise Exception(msg)
 
     _version_changes[library][version][structure] = CustomField(
-        fields, list(removals) if removals else None, list(repositions) if repositions else None)
+        fields, list(removals) if removals else [], list(repositions) if repositions else None)
 
 
 def apply_version_changes() -> None:

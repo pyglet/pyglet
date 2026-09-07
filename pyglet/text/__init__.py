@@ -40,7 +40,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from os.path import dirname as _dirname
 from os.path import splitext as _splitext
-from typing import TYPE_CHECKING, Any, BinaryIO, Literal
+from typing import TYPE_CHECKING, Any, BinaryIO, Literal, cast
 
 import pyglet
 from pyglet.enums import Stretch, Style, Weight
@@ -105,6 +105,7 @@ def get_decoder(filename: str | None, mimetype: SupportedMimeTypes | None = None
         DocumentDecodeException: If MIME type is not from the supported types.
     """
     if mimetype is None:
+        assert filename is not None
         _, ext = _splitext(filename)
         if ext.lower() in (".htm", ".html", ".xhtml"):
             mimetype = "text/html"
@@ -142,6 +143,7 @@ def load(filename: str,
             supported MIME types.
     """
     decoder = get_decoder(filename, mimetype)
+    file_contents: str | bytes
     if not file:
         with open(filename) as f:
             file_contents = f.read()
@@ -166,7 +168,7 @@ def decode_html(text: str, location: str | None = None) -> FormattedDocument:
             Location giving the base path for additional resources referenced from the document (e.g., images).
     """
     decoder = get_decoder(None, "text/html")
-    return decoder.decode(text, location)
+    return cast(document.FormattedDocument, decoder.decode(text, location))  # type: ignore[arg-type]
 
 
 def decode_attributed(text: str) -> FormattedDocument:
@@ -175,13 +177,13 @@ def decode_attributed(text: str) -> FormattedDocument:
     See `pyglet.text.formats.attributed` for a description of attributed text.
     """
     decoder = get_decoder(None, "text/vnd.pyglet-attributed")
-    return decoder.decode(text)
+    return cast(document.FormattedDocument, decoder.decode(text))
 
 
 def decode_text(text: str) -> UnformattedDocument:
     """Create a document directly from some plain text."""
     decoder = get_decoder(None, "text/plain")
-    return decoder.decode(text)
+    return cast(document.UnformattedDocument, decoder.decode(text))
 
 
 class DocumentLabel(layout.TextLayout):
@@ -302,7 +304,7 @@ class DocumentLabel(layout.TextLayout):
             if alpha != color.start[3] or alpha != color.end[3]:
                 self.color = LinearGradient((*color.start[:3], alpha), (*color.end[:3], alpha))
         elif alpha != color[3]:
-            self.color = list(map(int, (*color[:3], alpha)))
+            self.color = cast(tuple[int, int, int, int], tuple(map(int, (*color[:3], alpha))))
 
     @property
     def shadow(self) -> DropShadow | None:
@@ -520,7 +522,7 @@ class Label(DocumentLabel):
         """
         doc = decode_text(text)
         if isinstance(color, LinearGradient):
-            rgba = color
+            rgba: tuple[int, int, int, int] | LinearGradient = color
         else:
             r, g, b, *a = color
             rgba = r, g, b, a[0] if a else 255
@@ -572,7 +574,7 @@ class HTMLLabel(DocumentLabel):
     def __init__(self, text: str = "",
                  x: float = 0.0, y: float = 0.0, z: float = 0.0, width: int | None = None, height: int | None = None,
                  anchor_x: AnchorX = "left", anchor_y: AnchorY = "baseline", rotation: float = 0.0,
-                 multiline: bool = False, dpi: float | None = None,
+                 multiline: bool = False, dpi: int | None = None,
                  location: Location | None = None,
                  batch: Batch | None = None, group: Group | None = None,
                  program: ShaderProgram | None = None,
@@ -634,7 +636,7 @@ class HTMLLabel(DocumentLabel):
         """
         self._text = text
         self._location = location
-        doc = decode_html(text, location)
+        doc = decode_html(text, location)  # type: ignore[arg-type]
         super().__init__(doc, x, y, z, width, height, anchor_x, anchor_y, rotation,
                          multiline, dpi, batch, group, program, decoration_shader, effect_shader,
                          shaping=shaping, init_document=True, depth_sorting=depth_sorting)
@@ -647,7 +649,7 @@ class HTMLLabel(DocumentLabel):
     @text.setter
     def text(self, text: str) -> None:
         self._text = text
-        self.document = decode_html(text, self._location)
+        self.document = decode_html(text, self._location)  # type: ignore[arg-type]
 
 
 __all__ = [

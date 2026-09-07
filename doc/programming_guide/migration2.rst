@@ -1,4 +1,4 @@
-.. _migration:
+.. _migration-2-1:
 
 Migrating from pyglet 2.0 -> 2.1
 ================================
@@ -18,7 +18,7 @@ channel.
 
 .. _GitHub Issues: https://github.com/pyglet/pyglet/issues
 
-.. _migration-options:
+.. _migration-2-1-options:
 
 Setting pyglet Options
 ----------------------

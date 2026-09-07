@@ -5,7 +5,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from itertools import count
-from typing import Any, ClassVar, Generic, TypeVar
+from typing import Any, ClassVar, Generic, TypeVar, cast
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,7 +72,7 @@ class GraphicsResource(ABC, Generic[HandleT, KeyT]):
         except AttributeError:
             key_type = self.key_type
             counter = self._key_counters.setdefault(key_type, count(1))
-            self._key = key if key is not None else key_type(next(counter))
+            self._key = key if key is not None else cast(KeyT, key_type(next(counter)))
         else:
             if key is not None and key != existing_key:
                 raise ValueError("A graphics resource key cannot be replaced.")

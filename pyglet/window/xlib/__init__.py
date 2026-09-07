@@ -878,11 +878,11 @@ class XlibWindow(BaseWindow):
 
         data = asbytes('')
         for image in images:
-            image = image.get_image_data()
-            pitch = -(image.width * len(fmt))
+            image_data = image.get_image_data()
+            pitch = -(image_data.width * len(fmt))
             s = c_buffer(sizeof(c_ulong) * 2)
-            memmove(s, cast((c_ulong * 2)(image.width, image.height), POINTER(c_ubyte)), len(s))
-            data += s.raw + image.get_bytes(fmt, pitch)
+            memmove(s, cast((c_ulong * 2)(image_data.width, image_data.height), POINTER(c_ubyte)), len(s))
+            data += s.raw + image_data.get_bytes(fmt, pitch)
         buffer = (c_ubyte * len(data))()
         memmove(buffer, data, len(data))
         atom = xlib.XInternAtom(self._x_display, asbytes('_NET_WM_ICON'), False)

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import struct
-import sys
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from typing import Any, Generic, Iterator, Literal, Protocol, Sequence, TYPE_CHECKING, TypeVar, overload
@@ -79,7 +78,7 @@ class PixelData:
         return ImageData(self.width, self.height, self.format.value, self.data, self.pitch, self.data_type)
 
 
-class TextureSequence(_AbstractImageSequence, Generic[TTexture]):
+class TextureSequence(_AbstractImageSequence[TTexture], Generic[TTexture]):
     """Interface for a sequence of textures.
 
     Typical implementations store multiple :py:class:`~pyglet.graphics.texture.TextureRegion`s
@@ -1126,9 +1125,7 @@ class UnsupportedCompressedTexture(CompressedTexture):
         raise UnsupportedBackendError("CompressedTexture")
 
 
-_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
-
-if not _is_pyglet_doc_run:
+if not pyglet.IS_DOC_BUILD:
     if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
         from pyglet.graphics.api.gl.framebuffer import (  # noqa: F401
             GLFramebuffer as Framebuffer,

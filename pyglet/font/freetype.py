@@ -466,7 +466,7 @@ class FreeTypeFont(base.Font):
             self.glyphs[glyph_indice] = glyph
             self._glyph_sources[id(glyph)] = glyph_indice
 
-    def get_glyphs(self, text: str, shaping: bool) -> tuple[list[base.Glyph], list[base.GlyphPosition]]:
+    def get_glyphs(self, text: str, shaping: bool = False) -> tuple[list[base.Glyph], list[base.GlyphPosition]]:
         """Create and return a list of Glyphs for `text`.
 
         If any characters do not have a known glyph representation in this

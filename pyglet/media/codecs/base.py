@@ -160,7 +160,7 @@ class AudioData:
         if isinstance(data, bytes):
             # bytes are treated specially by ctypes and can be cast to a void pointer, get
             # their content's address like this
-            self.pointer = ctypes.cast(data, ctypes.c_void_p).value
+            self.pointer = ctypes.cast(data, ctypes.c_void_p).value  # type: ignore[arg-type]
         elif isinstance(data, ctypes.Array):
             self.pointer = ctypes.addressof(data)
         else:
@@ -281,7 +281,7 @@ class Source:
             # Animation requires at least one frame.
             return Animation([])
         frames = []
-        last_ts = 0
+        last_ts = 0.0
         next_ts = self.get_next_video_timestamp()
         while next_ts is not None:
             image = self.get_next_video_frame()
@@ -426,7 +426,7 @@ class StreamingSource(Source):
         if self.is_player_source:
             raise MediaException('This source is already queued on a player.')
         self.is_player_source = True
-        return super().get_queue_source()
+        return self
 
     def delete(self) -> None:
         """Release the resources held by this StreamingSource."""
@@ -472,10 +472,11 @@ class StaticSource(Source):
 
         self._duration = len(self._data) / self.audio_format.bytes_per_second
 
-    def get_queue_source(self) -> StaticMemorySource | None:
+    def get_queue_source(self) -> Source:
         if self._data is not None:
+            assert self.audio_format is not None
             return StaticMemorySource(self._data, self.audio_format)
-        return None
+        return self
 
     def get_audio_data(self, num_bytes: int) -> AudioData | None:
         """The StaticSource does not provide audio data.
@@ -546,6 +547,11 @@ class SourceGroup:
     gapless playback. All sources must share the same audio format.
     The first source added sets the format.
     """
+
+    audio_format: AudioFormat | None
+    video_format: VideoFormat | None
+    info: SourceInfo | None
+    _sources: list[Source]
 
     def __init__(self) -> None:
         """Create an empty source group."""

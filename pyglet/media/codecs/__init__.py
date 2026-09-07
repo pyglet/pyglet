@@ -11,8 +11,6 @@ from pyglet.customtypes import MediaTypes
 
 _debug = pyglet.options.debug_media
 
-_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
-
 registry = CodecRegistry()
 add_decoders = registry.add_decoders
 add_encoders = registry.add_encoders
@@ -165,7 +163,7 @@ def have_ffmpeg() -> bool:
                 found = True
                 break
 
-        if not found and not _is_pyglet_doc_run:
+        if not found and not pyglet.IS_DOC_BUILD:
             warnings.warn(f'FFmpeg release version not found. This may be a new or untested release. Unknown behavior may occur. Versions Loaded: {ffmpeg_lib.compat.versions}')
 
         return True

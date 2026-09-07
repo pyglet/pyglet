@@ -51,7 +51,7 @@ provides a convenient way to handle hot-plugging of controllers.
 """
 from __future__ import annotations
 
-import sys
+from pyglet import IS_DOC_BUILD
 
 from typing import TYPE_CHECKING
 
@@ -63,7 +63,6 @@ from .base import DeviceException, DeviceOpenException, DeviceExclusiveException
 if TYPE_CHECKING:
     from pyglet.display import Display
 
-_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 
 def get_apple_remote(display: Display | None = None) -> AppleRemote | None:
@@ -80,7 +79,7 @@ def get_apple_remote(display: Display | None = None) -> AppleRemote | None:
     return None
 
 
-if _is_pyglet_doc_run:
+if IS_DOC_BUILD:
     def get_devices(display: Display | None = None) -> list[Device]:
         """Get a list of all attached input devices.
 

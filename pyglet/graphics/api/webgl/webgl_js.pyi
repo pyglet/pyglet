@@ -191,6 +191,9 @@ class WebGLRenderingContext:
 
 
 class WebGL2RenderingContext(WebGLRenderingContext):
+    COPY_READ_BUFFER: int
+    COPY_WRITE_BUFFER: int
+    DYNAMIC_DRAW: int
     def beginQuery(self, target: int, query: WebGLQuery) -> None: ...
     def beginTransformFeedback(self, primitiveMode: int) -> None: ...
     def bindBufferBase(self, target: int, index: int, buffer: WebGLBuffer | None) -> None: ...

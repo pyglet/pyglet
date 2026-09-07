@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import sys
 from typing import TYPE_CHECKING
 
 import pyglet
 from pyglet.graphics.texture import Texture, TextureArray
 
-_is_pyglet_doc_run = hasattr(sys, 'is_pyglet_doc_run') and sys.is_pyglet_doc_run
 
 if TYPE_CHECKING:
     from pyglet.graphics.shader import ShaderProgram
