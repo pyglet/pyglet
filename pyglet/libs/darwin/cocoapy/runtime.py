@@ -40,10 +40,12 @@ from ctypes import (
     ArgumentError, CFUNCTYPE, POINTER, Structure, addressof, alignment, byref,
     c_bool, c_buffer, c_byte, c_char, c_char_p, c_double, c_float, c_int, c_int32,
     c_int64, c_long, c_longdouble, c_longlong, c_short, c_size_t, c_ubyte,
-    c_uint, c_uint8, c_ulong, c_ulonglong, c_ushort, c_void_p, cast, cdll,
+    c_uint, c_uint8, c_ulong, c_ulonglong, c_ushort, c_void_p, cast,
     create_string_buffer, py_object, sizeof, util,
 )
 from typing import Type, TypeVar, Sequence, Any, Callable, List
+
+import pyglet.lib
 
 from .cocoatypes import (
     Block_descriptor_1, Block_literal_1, CAFrameRateRange, CAFrameRateRangeEncoding, CGImageEncoding, NSPoint,
@@ -62,14 +64,16 @@ elif sizeof(c_void_p) == 8:
 
 ######################################################################
 
-lib = util.find_library('objc')
+objc_path = util.find_library('objc')
+if objc_path is None:
+    objc_path = '/usr/lib/libobjc.dylib'
 
-# Hack for compatibility with macOS > 11.0
-if lib is None:
-    lib = '/usr/lib/libobjc.dylib'
+libc_path = util.find_library('c')
+if libc_path is None:
+    libc_path = '/usr/lib/libSystem.B.dylib'
 
-objc = cdll.LoadLibrary(lib)
-libc = cdll.LoadLibrary(util.find_library('c'))
+objc = pyglet.lib.load_library(objc_path)
+libc = pyglet.lib.load_library(libc_path)
 
 # void free(void *)
 libc.free.restype = None

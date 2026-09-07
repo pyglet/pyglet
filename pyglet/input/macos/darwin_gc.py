@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import warnings
 import weakref
-from ctypes import cdll, util, c_void_p, byref
+from ctypes import c_void_p, byref
 from enum import Enum, auto
 from typing import Protocol
 
 import pyglet
+import pyglet.lib
 from pyglet.event import EventDispatcher
 from pyglet.libs.darwin import ObjCInstance, send_super, \
     AutoReleasePool, ns_to_py, objc_method, PyObjectEncoding
@@ -19,13 +20,7 @@ from pyglet.libs.darwin import ObjCClass, get_selector
 NSNotification = ObjCClass('NSNotification')
 NSNotificationCenter = ObjCClass('NSNotificationCenter')
 
-lib = util.find_library('GameController')
-
-# Hack for compatibility with macOS > 11.0
-if lib is None:
-    lib = '/System/Library/Frameworks/GameController.framework/GameController'
-
-gc = cdll.LoadLibrary(lib)
+gc = pyglet.lib.load_library(framework='GameController')
 
 NSObject = ObjCClass('NSObject')
 GCController = ObjCClass("GCController")

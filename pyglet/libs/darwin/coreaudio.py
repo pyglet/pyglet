@@ -13,18 +13,14 @@ This module includes:
 
 """
 from __future__ import annotations
-from ctypes import c_void_p, c_int, c_bool, Structure, c_uint32, util, cdll, c_uint, c_double, POINTER, c_int64, \
+from ctypes import c_void_p, c_int, c_bool, Structure, c_uint32, c_uint, c_double, POINTER, c_int64, \
     CFUNCTYPE
 from typing import Final
 
+import pyglet.lib
 from pyglet.libs.darwin import CFURLRef
 
-lib = util.find_library('CoreAudio')
-
-if lib is None:
-    lib = '/System/Library/Frameworks/CoreAudio.framework/CoreAudio'
-
-ca = cdll.LoadLibrary(lib)
+ca = pyglet.lib.load_library(framework='CoreAudio')
 
 
 class AudioStreamPacketDescription(Structure):
