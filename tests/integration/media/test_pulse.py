@@ -28,15 +28,13 @@ def validate_pulse_audio_driver():
 
     try:
         mainloop.start()
-        with mainloop.lock:
-            context = mainloop.create_context()
-            context.connect()
+        context = mainloop.create_context()
+        context.connect()
     except interface.PulseAudioException as exc:
         pytest.skip(f"PulseAudio driver is unavailable on this runner: {exc}")
     finally:
         if context is not None:
-            with mainloop.lock:
-                context.delete()
+            context.delete()
         mainloop.delete()
 
 
