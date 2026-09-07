@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 cf = cocoapy.cf
 ct = cocoapy.ct
-quartz = cocoapy.quartz
+cg = cocoapy.cg
 
 UIFontWeightUltraLight = -0.8
 UIFontWeightThin = -0.6
@@ -176,7 +176,7 @@ if harfbuzz_available():
         user_data is a pointer to the CGFont.
         """
         # Use Quartz to get the table data for the given tag.
-        table_data = quartz.CGFontCopyTableForTag(user_data, tag)
+        table_data = cg.CGFontCopyTableForTag(user_data, tag)
         if table_data is None:
             return None
 
@@ -239,9 +239,9 @@ class QuartzGlyphRenderer(GlyphRenderer):
         # Create bitmap context.
         bits_per_components = 8
         bytes_per_row = 4 * width
-        colorSpace = c_void_p(quartz.CGColorSpaceCreateDeviceRGB())
+        colorSpace = c_void_p(cg.CGColorSpaceCreateDeviceRGB())
         bitmap_context = c_void_p(
-            quartz.CGBitmapContextCreate(
+            cg.CGBitmapContextCreate(
                 None,
                 width,
                 height,
@@ -253,42 +253,42 @@ class QuartzGlyphRenderer(GlyphRenderer):
         )
 
         # Draw text to bitmap context.
-        quartz.CGContextSetShouldAntialias(bitmap_context, pyglet.options.text_antialiasing)
-        quartz.CGContextSetTextPosition(bitmap_context, -lsb, baseline)
-        quartz.CGContextSetRGBFillColor(bitmap_context, 1, 1, 1, 1)
+        cg.CGContextSetShouldAntialias(bitmap_context, pyglet.options.text_antialiasing)
+        cg.CGContextSetTextPosition(bitmap_context, -lsb, baseline)
+        cg.CGContextSetRGBFillColor(bitmap_context, 1, 1, 1, 1)
         if stroke_size:
-            quartz.CGContextSetRGBStrokeColor(bitmap_context, 1, 1, 1, 1)
-            quartz.CGContextSetLineWidth(bitmap_context, stroke_size * 2)
-            quartz.CGContextSetLineJoin(bitmap_context, {"miter": 0, "round": 1, "bevel": 2}[stroke_join])
-            quartz.CGContextSetMiterLimit(bitmap_context, 10)
-        quartz.CGContextSetFont(bitmap_context, ct_font)
-        quartz.CGContextSetFontSize(bitmap_context, self.font.pixel_size)
-        quartz.CGContextTranslateCTM(bitmap_context, 0, height)  # Move origin to top-left
-        quartz.CGContextScaleCTM(bitmap_context, 1, -1)  # Flip vertically
+            cg.CGContextSetRGBStrokeColor(bitmap_context, 1, 1, 1, 1)
+            cg.CGContextSetLineWidth(bitmap_context, stroke_size * 2)
+            cg.CGContextSetLineJoin(bitmap_context, {"miter": 0, "round": 1, "bevel": 2}[stroke_join])
+            cg.CGContextSetMiterLimit(bitmap_context, 10)
+        cg.CGContextSetFont(bitmap_context, ct_font)
+        cg.CGContextSetFontSize(bitmap_context, self.font.pixel_size)
+        cg.CGContextTranslateCTM(bitmap_context, 0, height)  # Move origin to top-left
+        cg.CGContextScaleCTM(bitmap_context, 1, -1)  # Flip vertically
 
         if stroke_size:
             path = c_void_p(ct.CTFontCreatePathForGlyph(ct_font, glyph_index, None))
             if path:
-                quartz.CGContextTranslateCTM(bitmap_context, -lsb, baseline)
-                quartz.CGContextAddPath(bitmap_context, path)
-                quartz.CGContextStrokePath(bitmap_context)
-                quartz.CGPathRelease(path)
+                cg.CGContextTranslateCTM(bitmap_context, -lsb, baseline)
+                cg.CGContextAddPath(bitmap_context, path)
+                cg.CGContextStrokePath(bitmap_context)
+                cg.CGPathRelease(path)
         else:
             positions = (cocoapy.CGPoint * 1)(*[cocoapy.CGPoint(0, 0)])
-            quartz.CTFontDrawGlyphs(ct_font, glyphs, positions, 1, bitmap_context)
+            ct.CTFontDrawGlyphs(ct_font, glyphs, positions, 1, bitmap_context)
 
         # Create an image to get the data out.
-        image_ref = c_void_p(quartz.CGBitmapContextCreateImage(bitmap_context))
+        image_ref = c_void_p(cg.CGBitmapContextCreateImage(bitmap_context))
 
-        bytes_per_row = quartz.CGImageGetBytesPerRow(image_ref)
-        data_provider = c_void_p(quartz.CGImageGetDataProvider(image_ref))
-        image_data = c_void_p(quartz.CGDataProviderCopyData(data_provider))
+        bytes_per_row = cg.CGImageGetBytesPerRow(image_ref)
+        data_provider = c_void_p(cg.CGImageGetDataProvider(image_ref))
+        image_data = c_void_p(cg.CGDataProviderCopyData(data_provider))
         buffer_size = cf.CFDataGetLength(image_data)
         buffer_ptr = cf.CFDataGetBytePtr(image_data)
         if buffer_ptr:
             buffer = string_at(buffer_ptr, buffer_size)
 
-            quartz.CGImageRelease(image_ref)
+            cg.CGImageRelease(image_ref)
             cf.CFRelease(image_data)
             cf.CFRelease(bitmap_context)
             cf.CFRelease(colorSpace)
@@ -300,7 +300,7 @@ class QuartzGlyphRenderer(GlyphRenderer):
 
             return glyph
 
-        quartz.CGImageRelease(image_ref)
+        cg.CGImageRelease(image_ref)
         cf.CFRelease(image_data)
         cf.CFRelease(bitmap_context)
         cf.CFRelease(colorSpace)
@@ -367,9 +367,9 @@ class QuartzGlyphRenderer(GlyphRenderer):
         # Create bitmap context.
         bits_per_components = 8
         bytes_per_row = 4 * width
-        colorSpace = c_void_p(quartz.CGColorSpaceCreateDeviceRGB())
+        colorSpace = c_void_p(cg.CGColorSpaceCreateDeviceRGB())
         bitmap_context = c_void_p(
-            quartz.CGBitmapContextCreate(
+            cg.CGBitmapContextCreate(
                 None,
                 width,
                 height,
@@ -381,30 +381,30 @@ class QuartzGlyphRenderer(GlyphRenderer):
         )
 
         # Transform the context to a top-left origin.
-        # quartz.CGContextTranslateCTM(bitmap, 0, height)  # Move origin to top-left.
-        # quartz.CGContextScaleCTM(bitmap, 1.0, -1.0)  # Flip Y-axis.
+        # cg.CGContextTranslateCTM(bitmap, 0, height)  # Move origin to top-left.
+        # cg.CGContextScaleCTM(bitmap, 1.0, -1.0)  # Flip Y-axis.
 
         # Draw text to bitmap context.
-        quartz.CGContextSetShouldAntialias(bitmap_context, pyglet.options.text_antialiasing)
-        quartz.CGContextSetTextPosition(bitmap_context, -lsb, baseline)
-        quartz.CGContextSetRGBFillColor(bitmap_context, 1, 1, 1, 1)  # Render white for multiplying.
-        quartz.CGContextTranslateCTM(bitmap_context, 0, height)  # Move origin to top-left
-        quartz.CGContextScaleCTM(bitmap_context, 1, -1)  # Flip vertically
+        cg.CGContextSetShouldAntialias(bitmap_context, pyglet.options.text_antialiasing)
+        cg.CGContextSetTextPosition(bitmap_context, -lsb, baseline)
+        cg.CGContextSetRGBFillColor(bitmap_context, 1, 1, 1, 1)  # Render white for multiplying.
+        cg.CGContextTranslateCTM(bitmap_context, 0, height)  # Move origin to top-left
+        cg.CGContextScaleCTM(bitmap_context, 1, -1)  # Flip vertically
 
         ct.CTLineDraw(line, bitmap_context)
         cf.CFRelease(line)
         # Create an image to get the data out.
-        image_ref = c_void_p(quartz.CGBitmapContextCreateImage(bitmap_context))
+        image_ref = c_void_p(cg.CGBitmapContextCreateImage(bitmap_context))
 
-        bytes_per_row = quartz.CGImageGetBytesPerRow(image_ref)
-        data_provider = c_void_p(quartz.CGImageGetDataProvider(image_ref))
-        image_data = c_void_p(quartz.CGDataProviderCopyData(data_provider))
+        bytes_per_row = cg.CGImageGetBytesPerRow(image_ref)
+        data_provider = c_void_p(cg.CGImageGetDataProvider(image_ref))
+        image_data = c_void_p(cg.CGDataProviderCopyData(data_provider))
         buffer_size = cf.CFDataGetLength(image_data)
         buffer_ptr = cf.CFDataGetBytePtr(image_data)
         if buffer_ptr:
             buffer = string_at(buffer_ptr, buffer_size)
 
-            quartz.CGImageRelease(image_ref)
+            cg.CGImageRelease(image_ref)
             cf.CFRelease(image_data)
             cf.CFRelease(bitmap_context)
             cf.CFRelease(colorSpace)
@@ -422,7 +422,7 @@ class QuartzGlyphRenderer(GlyphRenderer):
 
             return glyph
 
-        quartz.CGImageRelease(image_ref)
+        cg.CGImageRelease(image_ref)
         cf.CFRelease(image_data)
         cf.CFRelease(bitmap_context)
         cf.CFRelease(colorSpace)
@@ -516,7 +516,7 @@ class QuartzFont(Font):
         assert self._cg_font is None
 
         # Create a CGFont from the CTFont for the face.
-        self._cg_font = quartz.CTFontCopyGraphicsFont(self.ctFont, None)
+        self._cg_font = ct.CTFontCopyGraphicsFont(self.ctFont, None)
         if self._cg_font is None:
             raise ValueError("Could not get CGFont from CTFont")
 
@@ -710,11 +710,11 @@ class QuartzFont(Font):
         # Note that the iOS CTFontManager *is* able to register graphics fonts,
         # however this method is missing from CTFontManager on MacOS 10.6
         dataRef = c_void_p(cf.CFDataCreate(None, data, len(data)))
-        provider = c_void_p(quartz.CGDataProviderCreateWithCFData(dataRef))
-        cgFont = c_void_p(quartz.CGFontCreateWithDataProvider(provider))
+        provider = c_void_p(cg.CGDataProviderCreateWithCFData(dataRef))
+        cgFont = c_void_p(cg.CGFontCreateWithDataProvider(provider))
 
         cf.CFRelease(dataRef)
-        quartz.CGDataProviderRelease(provider)
+        cg.CGDataProviderRelease(provider)
 
         # Create a template CTFont from the graphics font so that we can get font info.
         ctFont = c_void_p(ct.CTFontCreateWithGraphicsFont(cgFont, 1.0, None, None))

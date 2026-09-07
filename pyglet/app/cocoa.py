@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import signal
 import time
+from typing import TYPE_CHECKING
 
+import pyglet
 from pyglet import app
-from pyglet.app.base import EventLoop, PlatformEventLoop
-from pyglet.libs.darwin import cocoapy, AutoReleasePool, ObjCSubclass, PyObjectEncoding, ObjCInstance, send_super, \
-    ObjCClass, get_selector, set_realtime_thread_policy
+from pyglet.app.base import EventLoop, PlatformEventLoop, WindowDrawSource
+from pyglet.libs.darwin import cocoapy, AutoReleasePool, PyObjectEncoding, ObjCInstance, send_super, \
+    ObjCClass, get_selector, objc_method, set_realtime_thread_policy
 
 NSApplication = cocoapy.ObjCClass('NSApplication')
+NSObject = cocoapy.ObjCClass('NSObject')
 NSMenu = cocoapy.ObjCClass('NSMenu')
 NSMenuItem = cocoapy.ObjCClass('NSMenuItem')
 NSDate = cocoapy.ObjCClass('NSDate')
@@ -16,6 +19,9 @@ NSEvent = cocoapy.ObjCClass('NSEvent')
 NSUserDefaults = cocoapy.ObjCClass('NSUserDefaults')
 NSTimer = cocoapy.ObjCClass('NSTimer')
 NSRunningApplication = cocoapy.ObjCClass('NSRunningApplication')
+
+if TYPE_CHECKING:
+    from pyglet.window.apple.cocoa import CocoaWindow
 
 def add_menu_item(menu, title, action, key):
     with AutoReleasePool():
@@ -54,25 +60,24 @@ def create_menu():
         appMenuItem.release()
 
 
-class _AppDelegate_Implementation:
-    _AppDelegate = ObjCSubclass('NSObject', '_AppDelegate')
+class _AppDelegate(NSObject):
 
-    @_AppDelegate.method(b'@' + PyObjectEncoding)
+    @objc_method(b'@' + PyObjectEncoding)
     def init(self, pyglet_loop):
         objc = ObjCInstance(send_super(self, 'init'))
         self._pyglet_loop = pyglet_loop
         return objc  # objc is self
 
-    @_AppDelegate.method('v')
+    @objc_method('v')
     def updatePyglet_(self):
         self._pyglet_loop.nsapp_step()
 
-    @_AppDelegate.method('v@')
+    @objc_method('v@')
     def applicationWillTerminate_(self, notification):
         self._pyglet_loop.is_running = False
         self._pyglet_loop.has_exit = True
 
-    @_AppDelegate.method('v@')
+    @objc_method('v@')
     def applicationDidFinishLaunching_(self, notification):
         self._pyglet_loop._finished_launching = True
 
@@ -96,38 +101,32 @@ class _AppDelegate_Implementation:
 
         NSApp.activateIgnoringOtherApps_(True)
 
-    @_AppDelegate.method('v@')
+    @objc_method('v@')
     def applicationWillFinishLaunching_(self, notification):
         pass
 
-    @_AppDelegate.method('B')
+    @objc_method('B')
     def applicationSupportsSecureRestorableState_(self):
         return True
 
-_AppDelegate = ObjCClass('_AppDelegate')  # the actual class
-
 class CocoaAlternateEventLoop(EventLoop):
     """This is an alternate loop developed mainly for ARM64 variants of macOS.
-    nextEventMatchingMask_untilDate_inMode_dequeue_ is very broken with ctypes calls. Events eventually stop
-    working properly after X returns. This event loop differs in that it uses the built-in NSApplication event
+
+    nextEventMatchingMask_untilDate_inMode_dequeue_ is very broken with ctypes calls on M1.
+
+    Events eventually stop working properly after X returns. This event loop
+    differs in that it uses the built-in NSApplication event
     loop. We tie our schedule into it via timer.
     """
     def __init__(self):
         super().__init__()
         self.platform_event_loop = None
 
-    def run(self, interval: float | None = 1/60):
-        if interval is None:
-            pass  # do not schedule redraws
-        elif not interval:
-            self.clock.schedule(self._redraw_windows)
-        else:
-            self.clock.schedule_interval(self._redraw_windows, interval)
-
+    def run(self, interval: float | None = 1/60) -> None:
         self.has_exit = False
 
-        from pyglet.window import Window
-        Window._enable_event_queue = False
+        from pyglet.window import Window  # noqa: PLC0415
+        Window._enable_event_queue = False  # noqa: SLF001
 
         # Dispatch pending events
         for window in app.windows:
@@ -135,13 +134,18 @@ class CocoaAlternateEventLoop(EventLoop):
             window.dispatch_pending_events()
 
         self.platform_event_loop = app.platform_event_loop
+        self._schedule_window_draw(interval)
 
         self.dispatch_event('on_enter')
         self.is_running = True
 
-        self.platform_event_loop.nsapp_start(interval or 0)
+        try:
+            self.platform_event_loop.nsapp_start(interval or 0)
+        finally:
+            self._unschedule_window_draw()
+        self._raise_window_draw_exception()
 
-    def exit(self):
+    def exit(self) -> None:
         """Safely exit the event loop at the end of the current iteration.
 
         This method is a thread-safe equivalent for setting
@@ -159,12 +163,52 @@ class CocoaAlternateEventLoop(EventLoop):
             self.platform_event_loop.nsapp_stop()
 
 
+class CocoaWindowDrawSource(WindowDrawSource):
+    """Display driven drawing backed by one CADisplayLink."""
+
+    def __init__(self) -> None:
+        self._active = False
+        self._interval = None
+
+    def start(self, interval: float) -> bool:
+        started_windows = []
+        for window in app.windows:
+            if not window._start_display_link(interval):  # noqa: SLF001
+                for started_window in started_windows:
+                    started_window._stop_display_link()  # noqa: SLF001
+                return False
+            started_windows.append(window)
+
+        self._interval = interval
+        self._active = True
+        return True
+
+    def stop(self) -> None:
+        if not self._active:
+            return
+
+        self._active = False
+        self._interval = None
+        for window in app.windows:
+            window._stop_display_link()  # noqa: SLF001
+
+    def add_window(self, window: CocoaWindow) -> bool:
+        return not self._active or window._start_display_link(self._interval)  # noqa: SLF001
+
+    def remove_window(self, window: CocoaWindow) -> None:
+        window._stop_display_link()  # noqa: SLF001
+
+
 class CocoaPlatformEventLoop(PlatformEventLoop):
 
     def __init__(self):
         super().__init__()
         set_realtime_thread_policy()
         self._timer = None
+        nsview = ObjCClass('NSView')
+        self._display_link_supported = bool(
+            nsview.instancesRespondToSelector_(get_selector('displayLinkWithTarget:selector:'))
+        )
 
         with AutoReleasePool():
             # Prepare the default application.
@@ -198,7 +242,7 @@ class CocoaPlatformEventLoop(PlatformEventLoop):
         signal.signal(signal.SIGINT, term_received)
         signal.signal(signal.SIGTERM, term_received)
 
-    def start(self):
+    def start(self) -> None:
         with AutoReleasePool():
             if not self.NSApp.isRunning() and not self._finished_launching:
                 # finishLaunching should be called only once. However isRunning will not
@@ -207,9 +251,14 @@ class CocoaPlatformEventLoop(PlatformEventLoop):
                 self.NSApp.activateIgnoringOtherApps_(True)
                 self._finished_launching = True
 
-    def nsapp_start(self, interval):
-        """Used only for CocoaAlternateEventLoop"""
-        from pyglet.app import event_loop
+    def create_window_draw_source(self, _event_loop: EventLoop) -> WindowDrawSource | None:
+        if pyglet.options.osx_displaylink and self._display_link_supported:
+            return CocoaWindowDrawSource()
+        return None
+
+    def nsapp_start(self, interval: float) -> None:
+        """Used only for CocoaAlternateEventLoop."""
+        from pyglet.app import event_loop  # noqa: PLC0415
         self._event_loop = event_loop
 
         assert self._timer is None
@@ -219,26 +268,26 @@ class CocoaPlatformEventLoop(PlatformEventLoop):
             self.appdelegate,
             get_selector('updatePyglet:'),
             False,
-            True
+            True,
         )
 
         self.NSApp.run()
 
-    def nsapp_step(self):
-        """Used only for CocoaAlternateEventLoop"""
+    def nsapp_step(self) -> None:
+        """Used only for CocoaAlternateEventLoop."""
         self._event_loop.idle()
         with AutoReleasePool():
             self.dispatch_posted_events()
 
-    def nsapp_stop(self):
-        """Used only for CocoaAlternateEventLoop"""
+    def nsapp_stop(self) -> None:
+        """Used only for CocoaAlternateEventLoop."""
         self.NSApp.stop_(None)
 
         if self._timer:
             self._timer.invalidate()
             self._timer = None
 
-    def step(self, timeout=None):
+    def step(self, timeout: float | None=None) -> bool:  # noqa: ANN201
         with AutoReleasePool():
             self.dispatch_posted_events()
 
@@ -274,10 +323,10 @@ class CocoaPlatformEventLoop(PlatformEventLoop):
 
             return did_time_out
 
-    def stop(self):
+    def stop(self) -> None:
         pass
 
-    def notify(self):
+    def notify(self) -> None:
         with AutoReleasePool():
             notifyEvent = NSEvent.otherEventWithType_location_modifierFlags_timestamp_windowNumber_context_subtype_data1_data2_(
                 cocoapy.NSApplicationDefined, # type

@@ -1,33 +1,26 @@
 from __future__ import annotations
 
-import time
 import warnings
 import weakref
-from ctypes import cdll, util, c_void_p, byref
+from ctypes import c_void_p, byref
 from enum import Enum, auto
 from typing import Protocol
 
 import pyglet
+import pyglet.lib
 from pyglet.event import EventDispatcher
-from pyglet.libs.darwin import ObjCSubclass, ObjCInstance, send_super, \
-    AutoReleasePool, ns_to_py, nsdict_to_py, PyObjectEncoding, nsnum_to_py
+from pyglet.libs.darwin import ObjCInstance, send_super, \
+    AutoReleasePool, ns_to_py, objc_method, PyObjectEncoding
 from pyglet.libs.darwin.cocoapy.runtime import get_callback_block
-from pyglet.math import Vec2
-
-from pyglet.window.cocoa.pyglet_delegate import NSNotification
 
 from pyglet.input.base import Device, Control, Controller, Button, AbsoluteAxis, ControllerManager, Sign
 
 from pyglet.libs.darwin import ObjCClass, get_selector
-from pyglet.window.cocoa.pyglet_view import NSNotificationCenter
 
-lib = util.find_library('GameController')
+NSNotification = ObjCClass('NSNotification')
+NSNotificationCenter = ObjCClass('NSNotificationCenter')
 
-# Hack for compatibility with macOS > 11.0
-if lib is None:
-    lib = '/System/Library/Frameworks/GameController.framework/GameController'
-
-gc = cdll.LoadLibrary(lib)
+gc = pyglet.lib.load_library(framework='GameController')
 
 NSObject = ObjCClass('NSObject')
 GCController = ObjCClass("GCController")
@@ -546,10 +539,9 @@ class AppleController(Controller):
             self.device.strong_motor_engine.stop_event()
 
 
-class _AppleControllerManager_Implementation(EventDispatcher):
-    _PygletAppleControllerManager = ObjCSubclass('NSObject', '_PygletAppleControllerManager')
+class _PygletAppleControllerManager(NSObject):
 
-    @_PygletAppleControllerManager.method(b'@' + PyObjectEncoding)
+    @objc_method(b'@' + PyObjectEncoding)
     def initWithDispatcher(self, dispatcher: _SingletonAppleDispatcher):
         self = ObjCInstance(send_super(self, 'init'))
         if self is None:
@@ -577,7 +569,7 @@ class _AppleControllerManager_Implementation(EventDispatcher):
         GCController.startWirelessControllerDiscoveryWithCompletionHandler_(None)
         return self
 
-    @_PygletAppleControllerManager.method('v@')
+    @objc_method('v@')
     def controllerConnected_(self, notification: NSNotification):
         device: GCController = notification.object()
         device_ptr = device.ptr.value
@@ -593,7 +585,7 @@ class _AppleControllerManager_Implementation(EventDispatcher):
 
         self.dispatcher.dispatch_event('on_connect', controller)
 
-    @_PygletAppleControllerManager.method('v@')
+    @objc_method('v@')
     def controllerDisconnected_(self, notification: NSNotification):
         device: GCController = notification.object()
         device_ptr = device.ptr.value
@@ -607,10 +599,6 @@ class _AppleControllerManager_Implementation(EventDispatcher):
 
     def get_controllers(self):
         return list(self.controllers.values())
-
-
-_PygletAppleControllerManager = ObjCClass('_PygletAppleControllerManager')
-
 
 class _SingletonAppleDispatcher(EventDispatcher):
     """Only keep this as we only need one."""

@@ -28,12 +28,24 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-from contextlib import contextmanager
 
-from .runtime import objc, send_message, send_super, AutoReleasePool, ObjCBlock
-from .runtime import get_selector
-from .runtime import ObjCClass, ObjCInstance, ObjCSubclass
+import sys
 
-from .cocoatypes import *
-from .cocoalibs import *
-from .cocoahelpers import *
+from .runtime import objc, send_message, send_super, AutoReleasePool, ObjCBlock  # noqa: F401
+from .runtime import get_selector  # noqa: F401
+from .runtime import (ObjCClass, ObjCInstance, ObjCSubclass, objc_classmethod, objc_ivar,
+                      objc_method, objc_rawmethod)  # noqa: F401
+
+from .cocoatypes import *  # noqa: F403
+from .cocoahelpers import *  # noqa: F403
+
+from .lib_corefoundation import *  # noqa: F403
+from .lib_coregraphics import *  # noqa: F403
+from .lib_coretext import *  # noqa: F403
+
+if sys.platform == 'darwin':
+    from .lib_appkit import *  # noqa: F403
+    from .lib_cocoa import *  # noqa: F403
+    from .lib_quartz import *  # noqa: F403
+elif sys.platform == 'ios':
+    from .lib_uikit import *  # noqa: F403

@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pyglet.config import OpenGLUserConfig
     from pyglet.graphics.api.gl.cocoa.context import NSOpenGLPixelFormat, CocoaContext
-    from pyglet.window.cocoa import CocoaWindow
+    from pyglet.window.apple.cocoa import CocoaWindow
     from pyglet.graphics.api import OpenGLBackend
 
 # Version info, needed as OpenGL different Lion and onward

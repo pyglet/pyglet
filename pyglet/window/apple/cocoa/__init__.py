@@ -5,10 +5,10 @@ from typing import TYPE_CHECKING, Sequence
 
 import pyglet
 from pyglet.event import EventDispatcher
-from pyglet.libs.darwin import AutoReleasePool, CGPoint, cocoapy
+from pyglet.libs.darwin import AutoReleasePool, CGPoint, cocoapy, get_display_link_dt
 from pyglet.window import BaseWindow, DefaultMouseCursor, MouseCursor
 
-from ...libs import darwin
+from pyglet.libs import darwin
 from .pyglet_delegate import PygletDelegate
 from .pyglet_textview import PygletTextView
 from .pyglet_view import PygletView
@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.api.gl.cocoa.context import CocoaContext
 
 NSApplication = cocoapy.ObjCClass('NSApplication')
+NSRunLoop = cocoapy.ObjCClass('NSRunLoop')
 NSCursor = cocoapy.ObjCClass('NSCursor')
 NSColor = cocoapy.ObjCClass('NSColor')
 NSEvent = cocoapy.ObjCClass('NSEvent')
@@ -26,6 +27,7 @@ NSArray = cocoapy.ObjCClass('NSArray')
 NSImage = cocoapy.ObjCClass('NSImage')
 NSPasteboard = cocoapy.ObjCClass('NSPasteboard')
 
+cg = cocoapy.cg
 quartz = cocoapy.quartz
 cf = cocoapy.cf
 
@@ -80,6 +82,9 @@ class CocoaWindow(BaseWindow):
     }
 
     def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
+        self._display_link = None
+        self._display_link_last_timestamp = None
+        self._display_link_controls_vsync = False
         self._installing_view = False
         with AutoReleasePool():
             super().__init__(*args, **kwargs)
@@ -96,6 +101,9 @@ class CocoaWindow(BaseWindow):
 
     def _create(self) -> None:
         with AutoReleasePool():
+            # A display link retains its target view. Invalidate it before a
+            # view is released or replaced to prevent stale callbacks.
+            pyglet.app.event_loop._remove_window_from_draw_source(self)
             if self._nswindow:
                 # The window is about to be recreated so destroy everything
                 # associated with the old window, then destroy the window itself.
@@ -218,6 +226,59 @@ class CocoaWindow(BaseWindow):
                     self.set_mouse_passthrough(True)
                     self._nswindow.setLevel_(cocoapy.NSStatusWindowLevel)
 
+        pyglet.app.event_loop._add_window_to_draw_source(self)
+
+    def _start_display_link(self, interval: float) -> bool:
+        self._stop_display_link()
+        if self._nsview is None:
+            return False
+
+        # The NSView API follows this window as it moves between displays and
+        # pauses callbacks while the view is hidden/off the display.
+        display_link = self._nsview.displayLinkWithTarget_selector_(
+            self._nsview,
+            cocoapy.get_selector('displayLinkFired:'),
+        )
+        if display_link is None:
+            return False
+
+        if interval:
+            frame_rate = 1 / interval
+            display_link.setPreferredFrameRateRange_(
+                cocoapy.CAFrameRateRange(frame_rate, frame_rate, frame_rate)
+            )
+
+        display_link.addToRunLoop_forMode_(
+            NSRunLoop.mainRunLoop(),
+            cocoapy.NSRunLoopCommonModes,
+        )
+        self._display_link = display_link
+        self._display_link_last_timestamp = None
+        if self._vsync:
+            # CADisplayLink owns pacing. A blocking swap interval would stall
+            # this main-run-loop callback until the following refresh.
+            self.context.set_vsync(False)
+            self._display_link_controls_vsync = True
+        return True
+
+    def _stop_display_link(self) -> None:
+        if self._display_link is not None:
+            self._display_link.invalidate()
+            self._display_link = None
+        if self._display_link_controls_vsync:
+            self.context.set_vsync(self._vsync)
+            self._display_link_controls_vsync = False
+        self._display_link_last_timestamp = None
+
+    def _display_link_tick(self, display_link: darwin.ObjCInstance) -> None:
+        if self._display_link is None or self._was_closed:
+            return
+
+        self._display_link_last_timestamp, dt = get_display_link_dt(
+            display_link, self._display_link_last_timestamp,
+        )
+        pyglet.app.event_loop._dispatch_platform_draw(self, dt)
+
     def _set_fullscreen_state(self) -> None:
         """Apply exclusive-style fullscreen without replacing the NSWindow or NSView.
 
@@ -338,6 +399,7 @@ class CocoaWindow(BaseWindow):
             return
 
         with AutoReleasePool():
+            pyglet.app.event_loop._remove_window_from_draw_source(self)
             # Restore cursor visibility
             self.set_mouse_cursor_platform_visible(True)
             self.set_exclusive_mouse(False)
@@ -449,12 +511,12 @@ class CocoaWindow(BaseWindow):
         # explicit Core Foundation lifetime.
         cfdata = c_void_p(cf.CFDataCreate(None, data, len(data)))
 
-        provider = c_void_p(quartz.CGDataProviderCreateWithCFData(cfdata))
+        provider = c_void_p(cg.CGDataProviderCreateWithCFData(cfdata))
 
-        colorSpace = c_void_p(quartz.CGColorSpaceCreateDeviceRGB())
+        colorSpace = c_void_p(cg.CGColorSpaceCreateDeviceRGB())
 
         # Then create a CGImage from the provider.
-        cgimage = c_void_p(quartz.CGImageCreate(
+        cgimage = c_void_p(cg.CGImageCreate(
             image.width, image.height, 8, 32, bytesPerRow,
             colorSpace,
             cocoapy.kCGImageAlphaFirst,
@@ -464,8 +526,8 @@ class CocoaWindow(BaseWindow):
             cocoapy.kCGRenderingIntentDefault))
 
         cf.CFRelease(cfdata)
-        quartz.CGDataProviderRelease(provider)
-        quartz.CGColorSpaceRelease(colorSpace)
+        cg.CGDataProviderRelease(provider)
+        cg.CGColorSpaceRelease(colorSpace)
 
         if not cgimage:
             return
@@ -473,7 +535,7 @@ class CocoaWindow(BaseWindow):
         # Turn the CGImage into an NSImage.
         size = cocoapy.NSMakeSize(image.width, image.height)
         nsimage = NSImage.alloc().initWithCGImage_size_(cgimage, size)
-        quartz.CGImageRelease(cgimage)
+        cg.CGImageRelease(cgimage)
         if not nsimage:
             return
 
@@ -574,7 +636,8 @@ class CocoaWindow(BaseWindow):
             vsync = pyglet.options.vsync
 
         super().set_vsync(vsync)
-        self.context.set_vsync(vsync)
+        self.context.set_vsync(vsync if self._display_link is None else False)
+        self._display_link_controls_vsync = bool(self._display_link is not None and vsync)
 
     def _mouse_in_content_rect(self) -> bool:
         # Returns true if mouse is inside the window's content rectangle.

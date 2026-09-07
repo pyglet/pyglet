@@ -8,7 +8,7 @@ from pyglet.libs.darwin.cocoapy import (
     NSUInteger,
     NSUIntegerEncoding,
     ObjCClass,
-    ObjCSubclass,
+    objc_method,
     send_super,
 )
 
@@ -16,10 +16,11 @@ if TYPE_CHECKING:
     from pyglet.libs.darwin import ObjCInstance
 
 
-class PygletWindow_Implementation:
-    PygletWindow = ObjCSubclass('NSWindow', 'PygletWindow')
+NSWindow = ObjCClass('NSWindow')
+NSPanel = ObjCClass('NSPanel')
 
-    @PygletWindow.method('B')
+class PygletWindow(NSWindow):
+    @objc_method('B')
     def canBecomeKeyWindow(self) -> bool:
         return True
 
@@ -35,7 +36,7 @@ class PygletWindow_Implementation:
     # method is being called instead of this one.  I don't really feel like
     # subclassing NSApplication just to fix this.  Also, to prevent white flashes
     # while resizing, we must also call idle() from the view's reshape method.
-    @PygletWindow.method(b'@' + NSUIntegerEncoding + b'@@B')
+    @objc_method(b'@' + NSUIntegerEncoding + b'@@B')
     def nextEventMatchingMask_untilDate_inMode_dequeue_(self, mask: ObjCInstance, date: ObjCInstance,
                                                         mode: ObjCInstance, dequeue: bool) -> int:
         if self.inLiveResize():
@@ -55,15 +56,13 @@ class PygletWindow_Implementation:
         return event.value
 
     # Need this for set_size to not flash.
-    @PygletWindow.method(b'd' + NSRectEncoding)
+    @objc_method(b'd' + NSRectEncoding)
     def animationResizeTime_(self, newFrame: ObjCInstance) -> float:
         return 0.0
 
+class PygletToolWindow(NSPanel):
 
-class PygletToolWindow_Implementation:
-    PygletToolWindow = ObjCSubclass('NSPanel', 'PygletToolWindow')
-
-    @PygletToolWindow.method(b'@' + NSUIntegerEncoding + b'@@B')
+    @objc_method(b'@' + NSUIntegerEncoding + b'@@B')
     def nextEventMatchingMask_untilDate_inMode_dequeue_(self, mask: ObjCInstance, date: ObjCInstance,
                                                         mode: ObjCInstance, dequeue: bool) -> int:
         if self.inLiveResize():
@@ -81,10 +80,6 @@ class PygletToolWindow_Implementation:
         return event.value
 
     # Need this for set_size to not flash.
-    @PygletToolWindow.method(b'd' + NSRectEncoding)
+    @objc_method(b'd' + NSRectEncoding)
     def animationResizeTime_(self, newFrame: ObjCInstance) -> float:
         return 0.0
-
-
-PygletWindow = ObjCClass('PygletWindow')
-PygletToolWindow = ObjCClass('PygletToolWindow')

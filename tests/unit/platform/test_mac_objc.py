@@ -2,6 +2,7 @@
 import unittest
 import weakref
 import gc
+from ctypes import c_int
 
 import pyglet
 from tests.annotations import require_platform, Platform
@@ -9,13 +10,16 @@ from tests.annotations import require_platform, Platform
 pytestmark = require_platform(Platform.OSX)
 
 if pyglet.compat_platform in ("darwin",):
-    from pyglet.libs.darwin import AutoReleasePool, ObjCSubclass, ObjCClass
+    from pyglet.libs.darwin import (AutoReleasePool, ObjCSubclass, ObjCClass, objc_classmethod, objc_ivar,
+                                    objc_method, objc_rawmethod)
     from pyglet.libs.darwin.cocoapy.runtime import (
         _cache_observer_internal_name,
         _is_objc_tagged_pointer,
         get_cached_instances,
+        get_instance_variable,
         objc,
         send_super,
+        set_instance_variable,
     )
 
     NSObject = ObjCClass('NSObject')
@@ -24,9 +28,53 @@ if pyglet.compat_platform in ("darwin",):
 
 
 class ObjCIntegrationTest(unittest.TestCase):
+    def test_declarative_objc_subclass(self):
+        class DeclarativeObjCSubclassTest(NSObject):
+            stored_value = objc_ivar(c_int)
+
+            @objc_classmethod('B')
+            def isDeclarativeClass(self):
+                return True
+
+            @objc_method('B')
+            def isDeclarativeSubclass(self):
+                return True
+
+            @objc_rawmethod('i')
+            def storedValue(self, cmd):
+                return get_instance_variable(self, 'stored_value', c_int)
+
+        gc.collect()
+        test_object = DeclarativeObjCSubclassTest.alloc().init()
+        try:
+            self.assertTrue(DeclarativeObjCSubclassTest.isDeclarativeClass())
+            self.assertTrue(test_object.isDeclarativeSubclass())
+            set_instance_variable(test_object, 'stored_value', 42, c_int)
+            self.assertEqual(test_object.storedValue(), 42)
+            self.assertEqual(test_object.objc_class.name, b'DeclarativeObjCSubclassTest')
+            self.assertNotIn('stored_value', DeclarativeObjCSubclassTest.__dict__)
+            self.assertNotIn('storedValue', DeclarativeObjCSubclassTest.__dict__)
+        finally:
+            test_object.release()
+
+    def test_declarative_objc_subclass_dealloc(self):
+        deallocated = False
+
+        class DeclarativeObjCSubclassDeallocTest(NSObject):
+            @objc_method('v')
+            def dealloc(self):
+                nonlocal deallocated
+                deallocated = True
+                send_super(self, 'dealloc')
+
+        gc.collect()
+        test_object = DeclarativeObjCSubclassDeallocTest.alloc().init()
+        test_object.release()
+        self.assertTrue(deallocated)
+
     @staticmethod
     def _has_cached_pointer(ptr):
-        return any(obj.ptr.value == ptr for _, _, _, obj in get_cached_instances())
+        return any(obj.ptr.value == ptr for _, _, obj in get_cached_instances())
 
     def test_objc_leak_gc(self):
         """Test deleting """
@@ -164,7 +212,7 @@ class ObjCIntegrationTest(unittest.TestCase):
         self.assertFalse(self._has_cached_pointer(ptr))
 
     def test_objc_tagged_pointer_churn_does_not_grow_cache(self):
-        """Repeated tagged values should not accumulate cached wrappers like the old pool tracking did."""
+        """Repeated tagged values should not accumulate cached wrappers."""
         start_count = len(get_cached_instances())
         saw_tagged_date = False
 

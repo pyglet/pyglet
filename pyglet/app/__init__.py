@@ -51,6 +51,9 @@ else:
         # Use alternate loop only if forced, or using an M1 chip.
         if (platform.machine() == 'arm64' and "M1" in get_chip_model()) or pyglet.options.osx_alt_loop:
             from pyglet.app.cocoa import CocoaAlternateEventLoop as EventLoop
+    elif compat_platform == 'ios':
+        from pyglet.app.ios import IOSEventLoop as EventLoop
+        from pyglet.app.ios import IOSPlatformEventLoop as PlatformEventLoop
     elif compat_platform in ('win32', 'cygwin'):
         from pyglet.app.win32 import Win32EventLoop as PlatformEventLoop
     elif compat_platform == 'linux':

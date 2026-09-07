@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+from _ctypes import _SimpleCData
 from ctypes import (
     CFUNCTYPE,
     Structure,
@@ -28,7 +31,7 @@ __i386__ = (platform.machine() == 'i386')
 
 PyObjectEncoding = b'{PyObject=@}'
 
-def encoding_for_ctype(vartype):
+def encoding_for_ctype(vartype: _SimpleCData) -> bytes:
     typecodes = {c_char:b'c', c_int:b'i', c_short:b's', c_long:b'l', c_longlong:b'q',
                  c_ubyte:b'C', c_uint:b'I', c_ushort:b'S', c_ulong:b'L', c_ulonglong:b'Q',
                  c_float:b'f', c_double:b'd', c_bool:b'B', c_char_p:b'*', c_void_p:b'@',
@@ -38,9 +41,9 @@ def encoding_for_ctype(vartype):
 # Note CGBase.h located at
 # /System/Library/Frameworks/ApplicationServices.framework/Frameworks/CoreGraphics.framework/Headers/CGBase.h
 # defines CGFloat as double if __LP64__, otherwise it's a float.
-NSInteger: type[c_long] | type[c_int]
-NSUInteger: type[c_ulong] | type[c_uint]
-CGFloat: type[c_double] | type[c_float]
+NSInteger: type[c_long | c_int]
+NSUInteger: type[c_ulong | c_uint]
+CGFloat: type[c_double | c_float]
 if __LP64__:
     NSInteger = c_long
     NSUInteger = c_ulong
@@ -66,12 +69,13 @@ CGFloatEncoding = encoding_for_ctype(CGFloat)
 CGImageEncoding = b'{CGImage=}'
 
 NSZoneEncoding = b'{_NSZone=}'
+CAFrameRateRangeEncoding = b'{CAFrameRateRange=fff}'
 
 # from /System/Library/Frameworks/Foundation.framework/Headers/NSGeometry.h
 class NSPoint(Structure):
     _fields_ = [ ("x", CGFloat), ("y", CGFloat) ]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}(x={self.x}, y={self.y})"
 
 CGPoint = NSPoint
@@ -83,6 +87,14 @@ CGSize = NSSize
 class NSRect(Structure):
     _fields_ = [ ("origin", NSPoint), ("size", NSSize) ]
 CGRect = NSRect
+
+
+class CAFrameRateRange(Structure):
+    _fields_ = [
+        ("minimum", c_float),
+        ("maximum", c_float),
+        ("preferred", c_float),
+    ]
 
 def NSMakeSize(w, h):
     return NSSize(w, h)
@@ -133,4 +145,3 @@ class Block_literal_1(Structure):
         ("invoke", c_void_p),  # Invoke function
         ("descriptor", Block_descriptor_1),
     ]
-

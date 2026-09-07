@@ -21,7 +21,7 @@ def test_get_realtime_thread_policy__call_success__timeConstraintThreadPolicy_re
     cocoa_mock.thread_policy_get.return_value = 0
     expected_return_type = type(TimeConstraintThreadPolicy())
 
-    with patch("pyglet.libs.darwin.cocoapy.cocoalibs.cocoa", cocoa_mock):
+    with patch("pyglet.libs.darwin.cocoapy.lib_cocoa.cocoa", cocoa_mock):
         actual_return_type = type(get_realtime_thread_policy())
 
     cocoa_mock.thread_policy_get.assert_called_once()
@@ -36,7 +36,7 @@ def test_get_realtime_thread_policy__call_failure__None_returned_and_error_logge
     cocoa_mock.thread_policy_get.return_value = -1
     expected_return = None
 
-    with patch("pyglet.libs.darwin.cocoapy.cocoalibs.cocoa", cocoa_mock):
+    with patch("pyglet.libs.darwin.cocoapy.lib_cocoa.cocoa", cocoa_mock):
         actual_return = get_realtime_thread_policy()
 
     cocoa_mock.thread_policy_get.assert_called_once()
@@ -56,9 +56,9 @@ def test_set_realtime_thread_policy__call_success__no_error_logged(
     get_realtime_thread_policy_mock.return_value = TimeConstraintThreadPolicy()
 
     with (
-        patch("pyglet.libs.darwin.cocoapy.cocoalibs.cocoa", cocoa_mock),
+        patch("pyglet.libs.darwin.cocoapy.lib_cocoa.cocoa", cocoa_mock),
         patch(
-            "pyglet.libs.darwin.cocoapy.cocoalibs.get_realtime_thread_policy",
+            "pyglet.libs.darwin.cocoapy.lib_cocoa.get_realtime_thread_policy",
             get_realtime_thread_policy_mock,
         ),
     ):
@@ -80,9 +80,9 @@ def test_set_realtime_thread_policy__call_failure__error_logged(
     get_realtime_thread_policy_mock.return_value = None
 
     with (
-        patch("pyglet.libs.darwin.cocoapy.cocoalibs.cocoa", cocoa_mock),
+        patch("pyglet.libs.darwin.cocoapy.lib_cocoa.cocoa", cocoa_mock),
         patch(
-            "pyglet.libs.darwin.cocoapy.cocoalibs.get_realtime_thread_policy",
+            "pyglet.libs.darwin.cocoapy.lib_cocoa.get_realtime_thread_policy",
             get_realtime_thread_policy_mock,
         ),
     ):

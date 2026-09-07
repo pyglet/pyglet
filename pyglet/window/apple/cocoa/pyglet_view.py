@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     from . import CocoaWindow
 
 NSTrackingArea = cocoapy.ObjCClass('NSTrackingArea')
+NSView = cocoapy.ObjCClass('NSView')
 NSURL = cocoapy.ObjCClass('NSURL')
 NSArray = cocoapy.ObjCClass('NSArray')
 NSDictionary = cocoapy.ObjCClass('NSDictionary')
@@ -60,7 +61,7 @@ def getMouseDelta(nsevent: cocoapy.ObjCInstance) -> tuple[int, int]:
     return dx, dy
 
 
-def getMousePosition(self: PygletView_Implementation | cocoapy.ObjCInstance, nsevent: cocoapy.ObjCInstance) \
+def getMousePosition(self: cocoapy.ObjCInstance, nsevent: cocoapy.ObjCInstance) \
         -> tuple[int, int]:
     in_window = nsevent.locationInWindow()
     in_window = self.convertPoint_fromView_(in_window, None)
@@ -108,7 +109,7 @@ def getSymbol(nsevent: cocoapy.ObjCInstance) -> str | None:
     return None
 
 
-def _get_drag_position(self: PygletView_Implementation | cocoapy.ObjCInstance,
+def _get_drag_position(self: cocoapy.ObjCInstance,
                        dragging_info: cocoapy.ObjCInstance) -> tuple[int, int]:
     position = dragging_info.draggingLocation()
     position = self.convertPoint_fromView_(position, None)
@@ -139,10 +140,9 @@ def _get_dragging_paths(dragging_info: cocoapy.ObjCInstance) -> list[str]:
     return paths
 
 
-class PygletView_Implementation:
-    PygletView = cocoapy.ObjCSubclass('NSView', 'PygletView')
+class PygletView(NSView):
 
-    @PygletView.method(b'@' + cocoapy.NSRectEncoding + cocoapy.PyObjectEncoding)
+    @cocoapy.objc_method(b'@' + cocoapy.NSRectEncoding + cocoapy.PyObjectEncoding)
     def initWithFrame_cocoaWindow_(self, frame: cocoapy.NSRect, window: CocoaWindow) -> cocoapy.ObjCInstance | None:
 
         # The tracking area is used to get mouseEntered, mouseExited, and cursorUpdate
@@ -175,7 +175,7 @@ class PygletView_Implementation:
         self.addSubview_(self._textview)
         return self
 
-    @PygletView.method('v')
+    @cocoapy.objc_method('v')
     def dealloc(self) -> None:
         self._window = None
         self._textview.removeFromSuperviewWithoutNeedingDisplay()
@@ -183,7 +183,7 @@ class PygletView_Implementation:
         self._tracking_area.release()
         cocoapy.send_super(self, 'dealloc')
 
-    @PygletView.method('v')
+    @cocoapy.objc_method('v')
     def updateTrackingAreas(self) -> None:
         # This method is called automatically whenever the tracking areas need to be
         # recreated, for example when window resizes.
@@ -206,18 +206,23 @@ class PygletView_Implementation:
         self.addTrackingArea_(self._tracking_area)
         cocoapy.send_super(self, 'updateTrackingAreas', superclass_name='NSView')
 
-    @PygletView.method('B')
+    @cocoapy.objc_method('B')
     def canBecomeKeyView(self) -> bool:
         return True
 
-    @PygletView.method('B')
+    @cocoapy.objc_method('B')
     def isOpaque(self) -> bool:
         return True
+
+    @cocoapy.objc_method('v@')
+    def displayLinkFired_(self, display_link: cocoapy.ObjCInstance) -> None:
+        if self._window is not None:
+            self._window._display_link_tick(display_link)
 
     ## Event responders.
 
     # This method is called whenever the view changes size.
-    @PygletView.method(b'v' + cocoapy.NSSizeEncoding)
+    @cocoapy.objc_method(b'v' + cocoapy.NSSizeEncoding)
     def setFrameSize_(self, size: cocoapy.NSSize) -> None:
         cocoapy.send_super(self, 'setFrameSize:', size,
                            superclass_name='NSView',
@@ -246,20 +251,20 @@ class PygletView_Implementation:
             if app.event_loop is not None:
                 app.event_loop.idle()
 
-    @PygletView.method('v@')
+    @cocoapy.objc_method('v@')
     def keyDown_(self, nsevent: cocoapy.ObjCInstance) -> None:
         if not nsevent.isARepeat():
             symbol = getSymbol(nsevent)
             modifiers = getModifiers(nsevent)
             self._window.dispatch_event('on_key_press', symbol, modifiers)
 
-    @PygletView.method('v@')
+    @cocoapy.objc_method('v@')
     def keyUp_(self, nsevent: cocoapy.ObjCInstance) -> None:
         symbol = getSymbol(nsevent)
         modifiers = getModifiers(nsevent)
         self._window.dispatch_event('on_key_release', symbol, modifiers)
 
-    @PygletView.method('v@')
+    @cocoapy.objc_method('v@')
     def flagsChanged_(self, nsevent: cocoapy.ObjCInstance) -> None:
         # Handles on_key_press and on_key_release events for modifier keys.
         # Note that capslock is handled differently than other keys; it acts
@@ -280,11 +285,11 @@ class PygletView_Implementation:
         else:
             self._window.dispatch_event('on_key_release', symbol, modifiers)
 
-    @PygletView.method('v:')
+    @cocoapy.objc_method('v:')
     def doCommandBySelector_(self, selector: ctypes.c_void_p) -> None:
         """Prevent system beeps when an event or key is not handled."""
 
-    @PygletView.method('v@')
+    @cocoapy.objc_method('v@')
     def mouseMoved_(self, nsevent: cocoapy.ObjCInstance) -> None:
         if self._window._mouse_ignore_motion:  # noqa: SLF001
             self._window._mouse_ignore_motion = False  # noqa: SLF001
@@ -297,20 +302,20 @@ class PygletView_Implementation:
         factor = self._window._nswindow.backingScaleFactor()
         self._window.dispatch_event('on_mouse_motion', x, y, dx * factor, dy * factor)
 
-    @PygletView.method('v@')
+    @cocoapy.objc_method('v@')
     def scrollWheel_(self, nsevent: cocoapy.ObjCInstance) -> None:
         x, y = getMousePosition(self, nsevent)
         scroll_x, scroll_y = getMouseDelta(nsevent)
         self._window.dispatch_event('on_mouse_scroll', x, y, scroll_x, scroll_y)
 
-    @PygletView.method('v@')
+    @cocoapy.objc_method('v@')
     def mouseDown_(self, nsevent: cocoapy.ObjCInstance) -> None:
         x, y = getMousePosition(self, nsevent)
         buttons = mouse.LEFT
         modifiers = getModifiers(nsevent)
         self._window.dispatch_event('on_mouse_press', x, y, buttons, modifiers)
 
-    @PygletView.method('v@')
+    @cocoapy.objc_method('v@')
     def mouseDragged_(self, nsevent: cocoapy.ObjCInstance) -> None:
         x, y = getMousePosition(self, nsevent)
         dx, dy = getMouseDelta(nsevent)
@@ -318,21 +323,21 @@ class PygletView_Implementation:
         modifiers = getModifiers(nsevent)
         self._window.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons, modifiers)
 
-    @PygletView.method('v@')
+    @cocoapy.objc_method('v@')
     def mouseUp_(self, nsevent: cocoapy.ObjCInstance) -> None:
         x, y = getMousePosition(self, nsevent)
         buttons = mouse.LEFT
         modifiers = getModifiers(nsevent)
         self._window.dispatch_event('on_mouse_release', x, y, buttons, modifiers)
 
-    @PygletView.method('v@')
+    @cocoapy.objc_method('v@')
     def rightMouseDown_(self, nsevent: cocoapy.ObjCInstance) -> None:
         x, y = getMousePosition(self, nsevent)
         buttons = mouse.RIGHT
         modifiers = getModifiers(nsevent)
         self._window.dispatch_event('on_mouse_press', x, y, buttons, modifiers)
 
-    @PygletView.method('v@')
+    @cocoapy.objc_method('v@')
     def rightMouseDragged_(self, nsevent: cocoapy.ObjCInstance) -> None:
         x, y = getMousePosition(self, nsevent)
         dx, dy = getMouseDelta(nsevent)
@@ -340,21 +345,21 @@ class PygletView_Implementation:
         modifiers = getModifiers(nsevent)
         self._window.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons, modifiers)
 
-    @PygletView.method('v@')
+    @cocoapy.objc_method('v@')
     def rightMouseUp_(self, nsevent: cocoapy.ObjCInstance) -> None:
         x, y = getMousePosition(self, nsevent)
         buttons = mouse.RIGHT
         modifiers = getModifiers(nsevent)
         self._window.dispatch_event('on_mouse_release', x, y, buttons, modifiers)
 
-    @PygletView.method('v@')
+    @cocoapy.objc_method('v@')
     def otherMouseDown_(self, nsevent: cocoapy.ObjCInstance) -> None:
         x, y = getMousePosition(self, nsevent)
         buttons = mouse.MIDDLE
         modifiers = getModifiers(nsevent)
         self._window.dispatch_event('on_mouse_press', x, y, buttons, modifiers)
 
-    @PygletView.method('v@')
+    @cocoapy.objc_method('v@')
     def otherMouseDragged_(self, nsevent: cocoapy.ObjCInstance) -> None:
         x, y = getMousePosition(self, nsevent)
         dx, dy = getMouseDelta(nsevent)
@@ -362,14 +367,14 @@ class PygletView_Implementation:
         modifiers = getModifiers(nsevent)
         self._window.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons, modifiers)
 
-    @PygletView.method('v@')
+    @cocoapy.objc_method('v@')
     def otherMouseUp_(self, nsevent: cocoapy.ObjCInstance) -> None:
         x, y = getMousePosition(self, nsevent)
         buttons = mouse.MIDDLE
         modifiers = getModifiers(nsevent)
         self._window.dispatch_event('on_mouse_release', x, y, buttons, modifiers)
 
-    @PygletView.method('v@')
+    @cocoapy.objc_method('v@')
     def mouseEntered_(self, nsevent: cocoapy.ObjCInstance) -> None:
         x, y = getMousePosition(self, nsevent)
         self._window._mouse_in_window = True  # noqa: SLF001
@@ -377,7 +382,7 @@ class PygletView_Implementation:
         # Better to do it from cursorUpdate:
         self._window.dispatch_event('on_mouse_enter', x, y)
 
-    @PygletView.method('v@')
+    @cocoapy.objc_method('v@')
     def mouseExited_(self, nsevent: cocoapy.ObjCInstance) -> None:
         x, y = getMousePosition(self, nsevent)
         self._window._mouse_in_window = False  # noqa: SLF001
@@ -385,7 +390,7 @@ class PygletView_Implementation:
             self._window.set_mouse_cursor_platform_visible()
         self._window.dispatch_event('on_mouse_leave', x, y)
 
-    @PygletView.method('v@')
+    @cocoapy.objc_method('v@')
     def cursorUpdate_(self, nsevent: cocoapy.ObjCInstance) -> None:
         # Called when mouse cursor enters view.  Unlike mouseEntered:,
         # this method will be called if the view appears underneath a
@@ -398,7 +403,7 @@ class PygletView_Implementation:
         if not self._window._mouse_exclusive:  # noqa: SLF001
             self._window.set_mouse_cursor_platform_visible()
 
-    @PygletView.method('Q@')
+    @cocoapy.objc_method('Q@')
     def draggingEntered_(self, draginfo: cocoapy.ObjCInstance) -> int:
         paths = _get_dragging_paths(draginfo)
         if paths:
@@ -409,7 +414,7 @@ class PygletView_Implementation:
             return cocoapy.NSDragOperationGeneric
         return 0
 
-    @PygletView.method('Q@')
+    @cocoapy.objc_method('Q@')
     def draggingUpdated_(self, draginfo: cocoapy.ObjCInstance) -> int:
         paths = _get_dragging_paths(draginfo)
         if paths:
@@ -424,13 +429,13 @@ class PygletView_Implementation:
             self._file_drag_active = False
         return 0
 
-    @PygletView.method('v@')
+    @cocoapy.objc_method('v@')
     def draggingExited_(self, draginfo: cocoapy.ObjCInstance) -> None:
         if self._file_drag_active:
             self._window.dispatch_event('on_file_drag_exit')
             self._file_drag_active = False
 
-    @PygletView.method('B@')
+    @cocoapy.objc_method('B@')
     def performDragOperation_(self, sender: cocoapy.ObjCInstance) -> bool:
         x, y = _get_drag_position(self, sender)
         paths = _get_dragging_paths(sender)
@@ -440,6 +445,3 @@ class PygletView_Implementation:
             self._window.dispatch_event('on_file_drag_exit')
             self._file_drag_active = False
         return bool(paths)
-
-
-PygletView = cocoapy.ObjCClass('PygletView')

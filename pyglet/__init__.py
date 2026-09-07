@@ -264,6 +264,15 @@ class Options:
 
     .. versionadded:: 2.0.5"""
 
+    osx_displaylink: bool = True
+    """If ``True`` (the default), macOS 14 and later uses ``CADisplayLink`` to schedule window draws.
+
+    Set this to ``False`` before calling :func:`pyglet.app.run` to retain the clock-driven redraw behavior used by
+    earlier pyglet versions. This is useful for applications that need a timer defined frame cadence, such as a
+    deterministic capture pipeline or an application that coordinates drawing with an external scheduler.
+
+    .. versionadded:: 3.0.0"""
+
     dpi_scaling: Literal["platform", "stretch"] = "platform"
     """For 'HiDPI' displays, Window behavior can differ between operating systems. Defaults to `'platform'`.
 
@@ -354,7 +363,7 @@ for _option_name, _type_str in options.__annotations__.items():
 
 
 if (__debug__ is False) or getattr(sys, "frozen", False):
-    options.debug_gl = False
+    options.debug_api = False
 
 
 # Call tracing
