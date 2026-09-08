@@ -123,7 +123,7 @@ def test_stream_create(stream):
     assert stream.state == lib.PW_STREAM_STATE_UNCONNECTED
     assert stream.is_ready == False
 
-    with stream.mainloop.lock:
+    with stream.context.mainloop.lock:
         stream.delete()
 
     assert stream.state == lib.PW_STREAM_STATE_UNCONNECTED
@@ -139,7 +139,7 @@ def test_stream_connect(stream):
     assert stream.is_streaming == False
     assert isinstance(stream.get_node_id(), numbers.Integral)
 
-    with stream.mainloop.lock:
+    with stream.context.mainloop.lock:
         stream.delete()
 
 
@@ -148,15 +148,15 @@ def test_stream_set_active(stream):
 
     assert stream.is_paused
 
-    with stream.mainloop.lock:
+    with stream.context.mainloop.lock:
         stream.set_active(True)
-    _wait_for(lambda: stream.is_streaming, stream.mainloop)
+    _wait_for(lambda: stream.is_streaming, stream.context.mainloop)
 
-    with stream.mainloop.lock:
+    with stream.context.mainloop.lock:
         stream.set_active(False)
-    _wait_for(lambda: stream.is_paused, stream.mainloop)
+    _wait_for(lambda: stream.is_paused, stream.context.mainloop)
 
-    with stream.mainloop.lock:
+    with stream.context.mainloop.lock:
         stream.delete()
 
 
@@ -164,17 +164,17 @@ def test_stream_process_callback(stream):
     stream.connect_playback()
 
     process_calls = []
-    stream.set_process_callback(lambda: process_calls.append(True))
+    stream.push_handlers(on_process=lambda: process_calls.append(True))
 
-    with stream.mainloop.lock:
+    with stream.context.mainloop.lock:
         stream.set_active(True)
-    _wait_for(lambda: process_calls, stream.mainloop)
+    _wait_for(lambda: process_calls, stream.context.mainloop)
 
     assert process_calls
 
-    with stream.mainloop.lock:
+    with stream.context.mainloop.lock:
         stream.set_active(False)
-    with stream.mainloop.lock:
+    with stream.context.mainloop.lock:
         stream.delete()
 
 
@@ -186,7 +186,7 @@ def audio_source():
 def test_stream_time_info(stream, audio_source):
     stream.connect_playback()
 
-    def fill(_data):
+    def fill():
         buffer = stream.dequeue_buffer()
         if buffer is None:
             return
@@ -203,23 +203,23 @@ def test_stream_time_info(stream, audio_source):
                 buffer.size = nbytes // 2
         stream.queue_buffer(buffer)
 
-    stream.set_process_callback(fill)
+    stream.push_handlers(on_process=fill)
 
     time_info = None
-    with stream.mainloop.lock:
+    with stream.context.mainloop.lock:
         stream.set_active(True)
-    _wait_for(lambda: stream.is_streaming, stream.mainloop)
+    _wait_for(lambda: stream.is_streaming, stream.context.mainloop)
     for _ in range(5):
         time_info = stream.get_time()
         if time_info is not None:
             break
-        _wait_for(lambda: True, stream.mainloop)
+        _wait_for(lambda: True, stream.context.mainloop)
 
     assert time_info is not None
 
-    with stream.mainloop.lock:
+    with stream.context.mainloop.lock:
         stream.set_active(False)
-    with stream.mainloop.lock:
+    with stream.context.mainloop.lock:
         stream.delete()
 
 

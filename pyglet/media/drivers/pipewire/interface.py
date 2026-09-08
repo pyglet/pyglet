@@ -12,8 +12,9 @@ import sys
 import weakref
 
 from ctypes import POINTER, byref, sizeof
-from typing import Callable, Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
+from pyglet.event import EventDispatcher
 from pyglet.media.drivers.base import AbstractAudioPlayer
 from pyglet.util import debug_print
 from pyglet.media.drivers.pipewire import lib_pipewire as lib
@@ -23,11 +24,6 @@ if TYPE_CHECKING:
     from pyglet.media.codecs import AudioFormat
 
 _debug = debug_print('debug_media')
-
-StreamProcessCallback = Callable[[], None]
-StreamStateChangedCallback = Callable[[int, int, Optional[bytes]], None]
-StreamNewBufferCallback = Callable[[int], None]
-DrainedCallback = Callable[[], None]
 
 
 SAMPLE_FORMATS = {"U8": {"little": lib.SPA_AUDIO_FORMAT_U8, "big": lib.SPA_AUDIO_FORMAT_U8},
@@ -172,11 +168,19 @@ class PipeWireContext:
         self._loop = None
 
 
-class PipeWireStream:
+class PipeWireStream(EventDispatcher):
     """A PipeWire audio playback stream.
 
     The stream is created inactive; callers activate it with
     ``set_active(True)`` when playback should start.
+
+    Events:
+        on_state_changed(old, state, error):
+            The stream changed state.
+        on_process:
+            The stream is ready for the consumer to queue more buffers.
+        on_drained:
+            A previously requested drain has completed.
     """
 
     _state_name = {lib.PW_STREAM_STATE_ERROR: 'Error',
@@ -216,27 +220,12 @@ class PipeWireStream:
             self._properties = None  # Ownership transferred to the stream.
 
             self._listener = lib.struct_spa_hook()
-            self._events = lib.struct_pw_stream_events()
-
-            self._cb_destroy = lib._pw_stream_events_destroy_t(self._on_destroy)
-            self._cb_state_changed = lib._pw_stream_events_state_changed_t(self._on_state_changed)
-            self._cb_process = lib._pw_stream_events_process_t(self._on_process)
-            self._cb_add_buffer = lib._pw_stream_events_add_buffer_t(self._on_add_buffer)
-            self._cb_remove_buffer = lib._pw_stream_events_remove_buffer_t(self._on_remove_buffer)
-            self._cb_drained = lib._pw_stream_events_drained_t(self._on_drained)
-
-            self._events.version = lib.PW_VERSION_STREAM_EVENTS
-            self._events.destroy = self._cb_destroy
-            self._events.state_changed = self._cb_state_changed
-            self._events.process = self._cb_process
-            self._events.add_buffer = self._cb_add_buffer
-            self._events.remove_buffer = self._cb_remove_buffer
-            self._events.drained = self._cb_drained
-
-            self._process_callback = None
-            self._state_callback = None
-            self._buffer_callback = None
-            self._drained_callback = None
+            self._events = lib.make_stream_events(
+                destroy=self._on_destroy,
+                state_changed=self._on_state_changed,
+                process=self._on_process,
+                drained=self._on_drained,
+            )
 
             lib.pw_stream_add_listener(self._stream, self._listener, self._events, None)
 
@@ -261,42 +250,14 @@ class PipeWireStream:
         if state == lib.PW_STREAM_STATE_ERROR:
             error_msg = error.decode('utf-8') if error else 'unknown error'
             assert _debug(f'PipeWireStream: error: {error_msg}')
-        callback = self._state_callback
-        if callback is not None:
-            callback(old, state, error)
+        self.dispatch_event('on_state_changed', old, state, error)
         self.context.mainloop.signal()
 
     def _on_process(self, _data) -> None:
-        callback = self._process_callback
-        if callback is not None:
-            callback()
-
-    def _on_add_buffer(self, _data, buffer_ptr) -> None:
-        callback = self._buffer_callback
-        if callback is not None:
-            callback(True)
-
-    def _on_remove_buffer(self, _data, buffer_ptr) -> None:
-        callback = self._buffer_callback
-        if callback is not None:
-            callback(False)
+        self.dispatch_event('on_process')
 
     def _on_drained(self, _data) -> None:
-        callback = self._drained_callback
-        if callback is not None:
-            callback()
-
-    def set_process_callback(self, callback: Optional[StreamProcessCallback]) -> None:
-        self._process_callback = callback
-
-    def set_state_callback(self, callback: Optional[StreamStateChangedCallback]) -> None:
-        self._state_callback = callback
-
-    def set_buffer_callback(self, callback: Optional[StreamNewBufferCallback]) -> None:
-        self._buffer_callback = callback
-
-    def set_drained_callback(self, callback: Optional[DrainedCallback]) -> None:
-        self._drained_callback = callback
+        self.dispatch_event('on_drained')
 
     def connect_playback(self, target_latency: Optional[float] = None) -> None:
         """Connect the stream for playback, negotiating a format with the
@@ -420,3 +381,8 @@ class PipeWireStream:
         """
         assert self._stream is not None
         return lib.pw_stream_set_rate(self._stream, rate)
+
+
+PipeWireStream.register_event_type('on_process')
+PipeWireStream.register_event_type('on_state_changed')
+PipeWireStream.register_event_type('on_drained')

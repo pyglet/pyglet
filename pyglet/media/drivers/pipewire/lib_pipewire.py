@@ -15,7 +15,7 @@ from ctypes import (
     CFUNCTYPE, POINTER, Structure, byref, c_bool, c_char_p, c_double, c_int,
     c_int32, c_int64, c_size_t, c_ubyte, c_uint32, c_uint64, c_void_p,
     cast, create_string_buffer)
-from typing import Optional
+from typing import Any, Callable, Optional
 
 import pyglet.lib
 
@@ -244,6 +244,21 @@ class struct_pw_stream_events(Structure):
         ('command', _pw_stream_events_command_t),
         ('trigger_done', _pw_stream_events_trigger_done_t),
     ]
+
+
+def make_stream_events(**handlers: Callable[..., Any]) -> struct_pw_stream_events:
+    """Build a pw_stream_events struct wired to the given handlers.
+
+    Callback trampolines are attached to the returned object so they stay
+    alive as long as it does; retain it for the lifetime of the stream.
+    """
+    events = struct_pw_stream_events()
+    events.version = PW_VERSION_STREAM_EVENTS
+    for name, handler in handlers.items():
+        callback = globals()[f'_pw_stream_events_{name}_t'](handler)
+        setattr(events, name, callback)
+        setattr(events, f'{name}_callback', callback)
+    return events
 
 
 # Stream:

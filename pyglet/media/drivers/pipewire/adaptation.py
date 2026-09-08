@@ -192,23 +192,25 @@ class PipeWirePlayer(AbstractAudioPlayer):
 
         with driver.mainloop.lock:
             self.stream = driver.context.create_stream(audio_format)
-            self.stream.set_process_callback(self._process)
-            self.stream.set_state_callback(self._state_changed)
-            self.stream.set_drained_callback(self._on_drained)
 
-        # connect_playback() manages the main-loop lock itself; it must not
-        # be called while already holding it, because it waits on the
-        # thread-loop condition variable while the loop dispatches the
-        # state-change handler (holding the lock again would keep the loop
+        # State-change and process callbacks fire from the PipeWire main-loop thread.
+        # Handlers must be attached before connect_playback() because the connect state
+        # change is dispatched while it waits.
+        self.stream.push_handlers(on_process=self.on_process,
+                                  on_state_changed=self.on_state_changed,
+                                  on_drained=self.on_drained)
+
+        # connect_playback() manages the main-loop lock itself; it must not be called while
+        # already holding it, because it waits on the thread-loop condition variable while the
+        # loop dispatches the state-change handler (holding the lock again would keep the loop
         # thread from running).
         self.stream.connect_playback()
-
         assert _debug('PipeWirePlayer: __init__ finished')
 
-    def _state_changed(self, old: int, state: int, error) -> None:
+    def on_state_changed(self, old: int, state: int, error) -> None:
         assert _debug(f'PipeWirePlayer: stream state = {self.stream._state_name.get(state, state)}')
 
-    def _process(self) -> None:
+    def on_process(self) -> None:
         # Called from the PipeWire main-loop thread.
         assert _debug('PipeWirePlayer: process')
         with self._audio_data_lock:
@@ -275,7 +277,7 @@ class PipeWirePlayer(AbstractAudioPlayer):
         self._draining = True
         self.stream.drain()
 
-    def _on_drained(self) -> None:
+    def on_drained(self) -> None:
         # Called from the PipeWire main-loop thread.
         assert _debug('PipeWirePlayer: drained')
         self._dispatch_eos()
