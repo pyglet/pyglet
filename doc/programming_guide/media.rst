@@ -21,9 +21,9 @@ effects. To play video, :ref:`guide-supportedmedia-ffmpeg` must be
 installed.
 
 Audio is played back with one of the following: OpenAL, XAudio2,
-DirectSound, or PulseAudio. Hardware-accelerated mixing is available
-on all of them. 3D positional audio and surround sound features are
-available on all back-ends other than PulseAudio.
+DirectSound, PulseAudio, or PipeWire. Hardware-accelerated mixing is
+available on all of them. 3D positional audio and surround sound features
+are available on all back-ends other than PulseAudio and PipeWire.
 
 .. _FFmpeg: https://www.ffmpeg.org/download.html
 .. _openal.org: https://www.openal.org/downloads
@@ -31,8 +31,8 @@ available on all back-ends other than PulseAudio.
 Audio drivers
 -------------
 
-pyglet can use OpenAL, XAudio2, DirectSound, or PulseAudio to play
-sound. Only one driver can be used at a time, but the selection can
+pyglet can use OpenAL, XAudio2, DirectSound, PulseAudio, or PipeWire to
+play sound. Only one driver can be used at a time, but the selection can
 be changed by altering the configuration and restarting the program.
 
 The default driver preference order works well for most users. However,
@@ -53,12 +53,16 @@ The available drivers depend on your operating system:
           - OpenAL [#openalf]_
         * - DirectSound
           -
-          -
+          - PulseAudio [#pulseaudiof]_
         * - XAudio2
           -
-          - PulseAudio [#pulseaudiof]_
+          - PipeWire [#pipewiref]_
 
 .. [#pulseaudiof] The :ref:`guide-audio-driver-pulseaudio` driver has
+     limitations. For audio-intensive programs, consider using
+     :ref:`guide-audio-driver-openal`.
+
+.. [#pipewiref] The :ref:`guide-audio-driver-pipewire` driver has
      limitations. For audio-intensive programs, consider using
      :ref:`guide-audio-driver-openal`.
 
@@ -77,7 +81,7 @@ On import, the :mod:`pyglet.media` will try each entry from first to
 last until it either finds a working driver or runs out of entries. For
 example, the default is equivalent to setting the following value::
 
-   pyglet.options['audio'] = ('xaudio2', 'directsound', 'openal', 'pulse', 'silent')
+   pyglet.options['audio'] = ('xaudio2', 'directsound', 'openal', 'pulse', 'pipewire', 'silent')
 
 You can also set a custom preference order. For example, we could add
 this line before importing the media module::
@@ -105,6 +109,8 @@ one or more of the following strings:
           - XAudio2
         * - ``'pulse'``
           - PulseAudio
+        * - ``'pipewire'``
+          - PipeWire
         * - ``'silent'``
           - No audio output
 
@@ -200,6 +206,32 @@ Missing features
 """"""""""""""""
 
 Although PulseAudio can theoretically support advanced multi-channel
+audio, the pyglet driver does not. The following features will not
+work properly:
+
+#. Positional audio: automatically changing the volume for individual
+   audio channels based on the position of the sound source
+#. Integration with surround sound
+
+Switching to :ref:`guide-audio-driver-openal` should automatically enable them.
+
+.. _guide-audio-driver-pipewire:
+
+PipeWire
+^^^^^^^^
+
+PipeWire is a server that handles audio and video streams. It is the
+default audio server on many modern Linux distributions, and can act as a
+replacement for PulseAudio. The pyglet driver supports the same subset of
+features as the PulseAudio driver.
+
+If it fails to initialize, consult your distro's documentation to learn
+which supported audio back-ends you can install.
+
+Missing features
+""""""""""""""""
+
+Although PipeWire can theoretically support advanced multi-channel
 audio, the pyglet driver does not. The following features will not
 work properly:
 

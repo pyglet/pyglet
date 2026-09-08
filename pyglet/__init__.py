@@ -63,7 +63,7 @@ class PyodideOptions:
 class Options:
     """Dataclass for global pyglet options."""
 
-    audio: Sequence[str] = ("xaudio2", "directsound", "openal", "pulse", "silent")
+    audio: Sequence[str] = ("xaudio2", "directsound", "openal", "pulse", "pipewire", "silent")
     """A :py:class:`~typing.Sequence` of valid audio modules names. They will
      be tried from first to last until either a driver loads or no entries
      remain. See :ref:`guide-audio-driver-order` for more information.
@@ -75,6 +75,8 @@ class Options:
      * ``'pulse'``, the :ref:`guide-audio-driver-pulseaudio` module
         (Linux only, otherwise nearly ubiquitous. Limited features; use
         ``'openal'`` for more.)
+     * ``'pipewire'``, the :ref:`guide-audio-driver-pipewire` module
+        (Linux only)
      * ``'openal'``, the :ref:`guide-audio-driver-openal` audio module
        (A library may need to be installed on Windows and Linux)
      * ``'silent'``, no audio"""

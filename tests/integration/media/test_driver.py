@@ -87,6 +87,13 @@ def get_drivers():
         pass
 
     try:
+        from pyglet.media.drivers import pipewire
+        drivers.append(pipewire)
+        ids.append('PipeWire')
+    except ImportError:
+        pass
+
+    try:
         from pyglet.media.drivers import openal
         drivers.append(openal)
         ids.append('OpenAL')

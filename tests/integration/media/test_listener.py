@@ -22,6 +22,12 @@ try:
 except ImportError:
     has_directsound = False
 
+try:
+    from pyglet.media.drivers import pipewire
+    has_pipewire = True
+except ImportError:
+    has_pipewire = False
+
 
 def check_listener_defaults(listener):
     assert listener.volume == 1.0
@@ -61,9 +67,26 @@ def test_pulse_listener():
     del listener
 
 
+try:
+    from pyglet.media.drivers import pipewire
+    has_pipewire = True
+except ImportError:
+    has_pipewire = False
+
+
 @pytest.mark.skipif(not has_directsound, reason="Test requires DirectSound")
 def test_directsound_listener():
     driver = directsound.create_audio_driver()
+    listener = driver.get_listener()
+    check_listener_defaults(listener=listener)
+    check_modifying_values(listener=listener)
+    # Need to garbage collect the listener before the driver is deleted
+    del listener
+
+
+@pytest.mark.skipif(not has_pipewire, reason="Test requires PipeWire")
+def test_pipewire_listener():
+    driver = pipewire.create_audio_driver()
     listener = driver.get_listener()
     check_listener_defaults(listener=listener)
     check_modifying_values(listener=listener)

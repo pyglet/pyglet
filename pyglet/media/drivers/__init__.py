@@ -22,6 +22,12 @@ else:
 
                 _audio_driver = pulse.create_audio_driver()
                 break
+            elif driver_name == 'pipewire':
+                if pyglet.compat_platform.startswith('linux'):
+                    from . import pipewire
+
+                    _audio_driver = pipewire.create_audio_driver()
+                    break
             elif driver_name == 'xaudio2':
                 if pyglet.compat_platform in ('win32', 'cygwin'):
                     from pyglet.libs.win32.constants import WINDOWS_8_OR_GREATER
