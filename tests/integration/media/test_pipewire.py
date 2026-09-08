@@ -279,8 +279,7 @@ def _parse_enum_format_pod(pod_bytes: bytes):
 
 
 def test_enum_format_pod_structure():
-    pod_bytes = lib._make_enum_format_pod_bytes(
-        lib.SPA_MEDIA_SUBTYPE_raw, lib.SPA_AUDIO_FORMAT_S16_LE, 44100, 2)
+    pod_bytes = lib._make_enum_format_pod_bytes(lib.SPA_MEDIA_SUBTYPE_raw, lib.SPA_AUDIO_FORMAT_S16_LE, 44100, 2)
     props = _parse_enum_format_pod(pod_bytes)
 
     assert props[lib.SPA_FORMAT_mediaType][1] == lib.SPA_MEDIA_TYPE_audio
@@ -288,8 +287,7 @@ def test_enum_format_pod_structure():
     assert props[lib.SPA_FORMAT_AUDIO_format][1] == lib.SPA_AUDIO_FORMAT_S16_LE
     assert props[lib.SPA_FORMAT_AUDIO_rate][1] == 44100
     assert props[lib.SPA_FORMAT_AUDIO_channels][1] == 2
-    assert props[lib.SPA_FORMAT_AUDIO_position][1] == [
-        lib.SPA_AUDIO_CHANNEL_FL, lib.SPA_AUDIO_CHANNEL_FR]
+    assert props[lib.SPA_FORMAT_AUDIO_position][1] == [lib.SPA_AUDIO_CHANNEL_FL, lib.SPA_AUDIO_CHANNEL_FR]
 
 
 def test_enum_format_pod_prop_flags():

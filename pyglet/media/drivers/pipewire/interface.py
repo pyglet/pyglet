@@ -9,13 +9,14 @@ function is documented to be callable from any thread.
 from __future__ import annotations
 
 import sys
-from ctypes import POINTER, byref, sizeof
-from typing import Callable, Optional, TYPE_CHECKING, Union
 import weakref
 
+from ctypes import POINTER, byref, sizeof
+from typing import Callable, Optional, TYPE_CHECKING
+
+from pyglet.util import debug_print
 from pyglet.media.drivers.pipewire import lib_pipewire as lib
 from pyglet.media.exceptions import MediaException
-from pyglet.util import debug_print
 
 if TYPE_CHECKING:
     from pyglet.media.codecs import AudioFormat
@@ -25,27 +26,14 @@ _debug = debug_print('debug_media')
 StreamProcessCallback = Callable[[], None]
 StreamStateChangedCallback = Callable[[int, int, Optional[bytes]], None]
 StreamNewBufferCallback = Callable[[int], None]
+DrainedCallback = Callable[[], None]
 
-_pw_initialized = False
 
-
-def _ensure_initialized() -> None:
-    """Call ``pw_init`` once per process."""
-    global _pw_initialized
-    if not _pw_initialized:
-        lib.pw_init(None, None)
-        _pw_initialized = True
-
-SAMPLE_FORMATS = {"U8": {"little": lib.SPA_AUDIO_FORMAT_U8,
-                         "big": lib.SPA_AUDIO_FORMAT_U8},
-                  "S16": {"little": lib.SPA_AUDIO_FORMAT_S16_LE,
-                          "big": lib.SPA_AUDIO_FORMAT_S16_BE},
-                  "S24": {"little": lib.SPA_AUDIO_FORMAT_S24_LE,
-                          "big": lib.SPA_AUDIO_FORMAT_S24_BE},
-                  "S32": {"little": lib.SPA_AUDIO_FORMAT_S32_LE,
-                          "big": lib.SPA_AUDIO_FORMAT_S32_BE},
-                  "F32": {"little": lib.SPA_AUDIO_FORMAT_F32_LE,
-                          "big": lib.SPA_AUDIO_FORMAT_F32_BE}}
+SAMPLE_FORMATS = {"U8": {"little": lib.SPA_AUDIO_FORMAT_U8, "big": lib.SPA_AUDIO_FORMAT_U8},
+                  "S16": {"little": lib.SPA_AUDIO_FORMAT_S16_LE, "big": lib.SPA_AUDIO_FORMAT_S16_BE},
+                  "S24": {"little": lib.SPA_AUDIO_FORMAT_S24_LE, "big": lib.SPA_AUDIO_FORMAT_S24_BE},
+                  "S32": {"little": lib.SPA_AUDIO_FORMAT_S32_LE, "big": lib.SPA_AUDIO_FORMAT_S32_BE},
+                  "F32": {"little": lib.SPA_AUDIO_FORMAT_F32_LE, "big": lib.SPA_AUDIO_FORMAT_F32_BE}}
 
 
 class PipeWireException(MediaException):
@@ -62,10 +50,10 @@ class _MainloopLock:
         self._mainloop = mainloop
 
     def __enter__(self) -> None:
-        lib.pw_thread_loop_lock(self._mainloop._loop)
+        lib.pw_thread_loop_lock(self._mainloop.loop)
 
     def __exit__(self, _exc_type, _exc_value, _tb) -> None:
-        lib.pw_thread_loop_unlock(self._mainloop._loop)
+        lib.pw_thread_loop_unlock(self._mainloop.loop)
 
 
 class PipeWireMainloop:
@@ -76,16 +64,25 @@ class PipeWireMainloop:
     used to block until a state change has been processed.
     """
 
+    _pw_initialized: bool = False
+
     def __init__(self) -> None:
-        _ensure_initialized()
-        self._loop = lib.pw_thread_loop_new(b'pyglet', None)
-        if not self._loop:
+        self._initialize()
+        self.loop = lib.pw_thread_loop_new(b'pyglet', None)
+        if not self.loop:
             raise PipeWireException('Could not create PipeWire main loop.')
         self.lock = _MainloopLock(self)
 
+    @classmethod
+    def _initialize(cls) -> None:
+        """Call ``pw_init`` once per process."""
+        if not cls._pw_initialized:
+            lib.pw_init(None, None)
+            cls._pw_initialized = True
+
     def start(self) -> None:
         """Start running the main loop on its own thread."""
-        if lib.pw_thread_loop_start(self._loop) < 0:
+        if lib.pw_thread_loop_start(self.loop) < 0:
             raise PipeWireException('Failed to start the PipeWire main loop.')
         assert _debug('PipeWireMainloop: Started')
 
@@ -95,24 +92,24 @@ class PipeWireMainloop:
 
     def delete(self) -> None:
         """Stop the loop and clean up its resources."""
-        if self._loop is not None:
+        if self.loop is not None:
             assert _debug('PipeWireMainloop: Deleting')
-            lib.pw_thread_loop_stop(self._loop)
-            lib.pw_thread_loop_destroy(self._loop)
-            self._loop = None
+            lib.pw_thread_loop_stop(self.loop)
+            lib.pw_thread_loop_destroy(self.loop)
+            self.loop = None
 
     def signal(self) -> None:
         """Wake a thread waiting on ``wait``."""
-        assert self._loop is not None
-        lib.pw_thread_loop_signal(self._loop, False)
+        assert self.loop is not None
+        lib.pw_thread_loop_signal(self.loop, False)
 
     def wait(self) -> None:
         """Release the lock and wait for a signal, then reacquire it.
 
         Must be called with the main-loop lock held.
         """
-        assert self._loop is not None
-        lib.pw_thread_loop_wait(self._loop)
+        assert self.loop is not None
+        lib.pw_thread_loop_wait(self.loop)
 
     def timed_wait(self, max_sec: int) -> int:
         """Like ``wait`` but returns after ``max_sec`` seconds.
@@ -120,8 +117,8 @@ class PipeWireMainloop:
         Must be called with the main-loop lock held. Returns 0 when
         signaled, or a negative error code (e.g. ``-ETIMEDOUT``).
         """
-        assert self._loop is not None
-        return lib.pw_thread_loop_timed_wait(self._loop, max_sec)
+        assert self.loop is not None
+        return lib.pw_thread_loop_timed_wait(self.loop, max_sec)
 
 
 class PipeWireContext:
@@ -133,7 +130,7 @@ class PipeWireContext:
 
     def __init__(self, mainloop: PipeWireMainloop) -> None:
         self.mainloop = mainloop
-        self._loop = lib.pw_thread_loop_get_loop(mainloop._loop)
+        self._loop = lib.pw_thread_loop_get_loop(mainloop.loop)
         assert self._loop is not None
         self._context = lib.pw_context_new(self._loop, None, 0)
         if not self._context:
@@ -142,7 +139,6 @@ class PipeWireContext:
 
     def connect(self, properties: Optional[dict] = None) -> None:
         """Connect the context to a PipeWire daemon."""
-        assert self._context is not None
         props = lib.make_properties(properties) if properties else None
 
         with self.mainloop.lock:
@@ -158,11 +154,10 @@ class PipeWireContext:
     def is_connected(self) -> bool:
         return self._core is not None
 
-    def create_stream(self, audio_format: 'AudioFormat',
-                      name: Optional[bytes] = None) -> 'PipeWireStream':
+    def create_stream(self, audio_format: 'AudioFormat') -> 'PipeWireStream':
         """Create a new playback stream for the given audio format."""
         assert self._core is not None
-        return PipeWireStream(self, audio_format, name)
+        return PipeWireStream(self, audio_format)
 
     def delete(self) -> None:
         """Disconnect and destroy the context."""
@@ -189,8 +184,7 @@ class PipeWireStream:
                    lib.PW_STREAM_STATE_PAUSED: 'Paused',
                    lib.PW_STREAM_STATE_STREAMING: 'Streaming'}
 
-    def __init__(self, context: PipeWireContext, audio_format: 'AudioFormat',
-                 name: Optional[bytes] = None) -> None:
+    def __init__(self, context: PipeWireContext, audio_format: 'AudioFormat') -> None:
         self.context = weakref.ref(context)
         self.mainloop = context.mainloop
 
@@ -208,17 +202,16 @@ class PipeWireStream:
         self._audio_format = audio_format
         self._spa_format = spa_format
 
-        stream_name = name or f'pyglet-{id(self):X}'.encode('utf-8')
+        stream_name = f'pyglet-{id(self):X}'
         self._properties = lib.make_properties({
             'media.type': 'Audio',
             'media.category': 'Playback',
             'media.role': 'Music',
-            'node.name': stream_name.decode('utf-8'),
+            'node.name': stream_name,
         })
 
         with self.mainloop.lock:
-            self._stream = lib.pw_stream_new(context._core, stream_name,
-                                             self._properties)
+            self._stream = lib.pw_stream_new(context._core, stream_name.encode('utf-8'), self._properties)
             if not self._stream:
                 raise PipeWireException('Could not create PipeWire stream.')
             self._properties = None  # Ownership transferred to the stream.
@@ -231,6 +224,7 @@ class PipeWireStream:
             self._cb_process = lib._pw_stream_events_process_t(self._on_process)
             self._cb_add_buffer = lib._pw_stream_events_add_buffer_t(self._on_add_buffer)
             self._cb_remove_buffer = lib._pw_stream_events_remove_buffer_t(self._on_remove_buffer)
+            self._cb_drained = lib._pw_stream_events_drained_t(self._on_drained)
 
             self._events.version = lib.PW_VERSION_STREAM_EVENTS
             self._events.destroy = self._cb_destroy
@@ -238,13 +232,14 @@ class PipeWireStream:
             self._events.process = self._cb_process
             self._events.add_buffer = self._cb_add_buffer
             self._events.remove_buffer = self._cb_remove_buffer
+            self._events.drained = self._cb_drained
 
             self._process_callback = None
             self._state_callback = None
             self._buffer_callback = None
+            self._drained_callback = None
 
-            lib.pw_stream_add_listener(self._stream, self._listener,
-                                       self._events, None)
+            lib.pw_stream_add_listener(self._stream, self._listener, self._events, None)
 
     @property
     def is_paused(self) -> bool:
@@ -261,8 +256,7 @@ class PipeWireStream:
     def _on_destroy(self, _data) -> None:
         assert _debug('PipeWireStream: destroyed')
 
-    def _on_state_changed(self, _data, old: int, state: int,
-                          error: Optional[bytes]) -> None:
+    def _on_state_changed(self, _data, old: int, state: int, error: Optional[bytes]) -> None:
         self.state = state
         assert _debug(f'PipeWireStream: state changed to {self._state_name.get(state, state)}')
         if state == lib.PW_STREAM_STATE_ERROR:
@@ -288,6 +282,11 @@ class PipeWireStream:
         if callback is not None:
             callback(False)
 
+    def _on_drained(self, _data) -> None:
+        callback = self._drained_callback
+        if callback is not None:
+            callback()
+
     def set_process_callback(self, callback: Optional[StreamProcessCallback]) -> None:
         self._process_callback = callback
 
@@ -296,6 +295,9 @@ class PipeWireStream:
 
     def set_buffer_callback(self, callback: Optional[StreamNewBufferCallback]) -> None:
         self._buffer_callback = callback
+
+    def set_drained_callback(self, callback: Optional[DrainedCallback]) -> None:
+        self._drained_callback = callback
 
     def connect_playback(self, target_latency: Optional[float] = None) -> None:
         """Connect the stream for playback, negotiating a format with the
@@ -308,13 +310,10 @@ class PipeWireStream:
         self._pod_buffer, pod = lib.make_enum_format_pod(lib.SPA_MEDIA_SUBTYPE_raw, self._spa_format, rate, channels)
         self._params = (POINTER(lib.struct_spa_pod) * 1)(pod)
 
-        flags = (lib.PW_STREAM_FLAG_AUTOCONNECT | lib.PW_STREAM_FLAG_INACTIVE |
-                 lib.PW_STREAM_FLAG_MAP_BUFFERS)
+        flags = (lib.PW_STREAM_FLAG_AUTOCONNECT | lib.PW_STREAM_FLAG_INACTIVE | lib.PW_STREAM_FLAG_MAP_BUFFERS)
 
         with self.mainloop.lock:
-            result = lib.pw_stream_connect(self._stream, lib.PW_DIRECTION_OUTPUT,
-                                           lib.PW_ID_ANY, flags,
-                                           self._params, 1)
+            result = lib.pw_stream_connect(self._stream, lib.PW_DIRECTION_OUTPUT, lib.PW_ID_ANY, flags, self._params, 1)
             if result < 0:
                 raise PipeWireException(f'Could not connect PipeWire stream: {result}')
 
@@ -363,8 +362,7 @@ class PipeWireStream:
         """
         assert self._stream is not None
         time_info = lib.struct_pw_time()
-        if lib.pw_stream_get_time_n(self._stream, byref(time_info),
-                                    sizeof(time_info)) < 0:
+        if lib.pw_stream_get_time_n(self._stream, byref(time_info), sizeof(time_info)) < 0:
             return None
         return time_info
 
@@ -406,6 +404,15 @@ class PipeWireStream:
         """Flush all queued buffers. RT safe."""
         assert self._stream is not None
         lib.pw_stream_flush(self._stream, False)
+
+    def drain(self) -> None:
+        """Flush queued buffers and wait until they have all been played.
+
+        The ``drained`` callback is invoked once the device has consumed
+        every buffer queued so far. RT safe.
+        """
+        assert self._stream is not None
+        lib.pw_stream_flush(self._stream, True)
 
     def set_rate(self, rate: float) -> int:
         """Adjust the adaptive resampler rate (1.0 is the default).

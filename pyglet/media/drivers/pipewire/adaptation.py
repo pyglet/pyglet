@@ -21,7 +21,6 @@ from __future__ import annotations
 from array import array
 from collections import deque
 import ctypes
-import sys
 import threading
 import weakref
 from typing import TYPE_CHECKING
@@ -144,9 +143,7 @@ class _AudioDataBuffer:
             cur_len = cur_audio_data.length - self._first_read_offset
             packet_used = cur_len <= bytes_remaining
             cur_write = min(bytes_remaining, cur_len)
-            ctypes.memmove(target_pointer + bytes_written,
-                           cur_audio_data.pointer + self._first_read_offset,
-                           cur_write)
+            ctypes.memmove(target_pointer + bytes_written, cur_audio_data.pointer + self._first_read_offset, cur_write)
             bytes_written += cur_write
             bytes_remaining -= cur_write
             if packet_used:
@@ -161,8 +158,7 @@ class _AudioDataBuffer:
 
 
 class PipeWirePlayer(AbstractAudioPlayer):
-    def __init__(self, source: 'Source', player: 'AudioPlayer',
-                 driver: 'PipeWireDriver') -> None:
+    def __init__(self, source: 'Source', player: 'AudioPlayer', driver: 'PipeWireDriver') -> None:
         super().__init__(source, player)
         self.driver = driver
 
@@ -179,6 +175,7 @@ class PipeWirePlayer(AbstractAudioPlayer):
         self._pyglet_source_exhausted = False
         self._pending_bytes = 0
         self._eos_dispatched = False
+        self._draining = False
 
         # Only half of the ideal buffer size is kept in Python land, the
         # rest is spread across the PipeWire stream's queued buffers.
@@ -196,6 +193,7 @@ class PipeWirePlayer(AbstractAudioPlayer):
             self.stream = driver.context.create_stream(audio_format)
             self.stream.set_process_callback(self._process)
             self.stream.set_state_callback(self._state_changed)
+            self.stream.set_drained_callback(self._on_drained)
 
         # connect_playback() manages the main-loop lock itself; it must not
         # be called while already holding it, because it waits on the
@@ -217,6 +215,10 @@ class PipeWirePlayer(AbstractAudioPlayer):
 
     def _write_buffers(self) -> None:
         """Fill and queue as many buffers as the stream has available."""
+        if self._draining:
+            # The source is exhausted and the stream is flushing its queued
+            # buffers out to the device; do not hand it any more data.
+            return
         while True:
             buffer = self.stream.dequeue_buffer()
             if buffer is None:
@@ -256,8 +258,26 @@ class PipeWirePlayer(AbstractAudioPlayer):
                 self.stream.return_buffer(buffer)
                 self._pending_bytes = request_size
                 if self._pyglet_source_exhausted:
-                    self._dispatch_eos()
+                    self._request_drain()
                 return
+
+    def _request_drain(self) -> None:
+        """Flush the queued tail out to the device before ending playback.
+
+        Dispatching EOS as soon as the source is exhausted makes the player
+        pause and destroy the stream while the audio still queued in the
+        graph is in flight, truncating it with an audible click. Instead the
+        stream signals ``drained`` once the device has consumed that tail,
+        and EOS is dispatched from there.
+        """
+        assert _debug('PipeWirePlayer: requesting drain')
+        self._draining = True
+        self.stream.drain()
+
+    def _on_drained(self) -> None:
+        # Called from the PipeWire main-loop thread.
+        assert _debug('PipeWirePlayer: drained')
+        self._dispatch_eos()
 
     def _dispatch_eos(self) -> None:
         if not self._eos_dispatched:
@@ -338,7 +358,7 @@ class PipeWirePlayer(AbstractAudioPlayer):
 
         if new_data is None:
             self._pyglet_source_exhausted = True
-            # EOS will be dispatched from the process callback.
+            # The drained event dispatches EOS once the tail has played out.
         else:
             self._audio_data_buffer.add_data(new_data)
 
@@ -374,6 +394,7 @@ class PipeWirePlayer(AbstractAudioPlayer):
 
         self._pyglet_source_exhausted = False
         self._eos_dispatched = False
+        self._draining = False
         self._pending_bytes = 0
         self._latest_time = None
 
