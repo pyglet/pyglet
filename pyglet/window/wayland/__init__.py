@@ -64,6 +64,7 @@ class WaylandWindow(BaseWindow):
     wdg_surface: Interface
     xdg_toplevel: Interface
     wl_pointer: Interface
+    wl_touch: Interface
 
     def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
         self._mouse_buttons = 0
@@ -186,6 +187,17 @@ class WaylandWindow(BaseWindow):
                                     leave=self.wl_pointer_leave_handler)
         # frame', self.wl_pointer_frame_handler)
 
+        self.wl_touch = self.wl_seat.get_touch(next(self.client.oid_pool))
+        self.wl_touch.set_handlers(
+            down=self.wl_touch_down_handler,
+            up=self.wl_touch_up_handler,
+            motion=self.wl_touch_motion_handler,
+            frame=self.wl_touch_frame_handler,
+            cancel=self.wl_touch_cancel_handler,
+            shape=self.wl_touch_shape_handler,
+            orientation=self.wl_touch_orientation_handler,
+        )
+
         self.wl_keyboard = self.wl_seat.get_keyboard(next(self.client.oid_pool))
         self.wl_keyboard.set_handlers(
             keymap=self.wl_keyboard_keymap_handler,
@@ -293,6 +305,33 @@ class WaylandWindow(BaseWindow):
         scroll_x *= (value120 / 120)
         scroll_y *= (value120 / 120)
         self.dispatch_event('on_mouse_scroll', self._mouse_x, self._mouse_y, scroll_x, scroll_y)
+
+    def _touch_position(self, surface_x, surface_y) -> tuple[float, float]:
+        return surface_x / self._scale, self.height - surface_y / self._scale
+
+    def wl_touch_down_handler(self, serial, time, surface, touch_id, surface_x, surface_y):
+        x, y = self._touch_position(surface_x, surface_y)
+        self._dispatch_touch_event('on_touch_start', touch_id, x, y, 0, 0, 0.0)
+
+    def wl_touch_up_handler(self, serial, time, touch_id):
+        x, y = self._touch_positions.get(touch_id, (0.0, 0.0))
+        self._dispatch_touch_event('on_touch_end', touch_id, x, y, 0, 0, 0.0)
+
+    def wl_touch_motion_handler(self, time, touch_id, surface_x, surface_y):
+        x, y = self._touch_position(surface_x, surface_y)
+        self._dispatch_touch_event('on_touch_move', touch_id, x, y, 0, 0, 0.0)
+
+    def wl_touch_frame_handler(self):
+        return None
+
+    def wl_touch_cancel_handler(self):
+        self._touch_positions.clear()
+
+    def wl_touch_shape_handler(self, touch_id, major, minor):
+        return None
+
+    def wl_touch_orientation_handler(self, touch_id, orientation):
+        return None
 
     # def wl_pointer_frame_handler(self):
     #     print("end of pointer frame")

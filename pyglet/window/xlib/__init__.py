@@ -60,6 +60,13 @@ try:
 except ImportError:
     _have_xsync = False
 
+try:
+    from pyglet.libs.linux.x11 import xinput2
+
+    _have_xinput2 = True
+except ImportError:
+    _have_xinput2 = False
+
 _debug = pyglet.options.debug_x11
 
 
@@ -146,6 +153,7 @@ class XlibWindow(BaseWindow):
     _mapped: bool = False
     _lost_context: bool = False
     _lost_context_state: bool = False
+    _xinput2_opcode: int | None = None
 
     _enable_xsync: bool = False
     _current_sync_value: xsync.XSyncValue | None = None
@@ -299,6 +307,7 @@ class XlibWindow(BaseWindow):
                                                 byref(window_attributes))
             xlib.XMapWindow(self._x_display, self._x_window)
             xlib.XSelectInput(self._x_display, self._x_window, self._default_event_mask)
+            self._enable_xinput2_touch()
 
             self.display._window_map[self._window] = self.dispatch_platform_event  # noqa: SLF001
             self.display._window_map[self._x_window] = self.dispatch_platform_event_view  # noqa: SLF001
@@ -1090,9 +1099,55 @@ class XlibWindow(BaseWindow):
             event_handler(e)
 
     def dispatch_platform_event_view(self, e: xlib.XEvent) -> None:
+        if e.type == xlib.GenericEvent:
+            self._dispatch_xinput2_event(e)
+            return
         event_handler = self._view_event_handlers.get(e.type)
         if event_handler:
             event_handler(e)
+
+    @staticmethod
+    def _xinput2_event_window(cookie: xlib.XGenericEventCookie) -> int:
+        event = cast(cookie.data, POINTER(xinput2.XIDeviceEvent)).contents
+        return event.event
+
+    def _enable_xinput2_touch(self) -> None:
+        if not _have_xinput2:
+            return
+
+        opcode = c_int()
+        first_event = c_int()
+        first_error = c_int()
+        if not xlib.XQueryExtension(self._x_display, b'XInputExtension',
+                                    byref(opcode), byref(first_event), byref(first_error)):
+            return
+        if not xinput2.query_version(self._x_display):
+            return
+
+        mask, event_mask = xinput2.touch_event_mask()
+        if xinput2.XISelectEvents(self._x_display, self._x_window, byref(event_mask), 1) != 0:
+            return
+
+        self._xinput2_opcode = opcode.value
+        self.display._generic_event_window_handlers[opcode.value] = self._xinput2_event_window  # noqa: SLF001
+        xlib.XFlush(self._x_display)
+
+    def _dispatch_xinput2_event(self, e: xlib.XEvent) -> None:
+        if self._xinput2_opcode is None or e.xcookie.extension != self._xinput2_opcode:
+            return
+        if e.xcookie.evtype not in (xinput2.XI_TOUCH_BEGIN, xinput2.XI_TOUCH_UPDATE, xinput2.XI_TOUCH_END):
+            return
+
+        event = cast(e.xcookie.data, POINTER(xinput2.XIDeviceEvent)).contents
+        pointer_id = (event.deviceid << 32) | (event.detail & 0xffffffff)
+        x = event.event_x / self._scale
+        y = self.height - 1 - event.event_y / self._scale
+        dispatch_name = {
+            xinput2.XI_TOUCH_BEGIN: 'on_touch_start',
+            xinput2.XI_TOUCH_UPDATE: 'on_touch_move',
+            xinput2.XI_TOUCH_END: 'on_touch_end',
+        }[event.evtype]
+        self._dispatch_touch_event(dispatch_name, pointer_id, x, y, 0, 0, 0.0)
 
     @staticmethod
     @lru_cache

@@ -53,6 +53,38 @@ class PygletIOSView(UIView):
         send_super(self, 'layoutSubviews')
         self._window._view_did_resize()
 
+    def _dispatch_touches(self, touches: ObjCInstance, dispatch_name: str) -> None:
+        touch_array = touches.allObjects()
+        scale = self.contentScaleFactor()
+        bounds = self.bounds()
+        for index in range(touch_array.count()):
+            touch = touch_array.objectAtIndex_(index)
+            location = touch.locationInView_(self)
+            x = round(location.x * scale)
+            y = round((bounds.size.height - location.y) * scale)
+            radius = touch.majorRadius() * scale
+            maximum_force = touch.maximumPossibleForce()
+            pressure = touch.force() / maximum_force if maximum_force else 0.0
+            self._window._dispatch_touch_event(
+                dispatch_name, int(touch.hash()), x, y, radius * 2, radius * 2, pressure,
+            )
+
+    @objc_method('v@@')
+    def touchesBegan_withEvent_(self, touches: ObjCInstance, event: ObjCInstance) -> None:
+        self._dispatch_touches(touches, 'on_touch_start')
+
+    @objc_method('v@@')
+    def touchesMoved_withEvent_(self, touches: ObjCInstance, event: ObjCInstance) -> None:
+        self._dispatch_touches(touches, 'on_touch_move')
+
+    @objc_method('v@@')
+    def touchesEnded_withEvent_(self, touches: ObjCInstance, event: ObjCInstance) -> None:
+        self._dispatch_touches(touches, 'on_touch_end')
+
+    @objc_method('v@@')
+    def touchesCancelled_withEvent_(self, touches: ObjCInstance, event: ObjCInstance) -> None:
+        self._dispatch_touches(touches, 'on_touch_end')
+
 class IOSWindow(BaseWindow):
     """A UIKit-backed window.
 

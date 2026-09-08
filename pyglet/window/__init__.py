@@ -78,6 +78,7 @@ by creating a backend-aware "template" configuration::
 from __future__ import annotations
 
 import atexit
+import math
 import sys
 from abc import abstractmethod
 from collections.abc import Iterable
@@ -479,6 +480,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         """
         EventDispatcher.__init__(self)
         self._event_queue = deque()
+        self._touch_positions: dict[int, tuple[float, float]] = {}
 
         self._user_config = config
         self._context = None
@@ -526,6 +528,35 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         if visible:
             self.set_visible(True)
             self.activate()
+
+    def _get_touch_distance(self) -> float | None:
+        """Return the distance between the first two active contacts."""
+        if len(self._touch_positions) < 2:
+            return None
+
+        first, second = tuple(self._touch_positions.values())[:2]
+        return math.dist(first, second)
+
+    def _update_touch_position(self, pointer_id: int, x: float, y: float) -> tuple[float, float, float]:
+        """Store a contact position and return its delta and pinch scale."""
+        previous_x, previous_y = self._touch_positions.get(pointer_id, (x, y))
+        previous_distance = self._get_touch_distance()
+        self._touch_positions[pointer_id] = x, y
+        distance = self._get_touch_distance()
+
+        scale = 1.0
+        if previous_distance and distance is not None:
+            scale = distance / previous_distance
+
+        return x - previous_x, y - previous_y, scale
+
+    def _dispatch_touch_event(self, dispatch_name: str, pointer_id: int, x: float, y: float,
+                              width: float, height: float, pressure: float) -> None:
+        """Dispatch a touch event after calculating its movement and pinch scale."""
+        dx, dy, scale = self._update_touch_position(pointer_id, x, y)
+        self.dispatch_event(dispatch_name, pointer_id, x, y, dx, dy, width, height, pressure, scale)
+        if dispatch_name == 'on_touch_end':
+            self._touch_positions.pop(pointer_id, None)
 
     def _assign_config(self) -> None:
         if pyglet.options.backend:
@@ -1556,6 +1587,47 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                     Relative X position from the previous mouse position.
                 dy: int
                     Relative Y position from the previous mouse position.
+
+            :event:
+            """
+
+        def on_touch_start(self, pointer_id: int, x: int, y: int, dx: int, dy: int, width: int, height: int,
+                           pressure: float, scale: float) -> EVENT_HANDLE_STATE:
+            """A touch contact started.
+
+            ``dx`` and ``dy`` are zero for a new contact. ``scale`` is the ratio of the distance between the first
+            two active contacts after this event to its distance before the event. It is ``1.0`` when fewer than two
+            contacts are active.
+
+            Args:
+                pointer_id: Identifier of the touch contact.
+                x: Distance in pixels from the left edge of the window.
+                y: Distance in pixels from the bottom edge of the window.
+                dx: Horizontal movement since the previous event for this contact.
+                dy: Vertical movement since the previous event for this contact.
+                width: Width of the touch contact in pixels, if available.
+                height: Height of the touch contact in pixels, if available.
+                pressure: Normalized touch pressure, if available.
+                scale: Ratio of the active two-contact distance since the previous event.
+
+            :event:
+            """
+
+        def on_touch_move(self, pointer_id: int, x: int, y: int, dx: int, dy: int, width: int, height: int,
+                          pressure: float, scale: float) -> EVENT_HANDLE_STATE:
+            """A touch contact moved.
+
+            The parameters have the same meaning as :py:meth:`on_touch_start`. A ``scale`` greater than ``1.0``
+            indicates the first two active contacts moved apart; a value below ``1.0`` indicates they moved together.
+
+            :event:
+            """
+
+        def on_touch_end(self, pointer_id: int, x: int, y: int, dx: int, dy: int, width: int, height: int,
+                         pressure: float, scale: float) -> EVENT_HANDLE_STATE:
+            """A touch contact ended.
+
+            The ending contact is included in ``scale`` for this event, then removed from the active contacts.
 
             :event:
             """

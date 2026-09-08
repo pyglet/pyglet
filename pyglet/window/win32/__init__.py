@@ -22,7 +22,11 @@ from pyglet.libs.win32.types import (
     RAWINPUTHEADER,
     STGMEDIUM,
     TRACKMOUSEEVENT,
-    WCHAR, IID_IDROPTARGET, IID_IUNKNOWN,
+    WCHAR,
+    IID_IDROPTARGET,
+    IID_IUNKNOWN,
+    UINT32,
+    POINTER_TOUCH_INFO,
 )
 from pyglet.libs.win32.winkey import chmap, keymap
 from pyglet.libs.win32.context_managers import hresult_context
@@ -1687,7 +1691,7 @@ class Win32Window(BaseWindow):
                 width = rc.right - rc.left
                 height = rc.bottom - rc.top
 
-            self.dispatch_event(dispatch_name, pointer_id, x, y, width, height, pressure)
+            self._dispatch_touch_event(dispatch_name, pointer_id, x, y, width, height, pressure)
 
         return 0
 

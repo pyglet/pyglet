@@ -24,7 +24,7 @@ class TouchExample:
         self.window.clear()
         self.batch.draw()
 
-    def on_touch_start(self, pointer_id, x, y, width, height, pressure):
+    def on_touch_start(self, pointer_id, x, y, dx, dy, width, height, pressure, scale):
         print("POINTER ID", pointer_id)
         if pointer_id not in self.touch_circles:
             color = self.COLORS[self._counter]
@@ -33,13 +33,13 @@ class TouchExample:
         else:
             self.touch_circles[pointer_id].position = x, y
 
-    def on_touch_move(self, pointer_id, x, y, width, height, pressure):
+    def on_touch_move(self, pointer_id, x, y, dx, dy, width, height, pressure, scale):
         if pointer_id in self.touch_circles:
             circle = self.touch_circles[pointer_id]
             circle.position = x, y
             circle.radius = width
 
-    def on_touch_end(self, pointer_id, x, y, width, height, pressure):
+    def on_touch_end(self, pointer_id, x, y, dx, dy, width, height, pressure, scale):
         if pointer_id in self.touch_circles:
             circle = self.touch_circles[pointer_id]
             circle.delete()

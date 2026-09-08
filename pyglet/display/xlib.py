@@ -119,6 +119,7 @@ class XlibDisplay(LinuxSelectDevice, Display):
 
         self._fileno = xlib.XConnectionNumber(self._display)
         self._window_map = {}
+        self._generic_event_window_handlers = {}
 
         # Initialise XSync
         if _have_xsync:
@@ -216,6 +217,21 @@ class XlibDisplay(LinuxSelectDevice, Display):
         e = xlib.XEvent()
         while xlib.XPending(self._display):
             xlib.XNextEvent(self._display, e)
+
+            if e.type == xlib.GenericEvent:
+                if not xlib.XGetEventData(self._display, byref(e.xcookie)):
+                    continue
+                try:
+                    event_window_handler = self._generic_event_window_handlers.get(e.xcookie.extension)
+                    if event_window_handler is None:
+                        continue
+                    event_window = event_window_handler(e.xcookie)
+                    dispatch = self._window_map.get(event_window)
+                    if dispatch:
+                        dispatch(e)
+                finally:
+                    xlib.XFreeEventData(self._display, byref(e.xcookie))
+                continue
 
             # Key events are filtered by the xlib window event
             # handler so they get a shot at the prefiltered event.
