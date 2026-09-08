@@ -305,8 +305,7 @@ class PipeWireStream:
         rate = self._audio_format.sample_rate
         channels = self._audio_format.channels
 
-        self._pod_buffer, pod = lib.make_enum_format_pod(
-            lib.SPA_MEDIA_SUBTYPE_raw, self._spa_format, rate, channels)
+        self._pod_buffer, pod = lib.make_enum_format_pod(lib.SPA_MEDIA_SUBTYPE_raw, self._spa_format, rate, channels)
         self._params = (POINTER(lib.struct_spa_pod) * 1)(pod)
 
         flags = (lib.PW_STREAM_FLAG_AUTOCONNECT | lib.PW_STREAM_FLAG_INACTIVE |

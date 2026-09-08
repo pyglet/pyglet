@@ -424,7 +424,7 @@ PW_KEY_MEDIA_ROLE = b'media.role'
 PW_KEY_NODE_NAME = b'node.name'
 
 
-def make_properties(properties: Optional[dict] = None) -> POINTER(struct_pw_properties):
+def make_properties(properties: Optional[dict] = None):
     """Create a new pw_properties from a dict of string pairs."""
     items = list((properties or {}).items())
     spa_items = (struct_spa_dict_item * max(len(items), 1))()
@@ -432,13 +432,11 @@ def make_properties(properties: Optional[dict] = None) -> POINTER(struct_pw_prop
         spa_items[i].key = key.encode('utf-8') if isinstance(key, str) else key
         spa_items[i].value = value.encode('utf-8') if isinstance(value, str) else value
 
-    spa_dict = struct_spa_dict(0, len(items),
-                               cast(spa_items, POINTER(struct_spa_dict_item)))
+    spa_dict = struct_spa_dict(0, len(items), cast(spa_items, POINTER(struct_spa_dict_item)))
     return pw_properties_new_dict(byref(spa_dict))
 
 
-def _make_enum_format_pod_bytes(media_subtype: int, audio_format: int,
-                                rate: int, channels: int) -> bytes:
+def _make_enum_format_pod_bytes(media_subtype: int, audio_format: int, rate: int, channels: int) -> bytes:
     """Build the SPA POD for an EnumFormat object (audio/raw).
 
     This reimplements ``spa_format_audio_raw_ext_build`` from
@@ -464,8 +462,7 @@ def _make_enum_format_pod_bytes(media_subtype: int, audio_format: int,
     buf = bytearray()
     object_start = len(buf)
     # struct spa_pod_object: pod { size, SPA_TYPE_Object }, body { type, id }
-    buf += struct.pack('<IIII', 8, SPA_TYPE_Object, SPA_TYPE_OBJECT_Format,
-                       SPA_PARAM_EnumFormat)
+    buf += struct.pack('<IIII', 8, SPA_TYPE_Object, SPA_TYPE_OBJECT_Format, SPA_PARAM_EnumFormat)
 
     # media type + subtype as ids
     buf += struct.pack('<II', SPA_FORMAT_mediaType, SPA_POD_PROP_FLAG_NONE)
