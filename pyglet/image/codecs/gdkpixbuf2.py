@@ -1,11 +1,9 @@
 from ctypes import *
 
-from pyglet.gl import *
 from pyglet.image import *
 from pyglet.image.codecs import *
 from pyglet.image.codecs import gif
 
-import pyglet.lib
 import pyglet.window
 
 gdk = pyglet.lib.load_library('gdk-x11-2.0')

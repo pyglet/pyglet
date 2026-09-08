@@ -23,7 +23,8 @@ class MouseStateHandler:
         False
 
 
-    Mouse coordinates can be retrieved by using the ``'x'`` and ``'y'`` strings.
+    Mouse coordinates can be retrieved by using the ``'x'`` and ``'y'`` strings
+    or by using ``'mouse_state.x'`` and ``'mouse_state.y`` attributes.
 
     For example::
 
@@ -37,10 +38,16 @@ class MouseStateHandler:
         20
         >>> mouse_state['y']
         50
+        
+        # Or...
+        >>> mouse_state.x
+        20
+        >>> mouse_state.y
+        50
     """
 
     def __init__(self) -> None:  # noqa: D107
-        self.data = {
+        self.data: dict[int | str, int | bool] = {
             'x': 0,
             'y': 0,
         }
@@ -62,8 +69,11 @@ class MouseStateHandler:
         self.data['x'] = x
         self.data['y'] = y
 
-    def __getitem__(self, key: str) -> int | bool:
+    def __getitem__(self, key: str | int) -> int | bool:
         return self.data.get(key, False)
+    
+    def __getattr__(self, item: str) -> int:
+        return self.data[item]
 
 
 def buttons_string(buttons: int) -> str:

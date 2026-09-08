@@ -1,7 +1,7 @@
 import os.path
 
-from pyglet.image import *
-from pyglet.image.codecs import *
+from pyglet.image import ImageData
+from pyglet.image.codecs import ImageDecodeException, ImageDecoder, ImageEncodeException, ImageEncoder
 
 from PIL import Image
 
@@ -66,7 +66,7 @@ class PILImageEncoder(ImageEncoder):
             image_from_fn = getattr(Image, "frombytes")
         except AttributeError:
             image_from_fn = getattr(Image, "fromstring")
-        pil_image = image_from_fn(fmt, (image.width, image.height), image.get_data(fmt, pitch))
+        pil_image = image_from_fn(fmt, (image.width, image.height), image.get_bytes(fmt, pitch))
 
         try:
             pil_image.save(file, pil_format)

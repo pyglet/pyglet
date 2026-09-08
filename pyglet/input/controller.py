@@ -26,7 +26,7 @@ import os as _os
 import sys as _sys
 import warnings as _warnings
 
-from .base import Sign
+from .base import Sign, Relation
 from .controller_db import mapping_list
 
 
@@ -53,18 +53,6 @@ def create_guid(bus: int, vendor: int, product: int, version: int, name: str, si
     return f"{bus:04x}0000{vendor:04x}0000{product:04x}0000{version:04x}0000"
 
 
-class Relation:
-    __slots__ = 'control_type', 'index', 'sign'
-
-    def __init__(self, control_type: str, index: int, sign: Sign = Sign.DEFAULT):
-        self.control_type = control_type
-        self.index = index
-        self.sign = sign
-
-    def __repr__(self):
-        return f"Relation(type={self.control_type}, index={self.index}, sign={self.sign})"
-
-
 def _parse_mapping(mapping_string: str) -> dict[str, str | Relation] | None:
     """Parse a SDL2 style GameController mapping string.
 
@@ -79,7 +67,7 @@ def _parse_mapping(mapping_string: str) -> dict[str, str | Relation] | None:
 
     try:
         guid, name, *split_mapping = mapping_string.strip().split(",")
-        relations = dict(guid=guid, name=name)
+        relations: dict[str, str | Relation] = dict(guid=guid, name=name)
     except ValueError:
         return None
 
@@ -88,10 +76,14 @@ def _parse_mapping(mapping_string: str) -> dict[str, str | Relation] | None:
         if ':' not in item:
             continue
 
-        key, relation_string, *etc = item.split(':')
+        input_name, relation_string, *etc = item.split(':')
 
-        if key not in valid_keys:
+        if input_name not in valid_keys:
             continue
+
+        # override some input_names to match pyglet layout:
+        input_name = {'leftstick': 'leftthumb',
+                      'rightstick': 'rightthumb'}.get(input_name, input_name)
 
         # Look for specific flags to signify axis sign:
         if "+" in relation_string:
@@ -108,11 +100,11 @@ def _parse_mapping(mapping_string: str) -> dict[str, str | Relation] | None:
 
         # All relations will be one of (Button, Axis, or Hat).
         if relation_string.startswith("b"):  # Button
-            relations[key] = Relation("button", int(relation_string[1:]), sign)
+            relations[input_name] = Relation("button", index=int(relation_string[1:]), sign=sign)
         elif relation_string.startswith("a"):  # Axis
-            relations[key] = Relation("axis", int(relation_string[1:]), sign)
+            relations[input_name] = Relation("axis", index=int(relation_string[1:]), sign=sign)
         elif relation_string.startswith("h0"):  # Hat
-            relations[key] = Relation("hat0", int(relation_string.split(".")[1]), sign)
+            relations[input_name] = Relation("hat0", index=int(relation_string.split(".")[1]), sign=sign)
 
     return relations
 
@@ -132,6 +124,8 @@ def get_mapping(guid: str) -> dict[str, str | Relation] | None:
         except ValueError:
             _warnings.warn(f"Unable to parse Controller mapping: {mapping}")
             continue
+
+    return None
 
 
 def add_mappings_from_file(filename: str) -> None:

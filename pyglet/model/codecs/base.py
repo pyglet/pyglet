@@ -1,53 +1,78 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+import dataclasses
+
+from abc import ABC
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from typing import Sequence
     from pyglet.model import Model
     from pyglet.graphics import Batch, Group
+    from pyglet.enums import GeometryMode
 
 
-class Scene(ABC):
-    """A high level container for one or more Node objects."""
+class Scene:
+    """A high level container for one or more Nodes.
+
+    The Scene contains a list of 0 or more Nodes. The Nodes
+    themselves may contain 'child' Nodes. The Node list can
+    be accessed directly. Alternatively, the Scene instance
+    can be iterated over. This will recursively yield all
+    Nodes and their child Nodes. For example::
+
+        for node in scene_instance:
+            ...
+
+    will yield::
+
+        yield NodeA
+            yield ChildA
+            yield ChildB
+        yield NodeB
+        etc.
+
+    """
 
     def __init__(self, nodes: list[Node] | None = None) -> None:
         self.nodes = nodes or []
 
-    # TODO: test and implement:
-    # def __iter__(self):
-    #     """Iterate over all Nodes and their children (if existing)."""
-    #     for top_node in self.nodes:
-    #         for node in top_node:
-    #             yield node
+    def __iter__(self):
+        """Recursively iterate over all Nodes and their children."""
+        for parent_node in self.nodes:
+            yield parent_node
+            for child_node in parent_node.children:
+                yield child_node
 
     def create_models(self, batch: Batch, group: Group | None = None) -> list[Model]:
-        """TBD"""
+        """Decoder subclasses are currently responsible for generating Model objects.
+
+        Once base classes are fully defined, the decoders should not create GPU resources
+        themselves. Instead, the final VertexLists, etc. can be created here.
+        """
+        vertex_lists = []
+        groups = []
+        for node in self.nodes:
+            material = node.mesh.primitives[0].material
+
         raise NotImplementedError(f"{self.__class__.__name__} does not implement this method.")
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(nodes={self.nodes})"
+        return f"{self.__class__.__name__}(nodes={len(self.nodes)})"
 
 
 class Node:
     """Container for one or more sub-objects, such as Meshes."""
-    def __init__(self, nodes: list[Node] | None = None, meshes: list[Mesh] | None = None,
-                 skins: list[Skin] | None = None, cameras: list[Camera] | None = None) -> None:
-        self.nodes = nodes or []
-        self.meshes = meshes or []
-        self.skins = skins or []
-        self.cameras = cameras or []
-
-    # TODO: test and implement:
-    # def __iter__(self):
-    #     yield self
-    #     for child_node in self.nodes:
-    #         yield child_node
+    def __init__(self, mesh: Mesh | None = None, skin: Skin | None = None,
+                 camera: Camera | None = None, children: list[Node] | None = None) -> None:
+        self.mesh = mesh
+        self.skin = skin
+        self.camera = camera
+        self.children = children or []
 
     def __repr__(self):
-        return (f"Node(nested_nodes={len(self.nodes)}, meshes={len(self.meshes)},"
-                f"skins={len(self.skins)}, cameras={len(self.cameras)})")
+        return (f"{self.__class__.__name__}"
+                f"(mesh={self.mesh}, skin={self.skin}, camera={self.camera}, children={len(self.children)})")
 
 
 class Mesh:
@@ -57,16 +82,16 @@ class Mesh:
         self.name = name
 
     def __repr__(self):
-        return f"Mesh(name='{self.name}', primitive_count={len(self.primitives)})"
+        return f"Mesh(name='{self.name}', primitives={len(self.primitives)})"
 
 
+@dataclasses.dataclass
 class Attribute:
-    def __init__(self, name: str, fmt: str, attr_type, count, array):
-        self.name = name
-        self.fmt = fmt
-        self.type = attr_type
-        self.count = count
-        self.array = array
+    name: str
+    fmt: str
+    type: str
+    count: int
+    array: Sequence
 
     def __repr__(self):
         return f"{self.__class__.__name__}(name='{self.name}', fmt={self.fmt}, type={self.type}, count={self.count})"
@@ -75,11 +100,13 @@ class Attribute:
 class Primitive:
     """Geometry to be rendered, with optional material."""
     def __init__(self, attributes: list[Attribute], indices: Sequence[int] | None,
-                 mode: int, material: Material | None = None) -> None:
+                 mode: GeometryMode, material: Material | None = None) -> None:
         self.attributes = attributes
         self.indices = indices
         self.mode = mode
         self.material = material
+        # All attributes must have the same count:
+        self.count = self.attributes[0].count
 
     def __repr__(self):
         return f"Primitive(attributes={list(self.attributes)}, mode={self.mode})"
@@ -89,30 +116,20 @@ class Material(ABC):
     """Base class for Material types"""
 
 
+@dataclasses.dataclass(frozen=True)
 class SimpleMaterial(Material):
-    def __init__(self, name: str = "default",
-                 diffuse: Sequence[float] = (0.8, 0.8, 0.8, 1.0),
-                 ambient: Sequence[float] = (0.2, 0.2, 0.2, 1.0),
-                 specular: Sequence[float] = (0.0, 0.0, 0.0, 1.0),
-                 emission: Sequence[float] = (0.0, 0.0, 0.0, 1.0),
-                 shininess: float = 20,
-                 texture_name: str | None = None) -> None:
-
-        self.name = name
-        self.diffuse = diffuse
-        self.ambient = ambient
-        self.specular = specular
-        self.emission = emission
-        self.shininess = shininess
-        self.texture_name = texture_name
-
-    def __repr__(self):
-        return f"Material(name='{self.name}', texture='{self.texture_name}'"
+    name: str = "default",
+    diffuse: tuple[float, float, float, float] = (0.8, 0.8, 0.8, 1.0)
+    ambient: tuple[float, float, float, float] = (0.2, 0.2, 0.2, 1.0)
+    specular: tuple[float, float, float, float] = (0.0, 0.0, 0.0, 1.0)
+    emission: tuple[float, float, float, float] = (0.0, 0.0, 0.0, 1.0)
+    shininess: float = 20
+    texture_name: str | None = None
 
 
 class PBRMaterial(Material):
     def __init__(self):
-        # TODO: implement this class
+        # TODO: implement this as a dataclass
         pass
 
 

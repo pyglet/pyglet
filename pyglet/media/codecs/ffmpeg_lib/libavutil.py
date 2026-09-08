@@ -12,8 +12,8 @@ _debug = debug_print('debug_media')
 
 avutil = pyglet.lib.load_library(
     'avutil',
-    win32=('avutil-59', 'avutil-58', 'avutil-57', 'avutil-56'),
-    darwin=('avutil.59', 'avutil.58', 'avutil.57', 'avutil.56')
+    win32=('avutil-60', 'avutil-59', 'avutil-58', 'avutil-57', 'avutil-56'),
+    darwin=('avutil.60', 'avutil.59', 'avutil.58', 'avutil.57', 'avutil.56')
 )
 
 avutil.avutil_version.restype = c_int
@@ -148,9 +148,9 @@ AVFrame_Fields = [
     ('opaque', c_void_p),
     ('error', c_uint64 * AV_NUM_DATA_POINTERS),  # Deprecated. Removed in 57.
     ('repeat_pict', c_int),
-    ('interlaced_frame', c_int),  # deprecated in 59. Targeted for removal. Use AV_FRAME_FLAG_INTERLACED
-    ('top_field_first', c_int),  # deprecated in 59. Targeted for removal. Use AV_FRAME_FLAG_TOP_FIELD_FIRST
-    ('palette_has_changed', c_int),  # deprecated in 59. Targeted for removal.
+    ('interlaced_frame', c_int),  # deprecated in 59. Targeted for removal. Use AV_FRAME_FLAG_INTERLACED (removed in 60)
+    ('top_field_first', c_int),  # deprecated in 59. Targeted for removal. Use AV_FRAME_FLAG_TOP_FIELD_FIRST (removed in 60)
+    ('palette_has_changed', c_int),  # deprecated in 59. Targeted for removal. (removed in 60)
     ('reordered_opaque', c_int64),  # removed in 59.
     ('sample_rate', c_int),
     ('channel_layout', c_uint64),  # removed in 59.
@@ -170,7 +170,7 @@ AVFrame_Fields = [
     ('pkt_duration', c_int64),  # removed in 59?
     ('metadata', POINTER(AVDictionary)),
     ('decode_error_flags', c_int),
-    ('channels', c_int),
+    ('channels', c_int),  # removed in 59.
     ('pkt_size', c_int),  # deprecated in 59.  use AV_CODEC_FLAG_COPY_OPAQUE to pass through arbitrary user data from packets to frames
     ('qscale_table', POINTER(c_int8)),  # Deprecated. Removed in 57.
     ('qstride', c_int),  # Deprecated. Removed in 57.
@@ -198,9 +198,18 @@ for compat_ver in (57, 58):
 compat.add_version_changes('avutil', 59, AVFrame, AVFrame_Fields,
                            removals=('pkt_pts', 'error', 'qscale_table', 'qstride', 'qscale_type', 'qp_table_buf',
                                      'channels', 'channel_layout',
-                                     'coded_picture_number', 'display_picture_number', 'reordered_opaque', 'pkt_duration'
+                                     'coded_picture_number', 'display_picture_number', 'reordered_opaque',
+                                     'pkt_duration',
                                      ))
 
+compat.add_version_changes('avutil', 60, AVFrame, AVFrame_Fields,
+                           removals=('pkt_pts', 'error', 'qscale_table', 'qstride', 'qscale_type', 'qp_table_buf',
+                                     'channels', 'channel_layout',
+                                     'coded_picture_number', 'display_picture_number', 'reordered_opaque',
+                                     'pkt_duration',
+                                     'interlaced_frame', 'top_field_first', 'palette_has_changed', 'pkt_pos',
+                                     'pkt_size',
+                                     ))
 
 AV_NOPTS_VALUE = -0x8000000000000000
 AV_TIME_BASE = 1000000
@@ -249,6 +258,12 @@ avutil.av_get_bytes_per_sample.restype = c_int
 avutil.av_get_bytes_per_sample.argtypes = [c_int]
 avutil.av_strerror.restype = c_int
 avutil.av_strerror.argtypes = [c_int, c_char_p, c_size_t]
+
+avutil.av_get_pix_fmt_name.restype = c_char_p
+avutil.av_get_pix_fmt_name.argtypes = [c_int]
+
+avutil.av_image_get_buffer_size.restype = c_int
+avutil.av_image_get_buffer_size.argtypes = [c_int, c_int, c_int, c_int]
 
 avutil.av_image_fill_arrays.restype = c_int
 avutil.av_image_fill_arrays.argtypes = [POINTER(c_uint8) * 4, c_int * 4,

@@ -1,5 +1,5 @@
 """
-Responsabilities
+Responsibilities
 
 Path building for entities into a session should be delegated to fs.PathServices
 Session's creation, activation and management at start of fs

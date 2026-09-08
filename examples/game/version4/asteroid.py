@@ -77,5 +77,5 @@ if __name__ == "__main__":
     # Update the game 120 times per second
     pyglet.clock.schedule_interval(update, 1 / 120.0)
 
-    # Tell pyglet to do its thing
+    # Enter into the event loop:
     pyglet.app.run()

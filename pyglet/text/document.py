@@ -14,18 +14,18 @@ example::
     0    5   10   15   20
     The cat sat on the mat.
     +++++++        +++++++    "weight"
-                ++++++      "italic"
+                ++++++      "style"
 
 If this example were to be rendered, "The cat" and "the mat" would have a weight
 set ("bold", "thin", etc.), and "on the" would be in italics.  Note that the second
 "the" is both weighted and italic.
 
 The document styles recorded for this example would be a specific ``"weight"`` over
-ranges (0-7) & (15-22) and ``"italic"`` over range (12-18).  Overlapping styles are
+ranges (0-7) & (15-22) and ``"style"`` over range (12-18).  Overlapping document styles are
 permitted; unlike HTML and other structured markup, the ranges need not be nested.
 
 The document has no knowledge of the semantics of ``"weight"`` names or
-``"italic"``, it stores only the style names.  The pyglet layout classes give
+``"style"`` names, it stores only the document style key names.  The pyglet layout classes give
 meaning to these style names in the way they are rendered; but you are also free
 to invent your own style names (which will be ignored by the layout classes).
 This can be useful to tag areas of interest in a document, or maintain
@@ -71,22 +71,32 @@ The following character style attribute names are recognised by pyglet:
 ``font_size``
     Font size, in points.
 ``weight``
-    String.
-``italic``
-    Boolean.
+    String or :py:class:`~pyglet.enums.Weight`.
+``style``
+    String or :py:class:`~pyglet.enums.Style`.
+``stretch``
+    String or :py:class:`~pyglet.enums.Stretch`.
 ``underline``
     4-tuple of ints in range (0, 255) giving RGBA underline color, or None
     (default) for no underline.
+``strikethrough``
+    4-tuple of ints in range (0, 255) giving RGBA strikethrough color, or
+    ``None`` (default) for no strikethrough.
 ``kerning``
     Additional space to insert between glyphs, in points.  Defaults to 0.
 ``baseline``
     Offset of glyph baseline from line baseline, in points.  Positive values
     give a superscript, negative values give a subscript.  Defaults to 0.
 ``color``
-    4-tuple of ints in range (0, 255) giving RGBA text color
+    4-tuple of ints in range (0, 255) giving RGBA text color, or a
+    :class:`~pyglet.text.LinearGradient`.
 ``background_color``
     4-tuple of ints in range (0, 255) giving RGBA text background color; or
     ``None`` for no background fill.
+``shadow``
+    A :class:`~pyglet.text.DropShadow`, or ``None`` (default) for no shadow.
+``stroke``
+    A :class:`~pyglet.text.Stroke`, or ``None`` (default) for no text stroke.
 
 The following paragraph style attribute names are recognised by pyglet.  Note
 that paragraph styles are handled no differently from character styles by the
@@ -294,6 +304,14 @@ class AbstractDocument(event.EventDispatcher):
                 Name of style attribute to query.
         """
 
+    def has_style_run(self, attribute: str) -> bool:  # noqa: ARG002
+        """Return whether this document stores runs for a style attribute.
+
+        This is a fast-path hint. Custom document types return
+        ``True`` by default so callers continue to inspect their style runs.
+        """
+        return True
+
     @abstractmethod
     def get_style(self, attribute: str, position: int = 0) -> Any:
         """Get an attribute style at the given position.
@@ -337,7 +355,7 @@ class AbstractDocument(event.EventDispatcher):
         """Get a style iterator over the `pyglet.font.Font` instances used in the document.
 
         The font instances are created on-demand by inspection of the
-        ``font_name``, ``font_size``, ``weight`` and ``italic`` style
+        ``font_name``, ``font_size``, ``weight`` and ``style`` document style
         attributes.
 
         Args:
@@ -401,7 +419,7 @@ class AbstractDocument(event.EventDispatcher):
 
     def _delete_text(self, start: int, end: int) -> None:
         for element in list(self._elements):
-            assert element.position is not None
+            assert element._position is not None
             if start <= element._position < end: # noqa: SLF001
                 self._elements.remove(element)
             elif element._position >= end:  # fixes #538  # noqa: SLF001
@@ -550,6 +568,9 @@ class UnformattedDocument(AbstractDocument):
         value = self.styles.get(attribute)
         return runlist.ConstRunIterator(len(self.text), value)
 
+    def has_style_run(self, attribute: str) -> bool:
+        return self.styles.get(attribute) is not None
+
     def get_style(self, attribute: str, position: int | None = None) -> Any:  # noqa: ARG002
         return self.styles.get(attribute)
 
@@ -571,9 +592,9 @@ class UnformattedDocument(AbstractDocument):
         font_name = self.styles.get("font_name")
         font_size = self.styles.get("font_size")
         weight = self.styles.get("weight", "normal")
-        italic = self.styles.get("italic", False)
-        stretch = self.styles.get("stretch", False)
-        return font.load(font_name, font_size, weight=weight, italic=italic, stretch=stretch, dpi=dpi)
+        style = self.styles.get("style", "normal")
+        stretch = self.styles.get("stretch", "normal")
+        return font.load(font_name, font_size, weight=weight, style=style, stretch=stretch, dpi=dpi)
 
     def get_element_runs(self) -> runlist.ConstRunIterator:
         return runlist.ConstRunIterator(len(self._text), None)
@@ -596,6 +617,9 @@ class FormattedDocument(AbstractDocument):
         except KeyError:
             return _no_style_range_iterator
 
+    def has_style_run(self, attribute: str) -> bool:
+        return attribute in self._style_runs
+
     def get_style(self, attribute: str, position: int = 0) -> Any | None:
         try:
             return self._style_runs[attribute][position]
@@ -616,7 +640,7 @@ class FormattedDocument(AbstractDocument):
             self.get_style_runs("font_name"),
             self.get_style_runs("font_size"),
             self.get_style_runs("weight"),
-            self.get_style_runs("italic"),
+            self.get_style_runs("style"),
             self.get_style_runs("stretch"),
             dpi)
 
@@ -670,21 +694,21 @@ class _ElementIterator(runlist.RunIterator):
 class _FontStyleRunsRangeIterator(runlist.RunIterator):
     # XXX subclass runlist
     def __init__(self, font_names: runlist.RunIterator, font_sizes: runlist.RunIterator, weights: runlist.RunIterator,
-                 italics: runlist.RunIterator, stretch: runlist.RunIterator, dpi: int | None) -> None:
-        self.zip_iter = runlist.ZipRunIterator((font_names, font_sizes, weights, italics, stretch))
+                 italic_styles: runlist.RunIterator, stretch: runlist.RunIterator, dpi: int | None) -> None:
+        self.zip_iter = runlist.ZipRunIterator((font_names, font_sizes, weights, italic_styles, stretch))
         self.dpi = dpi
 
     def ranges(self, start: int, end: int) -> Generator[tuple[int, int, Font], None, None]:
         from pyglet import font
         for start_, end_, styles in self.zip_iter.ranges(start, end):
-            font_name, font_size, weight, italic, stretch = styles
-            ft = font.load(font_name, font_size, weight=weight, italic=bool(italic), stretch=stretch, dpi=self.dpi)
+            font_name, font_size, weight, italic_style, stretch = styles
+            ft = font.load(font_name, font_size, weight=weight, style=italic_style, stretch=stretch, dpi=self.dpi)
             yield start_, end_, ft
 
     def __getitem__(self, index: int) -> Font:
         from pyglet import font
-        font_name, font_size, weight, italic, stretch = self.zip_iter[index]
-        return font.load(font_name, font_size, weight=weight, italic=bool(italic), stretch=stretch, dpi=self.dpi)
+        font_name, font_size, weight, italic_style, stretch = self.zip_iter[index]
+        return font.load(font_name, font_size, weight=weight, style=italic_style, stretch=stretch, dpi=self.dpi)
 
 
 class _NoStyleRangeIterator(runlist.RunIterator):

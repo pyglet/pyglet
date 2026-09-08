@@ -17,17 +17,20 @@ import time
 from typing import TYPE_CHECKING, Any, Pattern
 
 from pyglet import clock, event
+from pyglet.customtypes import RGBColor, RGBAColor
 from pyglet.window import key
+from pyglet.event import EventDispatcher
+from pyglet.enums import GeometryMode
 
 if TYPE_CHECKING:
     from pyglet.graphics import Batch
+    from pyglet.window import Window
     from pyglet.text.layout import IncrementalTextLayout
 
-
-class Caret:
+class Caret(EventDispatcher):
     """Visible text insertion marker for `pyglet.text.layout.IncrementalTextLayout`.
 
-    The caret is drawn as a single vertical bar at the document `position` 
+    The caret is drawn as a single vertical bar at the document `position`
     on a text layout object.  If ``mark`` is not None, it gives the unmoving
     end of the current text selection.  The visible text selection on the
     layout is updated along with ``mark`` and ``position``.
@@ -39,6 +42,9 @@ class Caret:
     Updates to the document (and so the layout) are automatically propagated
     to the caret.
 
+    If the window argument is supplied, the caret object dispatches the on_clipboard_copy event when copying text and copies the text.
+    Pasting also works, which will dispatch the on_clipboard_paste event, and pastes the text to the current position of the caret, overriding selection.
+
     The caret object can be pushed onto a window event handler stack with
     ``Window.push_handlers``.  The caret will respond correctly to keyboard,
     text, mouse and activation events, including double- and triple-clicks.
@@ -48,6 +54,7 @@ class Caret:
     """
     _next_word_re: Pattern[str] = re.compile(r"(?<=\W)\w")
     _previous_word_re: Pattern[str] = re.compile(r"(?<=\W)\w+\W*$")
+    _word_re: Pattern[str] = re.compile(r"\w+")
     _next_para_re: Pattern[str] = re.compile(r"\n", flags=re.DOTALL)
     _previous_para_re: Pattern[str] = re.compile(r"\n", flags=re.DOTALL)
 
@@ -70,23 +77,23 @@ class Caret:
     _next_attributes: dict[str, Any]
 
     def __init__(self, layout: IncrementalTextLayout, batch: Batch | None = None,
-                 color: tuple[int, int, int, int] = (0, 0, 0, 255)) -> None:
+                 color: RGBColor | RGBAColor = (0, 0, 0, 255), window: Window | None = None) -> None:
         """Create a caret for a layout.
 
         By default the layout's batch is used, so the caret does not need to
         be drawn explicitly.
 
-        :Parameters:
-            `layout` : `~pyglet.text.layout.IncrementalTextLayout`
+        Args:
+            layout:
                 Layout to control.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Graphics batch to add vertices to.
-            `color` : (int, int, int, int)
+            color:
                 An RGBA or RGB tuple with components in the range [0, 255].
                 RGB colors will be treated as having an opacity of 255.
-
+            window:
+                For the clipboard feature to work, a window object is needed to be passed in to access and set clipboard content.
         """
-        from pyglet import gl
         self._layout = layout
 
         self._custom_batch = batch is not None
@@ -101,15 +108,22 @@ class Caret:
 
         colors = r, g, b, self._visible_alpha, r, g, b, self._visible_alpha
 
-        self._list = self._group.program.vertex_list(2, gl.GL_LINES, self._batch, self._group,
-                                                     colors=("Bn", colors),
-                                                     visible=("f", (1, 1)))
+        self._list = self._group.program.vertex_list(2, GeometryMode.LINES, self._batch, self._group,
+                                                        position=(0, 0, 0) * 2,
+                                                        translation=(0, 0, 0, layout.get_depth_offset(2)) * 2,
+                                                        view_translation=(0, 0, 0) * 2,
+                                                        anchor=(0, 0) * 2,
+                                                        rotation=(0, 0),
+                                                        visible=(1, 1),
+                                                        colors=colors)
+
         self._ideal_x = None
         self._ideal_line = None
         self._next_attributes = {}
 
         self.visible = True
 
+        self._window = window
         layout.push_handlers(self)
 
     @property
@@ -118,14 +132,13 @@ class Caret:
 
     @layout.setter
     def layout(self, layout: IncrementalTextLayout) -> None:
-        if self._layout == layout and self._group == layout.group:
+        if self._layout == layout and self._group == layout.foreground_decoration_group:
             return
 
-        from pyglet.gl import GL_LINES
         self._layout = layout
         batch = self._batch if self._custom_batch else layout.batch
         self._group = layout.foreground_decoration_group
-        self._batch.migrate(self._list, GL_LINES, self._group, batch)
+        self._batch.migrate(self._list, GeometryMode.LINES, self._group, batch)
 
     def delete(self) -> None:
         """Remove the caret from its batch.
@@ -329,22 +342,21 @@ class Caret:
         """Select the word at the given window coordinate."""
         line = self._layout.get_line_from_point(x, y)
         p = self._layout.get_position_on_line(line, x)
-        match1 = self._previous_word_re.search(self._layout.document.text, 0, p + 1)
-        if not match1:
-            mark1 = 0
-        else:
-            mark1 = match1.start()
-        self.mark = mark1
+        word = self._get_word_bounds(self._layout.document.text, p)
+        if word is None:
+            return
 
-        match2 = self._next_word_re.search(self._layout.document.text, p)
-        if not match2:
-            mark2 = len(self._layout.document.text)
-        else:
-            mark2 = match2.start()
-
-        self._position = mark2
+        self.mark, self._position = word
         self._update(line=line)
         self._next_attributes.clear()
+
+    @classmethod
+    def _get_word_bounds(cls, text: str, position: int) -> tuple[int, int] | None:
+        """Return the word containing an insertion position, without trailing whitespace."""
+        for match in cls._word_re.finditer(text):
+            if match.start() <= position <= match.end():
+                return match.span()
+        return None
 
     def select_paragraph(self, x: int, y: int) -> None:
         """Select the paragraph at the given window coordinate."""
@@ -379,7 +391,8 @@ class Caret:
         self._list.position[:] = [x, y + font.descent, z, x, y + font.ascent, z]
 
     def on_translation_update(self) -> None:
-        self._list.translation[:] = (-self._layout.view_x, -self._layout.view_y, 0) * 2
+        depth_offset = self._list.translation[3]
+        self._list.translation[:] = (-self._layout.view_x, -self._layout.view_y, 0, depth_offset) * 2
 
     def on_layout_update(self) -> None:
         """Handler for the `IncrementalTextLayout.on_layout_update` event."""
@@ -467,7 +480,26 @@ class Caret:
                 self.position = 0
             else:
                 self.position = m.start()
+        elif motion == key.MOTION_COPY and self._window:
+            pos = self._position
+            mark = self._mark
+            if pos > mark:
+                text = self._layout.document.text[mark:pos]
+            else:
+                text = self._layout.document.text[pos:mark]
 
+            self._window.set_clipboard_text(text)
+            self.dispatch_event("on_clipboard_copy", text)
+        elif motion == key.MOTION_PASTE and self._window:
+            if self._mark is not None:
+                self._delete_selection()
+
+            text = self._window.get_clipboard_text().replace("\r", "\n")
+            pos = self._position
+            self._position += len(text)
+            self._layout.document.insert_text(pos, text, self._next_attributes)
+            self._nudge()
+            self.dispatch_event("on_clipboard_paste", text)
         if self._mark is not None and not select:
             self._mark = None
             self._layout.set_selection(0, 0)
@@ -564,3 +596,17 @@ class Caret:
         self._active = False
         self.visible = self._active
         return event.EVENT_HANDLED
+
+    def on_clipboard_copy(self, text: str) -> bool:
+        """Dispatched when text is copied.
+        This default handler does nothing.
+        """
+        return event.EVENT_HANDLED
+    def on_clipboard_paste(self, text: str) -> bool:
+        """Dispatched when text is pasted.
+        The default handler does nothing.
+        """
+        return event.EVENT_HANDLED
+
+Caret.register_event_type("on_clipboard_copy")
+Caret.register_event_type("on_clipboard_paste")

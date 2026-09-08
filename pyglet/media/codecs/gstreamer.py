@@ -48,7 +48,7 @@ class _MessageHandler:
         """The main message callback"""
         if message.type == Gst.MessageType.EOS:
 
-            self.source.queue.put(self.source.sentinal)
+            self.source.queue.put(self.source.sentinel)
             if not self.source.caps:
                 raise GStreamerDecodeException("Appears to be an unsupported file")
 
@@ -105,7 +105,7 @@ class _MessageHandler:
 class GStreamerSource(StreamingSource):
 
     source_instances = weakref.WeakSet()
-    sentinal = object()
+    sentinel = object()
 
     def __init__(self, filename, file=None):
         self._pipeline = Gst.Pipeline()
@@ -192,14 +192,14 @@ class GStreamerSource(StreamingSource):
         except (ImportError, AttributeError):
             pass
 
-    def get_audio_data(self, num_bytes, compensation_time=0.0):
+    def get_audio_data(self, num_bytes):
         if self._finished.is_set():
             return None
 
         data = bytes()
         while len(data) < num_bytes:
             packet = self.queue.get()
-            if packet == self.sentinal:
+            if packet == self.sentinel:
                 self._finished.set()
                 break
             data += packet
@@ -207,10 +207,7 @@ class GStreamerSource(StreamingSource):
         if not data:
             return None
 
-        timestamp = self._pipeline.query_position(Gst.Format.TIME).cur / Gst.SECOND
-        duration = self.audio_format.bytes_per_second / len(data)
-
-        return AudioData(data, len(data), timestamp, duration, [])
+        return AudioData(data, len(data))
 
     def seek(self, timestamp):
         # First clear any data in the queue:
@@ -246,7 +243,7 @@ class GStreamerDecoder(MediaDecoder):
     def get_file_extensions(self):
         return '.mp3', '.flac', '.ogg', '.m4a'
 
-    def decode(self, filename, file, streaming=True):
+    def decode(self, filename, file, streaming=True, **kwargs):
 
         if not any(filename.endswith(ext) for ext in self.get_file_extensions()):
             # Refuse to decode anything not specifically listed in the supported

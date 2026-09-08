@@ -1,6 +1,7 @@
 import pytest
 
-from pyglet import gl
+import pyglet
+from pyglet.graphics.api import gl
 from pyglet import graphics
 from pyglet.text import document
 from pyglet.text import layout
@@ -14,13 +15,14 @@ def text_window(request):
         def __init__(self, doctype, *args, **kwargs):
             super().__init__(*args, **kwargs)
 
-            self.batch = graphics.Batch()
+            self.batch = pyglet.graphics.Batch()
             self.document = doctype()
             self.layout = layout.IncrementalTextLayout(
                 self.document, 0, 0, 0, self.width, self.height, batch=self.batch)
 
+            self.context.set_clear_color(1, 1, 1, 1)
+
         def on_draw(self):
-            gl.glClearColor(1, 1, 1, 1)
             self.clear()
             self.batch.draw()
 

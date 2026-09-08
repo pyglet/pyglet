@@ -1,5 +1,5 @@
-sphinx==7.1.2
-sphinx_rtd_theme==2.0.0
+sphinx==9.0.4
+sphinx_rtd_theme==3.1.0
 readthedocs-sphinx-search==0.3.2
-sphinx-autodoc-typehints==2.0.1
+sphinx-autodoc-typehints==3.6.1
 pytest

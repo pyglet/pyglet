@@ -63,6 +63,9 @@ is 18 pixels.
 ``underline``
     4-tuple of ints in range (0, 255) giving RGBA underline color, or None
     (default) for no underline.
+``strikethrough``
+    4-tuple of ints in range (0, 255) giving RGBA strikethrough color, or
+    ``None`` (default) for no strikethrough.
 ``kerning``
     Additional space to insert between glyphs, as a distance.  Defaults to 0.
 ``baseline``
@@ -70,10 +73,15 @@ is 18 pixels.
     values give a superscript, negative values give a subscript.  Defaults to
     0.
 ``color``
-    4-tuple of ints in range (0, 255) giving RGBA text color
+    4-tuple of ints in range (0, 255) giving RGBA text color, or a
+    :class:`~pyglet.text.LinearGradient`.
 ``background_color``
     4-tuple of ints in range (0, 255) giving RGBA text background color; or
     ``None`` for no background fill.
+``stroke``
+    A :class:`~pyglet.text.Stroke`, or ``None`` (default) for no text stroke.
+``shadow``
+    A :class:`~pyglet.text.DropShadow`, or ``None`` (default) for no shadow.
 
 The following paragraph style attribute names are recognised.  Note
 that paragraph styles are handled no differently from character styles by the
@@ -121,24 +129,31 @@ from pyglet.text.layout.base import (
     TextDecorationGroup,
     TextLayout,
     TextLayoutGroup,
-    decoration_fragment_source,
-    decoration_vertex_source,
-    get_default_decoration_shader,
-    get_default_image_layout_shader,
     get_default_layout_shader,
-    layout_fragment_image_source,
-    layout_fragment_source,
-    layout_vertex_source,
+    get_default_image_layout_shader,
+    get_default_decoration_shader, ScrollableTextLayoutGroup, ScrollableTextDecorationGroup,
 )
 from pyglet.text.layout.incremental import (
     IncrementalTextDecorationGroup,
     IncrementalTextLayout,
     IncrementalTextLayoutGroup,
 )
-from pyglet.text.layout.scrolling import ScrollableTextDecorationGroup, ScrollableTextLayout, ScrollableTextLayoutGroup
 
-__all__ = ["TextLayout", "IncrementalTextLayout", "ScrollableTextLayout", "TextLayoutGroup", "TextDecorationGroup",
-           "IncrementalTextLayoutGroup", "IncrementalTextDecorationGroup", "ScrollableTextLayoutGroup",
-           "ScrollableTextDecorationGroup", "get_default_layout_shader", "get_default_image_layout_shader",
-           "get_default_decoration_shader", "decoration_fragment_source", "layout_fragment_image_source",
-           "layout_fragment_source", "layout_vertex_source", "decoration_vertex_source"]
+from pyglet.text.layout.scrolling import (
+    ScrollableTextLayout,
+)
+
+__all__ = [
+    "IncrementalTextDecorationGroup",
+    "IncrementalTextLayout",
+    "IncrementalTextLayoutGroup",
+    "ScrollableTextDecorationGroup",
+    "ScrollableTextLayout",
+    "ScrollableTextLayoutGroup",
+    "TextDecorationGroup",
+    "TextLayout",
+    "TextLayoutGroup",
+    "get_default_decoration_shader",
+    "get_default_image_layout_shader",
+    "get_default_layout_shader",
+]

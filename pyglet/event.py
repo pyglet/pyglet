@@ -120,12 +120,14 @@ from __future__ import annotations
 
 import inspect
 import os.path
-from functools import partial
-from typing import TYPE_CHECKING, Literal, Union
+
+from typing import TYPE_CHECKING, Any, Literal, Union
 from weakref import WeakMethod
 
+import pyglet
+
 if TYPE_CHECKING:
-    from typing import Any, Callable, Generator
+    from collections.abc import Callable, Generator
 
 
 EVENT_HANDLED = True
@@ -190,7 +192,7 @@ class EventDispatcher:
                     msg = f'Unknown event "{name}"'
                     raise EventException(msg)
                 if inspect.ismethod(obj):
-                    yield name, WeakMethod(obj, partial(self._remove_handler, name))
+                    yield name, WeakMethod(obj)
                 else:
                     yield name, obj
             else:
@@ -198,7 +200,7 @@ class EventDispatcher:
                 for name in dir(obj):
                     if name in self.event_types:
                         meth = getattr(obj, name)
-                        yield name, WeakMethod(meth, partial(self._remove_handler, name))
+                        yield name, WeakMethod(meth)
 
         for name, handler in kwargs.items():
             # Function for handling given event (no magic)
@@ -206,7 +208,7 @@ class EventDispatcher:
                 msg = f'Unknown event "{name}"'
                 raise EventException(msg)
             if inspect.ismethod(handler):
-                yield name, WeakMethod(handler, partial(self._remove_handler, name))
+                yield name, WeakMethod(handler)
             else:
                 yield name, handler
 
@@ -300,25 +302,6 @@ class EventDispatcher:
             except KeyError:
                 pass
 
-    def _remove_handler(self, name: str, handler: Callable) -> None:
-        """Used internally to remove all handler instances for the given event name.
-
-        This is normally called from a dead ``WeakMethod`` to remove itself from the
-        event stack.
-        """
-        # Iterate over a copy as we might mutate the list
-        for frame in list(self._event_stack):
-
-            if name in frame:
-                try:
-                    if frame[name] == handler:
-                        del frame[name]
-                        if not frame:
-                            self._event_stack.remove(frame)
-                except TypeError:
-                    # weakref is already dead
-                    pass
-
     def dispatch_event(self, event_type: str, *args: Any) -> bool | None:
         """Dispatch an event to the attached event handlers.
 
@@ -328,7 +311,7 @@ class EventDispatcher:
         handlers down the stack will receive this event.
 
         This method has several possible return values. If any event
-        hander has returned ``EVENT_HANDLED``, then this method will
+        handler has returned ``EVENT_HANDLED``, then this method will
         also return ``EVENT_HANDLED``. If not, this method will return
         ``EVENT_UNHANDLED``. If there were no events registered to
         receive this event, ``False`` is returned.
@@ -345,7 +328,6 @@ class EventDispatcher:
             "EventDispatcher.register_event_type('event_name')."
         )
         assert event_type in self.event_types, f"{event_type} not found in {self}.event_types == {self.event_types}"
-
         invoked = False
 
         # Search handler stack for matching event handlers
@@ -354,8 +336,16 @@ class EventDispatcher:
             if not handler:
                 continue
             if isinstance(handler, WeakMethod):
-                handler = handler()
-                assert handler is not None
+                weak_handler = handler
+                handler = weak_handler()
+                if handler is None:
+                    # Weak handlers can expire before their callback is removed from stack.
+                    # Skip and remove stale handlers
+                    if frame.get(event_type) is weak_handler:
+                        del frame[event_type]
+                        if not frame and frame in self._event_stack:
+                            self._event_stack.remove(frame)
+                    continue
             try:
                 invoked = True
                 if handler(*args):
@@ -380,6 +370,19 @@ class EventDispatcher:
             return EVENT_UNHANDLED
 
         return False
+
+    def post_event(self, event_type: str, *args: Any) -> bool | None:
+        """Post an event to the main application thread.
+
+        Unlike the :py:meth:`~pyglet.event.EventDispatcher.dispatch_event`
+        method, this method does not dispatch events directly. Instead, it
+        hands off the dispatch call to the main application thread. This
+        ensures that any event handlers are also executed in the main thread.
+
+        This method aliases :py:meth:`~pyglet.app.PlatformEventLoop.post_event`,
+        which can be seen for more information on behavior.
+        """
+        pyglet.app.platform_event_loop.post_event(self, event_type, *args)
 
     def _raise_dispatch_exception(self, event_type: str, args: Any, handler: Callable, exception: Exception) -> None:
         # A common problem in applications is having the wrong number of
@@ -434,10 +437,10 @@ class EventDispatcher:
     def _dump_handlers(self) -> None:
 
         for level, handlers in enumerate(self._event_stack):
-            print(f"level: {level}")
+            print(f"level: {level}")  # noqa: T201
 
             for event_type, handler in handlers.items():
-                print(f" - '{event_type}': {handler}")
+                print(f" - '{event_type}': {handler}")  # noqa: T201
 
     # Decorator
 

@@ -6,9 +6,7 @@ __pycache__
 # Virtualenvs (from project root)
 /env
 /.env
-/.venv
-/.venv2
-/.venv3
+/.venv*
 
 # Pyenv
 .python-version
@@ -46,6 +44,10 @@ doc/api
 doc/internal/build.rst
 website/dist
 tools/*tab.py
+tools/pyodide/.*_build/
+tools/pyodide/**/.build/
+tests/pyodide/**/.build/
+.pyodide_test_build/
 exprtab.py
 parser.out
 parsetab.py

@@ -1,0 +1,15 @@
+body {
+    background-color: #313338;
+    color: #f2f3f5;
+}
+
+#pygletStatus {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 1em;
+    border-radius: 5px;
+    white-space: pre-wrap;
+    font-family: monospace;
+    max-height: 400px;
+    overflow-y: auto;
+}

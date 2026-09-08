@@ -318,7 +318,7 @@ class Win32AudioDeviceManager(base.AbstractAudioDeviceManager):
         return dev_id.value, name, description, state.value
 
     def get_devices(self, flow=eRender, state=DEVICE_STATE_ACTIVE):
-        """Get's all of the specified devices (by default, all output and active)."""
+        """Gets all of the specified devices (by default, all output and active)."""
         collection = IMMDeviceCollection()
         self._device_enum.EnumAudioEndpoints(flow, state, byref(collection))
 

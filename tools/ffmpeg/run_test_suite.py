@@ -12,7 +12,7 @@ Arguments
 If no sample_dir is provided the samples to play will come from the active
 session (see cmd configure new)
 
-If the samples_dir is provided, all files whitin will be played except for the
+If the samples_dir is provided, all files within will be played except for the
 ones with extension ".dbg", ".htm", ".html", ".json", ".log", ".pkl", ".py",
 ".txt" ; subdirectories of samples_dir will not be explored. 
 

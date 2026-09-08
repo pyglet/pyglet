@@ -36,7 +36,7 @@ should be written to accept these two values. For example::
     def on_resize(width, height):
         pass
 
-There are a few different ways in which event handlers can be attached to recieve them.
+There are a few different ways in which event handlers can be attached to receive them.
 The simplest way is to directly attach the event handler to the corresponding attribute
 on the object.  This will completely replace the default event handler::
 
@@ -91,7 +91,7 @@ or if your handler has a different name, pass the event name to the decorator::
 
 
 In most simple cases, the :py:class:`~pyglet.event.EventDispatcher.event`
-decorator is most convienent.  One limitation of using the decorator,
+decorator is most convenient.  One limitation of using the decorator,
 however, is that you can only add one additional event handler.
 If you want to add multiple additional event handlers, the next section
 describes how to accomplish that.
@@ -200,7 +200,7 @@ Creating your own event dispatcher
 ----------------------------------
 
 pyglet provides the :py:class:`~pyglet.window.Window`,
-:py:class:`~pyglet.media.player.Player`, and other event dispatchers,
+:py:class:`~pyglet.media.player.AudioPlayer`, and other event dispatchers,
 but exposes a public interface for creating and dispatching your own events.
 
 The steps for creating an event dispatcher are:
@@ -208,7 +208,7 @@ The steps for creating an event dispatcher are:
 1. Subclass :py:class:`~pyglet.event.EventDispatcher`
 2. Call the :py:meth:`~pyglet.event.EventDispatcher.register_event_type`
    class method on your subclass for each event your subclass will recognise.
-3. Call :py:meth:`~pyglet.event.EventDispatcher. dispatch_event` to create and
+3. Call :py:meth:`~pyglet.event.EventDispatcher.dispatch_event` to create and
    dispatch an event as needed.
 
 In the following example, a hypothetical GUI widget provides several events::
@@ -251,7 +251,7 @@ There is zero instance overhead on objects that have no event handlers
 attached (the event stack is created only when required).  This makes
 :py:class:`~pyglet.event.EventDispatcher` suitable for use even on light-weight
 objects that may not always have handlers.  For example,
-:py:class:`~pyglet.media.player.Player` is an
+:py:class:`~pyglet.media.player.AudioPlayer` is an
 :py:class:`~pyglet.event.EventDispatcher` even though potentially hundreds
 of these objects may be created and destroyed each second, and most will
 not need an event handler.
@@ -300,3 +300,7 @@ The two clock objects will be notified whenever the timer is "ticked", though
 neither the timer nor the clocks needed prior knowledge of the other.  During
 object construction any relationships between subjects and observers can be
 created.
+
+
+Event chains provide a higher-level way to write timed and callback-driven
+event flows. See :doc:`event_chains` for details and examples.

@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import ctypes
 import warnings
 
-from typing import List, Dict, Optional
+from typing import Optional
 
 from pyglet.libs.win32.constants import WM_DEVICECHANGE, DBT_DEVICEARRIVAL, DBT_DEVICEREMOVECOMPLETE, \
     DBT_DEVTYP_DEVICEINTERFACE, DEVICE_NOTIFY_WINDOW_HANDLE
@@ -55,7 +57,7 @@ def _create_control(object_instance):
     elif ctrl_type & dinput.DIDFT_POV:
         control = base.AbsoluteAxis(base.AbsoluteAxis.HAT, 0, 0xffffffff, raw_name)
     else:
-        return
+        return None
 
     control._type = object_instance.dwType
     return control
@@ -124,16 +126,17 @@ class DirectInputDevice(base.Device):
         prop.dwData = 64 * ctypes.sizeof(dinput.DIDATAFORMAT)
         self._device.SetProperty(dinput.DIPROP_BUFFERSIZE, ctypes.byref(prop.diph))
 
-    def open(self, window=None, exclusive=False):
+    def open(self, window: pyglet.window.Window | None=None, exclusive: bool=False) -> None:
         if not self.controls:
             return
 
         if window is None:
-            # Pick any open window, or the shadow window if no windows
-            # have been created yet.
-            window = pyglet.gl._shadow_window
+            # Pick any open window or the shadow window if no windows are available.
             for window in pyglet.app.windows:
                 break
+
+            if not window:
+                window = pyglet.window._shadow_window  # noqa: SLF001
 
         flags = dinput.DISCL_BACKGROUND
         if exclusive:
@@ -215,31 +218,34 @@ class DIDeviceManager(EventDispatcher):
         self.registered = False
         self.window = None
         self._devnotify = None
-        self.devices: List[DirectInputDevice] = []
+        self.devices: list[DirectInputDevice] = []
 
         if self.register_device_events(skip_warning=True):
             self.set_current_devices()
 
-    def set_current_devices(self):
-        """Sets all currently discovered devices in the devices list.
-        Be careful when using this, as this creates new device objects. Should only be called on initialization of
-        the manager and if for some reason the window connection event isn't registered.
+    def set_current_devices(self) -> None:
+        """Sets all currently discovered devices in the device list.
+
+        .. note:: Be careful when using this, as this creates new device objects. Only to be called on the
+        initialization of the manager, and if the window connection event isn't already registered.
         """
         new_devices, _ = self._get_devices()
         self.devices = new_devices
 
-    def register_device_events(self, skip_warning=False, window=None):
+    def register_device_events(self, skip_warning: bool=False, window: pyglet.window.Window | None=None) -> bool:
         """Register the first OS Window to receive events of disconnect and connection of devices.
-        Returns True if events were successfully registered.
+
+        Returns:
+            True if events were successfully registered.
         """
         if not self.registered:
-            # If a specific window is not specified, find one.
-            if not window:
-                # Pick any open window, or the shadow window if no windows have been created yet.
-                window = pyglet.gl._shadow_window
+            # Pick any open window or the shadow window if no windows are available.
+            if window is None:
+                for window in pyglet.app.windows:
+                    break
+
                 if not window:
-                    for window in pyglet.app.windows:
-                        break
+                    window = pyglet.window._shadow_window  # noqa: SLF001
 
             self.window = window
             if self.window is not None:
@@ -255,24 +261,27 @@ class DIDeviceManager(EventDispatcher):
                 self.registered = True
                 self.window.push_handlers(self)
                 return True
-            else:
-                if not skip_warning:
-                    warnings.warn("DirectInput Device Manager requires a window to receive device connection events.")
+            if not skip_warning:
+                warnings.warn("DirectInput Device Manager requires a window to receive device connection events.")
 
         return False
 
-    def _unregister_device_events(self):
-        if WM_DEVICECHANGE in self.window._event_handlers:
-            del self.window._event_handlers[WM_DEVICECHANGE]
-        _user32.UnregisterDeviceNotification(self._devnotify)
-        self.registered = False
+    def _unregister_device_events(self) -> None:
+        if self.registered:
+            if self.window is not None and WM_DEVICECHANGE in self.window._event_handlers:  # noqa: SLF001
+                del self.window._event_handlers[WM_DEVICECHANGE]  # noqa: SLF001
+            self.registered = False
+        if self._devnotify:
+            unregister = getattr(_user32, "UnregisterDeviceNotification", None)
+            if unregister:
+                unregister(self._devnotify)
+
         self._devnotify = None
 
     def on_close(self):
-        if self.registered:
-            self._unregister_device_events()
+        self._unregister_device_events()
 
-        import pyglet.app
+        import pyglet.app  # noqa: PLC0415
         if len(pyglet.app.windows) != 0:
             # At this point the closed windows aren't removed from the app.windows list. Check for non-current window.
             for existing_window in pyglet.app.windows:
@@ -282,20 +291,26 @@ class DIDeviceManager(EventDispatcher):
 
         self.window = None
 
-    def __del__(self):
-        if self.registered:
+    def __del__(self) -> None:
+        # During interpreter teardown, module globals can already be cleared.
+        # Cleanup in __del__ must be best-effort and never raise.
+        try:
             self._unregister_device_events()
+        except Exception:
+            pass
 
     def _get_devices(self, display=None):
         """Enumerate all the devices on the system.
-        Returns two values: new devices, missing devices"""
+
+        Returns two values: new devices, missing devices
+        """
         _missing_devices = list(self.devices)
         _new_devices = []
         _xinput_devices = []
 
-        if not pyglet.options["win32_disable_xinput"]:
+        if not pyglet.options.win32_disable_xinput:
             try:
-                from pyglet.input.win32.xinput import get_xinput_guids
+                from pyglet.input.win32.xinput import get_xinput_guids  # noqa: PLC0415
                 _xinput_devices = get_xinput_guids()
             except ImportError:
                 pass
@@ -359,7 +374,7 @@ class DIControllerManager(ControllerManager):
 
     def __init__(self, display=None):
         self._display = display
-        self._controllers: Dict[DirectInputDevice, base.Controller] = {}
+        self._controllers: dict[DirectInputDevice, base.Controller] = {}
 
         for device in _di_manager.devices:
             self._add_controller(device)
@@ -398,7 +413,7 @@ def get_devices(display=None):
     _devices = []
     _xinput_devices = []
 
-    if not pyglet.options["win32_disable_xinput"]:
+    if not pyglet.options.win32_disable_xinput:
         try:
             from pyglet.input.win32.xinput import get_xinput_guids
             _xinput_devices = get_xinput_guids()
@@ -429,9 +444,8 @@ def _create_controller(device):
     if device._type in (dinput.DI8DEVTYPE_JOYSTICK, dinput.DI8DEVTYPE_1STPERSON, dinput.DI8DEVTYPE_GAMEPAD):
         if mapping is not None:
             return base.Controller(device, mapping)
-        else:
-            warnings.warn(f"Warning: {device} (GUID: {device.get_guid()}) "
-                          f"has no controller mappings. Update the mappings in the Controller DB.")
+        warnings.warn(f"Warning: {device} (GUID: {device.get_guid()}) "
+                      f"has no controller mappings. Update the mappings in the Controller DB.")
 
 
 def _create_joystick(device):

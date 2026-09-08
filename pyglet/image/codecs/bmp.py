@@ -9,6 +9,7 @@ encoding.  Alpha channel is supported for 32-bit BI_RGB only.
 #
 # But some details including alignment and bit/byte order are omitted; see
 # http://www.fileformat.info/format/bmp/egff.htm
+from __future__ import annotations
 
 import ctypes
 from ctypes.wintypes import DWORD, LONG, WORD
@@ -31,7 +32,7 @@ class BITMAPFILEHEADER(ctypes.LittleEndianStructure):
         ('bfSize', DWORD),
         ('bfReserved1', WORD),
         ('bfReserved2', WORD),
-        ('bfOffBits', DWORD)
+        ('bfOffBits', DWORD),
     ]
 
 class BITMAPINFOHEADER(ctypes.LittleEndianStructure):
@@ -47,7 +48,7 @@ class BITMAPINFOHEADER(ctypes.LittleEndianStructure):
         ('biXPelsPerMeter', LONG),
         ('biYPelsPerMeter', LONG),
         ('biClrUsed', DWORD),
-        ('biClrImportant', DWORD)
+        ('biClrImportant', DWORD),
     ]
 
 CIEXYZTRIPLE = FXPT2DOT30 * 9
@@ -92,7 +93,7 @@ class RGBQUAD(ctypes.LittleEndianStructure):
         ('rgbBlue', BYTE),
         ('rgbGreen', BYTE),
         ('rgbRed', BYTE),
-        ('rgbReserved', BYTE)
+        ('rgbReserved', BYTE),
     ]
 
     def __repr__(self):
@@ -137,7 +138,7 @@ class BMPImageDecoder(ImageDecoder):
         if width <= 0  or info_header.biPlanes != 1:
             raise ImageDecodeException(
                 'BMP file has corrupt parameters: %r' % (filename or file))
-        pitch_sign = height < 0 and -1 or 1
+        pitch_sign = (height < 0 and -1) or 1
         height = abs(height)
 
         compression = info_header.biCompression
@@ -146,7 +147,7 @@ class BMPImageDecoder(ImageDecoder):
                 'Unsupported compression: %r' % (filename or file))
 
         clr_used = 0
-        bitcount = info_header.biBitCount 
+        bitcount = info_header.biBitCount
         if bitcount == 1:
             pitch = (width + 7) // 8
             bits_type = ctypes.c_ubyte
@@ -166,7 +167,7 @@ class BMPImageDecoder(ImageDecoder):
         elif bitcount == 24:
             pitch = width * 3
             bits_type = ctypes.c_ubyte
-            decoder = decode_24bit 
+            decoder = decode_24bit
         elif bitcount == 32:
             pitch = width * 4
             if compression == BI_RGB:
@@ -185,17 +186,17 @@ class BMPImageDecoder(ImageDecoder):
         pitch = (pitch + 3) & ~3
         packed_width = pitch // ctypes.sizeof(bits_type)
 
-        if bitcount < 16 and compression == BI_RGB: 
+        if bitcount < 16 and compression == BI_RGB:
             clr_used = info_header.biClrUsed or (1 <<  bitcount)
             palette = to_ctypes(buffer, palette_offset, RGBQUAD * clr_used)
-            bits = to_ctypes(buffer, bits_offset, 
+            bits = to_ctypes(buffer, bits_offset,
                              bits_type * packed_width * height)
             return decoder(bits, palette, width, height, pitch, pitch_sign)
-        elif bitcount >= 16 and compression == BI_RGB:
-            bits = to_ctypes(buffer, bits_offset, 
+        if bitcount >= 16 and compression == BI_RGB:
+            bits = to_ctypes(buffer, bits_offset,
                              bits_type * (packed_width * height))
             return decoder(bits, None, width, height, pitch, pitch_sign)
-        elif compression == BI_BITFIELDS:
+        if compression == BI_BITFIELDS:
             if info_header.biSize >= ctypes.sizeof(BITMAPV4HEADER):
                 info_header = to_ctypes(buffer, info_header_offset,
                                         BITMAPV4HEADER)
@@ -204,7 +205,7 @@ class BMPImageDecoder(ImageDecoder):
                 b_mask = info_header.bV4BlueMask
             else:
                 fields_offset = info_header_offset + \
-                    ctypes.sizeof(BITMAPINFOHEADER) 
+                    ctypes.sizeof(BITMAPINFOHEADER)
                 fields = to_ctypes(buffer, fields_offset, RGBFields)
                 r_mask = fields.red
                 g_mask = fields.green
@@ -215,46 +216,60 @@ class BMPImageDecoder(ImageDecoder):
                     ('data', bits_type * packed_width * height),
                 ]
             bits = to_ctypes(buffer, bits_offset, _BitsArray).data
-            return decoder(bits, r_mask, g_mask, b_mask, 
-                           width, height, pitch, pitch_sign)
+            return decoder(bits, r_mask, g_mask, b_mask, width, height, pitch, pitch_sign)
+        return None
+
 
 def decode_1bit(bits, palette, width, height, pitch, pitch_sign):
-    rgb_pitch = (((pitch << 3) + 7) & ~0x7) * 3
+    rgb_pitch = width * 3
     buffer = (ctypes.c_ubyte * (height * rgb_pitch))()
     i = 0
     for row in bits:
+        pixel_count = 0
         for packed in row:
             for _ in range(8):
+                if pixel_count >= width:
+                    break
                 rgb = palette[(packed & 0x80) >> 7]
                 buffer[i] = rgb.rgbRed
                 buffer[i + 1] = rgb.rgbGreen
                 buffer[i + 2] = rgb.rgbBlue
                 i += 3
+                pixel_count += 1
                 packed <<= 1
 
     return ImageData(width, height, 'RGB', buffer, pitch_sign * rgb_pitch)
 
 def decode_4bit(bits, palette, width, height, pitch, pitch_sign):
-    rgb_pitch = (((pitch << 1) + 1) & ~0x1) * 3
+    packed_row_bytes = (width + 1) // 2
+    rgb_pitch = width * 3
     buffer = (ctypes.c_ubyte * (height * rgb_pitch))()
-    i = 0
+    i  = 0
     for row in bits:
-        for packed in row:
-            for index in ((packed & 0xf0) >> 4, packed & 0xf):
+        pixel_count = 0
+        for byte_i in range(packed_row_bytes):
+            packed = row[byte_i]
+            for index in ((packed & 0xF0) >> 4, packed & 0x0F):
+                if pixel_count >= width:
+                    break
                 rgb = palette[index]
                 buffer[i] = rgb.rgbRed
                 buffer[i + 1] = rgb.rgbGreen
                 buffer[i + 2] = rgb.rgbBlue
                 i += 3
+                pixel_count += 1
 
     return ImageData(width, height, 'RGB', buffer, pitch_sign * rgb_pitch)
 
+
 def decode_8bit(bits, palette, width, height, pitch, pitch_sign):
-    rgb_pitch = pitch * 3
+    rgb_pitch = width * 3
     buffer = (ctypes.c_ubyte * (height * rgb_pitch))()
+
     i = 0
     for row in bits:
-        for index in row:
+        for x in range(width):
+            index = row[x]
             rgb = palette[index]
             buffer[i] = rgb.rgbRed
             buffer[i + 1] = rgb.rgbGreen
@@ -265,9 +280,18 @@ def decode_8bit(bits, palette, width, height, pitch, pitch_sign):
 
 
 def decode_24bit(bits, palette, width, height, pitch, pitch_sign):
-    buffer = (ctypes.c_ubyte * (height * pitch))()
-    ctypes.memmove(buffer, bits, len(buffer))
-    return ImageData(width, height, 'BGR', buffer, pitch_sign * pitch)
+    row_bytes = width * 3
+    buffer = (ctypes.c_ubyte * (height * row_bytes))()
+
+    src_base = ctypes.addressof(bits)
+    dst_base = ctypes.addressof(buffer)
+
+    for y in range(height):
+        src_row = src_base + y * pitch
+        dst_row = dst_base + y * row_bytes
+        ctypes.memmove(dst_row, src_row, row_bytes)
+
+    return ImageData(width, height, 'BGR', buffer, pitch_sign * row_bytes)
 
 def decode_32bit_rgb(bits, palette, width, height, pitch, pitch_sign):
     buffer = (ctypes.c_ubyte * (height * pitch))()
@@ -291,21 +315,20 @@ def get_shift(mask):
     s = shift - (8 - shift_up)
     if s < 0:
         return 0, -s
-    else:
-        return s, 0
+    return s, 0
 
-def decode_bitfields(bits, r_mask, g_mask, b_mask, 
-                     width, height, pitch, pitch_sign):
+def decode_bitfields(bits, r_mask, g_mask, b_mask, width, height, pitch, pitch_sign):
     r_shift1, r_shift2 = get_shift(r_mask)
     g_shift1, g_shift2 = get_shift(g_mask)
     b_shift1, b_shift2 = get_shift(b_mask)
 
-    rgb_pitch = 3 * len(bits[0])
+    rgb_pitch = width * 3
     buffer = (ctypes.c_ubyte * (height * rgb_pitch))()
 
     i = 0
     for row in bits:
-        for packed in row:
+        for x in range(width):
+            packed = row[x]
             buffer[i] = (packed & r_mask) >> r_shift1 << r_shift2
             buffer[i+1] = (packed & g_mask) >> g_shift1 << g_shift2
             buffer[i+2] = (packed & b_mask) >> b_shift1 << b_shift2

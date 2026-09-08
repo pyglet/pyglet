@@ -4,7 +4,7 @@
 # Integrated by Ben Smith
 
 """ There is the possibility that time.clock be non monotonic in multicore hardware, 
-due to the underlaying use of win32 QueryPerformanceCounter.
+due to the underlying use of win32 QueryPerformanceCounter.
 If your update is seeing a negative dt, then time.clock is probably the culprit.
 AMD or Intel Patches for multicore may fix this problem (if you see it at all)"""
 import time

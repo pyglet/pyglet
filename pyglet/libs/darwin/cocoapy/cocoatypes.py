@@ -1,13 +1,37 @@
-from ctypes import *
+from __future__ import annotations
 
-import sys, platform, struct
+from _ctypes import _SimpleCData
+from ctypes import (
+    CFUNCTYPE,
+    Structure,
+    c_bool,
+    c_char,
+    c_char_p,
+    c_double,
+    c_float,
+    c_int,
+    c_long,
+    c_longlong,
+    c_short,
+    c_ubyte,
+    c_uint,
+    c_uint32,
+    c_ulong,
+    c_ulonglong,
+    c_ushort,
+    c_void_p,
+    c_wchar,
+    py_object,
+)
+import platform
+import struct
 
 __LP64__ = (8*struct.calcsize("P") == 64)
 __i386__ = (platform.machine() == 'i386')
 
 PyObjectEncoding = b'{PyObject=@}'
 
-def encoding_for_ctype(vartype):
+def encoding_for_ctype(vartype: _SimpleCData) -> bytes:
     typecodes = {c_char:b'c', c_int:b'i', c_short:b's', c_long:b'l', c_longlong:b'q',
                  c_ubyte:b'C', c_uint:b'I', c_ushort:b'S', c_ulong:b'L', c_ulonglong:b'Q',
                  c_float:b'f', c_double:b'd', c_bool:b'B', c_char_p:b'*', c_void_p:b'@',
@@ -17,6 +41,9 @@ def encoding_for_ctype(vartype):
 # Note CGBase.h located at
 # /System/Library/Frameworks/ApplicationServices.framework/Frameworks/CoreGraphics.framework/Headers/CGBase.h
 # defines CGFloat as double if __LP64__, otherwise it's a float.
+NSInteger: type[c_long | c_int]
+NSUInteger: type[c_ulong | c_uint]
+CGFloat: type[c_double | c_float]
 if __LP64__:
     NSInteger = c_long
     NSUInteger = c_ulong
@@ -42,10 +69,15 @@ CGFloatEncoding = encoding_for_ctype(CGFloat)
 CGImageEncoding = b'{CGImage=}'
 
 NSZoneEncoding = b'{_NSZone=}'
+CAFrameRateRangeEncoding = b'{CAFrameRateRange=fff}'
 
 # from /System/Library/Frameworks/Foundation.framework/Headers/NSGeometry.h
 class NSPoint(Structure):
     _fields_ = [ ("x", CGFloat), ("y", CGFloat) ]
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(x={self.x}, y={self.y})"
+
 CGPoint = NSPoint
 
 class NSSize(Structure):
@@ -55,6 +87,14 @@ CGSize = NSSize
 class NSRect(Structure):
     _fields_ = [ ("origin", NSPoint), ("size", NSSize) ]
 CGRect = NSRect
+
+
+class CAFrameRateRange(Structure):
+    _fields_ = [
+        ("minimum", c_float),
+        ("maximum", c_float),
+        ("preferred", c_float),
+    ]
 
 def NSMakeSize(w, h):
     return NSSize(w, h)
@@ -83,3 +123,25 @@ NSZeroPoint = NSPoint(0,0)
 
 CFTypeID = c_ulong
 CFNumberType = c_uint32
+
+_dispose_helper_cb = CFUNCTYPE(c_void_p, c_void_p)
+_copy_helper_cb = CFUNCTYPE(c_void_p, c_void_p, c_void_p)
+
+class Block_descriptor_1(Structure):
+    _fields_ = [
+        ("reserved", c_ulong),
+        ("Block_size", c_ulong),
+        ("copy_helper", _copy_helper_cb),  # Optional
+        ("dispose_helper", _dispose_helper_cb),  # Optional
+        ("signature", c_char_p),
+    ]
+
+
+class Block_literal_1(Structure):
+    _fields_ = [
+        ("isa", c_void_p),  # address to ConcreteStack/ConcreteGlobal
+        ("flags", c_int),
+        ("reserved", c_int),
+        ("invoke", c_void_p),  # Invoke function
+        ("descriptor", Block_descriptor_1),
+    ]

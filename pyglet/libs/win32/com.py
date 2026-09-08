@@ -56,12 +56,20 @@ class GUID(ctypes.Structure):
         ('Data4', ctypes.c_ubyte * 8),
     ]
 
-    def __init__(self, l: int, w1: int, w2: int,
-                 b1: int, b2: int, b3: int, b4: int, b5: int, b6: int, b7: int, b8: int) -> None:
+    def __init__(self, *values: int) -> None:
+        """Create a GUID from its 11 component values, or a null GUID."""
+        if not values:
+            super().__init__()
+            return
+        if len(values) != 11:
+            msg = f'GUID expected 0 or 11 arguments, got {len(values)}'
+            raise TypeError(msg)
+
+        l, w1, w2, *data4 = values
         self.Data1 = l
         self.Data2 = w1
         self.Data3 = w2
-        self.Data4[:] = (b1, b2, b3, b4, b5, b6, b7, b8)
+        self.Data4[:] = data4
 
     def __repr__(self) -> str:
         b1, b2, b3, b4, b5, b6, b7, b8 = self.Data4
@@ -72,6 +80,10 @@ class GUID(ctypes.Structure):
 
     def __hash__(self) -> int:
         return hash(bytes(self))
+
+    def copy(self) -> GUID:
+        """Return an independent copy of this GUID."""
+        return GUID(self.Data1, self.Data2, self.Data3, *self.Data4)
 
     @classmethod
     def from_string(cls, text: str) -> GUID:

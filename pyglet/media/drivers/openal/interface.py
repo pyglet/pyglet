@@ -11,6 +11,20 @@ from pyglet.media.exceptions import MediaException
 _debug = debug_print('debug_media')
 
 
+SAMPLE_FORMATS = {
+	"U8":  (None, {1: al.AL_FORMAT_MONO8, 2: al.AL_FORMAT_STEREO8}),
+	"S16": (None, {1: al.AL_FORMAT_MONO16, 2: al.AL_FORMAT_STEREO16}),
+	"S32": (b"AL_EXT_32bit_formats",
+            {1: al.alGetEnumValue(b"AL_FORMAT_MONO_I32"),
+             2: al.alGetEnumValue(b"AL_FORMAT_STEREO_I32")}),
+	"F32": (b"AL_EXT_float32",
+            {1: al.alGetEnumValue(b"AL_FORMAT_MONO_FLOAT32"),
+             2: al.alGetEnumValue(b"AL_FORMAT_STEREO_FLOAT32")}),
+}
+
+al.alGetError()  # Clear error from possibly unknown enum values
+
+
 class OpenALException(MediaException):
     def __init__(self, message=None, error_code=None, error_string=None):
         self.message = message
@@ -106,6 +120,12 @@ class OpenALContext(OpenALObject):
         self._al_context = al_context
         self._sources = set()
         self.make_current()
+
+        self._supported_formats = []
+        for fmt, (required_extension, _) in SAMPLE_FORMATS.items():
+            if (required_extension is None
+                    or al.alIsExtensionPresent(required_extension)):
+                self._supported_formats.append(fmt)
 
     def delete_sources(self):
         for s in tuple(self._sources):
@@ -384,12 +404,6 @@ class OpenALListener(OpenALObject):
 
 
 class OpenALBuffer(OpenALObject):
-    _format_map = {
-        (1,  8): al.AL_FORMAT_MONO8,
-        (1, 16): al.AL_FORMAT_MONO16,
-        (2,  8): al.AL_FORMAT_STEREO8,
-        (2, 16): al.AL_FORMAT_STEREO16,
-    }
 
     def __init__(self, al_name):
         self.al_name = al_name
@@ -414,13 +428,20 @@ class OpenALBuffer(OpenALObject):
             self._check_error('Error deleting buffer.')
             self.al_name = None
 
-    def data(self, audio_data, audio_format):
+    def data(self, audio_data, audio_format, supported_formats):
         assert self.is_valid
 
         try:
-            al_format = self._format_map[(audio_format.channels, audio_format.sample_size)]
-        except KeyError:
-            raise MediaException(f"OpenAL does not support '{audio_format.sample_size}bit' audio.")
+            sample_format = audio_format.sample_format
+            channels = audio_format.channels
+            assert sample_format in SAMPLE_FORMATS
+            assert sample_format in supported_formats
+            al_format = SAMPLE_FORMATS[sample_format][1][channels]
+        except AssertionError:
+            raise MediaException(
+                f"OpenAL does not support '{audio_format.channels}-channel, "
+                f"{audio_format.sample_size}-bit "
+                f"{audio_format.sample_type}' audio.")
 
         al.alBufferData(self.al_name,
                         al_format,

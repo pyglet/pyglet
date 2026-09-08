@@ -65,7 +65,7 @@ class PNGImageEncoder(ImageEncoder):
         writer = pypng.Writer(image.width, image.height, greyscale=greyscale, alpha=has_alpha)
 
         data = array.array('B')
-        data.frombytes(image.get_data(image.format, image.pitch))
+        data.frombytes(image.get_bytes(image.format, image.pitch))
 
         writer.write_array(file, data)
 

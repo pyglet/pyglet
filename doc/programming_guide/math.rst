@@ -72,8 +72,8 @@ In addition to the ``projection`` property, pyglet Windows also contain a ``view
 points to another matrix that is used internally by pyglet's built-in classes. The view matrix
 gets multiplied with the projection matrix, controlling the final positioning and rendering of
 pyglet's built-in objects like Sprites, Shapes, and text. Unlike the projection matrix the view
-matrix defaults to an indentity matrix, and therefore has no effect initially. This makes it useful
-for users to set their own matrix on it, and controll zooming or translating (panning) a "camera".
+matrix defaults to an identity matrix, and therefore has no effect initially. This makes it useful
+for users to set their own matrix on it, and control zooming or translating (panning) a "camera".
 The ``Mat4`` class contains helper methods for creating these types of matrixes::
 
     # translate the camera +100 on the X axis:

@@ -1,6 +1,7 @@
 include LICENSE
 include README.md
 include RELEASE_NOTES
+include pyglet/libs/emscripten/pyglet_emscripten.js
 
 # Public tools
 include tools/inspect_font.py

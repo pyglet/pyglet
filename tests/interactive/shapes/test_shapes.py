@@ -2,6 +2,7 @@ import itertools
 import inspect
 from typing import Dict, Optional, Generator, Tuple, Type
 
+
 import pyglet.window
 import math
 from pyglet.shapes import (

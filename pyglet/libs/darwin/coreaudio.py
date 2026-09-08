@@ -12,25 +12,22 @@ This module includes:
 * Error checking helpers
 
 """
-from ctypes import c_void_p, c_int, c_bool, Structure, c_uint32, util, cdll, c_uint, c_double, POINTER, c_int64, \
+from __future__ import annotations
+from ctypes import c_void_p, c_int, c_bool, Structure, c_uint32, c_uint, c_double, POINTER, c_int64, \
     CFUNCTYPE
 from typing import Final
 
+import pyglet.lib
 from pyglet.libs.darwin import CFURLRef
 
-lib = util.find_library('CoreAudio')
-
-if lib is None:
-    lib = '/System/Library/Frameworks/CoreAudio.framework/CoreAudio'
-
-ca = cdll.LoadLibrary(lib)
+ca = pyglet.lib.load_library(framework='CoreAudio')
 
 
 class AudioStreamPacketDescription(Structure):
     _fields_ = [
         ('mStartOffset', c_int64),
         ('mVariableFramesInPacket', c_uint32),
-        ('mDataByteSize', c_uint32)
+        ('mDataByteSize', c_uint32),
     ]
 
 
@@ -44,10 +41,10 @@ class AudioStreamBasicDescription(Structure):
         ('mBytesPerFrame', c_uint32),
         ('mChannelsPerFrame', c_uint32),
         ('mBitsPerChannel', c_uint32),
-        ('mReserved', c_uint32)
+        ('mReserved', c_uint32),
     ]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"AudioStreamBasicDescription(sample_rate={self.mSampleRate}, channels={self.mChannelsPerFrame}, " \
                f"fmt={self.mFormatID}, bytes_per_packet={self.mBytesPerPacket}, bits={self.mBitsPerChannel}, " \
                f"frames_per_packet={self.mFramesPerPacket}, bytes_per_frame={self.mBytesPerFrame})"
@@ -224,7 +221,6 @@ class CoreAudioException(Exception):
     * kAudio_FileNotFoundError -> OSError (The typical Python file read error
     * kAudioFileInvalidChunkError -> ValueError (Invalid data)
     """
-    ...
 
 
 def err_check(err: int) -> None:

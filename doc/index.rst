@@ -37,34 +37,70 @@ If you are migrating from an older version of pyglet, please read through
 
 .. toctree::
    :maxdepth: 3
-   :caption: Programming Guide
+   :caption: Getting Started
 
    programming_guide/installation
    programming_guide/quickstart
+   programming_guide/examplegame
+
+.. toctree::
+   :maxdepth: 3
+  :caption: Application Fundamentals
+
    programming_guide/windowing
+   programming_guide/eventloop
+   programming_guide/events
+   programming_guide/event_chains
+   programming_guide/time
+   programming_guide/options
+   programming_guide/debug
+
+.. toctree::
+   :maxdepth: 3
+   :caption: Input and User Interface
+
    programming_guide/keyboard
    programming_guide/mouse
    programming_guide/input
+   programming_guide/gui
+
+.. toctree::
+   :maxdepth: 3
+   :caption: Assets and Media
+
+   programming_guide/resources
    programming_guide/image
+   Supported fonts <programming_guide/fonts>
    programming_guide/text
    programming_guide/media
+
+.. toctree::
+   :maxdepth: 3
+   :caption: Graphics and Rendering
+
    programming_guide/shapes
-   programming_guide/models
-   programming_guide/resources
+   programming_guide/texture
    programming_guide/rendering
-   programming_guide/events
-   programming_guide/gui
-   programming_guide/time
+   programming_guide/camera
+   programming_guide/math
+   programming_guide/models
+
+.. toctree::
+   :maxdepth: 3
+   :caption: Graphics Backends
+
    programming_guide/context
    programming_guide/gl
    programming_guide/opengles
-   programming_guide/math
-   programming_guide/eventloop
-   programming_guide/examplegame
 
-   programming_guide/options
-   programming_guide/debug
-   programming_guide/migration
+.. toctree::
+   :maxdepth: 3
+   :caption: Web and Migration
+
+   programming_guide/pyodide
+   Migrating from pyglet 2.1 to 3.0 <programming_guide/migration>
+   Migrating from pyglet 2.0 to 2.1 <programming_guide/migration2>
+   From pygame to pyglet <programming_guide/from_pygame>
 
 .. toctree::
    :maxdepth: 3
@@ -73,11 +109,12 @@ If you are migrating from an older version of pyglet, please read through
    modules/pyglet
    modules/app
    modules/clock
+   modules/config/index
    modules/display
    modules/customtypes
+   modules/enums
    modules/event
-   modules/font
-   modules/gl
+   modules/font/index
    modules/graphics/index
    modules/gui
    modules/image/index
@@ -85,7 +122,9 @@ If you are migrating from an older version of pyglet, please read through
    modules/input
    modules/math
    modules/media
+   modules/models
    modules/resource
+   modules/storage
    modules/sprite
    modules/shapes
    modules/text/index

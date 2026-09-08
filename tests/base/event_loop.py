@@ -6,7 +6,6 @@ import pytest
 
 import pyglet
 from pyglet import clock
-from pyglet import gl
 from pyglet.graphics import Batch
 from pyglet.text.document import FormattedDocument
 from pyglet.text.layout import TextLayout
@@ -21,7 +20,7 @@ def event_loop(request):
 
 
 class EventLoopFixture(InteractiveFixture):
-    question = '\n\n(P)ass/(F)ail/(S)kip/(Q)uit?'
+    question = '\n\n(P)ass / (F)ail / (S)kip / (Q)uit?'
     key_pass = key.P
     key_fail = key.F
     key_skip = key.S
@@ -63,13 +62,14 @@ class EventLoopFixture(InteractiveFixture):
         assert self.window is not None
         self.text_batch = Batch()
         self.text_document = FormattedDocument()
-        layout = TextLayout(self.text_document, self.window.width, self.window.height,
+        self.layout = TextLayout(self.text_document, width=self.window.width, height=self.window.height,
                             multiline=True, wrap_lines=True, batch=self.text_batch)
-        layout.content_valign = 'bottom'
+        self.layout.content_valign = 'bottom'
 
     def add_text(self, text):
         self.get_document()
         self.text_document.insert_text(len(self.text_document.text), text)
+        self.text_document.set_style(0, len(self.layout.document.text), {"color": (255, 255, 255, 255), "background_color": (0, 0, 0, 255)})
 
     def ask_question(self, description=None, screenshot=True):
         """Ask a question inside the test window. By default takes a screenshot and validates
@@ -137,7 +137,6 @@ class EventLoopFixture(InteractiveFixture):
         self.draw_text()
 
     def clear(self):
-        gl.glClearColor(*self.clear_color)
         self.window.clear()
 
     def draw_text(self):

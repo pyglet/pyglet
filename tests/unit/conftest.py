@@ -9,7 +9,7 @@ def get_dummy_shader_program():
     """
     Provide a dummy getter to monkeypatch getters for default shaders.
 
-    By default, batchable objects create or re-use a default shader
+    By default, batchable objects create or reuse a default shader
     program. This is usually done through a ``get_default_shader``
     function on their implementing module. If no GL context exists,
     calling that function creates one, which risks non-drawing tests

@@ -2,20 +2,10 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from pyglet.display.headless import HeadlessCanvas
-
-# from pyglet.window import key
-# from pyglet.window import mouse
+import pyglet
 from pyglet.event import EventDispatcher
-from pyglet.libs.egl import egl
 from pyglet.window import (
     BaseWindow,
-    DefaultMouseCursor,  # noqa: F401
-    ImageMouseCursor,  # noqa: F401
-    MouseCursor,  # noqa: F401
-    MouseCursorException,  # noqa: F401
-    NoSuchDisplayException,  # noqa: F401
-    WindowException,  # noqa: F401
     _PlatformEventHandler,
     _ViewEventHandler,
 )
@@ -26,22 +16,24 @@ ViewEventHandler = _ViewEventHandler
 
 
 class HeadlessWindow(BaseWindow):
-    _egl_display_connection = None
-    _egl_surface = None
+    """Backend-neutral headless window.
+
+    This class provides a no-OS-window shell around a graphics context.
+    It is suitable for Vulkan offscreen rendering paths where no native
+    window system surface is required.
+    """
 
     def _recreate(self, changes: Sequence[str]) -> None:
-        pass
-
-    def flip(self) -> None:
-        if self.context:
-            self.context.flip()
+        if 'fullscreen' in changes:
+            self.dispatch_event('_on_internal_resize', self._width, self._height)
+            self.dispatch_event('on_expose')
 
     def switch_to(self) -> None:
         if self.context:
             self.context.set_current()
 
     def set_caption(self, caption: str) -> None:
-        pass
+        self._caption = caption
 
     def set_minimum_size(self, width: int, height: int) -> None:
         pass
@@ -50,7 +42,10 @@ class HeadlessWindow(BaseWindow):
         pass
 
     def set_size(self, width: int, height: int) -> None:
-        pass
+        self._width = int(width)
+        self._height = int(height)
+        self.dispatch_event('_on_internal_resize', self._width, self._height)
+        self.dispatch_event('on_resize', self._width, self._height)
 
     def get_size(self) -> tuple[int, int]:
         return self._width, self._height
@@ -65,7 +60,13 @@ class HeadlessWindow(BaseWindow):
         pass
 
     def set_visible(self, visible: bool = True) -> None:
-        pass
+        self._visible = visible
+        if visible:
+            self.dispatch_event('_on_internal_resize', self._width, self._height)
+            self.dispatch_event('on_show')
+            self.dispatch_event('on_expose')
+        else:
+            self.dispatch_event('on_hide')
 
     def minimize(self) -> None:
         pass
@@ -76,7 +77,7 @@ class HeadlessWindow(BaseWindow):
     def set_vsync(self, vsync: bool) -> None:
         pass
 
-    def set_mouse_platform_visible(self, platform_visible: bool | None = None) -> None:
+    def set_mouse_cursor_platform_visible(self, platform_visible: bool | None = None) -> None:
         pass
 
     def set_exclusive_mouse(self, exclusive: bool = True) -> None:
@@ -90,26 +91,58 @@ class HeadlessWindow(BaseWindow):
 
     def dispatch_events(self) -> None:
         while self._event_queue:
-            EventDispatcher.dispatch_event(self, *self._event_queue.pop(0))
+            EventDispatcher.dispatch_event(self, *self._event_queue.popleft())
 
     def dispatch_pending_events(self) -> None:
         pass
 
     def _create(self) -> None:
-        self._egl_display_connection = self.display._display_connection  # noqa: SLF001
-
-        if not self._egl_surface:
-            pbuffer_attribs = (egl.EGL_WIDTH, self._width, egl.EGL_HEIGHT, self._height, egl.EGL_NONE)
-            pbuffer_attrib_array = (egl.EGLint * len(pbuffer_attribs))(*pbuffer_attribs)
-            self._egl_surface = egl.eglCreatePbufferSurface(self._egl_display_connection,
-                                                            self.config._egl_config,  # noqa: SLF001
-                                                            pbuffer_attrib_array)
-
-            self.canvas = HeadlessCanvas(self.display, self._egl_surface)
-
-            self.context.attach(self.canvas)
-
-            self.dispatch_event('_on_internal_resize', self._width, self._height)
+        if pyglet.options.backend and not self._shadow:
+            self._assign_config()
+            self.context.attach(self)
 
 
-__all__ = ['HeadlessWindow']
+class EGLHeadlessWindow(HeadlessWindow):
+    """EGL-backed headless window for OpenGL/EGL rendering backends."""
+
+    egl_display_connection = None
+    egl_surface = None
+
+    def _create(self) -> None:
+        if not pyglet.options.backend or self._shadow:
+            return
+
+        from pyglet.libs.egl import (  # noqa: PLC0415
+            EGLint,
+            EGL_WIDTH,
+            EGL_HEIGHT,
+            EGL_NONE,
+            eglCreatePbufferSurface,
+        )
+
+        self.egl_display_connection = self.display._display_connection  # noqa: SLF001
+        if not self.egl_surface:
+            self._assign_config()
+            pbuffer_attribs = (EGL_WIDTH, self._width, EGL_HEIGHT, self._height, EGL_NONE)
+            pbuffer_attrib_array = (EGLint * len(pbuffer_attribs))(*pbuffer_attribs)
+            self.egl_surface = eglCreatePbufferSurface(
+                self.egl_display_connection,
+                self.config._egl_config,  # noqa: SLF001
+                pbuffer_attrib_array,
+            )
+
+            if not self.egl_surface:
+                raise Exception("Failed to create EGL Surface.")
+            self.context.attach(self)
+
+    def close(self) -> None:
+        super().close()
+        if self.egl_surface:
+            from pyglet.libs.egl import eglDestroySurface  # noqa: PLC0415
+
+            eglDestroySurface(self.egl_display_connection, self.egl_surface)
+            self.egl_surface = None
+        self.egl_display_connection = None
+
+
+__all__ = ['EGLHeadlessWindow', 'HeadlessWindow']

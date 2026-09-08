@@ -74,7 +74,7 @@ def cmd__py3(cmdline, bufsize=-1, cwd=None, timeout=60):
     """runs a .py script as a subprocess with the same python as the caller
 
        cmdline: list [<scriptname>, arg1, ...]
-       timeout: time in seconds; subprocess wil be killed if it is still running
+       timeout: time in seconds; subprocess will be killed if it is still running
                 at that time.
     """
     # use the same python as the caller to run the script

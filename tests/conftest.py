@@ -18,3 +18,14 @@ def pytest_addoption(parser):
 from .base.data import test_data
 from .base.performance import performance
 
+
+def pytest_terminal_summary(terminalreporter, exitstatus, config):
+    """Print rendering backend details in the test summary footer."""
+    terminalreporter.write_sep("=", "Graphics Backend")
+    terminalreporter.write_line(f"pyglet.options.backend: {pyglet.options.backend}")
+    env_backend = os.environ.get("PYGLET_BACKEND")
+    terminalreporter.write_line(f"PYGLET_BACKEND env: {env_backend if env_backend is not None else '<unset>'}")
+
+import os
+
+import pyglet

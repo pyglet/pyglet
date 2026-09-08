@@ -13,15 +13,15 @@ This changeset starts from dangillet/pyglet, branch ffmpeg
 
 Goals
 
- - better capture of debbuging info
+ - better capture of debugging info
 	More player state captured, less perturbation in timings by capturing raw info and save after play
 
-- support postprocessing of debuggging info into different views / reports
-    Player state captured can be postprocessed in a varity of reports; easy to define new reports.
+- support postprocessing of debugging info into different views / reports
+    Player state captured can be postprocessed in a variety of reports; easy to define new reports.
 	Reports can be rendered for raw data captured in another machine.
 
-- have some quality measure to programatically compare two test runs and tell which is better
-    Rought sketch ATM, qtty of anomalies over all samples in the debbuging session.
+- have some quality measure to programmatically compare two test runs and tell which is better
+    Rought sketch ATM, qtty of anomalies over all samples in the debugging session.
 	Useful to tell if a change in code or library gives better or worse results.
 
 - enforce an ordered schema to store test results

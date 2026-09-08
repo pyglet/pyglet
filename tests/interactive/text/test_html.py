@@ -1,5 +1,6 @@
 import pytest
 
+
 from tests.base.interactive import InteractiveTestCase
 
 import pyglet
@@ -39,10 +40,19 @@ doctext = """
 
     <p>Font color changes to <font color=red>red</font>, <font
     color=green>green</font> and <font color=#0f0fff>pastel blue using a
-    hexidecimal number</font>.</p>
+    hexadecimal number</font>.</p>
 
     <p><u>This text is underlined</u>.  <font color=green><u>This text is
     underlined and green.</u></font></p>
+
+    <p><s>This text is struck through</s>.  <font color=green><s>This text is
+    struck through and green.</s></font></p>
+
+    <p>This paragraph contains a <a href="https://pyglet.org">blue, underlined
+    link</a> and a <a href="https://pyglet.org" style="color: red">red,
+    underlined link</a>.</p>
+
+    <hr color=red>
 
     <h1>Heading 1</h1>
     <h2>Heading 2</h2>
@@ -211,6 +221,8 @@ class TestWindow(pyglet.window.Window):
 
         self.set_mouse_cursor(self.get_system_mouse_cursor('text'))
 
+        self.context.set_clear_color(1, 1, 1, 1)
+
     def on_resize(self, width, height):
         super().on_resize(width, height)
         self.layout.begin_update()
@@ -225,7 +237,6 @@ class TestWindow(pyglet.window.Window):
         self.layout.view_y += scroll_y * 16
 
     def on_draw(self):
-        pyglet.gl.glClearColor(1, 1, 1, 1)
         self.clear()
         self.batch.draw()
 

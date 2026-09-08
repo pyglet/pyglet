@@ -1,11 +1,17 @@
 """Decoder for RIFF Wave files, using the standard library wave module.
 """
 
+from __future__ import annotations
+
 import wave
+from typing import TYPE_CHECKING, BinaryIO
 
 from pyglet.util import DecodeException
 from .base import StreamingSource, AudioData, AudioFormat, StaticSource
 from . import MediaEncoder, MediaDecoder
+
+if TYPE_CHECKING:
+    from .base import Source
 
 
 class WAVEDecodeException(DecodeException):
@@ -13,7 +19,7 @@ class WAVEDecodeException(DecodeException):
 
 
 class WaveSource(StreamingSource):
-    def __init__(self, filename, file=None):
+    def __init__(self, filename: str, file: BinaryIO | None = None) -> None:
         if file is None:
             file = open(filename, 'rb')
             self._file = file
@@ -25,6 +31,12 @@ class WaveSource(StreamingSource):
 
         nchannels, sampwidth, framerate, nframes, comptype, compname = self._wave.getparams()
 
+        if nchannels not in (1, 2):
+            raise WAVEDecodeException(f"incompatible channel count {nchannels}")
+
+        if sampwidth not in (1, 2):
+            raise WAVEDecodeException(f"incompatible sample width {sampwidth}")
+
         self.audio_format = AudioFormat(channels=nchannels, sample_size=sampwidth * 8, sample_rate=framerate)
 
         self._bytes_per_frame = nchannels * sampwidth
@@ -34,22 +46,20 @@ class WaveSource(StreamingSource):
 
         self._wave.rewind()
 
-    def __del__(self):
+    def __del__(self) -> None:
         if hasattr(self, '_file'):
             self._file.close()
 
-    def get_audio_data(self, num_bytes, compensation_time=0.0):
+    def get_audio_data(self, num_bytes: int):
         num_frames = max(1, num_bytes // self._bytes_per_frame)
 
         data = self._wave.readframes(num_frames)
         if not data:
             return None
 
-        timestamp = self._wave.tell() / self.audio_format.sample_rate
-        duration = num_frames / self.audio_format.sample_rate
-        return AudioData(data, len(data), timestamp, duration, [])
+        return AudioData(data, len(data))
 
-    def seek(self, timestamp):
+    def seek(self, timestamp: float) -> None:
         timestamp = max(0.0, min(timestamp, self._duration))
         position = int(timestamp / self._duration_per_frame)
         self._wave.setpos(position)
@@ -61,10 +71,10 @@ class WaveSource(StreamingSource):
 
 class WaveDecoder(MediaDecoder):
 
-    def get_file_extensions(self):
+    def get_file_extensions(self) -> tuple[str, str, str]:
         return '.wav', '.wave', '.riff'
 
-    def decode(self, filename, file, streaming=True):
+    def decode(self, filename: str, file: BinaryIO | None, streaming: bool = True, **kwargs):
         if streaming:
             return WaveSource(filename, file)
         else:
@@ -73,19 +83,19 @@ class WaveDecoder(MediaDecoder):
 
 class WaveEncoder(MediaEncoder):
 
-    def get_file_extensions(self):
+    def get_file_extensions(self) -> tuple[str, str, str]:
         return '.wav', '.wave', '.riff'
 
-    def encode(self, source, filename, file):
+    def encode(self, source: Source, filename: str, file: BinaryIO | None) -> None:
         """Save the Source to disk as a standard RIFF Wave.
 
         A standard RIFF wave header will be added to the raw PCM
         audio data when it is saved to disk.
 
-        :Parameters:
-            `filename` : str
+        Args:
+            filename:
                 The file name to save as.
-            `file` : file-like object
+            file:
                 A file-like object, opened with mode 'wb'.
 
         """

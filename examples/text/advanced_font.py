@@ -26,7 +26,7 @@ batch = pyglet.graphics.Batch()
 float_font_size = pyglet.text.Label("Hello World on size 15.1", font_name="Arial", font_size=15.1, x=30, y=500, batch=batch)
 float_font_size_1 = pyglet.text.Label("Hello World on size 15", font_name="Arial", font_size=15, x=270, y=500, batch=batch)
 
-arial_bold = pyglet.text.Label("Hello World 👽", font_name="Arial", weight="normal", font_size=25, x=50, y=400, batch=batch)
+arial_bold = pyglet.text.Label("Hello World 👽", font_name="Arial", weight="bold", font_size=25, x=50, y=400, batch=batch)
 arial_black = pyglet.text.Label("Hello World 👾", font_name="Arial", weight="black", font_size=25, x=50, y=350, batch=batch)
 arial_narrow = pyglet.text.Label("Hello World 🤖", font_name="Arial", weight="normal", stretch="condensed", font_size=25, x=50, y=300, batch=batch)
 arial = pyglet.text.Label("Hello World 👀", font_name="Arial", font_size=25, x=50, y=250, batch=batch)

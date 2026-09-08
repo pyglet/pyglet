@@ -19,14 +19,16 @@ All objects are immutable and hashable.
 #   on systems without access to compute shaders
 from __future__ import annotations
 
-import math as _math
+from math import acos, sin, asin, cos, sqrt, ceil, trunc, atan2, floor, radians, tan, pi
+
 import typing as _typing
 import warnings as _warnings
 
 
 def clamp(num: float, minimum: float, maximum: float) -> float:
     """Clamp a value between a minimum and maximum limit."""
-    return max(min(num, maximum), minimum)
+    # if/else checks are significantly faster that min()/max() calls:
+    return minimum if num < minimum else maximum if num > maximum else num
 
 
 class Vec2(_typing.NamedTuple):
@@ -162,13 +164,13 @@ class Vec2(_typing.NamedTuple):
         return Vec2(*(round(v, n_digits) for v in self))
 
     def __ceil__(self) -> Vec2:
-        return Vec2(_math.ceil(self[0]), _math.ceil(self[1]))
+        return Vec2(ceil(self[0]), ceil(self[1]))
 
     def __floor__(self) -> Vec2:
-        return Vec2(_math.floor(self[0]), _math.floor(self[1]))
+        return Vec2(floor(self[0]), floor(self[1]))
 
     def __trunc__(self) -> Vec2:
-        return Vec2(_math.trunc(self[0]), _math.trunc(self[1]))
+        return Vec2(trunc(self[0]), trunc(self[1]))
 
     def __mod__(self, other: Vec2 | tuple[float, float] | float) -> Vec2:
         try:
@@ -191,7 +193,7 @@ class Vec2(_typing.NamedTuple):
             )
 
     def __lt__(self, other: tuple[float, float]) -> bool:
-        return self[0] ** 2 + self[0] ** 2 < other[0] ** 2 + other[1] ** 2
+        return self[0] ** 2 + self[1] ** 2 < other[0] ** 2 + other[1] ** 2
 
     @staticmethod
     def from_heading(heading: float, length: float = 1.0) -> Vec2:
@@ -201,7 +203,7 @@ class Vec2(_typing.NamedTuple):
           heading: The desired heading, in radians
           length: The desired length of the vector
         """
-        return Vec2(length * _math.cos(heading), length * _math.sin(heading))
+        return Vec2(length * cos(heading), length * sin(heading))
 
     @staticmethod
     def from_polar(angle: float, length: float = 1.0) -> Vec2:
@@ -211,11 +213,11 @@ class Vec2(_typing.NamedTuple):
           angle: The angle, in radians.
           length: The desired length
         """
-        return Vec2(length * _math.cos(angle), length * _math.sin(angle))
+        return Vec2(length * cos(angle), length * sin(angle))
 
     def length(self) -> float:
         """Calculate the length of the vector: ``sqrt(x ** 2 + y ** 2)``."""
-        return _math.sqrt(self[0] ** 2 + self[1] ** 2)
+        return sqrt(self[0] ** 2 + self[1] ** 2)
 
     def heading(self) -> float:
         """Calculate the heading of the vector in radians.
@@ -224,7 +226,7 @@ class Vec2(_typing.NamedTuple):
         -pi and pi. ``Vec2(1, 0)`` will have a heading of 0. Counter-clockwise
         is positive moving towards pi, and clockwise is negative moving towards -pi.
         """
-        return _math.atan2(self[1], self[0])
+        return atan2(self[1], self[0])
 
     def length_squared(self) -> float:
         """Calculate the squared length of the vector.
@@ -283,8 +285,8 @@ class Vec2(_typing.NamedTuple):
         Args:
             angle: The desired angle, in radians.
         """
-        s = _math.sin(angle)
-        c = _math.cos(angle)
+        s = sin(angle)
+        c = cos(angle)
         return Vec2(c * self[0] - s * self[1], s * self[0] + c * self[1])
 
     def distance(self, other: Vec2 | tuple[int, int]) -> float:
@@ -293,7 +295,7 @@ class Vec2(_typing.NamedTuple):
         Args:
             other: The point to calculate the distance to.
         """
-        return _math.sqrt(((other[0] - self[0]) ** 2) + ((other[1] - self[1]) ** 2))
+        return sqrt(((other[0] - self[0]) ** 2) + ((other[1] - self[1]) ** 2))
 
     def normalize(self) -> Vec2:
         """Return a normalized version of the vector.
@@ -301,8 +303,7 @@ class Vec2(_typing.NamedTuple):
         This simply means the vector will have a length of 1.0. If the vector
         has a length of 0, the original vector will be returned.
         """
-        d = _math.sqrt(self[0] ** 2 + self[1] ** 2)
-        if d:
+        if d := sqrt(self[0] ** 2 + self[1] ** 2):
             return Vec2(self[0] / d, self[1] / d)
         return self
 
@@ -350,8 +351,25 @@ class Vec2(_typing.NamedTuple):
             clamp(self[0], min_x, max_x), clamp(self[1], min_y, max_y),  # type: ignore
         )
 
+    def cross(self, other: Vec2 | tuple[float, float]) -> float:
+        """Calculate the cross product of this vector and another 2D vector.
+
+        |a|*|b|*sin(ab)
+
+        The sign of the result reflects the sign of the angle between them.
+        If vectors are normalized, this is the sine of the angle between them.
+        Also, this is the signed area of the parallelogram built on two vectors,
+        or doubled area of the triangle built on them.
+        """
+        return self[0] * other[1] - self[1] * other[0]
+
     def dot(self, other: Vec2 | tuple[float, float]) -> float:
-        """Calculate the dot product of this vector and another 2D vector."""
+        """Calculate the dot product of this vector and another 2D vector.
+
+        |a|*|b|*cos(ab)
+
+        If vectors are normalized, this is the cosine of the angle between them.
+        """
         return self[0] * other[0] + self[1] * other[1]
 
     def index(self, *args: _typing.Any) -> int:
@@ -492,13 +510,13 @@ class Vec3(_typing.NamedTuple):
         return Vec3(*(round(v, n_digits) for v in self))
 
     def __ceil__(self) -> Vec3:
-        return Vec3(_math.ceil(self[0]), _math.ceil(self[1]), _math.ceil(self[2]))
+        return Vec3(ceil(self[0]), ceil(self[1]), ceil(self[2]))
 
     def __floor__(self) -> Vec3:
-        return Vec3(_math.floor(self[0]), _math.floor(self[1]), _math.floor(self[2]))
+        return Vec3(floor(self[0]), floor(self[1]), floor(self[2]))
 
     def __trunc__(self) -> Vec3:
-        return Vec3(_math.trunc(self[0]), _math.trunc(self[1]), _math.trunc(self[2]))
+        return Vec3(trunc(self[0]), trunc(self[1]), trunc(self[2]))
 
     def __mod__(self, other: Vec3 | tuple[float, float, float] | float) -> Vec3:
         try:
@@ -532,18 +550,18 @@ class Vec3(_typing.NamedTuple):
             yaw: The yaw value in radians
         """
         return Vec3(
-            _math.cos(yaw) * _math.cos(pitch),
-            _math.sin(pitch),
-            _math.sin(yaw) * _math.cos(pitch),
+            cos(yaw) * cos(pitch),
+            sin(pitch),
+            sin(yaw) * cos(pitch),
         ).normalize()
 
     def get_pitch_yaw(self) -> tuple[float, float]:
         """Get the pitch and yaw angles from a unit vector in radians."""
-        return _math.asin(self.y), _math.atan2(self.z, self.x)
+        return asin(self.y), atan2(self.z, self.x)
 
     def length(self) -> float:
         """Calculate the length of the vector: ``sqrt(x ** 2 + y ** 2 + z ** 2)``."""
-        return _math.sqrt(self[0] ** 2 + self[1] ** 2 + self[2] ** 2)
+        return sqrt(self[0] ** 2 + self[1] ** 2 + self[2] ** 2)
 
     def length_squared(self) -> float:
         """Calculate the squared length of the vector.
@@ -556,8 +574,11 @@ class Vec3(_typing.NamedTuple):
     def cross(self, other: Vec3 | tuple[float, float, float]) -> Vec3:
         """Calculate the cross product of this vector and another 3D vector.
 
-        Args:
-            other: Another Vec3 or tuple of 3 floats.
+        |a|*|b|*sin(θ) in the direction given by the right-hand rule.
+
+        The magnitude of the result is the area of the parallelogram
+        built on the two vectors (or twice the area of the triangle).
+        The result is perpendicular to both input vectors.
         """
         return Vec3(
             (self.y * other[2]) - (self.z * other[1]),
@@ -568,8 +589,9 @@ class Vec3(_typing.NamedTuple):
     def dot(self, other: Vec3 | tuple[float, float, float]) -> float:
         """Calculate the dot product of this vector and another 3D vector.
 
-        Args:
-            other: Another Vec3 or tuple of 3 floats.
+        |a|*|b|*cos(θ)
+
+        If the vectors are normalized, this is the cosine of the angle between them.
         """
         return self.x * other[0] + self.y * other[1] + self.z * other[2]
 
@@ -594,7 +616,7 @@ class Vec3(_typing.NamedTuple):
         Args:
             other: The point to calculate the distance to.
         """
-        return _math.sqrt(((other[0] - self.x) ** 2) + ((other[1] - self.y) ** 2) + ((other[2] - self.z) ** 2))
+        return sqrt(((other[0] - self.x) ** 2) + ((other[1] - self.y) ** 2) + ((other[2] - self.z) ** 2))
 
     def normalize(self) -> Vec3:
         """Return a normalized version of the vector.
@@ -603,7 +625,7 @@ class Vec3(_typing.NamedTuple):
         has a length of 0, the original vector will be returned.
         """
         try:
-            d = _math.sqrt(self[0] ** 2 + self[1] ** 2 + self[2] ** 2)
+            d = sqrt(self[0] ** 2 + self[1] ** 2 + self[2] ** 2)
             return Vec3(self.x / d, self.y / d, self.z / d)
         except ZeroDivisionError:
             return self
@@ -794,13 +816,13 @@ class Vec4(_typing.NamedTuple):
         return Vec4(*(round(v, n_digits) for v in self))
 
     def __ceil__(self) -> Vec4:
-        return Vec4(_math.ceil(self[0]), _math.ceil(self[1]), _math.ceil(self[2]), _math.ceil(self[3]))
+        return Vec4(ceil(self[0]), ceil(self[1]), ceil(self[2]), ceil(self[3]))
 
     def __floor__(self) -> Vec4:
-        return Vec4(_math.floor(self[0]), _math.floor(self[1]), _math.floor(self[2]), _math.floor(self[3]))
+        return Vec4(floor(self[0]), floor(self[1]), floor(self[2]), floor(self[3]))
 
     def __trunc__(self) -> Vec4:
-        return Vec4(_math.trunc(self[0]), _math.trunc(self[1]), _math.trunc(self[2]), _math.trunc(self[3]))
+        return Vec4(trunc(self[0]), trunc(self[1]), trunc(self[2]), trunc(self[3]))
 
     def __mod__(self, other: Vec4 | tuple[int, int, int, int] | float) -> Vec4:
         try:
@@ -823,11 +845,12 @@ class Vec4(_typing.NamedTuple):
             )
 
     def __lt__(self, other: Vec4 | tuple[float, float, float, float]) -> bool:
-        return self[0] ** 2 + self[1] ** 2 + self[2] ** 2 < other[0] ** 2 + other[1] ** 2 + other[2] ** 2
+        return (self[0] ** 2 + self[1] ** 2 + self[2] ** 2 + self[3] ** 2 <
+                other[0] ** 2 + other[1] ** 2 + other[2] ** 2 + other[3] ** 2)
 
     def length(self) -> float:
         """Calculate the length of the vector: ``sqrt(x ** 2 + y ** 2 + z ** 2 + w ** 2)``."""
-        return _math.sqrt(self[0] ** 2 + self[1] ** 2 + self[2] ** 2 + self[3] ** 2)
+        return sqrt(self[0] ** 2 + self[1] ** 2 + self[2] ** 2 + self[3] ** 2)
 
     def length_squared(self) -> float:
         """Calculate the squared length of the vector.
@@ -859,7 +882,7 @@ class Vec4(_typing.NamedTuple):
         Args:
             other: The point to calculate the distance to.
         """
-        return _math.sqrt(
+        return sqrt(
             ((other.x - self.x) ** 2)
             + ((other.y - self.y) ** 2)
             + ((other.z - self.z) ** 2)
@@ -872,8 +895,7 @@ class Vec4(_typing.NamedTuple):
         This means that the vector will have the same direction, but a length of 1.0.
         If the vector has a length of 0, the original vector will be returned.
         """
-        d = _math.sqrt(self[0] ** 2 + self[1] ** 2 + self[2] ** 2 + self[3] ** 2)
-        if d:
+        if d := sqrt(self[0] ** 2 + self[1] ** 2 + self[2] ** 2 + self[3] ** 2):
             return Vec4(self[0] / d, self[1] / d, self[2] / d, self[3] / d)
         return self
 
@@ -977,14 +999,14 @@ class Mat3(_typing.NamedTuple):
     i: float = 1.0
 
     def scale(self, sx: float, sy: float) -> Mat3:
-        return self @ Mat3(1.0 / sx, 0.0, 0.0, 0.0, 1.0 / sy, 0.0, 0.0, 0.0, 1.0)
+        return self @ Mat3(sx, 0.0, 0.0, 0.0, sy, 0.0, 0.0, 0.0, 1.0)
 
     def translate(self, tx: float, ty: float) -> Mat3:
-        return self @ Mat3(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, -tx, ty, 1.0)
+        return self @ Mat3(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, tx, ty, 1.0)
 
     def rotate(self, phi: float) -> Mat3:
-        s = _math.sin(_math.radians(phi))
-        c = _math.cos(_math.radians(phi))
+        s = sin(radians(phi))
+        c = cos(radians(phi))
         return self @ Mat3(c, s, 0.0, -s, c, 0.0, 0.0, 0.0, 1.0)
 
     def shear(self, sx: float, sy: float) -> Mat3:
@@ -1053,7 +1075,21 @@ class Mat3(_typing.NamedTuple):
     def __matmul__(self, other: Mat3) -> Mat3: ...
 
     def __matmul__(self, other) -> Vec3 | Mat3:
-        if isinstance(other, Vec3):
+        try:
+            # extract the elements in row-column form. (matrix is stored column first)
+            a11, a12, a13, a21, a22, a23, a31, a32, a33 = self
+            b11, b12, b13, b21, b22, b23, b31, b32, b33 = other
+
+            # Multiply and sum rows * columns
+            return Mat3(
+                # Column 1
+                a11 * b11 + a21 * b12 + a31 * b13, a12 * b11 + a22 * b12 + a32 * b13, a13 * b11 + a23 * b12 + a33 * b13,
+                # Column 2
+                a11 * b21 + a21 * b22 + a31 * b23, a12 * b21 + a22 * b22 + a32 * b23, a13 * b21 + a23 * b22 + a33 * b23,
+                # Column 3
+                a11 * b31 + a21 * b32 + a31 * b33, a12 * b31 + a22 * b32 + a32 * b33, a13 * b31 + a23 * b32 + a33 * b33,
+            )
+        except ValueError:
             x, y, z = other
             # extract the elements in row-column form. (matrix is stored column first)
             a11, a12, a13, a21, a22, a23, a31, a32, a33 = self
@@ -1062,24 +1098,6 @@ class Mat3(_typing.NamedTuple):
                 a12 * x + a22 * y + a32 * z,
                 a13 * x + a23 * y + a33 * z,
             )
-
-        if not isinstance(other, Mat3):
-            msg = "Can only multiply with Mat3 or Vec3 types"
-            raise TypeError(msg)
-
-        # extract the elements in row-column form. (matrix is stored column first)
-        a11, a12, a13, a21, a22, a23, a31, a32, a33 = self
-        b11, b12, b13, b21, b22, b23, b31, b32, b33 = other
-
-        # Multiply and sum rows * columns
-        return Mat3(
-            # Column 1
-            a11 * b11 + a21 * b12 + a31 * b13, a12 * b11 + a22 * b12 + a32 * b13, a13 * b11 + a23 * b12 + a33 * b13,
-            # Column 2
-            a11 * b21 + a21 * b22 + a31 * b23, a12 * b21 + a22 * b22 + a32 * b23, a13 * b21 + a23 * b22 + a33 * b23,
-            # Column 3
-            a11 * b31 + a21 * b32 + a31 * b33, a12 * b31 + a22 * b32 + a32 * b33, a13 * b31 + a23 * b32 + a33 * b33,
-        )
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}{self[0:3]}\n    {self[3:6]}\n    {self[6:9]}"
@@ -1155,7 +1173,7 @@ class Mat4(_typing.NamedTuple):
         create a 4x4 Projection Matrix. This is useful for setting
         :py:attr:`~pyglet.window.Window.projection`.
         """
-        xy_max = z_near * _math.tan(fov * _math.pi / 360)
+        xy_max = z_near * tan(fov * pi / 360)
         y_min = -xy_max
         x_min = -xy_max
 
@@ -1237,8 +1255,8 @@ class Mat4(_typing.NamedTuple):
         if not all(abs(n) <= 1 for n in vector):
             raise ValueError("vector must be normalized (<=1)")
         x, y, z = vector
-        c = _math.cos(angle)
-        s = _math.sin(angle)
+        c = cos(angle)
+        s = sin(angle)
         t = 1 - c
         temp_x, temp_y, temp_z = t * x, t * y, t * z
 
@@ -1261,11 +1279,7 @@ class Mat4(_typing.NamedTuple):
 
     def scale(self, vector: Vec3) -> Mat4:
         """Get a scale Matrix on x, y, or z axis."""
-        temp = list(self)
-        temp[0] *= vector[0]
-        temp[5] *= vector[1]
-        temp[10] *= vector[2]
-        return Mat4(*temp)
+        return self @ Mat4(vector[0], 0, 0, 0, 0, vector[1], 0, 0, 0, 0, vector[2], 0, 0, 0, 0, 1)
 
     def translate(self, vector: Vec3) -> Mat4:
         """Get a translation Matrix along x, y, and z axis."""
@@ -1357,7 +1371,26 @@ class Mat4(_typing.NamedTuple):
     def __matmul__(self, other: Mat4) -> Mat4: ...
 
     def __matmul__(self, other):
-        if isinstance(other, Vec4):
+        try:
+            # extract the elements in row-column form. (matrix is stored column first)
+            a11, a12, a13, a14, a21, a22, a23, a24, a31, a32, a33, a34, a41, a42, a43, a44 = self
+            b11, b12, b13, b14, b21, b22, b23, b24, b31, b32, b33, b34, b41, b42, b43, b44 = other
+            # Multiply and sum rows * columns:
+            return Mat4(
+                # Column 1
+                a11 * b11 + a21 * b12 + a31 * b13 + a41 * b14, a12 * b11 + a22 * b12 + a32 * b13 + a42 * b14,
+                a13 * b11 + a23 * b12 + a33 * b13 + a43 * b14, a14 * b11 + a24 * b12 + a34 * b13 + a44 * b14,
+                # Column 2
+                a11 * b21 + a21 * b22 + a31 * b23 + a41 * b24, a12 * b21 + a22 * b22 + a32 * b23 + a42 * b24,
+                a13 * b21 + a23 * b22 + a33 * b23 + a43 * b24, a14 * b21 + a24 * b22 + a34 * b23 + a44 * b24,
+                # Column 3
+                a11 * b31 + a21 * b32 + a31 * b33 + a41 * b34, a12 * b31 + a22 * b32 + a32 * b33 + a42 * b34,
+                a13 * b31 + a23 * b32 + a33 * b33 + a43 * b34, a14 * b31 + a24 * b32 + a34 * b33 + a44 * b34,
+                # Column 4
+                a11 * b41 + a21 * b42 + a31 * b43 + a41 * b44, a12 * b41 + a22 * b42 + a32 * b43 + a42 * b44,
+                a13 * b41 + a23 * b42 + a33 * b43 + a43 * b44, a14 * b41 + a24 * b42 + a34 * b43 + a44 * b44,
+            )
+        except ValueError:
             x, y, z, w = other
             # extract the elements in row-column form. (matrix is stored column first)
             a11, a12, a13, a14, a21, a22, a23, a24, a31, a32, a33, a34, a41, a42, a43, a44 = self
@@ -1368,35 +1401,19 @@ class Mat4(_typing.NamedTuple):
                 x * a14 + y * a24 + z * a34 + w * a44,
             )
 
-        if not isinstance(other, Mat4):
-            msg = "Can only multiply with Mat4 or Vec4 types"
-            raise TypeError(msg)
-
-        # extract the elements in row-column form. (matrix is stored column first)
-        a11, a12, a13, a14, a21, a22, a23, a24, a31, a32, a33, a34, a41, a42, a43, a44 = self
-        b11, b12, b13, b14, b21, b22, b23, b24, b31, b32, b33, b34, b41, b42, b43, b44 = other
-        # Multiply and sum rows * columns:
-        return Mat4(
-            # Column 1
-            a11 * b11 + a21 * b12 + a31 * b13 + a41 * b14, a12 * b11 + a22 * b12 + a32 * b13 + a42 * b14,
-            a13 * b11 + a23 * b12 + a33 * b13 + a43 * b14, a14 * b11 + a24 * b12 + a34 * b13 + a44 * b14,
-            # Column 2
-            a11 * b21 + a21 * b22 + a31 * b23 + a41 * b24, a12 * b21 + a22 * b22 + a32 * b23 + a42 * b24,
-            a13 * b21 + a23 * b22 + a33 * b23 + a43 * b24, a14 * b21 + a24 * b22 + a34 * b23 + a44 * b24,
-            # Column 3
-            a11 * b31 + a21 * b32 + a31 * b33 + a41 * b34, a12 * b31 + a22 * b32 + a32 * b33 + a42 * b34,
-            a13 * b31 + a23 * b32 + a33 * b33 + a43 * b34, a14 * b31 + a24 * b32 + a34 * b33 + a44 * b34,
-            # Column 4
-            a11 * b41 + a21 * b42 + a31 * b43 + a41 * b44, a12 * b41 + a22 * b42 + a32 * b43 + a42 * b44,
-            a13 * b41 + a23 * b42 + a33 * b43 + a43 * b44, a14 * b41 + a24 * b42 + a34 * b43 + a44 * b44,
-        )
-
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}{self[0:4]}\n    {self[4:8]}\n    {self[8:12]}\n    {self[12:16]}"
 
 
 class Quaternion(_typing.NamedTuple):
-    """Quaternion."""
+    """Quaternion.
+
+    Quaternions are 4-dimensional complex numbers, useful for describing 3D rotations.
+
+    .. note:: Quaternions are defined as ``w, x, y, z``. When passing a Quaternion object
+              into a Shader as a Uniform or Vertex Attribute, keep in mind that the glsl vec4
+              is accessed as ``x, y, z, w``. Make sure to adjust in your Shader.
+    """
 
     w: float = 1.0
     x: float = 0.0
@@ -1404,14 +1421,44 @@ class Quaternion(_typing.NamedTuple):
     z: float = 0.0
 
     @classmethod
-    def from_mat3(cls) -> Quaternion:
+    def from_rotation(cls, angle: float, axis: Vec3) -> Quaternion:
+        """Create a Quaternion from a rotation angle and axis.
+
+        This method takes a Vec3 as an axis argument. Only ONE axis (x, y, z)
+        should be given as a normalized value (1.0), to choose the axis to
+        rotate around. For example::
+
+            quat = Quaternion.from_rotation(0.5, Vec3(1.0, 0.0, 0.0))
+            # or:
+            quat = Quaternion.from_rotation(0.5, Vec3(0.0, 1.0, 0.0))
+            # but NEVER:
+            quat = Quaternion.from_rotation(0.5, Vec3(1.0, 1.0, 0.0))
+
+        The results are undefined if more than one axis is passed, but for
+        performance reasons, no validation is done to enforce this. Take care
+        to only pass a single axis when using this method.
+
+        Args:
+            angle: The rotation angle in radians.
+            axis: A Vec3 representing the axis of rotation (must be normalized).
+
+        Returns:
+            A new Quaternion instance.
+        """
+        sin_half = sin(angle * 0.5)
+        return cls(w=cos(angle * 0.5), x=axis.x * sin_half, y=axis.y * sin_half, z=axis.z * sin_half)
+
+    @classmethod
+    def from_mat3(cls, mat: Mat3) -> Quaternion:
         raise NotImplementedError
 
     @classmethod
-    def from_mat4(cls) -> Quaternion:
+    def from_mat4(cls, mat: Mat4) -> Quaternion:
         raise NotImplementedError
 
     def to_mat4(self) -> Mat4:
+        """Calculate a 4x4 transform matrix which applies a rotation."""
+
         w = self.w
         x = self.x
         y = self.y
@@ -1437,6 +1484,8 @@ class Quaternion(_typing.NamedTuple):
         return Mat4(a, b, c, 0.0, e, f, g, 0.0, i, j, k, 0.0, 0.0, 0.0, 0.0, 1.0)
 
     def to_mat3(self) -> Mat3:
+        """Create a 3x3 rotation matrix."""
+
         w = self.w
         x = self.x
         y = self.y
@@ -1462,25 +1511,68 @@ class Quaternion(_typing.NamedTuple):
         return Mat3(*(a, b, c, e, f, g, i, j, k))
 
     def length(self) -> float:
-        """Calculate the length of the Quaternion.
-
-        The distance between the coordinates and the origin.
-        """
-        return _math.sqrt(self.w**2 + self.x**2 + self.y**2 + self.z**2)
+        """Calculate the length of the quaternion from the origin."""
+        return sqrt(self.w**2 + self.x**2 + self.y**2 + self.z**2)
 
     def conjugate(self) -> Quaternion:
+        """Calculate the conjugate of this quaternion.
+
+        This operation:
+        #. leaves the :py:attr:`.w` component alone
+        #. inverts the sign of the :py:attr:`.x`, :py:attr:`.y`, and :py:attr:`.z` components
+
+        """
         return Quaternion(self.w, -self.x, -self.y, -self.z)
 
     def dot(self, other: Quaternion) -> float:
+        """Calculate the dot product with another quaternion."""
         a, b, c, d = self
         e, f, g, h = other
         return a * e + b * f + c * g + d * h
 
     def normalize(self) -> Quaternion:
+        """Calculate a unit quaternion from the instance.
+
+        The returned quaternion will be a scaled-down version
+        of the instance which has:
+
+        * a length of ``1``
+        * the same relative of its components
+        """
         m = self.length()
         if m == 0:
             return self
         return Quaternion(self.w / m, self.x / m, self.y / m, self.z / m)
+
+    def slerp(self , other: Quaternion , t: float) -> Quaternion:
+        """
+        Calculate the spherical interpolation between this quaternion and the
+        one given and returns it as a new instance.
+
+        This function uses the equations from the GLTF 2.0 Specification book.
+        https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#interpolation-slerp
+
+        Args:
+            other: The other quaternion
+            t: The parametric variable in the range [0, 1]
+
+        Returns:
+            The quaternion instance obtained from the spherical interpolation
+            between the two given quaternions
+        """
+        dot = self.dot(other)
+
+        abs_dot = min(abs(dot), 0.999)
+        x = acos(abs_dot)
+
+        if x < 0.005:
+            return self * (1 - t) + other * t
+
+        s = dot / abs_dot
+
+        v = self * (sin(x * (1 - t)) / sin(x)) + \
+            other * s * (sin(x * t) / sin(x))
+        return v
 
     def __add__(self, other: Quaternion) -> Quaternion:
         a, b, c, d = self
@@ -1493,9 +1585,8 @@ class Quaternion(_typing.NamedTuple):
         return Quaternion(a - e, b - f, c - g, d - h)
 
     def __mul__(self, scalar: float) -> Quaternion:
-        w, x = self.w * scalar, self.x * scalar
-        y, z = self.y * scalar, self.z * scalar
-        return Quaternion(w, x, y, z)
+        w, x, y, z = self
+        return Quaternion(w * scalar, x * scalar, y * scalar, z * scalar)
 
     def __truediv__(self, other: Quaternion) -> Quaternion:
         return ~self @ other
@@ -1504,8 +1595,10 @@ class Quaternion(_typing.NamedTuple):
         return self.conjugate() * (1 / self.dot(self))
 
     def __matmul__(self, other: Quaternion) -> Quaternion:
-        a, u = self.w, Vec3(*self[1:])
-        b, v = other.w, Vec3(*other[1:])
-        scalar = a * b - u.dot(v)
-        vector = v * a + u * b + u.cross(v)
-        return Quaternion(scalar, *vector)
+        w1, x1, y1, z1 = self
+        w2, x2, y2, z2 = other
+        w = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2
+        x = w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2
+        y = w1 * y2 - x1 * z2 + y1 * w2 + z1 * x2
+        z = w1 * z2 + x1 * y2 - y1 * x2 + z1 * w2
+        return Quaternion(w, x, y, z)

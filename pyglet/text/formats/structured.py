@@ -5,23 +5,12 @@ import re
 from typing import TYPE_CHECKING, Any, NoReturn
 
 import pyglet
-import pyglet.text.layout
-from pyglet.gl import (
-    GL_BLEND,
-    GL_ONE_MINUS_SRC_ALPHA,
-    GL_SRC_ALPHA,
-    GL_TEXTURE0,
-    glActiveTexture,
-    glBindTexture,
-    glBlendFunc,
-    glDisable,
-    glEnable,
-)
+from pyglet.enums import BlendFactor, GeometryMode
 
 if TYPE_CHECKING:
     from pyglet.graphics import Group
     from pyglet.graphics.shader import ShaderProgram
-    from pyglet.image import AbstractImage, Texture
+    from pyglet.image import _AbstractImage, Texture
     from pyglet.resource import Location
     from pyglet.text.document import InlineElement
     from pyglet.text.layout import TextLayout
@@ -33,31 +22,9 @@ class _InlineElementGroup(pyglet.graphics.Group):
         super().__init__(order, parent)
         self.texture = texture
         self.program = program
-
-    def set_state(self) -> None:
-        self.program.use()
-
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(self.texture.target, self.texture.id)
-
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-    def unset_state(self) -> None:
-        glDisable(GL_BLEND)
-        self.program.stop()
-
-    def __eq__(self, other: _InlineElementGroup) -> bool:
-        return (self.__class__ is other.__class__ and
-                self._order == other.order and
-                self.program == other.program and
-                self.parent == other.parent and
-                self.texture.target == other.texture.target and
-                self.texture.id == other.texture.id)
-
-    def __hash__(self) -> int:
-        return hash((self._order, self.program, self.parent,
-                     self.texture.target, self.texture.id))
+        self.set_shader_program(program)
+        self.set_texture(texture, 0)
+        self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
 
 
 class ImageElement(pyglet.text.document.InlineElement):
@@ -65,7 +32,7 @@ class ImageElement(pyglet.text.document.InlineElement):
     height: int
     width: int
 
-    def __init__(self, image: AbstractImage, width: int | None=None, height: int | None=None) -> None:  # noqa: D107
+    def __init__(self, image: _AbstractImage, width: int | None=None, height: int | None=None) -> None:  # noqa: D107
         self.image = image.get_texture()
         self.width = width or image.width
         self.height = height or image.height
@@ -79,28 +46,31 @@ class ImageElement(pyglet.text.document.InlineElement):
     def place(self, layout: TextLayout, x: float, y: float, z: float, line_x: float, line_y: float, rotation: float,
               visible: bool, anchor_x: float, anchor_y: float) -> None:
         program = pyglet.text.layout.get_default_image_layout_shader()
-        group = _InlineElementGroup(self.image.get_texture(), program, 0, layout.group)
+        group = _InlineElementGroup(self.image.get_texture(), program, 3 if layout.depth_sorting else 0, layout.group)
+        layout._set_depth_test(group)  # noqa: SLF001
         x1 = line_x
         y1 = line_y + self.descent
         x2 = line_x + self.width
         y2 = line_y + self.height + self.descent
 
-        vertex_list = program.vertex_list_indexed(4, pyglet.gl.GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
+        vertex_list = program.vertex_list_indexed(4, GeometryMode.TRIANGLES, [0, 1, 2, 0, 2, 3],
                                                   layout.batch, group,
-                                                  position=("f", (x1, y1, z, x2, y1, z, x2, y2, z, x1, y2, z)),
-                                                  translation=("f", (x, y, z) * 4),
-                                                  tex_coords=("f", self.image.tex_coords),
-                                                  visible=("f", (visible,) * 4),
-                                                  rotation=("f", (rotation,) * 4),
-                                                  anchor=("f", (anchor_x, anchor_y) * 4),
+                                                  position=(x1, y1, z, x2, y1, z, x2, y2, z, x1, y2, z),
+                                                  translation=(x, y, z, layout.get_depth_offset(0)) * 4,
+                                                  tex_coords=self.image.tex_coords,
+                                                  visible=(visible,) * 4,
+                                                  rotation=(rotation,) * 4,
+                                                  anchor=(anchor_x, anchor_y) * 4,
+                                                  view_translation=(0, 0, 0) * 4,
+                                                  #colors=("Bn", (128, 128, 128, 255) * 4),
                                                   )
 
         self.vertex_lists[layout] = vertex_list
 
     def update_translation(self, x: float, y: float, z: float) -> None:
-        translation = (x, y, z)
         for _vertex_list in self.vertex_lists.values():
-            _vertex_list.translation[:] = translation * _vertex_list.count
+            depth_offset = _vertex_list.translation[3]
+            _vertex_list.translation[:] = (x, y, z, depth_offset) * _vertex_list.count
 
     def update_color(self, color: list[int]) -> None:
         # No color blending in shader. Optional.
@@ -125,6 +95,66 @@ class ImageElement(pyglet.text.document.InlineElement):
         anchor = (anchor_x, anchor_y)
         for _vertex_list in self.vertex_lists.values():
             _vertex_list.anchor[:] = anchor * _vertex_list.count
+
+    def remove(self, layout: TextLayout) -> None:
+        self.vertex_lists[layout].delete()
+        del self.vertex_lists[layout]
+
+
+class HorizontalRuleElement(pyglet.text.document.InlineElement):
+    """A horizontal rule that spans the available layout width."""
+
+    def __init__(self, color: tuple[int, int, int, int], width: int = 100) -> None:
+        self.color = color
+        self.width = width
+        self.vertex_lists = {}
+        super().__init__(1, -1, 0)
+
+    def place(self, layout: TextLayout, x: float, y: float, z: float, line_x: float, line_y: float, rotation: float,
+              visible: bool, anchor_x: float, anchor_y: float) -> None:
+        program = layout.decoration_shader
+        right = layout.width if layout.width is not None else line_x + self.width
+        vertex_list = program.vertex_list(
+            2,
+            GeometryMode.LINES,
+            layout.batch,
+            layout.foreground_decoration_group,
+            position=(line_x, line_y, z, right, line_y, z),
+            translation=(x, y, z, layout.get_depth_offset(1)) * 2,
+            colors=self.color * 2,
+            visible=(visible,) * 2,
+            rotation=(rotation,) * 2,
+            anchor=(anchor_x, anchor_y) * 2,
+        )
+        self.vertex_lists[layout] = vertex_list
+
+    def update_translation(self, x: float, y: float, z: float) -> None:
+        for vertex_list in self.vertex_lists.values():
+            depth_offset = vertex_list.translation[3]
+            vertex_list.translation[:] = (x, y, z, depth_offset) * vertex_list.count
+
+    def update_color(self, color: list[int]) -> None:
+        self.color = tuple(color[:4])
+        for vertex_list in self.vertex_lists.values():
+            vertex_list.colors[:] = self.color * vertex_list.count
+
+    def update_view_translation(self, translate_x: float, translate_y: float) -> None:
+        view_translation = (-translate_x, -translate_y, 0)
+        for vertex_list in self.vertex_lists.values():
+            vertex_list.view_translation[:] = view_translation * vertex_list.count
+
+    def update_rotation(self, rotation: float) -> None:
+        for vertex_list in self.vertex_lists.values():
+            vertex_list.rotation[:] = (rotation,) * vertex_list.count
+
+    def update_visibility(self, visible: bool) -> None:
+        for vertex_list in self.vertex_lists.values():
+            vertex_list.visible[:] = (visible,) * vertex_list.count
+
+    def update_anchor(self, anchor_x: float, anchor_y: float) -> None:
+        anchor = (anchor_x, anchor_y)
+        for vertex_list in self.vertex_lists.values():
+            vertex_list.anchor[:] = anchor * vertex_list.count
 
     def remove(self, layout: TextLayout) -> None:
         self.vertex_lists[layout].delete()

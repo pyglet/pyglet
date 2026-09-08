@@ -1,15 +1,12 @@
+from __future__ import annotations
+
 import pytest
 
-from tests.base.interactive import InteractiveTestCase
-
-from pyglet import app
-from pyglet import gl
-from pyglet import graphics
-from pyglet import text
-from pyglet.text import caret
-from pyglet.text import layout
-from pyglet import window
+import pyglet
+from pyglet import app, text, window
+from pyglet.text import caret, layout
 from pyglet.window import key
+from tests.base.interactive import InteractiveTestCase
 
 
 class TestWindow(window.Window):
@@ -26,7 +23,7 @@ class TestWindow(window.Window):
     ):
         super().__init__(*args, **kwargs)
 
-        self.batch = graphics.Batch()
+        self.batch = pyglet.graphics.Batch()
         self.document = text.decode_text(
             self.INSTRUCTIONS.format(caret_color)
         )
@@ -43,6 +40,8 @@ class TestWindow(window.Window):
 
         self.set_mouse_cursor(self.get_system_mouse_cursor('text'))
 
+        self.context.set_clear_color(1, 1, 1, 1)
+
     def on_resize(self, width, height):
         super().on_resize(width, height)
         self.layout.begin_update()
@@ -57,7 +56,6 @@ class TestWindow(window.Window):
         self.layout.view_y += scroll_y * 16
 
     def on_draw(self):
-        gl.glClearColor(1, 1, 1, 1)
         self.clear()
         self.batch.draw()
 
@@ -129,7 +127,7 @@ class CaretColorSetterTestCase(InteractiveTestCase, _DRYHelperMixin):
     """
 
     def test_caret_color_setter_rgb(self):
-        color = (0, 0, 255)
+        color = (0, 0, 0, 255)
         self.build_window_via_setter(color, window_class=SetterTestWindow)
         app.run()
         self.ask_color(color)

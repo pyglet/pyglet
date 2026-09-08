@@ -1440,7 +1440,7 @@ class PreprocessorNamespace(EvaluationContext):
                 # build params list
                 i += 2
                 params = [[]]
-                parens = 0  # balance parantheses within each arg
+                parens = 0  # balance parentheses within each arg
                 while i < len(tokens):
                     if tokens[i].value == ',' and parens == 0 and \
                        len(params) < numargs:

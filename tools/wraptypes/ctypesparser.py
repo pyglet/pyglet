@@ -77,7 +77,7 @@ def get_ctypes_type(typ, declarator):
             a = a.array
     return t
     
-# Remove one level of indirection from funtion pointer; needed for typedefs
+# Remove one level of indirection from function pointer; needed for typedefs
 # and function parameters.
 def remove_function_pointer(t):
     if type(t) == CtypesPointer and type(t.destination) == CtypesFunction:

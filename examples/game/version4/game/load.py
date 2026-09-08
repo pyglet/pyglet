@@ -1,13 +1,14 @@
 import pyglet
+from pyglet.enums import Anchor
 import random
-from . import asteroid, resources, util
+from . import asteroid, util, util
 
 
 def player_lives(num_icons, batch=None):
     """Generate sprites for player life icons"""
     player_lives = []
     for i in range(num_icons):
-        new_sprite = pyglet.sprite.Sprite(img=resources.player_image,
+        new_sprite = pyglet.sprite.Sprite(img=pyglet.resource.image('player.png'), anchor=Anchor.CENTER,
                                           x=785 - i * 30, y=585,
                                           batch=batch)
         new_sprite.scale = 0.5

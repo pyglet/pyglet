@@ -75,11 +75,12 @@ directory and display it within the window::
 
     window = pyglet.window.Window()
     image = pyglet.resource.image('kitten.jpg')
+    sprite = pyglet.sprite.Sprite(image, x=0, y=0)
 
     @window.event
     def on_draw():
         window.clear()
-        image.blit(0, 0)
+        sprite.draw()
 
     pyglet.app.run()
 
@@ -89,9 +90,9 @@ file (rather than the working directory).  To load an image not bundled with
 the application (for example, specified on the command line), you would use
 :func:`pyglet.image.load`.
 
-The :meth:`~pyglet.image.AbstractImage.blit` method draws the image.  The
-arguments ``(0, 0)`` tell pyglet to draw the image at pixel coordinates 0,
-0 in the window (the lower-left corner).
+The :class:`~pyglet.sprite.Sprite` class wraps an image for drawing. The
+``x=0`` and ``y=0`` arguments tell pyglet to position the sprite at pixel
+coordinates 0, 0 in the window (the lower-left corner).
 
 The complete code for this example is located in
 `examples/programming_guide/image_viewer.py`.
@@ -170,15 +171,15 @@ The following example plays an MP3 file [#mp3]_::
 
     import pyglet
 
-    music = pyglet.resource.media('music.mp3')
+    music = pyglet.resource.audio('music.mp3')
     music.play()
 
     pyglet.app.run()
 
 As with the image loading example presented earlier,
-:func:`~pyglet.resource.media` locates the sound file in the application's
+:func:`~pyglet.resource.audio` locates the sound file in the application's
 directory (not the working directory).  If you know the actual filesystem path
-(either relative or absolute), use :func:`pyglet.media.load`.
+(either relative or absolute), use :func:`pyglet.media.load_audio`.
 
 By default, audio is streamed when playing. This works well for longer music
 tracks. Short sounds, such as a gunfire shot used in a game, should instead be
@@ -187,7 +188,7 @@ immediately and incur less of a CPU performance penalty. It also allows playing
 the same sound repeatedly without reloading it.
 Specify ``streaming=False`` in this case::
 
-    sound = pyglet.resource.media('shot.wav', streaming=False)
+    sound = pyglet.resource.audio('shot.wav', streaming=False)
     sound.play()
 
 The `examples/media/media_player.py` example demonstrates playback of streaming

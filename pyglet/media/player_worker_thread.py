@@ -24,7 +24,7 @@ class PlayerWorkerThread(threading.Thread):
     to keep their buffers filled (and perform event dispatching tasks), but
     does not block the main thread.
 
-    This thread will sleep for a small period betwen updates, but provides a
+    This thread will sleep for a small period between updates, but provides a
     :py:meth:`~notify` method to allow waking it immediately. A :py:meth:`~stop`
     method is provided to terminate the thread, but under normal operation it
     will exit cleanly on interpreter shutdown.
@@ -44,7 +44,7 @@ class PlayerWorkerThread(threading.Thread):
         self.players: Set[AbstractAudioPlayer] = set()
 
     def run(self) -> None:
-        if pyglet.options['debug_trace']:
+        if pyglet.options.debug_trace:
             pyglet._install_trace()
 
         sleep_time = None
@@ -122,6 +122,7 @@ class PlayerWorkerThread(threading.Thread):
         """
         assert _debug('PlayerWorkerThread: player removed')
 
-        if player in self.players:
-            with self._operation_lock:
-                self.players.remove(player)
+        # Can be reached through stop(), delete(), and
+        # driver shutdown. Discard to instead ignore if it was already removed.
+        with self._operation_lock:
+            self.players.discard(player)

@@ -18,6 +18,7 @@ def _mock_expand_user(p):
     return os.path.join(*parts)
 
 
+@mock.patch.object(sys, 'platform', 'test-platform')
 class ResourcePathTest(unittest.TestCase):
     """
     Test default paths returned for different platforms.
@@ -41,7 +42,7 @@ class ResourcePathTest(unittest.TestCase):
         """Py2App OSX bundle"""
         self.assertEqual(get_script_home(), _script_home)
 
-    @mock.patch.object(sys.modules['__main__'], '__file__', _executable)
+    @mock.patch.object(sys.modules['__main__'], '__file__', _executable, create=True)
     def test_script_home_normal_python(self):
         """Normal execution of a script in python."""
         self.assertEqual(get_script_home(), _script_home)

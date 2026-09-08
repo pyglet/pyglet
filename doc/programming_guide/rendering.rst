@@ -4,7 +4,7 @@ Shaders and Rendering
 =====================
 
 At the lowest level, pyglet uses OpenGL to draw graphics in program windows.
-The OpenGL interface is exposed via the :py:mod:`pyglet.gl` module
+The OpenGL interface is exposed via the :py:mod:`pyglet.graphics.api.gl` module
 (see :ref:`guide_gl`)
 
 .. Note::
@@ -26,7 +26,7 @@ in more detail in the following sections, but a rough overview is as follows:
   standard OpenGL Shader Programs. pyglet does full attribute and uniform
   introspection, and provides methods for automatically generating buffers
   that match the attribute formats.
-* VertexDomains at at the lowest level, and users will generally not need to
+* VertexDomains are at the lowest level, and users will generally not need to
   interact with them directly. They maintain ownership of raw OpenGL vertex
   array buffers, that match a specific collection of vertex attributes.
   Buffers are resized automatically as needed. Access to these buffers is
@@ -170,23 +170,23 @@ object value. In the above example, the name would be ``WindowBlock`` while the 
 
 Normally with OpenGL, you would have to manually assign a global binding point value to each Uniform Block for each Shader Program, as they are created. With Pyglet, the global binding values and assignments are all taken care of internally.
 
-Uniform Blocks can be a convenient way to update uniforms of multiple Shader Programs at once, as their data is shared. This allows you to access the same information from multiple Shader Programs without having to bind every program using it, just to modify the uniform values. This can be achieved through a :py:class:`~pyglet.graphics.shader.UniformBufferObject`.
+Uniform Blocks can be a convenient way to update uniforms of multiple Shader Programs at once, as their data is shared. This allows you to access the same information from multiple Shader Programs without having to bind every program using it, just to modify the uniform values. This can be achieved through a :py:class:`~pyglet.graphics.buffer.UniformBufferObject`.
 
 To modify the uniforms in a :py:class:`~pyglet.graphics.shader.UniformBlock`, you must first create a
-:py:class:`~pyglet.graphics.shader.UniformBufferObject` using the
+:py:class:`~pyglet.graphics.buffer.UniformBufferObject` using the
 :py:meth:`~pyglet.graphics.shader.UniformBlock.create_ubo` method.::
 
     ubo = program.uniform_blocks['WindowBlock'].create_ubo()
 
-The :py:class:`~pyglet.graphics.shader.UniformBufferObject` can then be used as a context manager for easy
+The :py:class:`~pyglet.graphics.buffer.UniformBufferObject` can then be used as a context manager for easy
 access to update its uniforms::
 
         with ubo as window_block:
             window_block.projection[:] = new_matrix
 
-You can also create multiple :py:class:`~pyglet.graphics.shader.UniformBufferObject` instances if you need to swap between different sets of data. Calling :py:meth:`~pyglet.graphics.shader.UniformBufferObject.bind` will bind the buffers data to the associated binding point.
+You can also create multiple :py:class:`~pyglet.graphics.buffer.UniformBufferObject` instances if you need to swap between different sets of data. Calling :py:meth:`~pyglet.graphics.buffer.UniformBufferObject.bind` will bind the buffers data to the associated binding point.
 
-There may come a point where you don't want a specific :py:class:`~pyglet.graphics.shader.ShaderProgram`, or a group of them, to use the same uniform data set as the rest of your shaders. At this point, you will have to modify the binding point of those Uniform Blocks to one that is unused. This can be done through :py:meth:`~pyglet.graphics.shader.UniformBlock.set_binding`. Once the binding has been set, you will have to create a new :py:class:`~pyglet.graphics.shader.UniformBufferObject` using the :py:meth:`~pyglet.graphics.shader.UniformBlock.create_ubo` method again and supply it with your new data set.
+There may come a point where you don't want a specific :py:class:`~pyglet.graphics.shader.ShaderProgram`, or a group of them, to use the same uniform data set as the rest of your shaders. At this point, you will have to modify the binding point of those Uniform Blocks to one that is unused. This can be done through :py:meth:`~pyglet.graphics.shader.UniformBlock.set_binding`. Once the binding has been set, you will have to create a new :py:class:`~pyglet.graphics.buffer.UniformBufferObject` using the :py:meth:`~pyglet.graphics.shader.UniformBlock.create_ubo` method again and supply it with your new data set.
 
 .. warning:: When assigning custom binding points through py:meth:`~pyglet.graphics.shader.UniformBlock.set_binding`, it is recommended to use an unassigned binding point, as unexpected behavior may occur. A warning will be output if such a collision occurs.
 
@@ -194,6 +194,39 @@ There may come a point where you don't want a specific :py:class:`~pyglet.graphi
              higher than the amount of Uniform Blocks in your application to prevent collisions.
 
 .. note:: Binding point 0 cannot be set, as it is used internally for ``WindowBlock``.
+
+Transform Feedback
+^^^^^^^^^^^^^^^^^^
+
+:py:class:`~pyglet.graphics.shader.TransformFeedbackShaderProgram` is a specialized
+ShaderProgram that captures vertex (or geometry) shader outputs into a buffer,
+instead of only rasterizing them to the framebuffer.
+
+This is useful for GPU particle updates, simulation steps, and other workflows
+where one draw pass generates data for later passes.
+
+Create one the same way as a normal ShaderProgram, but provide ``varyings`` when
+linking::
+
+    tf_program = pyglet.graphics.TransformFeedbackShaderProgram(
+        vertex_shader,
+        fragment_shader,
+        varyings=("next_position", "next_velocity"),
+    )
+
+``varyings`` names must match ``out`` variables declared in your shader stage.
+Captured values are written to transform feedback buffer binding points in the
+order provided by ``varyings``.
+
+Use ``varying_buffer_type="separate"`` (default) to write each varying to a
+separate binding point, or ``"interleaved"`` to pack them into one stream.
+
+After linking, bind one or more
+:py:class:`~pyglet.graphics.buffer.TransformFeedbackBuffer` objects with
+``bind_base``/``bind_range`` and run a draw call while transform feedback is
+active.
+
+See ``examples/opengl/transform_shader.py`` for a complete end-to-end example.
 
 
 Creating Vertex Lists
@@ -211,18 +244,19 @@ and
 
 At a minimum, you must provide a `count` and `mode` when creating a VertexList.
 The `count` is simply the number of vertices you wish to create. The `mode` is
-the OpenGL primitive type. A ``group`` and ``batch`` parameters are also accepted
-(described below).
+the GeometryMode primitive type, pyglet converts these to their respective API geometry mode.
+A ``group`` and ``batch`` parameters are also accepted (described below).
 
-The mode should be passed using one of the following constants:
+The mode should be passed using one of the following enumerations from ``pyglet.enums.GeometryMode``:
 
-* ``pyglet.gl.GL_POINTS``
-* ``pyglet.gl.GL_LINES``
-* ``pyglet.gl.GL_LINE_STRIP``
-* ``pyglet.gl.GL_TRIANGLES``
-* ``pyglet.gl.GL_TRIANGLE_STRIP``
+* ``pyglet.enums.GeometryMode.POINTS``
+* ``pyglet.enums.GeometryMode.LINES``
+* ``pyglet.enums.GeometryMode.LINE_STRIP``
+* ``pyglet.enums.GeometryMode.TRIANGLES``
+* ``pyglet.enums.GeometryMode.TRIANGLE_STRIP``
+* ``pyglet.enums.GeometryMode.TRIANGLE_FAN``
 
-When using ``GL_LINE_STRIP`` and ``GL_TRIANGLE_STRIP``, care must be taken to
+When using ``pyglet.enums.GeometryMode.LINE_STRIP`` and ``pyglet.enums.GeometryMode.TRIANGLE_STRIP``, care must be taken to
 insert degenerate vertices at the beginning and end of each vertex list.
 For example, given the vertex list::
 
@@ -232,13 +266,13 @@ the correct vertex list to provide the vertex list is::
 
     A, A, B, C, D, D
 
-.. note:: Because of the way the high level API renders multiple primitives with
-          shared state, ``GL_POLYGON``, ``GL_LINE_LOOP`` and ``GL_TRIANGLE_FAN``
+.. note:: For OpenGL, because of the way the high level API renders multiple primitives with
+          shared state, polygon and line-loop modes, and ``pyglet.enums.GeometryMode.TRIANGLE_FAN``
           cannot be used --- the results are undefined.
 
 Create a VertexList with three vertices, without initial data::
 
-    vlist = program.vertex_list(3, pyglet.gl.GL_TRIANGLES)
+    vlist = program.vertex_list(3, pyglet.enums.GeometryMode.TRIANGLES)
 
 From examining the ShaderProgram.attributes above, we know `position` and `colors`
 attributes are available. The underlying arrays can be accessed directly::
@@ -267,9 +301,12 @@ on the property by passing a list or tuple of the correct length. For example::
     # or slightly faster to update in-place:
     vlist.position[:] = (100, 300, 200, 250, 200, 350)
 
-The default data format is single precision floats, but it is possible to specify a
-format using a "format string". This is passed on creation as a Python keyword
-argument. The following formats are available:
+The default data format is single precision floats. To use another storage format,
+create a :class:`~pyglet.graphics.shader.ShaderProgramView` with
+:py:meth:`~pyglet.graphics.shader.ShaderProgram.get_attribute_view`. A view
+uses the same linked shader program and uniforms as its owner, but has its own
+cached vertex formats and vertex domains.
+The following formats are available:
 
 .. list-table::
     :header-rows: 1
@@ -304,9 +341,10 @@ argument. The following formats are available:
 
 
 For example, if you would like to pass the `position` data as a signed int, you
-can pass the "i" format string as a Python keyword argument::
+can create a configured program view before creating vertex lists::
 
-    vlist = program.vertex_list(3, pyglet.gl.GL_TRIANGLES, position='i')
+    int_positions = program.get_attribute_view(position='i')
+    vlist = int_positions.vertex_list(3, pyglet.enums.GeometryMode.TRIANGLES)
 
 By appending ``"n"`` to the format string, you can also specify that the passed
 data should be "normalized" to the range ``[0, 1]``. The value is used as-is if
@@ -314,23 +352,61 @@ the data type is floating-point. If the data type is byte, short or int, the val
 is divided by the maximum value representable by that type.  For example, unsigned
 bytes are divided by 255 to get the normalised value.
 
-A common case is to use normalized unsigned bytes for the color data. Simply
-pass "Bn" as the format::
+A common case is to use normalized unsigned bytes for the color data. A program
+can have multiple format views at once::
 
-    vlist = program.vertex_list(3, pyglet.gl.GL_TRIANGLES, colors='Bn')
+    byte_colors = program.get_attribute_view(colors='Bn')
+    float_colors = program.get_attribute_view(colors='f')
+
+    # Repeated requests for the same configuration return the same view.
+    assert program.get_attribute_view(colors='Bn') is byte_colors
+
+Pyglet's built-in :class:`~pyglet.sprite.Sprite`, :class:`~pyglet.text.Label`,
+and related rendering helpers upload their ``colors`` data as four unsigned
+bytes in the range ``0``--``255``. Their default shaders therefore use a
+normalized-byte view (``get_attribute_view(colors='Bn')``), converting those
+values to the ``0``--``1`` range expected by a GLSL ``vec4``. If you provide a
+custom shader program to one of these classes, create the same view before
+passing it in::
+
+    shader = pyglet.graphics.ShaderProgram(vertex_shader, fragment_shader)
+    shader = shader.get_attribute_view(colors='Bn')
+    sprite = pyglet.sprite.Sprite(image, program=shader)
+
+Without the ``'Bn'`` view, the integer color values can be interpreted as
+unnormalized floats. Values such as ``255`` are then clamped to ``1.0``, which
+can make sprites, labels, and other colored geometry appear solid white.
+
+Views expose the same rendering and vertex-list API as shader programs, so each
+can be used where a ShaderProgram is accepted::
+
+    byte_list = byte_colors.vertex_list(3, pyglet.enums.GeometryMode.TRIANGLES,
+                                        position=positions, colors=byte_color_data)
+    float_list = float_colors.vertex_list(3, pyglet.enums.GeometryMode.TRIANGLES,
+                                          position=positions, colors=float_color_data)
+
+Views can also carry a divisor configuration without changing the original
+program or another view::
+
+    instanced = byte_colors.set_instance_attributes(translation=1)
+    vlist = instanced.vertex_list_instanced(3, pyglet.enums.GeometryMode.TRIANGLES,
+                                            position=positions,
+                                            colors=colors,
+                                            translation=translations)
 
 
 Passing Initial Data
 ~~~~~~~~~~~~~~~~~~~~
 
 Rather than setting the data *after* creation of a VertexList, you can also
-easily pass initial arrays of data on creation. You do this by passing the format
-and the data as a tuple, using a keyword argument as above. To set the position
-and color data on creation::
+pass initial arrays of data on creation. Attribute formats are configured on a
+ShaderProgram view, while vertex-list keyword arguments contain only data. To set the
+position and normalized-byte color data on creation::
 
-    vlist = program.vertex_list(3, pyglet.gl.GL_TRIANGLES,
-                                position=('f', (200, 400, 300, 350, 300, 450)),
-                                colors=('Bn', (255, 0, 0, 255,  0, 255, 0, 255,  75, 75, 255, 255),)
+    byte_colors = program.get_attribute_view(colors='Bn')
+    vlist = byte_colors.vertex_list(3, pyglet.enums.GeometryMode.TRIANGLES,
+                                position=(200, 400, 300, 350, 300, 450),
+                                colors=(255, 0, 0, 255,  0, 255, 0, 255,  75, 75, 255, 255))
 
 
 Indexed Rendering
@@ -347,14 +423,157 @@ The following example creates four vertices, and provides their positional data.
 By passing an index list of [0, 1, 2, 0, 2, 3], we creates two adjacent triangles,
 and the shared vertices are reused::
 
-    vlist = program.vertex_list_indexed(4, pyglet.gl.GL_TRIANGLES,
+    vlist = program.vertex_list_indexed(4, pyglet.enums.GeometryMode.TRIANGLES,
         [0, 1, 2, 0, 2, 3],
-        position=('i', (100, 100,  150, 100,  150, 150,  100, 150)),
+        position=(100, 100,  150, 100,  150, 150,  100, 150),
     )
 
 Note that the first argument gives the number of vertices in the data, not the
 number of indices (which is implicit on the length of the index list given in
 the third argument).
+
+.. _guide_instanced-rendering:
+
+Instanced Rendering
+~~~~~~~~~~~~~~~~~~~
+
+Instanced rendering lets you draw many copies of the same geometry with a single
+draw call by providing *per-instance* attributes (such as translation, color,
+or scale). In pyglet, configure an attribute's divisor on the shader program
+before creating an instanced vertex list, then create instances to populate the
+per-instance data.
+
+There are two instanced creation methods:
+
+* :py:meth:`~pyglet.graphics.shader.ShaderProgram.vertex_list_instanced`
+* :py:meth:`~pyglet.graphics.shader.ShaderProgram.vertex_list_instanced_indexed`
+
+Configure instanced attributes on the program before creating instanced vertex lists.
+For normal per-instance behavior, use a divisor of ``1`` (one attribute row per
+instance). The instanced attributes must exist in your shader just like regular
+attributes.
+
+At creation time, provide:
+
+* Per-vertex attributes with arrays sized ``count * components``.
+* Per-instance attributes with a single element (used for the initial instance).
+
+An instanced VertexList contains no instances by default. To add more
+instances, call ``vlist.create_instance(...)``, which returns a lightweight
+object with assignable properties for each instanced attribute. You cannot modify
+any per-vertex attributes from instanced vertex lists. Those can be modified through
+the original vertex list mesh.
+
+Each created instance adds another row to the instance buffer and increases the
+instance count used for drawing.
+
+When several independently managed instances are needed at once, use
+``vlist.create_instances(count, **attributes)``. It allocates and uploads the
+instance data in bulk, then returns a list of individual ``VertexInstance``
+objects. Each attribute must contain flattened data for all ``count``
+instances.
+
+Example (indexed instancing)::
+
+    program.set_instance_attributes(translate=1, colors=1)
+    vlist = program.vertex_list_instanced_indexed(
+        4,
+        mode=pyglet.enums.GeometryMode.TRIANGLES,
+        indices=[0, 1, 2, 0, 2, 3],
+        position=(0, 0, 0,  32, 0, 0,  32, 32, 0,  0, 32, 0),
+        translate=(0, 0, 0),
+        colors=(1, 0, 0, 1),
+        batch=batch,
+    )
+
+    # Create additional instances:
+    instance1 = vlist.create_instance(translate=(64, 0, 0), colors=(0, 1, 0, 1))
+    instance2 = vlist.create_instance(translate=(0, 64, 0), colors=(0, 0, 1, 1))
+
+If a different divisor configuration must coexist with the program's default,
+configure it on a view instead::
+
+    instanced_colors = program.get_attribute_view(colors='Bn').set_instance_attributes(colors=1)
+
+
+If you lose track of your instances or wish to get them by index, you can do so via the helper method on the mesh
+vertex list: ``instance = vlist.get_instance_by_index(0)``.
+
+Instanced vertex lists also provide helper APIs for ordering:
+
+* ``vlist.instance_count`` to inspect the number of active instances.
+* ``vlist.get_instance_index(instance)`` to get the current slot for an instance.
+* ``vlist.swap_instances(a, b)`` to swap two instances.
+* ``vlist.move_instance_to_index(instance, index)`` to move one instance to a specific index.
+* ``vlist.move_to_back([inst1, inst2, ...])`` to move a subset to lower indices (drawn earlier).
+* ``vlist.move_to_top([inst1, inst2, ...])`` to move a subset to higher indices (drawn later).
+* ``vlist.set_instance_order([...])`` to set the full exact order of all active instances.
+
+.. note:: Moving instances may involve shifting existing instances around in the buffer, which can be slow.
+
+Groups control draw order between different vertex lists, but not between
+instances inside the same instanced vertex list. Use the ordering helpers above
+when you need explicit ordering among instances of a single mesh.
+
+Instance collections
+^^^^^^^^^^^^^^^^^^^^
+
+Individual :py:class:`~pyglet.graphics.instance.VertexInstance` objects are a
+good fit when each rendered object has its own lifetime and is updated
+independently. ``create_instances`` reduces upload overhead when creating many
+of these objects, but it still returns and tracks one Python object per
+instance.
+
+Use :py:class:`~pyglet.graphics.instance.InstanceCollection` when the instance
+data is naturally managed as arrays. Common examples include glyph runs,
+particle systems, tile maps, and vegetation. A collection avoids the Python
+object cost and supports whole-range attribute updates::
+
+    translations = (0, 0, 0,  32, 0, 0,  64, 0, 0)
+    colors = (1, 0, 0, 1,  0, 1, 0, 1,  0, 0, 1, 1)
+
+    instances = vlist.create_instance_collection(
+        3,
+        capacity=128,
+        translate=translations,
+        colors=colors,
+    )
+
+    # Replace one attribute for every active instance with one upload.
+    instances.set(translate=new_translations)
+
+Individual instances can also be updated by index. Pass ``start`` and
+``count=1`` to replace attributes for one instance; attributes that are not
+provided remain unchanged::
+
+    # Change only the translation of instance 5.
+    instances.set(start=5, count=1, translate=(100, 200, 0))
+
+The same arguments update any contiguous range when the attribute data contains
+one flattened row per selected instance::
+
+    instances.set(
+        start=5,
+        count=3,
+        translate=(100, 200, 0,  110, 200, 0,  120, 200, 0),
+    )
+
+The active ``count`` is separate from reserved ``capacity``. This is useful
+when data is regenerated frequently: reducing the count renders fewer
+instances without reallocating the buffers, and later growth can reuse the
+reserved slots::
+
+    instances.set_count(2)
+    instances.set_count(80)
+    instances.set(translate=translations_for_80, colors=colors_for_80)
+
+``insert`` and ``remove`` are available for occasional structural changes,
+but they shift following instance data. Replacing ranges with ``set`` and
+changing ``count`` is preferable for frequently rebuilt collections.
+
+An instanced vertex list uses either individual ``VertexInstance`` objects or
+one ``InstanceCollection``; the two ownership models cannot be mixed on the
+same vertex list.
 
 Resource Management
 ~~~~~~~~~~~~~~~~~~~
@@ -395,7 +614,7 @@ automatically. A batch is created with no arguments::
 To use a Batch, you simply pass it as a (keyword) argument when creating
 any of pyglet's high level objects. For example::
 
-    vlist = program.vertex_list(3, pyglet.gl.GL_TRIANGLES, batch=batch)
+    vlist = program.vertex_list(3, pyglet.enums.GeometryMode.TRIANGLES, batch=batch)
     sprite = pyglet.sprite.Sprite(img, x, y, batch=batch)
 
 To draw all objects contained in the batch at once::
@@ -413,9 +632,9 @@ Before drawing in OpenGL, it's necessary to set certain state. You might need
 to activate a :py:class:`~pyglet.graphics.shader.ShaderProgram`, or bind a Texture. For example, to enable and bind
 a texture requires the following before drawing::
 
-    from pyglet.gl import *
+    from pyglet.graphics.api.gl import *
     glActiveTexture(GL_TEXTURE0)
-    glBindTexture(texture.target, texture.id)
+    glBindTexture(texture.target, texture.handle)
 
 With a :py:class:`~pyglet.graphics.Group` these state changes can be
 encapsulated and associated with the vertex lists they affect.
@@ -431,7 +650,7 @@ and `Group.unset_state` methods to perform the required state changes::
         def set_state(self):
             self.program.use()
             glActiveTexture(GL_TEXTURE0)
-            glBindTexture(self.texture.target, self.texture.id)
+            glBindTexture(self.texture.target, self.texture.handle)
 
         def unset_state(self):
             self.program.stop()
@@ -439,9 +658,9 @@ and `Group.unset_state` methods to perform the required state changes::
 An instance of this group can now be attached to vertex lists::
 
     custom_group = CustomGroup()
-    vertex_list = program.vertex_list(2, pyglet.gl.GL_POINTS, batch, custom_group,
-        position=('i', (10, 15, 30, 35)),
-        colors=('Bn', (0, 0, 255, 0, 255, 0))
+    vertex_list = program.vertex_list(2, pyglet.enums.GeometryMode.POINTS, batch, custom_group,
+        position=(10, 15, 30, 35),
+        colors=(0, 0, 255, 0, 255, 0)
     )
 
 The :py:class:`~pyglet.graphics.Batch` ensures that the appropriate
@@ -462,6 +681,31 @@ For example::
         my_shader.my_uniform = 1.0
 
 
+
+Groups
+^^^^^^
+
+In Pyglet, when a vertex list is added to a Batch, it is effectively combined
+with similar objects in a large buffer. This significantly increases performance, but also presents the question,
+how do I affect those objects separately? That is where `Groups` come into the picture.
+
+A group is a way to affect a group of objects and/or vertices rendered in a `pyglet.graphics.Batch`. It is also
+commonly used to affect the draw order in the draw list. It is the collection of states that are applied to those
+vertex lists.
+
+For example, if you have a number of vertex lists that all need texturing enabled,
+but have different bound textures. The following example demonstrates this::
+
+    class TextureBindGroup(pyglet.graphics.Group):
+        def __init__(self, texture, order=0, parent=None):
+            super().__init__(order=order, parent=parent)
+            self.add_texture(texture, binding=0)
+
+    program.vertex_list_indexed(4, pyglet.enums.GeometryMode.TRIANGLES, indices, batch, TextureBindGroup(texture1))
+    program.vertex_list_indexed(4, pyglet.enums.GeometryMode.TRIANGLES, indices, batch, TextureBindGroup(texture2))
+    program.vertex_list_indexed(4, pyglet.enums.GeometryMode.TRIANGLES, indices, batch, TextureBindGroup(texture1))
+
+
 Hierarchical state
 ^^^^^^^^^^^^^^^^^^
 
@@ -470,65 +714,131 @@ in a tree structure.  If groups **B** and **C** have parent **A**, then the
 order of ``set_state`` and ``unset_state`` calls for vertex lists in a batch
 will be::
 
-    A.set_state()
+    A.set_states()
 
-      B.set_state()
+      B.set_states()
       # Draw B vertices
-      B.unset_state()
+      B.unset_states()
 
-      C.set_state()
+      C.set_states()
       # Draw C vertices
-      C.unset_state()
+      C.unset_states()
 
-    A.unset_state()
-
-This is useful to group state changes into as few calls as possible.  For
-example, if you have a number of vertex lists that all need texturing enabled,
-but have different bound textures, you could enable and disable texturing in
-the parent group and bind each texture in the child groups.  The following
-example demonstrates this::
-
-    class TextureEnableGroup(pyglet.graphics.Group):
-        def set_state(self):
-            glActiveTexture(GL_TEXTURE0)
-
-        def unset_state(self):
-            # not necessary
+    A.unset_states()
 
 
-    texture_enable_group = TextureEnableGroup()
+Group states
+^^^^^^^^^^^^
+
+A group contains a list of :py:meth:`~pyglet.graphics.State` objects that will be applied to all
+of the vertices in that Group. This makes it easier to keep track of states within a Group and allow
+state tracking.
+
+Here is an example of how a :py:meth:`~pyglet.graphics.State` looks like under the hood::
+
+    @dataclass(frozen=True)
+    class ActiveTextureState(State):
+        binding: int
+        sets_state: bool = True
+
+        def set_state(self, ctx: OpenGLSurfaceContext) -> None:
+            ctx = pyglet.graphics.api.core.current_context
+            ctx.glActiveTexture(GL_TEXTURE0 + self.binding)
 
 
-    class TextureBindGroup(pyglet.graphics.Group):
-        def __init__(self, texture):
-            super().__init__(parent=texture_enable_group)
-            assert texture.target = GL_TEXTURE_2D
-            self.texture = texture
+    @dataclass(frozen=True)
+    class TextureState(State):
+        texture: tuple[int, int]
+        binding: int = 0
+        set_id: int = 0
 
-        def set_state(self):
-            glBindTexture(GL_TEXTURE_2D, self.texture.id)
+        parents: bool = True
+        sets_state: bool = True
 
-        def unset_state(self):
-            # not required
+        def set_state(self, ctx: OpenGLSurfaceContext) -> None:
+            ctx.glBindTexture(*self.texture)
 
-        def __eq__(self, other):
-            return (self.__class__ is other.__class__ and
-                    self.texture.id == other.texture.id and
-                    self.texture.target == other.texture.target and
-                    self.parent == other.parent)
-
-        def __hash__(self):
-            return hash((self.texture.id, self.texture.target))
-
-    program.vertex_list_indexed(4, GL_TRIANGLES, indices, batch, TextureBindGroup(texture1))
-    program.vertex_list_indexed(4, GL_TRIANGLES, indices, batch, TextureBindGroup(texture2))
-    program.vertex_list_indexed(4, GL_TRIANGLES, indices, batch, TextureBindGroup(texture1))
+        def generate_parent_states(self) -> Generator[State, None, None]:
+            yield ActiveTextureState(self.binding)
 
 
-.. note:: The ``__eq__`` method on the group allows the :py:class:`~pyglet.graphics.Batch`
-          to automatically merge the two identical ``TextureBindGroup`` instances.
-          For optimal performance, always take care to ensure your custom Groups have
-          correct ``__eq__`` and ``__hash__`` methods defined.
+
+Creating a custom state
+^^^^^^^^^^^^^^^^^^^^^^^
+
+You can create your own State object by subclassing `pyglet.graphics.State` and add it to a group
+with :py:meth:`~pyglet.graphics.Group.add_state`.
+
+If your state relies on another state (from the example above, the `ActiveTextureState`) you will implement the
+:py:meth:`~pyglet.graphics.State.generate_parent_states` method to yield the parent state.
+
+A `State` must declare their intentions on how the state will be applied with attributes on the class itself.
+
+The following attributes and their descriptions can be found on the :py:class:`~pyglet.graphics.State` class.
+
+By using a frozen dataclass, Python will automatically generate the `__eq__` and `__hash__` functions for you, so
+you can get proper render consolidation. In other words, even if they are separate objects, the statement
+`TextureState((1, 1)) == TextureState((1, 1))` will be `True`.
+
+If you do not decorate the :py:class:`~pyglet.graphics.State` as a frozen dataclass, it will be considered
+a separate object and not consolidate with other states. This can be useful when you do not want merging of groups
+such as a group that contains a camera or scissor state.
+
+Lets look at a couple examples of implementing your own state. Say you already have your Camera object (`MyCamera`)
+and wish to make separate cameras for each ParallaxGroup in your game.
+
+Your state could look like this::
+
+    @dataclass(frozen=True)
+    class CameraState(pyglet.graphics.State):
+        camera: MyCamera
+        sets_state: bool = True  # <- Must be set for set_state to be called
+        unsets_state: bool = True  # <- Must be set for unset_state to be called
+
+        def set_state(self, ctx: OpenGLSurfaceContext) -> None:
+            self.camera.set_view()  # Sets your scale/translate/view matrix
+
+        def unset_state(self, ctx: OpenGLSurfaceContext) -> None:
+            # Resets your scale/translate/view matrix
+            # This may not even be needed if every draw is setting a new view.
+            self.camera.unset_view()
+
+Then for your group::
+
+    class ParallaxGroup(Group):
+        def __init__(self, camera: MyCamera, order=0, parent=None):
+            super().init(order=order, parent=parent)
+            self.add_state(CameraState(camera))
+
+    background_camera = MyCamera()
+    middle_camera = MyCamera()
+    background_group = ParallaxGroup(background_camera)
+    middle_group = ParallaxGroup(middle_camera)
+
+You could also just use your own implementation class as a State itself.
+
+Since it does not need any consolidation, there is no need to specify it as a dataclass.::
+
+    class CameraState(State):
+        sets_state: bool = True
+        unsets_state: bool = True
+
+        def __init__(self, window: pyglet.window.Window, x: float, y: float, zoom: float=1.0):
+            self._window = window
+            self.x = x
+            self.y = y
+            self.zoom = zoom
+
+        def set_state(self, ctx: SurfaceContext):
+            view_matrix = self._window.view.translate((-self.x * self.zoom, -self.y * self.zoom, 0))
+            view_matrix = view_matrix.scale((self.zoom, self.zoom, 1))
+            self._window.view = view_matrix
+
+        def unset_state(self, ctx: SurfaceContext):
+            view_matrix = self._window.view.scale((1 / self.zoom, 1 / self.zoom, 1))
+            view_matrix = view_matrix.translate((self.x * self.zoom, self.y * self.zoom, 0))
+            self._window.view = view_matrix
+
 
 Drawing order
 ^^^^^^^^^^^^^

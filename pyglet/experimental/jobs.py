@@ -92,7 +92,7 @@ class JobExecutor:
 
         All JobExecutor workers are Daemon Threads, so it is not strictly
         necessary to call shutdown() at program termination. However, if
-        it is no longer needed, shutdown() can be called ot free up the
+        it is no longer needed, shutdown() can be called to free up the
         thread resources.
         """
         if not self._queue:

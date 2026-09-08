@@ -22,6 +22,11 @@ Classes
   :undoc-members:
   :show-inheritance:
 
+.. autoclass:: Frame
+  :members:
+  :undoc-members:
+  :show-inheritance:
+
 .. autoclass:: ToggleButton
   :members:
   :undoc-members:

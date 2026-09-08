@@ -13,7 +13,7 @@ import unittest
 
 import pyglet
 from pyglet import window
-from pyglet.gl import *
+from pyglet.graphics.api.gl import *
 
 
 @pytest.mark.requires_user_action

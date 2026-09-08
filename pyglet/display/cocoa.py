@@ -1,13 +1,18 @@
-# Note: The display mode API used here is Mac OS 10.6 only.
 from __future__ import annotations
 
-from ctypes import c_uint32, c_void_p, byref
+from ctypes import byref, c_uint32, c_void_p
 
-from .base import Canvas, Display, Screen, ScreenMode
-from pyglet.libs.darwin.cocoapy import CGDirectDisplayID, quartz, cf, ObjCClass, get_NSString
-from pyglet.libs.darwin.cocoapy import cfstring_to_string, cfarray_to_list
-from pyglet.libs.darwin import NSDeviceResolution
+from pyglet.libs.darwin.cocoapy import (
+    CGDirectDisplayID,
+    ObjCClass,
+    cf,
+    cfarray_to_list,
+    cfstring_to_string,
+    get_NSString,
+    quartz,
+)
 
+from .base import Display, Screen, ScreenMode
 
 NSScreen = ObjCClass('NSScreen')
 
@@ -19,58 +24,64 @@ class CocoaDisplay(Display):
         activeDisplays = (CGDirectDisplayID * maxDisplays)()
         count = c_uint32()
         quartz.CGGetActiveDisplayList(maxDisplays, activeDisplays, byref(count))
-        return [CocoaScreen(self, displayID) for displayID in list(activeDisplays)[:count.value]]
+        return [CocoaScreen(self, displayID) for displayID in list(activeDisplays)[: count.value]]
 
+    def get_default_screen(self) -> Screen:
+        main_id = quartz.CGMainDisplayID()
+
+        screens = self.get_screens()
+        for screen in screens:
+            if screen.get_display_id() == main_id:
+                return screen
+
+        return screens[0]
 
 class CocoaScreen(Screen):
 
     def __init__(self, display, displayID):
         bounds = quartz.CGDisplayBounds(displayID)
-        # FIX ME:
-        # Probably need to convert the origin coordinates depending on context:
-        # http://www.cocoabuilder.com/archive/cocoa/233492-ns-cg-rect-conversion-and-screen-coordinates.html
         x, y = bounds.origin.x, bounds.origin.y
         width, height = bounds.size.width, bounds.size.height
         super().__init__(display, int(x), int(y), int(width), int(height))
         self._cg_display_id = displayID
+        self._unit_number = quartz.CGDisplayUnitNumber(displayID)
         # Save the default mode so we can restore to it.
         self._default_mode = self.get_mode()
-        self._ns_screen = self.get_nsscreen()
+        self._friendly_name = "Unknown"
+        ns_screen = self.get_nsscreen()
+        if ns_screen is not None:
+            screen_name = ns_screen.localizedName()
+            if screen_name:
+                self._friendly_name = cfstring_to_string(screen_name)
 
     def get_nsscreen(self):
-        """Returns the NSScreen instance that matches our CGDirectDisplayID."""
+        """Return the current NSScreen associated with this display framebuffer."""
         # Get a list of all currently active NSScreens and then search through
         # them until we find one that matches our CGDisplayID.
         screen_array = NSScreen.screens()
         count = screen_array.count()
         for i in range(count):
             nsscreen = screen_array.objectAtIndex_(i)
-            screenInfo = nsscreen.deviceDescription()
-            displayID = screenInfo.objectForKey_(get_NSString('NSScreenNumber'))
-            displayID = displayID.intValue()
-            if displayID == self._cg_display_id:
+            screen_info = nsscreen.deviceDescription()
+            screen_number = screen_info.objectForKey_(get_NSString('NSScreenNumber'))
+            display_id = screen_number.unsignedIntValue()
+            if display_id == self._cg_display_id:
+                return nsscreen
+
+            # A GPU switch can replace a CGDirectDisplayID while the underlying
+            # framebuffer remains the same. Match its logical unit as a fallback.
+            if quartz.CGDisplayUnitNumber(display_id) == self._unit_number:
                 return nsscreen
         return None
 
-    def get_dpi(self):
-        desc = self._ns_screen.deviceDescription()
-        rsize = desc.objectForKey_(NSDeviceResolution).sizeValue()
-        return int(rsize.width)
+    def get_dpi(self) -> int:
+        # Keep pyglet's existing 96-DPI font basis until font sizing is
+        # updated to use AppKit's nominal 72 points per inch.
+        return round(96 * self.get_scale())
 
-    def get_scale(self):
-        ratio = 1.0
-        if self._ns_screen:
-            pts = self._ns_screen.frame()
-            pixels = self._ns_screen.convertRectToBacking_(pts)
-            ratio = pixels.size.width / pts.size.width
-        else:
-            print("Could not initialize NSScreen to retrieve DPI. Using default.")
-
-        return ratio
-
-    def get_matching_configs(self, template):
-        canvas = CocoaCanvas(self.display, self, None)
-        return template.match(canvas)
+    def get_scale(self) -> float:
+        ns_screen = self.get_nsscreen()
+        return ns_screen.backingScaleFactor() if ns_screen is not None else 1.0
 
     def get_modes(self):
         cgmodes = c_void_p(quartz.CGDisplayCopyAllDisplayModes(self._cg_display_id, None))
@@ -86,7 +97,6 @@ class CocoaScreen(Screen):
 
     def set_mode(self, mode):
         assert mode.screen is self
-        quartz.CGDisplayCapture(self._cg_display_id)
         quartz.CGDisplaySetDisplayMode(self._cg_display_id, mode.cgmode, None)
         self.width = mode.width
         self.height = mode.height
@@ -99,14 +109,19 @@ class CocoaScreen(Screen):
             # Already in default mode
             return
         quartz.CGDisplaySetDisplayMode(self._cg_display_id, self._default_mode.cgmode, None)
-        quartz.CGDisplayRelease(self._cg_display_id)
+        self.width = self._default_mode.width
+        self.height = self._default_mode.height
 
-    def capture_display(self):
-        quartz.CGDisplayCapture(self._cg_display_id)
+    def get_display_id(self) -> str:
+        """Get a unique identifier for the screen."""
+        return self._cg_display_id
 
-    def release_display(self):
-        quartz.CGDisplayRelease(self._cg_display_id)
+    def get_monitor_name(self) -> str:
+        """Get a friendly name, if available.
 
+        For example, the make and model of the screen: Dell S2716DG
+        """
+        return self._friendly_name
 
 class CocoaScreenMode(ScreenMode):
 
@@ -137,11 +152,3 @@ class CocoaScreenMode(ScreenMode):
         if pixelEncoding == IO16BitDirectPixels: return 16
         if pixelEncoding == IO32BitDirectPixels: return 32
         return 0
-
-
-class CocoaCanvas(Canvas):
-
-    def __init__(self, display, screen, nsview):
-        super().__init__(display)
-        self.screen = screen
-        self.nsview = nsview

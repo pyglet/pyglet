@@ -1,6 +1,6 @@
-"""Wrapper for include/libavformat/avformat.h
-"""
-from ctypes import c_int, c_int64
+"""Wrapper for include/libavformat/avformat.h."""
+from __future__ import annotations
+from ctypes import byref, c_int, c_int64
 from ctypes import c_uint8, c_uint, c_double, c_ubyte, c_size_t, c_char, c_char_p
 from ctypes import c_void_p, POINTER, CFUNCTYPE, Structure, Union
 
@@ -14,8 +14,8 @@ _debug = debug_print('debug_media')
 
 avformat = pyglet.lib.load_library(
     'avformat',
-    win32=('avformat-61', 'avformat-60', 'avformat-59', 'avformat-58'),
-    darwin=('avformat.61', 'avformat.60', 'avformat.59', 'avformat.58')
+    win32=('avformat-62', 'avformat-61', 'avformat-60', 'avformat-59', 'avformat-58'),
+    darwin=('avformat.62', 'avformat.61', 'avformat.60', 'avformat.59', 'avformat.58')
 )
 
 avformat.avformat_version.restype = c_int
@@ -31,6 +31,8 @@ AVSEEK_FLAG_FRAME = 8  # ///< seeking based on frame number
 AVSEEK_SIZE = 0x10000
 AVFMT_FLAG_CUSTOM_IO = 0x0080
 
+AVERROR_EOF = -541478725  # -MKTAG('E', 'O', 'F', ' ')
+
 MAX_REORDER_DELAY = 16
 
 
@@ -38,19 +40,42 @@ class AVPacketList(Structure):
     pass
 
 
+
 class AVInputFormat(Structure):
-    _fields_ = [
-        ('name', c_char_p)
+    _fields_ = [  # noqa: RUF012
+        ("name", c_char_p),
+        ("long_name", c_char_p),
+        ("flags", c_int),
+        ("extensions", c_char_p),
+        ("mime_type", c_char_p),
+    ]
+
+class AVOutputFormat(Structure):
+    _fields_ = [  # noqa: RUF012
+        ("name", c_char_p),
+        ("long_name", c_char_p),
+        ("mime_type", c_char_p),
+        ("extensions", c_char_p),
     ]
 
 
-class AVOutputFormat(Structure):
-    pass
-
+AVCodecContext = libavcodec.AVCodecContext
+AVPacketSideData = libavcodec.AVPacketSideData
+AVPacket = libavcodec.AVPacket
+AVCodecParserContext = libavcodec.AVCodecParserContext
+AVCodecParameters = libavcodec.AVCodecParameters
+AVRational = libavutil.AVRational
+AVDictionary = libavutil.AVDictionary
+AVFrame = libavutil.AVFrame
+AVClass = libavutil.AVClass
+AVCodec = libavcodec.AVCodec
 
 class AVIOContext(Structure):
-    pass
-
+    _fields_ = [
+        ('av_class', POINTER(AVClass)),
+        ('buffer', POINTER(c_char)),
+        ('buffer_size', c_int),  # Rest not listed/used
+    ]
 
 class AVIndexEntry(Structure):
     pass
@@ -100,21 +125,9 @@ class AVFrac(Structure):
     ]
 
 
-AVCodecContext = libavcodec.AVCodecContext
-AVPacketSideData = libavcodec.AVPacketSideData
-AVPacket = libavcodec.AVPacket
-AVCodecParserContext = libavcodec.AVCodecParserContext
-AVCodecParameters = libavcodec.AVCodecParameters
-AVRational = libavutil.AVRational
-AVDictionary = libavutil.AVDictionary
-AVFrame = libavutil.AVFrame
-AVClass = libavutil.AVClass
-AVCodec = libavcodec.AVCodec
-
-
-
 class AVStream(Structure):
     pass
+
 
 AVStream_Fields = [
         ('av_class', POINTER(AVClass)),
@@ -132,8 +145,8 @@ AVStream_Fields = [
         ('metadata', POINTER(AVDictionary)),
         ('avg_frame_rate', AVRational),
         ('attached_pic', AVPacket),
-        ('side_data', POINTER(AVPacketSideData)),
-        ('nb_side_data', c_int),
+        ('side_data', POINTER(AVPacketSideData)),  # Deprecated in 60. Removed in 62.
+        ('nb_side_data', c_int),  # Deprecated in 60. Removed in 62.
         ('event_flags', c_int),
         ('r_frame_rate', AVRational),
         ('recommended_encoder_configuration', c_char_p),  # Deprecated. Removed in 59.
@@ -142,7 +155,8 @@ AVStream_Fields = [
         ('pts_wrap_bits', c_int),
     ]
 
-compat.add_version_changes('avformat', 58, AVStream, AVStream_Fields, removals=('av_class',))
+compat.add_version_changes('avformat', 58, AVStream, AVStream_Fields,
+                           removals=('av_class',))
 
 compat.add_version_changes('avformat', 59, AVStream, AVStream_Fields,
                            removals=('av_class', 'codec', 'recommended_encoder_configuration', 'info'))
@@ -151,6 +165,10 @@ for compat_ver in (60, 61):
     compat.add_version_changes('avformat', compat_ver, AVStream, AVStream_Fields,
                                removals=('codec', 'recommended_encoder_configuration', 'info'),
                                repositions=(compat.Reposition("codecpar", "id"),))
+
+compat.add_version_changes('avformat', 62, AVStream, AVStream_Fields,
+                           removals=('codec', 'recommended_encoder_configuration', 'info', 'side_data', 'nb_side_data'),
+                           repositions=(compat.Reposition("codecpar", "id"),))
 
 
 class AVProgram(Structure):
@@ -318,8 +336,8 @@ if avformat_version >= 61:
         ('io_close2', CFUNCTYPE(c_int, POINTER(AVFormatContext), POINTER(AVIOContext)))  # Added in 59.
     ]
 
-    compat.add_version_changes('avformat', 61, AVFormatContext, AVFormatContext_Fields, removals=None)
-
+    for compat_ver in (61, 62):
+        compat.add_version_changes('avformat', compat_ver, AVFormatContext, AVFormatContext_Fields, removals=None)
 
 else:
     AVFormatContext_Fields = [
@@ -410,9 +428,10 @@ else:
     compat.add_version_changes('avformat', 58, AVFormatContext, AVFormatContext_Fields,
                                removals=('skip_estimate_duration_from_pts', 'max_probe_packets', 'io_close2'))
 
-    for compat_ver in (59, 60):
+    for compat_ver in (59, 60, 61, 62):
         compat.add_version_changes('avformat', compat_ver, AVFormatContext, AVFormatContext_Fields,
                                    removals=('filename', 'internal'))
+
 
 avformat.av_find_input_format.restype = c_int
 avformat.av_find_input_format.argtypes = [c_int]
@@ -455,6 +474,31 @@ avformat.avformat_alloc_context.argtypes = []
 avformat.avformat_free_context.restype = c_void_p
 avformat.avformat_free_context.argtypes = [POINTER(AVFormatContext)]
 
+avformat.avio_context_free.restype = c_void_p
+avformat.avio_context_free.argtypes = [c_void_p]
+
+avformat.av_demuxer_iterate.argtypes = [POINTER(c_void_p)]
+avformat.av_demuxer_iterate.restype = POINTER(AVInputFormat)
+
+
+def _split_extensions(ext_bytes: bytes) -> list[str]:
+    if not ext_bytes:
+        return []
+    return [e.strip().lower() for e in ext_bytes.decode("utf-8").split(",") if e.strip()]
+
+
+def get_input_extensions() -> list[str]:
+    opaque = c_void_p(None)
+    result = set()
+
+    while True:
+        fmt = avformat.av_demuxer_iterate(byref(opaque))
+        if not fmt:
+            break
+        result.update(_split_extensions(fmt.contents.extensions))
+
+    return sorted(result)
+
 __all__ = [
     'avformat',
     'AVSEEK_FLAG_BACKWARD',
@@ -464,4 +508,5 @@ __all__ = [
     'AVFormatContext',
     'AVCodecContext',
     'avformat_version',
+    'get_input_extensions',
 ]

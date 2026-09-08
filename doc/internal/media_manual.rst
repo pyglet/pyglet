@@ -47,45 +47,52 @@ never know what type of packet we will get next from the stream. It could be a
 packet of the same type as the filled up queue, in  which case we would not be
 able to store the additional packet.
 
-Whenever a :class:`~pyglet.media.player.Player` - a consumer of a source -
+Whenever a :class:`~pyglet.media.player.AudioPlayer` or
+:class:`~pyglet.media.player.VideoPlayer` - a consumer of a source -
 asks for audio data or a video frame, the
 :class:`~pyglet.media.Source` will pop the next packet from the
 appropriate queue, decode the data, and return the result to the Player. If
 this results in available space in both audio and video queues, it will read
 additional packets until one of the queues is full again.
 
-Player
-------
+Players
+-------
 
 Found in media/player.py
 
-The :class:`~pyglet.media.player.Player` is the main object that drives the
-source.  It maintains an internal sequence of sources or iterator of sources
-that it can play sequentially. Its responsibilities are to play, pause and seek
+There are two classes that drive media playback. :class:`~pyglet.media.player.AudioPlayer` and
+:class:`~pyglet.media.VideoPlayer`.  They maintain an internal sequence of sources or iterator of sources
+that it can play sequentially. Their responsibilities are to play, pause and seek
 into the source.
 
-If the source contains audio, the :class:`~pyglet.media.player.Player` will
-instantiate an ``AudioPlayer`` by asking the ``AudioDriver`` to create an
+Both the video and audio player support audio, while the video player only supports
+video playback. If the source contains audio, the pyglet player will
+instantiate a driver specific ``AudioPlayer`` by asking the ``AudioDriver`` to create an
 appropriate ``AudioPlayer`` for the given platform. The ``AudioDriver`` is a
 singleton created according to which drivers are available. Currently
 supported sound drivers are: DirectSound, OpenAL, PulseAudio and XAudio2.
 A silent audio driver that consumes, but does not play back any audio is also
 available.
 
-If the source contains video, the Player has a
-:meth:`~pyglet.media.Player.get_texture` method returning the current
-video frame.
+The public player methods and properties are not thread safe, and should be
+restricted to only be run in the event-loop thread; normally the main thread. Calls
+from other application threads must be posted onto that thread, for example with
+``EventDispatcher.post_event``.
+
+If your source contains video, and you are using a :class:`~pyglet.media.VideoPlayer`
+then the player will contain a :attr:`~pyglet.media.player.VideoPlayer.texture`
+property returning the current video frame.
 
 The player has an internal `master clock` which is used to synchronize the
 video and the audio. The audio synchronization is delegated to the
 ``AudioPlayer``. More info found below. The video synchronization is made by
 asking the :class:`~pyglet.media.Source` for the next video timestamp.
-The :class:`~pyglet.media.player.Player` then schedules on pyglet event loop a
-call to its :meth:`~pyglet.media.Player.update_texture` with a delay
-equals to the difference between the next video timestamp and the master clock
+The player then schedules on pyglet event loop a
+call to its :meth:`~pyglet.media.player.VideoPlayer.update_texture` with a delay
+equal to the difference between the next video timestamp and the master clock
 current time.
 
-When :meth:`~pyglet.media.Player.update_texture` is called, we will
+When :meth:`~pyglet.media.player.VideoPlayer.update_texture` is called, we will
 check if the actual master clock time is not too late compared to the video
 timestamp. This could happen if the loop was very busy and the function could
 not be called on time. In this case, the frame would be skipped until we find
@@ -119,7 +126,7 @@ If any single measurement exceeds 280ms, an extreme desync that is noticeable
 in context of the app is assumed. If the ``AudioPlayer`` is running behind the
 master clock, all of this audio data is skipped and the measurements are reset.
 When running *ahead* by more than 280ms, nothing is done but the standard
-stretchin g of 12ms at a time.
+stretching of 12ms at a time.
 
 .. _audioplayer-play:
 
@@ -177,15 +184,17 @@ invoked through :ref:`audioplayer-prefill_audio`. As it is called from a
 thread, implementing it error-free is difficult.
 
 This method is responsible for refilling audio data if needed and often for
-dispatching the :meth:`~pyglet.media.player.Player.on_eos` event.
+dispatching the :meth:`~pyglet.media.player.AudioPlayer.on_eos` event.
 
-Implementing this method comes with a lot of pitfalls. The following are free
-to happen in other threads while the method is running:
+Implementing this method comes with a lot of pitfalls. Although public Player
+operations are confined to the event-loop thread, they can run concurrently
+with this worker method. Native audio callbacks may also run on their own
+threads. The following can therefore happen while the method is running:
 
 The player is paused or unpaused.
     Audio backends usually accept data for non-playing streams/sources/etc.,
-    so this is not too much of a problem. Realistically, this won't happen, all
-    current implementations contain a call to
+    so this is not too much of a problem. All current implementations contain
+    a call to
     ``self.driver.worker.remove/add(self)`` snippet in their
     :ref:`audioplayer-play`/:ref:`audioplayer-stop` implementations.
     That call will return only once the ``PlayerWorkerThread`` is done with a
@@ -213,7 +222,6 @@ In pseudocode, the general way this method is implemented is: ::
 
     def work():
         update_play_cursor()
-        dispatch_media_events()
         if not source_exhausted:
             if play_cursor_too_close_to_write_cursor():
                 get_and_submit_new_audio_data()
@@ -232,7 +240,6 @@ tends to be different: ::
 
     def work():
         update_play_cursor()
-        dispatch_media_events()
         if not source_exhausted:
             if play_cursor_too_close_to_write_cursor():
                 get_and_submit_new_audio_data()
@@ -249,7 +256,7 @@ tends to be different: ::
         else:
             has_underrun = True
 
-High care must be taken to protect appropiate sections (any variables and
+High care must be taken to protect appropriate sections (any variables and
 buffers which get accessed by both callbacks and the work method) with a lock,
 otherwise the method is open to extremely unlucky issues where the callback
 is unscheduled in favor of the work method or vice versa, which may cause one
@@ -292,36 +299,36 @@ The ``AudioDriver`` provides an ``AudioListener``, which is used to place
 a listener in the same space as each ``AudioPlayer``, enabling positional
 audio.
 
-Normal operation of the ``Player``
-----------------------------------
+Normal operation of the ``AudioPlayer``
+---------------------------------------
 
 The client code instantiates a media player this way::
 
-    player = pyglet.media.Player()
-    source = pyglet.media.load(filename)
+    player = pyglet.media.AudioPlayer()
+    source = pyglet.media.load_audio(filename)
     player.queue(source)
     player.play()
 
 When the client code runs ``player.play()``:
 
-The :class:`~pyglet.media.player.Player` will check if there is an audio track
+The :class:`~pyglet.media.player.AudioPlayer` will check if there is an audio track
 on the media. If so it will instantiate an ``AudioPlayer`` appropriate for the
 available sound driver on the platform. It will create an empty
-:class:`~pyglet.image.Texture` if the media contains video frames and will
-schedule its :meth:`~pyglet.media.Player.update_texture` to be called
+:class:`~pyglet.graphics.texture.Texture` if the media contains video frames and will
+schedule its :meth:`~pyglet.media.player.VideoPlayer.update_texture` to be called
 immediately. Finally it will start the master clock.
 
 The ``AudioPlayer`` will start playing
 :ref:`as described above <audioplayer-play>`.
 
-When the :meth:`~pyglet.media.Player.update_texture` method is called,
+When the :meth:`~pyglet.media.player.VideoPlayer.update_texture` method is called,
 the next video timestamp will be checked with the master clock. We allow a
 delay up to the frame duration. If the master clock is beyond that time, the
 frame will be skipped. We will check the following frames for its timestamp
 until we find the appropriate frame for the master clock time. We will set the
-:attr:`~pyglet.media.player.Player.texture` to the new video frame. We will
+:attr:`~pyglet.media.player.VideoPlayer.texture` to the new video frame. We will
 check for the next video frame timestamp and we will schedule a new call to
-:meth:`~pyglet.media.Player.update_texture` with a delay equals to the
+:meth:`~pyglet.media.player.VideoPlayer.update_texture` with a delay equals to the
 difference between the next video timestamps and the master clock time.
 
 Helpful tools

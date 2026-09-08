@@ -101,7 +101,7 @@ for input indefinitely.
 Creating a Custom Event Loop
 ----------------------------
 
-Many windowing toolkits requie the application developer to write their own
+Many windowing toolkits require the application developer to write their own
 event loop. This is also possible in pyglet, but is usually just an inconvenience
 compared to :py:func:`pyglet.app.run`. It can be necessary in some situations,
 such as when combining pyglet with other toolkits, but is strongly discouraged
@@ -120,14 +120,13 @@ for the following reasons:
 With that out of the way, a manual event loop usually has the following form::
 
     while True:
-        pyglet.clock.tick()
+        dt = pyglet.clock.tick()
         pyglet.app.platform_event_loop.step(timeout)
 
         for window in pyglet.app.windows:
             window.switch_to()
             window.dispatch_events()
-            window.dispatch_event('on_draw')
-            window.flip()
+            window.draw(dt)
 
 The call to :py:func:`pyglet.clock.tick` is required for ensuring scheduled
 functions are called, including the internal data pump functions for playing

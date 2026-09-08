@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from ctypes import memmove, byref, c_uint32, sizeof, cast, c_void_p, create_string_buffer, POINTER, c_char, \
     c_long
 
@@ -52,9 +54,11 @@ class CoreAudioSource(StreamingSource):
         if file is None:
             fn_str = CFSTR(filename)
             url_ref = cf.CFURLCreateWithFileSystemPath(None, fn_str, kCFURLPOSIXPathStyle, False)
-
-            err_check(ca.ExtAudioFileOpenURL(url_ref, byref(audref)))
-            cf.CFRelease(fn_str)
+            try:
+                err_check(ca.ExtAudioFileOpenURL(url_ref, byref(audref)))
+            finally:
+                cf.CFRelease(url_ref)
+                cf.CFRelease(fn_str)
         else:
             self.file_obj = MemoryFileObject(file)
 
@@ -63,7 +67,7 @@ class CoreAudioSource(StreamingSource):
             err_check(ca.AudioFileOpenWithCallbacks(
                 None, self.file_obj.read_func, None, self.file_obj.getsize_func, None,
                 0,
-                byref(self._audfile))
+                byref(self._audfile)),
             )
 
             err_check(ca.ExtAudioFileWrapAudioFileID(self._audfile, False, byref(audref)))
@@ -83,7 +87,7 @@ class CoreAudioSource(StreamingSource):
             self._audref,
             kExtAudioFileProperty_ClientDataFormat,
             sizeof(self.convert_desc),
-            byref(self.convert_desc)
+            byref(self.convert_desc),
         ))
 
         length = c_long()
@@ -93,7 +97,7 @@ class CoreAudioSource(StreamingSource):
             self._audref,
             kExtAudioFileProperty_FileLengthFrames,
             byref(size),
-            byref(length)
+            byref(length),
         ))
 
         self.audio_format = AudioFormat(channels=self.convert_desc.mChannelsPerFrame,
@@ -131,7 +135,7 @@ class CoreAudioSource(StreamingSource):
             err_check(ca.ExtAudioFileDispose(self._audref))
             self._audref = None
 
-    def get_audio_data(self, num_bytes, compensation_time=0.0):
+    def get_audio_data(self, num_bytes):
         num_frames = c_uint32(num_bytes // self.convert_desc.mBytesPerFrame)
 
         if not self._bl:
@@ -151,7 +155,7 @@ class CoreAudioSource(StreamingSource):
 
             data = cast(self._bl.mBuffers[0].mData, POINTER(c_char))
             slice = data[:size]
-            return AudioData(slice, size, 0.0, size / self.audio_format.sample_rate, [])
+            return AudioData(slice, size)
 
         return None
 
@@ -168,14 +172,13 @@ class CoreAudioSource(StreamingSource):
 
 class CoreAudioDecoder(MediaDecoder):
 
-    def get_file_extensions(self):
+    def get_file_extensions(self) -> tuple[str, ...]:
         return '.aac', '.ac3', '.aif', '.aiff', '.aifc', '.caf', '.mp3', '.mp4', '.m4a', '.snd', '.au', '.sd2', '.wav'
 
-    def decode(self, filename, file, streaming=True):
+    def decode(self, filename, file, streaming=True, **kwargs):
         if streaming:
             return CoreAudioSource(filename, file)
-        else:
-            return StaticSource(CoreAudioSource(filename, file))
+        return StaticSource(CoreAudioSource(filename, file))
 
 
 def get_decoders():

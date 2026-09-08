@@ -1,4 +1,4 @@
-"""Experimental networking
+"""Experimental networking.
 
 This module contains experiments in making user-friendly Server and Client
 classes that integrate with pyglet's event system. These are very basic,
@@ -56,7 +56,7 @@ _debug_net = debug_print('debug_net')
 
 
 class Client(_EventDispatcher):
-    def __init__(self, address, port):
+    def __init__(self, address: str, port: int):
         """Create a Client connection to a Server."""
         self._socket = _socket.create_connection((address, port))
         self._address = address
@@ -70,7 +70,7 @@ class Client(_EventDispatcher):
 
         self._sentinal = object()  # poison pill
 
-    def close(self):
+    def close(self) -> None:
         """Close the connection."""
         self._queue.put(self._sentinal)
         self._socket.shutdown(1)
@@ -78,15 +78,15 @@ class Client(_EventDispatcher):
             self._terminate.set()
             self.dispatch_event('on_disconnect', self)
 
-    def send(self, message):
+    def send(self, message: bytes) -> None:
         """Queue a message to send.
 
         Put a string of bytes into the queue to send.
         raises a `ConnectionError` if the connection
         has been closed or dropped.
 
-       :Parameters:
-            `message` : bytes
+        Args:
+            message:
                 A string of bytes to send.
         """
         if self._terminate.is_set():

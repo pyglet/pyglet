@@ -42,7 +42,7 @@ This widget can also take an optional image for 'hover', but we'll skip that for
     )
 
 We now have a PushButton widget, but it won't yet do anything. It will be drawn on
-screen, however, if included as part of a :py:class:`~pyglet.graphics.Batch` as shown
+screen, however, if included as part of a :py:class:`~pyglet.graphics.draw.Batch` as shown
 above. In order to get the widget to react to the mouse, we need to set it to handle
 events dispatched by the Window::
 
@@ -100,7 +100,7 @@ If a Frame is introduced, the following occurs:
 2. Set the Frame as a handler for Window events.
 3. Make one or more Widget instances.
 4. Add your widget instances to the Frame.
-5. Only Widgets near the mouse pointer will recieve Window events.
+5. Only Widgets near the mouse pointer will receive Window events.
 
 This works quite well for most cases, but has some limitations. When using the
 TextEntry widget, for instance, the widget may become unresponsive if you use

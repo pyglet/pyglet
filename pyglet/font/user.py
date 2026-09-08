@@ -61,6 +61,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, ClassVar, Protocol
 
 import pyglet
+from pyglet.enums import Stretch, Style, Weight
 from pyglet.font import base
 
 SCALING_ENABLED = False
@@ -85,7 +86,7 @@ class UserDefinedGlyphRenderer(base.GlyphRenderer):
     def render(self, image_data: ImageData) -> Glyph:
         if self._font._scaling:  # noqa: SLF001
             image_original = Image.frombytes("RGBA", (image_data.width, image_data.height),
-                                             image_data.get_image_data().get_data("RGBA"))
+                                             image_data.get_image_data().get_bytes("RGBA"))
             scale_ratio = self._font.size / self._font._base_size
             image_resized = image_original.resize((int(image_data.width * scale_ratio),
                                                    int(image_data.height * scale_ratio)), Resampling.NEAREST)
@@ -108,7 +109,8 @@ class UserDefinedFontBase(base.Font):
 
     def __init__(
             self, name: str, default_char: str, size: int, ascent: int | None = None, descent: int | None = None,
-            weight: str = "normal", italic: bool = False, stretch: bool = False, dpi: int = 96, locale: str | None = None,
+            weight: Weight | str = Weight.NORMAL, style: Style | str = Style.NORMAL,
+            stretch: Stretch | str = Stretch.NORMAL, dpi: int = 96, locale: str | None = None,
     ) -> None:
         """Initialize a user defined font.
 
@@ -126,7 +128,7 @@ class UserDefinedFontBase(base.Font):
                 Maximum descent below the baseline, in pixels. Usually negative.
             weight:
                 The font weight, as a string. Defaults to "normal".
-            italic:
+            style:
                 If True, this font will be used when ``italic`` is enabled for the font name.
             stretch:
                 If True, this font will be used when ``stretch`` is enabled for the font name.
@@ -136,16 +138,10 @@ class UserDefinedFontBase(base.Font):
             locale:
                 Used to specify the locale of this font.
         """
-        super().__init__()
-        self._name = name
+        super().__init__(name, size, weight, style, stretch, dpi)
         self.default_char = default_char
         self.ascent = ascent
         self.descent = descent
-        self.size = size
-        self.weight = weight
-        self.italic = italic
-        self.stretch = stretch
-        self.dpi = dpi
         self.locale = locale
 
         self._base_size = 0
@@ -171,6 +167,17 @@ class UserDefinedFontBase(base.Font):
         if not self._glyph_renderer:
             self._glyph_renderer = self.glyph_renderer_class(self)
 
+    def get_text_size(self, text: str) -> tuple[int, int]:
+        """Return the bounds of the rendered user-font glyphs."""
+        if not text:
+            return 0, 0
+
+        glyphs, _ = self.get_glyphs(text, shaping=False)
+        width = sum(glyph.advance for glyph in glyphs)
+        top = max(glyph.vertices[3] for glyph in glyphs)
+        bottom = min(glyph.vertices[1] for glyph in glyphs)
+        return width, top - bottom
+
 class UserDefinedFontException(Exception):  # noqa: N818
     """An exception related to user font creation."""
 
@@ -188,8 +195,10 @@ class UserDefinedMappingFont(UserDefinedFontBase):
     _glyph_renderer: UserDefinedGlyphRenderer
 
     def __init__(self, name: str, default_char: str, size: int, mappings: DictLikeObject,
-            ascent: int | None = None, descent: int | None = None, weight: str = "normal", italic: bool = False,
-            stretch: bool = False, dpi: int = 96, locale: str | None = None) -> None:
+            ascent: int | None = None, descent: int | None = None,
+            weight: Weight | str = Weight.NORMAL, style: Style | str = Style.NORMAL,
+            stretch: Stretch | str = Stretch.NORMAL,
+            dpi: int = 96, locale: str | None = None) -> None:
         """Initialize the default parameters of your font.
 
         Args:
@@ -201,7 +210,7 @@ class UserDefinedMappingFont(UserDefinedFontBase):
                 Font size. Should be in pixels. This value will affect scaling if enabled.
             mappings:
                 A dict or dict-like object with a ``get`` function.
-                The ``get`` function must take a string character, and output :py:class:`~pyglet.iamge.ImageData` if
+                The ``get`` function must take a string character, and output :py:class:`~pyglet.image.ImageData` if
                 found. It also must return ``None`` if no character is found.
             ascent:
                 Maximum ascent above the baseline, in pixels. If None, the image height is used.
@@ -209,10 +218,10 @@ class UserDefinedMappingFont(UserDefinedFontBase):
                 Maximum descent below the baseline, in pixels. Usually negative.
             weight:
                 The font weight, as a string. Defaults to "normal".
-            italic:
-                If ``True``, this font will be used when ``italic`` is enabled for the font name.
+            style:
+                The font style, as a string. Defaults to "normal".
             stretch:
-                If ``True``, this font will be used when ``stretch`` is enabled for the font name.
+                The font stretch, as a string. Defaults to "normal".
             dpi:
                 The assumed resolution of the display device, for the purposes of determining the pixel size of the
                 font. Use a default of 96 for standard sizing.
@@ -231,7 +240,7 @@ class UserDefinedMappingFont(UserDefinedFontBase):
             if descent is None:
                 descent = 0
 
-        super().__init__(name, default_char, size, ascent, descent, weight, italic, stretch, dpi, locale)
+        super().__init__(name, default_char, size, ascent, descent, weight, style, stretch, dpi, locale)
 
     def enable_scaling(self, base_size: int) -> None:
         """Enables scaling the font size.
@@ -241,11 +250,11 @@ class UserDefinedMappingFont(UserDefinedFontBase):
                 The base size is used to calculate the ratio between new sizes and the original.
         """
         super().enable_scaling(base_size)
-        glyphs, offsets = self.get_glyphs(self.default_char)
+        glyphs, offsets = self.get_glyphs(self.default_char, False)
         self.ascent = glyphs[0].height
         self.descent = 0
 
-    def get_glyphs(self, text: str) -> tuple[list[Glyph], list[GlyphPosition]]:
+    def get_glyphs(self, text: str, shaping: bool = False) -> tuple[list[Glyph], list[GlyphPosition]]:
         """Create and return a list of Glyphs for `text`.
 
         If any characters do not have a known glyph representation in this font, a substitution will be made with
@@ -269,6 +278,10 @@ class UserDefinedMappingFont(UserDefinedFontBase):
             offsets.append(base.GlyphPosition(0, 0, 0, 0))
         return glyphs, offsets
 
+    def has_character(self, character: str) -> bool:
+        super().has_character(character)
+        return self.mappings.get(character) is not None
+
 
 def get_scaled_user_font(font_base: UserDefinedMappingFont, size: int) -> UserDefinedMappingFont:
     """This function will return a new font instance which can scale it's size based off the original base font.
@@ -284,7 +297,7 @@ def get_scaled_user_font(font_base: UserDefinedMappingFont, size: int) -> UserDe
             The new font size. This will be scaled based on the ratio between the base size and the new size.
     """
     new_font = UserDefinedMappingFont(font_base.name, font_base.default_char, size, font_base.mappings,
-                                      font_base.ascent, font_base.descent, font_base.weight, font_base.italic,
+                                      font_base.ascent, font_base.descent, font_base.weight, font_base.style,
                                       font_base.stretch, font_base.dpi, font_base.locale)
 
     new_font.enable_scaling(font_base.size)

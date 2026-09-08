@@ -1,0 +1,12 @@
+[tool.pyglet.web]
+entrypoint = "example.py"
+output = "dist"
+sources = ["example.py"]
+resources = ["pyglet.png"]
+title = "Pyglet Pyodide Example"
+
+# Fonts live under web/ and are available to pyglet before example.py starts.
+# [[tool.pyglet.web.fonts]]
+# name = "My Font"
+# path = "fonts/my-font.woff2"
+# weight = "400"
