@@ -68,7 +68,8 @@ class PipeWireDriver(AbstractAudioDriver):
         self.context = self.mainloop.create_context()
         self.context.connect()
 
-    def dump_debug_info(self):
+    @staticmethod
+    def dump_debug_info():
         print('Client version: ', lib.pw_get_library_version())
 
     def delete(self) -> None:

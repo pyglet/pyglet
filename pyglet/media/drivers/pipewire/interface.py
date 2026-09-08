@@ -14,6 +14,7 @@ import weakref
 from ctypes import POINTER, byref, sizeof
 from typing import Callable, Optional, TYPE_CHECKING
 
+from pyglet.media.drivers.base import AbstractAudioPlayer
 from pyglet.util import debug_print
 from pyglet.media.drivers.pipewire import lib_pipewire as lib
 from pyglet.media.exceptions import MediaException
@@ -154,7 +155,7 @@ class PipeWireContext:
     def is_connected(self) -> bool:
         return self._core is not None
 
-    def create_stream(self, audio_format: 'AudioFormat') -> 'PipeWireStream':
+    def create_stream(self, audio_format: AudioFormat) -> PipeWireStream:
         """Create a new playback stream for the given audio format."""
         assert self._core is not None
         return PipeWireStream(self, audio_format)
@@ -184,10 +185,8 @@ class PipeWireStream:
                    lib.PW_STREAM_STATE_PAUSED: 'Paused',
                    lib.PW_STREAM_STATE_STREAMING: 'Streaming'}
 
-    def __init__(self, context: PipeWireContext, audio_format: 'AudioFormat') -> None:
-        self.context = weakref.ref(context)
-        self.mainloop = context.mainloop
-
+    def __init__(self, context: PipeWireContext, audio_format: AudioFormat) -> None:
+        self.context = weakref.proxy(context)
         self.state = lib.PW_STREAM_STATE_UNCONNECTED
 
         try:
@@ -210,7 +209,7 @@ class PipeWireStream:
             'node.name': stream_name,
         })
 
-        with self.mainloop.lock:
+        with self.context.mainloop.lock:
             self._stream = lib.pw_stream_new(context._core, stream_name.encode('utf-8'), self._properties)
             if not self._stream:
                 raise PipeWireException('Could not create PipeWire stream.')
@@ -265,7 +264,7 @@ class PipeWireStream:
         callback = self._state_callback
         if callback is not None:
             callback(old, state, error)
-        self.mainloop.signal()
+        self.context.mainloop.signal()
 
     def _on_process(self, _data) -> None:
         callback = self._process_callback
@@ -312,7 +311,7 @@ class PipeWireStream:
 
         flags = (lib.PW_STREAM_FLAG_AUTOCONNECT | lib.PW_STREAM_FLAG_INACTIVE | lib.PW_STREAM_FLAG_MAP_BUFFERS)
 
-        with self.mainloop.lock:
+        with self.context.mainloop.lock:
             result = lib.pw_stream_connect(self._stream, lib.PW_DIRECTION_OUTPUT, lib.PW_ID_ANY, flags, self._params, 1)
             if result < 0:
                 raise PipeWireException(f'Could not connect PipeWire stream: {result}')
@@ -327,7 +326,7 @@ class PipeWireStream:
                 return
             if self.state == lib.PW_STREAM_STATE_ERROR:
                 raise PipeWireException('PipeWire stream entered the error state.')
-            result = self.mainloop.timed_wait(1)
+            result = self.context.mainloop.timed_wait(1)
             if result != 0:
                 timeout -= 1
                 if timeout <= 0:
@@ -342,7 +341,7 @@ class PipeWireStream:
         assert _debug('PipeWireStream: Deleting')
         # pw_stream_destroy fully disconnects and tears down the stream,
         # including its listeners.
-        with self.mainloop.lock:
+        with self.context.mainloop.lock:
             lib.pw_stream_destroy(self._stream)
         self._stream = None
 
