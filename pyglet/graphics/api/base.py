@@ -13,7 +13,9 @@ from pyglet.util import debug_print
 
 if TYPE_CHECKING:
     from pyglet.config import SurfaceConfig
+    from pyglet.graphics import Batch
     from pyglet.graphics.buffer import BufferRange
+    from pyglet.graphics.shader import AttributeLayout, Shader, ShaderProgram, ShaderType
     from pyglet.window import Window
 
 _debug_print = debug_print("debug_api")
@@ -102,8 +104,42 @@ class UnavailableBackendError(GraphicsBackendError):
 
 
 class NullBackend(BackendGlobalObject):  # noqa: D101
+    def __init__(self) -> None:
+        super().__init__()
+        self.current_context = NullContext()
+
     def _raise_no_backend(self) -> NoReturn:
         raise UnavailableBackendError
+
+    def get_config(self, **_kwargs: float | str | None) -> NoReturn:
+        self._raise_no_backend()
+
+    @property
+    def info(self) -> NoReturn:
+        self._raise_no_backend()
+
+    def get_info(self) -> NoReturn:
+        self._raise_no_backend()
+
+    def have_extension(self, _extension_name: str) -> NoReturn:
+        self._raise_no_backend()
+
+    def have_version(self, _major: int, _minor: int = 0) -> NoReturn:
+        self._raise_no_backend()
+
+    def get_cached_shader(self, _name: str, *sources: tuple[str, ShaderType],
+                          attribute_layout: AttributeLayout | None) -> ShaderProgram:
+        _ = sources, attribute_layout
+        self._raise_no_backend()
+
+    def create_shader_program(self, *_shaders: Shader) -> NoReturn:
+        self._raise_no_backend()
+
+    def create_shader(self, _source_string: str, _shader_type: ShaderType) -> NoReturn:
+        self._raise_no_backend()
+
+    def get_default_batch(self) -> Batch:
+        self._raise_no_backend()
 
     def get_surface_context(self, window: Window, config: SurfaceConfig,
                             shared: SurfaceContext | None = None) -> SurfaceContext:

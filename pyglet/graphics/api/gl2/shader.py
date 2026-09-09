@@ -21,6 +21,7 @@ from pyglet.graphics.api.gl.shader import GLShaderProgram
 from pyglet.graphics import UnsupportedBackendError
 from pyglet.graphics.shader import (
     _AbstractShaderProgram,
+    AttributeLayout,
     ShaderException,
     ShaderSource,
     ShaderType,
@@ -205,8 +206,9 @@ class TransformFeedbackShaderProgram(ShaderProgram):
         *shaders: Shader,
         varyings: Sequence[str],
         varying_buffer_type: str = "separate",
+        attribute_layout: AttributeLayout | None,
     ) -> None:
-        _ = shaders, varyings, varying_buffer_type
+        _ = shaders, varyings, varying_buffer_type, attribute_layout
         raise UnsupportedBackendError("TransformFeedbackShaderProgram")
 
 
@@ -239,9 +241,10 @@ _default_fragment_source: str = """#version 110
 
 def get_default_shader() -> ShaderProgram:
     """A default basic shader for default batches."""
-    program = pyglet.graphics.api.core.get_cached_shader(
+    program = pyglet.graphics.api.get_cached_shader(
         "default_graphics",
         (_default_vertex_source, 'vertex'),
         (_default_fragment_source, 'fragment'),
+        attribute_layout=None,
     )
     return program

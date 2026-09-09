@@ -163,35 +163,39 @@ decoration_fragment_source = """#version 110
 
 def get_default_layout_shader() -> ShaderProgram:
     """The default shader used for all glyphs in the layout."""
-    return pyglet.graphics.api.core.get_cached_shader(
+    return pyglet.graphics.api.get_cached_shader(
         "default_text_layout",
         (layout_vertex_source, "vertex"),
         (layout_fragment_source, "fragment"),
-    ).get_attribute_view(colors="Bn")
+        attribute_layout=pyglet.graphics.AttributeLayout(colors="Bn"),
+    )
 
 
 def get_default_scrollable_layout_shader() -> ShaderProgram:
     """Return the default text shader used by scrolling layouts."""
-    return pyglet.graphics.api.core.get_cached_shader(
+    return pyglet.graphics.api.get_cached_shader(
         "default_scrollable_text_layout",
         (scrollable_layout_vertex_source, "vertex"),
         (layout_fragment_source, "fragment"),
-    ).get_attribute_view(colors="Bn")
+        attribute_layout=pyglet.graphics.AttributeLayout(colors="Bn"),
+    )
 
 
 def get_default_image_layout_shader() -> ShaderProgram:
     """The default shader used for an InlineElement image. Used for HTML Labels that insert images via <img> tag."""
-    return pyglet.graphics.api.core.get_cached_shader(
+    return pyglet.graphics.api.get_cached_shader(
         "default_text_image",
         (scrollable_layout_vertex_source, "vertex"),
         (layout_fragment_image_source, "fragment"),
-    ).get_attribute_view(colors="Bn")
+        attribute_layout=pyglet.graphics.AttributeLayout(colors="Bn"),
+    )
 
 
 def get_default_decoration_shader() -> ShaderProgram:
     """The default shader for underline and background decoration effects in the layout."""
-    return pyglet.graphics.api.core.get_cached_shader(
+    return pyglet.graphics.api.get_cached_shader(
         "default_text_decoration",
         (decoration_vertex_source, "vertex"),
         (decoration_fragment_source, "fragment"),
-    ).get_attribute_view(colors="Bn")
+        attribute_layout=pyglet.graphics.AttributeLayout(colors="Bn"),
+    )

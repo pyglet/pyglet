@@ -9,7 +9,7 @@ from pyglet.util import asstr
 from . import ModelDecodeException, ModelDecoder
 from .base import SimpleMaterial, Mesh, Primitive, Attribute, Node, Scene
 from pyglet.model import Model, MaterialGroup, TexturedMaterialGroup
-from pyglet.graphics import Batch, Group
+from pyglet.graphics import AttributeLayout, Batch, Group
 from pyglet.enums import GeometryMode
 from pyglet.math import Vec3, Quaternion
 
@@ -244,7 +244,7 @@ class OBJScene(Scene):
                     program = pyglet.model.get_default_shader()
 
                 formats = {a.name: a.fmt for a in primitive.attributes if a.name in program.attributes}
-                layout = program.get_attribute_view(**formats).set_instance_attributes(
+                layout = program.get_attribute_view(AttributeLayout(**formats)).set_instance_attributes(
                     TRANSLATION=1, ROTATION=1, SCALE=1
                 )
                 if material.texture_name:

@@ -10,7 +10,7 @@ from pyglet.graphics.api.base import NullBackend
 if TYPE_CHECKING:
     from pyglet.graphics.api.base import GraphicsConfig
     from pyglet.graphics.draw import Batch
-    from pyglet.graphics.shader import ShaderType, ShaderProgram
+    from pyglet.graphics.shader import AttributeLayout, ShaderType, ShaderProgram
 
 core = NullBackend()
 
@@ -59,8 +59,16 @@ def have_extension(extension_name: str) -> bool:
     return core.have_extension(extension_name)
 
 
-def get_cached_shader(name: str, *sources: tuple[str, ShaderType]) -> ShaderProgram:
-    return core.get_cached_shader(name, *sources)
+def get_cached_shader(name: str, *sources: tuple[str, ShaderType],
+                      attribute_layout: AttributeLayout | None) -> ShaderProgram:
+    """Create or retrieve a cached shader program.
+
+    Args:
+        name: Cache key for the linked shader program.
+        sources: ``(source_string, shader_type)`` pairs used to build the program when uncached.
+        attribute_layout: Default buffer formats for the returned view. Use ``None`` to return the introspected program.
+    """
+    return core.get_cached_shader(name, *sources, attribute_layout=attribute_layout)
 
 
 def get_default_batch() -> Batch:

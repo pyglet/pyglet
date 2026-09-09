@@ -210,7 +210,8 @@ class Sprite(event.EventDispatcher):
             program:
                 A specific shader program to initialize the sprite with. By default, a pre-made shader will be chosen
                 based on the texture type passed. Sprite colors are uploaded as four unsigned bytes; custom programs
-                must use ``program.get_attribute_view(colors="Bn")`` so the values are normalized for the shader.
+                must use ``attribute_layout=pyglet.graphics.AttributeLayout(colors="Bn")`` so the values are normalized
+                for the shader.
         .. versionchanged:: 2.0.16
            Added *program* parameter.
         .. versionchanged:: 3.0

@@ -101,7 +101,7 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
     _vertex_layouts: dict[tuple[Any, ...], ShaderProgramView]
     _format_layouts: dict[frozenset[tuple[str, str]], ShaderProgramView]
 
-    def __init__(self, *shaders: Shader) -> None:
+    def __init__(self, *shaders: Shader, attribute_layout: AttributeLayout | None = None) -> None:
         GraphicsResource.__init__(self)
 
         # Attribute description
@@ -112,6 +112,7 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
         self._instance_attributes = {}
         self._vertex_layouts = {}
         self._format_layouts = {}
+        self._attribute_layout = attribute_layout
 
         # Uniform description
         self._uniforms = {}
@@ -139,6 +140,11 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
         for attrib in attributes:
             self._attributes[attrib.fmt.name] = attrib
         self._update_attribute_key()
+
+    def apply_attribute_layout(self) -> None:
+        """Apply the requested default buffer formats to introspected attributes."""
+        if self._attribute_layout is not None:
+            self._attributes = self._copy_attributes_with_formats(self._attributes, self._attribute_layout.formats)
 
     def _update_attribute_key(self) -> None:
         """Cache the platform-independent key used to look up vertex domains."""
@@ -219,14 +225,17 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
             )
         return self
 
-    def get_attribute_view(self, **formats: str) -> ShaderProgramView:
+    def get_attribute_view(self, attribute_layout: AttributeLayout | None = None) -> ShaderProgramView:
         """Return the interned shader-program view for the requested vertex formats.
 
         Pyglet's Sprite and Label helpers provide colors as four unsigned bytes.
-        A custom shader used with those helpers should therefore use
-        ``program.get_attribute_view(colors="Bn")`` so the values are normalized
-        before reaching a GLSL ``vec4`` color input.
+        Prefer ``ShaderProgram(..., attribute_layout=AttributeLayout(colors="Bn"))``
+        to set that program's default layout. Use this method only when an
+        occasional alternate layout is needed for the same program.
         """
+        if attribute_layout is not None and not isinstance(attribute_layout, AttributeLayout):
+            raise TypeError("attribute_layout must be an AttributeLayout or None.")
+        formats = {} if attribute_layout is None else attribute_layout.formats
         try:
             request_key = frozenset(formats.items())
             return self._format_layouts[request_key]
@@ -540,10 +549,15 @@ class ShaderProgram(_AbstractShaderProgram):
     program state management.
     """
 
-    def __init__(self, *shaders: _AbstractShader) -> None:
-        """Initialize a shader program from one or more Shader objects."""
+    def __init__(self, *shaders: _AbstractShader, attribute_layout: AttributeLayout | None) -> None:
+        """Initialize a shader program with an optional default attribute layout.
+
+        ``attribute_layout=None`` keeps the introspected attribute formats. An
+        :class:`AttributeLayout` changes only the buffer interpretation of the
+        named attributes; their component counts remain defined by the shader.
+        """
         assert shaders, "At least one Shader object is required."
-        super().__init__(*shaders)
+        super().__init__(*shaders, attribute_layout=attribute_layout)
 
 
 class ShaderProgramView(ShaderProgram):
@@ -690,6 +704,7 @@ class TransformFeedbackShaderProgram(ShaderProgram):
         *shaders: _AbstractShader,
         varyings: Sequence[str],
         varying_buffer_type: Literal["interleaved", "separate"] = "separate",
+        attribute_layout: AttributeLayout | None,
     ) -> None:
         """Initialize a transform feedback shader program.
 
@@ -708,7 +723,7 @@ class TransformFeedbackShaderProgram(ShaderProgram):
             This class is replaced by a backend-specific implementation at
             import time when a supported backend is active.
         """
-        super().__init__(*shaders)
+        super().__init__(*shaders, attribute_layout=attribute_layout)
         _ = varyings, varying_buffer_type
         msg = f"{self.__class__.__name__} is backend-specific and must be provided by the active backend."
         raise NotImplementedError(msg)
@@ -778,7 +793,35 @@ class Shader(_AbstractShader):
         """Return the proper ShaderSource class used to validate the shader."""
         raise NotImplementedError
 
+    def delete(self) -> None:
+        """Delete the shader program's backend resource."""
+
 DataTypeTuple = ('?', 'f', 'i', 'I', 'h',  'H', 'b', 'B', 'q','Q')
+
+
+@dataclass(frozen=True)
+class AttributeLayout:
+    """Partial overrides for a shader program's default attribute formats.
+
+    Each keyword names an attribute and supplies its buffer data type, with an
+    optional ``"n"`` suffix for normalized values. Component counts always
+    come from the linked shader. For example, ``AttributeLayout(colors="Bn")``
+    binds a GLSL ``vec4`` ``colors`` attribute as four normalized unsigned
+    bytes.
+    """
+    formats: dict[str, str]
+
+    def __init__(self, **formats: str) -> None:  # noqa: D107
+        for name, fmt in formats.items():
+            valid = (
+                isinstance(fmt, str)
+                and len(fmt) in (1, 2)
+                and fmt[0] in DataTypeTuple
+                and (len(fmt) == 1 or fmt[1] == 'n')
+            )
+            if not valid:
+                raise ValueError(f"Invalid vertex format {fmt!r} for attribute {name!r}.")
+        object.__setattr__(self, "formats", formats)
 
 _data_type_to_ctype = {
     '?': ctypes.c_bool,         # bool

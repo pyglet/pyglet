@@ -152,14 +152,14 @@ def get_default_shader():
     program = pyglet.graphics.api.core.current_context.create_program((vertex_source, 'vertex'),
                                                                        (geometry_source, 'geometry'),
                                                                        (fragment_source, 'fragment'))
-    return program.get_attribute_view(color="Bn")
+    return program.get_attribute_view(pyglet.graphics.AttributeLayout(color="Bn"))
 
 
 def get_default_array_shader():
     program = pyglet.graphics.api.core.current_context.create_program((vertex_source, 'vertex'),
                                                                        (geometry_source, 'geometry'),
                                                                        (fragment_array_source, 'fragment'))
-    return program.get_attribute_view(color="Bn")
+    return program.get_attribute_view(pyglet.graphics.AttributeLayout(color="Bn"))
 
 
 class SpriteGroup(Group):

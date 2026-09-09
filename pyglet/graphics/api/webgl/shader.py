@@ -35,6 +35,7 @@ from pyglet.graphics.shader import (
     _AbstractShader,
     _AbstractShaderProgram,
     Attribute,
+    AttributeLayout,
     Shader,
     ShaderException,
     UnsupportedShaderType,
@@ -820,9 +821,9 @@ class WebGLShaderProgram(ShaderProgram):
 
     __slots__ = '_attributes', '_context', '_id', '_uniform_blocks', '_uniforms'
 
-    def __init__(self, *shaders: WebGLShader) -> None:
+    def __init__(self, *shaders: WebGLShader, attribute_layout: AttributeLayout | None) -> None:
         """Initialize the ShaderProgram using at least two Shader instances."""
-        super().__init__(*shaders)
+        super().__init__(*shaders, attribute_layout=attribute_layout)
         self._context = pyglet.graphics.api.core.current_context
         self._gl = self._context.gl
         self._id = _build_program(self._gl, *shaders)
@@ -845,6 +846,7 @@ class WebGLShaderProgram(ShaderProgram):
         self.use()
 
         self._attributes = _introspect_attributes(self._id)
+        self.apply_attribute_layout()
         self._update_attribute_key()
         self._uniforms = _introspect_uniforms(self._gl, self._id)
         self._uniform_blocks = self._get_uniform_blocks()
@@ -883,8 +885,8 @@ class WebGLTransformFeedbackShaderProgram(WebGLShaderProgram):
     __slots__ = "_varying_buffer_type", "_varyings"
 
     def __init__(self, *shaders: WebGLShader, varyings: Sequence[str],
-                 varying_buffer_type: str = "separate") -> None:
-        ShaderProgram.__init__(self, *shaders)
+                 varying_buffer_type: str = "separate", attribute_layout: AttributeLayout | None) -> None:
+        ShaderProgram.__init__(self, *shaders, attribute_layout=attribute_layout)
         self._context = pyglet.graphics.api.core.current_context
         self._gl = self._context.gl
 
@@ -950,9 +952,10 @@ _default_fragment_source: str = """#version 330 core
 
 def get_default_shader() -> WebGLShaderProgram:
     """A default basic shader for default batches."""
-    program = pyglet.graphics.api.core.get_cached_shader(
+    program = pyglet.graphics.api.get_cached_shader(
         "default_graphics",
         (_default_vertex_source, 'vertex'),
         (_default_fragment_source, 'fragment'),
+        attribute_layout=None,
     )
     return program

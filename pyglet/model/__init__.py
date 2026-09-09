@@ -83,6 +83,7 @@ def get_default_shader() -> ShaderProgram:
         "default_model_material",
         (MaterialGroup.default_vert_src, 'vertex'),
         (MaterialGroup.default_frag_src, 'fragment'),
+        attribute_layout=None,
     )
     program.set_instance_attributes(TRANSLATION=1, ROTATION=1, SCALE=1)
     return program
@@ -93,6 +94,7 @@ def get_default_textured_shader() -> ShaderProgram:
         "default_model_textured_material",
         (TexturedMaterialGroup.default_vert_src, 'vertex'),
         (TexturedMaterialGroup.default_frag_src, 'fragment'),
+        attribute_layout=None,
     )
     program.set_instance_attributes(TRANSLATION=1, ROTATION=1, SCALE=1)
     return program

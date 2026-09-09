@@ -27,7 +27,7 @@ void main() {
 def test_custom_shaders_uniforms_and_indexed_batch(webgl_window):
     vertex_shader = pyglet.graphics.Shader(VERTEX_SOURCE, "vertex")
     fragment_shader = pyglet.graphics.Shader(FRAGMENT_SOURCE, "fragment")
-    program = pyglet.graphics.ShaderProgram(vertex_shader, fragment_shader)
+    program = pyglet.graphics.ShaderProgram(vertex_shader, fragment_shader, attribute_layout=None)
     batch = pyglet.graphics.Batch()
     vertex_list = program.vertex_list_indexed(
         3,

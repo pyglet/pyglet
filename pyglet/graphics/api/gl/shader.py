@@ -39,6 +39,7 @@ from pyglet.graphics.api.gl import (
 from pyglet.graphics.shader import (
     _AbstractShaderProgram,
     Attribute,
+    AttributeLayout,
     AttributeView,
     _build_uniform_struct_from_uniforms,
     GraphicsAttribute,
@@ -1063,9 +1064,9 @@ class GLShaderProgram(ShaderProgram):
 
     __slots__ = '_attributes', '_context', '_id', '_uniform_blocks', '_uniforms', '_shader_storage_blocks'
 
-    def __init__(self, *shaders: GLShader) -> None:
+    def __init__(self, *shaders: GLShader, attribute_layout: AttributeLayout | None) -> None:
         """Initialize the ShaderProgram using at least two Shader instances."""
-        super().__init__(*shaders)
+        super().__init__(*shaders, attribute_layout=attribute_layout)
 
         self._context = pyglet.graphics.api.core.current_context
         self._id = _build_program(self._context, *shaders)
@@ -1084,6 +1085,7 @@ class GLShaderProgram(ShaderProgram):
 
         have_dsa = self._context.info.features.separate_shader_objects
         self._attributes = _introspect_attributes(self._context, self._id)
+        self.apply_attribute_layout()
         self._update_attribute_key()
         self._uniforms = _introspect_uniforms(self._context, self._id, have_dsa)
         self._uniform_blocks = self._get_uniform_blocks()
@@ -1126,8 +1128,9 @@ class GLTransformFeedbackShaderProgram(GLShaderProgram):
     __slots__ = '_varying_buffer_type', '_varyings'
 
     def __init__(self, *shaders: GLShader, varyings: Sequence[str],
-                 varying_buffer_type: Literal["interleaved", "separate"] = "separate") -> None:
-        ShaderProgram.__init__(self, *shaders)
+                 varying_buffer_type: Literal["interleaved", "separate"] = "separate",
+                 attribute_layout: AttributeLayout | None) -> None:
+        ShaderProgram.__init__(self, *shaders, attribute_layout=attribute_layout)
         self._context = pyglet.graphics.api.core.current_context
 
         self._varyings = tuple(varyings)
@@ -1296,9 +1299,10 @@ _default_fragment_source: str = """#version 330 core
 
 def get_default_shader() -> GLShaderProgram:
     """A default basic shader for default batches."""
-    program = pyglet.graphics.api.core.get_cached_shader(
+    program = pyglet.graphics.api.get_cached_shader(
         "default_graphics",
         (_default_vertex_source, 'vertex'),
         (_default_fragment_source, 'fragment'),
+        attribute_layout=None,
     )
     return program

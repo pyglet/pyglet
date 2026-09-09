@@ -52,11 +52,12 @@ fragment_source = """#version 300 es
 
 
 def get_default_shader() -> ShaderProgram:
-    return pyglet.graphics.api.core.get_cached_shader(
+    return pyglet.graphics.api.get_cached_shader(
         "default_shapes",
         (vertex_source, 'vertex'),
         (fragment_source, 'fragment'),
-    ).get_attribute_view(colors="Bn")
+        attribute_layout=pyglet.graphics.AttributeLayout(colors="Bn"),
+    )
 
 
 class _ShapeGroup(Group):

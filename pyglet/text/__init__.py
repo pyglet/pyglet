@@ -231,8 +231,9 @@ class DocumentLabel(layout.TextLayout):
             batch: Optional graphics batch to add the label to.
             group: Optional graphics group to use.
             program: Optional graphics shader to use. Will affect all glyphs. Label colors are uploaded as four
-                unsigned bytes; custom programs must use ``program.get_attribute_view(colors="Bn")`` so the values
-                are normalized for the shader.
+                unsigned bytes; custom programs must use
+                ``attribute_layout=pyglet.graphics.AttributeLayout(colors="Bn")`` so the values are normalized for the
+                shader.
             decoration_shader: Optional graphics shader to use for all text decorations.
             effect_shader: Optional graphics shader to use for all glyph-backed text effects.
             shaping:

@@ -55,7 +55,7 @@ def shader_program(test_window):
     from pyglet.graphics import ShaderProgram, Shader
     vertex = Shader(_vertex_source, "vertex")
     fragment = Shader(_fragment_source, "fragment")
-    program = ShaderProgram(vertex, fragment)
+    program = ShaderProgram(vertex, fragment, attribute_layout=None)
     program.set_instance_attributes(colors=1, translate=1)
     try:
         yield program

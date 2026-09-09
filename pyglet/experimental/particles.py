@@ -183,8 +183,9 @@ def get_default_shader():
         (vertex_source, 'vertex'),
         (geometry_source, 'geometry'),
         (fragment_source, 'fragment'),
+        attribute_layout=pyglet.graphics.AttributeLayout(color_start="Bn", color_end="Bn"),
     )
-    return program.get_attribute_view(color_start="Bn", color_end="Bn")
+    return program
 
 
 class EmitterGroup(Group):

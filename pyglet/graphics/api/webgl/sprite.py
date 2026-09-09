@@ -84,11 +84,12 @@ def get_default_shader() -> ShaderProgram:
 
     This method allows the module to be imported without an OpenGL Context.
     """
-    return pyglet.graphics.api.core.get_cached_shader(
+    return pyglet.graphics.api.get_cached_shader(
         "default_sprite",
         (vertex_source, 'vertex'),
         (fragment_source, 'fragment'),
-    ).get_attribute_view(colors="Bn")
+        attribute_layout=pyglet.graphics.AttributeLayout(colors="Bn"),
+    )
 
 
 def get_default_array_shader() -> ShaderProgram:
@@ -96,11 +97,12 @@ def get_default_array_shader() -> ShaderProgram:
 
     This method allows the module to be imported without an OpenGL Context.
     """
-    return pyglet.graphics.api.core.get_cached_shader(
+    return pyglet.graphics.api.get_cached_shader(
         "default_sprite_array",
         (vertex_source, 'vertex'),
         (fragment_array_source, 'fragment'),
-    ).get_attribute_view(colors="Bn")
+        attribute_layout=pyglet.graphics.AttributeLayout(colors="Bn"),
+    )
 
 
 def get_default_multitexture_shader(layers: dict[str, Texture]) -> ShaderProgram:
@@ -194,8 +196,9 @@ def get_default_multitexture_shader(layers: dict[str, Texture]) -> ShaderProgram
 
     shader_key = tuple((name, *_sampler_parts(tex)) for name, tex in layers.items())
 
-    return pyglet.graphics.api.core.get_cached_shader(
+    return pyglet.graphics.api.get_cached_shader(
         f"default_multitexture_sprite_{shader_key}",
         (vertex_shader_source, 'vertex'),
         (fragment_shader_source, 'fragment'),
-    ).get_attribute_view(colors="Bn")
+        attribute_layout=pyglet.graphics.AttributeLayout(colors="Bn"),
+    )

@@ -13,7 +13,7 @@ from pyglet.graphics.api.base import (
     SurfaceContext,
     NullContext,
 )
-from pyglet.graphics.shader import Shader, ShaderProgram
+from pyglet.graphics.shader import AttributeLayout, Shader, ShaderProgram
 
 if TYPE_CHECKING:
 
@@ -88,7 +88,8 @@ class WebGLBackend(BackendGlobalObject):
 
         return self.current_context.info.have_version(major, minor)
 
-    def get_cached_shader(self, name: str, *sources: tuple[str, ShaderType]) -> ShaderProgram:
+    def get_cached_shader(self, name: str, *sources: tuple[str, ShaderType],
+                          attribute_layout: AttributeLayout | None) -> ShaderProgram:
         """Create a ShaderProgram from OpenGL GLSL source.
 
         This is a convenience method that takes one or more tuples of
@@ -99,8 +100,16 @@ class WebGLBackend(BackendGlobalObject):
         is the OpenGL shader type, such as "vertex" or "fragment". See
         :py:class:`~pyglet.graphics.shader.Shader` for more information.
 
-        .. note:: This method is cached. Given the same shader sources, the
-                  same ShaderProgram instance will be returned. For more
+        Args:
+            name:
+                Cache key for the linked shader program.
+            sources:
+                ``(source_string, shader_type)`` pairs used to build the program when uncached.
+            attribute_layout:
+                Default buffer formats for the returned view. Use ``None`` for introspected formats.
+
+        .. note:: This method is cached. Given the same shader sources and
+                  attribute layout, the same ShaderProgram instance will be returned. For more
                   control over the ShaderProgram lifecycle, it is recommended
                   to manually create Shaders and link ShaderPrograms.
 
@@ -109,15 +118,15 @@ class WebGLBackend(BackendGlobalObject):
         assert self.current_context
         assert isinstance(name, str), "First argument must be a string name for the shader."
         if program := self.current_context.cached_programs.get(name):
-            return program
+            return program if attribute_layout is None else program.get_attribute_view(attribute_layout)
 
         shaders = (Shader(src, srctype) for (src, srctype) in sources)
-        program = ShaderProgram(*shaders)
+        program = ShaderProgram(*shaders, attribute_layout=None)
         self.current_context.cached_programs[name] = program
-        return program
+        return program if attribute_layout is None else program.get_attribute_view(attribute_layout)
 
     def create_shader_program(self, *shaders: Shader) -> ShaderProgram:
-        return ShaderProgram(*shaders)
+        return ShaderProgram(*shaders, attribute_layout=None)
 
     def create_shader(self, source_string: str, shader_type: ShaderType) -> Shader:
         return Shader(source_string, shader_type)
