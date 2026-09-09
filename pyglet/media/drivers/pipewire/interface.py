@@ -11,7 +11,7 @@ from __future__ import annotations
 import sys
 import weakref
 
-from ctypes import POINTER, byref, sizeof
+from ctypes import POINTER, byref, c_float, sizeof
 from typing import Optional, TYPE_CHECKING
 
 from pyglet.event import EventDispatcher
@@ -381,6 +381,18 @@ class PipeWireStream(EventDispatcher):
         """
         assert self._stream is not None
         return lib.pw_stream_set_rate(self._stream, rate)
+
+    def set_control_volume(self, volume: float) -> None:
+        """Set the stream's channel volumes (linear gain, 1.0 is unity).
+
+        The volume is applied by the graph's mixer downstream of the stream,
+        so it does not touch the queued buffer data. Must hold the main-loop
+        lock when calling; RT safe.
+        """
+        assert self._stream is not None
+        channels = self._audio_format.channels
+        values = (c_float * channels)(*([volume] * channels))
+        lib.pw_stream_set_control(self._stream, lib.PW_CONTROL_CHANNEL_VOLUME, channels, values)
 
 
 PipeWireStream.register_event_type('on_process')

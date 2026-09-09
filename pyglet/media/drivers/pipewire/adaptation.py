@@ -18,7 +18,6 @@ processing thread.
 
 from __future__ import annotations
 
-from array import array
 from collections import deque
 import ctypes
 import threading
@@ -244,8 +243,6 @@ class PipeWirePlayer(AbstractAudioPlayer):
             write_size = min(request_size, self._audio_data_buffer.available)
             if write_size > 0:
                 written = self._audio_data_buffer.memmove(data.data, write_size)
-                if written > 0:
-                    self._apply_volume(data.data, written)
 
                 chunk = data.chunk.contents
                 chunk.offset = 0
@@ -287,60 +284,6 @@ class PipeWirePlayer(AbstractAudioPlayer):
             assert _debug('PipeWirePlayer: EOS')
             self._eos_dispatched = True
             self.dispatch_eos()
-
-    def _apply_volume(self, target_pointer: int, nbytes: int) -> None:
-        """Apply the player and listener volume to interleaved samples."""
-        volume = self._volume * self.driver._listener._volume
-        if volume == 1.0 or nbytes == 0:
-            return
-
-        sample_format = self.source.audio_format.sample_format
-        raw = ctypes.string_at(target_pointer, nbytes)
-
-        if sample_format == 'S16':
-            samples = array('h')
-            samples.frombytes(raw)
-            for i in range(len(samples)):
-                samples[i] = max(-32768, min(32767, int(samples[i] * volume)))
-            sample_data = samples.tobytes()
-
-        elif sample_format == 'S32':
-            samples = array('i')
-            samples.frombytes(raw)
-            for i in range(len(samples)):
-                samples[i] = max(-2147483648, min(2147483647, int(samples[i] * volume)))
-            sample_data = samples.tobytes()
-
-        elif sample_format == 'F32':
-            samples = array('f')
-            samples.frombytes(raw)
-            for i in range(len(samples)):
-                samples[i] = samples[i] * volume
-            sample_data = samples.tobytes()
-
-        elif sample_format == 'U8':
-            samples = array('B')
-            samples.frombytes(raw)
-            for i in range(len(samples)):
-                samples[i] = max(0, min(255, int((samples[i] - 128) * volume + 128)))
-            sample_data = samples.tobytes()
-
-        elif sample_format == 'S24':
-            samples = bytearray(raw)
-            for i in range(0, len(samples), 3):
-                value = samples[i] | samples[i + 1] << 8 | samples[i + 2] << 16
-                if value & 0x800000:
-                    value -= 0x1000000
-                value = max(-0x800000, min(0x7FFFFF, int(value * volume)))
-                samples[i] = value & 0xFF
-                samples[i + 1] = (value >> 8) & 0xFF
-                samples[i + 2] = (value >> 16) & 0xFF
-            sample_data = bytes(samples)
-
-        else:
-            return
-
-        ctypes.memmove(target_pointer, sample_data, nbytes)
 
     def _maybe_fill_audio_data_buffer(self) -> None:
         # Hold the audio_data_lock when calling this.
@@ -466,7 +409,12 @@ class PipeWirePlayer(AbstractAudioPlayer):
 
     def set_volume(self, volume: float) -> None:
         self._volume = volume
-        # Applied to samples in the process callback.
+
+        # The volume is applied by the graph mixer via the stream control,
+        # multiplied by the master (listener) volume.
+        if self.stream is not None:
+            with self.driver.mainloop.lock:
+                self.stream.set_control_volume(volume * self.driver._listener._volume)
 
     def set_pitch(self, pitch: float) -> None:
         if pitch == self._pitch:

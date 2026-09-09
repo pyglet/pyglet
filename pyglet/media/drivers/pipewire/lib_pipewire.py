@@ -12,8 +12,8 @@ from __future__ import annotations
 
 import struct
 from ctypes import (
-    CFUNCTYPE, POINTER, Structure, byref, c_bool, c_char_p, c_double, c_int,
-    c_int32, c_int64, c_size_t, c_ubyte, c_uint32, c_uint64, c_void_p,
+    CFUNCTYPE, POINTER, Structure, byref, c_bool, c_char_p, c_double, c_float,
+    c_int, c_int32, c_int64, c_size_t, c_ubyte, c_uint32, c_uint64, c_void_p,
     cast, create_string_buffer)
 from typing import Any, Callable, Optional
 
@@ -331,12 +331,21 @@ pw_stream_set_rate = _lib.pw_stream_set_rate
 pw_stream_set_rate.restype = c_int
 pw_stream_set_rate.argtypes = [POINTER(struct_pw_stream), c_double]
 
+pw_stream_set_control = _lib.pw_stream_set_control
+pw_stream_set_control.restype = c_int
+pw_stream_set_control.argtypes = [POINTER(struct_pw_stream), c_uint32, c_uint32, POINTER(c_float)]
+
 
 # Constants:
 PW_DIRECTION_INPUT = 0
 PW_DIRECTION_OUTPUT = 1
 
 PW_ID_ANY = 0xFFFFFFFF
+
+# Control ids for pw_stream_set_control(). These are not exported by the
+# installed dev headers, but are stable upstream:
+PW_CONTROL_MUTE = 0
+PW_CONTROL_CHANNEL_VOLUME = 1
 
 PW_STREAM_STATE_ERROR = -1
 PW_STREAM_STATE_UNCONNECTED = 0
