@@ -420,6 +420,15 @@ class _DomainKey:
     mode: GeometryMode
     attributes: str
 
+
+class _DefaultCameraMarker:
+    """Simple object to mark a default camera."""
+
+    __slots__ = ()
+
+
+_default_camera = _DefaultCameraMarker()
+
 @dataclass
 class BatchDrawOptions:
     """A draw pass encompasses the starting data of a batched draw.
@@ -430,8 +439,8 @@ class BatchDrawOptions:
     #: The framebuffer render target. If not specified, the window framebuffer.
     framebuffer: object | None = None
 
-    #: The camera to use at the start. Some passes may require drawing the same scene with a different camera.
-    camera: BaseCamera | None = None
+    #: The camera to use at the start. ``None`` disables the initial camera.
+    camera: BaseCamera | _DefaultCameraMarker | None = _default_camera
     viewport: tuple | None = None
     scissor: tuple | CameraScissor | None = None
 
@@ -439,13 +448,13 @@ class BatchDrawOptions:
 
     def resolve(self, ctx: SurfaceContext) -> DrawPass:
         """Resolves the draw options to give a final DrawPass."""
-        camera = self.camera or ctx.window.camera
+        camera = ctx.window.camera if isinstance(self.camera, _DefaultCameraMarker) else self.camera
         return DrawPass(
             #framebuffer=self.framebuffer or ctx.default_framebuffer,
             framebuffer=self.framebuffer,
             camera=camera,
-            viewport=self.viewport or camera.viewport,
-            scissor=self.scissor or camera.view.scissor,
+            viewport=self.viewport or (camera.viewport if camera is not None else None),
+            scissor=self.scissor or (camera.view.scissor if camera is not None else None),
             clear_color=self.clear_color or ctx.clear_color,
         )
 
@@ -456,9 +465,9 @@ class DrawPass:
     This class is guaranteed to have all the arguments filled after the backend resolves it.
     """
     framebuffer: object | None
-    camera: BaseCamera
-    viewport: tuple
-    scissor: CameraScissor
+    camera: BaseCamera | None
+    viewport: tuple | None
+    scissor: tuple | CameraScissor | None
     clear_color: tuple[float, float, float, float]
 
 SurfaceContextT = TypeVar("SurfaceContextT", bound=SurfaceContext)
