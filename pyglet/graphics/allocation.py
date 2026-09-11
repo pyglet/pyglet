@@ -36,6 +36,8 @@ responsibility to maintain the allocated regions.
 #  expensive
 from __future__ import annotations
 
+from collections.abc import Callable
+from dataclasses import dataclass
 
 
 class AllocatorMemoryException(Exception):  # noqa: N818
@@ -457,3 +459,105 @@ class RangeAllocator:
         """Iterate over the current merged contiguous ranges."""
         self._rebuild()
         return iter(self._merged)
+
+
+@dataclass
+class _Chunk:
+    """A contiguous allocation range provided by an external owner."""
+    start: int
+    capacity: int
+    allocator: Allocator
+
+
+class ChunkAllocator:
+    """Allocate local ranges from non-contiguous owned chunks.
+
+    ``allocate_chunk`` reserves a region from the backing owner and
+    ``deallocate_chunk`` returns a fully unused region to it. Each chunk uses
+    :class:`Allocator` to track the local free space, so allocations never
+    cross into gaps belonging to another owner.
+    """
+
+    def __init__(
+            self, chunk_size: int, allocate_chunk: Callable[[int], int], deallocate_chunk: Callable[[int, int], None],
+    ) -> None:
+        """Create an allocator over chunks owned by another allocator.
+
+        Args:
+            chunk_size: Minimum size of each requested backing chunk.
+            allocate_chunk: Reserves a backing range and returns its absolute start.
+            deallocate_chunk: Releases a fully unused backing range by start and size.
+        """
+        self.chunk_size = chunk_size
+        self._allocate_chunk = allocate_chunk
+        self._deallocate_chunk = deallocate_chunk
+        self._chunks: list[_Chunk] = []
+
+    @property
+    def starts(self) -> list[int]:
+        return self.get_allocated_regions()[0]
+
+    @property
+    def sizes(self) -> list[int]:
+        return self.get_allocated_regions()[1]
+
+    def _new_chunk(self, minimum_capacity: int) -> _Chunk:
+        capacity = max(self.chunk_size, minimum_capacity)
+        chunk = _Chunk(self._allocate_chunk(capacity), capacity, Allocator(capacity))
+        self._chunks.append(chunk)
+        return chunk
+
+    def _find_chunk(self, start: int, count: int) -> _Chunk:
+        for chunk in self._chunks:
+            if chunk.start <= start and start + count <= chunk.start + chunk.capacity:
+                return chunk
+        raise ValueError("Range does not belong to this chunk allocator.")
+
+    def alloc(self, count: int) -> int:
+        if count == 0:
+            return 0
+        for chunk in self._chunks:
+            try:
+                return chunk.start + chunk.allocator.alloc(count)
+            except AllocatorMemoryException:  # noqa: PERF203
+                continue
+        chunk = self._new_chunk(count)
+        return chunk.start + chunk.allocator.alloc(count)
+
+    def realloc(self, start: int, count: int, new_count: int) -> int:
+        if count == 0:
+            return self.alloc(new_count)
+        if new_count == 0:
+            self.dealloc(start, count)
+            return 0
+        chunk = self._find_chunk(start, count)
+        try:
+            return chunk.start + chunk.allocator.realloc(start - chunk.start, count, new_count)
+        except AllocatorMemoryException:
+            new_start = self.alloc(new_count)
+            self.dealloc(start, count)
+            return new_start
+
+    def dealloc(self, start: int, count: int) -> None:
+        if count == 0:
+            return
+        chunk = self._find_chunk(start, count)
+        chunk.allocator.dealloc(start - chunk.start, count)
+        if not chunk.allocator.starts:
+            self._deallocate_chunk(chunk.start, chunk.capacity)
+            self._chunks.remove(chunk)
+
+    def get_allocated_regions(self) -> tuple[list[int], list[int]]:
+        regions = [
+            (chunk.start + start, size)
+            for chunk in self._chunks
+            for start, size in zip(chunk.allocator.starts, chunk.allocator.sizes)
+        ]
+        if not regions:
+            return [], []
+        starts, sizes = zip(*sorted(regions))
+        return list(starts), list(sizes)
+
+    def __repr__(self) -> str:
+        starts, sizes = self.get_allocated_regions()
+        return f'<{self.__class__.__name__} {list(zip(starts, sizes))}>'
