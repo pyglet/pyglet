@@ -16,6 +16,22 @@ Rules for AI coding agents working in this repository.
 
 Write tests for new functionality. Run the full suite before submitting.
 
+### Unit tests
+
+- Test small, well-defined units of behavior in isolation using fast, deterministic, self-contained tests.
+- Keep unit tests in pure Python without importing or depending on operating-system services, windowing backends, graphics contexts, or graphics APIs.
+- Use mocks, stubs, or dependency injection to isolate external systems when practical.
+
+### Platform and API-specific tests
+
+- Put tests that require a particular operating system, platform backend, or graphics API in its dedicated test folder, guarded by the appropriate `skip_platform` or `require_platform` decorator when necessary.
+
+### Integration tests
+
+- Use integration tests for behavior that requires real resources or feature integration, such as a graphics context, native windowing behavior, or platform services.
+- Keep graphics API-specific integration tests under `tests/integration/graphics/<api_folder>/`.
+- Put API-agnostic graphics integration tests under `tests/integration/graphics/`; for example, camera behavior that does not call API-specific functionality.
+
 ## Commits
 
 - Use clear, descriptive commit messages
