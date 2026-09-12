@@ -8,7 +8,7 @@ from ctypes import POINTER, byref, c_buffer, c_char_p, c_int, cast
 import pyglet
 
 from pyglet import app
-from pyglet.app.linux import LinuxSelectDevice
+from pyglet.app.linux import LinuxPollDevice
 from pyglet.util import asbytes
 
 from . import xlib_vidmoderestore
@@ -88,7 +88,7 @@ _error_handler_ptr = xlib.XErrorHandler(_error_handler)
 xlib.XSetErrorHandler(_error_handler_ptr)
 
 
-class XlibDisplay(LinuxSelectDevice, Display):
+class XlibDisplay(LinuxPollDevice, Display):
     _display = None  # POINTER(xlib.Display)
 
     _x_im = None  # X input method
@@ -131,7 +131,7 @@ class XlibDisplay(LinuxSelectDevice, Display):
                     self._enable_xsync = True
 
         # Add to event loop select list.  Assume we never go away.
-        app.platform_event_loop.select_devices.add(self)
+        app.platform_event_loop.register(self)
 
     def get_default_screen(self) -> Screen:
         screens = self.get_screens()
@@ -212,7 +212,7 @@ class XlibDisplay(LinuxSelectDevice, Display):
     def fileno(self) -> int:
         return self._fileno
 
-    def select(self) -> None:
+    def process(self) -> None:
         e = xlib.XEvent()
         while xlib.XPending(self._display):
             xlib.XNextEvent(self._display, e)
@@ -228,9 +228,6 @@ class XlibDisplay(LinuxSelectDevice, Display):
                 continue
 
             dispatch(e)
-
-    def poll(self) -> int:
-        return xlib.XPending(self._display)
 
 
 class XlibScreen(Screen):
