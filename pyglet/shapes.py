@@ -75,7 +75,8 @@ from pyglet.extlibs import earcut
 from pyglet.graphics import Group
 from pyglet.enums import BlendFactor, GeometryMode, GraphicsAPI
 from pyglet.math import Vec2
-from pyglet.graphics.draw import DrawContext, BatchDrawOptions
+from pyglet.graphics.draw import BatchDrawOptions
+from pyglet.graphics.drawcontext import DrawContext
 
 if TYPE_CHECKING:
     from pyglet.graphics.shader import ShaderProgram

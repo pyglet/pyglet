@@ -110,7 +110,7 @@ def create_effect_shader(fragment_source: str):
     return pyglet.graphics.ShaderProgram(
         pyglet.graphics.Shader(EFFECT_VERTEX_SOURCE, "vertex"),
         pyglet.graphics.Shader(fragment_source, "fragment"),
-    ).get_attribute_view(colors="Bn")
+    ).get_vertex_view(pyglet.graphics.VertexLayout(colors="4Bn"))
 
 
 window = pyglet.window.Window(960, 400, "Text Effect Shaders")

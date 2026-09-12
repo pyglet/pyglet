@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from pyglet.customtypes import ScissorProtocol
     from pyglet.graphics.buffer import UniformBufferRegion
     from pyglet.graphics.api.webgl.shader import ShaderProgram
-    from pyglet.graphics.draw import DrawContext
+    from pyglet.graphics.drawcontext import DrawContext
     from pyglet.graphics.texture import Texture
     from pyglet.graphics.resource import TextureKey
 

@@ -179,7 +179,7 @@ def get_default_layout_shader() -> ShaderProgram:
         "default_text_layout",
         (layout_vertex_source, "vertex"),
         (layout_fragment_source, "fragment"),
-        attribute_layout=pyglet.graphics.AttributeLayout(colors="Bn"),
+        vertex_layout=pyglet.graphics.VertexLayout(colors="4Bn"),
     )
 
 
@@ -189,7 +189,7 @@ def get_default_scrollable_layout_shader() -> ShaderProgram:
         "default_scrollable_text_layout",
         (scrollable_layout_vertex_source, "vertex"),
         (layout_fragment_source, "fragment"),
-        attribute_layout=pyglet.graphics.AttributeLayout(colors="Bn"),
+        vertex_layout=pyglet.graphics.VertexLayout(colors="4Bn"),
     )
 
 
@@ -199,7 +199,7 @@ def get_default_image_layout_shader() -> ShaderProgram:
         "default_text_image",
         (scrollable_layout_vertex_source, "vertex"),
         (layout_fragment_image_source, "fragment"),
-        attribute_layout=pyglet.graphics.AttributeLayout(colors="Bn"),
+        vertex_layout=pyglet.graphics.VertexLayout(colors="4Bn"),
     )
 
 
@@ -209,5 +209,5 @@ def get_default_decoration_shader() -> ShaderProgram:
         "default_text_decoration",
         (decoration_vertex_source, "vertex"),
         (decoration_fragment_source, "fragment"),
-        attribute_layout=pyglet.graphics.AttributeLayout(colors="Bn"),
+        vertex_layout=pyglet.graphics.VertexLayout(colors="4Bn"),
     )

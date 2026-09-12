@@ -4,14 +4,14 @@ import contextlib
 import sys
 import warnings
 import weakref
-from collections.abc import Iterable
 from copy import copy
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Sequence, TypeVar, Generator
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Sequence, TypeVar, Generator, Literal
 
 import pyglet
 from pyglet.enums import BlendFactor, BlendOp, CompareOp, GeometryMode, GraphicsAPI
-from pyglet.graphics.api.base import BackendRenderer, SurfaceContext
+from pyglet.graphics.attributes import DomainAttributes, VertexLayout
+from pyglet.graphics.drawcontext import DrawContext, DrawPass, _DefaultCameraMarker, _default_camera
 from pyglet.graphics.state import (
     BlendState,
     CameraScissorProviderProtocol,
@@ -29,11 +29,14 @@ from pyglet.graphics.state import (
     ViewportState,
     _expand_states_in_order,
 )
+from pyglet.graphics.vertexstorage import VertexStorage
 if TYPE_CHECKING:
+    from pyglet.graphics.api.base import SurfaceContext
+    from collections.abc import Iterable
     from pyglet.graphics.buffer import UniformBufferRegion
     from pyglet.window.camera.base import BaseCamera, CameraScissor
     from pyglet.customtypes import ScissorProtocol
-    from pyglet.graphics.shader import ShaderProgram, VertexLayout
+    from pyglet.graphics.shader import ShaderProgram
     from pyglet.graphics.texture import Texture
     from pyglet.graphics.vertexdomain import (
         DomainAttributes, IndexedVertexGroupBucket, IndexedVertexList, VertexDomain, VertexGroupBucket, VertexList,
@@ -425,47 +428,6 @@ class _DomainKey:
     storage: VertexStorage | None = None
 
 
-class VertexStorage:
-    """A Batch-owned namespace for reusable, layout-compatible geometry."""
-
-    def __init__(self, batch: Batch, layouts: Iterable[VertexLayout] = (), *, chunk_size: int = 4096) -> None:
-        if chunk_size < 1:
-            raise ValueError("chunk_size must be positive.")
-        self._batch = batch
-        self.chunk_size = chunk_size
-        self.layouts: list[VertexLayout] = []
-        self.attribute_formats: dict[str, set[str]] = {}
-        for layout in layouts:
-            self.add_layout(layout)
-
-    def add_layout(self, layout: VertexLayout) -> VertexLayout:
-        from pyglet.graphics.shader import VertexLayout
-        if not isinstance(layout, VertexLayout):
-            raise TypeError("layout must be a VertexLayout")
-        if layout not in self.layouts:
-            self.layouts.append(layout)
-            for name, fmt in layout.formats.items():
-                self.attribute_formats.setdefault(name, set()).add(fmt)
-        return layout
-
-    def get_geometry_layout(self, shader_layout, vertex_layout: VertexLayout | None = None):  # noqa: ANN001
-        if vertex_layout is not None:
-            self.add_layout(vertex_layout)
-        elif len(self.layouts) == 1:
-            vertex_layout = self.layouts[0]
-        elif len(self.layouts) > 1:
-            raise ValueError("Specify vertex_layout when a VertexStorage supports multiple layouts.")
-        return shader_layout.get_attribute_view(**vertex_layout.formats) if vertex_layout else shader_layout
-
-
-class _DefaultCameraMarker:
-    """Simple object to mark a default camera."""
-
-    __slots__ = ()
-
-
-_default_camera = _DefaultCameraMarker()
-
 @dataclass
 class BatchDrawOptions:
     """A draw pass encompasses the starting data of a batched draw.
@@ -485,33 +447,14 @@ class BatchDrawOptions:
 
     def resolve(self, ctx: SurfaceContext) -> DrawPass:
         """Resolves the draw options to give a final DrawPass."""
-        camera = ctx.window.camera if isinstance(self.camera, _DefaultCameraMarker) else self.camera
         return DrawPass(
             #framebuffer=self.framebuffer or ctx.default_framebuffer,
             framebuffer=self.framebuffer,
-            camera=camera,
-            viewport=self.viewport or (camera.viewport if camera is not None else None),
-            scissor=self.scissor or (camera.view.scissor if camera is not None else None),
+            camera=self.camera,
+            viewport=self.viewport,
+            scissor=self.scissor,
             clear_color=self.clear_color or ctx.clear_color,
-        )
-
-@dataclass(eq=False)
-class DrawPass:
-    """This is the resolved state of the DrawPass.
-
-    This class is guaranteed to have all the arguments filled after the backend resolves it.
-    """
-    framebuffer: object | None
-    camera: BaseCamera | None
-    viewport: tuple | None
-    scissor: tuple | CameraScissor | None
-    clear_color: tuple[float, float, float, float]
-
-    # Passes are deliberately identity objects.  Two passes can have identical
-    # render-target state but still be distinct ordered submissions.
-    order: int = 0
-    name: str | None = None
-
+        ).resolve(ctx)
 
 @dataclass
 class _PassRegistration:
@@ -526,102 +469,6 @@ class _PassRegistration:
     group: Group
     binding: Any
     bucket: VertexGroupBucket | IndexedVertexGroupBucket
-
-SurfaceContextT = TypeVar("SurfaceContextT", bound=SurfaceContext)
-BackendContextT = TypeVar("BackendContextT")
-
-@dataclass
-class DrawContext(Generic[SurfaceContextT, BackendContextT]):
-    """This temporary context is passed to Group states during batch draw.
-
-    The data in this object is only valid during the batch draw call.
-    """
-    # The active backend surface during draw.
-    surface_ctx: SurfaceContextT
-    backend_ctx: BackendContextT
-
-    # The draw pass used in this.
-    draw_pass: DrawPass
-    renderer: BackendRenderer
-
-    camera_stack: list[CameraScopeProtocol] = field(default_factory=list)
-    viewport_stack: list = field(default_factory=list)
-    scissor_stack: list = field(default_factory=list)
-
-    active_shader_program: ShaderProgram | None = None
-
-    # Keep track of current camera to prevent double applies.
-    _applied_camera: CameraScopeProtocol | None = None
-    _applied_viewport: tuple[int, int, int, int] | None = None
-
-    def __post_init__(self) -> None:
-        if not self.camera_stack and self.draw_pass.camera is not None:
-            self.camera_stack.append(self.draw_pass.camera)
-
-    @property
-    def active_camera(self) -> CameraScopeProtocol:
-        return self.camera_stack[-1]
-
-    @property
-    def active_viewport(self) -> tuple | None:
-        if self.viewport_stack:
-            return self.viewport_stack[-1]
-        return None
-
-    @property
-    def active_scissor(self) -> tuple | None:
-        if self.scissor_stack:
-            return self.scissor_stack[-1]
-        return None
-
-    def apply_camera_scope(self, *, commit: bool = True, apply_scissor: bool = True) -> None:
-        if not self.camera_stack:
-            return
-        camera = self.active_camera
-        if camera is self._applied_camera:
-            return
-        camera.begin(draw_context=self, commit=commit)
-        self._applied_camera = camera
-        self.apply_viewport()
-        if apply_scissor:
-            self.apply_scissor()
-
-    def apply_viewport(self) -> None:
-        viewport_state = self.active_viewport
-        if viewport_state is not None:
-            viewport = (viewport_state.x, viewport_state.y, viewport_state.width, viewport_state.height)
-        else:
-            viewport = self.active_camera.viewport or self.draw_pass.viewport
-
-        if viewport is None:
-            return
-
-        x, y, width, height = viewport
-        resolved_viewport = int(x), int(y), int(width), int(height)
-        if resolved_viewport == self._applied_viewport:
-            return
-
-        self.renderer.set_viewport(*resolved_viewport)
-        self._applied_viewport = resolved_viewport
-
-    def apply_scissor(self) -> None:
-        scissor_state = self.active_scissor
-        if scissor_state is not None:
-            scissor = scissor_state.scissor
-        else:
-            scissor = self.active_camera.get_group_scissor_area()
-            if scissor is None:
-                scissor = self.draw_pass.scissor
-
-        self.renderer.set_scissor(scissor)
-
-    def apply_clear_color(self, r: float, g: float, b: float, a: float) -> None:
-        self.renderer.set_clear_color(r, g, b, a)
-
-    def begin(self) -> None:
-        self.apply_clear_color(*self.draw_pass.clear_color)
-        self.apply_camera_scope()
-
 
 class Batch:
     """Manage a collection of drawables for batched rendering.
@@ -702,8 +549,9 @@ class Batch:
 
     def create_vertex_storage(
             self, *, layouts: Iterable[VertexLayout] = (), chunk_size: int = 4096,
+            sharing_policy: Literal['separate', 'shared'] = 'separate',
     ) -> VertexStorage:
-        storage = VertexStorage(self, layouts, chunk_size=chunk_size)
+        storage = VertexStorage(self, layouts, chunk_size=chunk_size, sharing_policy=sharing_policy)
         self._storages.add(storage)
         return storage
 
@@ -712,6 +560,106 @@ class Batch:
         if storage._batch is not self or storage not in self._storages:  # noqa: SLF001
             raise ValueError("VertexStorage was not created by this Batch.")
         return storage
+
+    @staticmethod
+    def _get_group_program(group: Group) -> ShaderProgram:
+        """Return the shader program supplied by ``group``'s state."""
+        group._ensure_state_cache()  # noqa: SLF001
+        program = next((state.program for state in group._expanded_states  # noqa: SLF001
+                        if isinstance(state, ShaderProgramState)), None)
+        if program is None:
+            raise ValueError("A vertex-list group must contain a ShaderProgramState.")
+        return program
+
+    def _create_vertex_list(
+            self,
+            vertex_layout: VertexLayout,
+            count: int,
+            mode: GeometryMode,
+            group: Group,
+            *,
+            indices: Sequence[int] | None = None,
+            instanced: bool = False,
+            storage: VertexStorage | None = None,
+            **data: Any,
+    ) -> VertexList | IndexedVertexList:
+        """Create geometry using this batch's group program and vertex layout."""
+        if not isinstance(vertex_layout, VertexLayout):
+            raise TypeError('vertex_layout must be a VertexLayout')
+
+        program = self._get_group_program(group)
+        layout = program.get_vertex_view(vertex_layout)
+        return program._vertex_list_create(  # noqa: SLF001
+            count, mode, indices, instanced, batch=self, group=group, layout=layout,
+            storage=storage, vertex_layout=vertex_layout, **data,
+        )
+
+    def vertex_list(
+            self,
+            vertex_layout: VertexLayout,
+            count: int,
+            mode: GeometryMode,
+            group: Group,
+            *,
+            storage: VertexStorage | None = None,
+            **data: Any,
+    ) -> VertexList:
+        """Create a vertex list from authoritative geometry formats.
+
+        ``vertex_layout`` defines the buffer components, types, and
+        normalization.  The group's shader supplies the matching input
+        locations.
+        """
+        return self._create_vertex_list(
+            vertex_layout, count, mode, group, storage=storage, **data,
+        )
+
+    def vertex_list_indexed(
+            self,
+            vertex_layout: VertexLayout,
+            count: int,
+            mode: GeometryMode,
+            indices: Sequence[int],
+            group: Group,
+            *,
+            storage: VertexStorage | None = None,
+            **data: Any,
+    ) -> IndexedVertexList:
+        """Create an indexed vertex list from authoritative geometry formats."""
+        return self._create_vertex_list(
+            vertex_layout, count, mode, group, indices=indices, storage=storage, **data,
+        )
+
+    def vertex_list_instanced(
+            self,
+            vertex_layout: VertexLayout,
+            count: int,
+            mode: GeometryMode,
+            group: Group,
+            *,
+            storage: VertexStorage | None = None,
+            **data: Any,
+    ) -> VertexList:
+        """Create an instanced vertex list using an instanced group program view."""
+        return self._create_vertex_list(
+            vertex_layout, count, mode, group, instanced=True, storage=storage, **data,
+        )
+
+    def vertex_list_instanced_indexed(
+            self,
+            vertex_layout: VertexLayout,
+            count: int,
+            mode: GeometryMode,
+            indices: Sequence[int],
+            group: Group,
+            *,
+            storage: VertexStorage | None = None,
+            **data: Any,
+    ) -> IndexedVertexList:
+        """Create an indexed instanced vertex list using an instanced program view."""
+        return self._create_vertex_list(
+            vertex_layout, count, mode, group, indices=indices, instanced=True, storage=storage, **data,
+        )
 
     def add_pass(self, draw_pass: DrawPass) -> DrawPass:
         """Register an additional ordered rendering pass.
@@ -731,11 +679,7 @@ class Batch:
         if draw_pass not in self._pass_registrations:
             raise ValueError("DrawPass must be added to this Batch before adding geometry to it.")
 
-        group._ensure_state_cache()  # noqa: SLF001
-        program = next((state.program for state in group._expanded_states  # noqa: SLF001
-                        if isinstance(state, ShaderProgramState)), None)
-        if program is None:
-            raise ValueError("A secondary draw-pass group must contain a ShaderProgramState.")
+        program = self._get_group_program(group)
 
         binding = vertex_list.domain.get_vertex_input_binding(program)
         registrations = self._pass_registrations[draw_pass]
@@ -959,6 +903,7 @@ class Batch:
             domain.batch = self
             domain.storage = storage
             domain.mode = mode
+            storage.attach_domain(domain)
             self._domain_registry[key] = domain
             self._draw_list_dirty = True
         return domain
@@ -1029,7 +974,7 @@ class Batch:
         return DrawContext(
             surface_ctx=self._context,
             backend_ctx=self._create_backend_draw_context(),
-            draw_pass=draw_pass.resolve(self._context) if isinstance(draw_pass, BatchDrawOptions) else draw_pass,
+            draw_pass=draw_pass.resolve(self._context),
             renderer=self._context.renderer,
         )
 

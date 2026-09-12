@@ -9,7 +9,7 @@ from pyglet.graphics.api.gl.state import (TextureState, MultiTextureSamplerState
 
 
 if TYPE_CHECKING:
-    from pyglet.graphics.draw import DrawContext
+    from pyglet.graphics.drawcontext import DrawContext
     from pyglet.graphics import ShaderProgram
 
 

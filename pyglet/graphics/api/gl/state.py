@@ -15,7 +15,7 @@ from pyglet.graphics.state import (
 
 if TYPE_CHECKING:
     from pyglet.customtypes import ScissorProtocol
-    from pyglet.graphics.draw import DrawContext
+    from pyglet.graphics.drawcontext import DrawContext
     from pyglet.graphics.api.gl.shader import ShaderProgram
     from pyglet.graphics.buffer import UniformBufferRegion
     from pyglet.graphics.texture import Texture

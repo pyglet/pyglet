@@ -9,7 +9,8 @@ import pyglet
 from pyglet import clock, event, graphics, image
 from pyglet.enums import Anchor, BlendFactor, GeometryMode
 from pyglet.graphics import Group
-from pyglet.graphics.draw import DrawContext, BatchDrawOptions
+from pyglet.graphics.draw import BatchDrawOptions
+from pyglet.graphics.drawcontext import DrawContext
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -183,7 +184,7 @@ def get_default_shader():
         (vertex_source, 'vertex'),
         (geometry_source, 'geometry'),
         (fragment_source, 'fragment'),
-        attribute_layout=pyglet.graphics.AttributeLayout(color_start="Bn", color_end="Bn"),
+        vertex_layout=pyglet.graphics.VertexLayout(color_start="4Bn", color_end="4Bn"),
     )
     return program
 

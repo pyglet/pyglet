@@ -71,7 +71,8 @@ from typing import TYPE_CHECKING, ClassVar
 
 import pyglet
 from pyglet import event, clock
-from pyglet.graphics.draw import DrawContext, BatchDrawOptions
+from pyglet.graphics.draw import BatchDrawOptions
+from pyglet.graphics.drawcontext import DrawContext
 
 if TYPE_CHECKING:
     from typing import Literal
@@ -210,7 +211,7 @@ class Sprite(event.EventDispatcher):
             program:
                 A specific shader program to initialize the sprite with. By default, a pre-made shader will be chosen
                 based on the texture type passed. Sprite colors are uploaded as four unsigned bytes; custom programs
-                must use ``attribute_layout=pyglet.graphics.AttributeLayout(colors="Bn")`` so the values are normalized
+                must use ``vertex_layout=pyglet.graphics.VertexLayout(colors="4Bn")`` so the values are normalized
                 for the shader.
         .. versionchanged:: 2.0.16
            Added *program* parameter.

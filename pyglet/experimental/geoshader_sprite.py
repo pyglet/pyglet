@@ -6,7 +6,8 @@ import pyglet
 from pyglet import clock, event, graphics, image
 from pyglet.enums import Anchor, BlendFactor, GeometryMode
 from pyglet.graphics import Group
-from pyglet.graphics.draw import DrawContext, BatchDrawOptions
+from pyglet.graphics.draw import BatchDrawOptions
+from pyglet.graphics.drawcontext import DrawContext
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -152,14 +153,14 @@ def get_default_shader():
     program = pyglet.graphics.api.core.current_context.create_program((vertex_source, 'vertex'),
                                                                        (geometry_source, 'geometry'),
                                                                        (fragment_source, 'fragment'))
-    return program.get_attribute_view(pyglet.graphics.AttributeLayout(color="Bn"))
+    return program.get_vertex_view(pyglet.graphics.VertexLayout(color="4Bn"))
 
 
 def get_default_array_shader():
     program = pyglet.graphics.api.core.current_context.create_program((vertex_source, 'vertex'),
                                                                        (geometry_source, 'geometry'),
                                                                        (fragment_array_source, 'fragment'))
-    return program.get_attribute_view(pyglet.graphics.AttributeLayout(color="Bn"))
+    return program.get_vertex_view(pyglet.graphics.VertexLayout(color="4Bn"))
 
 
 class SpriteGroup(Group):

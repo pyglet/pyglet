@@ -28,8 +28,9 @@ from typing import TYPE_CHECKING, Any, Sequence, Protocol, Iterable, NoReturn
 
 import pyglet
 from pyglet.graphics import allocation
-from pyglet.graphics.shader import Attribute, AttributeView, GraphicsAttribute, DataTypeTuple
-from pyglet.graphics.draw import DrawContext, BatchDrawOptions
+from pyglet.graphics.attributes import Attribute, AttributeView, DataTypeTuple, GraphicsAttribute
+from pyglet.graphics.draw import BatchDrawOptions
+from pyglet.graphics.drawcontext import DrawContext
 
 if TYPE_CHECKING:
     from ctypes import Array
@@ -37,7 +38,9 @@ if TYPE_CHECKING:
     from pyglet.graphics.api.base import SurfaceContext
     from pyglet.graphics.instance import InstanceBucket, InstanceCollection, VertexInstance, InstanceDomain
     from pyglet.graphics.buffer import AttributeBufferObject, IndexedBufferObject
-    from pyglet.graphics.draw import Batch, DrawPass, Group, VertexStorage, _PassRegistration
+    from pyglet.graphics.draw import Batch, Group, _PassRegistration
+    from pyglet.graphics.drawcontext import DrawPass
+    from pyglet.graphics.vertexstorage import VertexStorage
     from pyglet.enums import GeometryMode
     from pyglet.graphics.shader import ShaderProgram
 
