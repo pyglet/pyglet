@@ -71,8 +71,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 import pyglet
 from pyglet import event, clock
-from pyglet.graphics.draw import BatchDrawOptions
-from pyglet.graphics.drawcontext import DrawContext
+from pyglet.graphics.draw import BatchDrawOptions, DrawContext
 
 if TYPE_CHECKING:
     from typing import Literal

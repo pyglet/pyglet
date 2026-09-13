@@ -11,7 +11,7 @@ from pyglet.enums import GraphicsAPI
 if TYPE_CHECKING:
     from pyglet.window.camera.base import _CameraViewBase
     from pyglet.customtypes import ScissorProtocol
-    from pyglet.graphics.drawcontext import DrawContext
+    from pyglet.graphics.draw import DrawContext
     from pyglet.window.camera import ViewportType
 
 

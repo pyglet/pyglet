@@ -12,7 +12,7 @@ from pyglet.math import Vec3, Vec4
 
 if TYPE_CHECKING:
     from pyglet.customtypes import ScissorProtocol
-    from pyglet.graphics.drawcontext import DrawContext
+    from pyglet.graphics.draw import DrawContext
     from pyglet.math import Mat4
     from pyglet.graphics.buffer import UniformBufferObject
     from pyglet.graphics.shader import ShaderProgram, UniformBlock

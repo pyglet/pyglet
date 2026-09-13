@@ -6,7 +6,8 @@ import pytest
 
 import pyglet
 from pyglet.math import Mat4, Vec3
-from pyglet.graphics.draw import BatchDrawOptions, DrawContext, DrawPass, _default_camera
+from pyglet.graphics.draw import BatchDrawOptions, DrawContext, _default_camera
+from pyglet.graphics import DrawPass
 from pyglet.window.camera import base as camera_base
 from pyglet.window.camera.base import (
     BaseCamera,

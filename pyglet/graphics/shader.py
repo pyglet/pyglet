@@ -29,7 +29,6 @@ if TYPE_CHECKING:
     from _weakref import CallableProxyType
 
     from pyglet.customtypes import CType, DataTypes
-    from pyglet.enums import GeometryMode
     from pyglet.graphics import Batch, Group, VertexStorage
     from pyglet.graphics.buffer import UniformBufferObject
     from pyglet.graphics.vertexdomain import (
@@ -172,8 +171,6 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
     @staticmethod
     def derive_domain_attributes(attributes: dict[str, Attribute], key: str | None = None) -> DomainAttributes:
         """Create domain metadata for an attribute layout."""
-        from pyglet.graphics.vertexdomain import DomainAttributes
-
         if key is None:
             return DomainAttributes.from_attributes(attributes)
         return DomainAttributes(attributes, key)

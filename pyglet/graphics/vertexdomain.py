@@ -28,9 +28,8 @@ from typing import TYPE_CHECKING, Any, Sequence, Protocol, Iterable, NoReturn
 
 import pyglet
 from pyglet.graphics import allocation
-from pyglet.graphics.attributes import Attribute, AttributeView, DataTypeTuple, GraphicsAttribute
-from pyglet.graphics.draw import BatchDrawOptions
-from pyglet.graphics.drawcontext import DrawContext
+from pyglet.graphics.attributes import Attribute, AttributeView, DataTypeTuple, GraphicsAttribute, DomainAttributes
+from pyglet.graphics.draw import BatchDrawOptions, DrawContext
 
 if TYPE_CHECKING:
     from ctypes import Array
@@ -38,26 +37,10 @@ if TYPE_CHECKING:
     from pyglet.graphics.api.base import SurfaceContext
     from pyglet.graphics.instance import InstanceBucket, InstanceCollection, VertexInstance, InstanceDomain
     from pyglet.graphics.buffer import AttributeBufferObject, IndexedBufferObject
-    from pyglet.graphics.draw import Batch, Group, _PassRegistration
-    from pyglet.graphics.drawcontext import DrawPass
+    from pyglet.graphics.draw import Batch, Group, _PassRegistration, DrawPass
     from pyglet.graphics.vertexstorage import VertexStorage
     from pyglet.enums import GeometryMode
     from pyglet.graphics.shader import ShaderProgram
-
-
-@dataclass(frozen=True)
-class DomainAttributes:
-    """Vertex attributes together with their stable domain lookup key."""
-    attributes: dict[str, Any]
-    key: str
-
-    @classmethod
-    def from_attributes(cls, attributes: dict[str, Any]) -> DomainAttributes:
-        """Create domain metadata and calculate its platform-independent key."""
-        key = str(tuple(
-            attribute.key for attribute in sorted(attributes.values(), key=lambda attribute: attribute.location)
-        ))
-        return cls(attributes, key)
 
 
 def _nearest_pow2(v: int) -> int:

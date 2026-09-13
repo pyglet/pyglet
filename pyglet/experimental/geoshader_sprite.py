@@ -6,8 +6,7 @@ import pyglet
 from pyglet import clock, event, graphics, image
 from pyglet.enums import Anchor, BlendFactor, GeometryMode
 from pyglet.graphics import Group
-from pyglet.graphics.draw import BatchDrawOptions
-from pyglet.graphics.drawcontext import DrawContext
+from pyglet.graphics.draw import BatchDrawOptions, DrawContext
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
