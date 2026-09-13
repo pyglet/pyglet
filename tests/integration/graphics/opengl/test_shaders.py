@@ -164,7 +164,7 @@ def test_shader_ubo_data_structure(test_window):
     program = pyglet.graphics.ShaderProgram(
         pyglet.graphics.Shader(vertex_source, "vertex"),
         pyglet.graphics.Shader(fragment_source, "fragment"),
-        attribute_layout=None,
+        vertex_layout=None,
     )
 
     entity_block = program.uniform_blocks['EntityDataBlock']
@@ -264,7 +264,7 @@ def test_shader_ubo_matrix_data_structure(test_window):
     program = pyglet.graphics.ShaderProgram(
         pyglet.graphics.Shader(vertex_source, "vertex"),
         pyglet.graphics.Shader(fragment_source, "fragment"),
-        attribute_layout=None,
+        vertex_layout=None,
     )
 
     matrix_block = program.uniform_blocks['MatrixTest']
@@ -360,7 +360,7 @@ def test_shader_uniform_block_matrix(test_window):
     program = pyglet.graphics.ShaderProgram(
         pyglet.graphics.Shader(vertex_source, "vertex"),
         pyglet.graphics.Shader(fragment_source, "fragment"),
-        attribute_layout=None,
+        vertex_layout=None,
     )
 
     matrix_block = program.uniform_blocks['MatrixTest']
@@ -456,7 +456,7 @@ def test_shader_uniform_matrix(test_window):
     program = pyglet.graphics.ShaderProgram(
         pyglet.graphics.Shader(vertex_source, "vertex"),
         pyglet.graphics.Shader(fragment_source, "fragment"),
-        attribute_layout=None,
+        vertex_layout=None,
     )
     test_data = pyglet.math.Mat4.orthogonal_projection(0, 800, 0, 600, -255, 255)
 
@@ -531,7 +531,7 @@ def test_shader_uniform_matrix_array(test_window):
     program = pyglet.graphics.ShaderProgram(
         pyglet.graphics.Shader(vertex_source, "vertex"),
         pyglet.graphics.Shader(fragment_source, "fragment"),
-        attribute_layout=None,
+        vertex_layout=None,
     )
     test_data = pyglet.math.Mat4.orthogonal_projection(0, 800, 0, 600, -255, 255)
 
@@ -608,7 +608,7 @@ def test_shader_uniform_float_array(test_window):
     program = pyglet.graphics.ShaderProgram(
         pyglet.graphics.Shader(vertex_source, "vertex"),
         pyglet.graphics.Shader(fragment_source, "fragment"),
-        attribute_layout=None,
+        vertex_layout=None,
     )
     test_data = 25.5
 
@@ -644,7 +644,7 @@ def test_shader_uniform_matrix_types(test_window, matrix_type, matrix_length):
     program = pyglet.graphics.ShaderProgram(
         pyglet.graphics.Shader(vertex_source, "vertex"),
         pyglet.graphics.Shader(fragment_source, "fragment"),
-        attribute_layout=None,
+        vertex_layout=None,
     )
 
     test_data = tuple((index + 1) / 10.0 for index in range(matrix_length))
@@ -679,7 +679,7 @@ def test_shader_uniform_matrix_array_types(test_window, matrix_type, matrix_leng
     program = pyglet.graphics.ShaderProgram(
         pyglet.graphics.Shader(vertex_source, "vertex"),
         pyglet.graphics.Shader(fragment_source, "fragment"),
-        attribute_layout=None,
+        vertex_layout=None,
     )
 
     test_data = tuple((index + 1) / 10.0 for index in range(matrix_length))
@@ -719,7 +719,7 @@ def test_transform_feedback_shader_program_varyings_are_linked(test_window):
         pyglet.graphics.Shader(vertex_source, "vertex"),
         pyglet.graphics.Shader(fragment_source, "fragment"),
         varyings=["tf_position"],
-        attribute_layout=None,
+        vertex_layout=None,
     )
 
     from pyglet.graphics.api.gl import gl

@@ -6,7 +6,7 @@ import pytest
 
 import pyglet
 from pyglet.math import Mat4, Vec3
-from pyglet.graphics.draw import DrawContext, DrawPass
+from pyglet.graphics.draw import BatchDrawOptions, DrawContext, DrawPass, _default_camera
 from pyglet.window.camera import base as camera_base
 from pyglet.window.camera.base import (
     BaseCamera,
@@ -78,6 +78,27 @@ def _set_default_view_storage(monkeypatch: pytest.MonkeyPatch, storage: Recordin
         "_create_default_view_storage",
         lambda self, _window, **_kwargs: storage,
     )
+
+
+def test_draw_pass_resolves_default_camera_and_preserves_none(test_window) -> None:
+    context = test_window.context
+
+    default_pass = BatchDrawOptions().resolve(context)
+    disabled_pass = BatchDrawOptions(camera=None).resolve(context)
+    direct_default_pass = DrawPass(
+        framebuffer=None,
+        camera=_default_camera,
+        viewport=None,
+        scissor=None,
+        clear_color=context.clear_color,
+    ).resolve(context)
+
+    assert default_pass.camera is test_window.camera
+    assert default_pass.viewport == test_window.camera.viewport
+    assert disabled_pass.camera is None
+    assert disabled_pass.viewport is None
+    assert disabled_pass.scissor is None
+    assert direct_default_pass.camera is test_window.camera
 
 
 @pytest.mark.parametrize("uniform_buffers", [False, True])

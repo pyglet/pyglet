@@ -30,17 +30,12 @@ class DrawPass:
     camera: BaseCamera | _DefaultCameraMarker | None
     viewport: tuple | None
     scissor: CameraScissor | tuple | None
-    clear_color: tuple[float, float, float, float]
+    clear_color: tuple[float, float, float, float] = (0.0, 0.0, 0.0, 1.0)
     order: int = 0
     name: str | None = None
 
     def resolve(self, ctx: SurfaceContext) -> DrawPass:
-        """Resolve the default-camera sentinel for this surface context.
-
-        ``None`` deliberately remains camera-free.  In that case explicit
-        viewport and scissor values are still retained, but no camera-derived
-        values are supplied.
-        """
+        """Resolve the draw pass for default values used on the context."""
         camera = ctx.window.camera if isinstance(self.camera, _DefaultCameraMarker) else self.camera
         return replace(
             self,

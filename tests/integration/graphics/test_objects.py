@@ -54,10 +54,10 @@ def _is_gl2_backend() -> bool:
     return pyglet.options.backend in GraphicsAPIGroups.GL2
 
 
-def _build_program(vertex_source: str, fragment_source: str, *, attribute_layout=None):
+def _build_program(vertex_source: str, fragment_source: str, *, vertex_layout=None):
     vertex = pyglet.graphics.Shader(vertex_source, "vertex")
     fragment = pyglet.graphics.Shader(fragment_source, "fragment")
-    return pyglet.graphics.ShaderProgram(vertex, fragment, attribute_layout=attribute_layout)
+    return pyglet.graphics.ShaderProgram(vertex, fragment, vertex_layout=vertex_layout)
 
 
 def _sprite_fragment_source() -> str:
@@ -344,10 +344,10 @@ def sprite_programs(test_window):  # noqa: ARG001
             program.delete()
 
 
-def test_attribute_layout_overrides_buffer_format(test_window):  # noqa: ARG001
-    layout = pyglet.graphics.AttributeLayout(colors="Bn")
+def test_vertex_layout_overrides_buffer_format(test_window):  # noqa: ARG001
+    layout = pyglet.graphics.VertexLayout(colors="4Bn")
     source = _sprite_vertex_source(_SPRITE_ORDER_A if _is_gl2_backend() else _SPRITE_LAYOUT_A)
-    program = _build_program(source, _sprite_fragment_source(), attribute_layout=layout)
+    program = _build_program(source, _sprite_fragment_source(), vertex_layout=layout)
     try:
         colors = program.attributes["colors"].fmt
         position = program.attributes["position"].fmt
@@ -357,32 +357,32 @@ def test_attribute_layout_overrides_buffer_format(test_window):  # noqa: ARG001
         program.delete()
 
 
-def test_cached_shader_attribute_layout_uses_interned_view(test_window):  # noqa: ARG001
+def test_cached_shader_vertex_layout_uses_interned_view(test_window):  # noqa: ARG001
     source = _sprite_vertex_source(_SPRITE_ORDER_A if _is_gl2_backend() else _SPRITE_LAYOUT_A)
     fragment_source = _sprite_fragment_source()
-    layout = pyglet.graphics.AttributeLayout(colors="Bn")
+    layout = pyglet.graphics.VertexLayout(colors="4Bn")
     program = pyglet.graphics.api.get_cached_shader(
-        "test_attribute_layout_cache",
+        "test_vertex_layout_cache",
         (source, "vertex"),
         (fragment_source, "fragment"),
-        attribute_layout=layout,
+        vertex_layout=layout,
     )
     same_layout = pyglet.graphics.api.get_cached_shader(
-        "test_attribute_layout_cache",
+        "test_vertex_layout_cache",
         (source, "vertex"),
         (fragment_source, "fragment"),
-        attribute_layout=layout,
+        vertex_layout=layout,
     )
     introspected = pyglet.graphics.api.get_cached_shader(
-        "test_attribute_layout_cache",
+        "test_vertex_layout_cache",
         (source, "vertex"),
         (fragment_source, "fragment"),
-        attribute_layout=None,
+        vertex_layout=None,
     )
     try:
         assert same_layout is program
         assert introspected is program.program
-        assert introspected.get_attribute_view(layout) is program
+        assert introspected.get_vertex_view(layout) is program
         assert program.attributes["colors"].fmt.normalized is True
         assert introspected.attributes["colors"].fmt.normalized is False
     finally:
