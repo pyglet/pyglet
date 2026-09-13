@@ -13,7 +13,8 @@ from pyglet.graphics.api.base import (
     SurfaceContext,
     NullContext,
 )
-from pyglet.graphics.shader import VertexLayout, Shader, ShaderProgram
+from pyglet.graphics.attributes import VertexLayout
+from pyglet.graphics.shader import Shader, ShaderProgram
 
 if TYPE_CHECKING:
 

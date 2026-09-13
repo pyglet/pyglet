@@ -257,6 +257,9 @@ class VertexInputBinding(Protocol):
     def bind(self) -> None:
         """Make this vertex-input state current."""
 
+    def commit(self) -> None:
+        """Commit pending data for streams used by this input state."""
+
 
 class VertexArrayBinding:
     """A wrapper for vertex-input state that binds streams."""
@@ -271,6 +274,11 @@ class VertexArrayBinding:
 
     def bind(self) -> None:
         raise NotImplementedError
+
+    def commit(self) -> None:
+        """Commit pending data for every stream linked to this binding."""
+        for stream in self.streams:
+            stream.commit()
 
     def _create_vao(self) -> VertexArrayProtocol: ...
 

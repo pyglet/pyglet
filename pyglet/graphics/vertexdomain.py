@@ -24,12 +24,21 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Sequence, Protocol, Iterable, NoReturn
+from typing import TYPE_CHECKING, Any, Sequence
 
 import pyglet
 from pyglet.graphics import allocation
-from pyglet.graphics.attributes import Attribute, AttributeView, DataTypeTuple, GraphicsAttribute, DomainAttributes
+from pyglet.graphics.attributes import Attribute, DomainAttributes
 from pyglet.graphics.draw import BatchDrawOptions, DrawContext
+from pyglet.graphics.vertexstorage import (
+    IndexStream,
+    InstanceStream,
+    Stream,
+    VertexArrayBinding,
+    VertexArrayProtocol,
+    VertexInputBinding,
+    VertexStream,
+)
 
 if TYPE_CHECKING:
     from ctypes import Array
@@ -41,32 +50,6 @@ if TYPE_CHECKING:
     from pyglet.graphics.vertexstorage import VertexStorage
     from pyglet.enums import GeometryMode
     from pyglet.graphics.shader import ShaderProgram
-
-
-def _nearest_pow2(v: int) -> int:
-    # From http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
-    # Credit: Sean Anderson
-    v -= 1
-    v |= v >> 1
-    v |= v >> 2
-    v |= v >> 4
-    v |= v >> 8
-    v |= v >> 16
-    return v + 1
-
-
-def _make_attribute_property(name: str) -> property:
-    def _attribute_getter(self: VertexList) -> Array[float | int]:
-        stream = self.domain.attrib_name_buffers[name]
-        region = stream.get_attribute_region(name, self.start, self.count)
-        stream.invalidate_attribute_region(name, self.start, self.count)
-        return region
-
-    def _attribute_setter(self: VertexList, data: Any) -> None:
-        stream = self.domain.attrib_name_buffers[name]
-        stream.set_attribute_region(name, self.start, self.count, data)
-
-    return property(_attribute_getter, _attribute_setter)
 
 
 class VertexList:
@@ -735,8 +718,7 @@ class VertexDomain(ABC):
     def bind_vao(self) -> None:
         """Binds the VAO as well as commit any pending buffer changes to the GPU."""
         self.vao.bind()
-        for stream in self._streams:
-            stream.commit()
+        self.vao.commit()
 
     @property
     def attribute_names(self):
@@ -1020,237 +1002,6 @@ class InstancedIndexedVertexDomain(IndexedVertexDomain):
         # Make a custom VertexList class w/ properties for each attribute in the ShaderProgram:
         return type(self._vertex_class.__name__, (mixin, self._vertex_class),
                                       self.vertex_buffers._property_dict)  # noqa: SLF001
-
-class Stream(ABC):
-    """A container that handles a set of buffers to be used with domains."""
-    def __init__(self, size: int) -> None:
-        """Initialize the stream and create an allocator.
-
-        Args:
-            size: Initial allocator and buffer size.
-        """
-        self._capacity = size
-        self.allocator = allocation.Allocator(size)
-        self.buffers = []
-
-    def commit(self) -> None:
-        """Binds buffers and commits all pending data to the graphics API."""
-        for buf in self.buffers:
-            buf.commit()
-
-    @abstractmethod
-    def bind_into(self, vao) -> None:
-        """Record this stream into the VAO.
-
-        The VAO should be bound before this function is called.
-        """
-
-    def alloc(self, count: int) -> int:
-        """Allocate a region of data, resizing the buffers if necessary."""
-        try:
-            return self.allocator.alloc(count)
-        except allocation.AllocatorMemoryException as e:
-            capacity = _nearest_pow2(e.requested_capacity)
-            self.resize(capacity)
-            return self.allocator.alloc(count)
-
-    def resize(self, capacity: int) -> None:
-        """Resize all buffers to the specified capacity.
-
-        Size is passed as capacity * stride.
-        """
-        if capacity <= self.allocator.capacity:
-            return
-        self.allocator.set_capacity(capacity)
-        for buf in self.buffers:
-            buf.resize(capacity * buf.stride)
-
-    def dealloc(self, start: int, count: int) -> None:
-        self.allocator.dealloc(start, count)
-
-    def realloc(self, start: int, count: int, new_count: int) -> int:
-        """Reallocate a region of data, resizing the buffers if necessary."""
-        try:
-            return self.allocator.realloc(start, count, new_count)
-        except allocation.AllocatorMemoryException as e:
-            capacity = _nearest_pow2(e.requested_capacity)
-            self.resize(capacity)
-            return self.allocator.realloc(start, count, new_count)
-    @abstractmethod
-    def set_region(self, start: int, count: int, data) -> None: ...
-
-
-class VertexStream(Stream):
-    """A stream of buffers to be used with per-vertex attributes."""
-    attrib_name_buffers: dict[str, AttributeBufferObject]
-    attribute_meta: Sequence[Attribute]
-    def __init__(self, ctx: SurfaceContext, initial_size: int, attrs: Sequence[Attribute], *, divisor: int = 0):
-        super().__init__(initial_size)
-        self._ctx = ctx
-        self.attribute_names = {}  # name: attribute
-        self.buffers = []
-        self.attrib_name_buffers = {}  # dict of AttributeName: AttributeBufferObject (for VertexLists)
-
-        self._property_dict = {}
-        self.attribute_meta = attrs
-        self._allocate_buffers()
-
-    def get_buffer(self, size, attribute):
-        raise NotImplementedError
-
-    def get_graphics_attribute(self, attribute: Attribute, view: AttributeView) -> GraphicsAttribute:
-        raise NotImplementedError
-
-    def _create_separate_buffers(self, attributes: Sequence[Attribute]) -> None:
-        """Takes the attributes and creates a separate buffer for each attribute."""
-        for attribute in attributes:
-            name = attribute.fmt.name
-
-            stride = attribute.fmt.components * attribute.element_size
-            view = AttributeView(offset=0, stride=stride)
-            self.attribute_names[name] = attribute = self.get_graphics_attribute(attribute, view)
-
-            self.attrib_name_buffers[name] = buffer = self.get_buffer(stride * self.allocator.capacity, attribute)
-
-            self.buffers.append(buffer)
-
-            # Create custom property to be used in the VertexList:
-            self._property_dict[name] = _make_attribute_property(name)
-
-    def _create_interleaved_buffers(self) -> NoReturn:
-        """Creates a single buffer for all passed attributes."""
-        raise NotImplementedError
-
-    def _allocate_buffers(self) -> None:
-        for attrib in self.attribute_meta:
-            fmt_dt = attrib.fmt.data_type
-            assert fmt_dt in DataTypeTuple, f"'{fmt_dt}' is not a valid attribute format for '{attrib.fmt.name}'."
-
-        # Only support separate buffers per attrib currently.
-        self._create_separate_buffers(self.attribute_meta)
-
-    def set_region(self, start: int, count: int, data_by_attr: dict[str, Any]):
-        for name, buf in self.attrib_name_buffers.items():
-            buf.set_region(start, count, data_by_attr[name])
-
-    def set_attribute_region(self, name: str, start: int, count: int, data: Any):
-        buf = self.attrib_name_buffers[name]
-        return buf.set_region(start, count, data)
-
-    def get_attribute_region(self, name: str, start: int, count: int):
-        buf = self.attrib_name_buffers[name]
-        return buf.get_region(start, count)
-
-    def invalidate_attribute_region(self, name: str, start: int, count: int):
-        buf = self.attrib_name_buffers[name]
-        buf.invalidate_region(start, count)
-
-    def copy_data(
-        self,
-        dst_slot: int,
-        dst_stream: VertexStream | InstanceStream,
-        src_slot: int,
-        count: int = 1,
-        attrs: Iterable[str] | None = None,
-        *,
-        strict: bool = False,
-    ) -> None:
-        if attrs is None:
-            dst_names = set(dst_stream.attrib_name_buffers.keys())
-            src_names = set(self.attrib_name_buffers.keys())
-            names = dst_names & src_names
-            if strict and dst_names != src_names:
-                err = (f"Attribute layout mismatch: missing in dst={sorted(src_names - dst_names)}, "
-                       f"missing in src={sorted(dst_names - src_names)}")
-                raise ValueError(err)
-        else:
-            names = [n for n in attrs if n in self.attrib_name_buffers and n in dst_stream.attrib_name_buffers]
-            if strict and len(names) != len(list(attrs)):
-                err = f"Requested attribute not present in both streams. {names}, {attrs}"
-                raise ValueError(err)
-
-        for name in names:
-            dst_buf = dst_stream.attrib_name_buffers[name]
-            src_buf = self.attrib_name_buffers[name]
-
-            data = src_buf.get_region(src_slot, count)
-            dst_buf.set_region(dst_slot, count, data)
-
-    def __repr__(self):
-        return f'{self.__class__.__name__}(attributes={list(self.attribute_meta)}, alloc={self.allocator})'
-
-class InstanceStream(VertexStream):
-    """Handles a stream of buffers to be used with the per-instance attributes."""
-
-class IndexStream(Stream):
-    """A container to manage an index buffer for a domain."""
-
-    def __init__(self, ctx, data_type: DataTypes, initial_elems: int):
-        super().__init__(initial_elems)
-        self.ctx = ctx
-        self.data_type = data_type
-        self.buffer = self._create_buffer()
-        self.buffers = [self.buffer]
-
-    def _create_buffer(self) -> IndexedBufferObject:
-        raise NotImplementedError
-
-    def commit(self) -> None:
-        self.buffer.commit()
-
-    def get_region(self, start: int, count: int) -> Any:
-        return self.buffer.get_region(start, count)
-
-    def bind_into(self, vao) -> None:
-        self.buffer.bind_to_index_buffer()
-
-    def set_region(self, start: int, count: int, data) -> None:
-        self.buffer.set_region(start, count, data)
-
-    def copy_region(self, dst: int, src: int, count: int) -> None:
-        self.buffer.copy_region(dst, src, count)
-
-
-class VertexArrayProtocol(Protocol):
-    def bind(self): ...
-    def unbind(self): ...
-
-
-class VertexInputBinding(Protocol):
-    """The vertex-input state required to issue a draw call."""
-
-    def bind(self) -> None:
-        """Make this vertex-input state current."""
-
-
-class VertexArrayBinding:
-    """A wrapper for a Vertex Array Object that binds streams.
-
-    VAO's store which attribute layouts are used, as well as which buffer object each attribute pulls from.
-
-    In the case of instanced drawing, each instance needs its own VAO as their per-instance data are separate buffers.
-    """
-    streams: list[VertexStream | InstanceStream | IndexStream]
-
-    def __init__(self, ctx: SurfaceContext, streams: list[VertexStream | InstanceStream | IndexStream]):
-        # attr_map: semantic/name -> location (from ShaderProgram inspection)
-        self._ctx = ctx
-        self.vao = self._create_vao()
-        self.streams = streams
-        self._link()
-
-    def bind(self):
-        raise NotImplementedError
-
-    def _create_vao(self) -> VertexArrayProtocol: ...
-
-    def _link(self):
-        """Link the all streams to the VAO."""
-
-    def __repr__(self):
-        return f'<{self.__class__.__name__}@{id(self):x} vao={self.vao}, streams={self.streams}>'
-
-
 
 class VertexGroupBucket(allocation.RangeAllocator):
     """A grouping of vertex lists belonging to a single group in a domain.

@@ -38,11 +38,7 @@ from pyglet.graphics.api.gl import (
 )
 from pyglet.graphics.shader import (
     _AbstractShaderProgram,
-    Attribute,
-    VertexLayout,
-    AttributeView,
     _build_uniform_struct_from_uniforms,
-    GraphicsAttribute,
     _AbstractShader,
     UBOBindingManager,
     UniformArrayBase,
@@ -53,6 +49,7 @@ from pyglet.graphics.shader import (
     ShaderType,
     UnsupportedShaderType,
 )
+from pyglet.graphics.attributes import Attribute, AttributeView, GraphicsAttribute, VertexLayout
 from pyglet.graphics.shader import ShaderException
 
 from pyglet.graphics.api.gl.buffer import GLUniformBufferObject

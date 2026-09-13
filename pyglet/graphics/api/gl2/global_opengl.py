@@ -7,7 +7,8 @@ from typing import Sequence, TYPE_CHECKING, Literal
 import pyglet
 from pyglet.enums import GraphicsAPI
 from pyglet.graphics.api.gl.global_opengl import OpenGLBackend
-from pyglet.graphics.shader import VertexLayout, ShaderProgram, Shader
+from pyglet.graphics.attributes import VertexLayout
+from pyglet.graphics.shader import ShaderProgram, Shader
 
 if TYPE_CHECKING:
     from _ctypes import Array

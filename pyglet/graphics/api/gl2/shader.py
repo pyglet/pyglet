@@ -21,11 +21,11 @@ from pyglet.graphics.api.gl.shader import GLShaderProgram
 from pyglet.graphics import UnsupportedBackendError
 from pyglet.graphics.shader import (
     _AbstractShaderProgram,
-    VertexLayout,
     ShaderException,
     ShaderSource,
     ShaderType,
 )
+from pyglet.graphics.attributes import VertexLayout
 
 if TYPE_CHECKING:
     from pyglet.graphics.api.base import NullContext

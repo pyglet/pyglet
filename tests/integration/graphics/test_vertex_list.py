@@ -80,10 +80,18 @@ class VertexListTest(unittest.TestCase):
         indexed_vertex_list = batch.vertex_list_indexed(
             layout, 3, GeometryMode.TRIANGLES, (0, 1, 2), group, storage=storage, **data,
         )
+        draw_pass = batch.add_pass(pyglet.graphics.DrawPass())
+        vertex_list.add_pass(draw_pass, group=group)
 
         assert vertex_list.domain.attribute_meta["colors"].fmt.data_type == "B"
         assert vertex_list.domain.storage is storage
         assert indexed_vertex_list.indices == [0, 1, 2]
+        assert len(batch._pass_registrations[draw_pass]) == 1
+        assert any(buffer._dirty for buffer in vertex_list.domain.vertex_buffers.buffers)
+
+        batch.draw_pass(draw_pass)
+
+        assert all(not buffer._dirty for buffer in vertex_list.domain.vertex_buffers.buffers)
 
     def test_vertex_list_property_set(self):
         program = pyglet.graphics.api.get_default_shader()

@@ -51,12 +51,8 @@ from pyglet.graphics.api.gl.lib import GLException, MissingFunctionException
 from pyglet.graphics.api.gl.shader import GLAttribute
 from pyglet.graphics.buffer import _data_type_size
 from pyglet.graphics.instance import InstanceBucket, InstanceCollection, InstanceDomain, VertexInstance
+from pyglet.graphics.vertexstorage import VertexStream, VertexArrayBinding, VertexArrayProtocol, InstanceStream, IndexStream
 from pyglet.graphics.vertexdomain import (
-    VertexStream,
-    VertexArrayBinding,
-    VertexArrayProtocol,
-    InstanceStream,
-    IndexStream,
     _RunningIndexSupport,
     VertexGroupBucket,
     VertexDomain,
@@ -70,12 +66,11 @@ from pyglet.graphics.vertexdomain import (
 )
 
 if TYPE_CHECKING:
-    from ctypes import Array
     from pyglet.graphics.resource import ShaderProgramKey
-    from pyglet.graphics.shader import AttributeView, GraphicsAttribute, ShaderProgram
+    from pyglet.graphics.attributes import Attribute, AttributeView, GraphicsAttribute
+    from pyglet.graphics.shader import ShaderProgram
     from pyglet.graphics import Group
     from pyglet.enums import GeometryMode
-    from pyglet.graphics.shader import Attribute
     from pyglet.customtypes import DataTypes
 
 _gl_types = {
@@ -88,20 +83,6 @@ _gl_types = {
     'f': GL_FLOAT,
     'd': GL_DOUBLE,
 }
-
-
-def _make_attribute_property(name: str) -> property:
-    def _attribute_getter(self: GLVertexList) -> Array[float | int]:
-        stream = self.domain.attrib_name_buffers[name]
-        region = stream.get_attribute_region(name, self.start, self.count)
-        stream.invalidate_attribute_region(name, self.start, self.count)
-        return region
-
-    def _attribute_setter(self: GLVertexList, data: Any) -> None:
-        stream = self.domain.attrib_name_buffers[name]
-        stream.set_attribute_region(name, self.start, self.count, data)
-
-    return property(_attribute_getter, _attribute_setter)
 
 class _GLVertexStreamMix(VertexStream):
     _ctx: OpenGLSurfaceContext

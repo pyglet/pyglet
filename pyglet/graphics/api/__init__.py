@@ -10,7 +10,8 @@ from pyglet.graphics.api.base import NullBackend
 if TYPE_CHECKING:
     from pyglet.graphics.api.base import GraphicsConfig
     from pyglet.graphics.draw import Batch
-    from pyglet.graphics.shader import VertexLayout, ShaderType, ShaderProgram
+    from pyglet.graphics.attributes import VertexLayout
+    from pyglet.graphics.shader import ShaderType, ShaderProgram
 
 core = NullBackend()
 

@@ -34,8 +34,6 @@ from pyglet.graphics.api.webgl.gl import (
 from pyglet.graphics.shader import (
     _AbstractShader,
     _AbstractShaderProgram,
-    Attribute,
-    VertexLayout,
     Shader,
     ShaderException,
     UnsupportedShaderType,
@@ -47,9 +45,8 @@ from pyglet.graphics.shader import (
     ShaderProgram,
     ShaderSource,
     ShaderType,
-    AttributeView,
-    GraphicsAttribute,
 )
+from pyglet.graphics.attributes import Attribute, AttributeView, GraphicsAttribute, VertexLayout
 
 try:
     import js  # noqa: F821

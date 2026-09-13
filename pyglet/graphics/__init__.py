@@ -32,7 +32,7 @@ class UnsupportedBackendError(Exception):
 
 if TYPE_CHECKING:
     from pyglet.enums import GraphicsAPI
-    from pyglet.graphics import api, DrawPass  # noqa: F401
+    from pyglet.graphics import api  # noqa: F401
     from pyglet.graphics.draw import BatchDrawOptions, Group, ShaderGroup, Batch, DrawPass  # noqa: F401
     from pyglet.graphics.vertexstorage import VertexStorage  # noqa: F401
     from pyglet.graphics.attributes import VertexLayout  # noqa: F401
@@ -52,7 +52,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.framebuffer import Framebuffer, RenderTexture, Renderbuffer, TextureRenderTarget  # noqa: F401
 else:
     from pyglet.graphics import api  # noqa: F401
-    from pyglet.graphics.draw import BatchDrawOptions, Group, ShaderGroup, Batch, get_default_batch  # noqa: F401
+    from pyglet.graphics.draw import BatchDrawOptions, DrawPass, Group, ShaderGroup, Batch, get_default_batch  # noqa: F401
     from pyglet.graphics.vertexstorage import VertexStorage  # noqa: F401
     from pyglet.graphics.attributes import VertexLayout  # noqa: F401
     from pyglet.graphics.shader import (  # noqa: F401

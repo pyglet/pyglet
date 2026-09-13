@@ -46,12 +46,8 @@ from pyglet.graphics.api.webgl.shader import GLAttribute
 from pyglet.graphics.api.webgl.buffer import WebGLAttributeBufferObject, WebGLIndexedBufferObject
 from pyglet.graphics.buffer import _data_type_size
 from pyglet.graphics.instance import InstanceBucket, InstanceDomain, VertexInstance
+from pyglet.graphics.vertexstorage import VertexArrayBinding, VertexArrayProtocol, InstanceStream, VertexStream, IndexStream
 from pyglet.graphics.vertexdomain import (
-    VertexArrayBinding,
-    VertexArrayProtocol,
-    InstanceStream,
-    VertexStream,
-    IndexStream,
     VertexList,
     IndexedVertexList,
     VertexDomain,
@@ -66,10 +62,9 @@ from pyglet.graphics.vertexdomain import (
 )
 
 if TYPE_CHECKING:
-    from pyglet.graphics.shader import AttributeView
+    from pyglet.graphics.attributes import Attribute, AttributeView
     from pyglet.customtypes import DataTypes
     from pyglet.enums import GeometryMode
-    from pyglet.graphics.shader import Attribute
     from pyglet.graphics.api.webgl.context import OpenGLSurfaceContext
 
 _gl_types = {
@@ -82,21 +77,6 @@ _gl_types = {
     'f': GL_FLOAT,
     'd': GL_DOUBLE,
 }
-
-
-def _make_attribute_property(name: str) -> property:
-    def _attribute_getter(self: WebGLVertexList) -> ctypes.Array[float | int]:
-        stream = self.domain.attrib_name_buffers[name]
-        region = stream.get_attribute_region(name, self.start, self.count)
-        stream.invalidate_attribute_region(name, self.start, self.count)
-        return region
-
-    def _attribute_setter(self: WebGLVertexList, data: Any) -> None:
-        stream = self.domain.attrib_name_buffers[name]
-        stream.set_attribute_region(name, self.start, self.count, data)
-
-    return property(_attribute_getter, _attribute_setter)
-
 
 class _GLVertexStreamMix(VertexStream):
     _ctx: OpenGLSurfaceContext

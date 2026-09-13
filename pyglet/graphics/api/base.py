@@ -15,7 +15,8 @@ if TYPE_CHECKING:
     from pyglet.config import SurfaceConfig
     from pyglet.graphics import Batch
     from pyglet.graphics.buffer import BufferRange
-    from pyglet.graphics.shader import VertexLayout, Shader, ShaderProgram, ShaderType
+    from pyglet.graphics.attributes import VertexLayout
+    from pyglet.graphics.shader import Shader, ShaderProgram, ShaderType
     from pyglet.window import Window
 
 _debug_print = debug_print("debug_api")

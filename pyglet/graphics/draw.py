@@ -5,7 +5,7 @@ import sys
 import warnings
 import weakref
 from copy import copy
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Sequence, TypeVar, Generator, Literal
 
 import pyglet
@@ -56,24 +56,40 @@ _default_camera = _DefaultCameraMarker()
 
 @dataclass(eq=False)
 class DrawPass:
-    """Resolved rendering state for one ordered submission."""
-    framebuffer: object | None
-    camera: BaseCamera | _DefaultCameraMarker | None
-    viewport: tuple | None
-    scissor: CameraScissor | tuple | None
-    clear_color: tuple[float, float, float, float] = (0.0, 0.0, 0.0, 1.0)
+    """Configuration for one ordered batch submission."""
+
+    #: Render target, or ``None`` for the context's default framebuffer.
+    framebuffer: object | None = None
+
+    #: Camera for this pass. ``None`` disables it; the default uses the context camera.
+    camera: BaseCamera | _DefaultCameraMarker | None = _default_camera
+
+    #: Viewport override, or the active camera's viewport when omitted.
+    viewport: tuple | None = None
+
+    #: Scissor override, or the active camera's scissor when omitted.
+    scissor: CameraScissor | tuple | None = None
+
+    #: Clear color override, or the surface context's clear color when omitted.
+    clear_color: tuple[float, float, float, float] | None = None
+
+    #: Submission order among this batch's additional passes.
     order: int = 0
+
+    #: Optional label for diagnostics and tooling.
     name: str | None = None
 
     def resolve(self, ctx: SurfaceContext) -> DrawPass:
-        """Resolve the draw pass for default values used on the context."""
-        camera = ctx.window.camera if isinstance(self.camera, _DefaultCameraMarker) else self.camera
-        return replace(
-            self,
-            camera=camera,
-            viewport=self.viewport or (camera.viewport if camera is not None else None),
-            scissor=self.scissor or (camera.view.scissor if camera is not None else None),
-        )
+        """Fill unspecified values from ``ctx`` while preserving pass identity."""
+        if isinstance(self.camera, _DefaultCameraMarker):
+            self.camera = ctx.window.camera
+        if self.viewport is None and self.camera is not None:
+            self.viewport = self.camera.viewport
+        if self.scissor is None and self.camera is not None:
+            self.scissor = self.camera.view.scissor
+        if self.clear_color is None:
+            self.clear_color = ctx.clear_color
+        return self
 
 
 SurfaceContextT = TypeVar("SurfaceContextT", bound=SurfaceContext)
@@ -563,7 +579,7 @@ class BatchDrawOptions:
             camera=self.camera,
             viewport=self.viewport,
             scissor=self.scissor,
-            clear_color=self.clear_color or ctx.clear_color,
+            clear_color=self.clear_color,
         ).resolve(ctx)
 
 @dataclass
@@ -674,12 +690,10 @@ class Batch:
     @staticmethod
     def _get_group_program(group: Group) -> ShaderProgram:
         """Return the shader program supplied by ``group``'s state."""
-        group._ensure_state_cache()  # noqa: SLF001
-        program = next((state.program for state in group._expanded_states  # noqa: SLF001
-                        if isinstance(state, ShaderProgramState)), None)
-        if program is None:
-            raise ValueError("A vertex-list group must contain a ShaderProgramState.")
-        return program
+        try:
+            return group._state_names[ShaderProgramState.__name__].program  # noqa: SLF001
+        except KeyError:
+            raise ValueError("A vertex-list group must contain a ShaderProgramState.") from None
 
     def _create_vertex_list(
             self,
@@ -778,10 +792,32 @@ class Batch:
         etc.).  Geometry is added to it with :meth:`VertexList.add_pass`.
         The default geometry registration made by ``batch=`` is unchanged.
         """
+        assert isinstance(draw_pass, DrawPass), "draw_pass must be a DrawPass."
+        draw_pass.resolve(self._context)
         if draw_pass not in self._pass_registrations:
             self._passes.append(draw_pass)
             self._pass_registrations[draw_pass] = []
         return draw_pass
+
+    @staticmethod
+    def _new_pass_bucket(vertex_list: VertexList) -> VertexGroupBucket | IndexedVertexGroupBucket:
+        """Create an empty bucket matching a vertex list's normal bucket."""
+        if vertex_list.bucket is None:
+            raise RuntimeError("VertexList must belong to a domain bucket before it can join a DrawPass.")
+        return type(vertex_list.bucket)()
+
+    @staticmethod
+    def _find_pass_registration(
+            registrations: list[_PassRegistration], vertex_list: VertexList, group: Group, binding: Any,
+    ) -> _PassRegistration | None:
+        """Find the pass bucket that can coalesce this vertex list."""
+        for registration in registrations:
+            if (registration.domain is vertex_list.domain
+                    and registration.group is group
+                    and registration.mode is vertex_list.mode
+                    and registration.binding is binding):
+                return registration
+        return None
 
     def _add_vertex_list_to_pass(
             self, vertex_list: VertexList, draw_pass: DrawPass, group: Group,
@@ -793,13 +829,11 @@ class Batch:
 
         binding = vertex_list.domain.get_vertex_input_binding(program)
         registrations = self._pass_registrations[draw_pass]
-        registration = next((entry for entry in registrations
-                             if entry.domain is vertex_list.domain and entry.group is group
-                             and entry.mode is vertex_list.mode and entry.binding is binding), None)
+        registration = self._find_pass_registration(registrations, vertex_list, group, binding)
         if registration is None:
-            from pyglet.graphics.vertexdomain import IndexedVertexGroupBucket, VertexGroupBucket
-            bucket = IndexedVertexGroupBucket() if vertex_list.indexed else VertexGroupBucket()
-            registration = _PassRegistration(vertex_list.domain, vertex_list.mode, group, binding, bucket)
+            registration = _PassRegistration(
+                vertex_list.domain, vertex_list.mode, group, binding, self._new_pass_bucket(vertex_list),
+            )
             registrations.append(registration)
         registration.bucket.add_vertex_list(vertex_list)
         return registration
@@ -1094,6 +1128,7 @@ class Batch:
         for registration in sorted(self._pass_registrations[draw_pass], key=lambda entry: entry.group):
             registration.group.set_state_recursive(draw_ctx)
             registration.binding.bind()
+            registration.binding.commit()
             registration.domain.draw_buckets(self._geometry_map[registration.mode], [registration.bucket])
             registration.group.unset_state_recursive(draw_ctx)
 
