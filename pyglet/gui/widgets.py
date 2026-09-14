@@ -608,9 +608,10 @@ class Slider(WidgetBase):
         fg_group = Group(order=1, parent=group)
         self._base_spr = pyglet.sprite.Sprite(self._base_img, x, y, batch=batch, group=bg_group)
         self._knob_spr = pyglet.sprite.Sprite(
-            self._knob_img, x + edge, y + base.height / 2, batch=batch, group=fg_group
-        ,
-            anchor_y=int(knob.height / 2),
+            self._knob_img, x + edge, y + base.height / 2,
+            batch=batch,
+            group=fg_group,
+            anchor=(0, int(knob.height / 2)),
         )
 
         self._value = 0
