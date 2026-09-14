@@ -135,7 +135,7 @@ class Frame:
         self._widgets.remove(widget)
         widget.parent = None
         self._active_widgets.discard(widget)
-        widget.remove_handler("on_reposition", self._on_reposition_handler)
+        widget.remove_handlers(on_reposition=self._on_reposition_handler)
         if not self._resizing:
             self._remove_from_cells(widget)
 

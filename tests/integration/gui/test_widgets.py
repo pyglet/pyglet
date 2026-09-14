@@ -1,0 +1,88 @@
+import pyglet
+import pytest
+
+from pyglet.gui.widgets import PushButton, Slider, TextButton, TextEntry, ToggleButton
+
+
+def image(width=20, height=10):
+    return pyglet.image.ImageData(width, height, "RGBA", bytes((255, 255, 255, 255)) * width * height)
+
+
+def test_push_button_renders_state_images_and_dispatches_events(test_window):
+    pressed, unpressed, hover = image(), image(), image()
+    button = PushButton(0, 0, pressed, unpressed, hover)
+    events = []
+    button.push_handlers(on_press=lambda widget: events.append("press"))
+    button.push_handlers(on_release=lambda widget: events.append("release"))
+
+    button.on_mouse_press(5, 5, 1, 0)
+    button.on_mouse_release(5, 5, 1, 0)
+
+    assert button.value is False
+    assert button._sprite.image is hover.get_texture()
+    assert events == ["press", "release"]
+
+
+def test_toggle_button_renders_and_dispatches_its_value(test_window):
+    pressed, unpressed = image(), image()
+    button = ToggleButton(0, 0, pressed, unpressed)
+    values = []
+    button.push_handlers(on_toggle=lambda widget, value: values.append(value))
+
+    button.on_mouse_press(5, 5, 1, 0)
+    button.on_mouse_press(5, 5, 1, 0)
+
+    assert button.value is False
+    assert values == [True, False]
+
+
+def test_slider_renders_and_clamps_its_knob(test_window):
+    slider = Slider(0, 0, image(100, 20), image(20, 20), edge=10)
+    values = []
+    slider.push_handlers(on_change=lambda widget, value: values.append(value))
+
+    slider.on_mouse_press(20, 10, 1, 0)
+    slider.on_mouse_drag(90, 10, 70, 0, 1, 0)
+    slider.on_mouse_release(90, 10, 1, 0)
+
+    assert values == [0.0, 100.0]
+    assert slider.value == 100.0
+    assert slider._knob_spr.x == slider._max_knob_x
+
+
+def test_text_button_repositions_real_label_after_resize(test_window):
+    button = TextButton(10, 20, "Centered")
+
+    button.width = 100
+    button.height = 40
+    button.on_mouse_press(60, 40, 1, 0)
+    button.on_mouse_release(60, 40, 1, 0)
+
+    assert button._label.position == (60, 40, 0)
+    assert button._label.color == (*button._hover_color, 255)
+
+
+def test_text_entry_uses_real_layout_caret_and_outline_when_resized(test_window):
+    entry = TextEntry("start", 10, 20, 40)
+    commits = []
+    entry.push_handlers(on_commit=lambda widget, value: commits.append(value))
+
+    entry.width = 100
+    entry.height = 30
+    entry.on_mouse_press(15, 25, 1, 0)
+    entry._caret.position = len(entry.value)
+    entry.on_text("x")
+    entry.on_text("\r")
+
+    assert entry._outline.width == 104
+    assert entry._outline.height == 34
+    assert entry.focus is False
+    assert commits == ["startx"]
+
+
+@pytest.mark.parametrize("value", [1, None, "yes"])
+def test_push_button_value_requires_boolean(test_window, value):
+    button = PushButton(0, 0, image(), image())
+
+    with pytest.raises(AssertionError):
+        button.value = value

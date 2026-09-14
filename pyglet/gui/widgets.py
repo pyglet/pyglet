@@ -786,7 +786,7 @@ class TextEntry(WidgetBase):
     def width(self, value: int) -> None:
         self._width = value
         self._layout.width = value
-        self._outline.width = value
+        self._outline.width = value + self._pad + self._pad
 
     @property
     def height(self) -> int:
@@ -796,7 +796,7 @@ class TextEntry(WidgetBase):
     def height(self, value: int) -> None:
         self._height = value
         self._layout.height = value
-        self._outline.height = value
+        self._outline.height = value + self._pad + self._pad
 
     @property
     def focus(self) -> bool:
