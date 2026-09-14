@@ -540,8 +540,25 @@ class _SingleSequenceLayout(Layout, ABC):
 
 
 class HBox(_SingleSequenceLayout):
+    """Lay out content in a single horizontal row.
+
+    Append content with :meth:`append`. Column widths, margins, padding, and
+    content alignment are configured through :class:`LayoutStyle`.
+    """
+
     def __init__(self, x: float, y: float, width: float, height: float, style: LayoutStyle | None = None,
                  batch: Batch | None = None, group: Group | None = None) -> None:
+        """Create a horizontal layout.
+
+        Args:
+            x: Left coordinate of the layout.
+            y: Bottom coordinate of the layout.
+            width: Layout width.
+            height: Layout height.
+            style: Optional layout style.
+            batch: Optional batch for layout backgrounds.
+            group: Optional group for layout backgrounds and content.
+        """
         super().__init__(x, y, width, height, 1, 1, style, batch, group)
 
     def cell(self, row: int, column: int = 0) -> LayoutCell[LayoutCellStyle] | None:
@@ -566,11 +583,28 @@ class HBox(_SingleSequenceLayout):
 
 
 class VBox(_SingleSequenceLayout):
+    """Lay out content in a single vertical column.
+
+    Append content with :meth:`append`. Row heights, margins, padding, and
+    content alignment are configured through :class:`LayoutStyle`.
+    """
+
     def __init__(self, x: float, y: float, width: float, height: float, style: LayoutStyle | None = None,
                  batch: Batch | None = None, group: Group | None = None) -> None:
+        """Create a vertical layout.
+
+        Args:
+            x: Left coordinate of the layout.
+            y: Bottom coordinate of the layout.
+            width: Layout width.
+            height: Layout height.
+            style: Optional layout style.
+            batch: Optional batch for layout backgrounds.
+            group: Optional group for layout backgrounds and content.
+        """
         super().__init__(x, y, width, height, 1, 1, style, batch, group)
 
-    def cell(self, row: int, _: int = 0) -> LayoutCell[LayoutCellStyle] | None:
+    def cell(self, row: int, column: int = 0) -> LayoutCell[LayoutCellStyle] | None:
         return super().cell(row, 0)
 
     @property
