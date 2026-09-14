@@ -89,6 +89,9 @@ class VertexListTest(unittest.TestCase):
         assert len(batch._pass_registrations[draw_pass]) == 1
         assert any(buffer._dirty for buffer in vertex_list.domain.vertex_buffers.buffers)
 
+        batch._update_draw_list()  # noqa: SLF001
+        assert batch._pass_draw_lists[draw_pass]  # noqa: SLF001
+
         batch.draw_pass(draw_pass)
 
         assert all(not buffer._dirty for buffer in vertex_list.domain.vertex_buffers.buffers)
