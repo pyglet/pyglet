@@ -35,6 +35,7 @@ def _margin(value: float | CellMargin) -> CellMargin:
 class WidgetStyle:
     """Common visual style fields shared by GUI components."""
 
+    #: RGB/RGBA background color, a drawable background object, or ``None``.
     background: Color | Any | None = None
 
 
@@ -42,8 +43,11 @@ class WidgetStyle:
 class LayoutCellStyle(WidgetStyle):
     """Style for one layout cell and its contained object."""
 
+    #: Interior spacing as one integer or ``(top, right, bottom, left)``.
     padding: int | Padding = 0
+    #: One boolean or ``(horizontal, vertical)`` flags for content stretching.
     stretch_content: bool | AxisFlags = False
+    #: A horizontal value or ``(horizontal, vertical)`` content alignment tuple.
     content_alignment: str | ContentAlignment = "center"
 
     def __post_init__(self) -> None:
@@ -56,12 +60,19 @@ class LayoutCellStyle(WidgetStyle):
 class LayoutStyle(LayoutCellStyle):
     """Style for a layout and the cells it creates."""
 
+    #: Spacing between cells as one number or ``(horizontal, vertical)``.
     cell_margin: int | float | CellMargin = 1
+    #: RGB/RGBA color, drawable object, or ``None`` for each cell background.
     cell_background: Color | Any | None = None
+    #: Default cell padding as one integer or ``(top, right, bottom, left)``.
     cell_padding: int | Padding = 0
+    #: Default cell content stretching flags.
     cell_stretch_content: bool | AxisFlags = False
+    #: Default cell content alignment.
     cell_content_alignment: str | ContentAlignment = "center"
+    #: Number, ``"Npx"``, ``"N%"``, or ``None`` for flexible row sizing.
     row_size: LayoutSize = None
+    #: Number, ``"Npx"``, ``"N%"``, or ``None`` for flexible column sizing.
     column_size: LayoutSize = None
 
     def __post_init__(self) -> None:
@@ -81,6 +92,9 @@ class ButtonStyle(WidgetStyle):
 class TextButtonStyle(ButtonStyle):
     """Colors used by :class:`~pyglet.gui.TextButton` interaction states."""
 
+    #: RGB/RGBA text color while the button is pressed.
     pressed_color: Color = (255, 0, 0)
+    #: RGB/RGBA text color while the button is idle.
     unpressed_color: Color = (255, 255, 255)
+    #: RGB/RGBA text color while the button is hovered.
     hover_color: Color = (0, 255, 0)
