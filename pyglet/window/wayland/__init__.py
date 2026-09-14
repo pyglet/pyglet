@@ -36,6 +36,7 @@ _motion_map: dict[tuple[int, bool], int] = {
     (key.END, True): key.MOTION_END_OF_FILE,
     (key.BACKSPACE, False): key.MOTION_BACKSPACE,
     (key.DELETE, False): key.MOTION_DELETE,
+    (key.A, True): key.MOTION_SELECT_ALL,
     (key.C, True): key.MOTION_COPY,
     (key.V, True): key.MOTION_PASTE,
 }

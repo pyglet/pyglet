@@ -1129,9 +1129,7 @@ class ScrollableRegion(WidgetBase, LayoutCell[LayoutCellStyle]):
         self._for_mouse_widgets("on_text_motion_select", motion)
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
-        for widget in self._widgets:
-            widget.on_key_press(symbol, modifiers)
+        self._for_mouse_widgets("on_key_press", symbol, modifiers)
 
     def on_key_release(self, symbol: int, modifiers: int) -> None:
-        for widget in self._widgets:
-            widget.on_key_release(symbol, modifiers)
+        self._for_mouse_widgets("on_key_release", symbol, modifiers)

@@ -144,6 +144,8 @@ See :ref:`guide_keyboard-motion-events` for more information.
   *
     * ``MOTION_LEFT``
   *
+    * ``MOTION_SELECT_ALL``
+  *
     * ``MOTION_COPY``
   *
     * ``MOTION_PASTE``

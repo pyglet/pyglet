@@ -424,6 +424,9 @@ class Caret(EventDispatcher):
         GUI toolkits should filter keyboard and text events by widget focus
         before invoking this handler.
         """
+        if motion == key.MOTION_SELECT_ALL:
+            self.select_all()
+            return event.EVENT_HANDLED
         if motion == key.MOTION_BACKSPACE:
             if self.mark is not None:
                 self._delete_selection()
