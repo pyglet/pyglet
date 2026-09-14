@@ -86,7 +86,13 @@ markers = [
 ]
 
 [tool.mypy]
-exclude = "pyglet.experimental.*"
+exclude = [
+    "^pyglet/experimental/",
+    "^pyglet/libs/",
+    "(^|/)lib_.*\\.py$",
+    "(^|/).*_lib\\.py$",
+]
+disable_error_code = ["union-attr"]
 
 [[tool.mypy.overrides]]
 # mypy incorrectly reports issues everywhere in pyglet.math because:
@@ -97,7 +103,7 @@ exclude = "pyglet.experimental.*"
 #    as suggested above."
 #    https://github.com/python/mypy/issues/5944#issuecomment-441285456
 module = "pyglet.math"
-ignore_errors = true
+disable_error_code = ["misc", "override"]
 
 [tool.ruff]
 line-length = 120
@@ -119,7 +125,6 @@ ignore = [
     "D102", # Do not check public method docstrings (Cannot determine overridden docstrings)
     # @typing.override not available until python 3.12 (PEP 698)
     "PLR",    # Too many of too many checks.
-    "ANN101", # Ignore self type annotation.
     "ANN401", # Allow Any as type annotation
     "D105",   # Allow no docstring magic method.
     "SIM108", # Simplify if/else is not always best.
@@ -161,7 +166,8 @@ indent-style = "space"
 "pyglet/window/headless/*" = ["RUF012", "D", "N", "ARG"]
 "pyglet/window/win32/*" = ["RUF012", "D", "N", "ARG"]
 "pyglet/window/xlib/*" = ["RUF012", "D", "N", "ARG"]
-"pyglet/gui/*" = ["ARG002"]
+"pyglet/gui/*" = ["ARG002", "ANN", "D", "EM102", "PYI041", "SLF001", "TC001", "TC003"]
+"pyglet/gui/__init__.py" = ["F401", "F403"]
 "pyglet/libs/*" = ["RUF012", "D", "N", "ARG"]
 "pyglet/lib.py" = ["ANN", "ARG002", "T201"]
 "pyglet/__init__.py" = ["PGH003"]

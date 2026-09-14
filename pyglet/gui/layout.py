@@ -9,11 +9,11 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
-from typing import Generic, Protocol, TypeVar, cast
+from typing import Any, Generic, Protocol, TypeVar, cast
 
 import pyglet
 from pyglet.graphics import Batch, Group
-from pyglet.gui.styles import LayoutCellStyle, LayoutStyle
+from pyglet.gui.styles import LayoutCellStyle, LayoutStyle, Padding
 
 StyleT = TypeVar("StyleT", bound=LayoutCellStyle)
 
@@ -21,8 +21,21 @@ StyleT = TypeVar("StyleT", bound=LayoutCellStyle)
 class LayoutContent(Protocol):
     """Drawable content that can be positioned and sized by a layout cell."""
 
-    width: float
-    height: float
+    @property
+    def width(self) -> float:
+        ...
+
+    @width.setter
+    def width(self, value: float) -> None:
+        ...
+
+    @property
+    def height(self) -> float:
+        ...
+
+    @height.setter
+    def height(self, value: float) -> None:
+        ...
 
     @property
     def position(self) -> tuple[float, float]:
@@ -37,12 +50,22 @@ class LayoutCell(Generic[StyleT]):
     """A rectangular layout cell, optionally containing one drawable object."""
 
     def __init__(self, style: StyleT | None = None, batch: Batch | None = None, group: Group | None = None) -> None:
+        """Create a layout cell.
+
+        Args:
+            style:
+                The cell's visual and content-alignment style.
+            batch:
+                Optional batch for a generated background rectangle.
+            group:
+                Optional group for a generated background rectangle.
+        """
         self._content: LayoutContent | None = None
         self._batch: Batch | None = batch
         self._group: Group | None = group
-        self._background = None
-        self._rect = (0, 0, 1, 1)
-        self._style: StyleT = style if style is not None else cast(StyleT, LayoutCellStyle())
+        self._background: Any | None = None
+        self._rect: tuple[float, float, float, float] = (0, 0, 1, 1)
+        self._style: StyleT = style if style is not None else cast("StyleT", LayoutCellStyle())
         self._span = (1, 1)
         self._update_background()
 
@@ -106,7 +129,7 @@ class LayoutCell(Generic[StyleT]):
                 if self._background is not None and hasattr(self._background, "delete"):
                     self._background.delete()
                 self._background = pyglet.shapes.Rectangle(
-                    0, 0, 0, 0, color=background, batch=self._batch, group=self._group
+                    0, 0, 0, 0, color=background, batch=self._batch, group=self._group,
                 )
             else:
                 self._background.color = background
@@ -115,16 +138,16 @@ class LayoutCell(Generic[StyleT]):
 
     def realign(self, new_rect: tuple[float, float, float, float] | None = None) -> None:
         if new_rect is not None:
-            self._rect = tuple(new_rect)
+            self._rect = new_rect
             if self._background is not None:
                 self._background.position = self.x, self.y
                 self._background.width, self._background.height = self.width, self.height
         if self._content is None:
             return
 
-        top, right, bottom, left = self._style.padding
-        stretch_x, stretch_y = self._style.stretch_content
-        align_x, align_y = self._style.content_alignment
+        top, right, bottom, left = cast("Padding", self._style.padding)
+        stretch_x, stretch_y = cast("tuple[bool, bool]", self._style.stretch_content)
+        align_x, align_y = cast("tuple[str, str]", self._style.content_alignment)
         if stretch_x:
             self._content.width = max(0, self.width - left - right)
         if stretch_y:
@@ -213,7 +236,8 @@ class _Grid:
         )
 
     def _new_sequence(self, key: str) -> _Sequence:
-        sequence = _Sequence(self._style.cell_margin[0 if key == "column-size" else 1])
+        margins = cast("tuple[float, float]", self._style.cell_margin)
+        sequence = _Sequence(margins[0 if key == "column-size" else 1])
         sequence.parse_size(self._style.column_size if key == "column-size" else self._style.row_size)
         return sequence
 
@@ -234,7 +258,7 @@ class _Grid:
 
     def _update_sizes(self, sequences: list[_Sequence], extent: float) -> None:
         margins = sum(item.margin_after for item in sequences[:-1])
-        fixed = 0
+        fixed: float = 0
         flexible: list[_Sequence] = []
         for item in sequences:
             if item.size_type == "pixels":
@@ -309,29 +333,29 @@ class Layout(LayoutCell[LayoutStyle]):
         layout_style.stretch_content = (True, True)
         super().__init__(layout_style, batch, group)
         self._cell_group = pyglet.graphics.Group(order=1, parent=group)
-        self._content = _Grid(rows, columns, self._style, batch, self._cell_group)
+        self._grid = _Grid(rows, columns, self._style, batch, self._cell_group)
         self.realign((x, y, width, height))
 
     @property
     def rows(self) -> int:
-        return len(self._content._rows)
+        return len(self._grid._rows)
 
     @rows.setter
     def rows(self, value: int) -> None:
-        self._content.set_dimensions(value, self.columns)
+        self._grid.set_dimensions(value, self.columns)
 
     @property
     def columns(self) -> int:
-        return len(self._content._columns)
+        return len(self._grid._columns)
 
     @columns.setter
     def columns(self, value: int) -> None:
-        self._content.set_dimensions(self.rows, value)
+        self._grid.set_dimensions(self.rows, value)
 
     def cell(self, row: int, column: int = 0) -> LayoutCell[LayoutCellStyle] | None:
         if not 0 <= row < self.rows or not 0 <= column < self.columns:
             raise IndexError("layout cell index out of range")
-        cell = self._content._cells[row][column]
+        cell = self._grid._cells[row][column]
         return cell if isinstance(cell, LayoutCell) else None
 
     @property
@@ -343,9 +367,7 @@ class Layout(LayoutCell[LayoutStyle]):
         """Replace the layout style and apply it to every existing cell."""
         self._style = style
         self._update_background()
-        if not isinstance(self._content, _Grid):
-            return
-        self._content._style = style
+        self._grid._style = style
         cell_style = LayoutCellStyle(
             background=style.cell_background,
             padding=style.cell_padding,
@@ -354,31 +376,31 @@ class Layout(LayoutCell[LayoutStyle]):
         )
         for cell in self._cells():
             cell.set_style(cell_style)
-        for row in self._content._rows:
-            row.margin_after = style.cell_margin[1]
+        for row in self._grid._rows:
+            row.margin_after = cast("tuple[float, float]", style.cell_margin)[1]
             row.parse_size(style.row_size)
-        for column in self._content._columns:
-            column.margin_after = style.cell_margin[0]
+        for column in self._grid._columns:
+            column.margin_after = cast("tuple[float, float]", style.cell_margin)[0]
             column.parse_size(style.column_size)
         self.realign()
 
     def _cells(self) -> Iterator[LayoutCell[LayoutCellStyle]]:
-        return (cell for row in self._content._cells for cell in row if isinstance(cell, LayoutCell))
+        return (cell for row in self._grid._cells for cell in row if isinstance(cell, LayoutCell))
 
     def set_row_size(self, index: int, value: int | float | str | None) -> None:
-        self._content._rows[index].parse_size(value)
+        self._grid._rows[index].parse_size(value)
         self.realign()
 
     def set_column_size(self, index: int, value: int | float | str | None) -> None:
-        self._content._columns[index].parse_size(value)
+        self._grid._columns[index].parse_size(value)
         self.realign()
 
     def set_row_margin(self, index: int, value: float) -> None:
-        self._content._rows[index].margin_after = value
+        self._grid._rows[index].margin_after = value
         self.realign()
 
     def set_column_margin(self, index: int, value: float) -> None:
-        self._content._columns[index].margin_after = value
+        self._grid._columns[index].margin_after = value
         self.realign()
 
     def set_cell_span(self, row: int, column: int, rowspan: int | None = None, colspan: int | None = None) -> None:
@@ -391,7 +413,7 @@ class Layout(LayoutCell[LayoutStyle]):
         for r in range(row, row + max(rowspan, cell._span[0])):
             for c in range(column, column + max(colspan, cell._span[1])):
                 if (r, c) != (row, column):
-                    self._content._cells[r][c] = (
+                    self._grid._cells[r][c] = (
                         _SpanFiller(cell)
                         if r < row + rowspan and c < column + colspan
                         else LayoutCell[LayoutCellStyle](batch=self._batch, group=self._cell_group)
@@ -401,24 +423,69 @@ class Layout(LayoutCell[LayoutStyle]):
 
     def realign(self, new_rect: tuple[float, float, float, float] | None = None) -> None:
         super().realign(new_rect)
-        if hasattr(self, "_content") and isinstance(self._content, _Grid):
-            self._content.x, self._content.y, self._content.width, self._content.height = (
+        if hasattr(self, "_grid"):
+            self._grid.x, self._grid.y, self._grid.width, self._grid.height = (
                 self.x,
                 self.y,
                 self.width,
                 self.height,
             )
-            self._content.realign()
+            self._grid.realign()
 
-    x = property(LayoutCell.x.fget, lambda self, value: self.realign((value, self.y, self.width, self.height)))
-    y = property(LayoutCell.y.fget, lambda self, value: self.realign((self.x, value, self.width, self.height)))
-    position = property(LayoutCell.position.fget, lambda self, value: self.realign((*value, self.width, self.height)))
-    width = property(LayoutCell.width.fget, lambda self, value: self.realign((self.x, self.y, value, self.height)))
-    height = property(LayoutCell.height.fget, lambda self, value: self.realign((self.x, self.y, self.width, value)))
-    size = property(LayoutCell.size.fget, lambda self, value: self.realign((self.x, self.y, *value)))
+    def on_resize(self, width: int, height: int) -> None:
+        """Forward a window resize event through this layout's grid."""
+        self._grid.on_resize(width, height)
+
+    @property
+    def x(self) -> float:
+        return self._rect[0]
+
+    @x.setter
+    def x(self, value: float) -> None:
+        self.realign((value, self.y, self.width, self.height))
+
+    @property
+    def y(self) -> float:
+        return self._rect[1]
+
+    @y.setter
+    def y(self, value: float) -> None:
+        self.realign((self.x, value, self.width, self.height))
+
+    @property
+    def position(self) -> tuple[float, float]:
+        return self.x, self.y
+
+    @position.setter
+    def position(self, value: tuple[float, float] | tuple[float, float, float]) -> None:
+        self.realign((value[0], value[1], self.width, self.height))
+
+    @property
+    def width(self) -> float:
+        return self._rect[2]
+
+    @width.setter
+    def width(self, value: float) -> None:
+        self.realign((self.x, self.y, value, self.height))
+
+    @property
+    def height(self) -> float:
+        return self._rect[3]
+
+    @height.setter
+    def height(self, value: float) -> None:
+        self.realign((self.x, self.y, self.width, value))
+
+    @property
+    def size(self) -> tuple[float, float]:
+        return self.width, self.height
+
+    @size.setter
+    def size(self, value: tuple[float, float]) -> None:
+        self.realign((self.x, self.y, value[0], value[1]))
 
     def fit_to_content(self) -> None:
-        self.size = self._content.calculated_width, self._content.calculated_height
+        self.size = self._grid.calculated_width, self._grid.calculated_height
 
 
 class _SingleSequenceLayout(Layout, ABC):
@@ -439,20 +506,33 @@ class _SingleSequenceLayout(Layout, ABC):
 
     def append(self, content: LayoutContent) -> None:
         if self.is_empty:
-            self.cell(0).content = content
+            cell = self.cell(0)
+            assert cell is not None
+            cell.content = content
         else:
             self._grow()
-            self.cell(self.count - 1).content = content
+            cell = self.cell(self.count - 1)
+            assert cell is not None
+            cell.content = content
 
     @property
     def is_empty(self) -> bool:
-        return self.cell(0).content is None
+        cell = self.cell(0)
+        assert cell is not None
+        return cell.content is None
 
     def remove(self, content_or_index: LayoutContent | int) -> None:
         index = (
             content_or_index
             if isinstance(content_or_index, int)
-            else next((i for i in range(self.count) if self.cell(i).content is content_or_index), None)
+            else next(
+                (
+                    i
+                    for i in range(self.count)
+                    if (cell := self.cell(i)) is not None and cell.content is content_or_index
+                ),
+                None,
+            )
         )
         if index is None:
             return
@@ -464,8 +544,8 @@ class HBox(_SingleSequenceLayout):
                  batch: Batch | None = None, group: Group | None = None) -> None:
         super().__init__(x, y, width, height, 1, 1, style, batch, group)
 
-    def cell(self, column: int, _: int = 0) -> LayoutCell[LayoutCellStyle] | None:
-        return super().cell(0, column)
+    def cell(self, row: int, column: int = 0) -> LayoutCell[LayoutCellStyle] | None:
+        return super().cell(0, row)
 
     @property
     def count(self) -> int:
@@ -476,10 +556,12 @@ class HBox(_SingleSequenceLayout):
 
     def _shrink(self, index: int) -> None:
         if self.columns == 1:
-            self.cell(0).content = None
+            cell = self.cell(0)
+            assert cell is not None
+            cell.content = None
         else:
-            del self._content._cells[0][index]
-            del self._content._columns[index]
+            del self._grid._cells[0][index]
+            del self._grid._columns[index]
             self.realign()
 
 
@@ -500,8 +582,10 @@ class VBox(_SingleSequenceLayout):
 
     def _shrink(self, index: int) -> None:
         if self.rows == 1:
-            self.cell(0).content = None
+            cell = self.cell(0)
+            assert cell is not None
+            cell.content = None
         else:
-            del self._content._cells[index]
-            del self._content._rows[index]
+            del self._grid._cells[index]
+            del self._grid._rows[index]
             self.realign()

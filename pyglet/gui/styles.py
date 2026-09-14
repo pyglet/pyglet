@@ -9,14 +9,14 @@ HorizontalAlignment: TypeAlias = Literal["left", "center", "right"]
 VerticalAlignment: TypeAlias = Literal["bottom", "center", "top"]
 ContentAlignment: TypeAlias = tuple[HorizontalAlignment, VerticalAlignment]
 AxisFlags: TypeAlias = tuple[bool, bool]
-Padding: TypeAlias = tuple[float, float, float, float]
+Padding: TypeAlias = tuple[int, int, int, int]
 CellMargin: TypeAlias = tuple[float, float]
 LayoutSize: TypeAlias = int | float | str | None
 Color: TypeAlias = RGBColor | RGBAColor
 
 
-def _padding(value: float | Padding) -> Padding:
-    return (value,) * 4 if isinstance(value, (int, float)) else value
+def _padding(value: int | Padding) -> Padding:
+    return (value,) * 4 if isinstance(value, int) else value
 
 
 def _axis_flags(value: bool | AxisFlags) -> AxisFlags:
@@ -42,7 +42,7 @@ class WidgetStyle:
 class LayoutCellStyle(WidgetStyle):
     """Style for one layout cell and its contained object."""
 
-    padding: int | float | Padding = 0
+    padding: int | Padding = 0
     stretch_content: bool | AxisFlags = False
     content_alignment: str | ContentAlignment = "center"
 
@@ -58,7 +58,7 @@ class LayoutStyle(LayoutCellStyle):
 
     cell_margin: int | float | CellMargin = 1
     cell_background: Color | Any | None = None
-    cell_padding: int | float | Padding = 0
+    cell_padding: int | Padding = 0
     cell_stretch_content: bool | AxisFlags = False
     cell_content_alignment: str | ContentAlignment = "center"
     row_size: LayoutSize = None

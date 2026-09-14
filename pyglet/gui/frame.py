@@ -1,10 +1,10 @@
 """WIP."""
 from __future__ import annotations
 
-from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
     from pyglet.gui.widgets import WidgetBase
     from pyglet.window import BaseWindow, MouseCursor
 
@@ -43,10 +43,10 @@ class Frame:
         self._window = window
         self._enable = enable
         self._cell_size = cell_size
-        self._cells = {}
-        self._widgets = set()
-        self._widget_cells = {}
-        self._active_widgets = set()
+        self._cells: dict[tuple[int, int], set[WidgetBase]] = {}
+        self._widgets: set[WidgetBase] = set()
+        self._widget_cells: dict[WidgetBase, set[tuple[int, int]]] = {}
+        self._active_widgets: set[WidgetBase] = set()
         self._order = order
         self.cursor = cursor
         self._mouse_pos = 0, 0
@@ -188,8 +188,12 @@ class Frame:
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> None:
         """Dispatch widget enter/leave transitions and motion within the spatial hash."""
-        current_widgets = {widget for widget in self._widgets_at(x, y) if widget._check_hit(x, y)}  # noqa: SLF001
-        previous_widgets = {widget for widget in self._widgets_at(*self._mouse_pos) if widget._check_hit(*self._mouse_pos)}  # noqa: SLF001
+        current_widgets = {widget for widget in self._widgets_at(x, y) if widget._check_hit(x, y)}
+        previous_widgets = {
+            widget
+            for widget in self._widgets_at(*self._mouse_pos)
+            if widget._check_hit(*self._mouse_pos)
+        }
         for widget in previous_widgets - current_widgets:
             widget.dispatch_event("on_mouse_leave_widget", x, y)
         for widget in current_widgets - previous_widgets:
@@ -255,12 +259,12 @@ class MovableFrame(Frame):
         """
         super().__init__(window, enable=enable, order=order, cursor=cursor)
         self._modifier = modifier
-        self._moving_widgets = set()
+        self._moving_widgets: set[WidgetBase] = set()
 
     def on_mouse_press(self, x: int, y: int, buttons: int, modifiers: int) -> None:
         if self._modifier & modifiers > 0:
             for widget in self._widgets_at(x, y):
-                if widget._check_hit(x, y):     # noqa: SLF001
+                if widget._check_hit(x, y):
                     self._moving_widgets.add(widget)
             for widget in self._moving_widgets:
                 self.remove_widget(widget)
