@@ -20,6 +20,59 @@ def test_nine_patch_renders_fixed_edges_and_stretched_center(test_window):
     patch.delete()
 
 
+def test_nine_patch_uses_explicit_texture_edges(test_window):
+    texture = image(31, 29).get_texture()
+    patch = NinePatch(
+        texture,
+        edge_sizes=(4, 7, 5, 8),
+        width=60,
+        height=50,
+    )
+
+    vertices = patch._get_vertices()
+    tex_coords = patch._get_tex_coords()
+    uv_x, uv_y, uv_w, uv_h = texture.uv
+
+    assert vertices[:12] == (0, 0, 0, 4, 0, 0, 53, 0, 0, 60, 0, 0)
+    assert vertices[-12:] == (0, 50, 0, 4, 50, 0, 53, 50, 0, 60, 50, 0)
+    assert tex_coords[:12] == (
+        uv_x,
+        uv_y,
+        0,
+        uv_x + (uv_w - uv_x) * 4 / 31,
+        uv_y,
+        0,
+        uv_w - (uv_w - uv_x) * 7 / 31,
+        uv_y,
+        0,
+        uv_w,
+        uv_y,
+        0,
+    )
+    assert tex_coords[-12:] == (
+        uv_x,
+        uv_h,
+        0,
+        uv_x + (uv_w - uv_x) * 4 / 31,
+        uv_h,
+        0,
+        uv_w - (uv_w - uv_x) * 7 / 31,
+        uv_h,
+        0,
+        uv_w,
+        uv_h,
+        0,
+    )
+    patch.delete()
+
+
+def test_nine_patch_rejects_texture_edges_without_a_center(test_window):
+    texture = image(31, 29).get_texture()
+
+    with pytest.raises(ValueError, match="center"):
+        NinePatch(texture, edge_sizes=(16, 15, 5, 8))
+
+
 def test_nine_patch_updates_real_vertex_attributes(test_window):
     patch = NinePatch(image(), width=60, height=90)
 
