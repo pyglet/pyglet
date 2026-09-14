@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pyglet.gui.widgets import WidgetBase
-    from pyglet.window import BaseWindow
+    from pyglet.window import BaseWindow, MouseCursor
 
 
 class Frame:
@@ -20,7 +20,8 @@ class Frame:
     of Widgets are in use.
     """
 
-    def __init__(self, window: BaseWindow, enable: bool = True, cell_size: int = 64, order: int = 0) -> None:
+    def __init__(self, window: BaseWindow, enable: bool = True, cell_size: int = 64, order: int = 0,
+                 cursor: str | MouseCursor | None = None) -> None:
         """Create an instance of a Frame.
 
         Args:
@@ -35,6 +36,9 @@ class Frame:
             order:
                 Widgets use internal ordered Groups for draw sorting.
                 This is the base value for these Groups.
+            cursor:
+                System cursor name or custom mouse cursor to show when no widget
+                supplies one.
         """
         self._window = window
         self._enable = enable
@@ -44,6 +48,7 @@ class Frame:
         self._widget_cells = {}
         self._active_widgets = set()
         self._order = order
+        self.cursor = cursor
         self._mouse_pos = 0, 0
         self._resizing = False
         if self._enable:
@@ -93,6 +98,12 @@ class Frame:
         """Return every registered widget once, regardless of its cell coverage."""
         return self._widgets
 
+    def _set_mouse_cursor(self, cursor: str | MouseCursor | None = None) -> None:
+        cursor = self.cursor if cursor is None else cursor
+        if isinstance(cursor, str):
+            cursor = self._window.get_system_mouse_cursor(cursor)
+        self._window.set_mouse_cursor(cursor)
+
     @property
     def enable(self):
         """Whether to enable frame.
@@ -112,6 +123,7 @@ class Frame:
     def add_widget(self, widget: WidgetBase) -> None:
         """Add a Widget to the spatial hash."""
         self._widgets.add(widget)
+        widget.parent = self
         widget.update_groups(self._order)
         # Preserve handlers already registered for this event.
         widget.push_handlers(on_reposition=self._on_reposition_handler)
@@ -121,6 +133,7 @@ class Frame:
     def remove_widget(self, widget: WidgetBase) -> None:
         """Remove a Widget from the spatial hash."""
         self._widgets.remove(widget)
+        widget.parent = None
         self._active_widgets.discard(widget)
         widget.remove_handler("on_reposition", self._on_reposition_handler)
         if not self._resizing:
@@ -163,10 +176,10 @@ class Frame:
         self._active_widgets.clear()
 
     def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int) -> None:
-        """Pass the event to any widgets that are currently active."""
+        """Pass drag events to active widgets and update hover state."""
         for widget in self._active_widgets:
             widget.on_mouse_drag(x, y, dx, dy, buttons, modifiers)
-        self._mouse_pos = x, y
+        self.on_mouse_motion(x, y, dx, dy)
 
     def on_mouse_scroll(self, x: int, y: int, scroll_x: float, scroll_y: float) -> None:
         """Pass the event to any widgets within range of the mouse."""
@@ -177,10 +190,10 @@ class Frame:
         """Dispatch widget enter/leave transitions and motion within the spatial hash."""
         current_widgets = {widget for widget in self._widgets_at(x, y) if widget._check_hit(x, y)}  # noqa: SLF001
         previous_widgets = {widget for widget in self._widgets_at(*self._mouse_pos) if widget._check_hit(*self._mouse_pos)}  # noqa: SLF001
-        for widget in current_widgets - previous_widgets:
-            widget.dispatch_event("on_mouse_enter_widget", x, y)
         for widget in previous_widgets - current_widgets:
             widget.dispatch_event("on_mouse_leave_widget", x, y)
+        for widget in current_widgets - previous_widgets:
+            widget.dispatch_event("on_mouse_enter_widget", x, y)
         for widget in current_widgets:
             widget.on_mouse_motion(x, y, dx, dy)
         self._mouse_pos = x, y
@@ -217,7 +230,8 @@ class MovableFrame(Frame):
     API documentation.
     """
 
-    def __init__(self, window: BaseWindow, enable: bool = True, order: int = 0, modifier: int = 0) -> None:
+    def __init__(self, window: BaseWindow, enable: bool = True, order: int = 0, modifier: int = 0,
+                 cursor: str | MouseCursor | None = None) -> None:
         """Create an instance of a MovableFrame.
 
         This is a similar to the standard Frame class, except that
@@ -235,8 +249,11 @@ class MovableFrame(Frame):
                 This is the base value for these Groups.
             modifier:
                 A key modifier, such as `pyglet.window.key.MOD_CTRL`
+            cursor:
+                System cursor name or custom mouse cursor to show when no widget
+                supplies one.
         """
-        super().__init__(window, enable=enable, order=order)
+        super().__init__(window, enable=enable, order=order, cursor=cursor)
         self._modifier = modifier
         self._moving_widgets = set()
 

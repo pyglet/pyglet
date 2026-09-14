@@ -18,13 +18,15 @@ if TYPE_CHECKING:
     from pyglet.gui.frame import Frame
     from pyglet.gui.layout import LayoutContent
     from pyglet.image import _AbstractImage
-    from pyglet.window import BaseWindow
+    from pyglet.window import BaseWindow, MouseCursor
     from pyglet.window.camera.base import BaseCamera, _CameraViewBase
 
 
 class WidgetBase(EventDispatcher):
     """The base of all widgets."""
-    def __init__(self, x: int, y: int, width: int, height: int) -> None:  # noqa: D107
+
+    def __init__(self, x: int, y: int, width: int, height: int,
+                 cursor: str | MouseCursor | None = None) -> None:  # noqa: D107
         self._x = x
         self._y = y
         self._width = width
@@ -33,6 +35,7 @@ class WidgetBase(EventDispatcher):
         self._bg_group = None
         self._fg_group = None
         self._enabled = True
+        self._cursor = cursor
 
     def _set_enabled(self, enabled: bool) -> None:
         """Internal hook for setting enabled.
@@ -151,6 +154,27 @@ class WidgetBase(EventDispatcher):
     def _update_position(self) -> None:
         raise NotImplementedError('Unable to reposition this Widget')
 
+    @property
+    def cursor(self) -> str | MouseCursor | None:
+        """System cursor name or custom mouse cursor shown while hovering."""
+        return self._cursor
+
+    @cursor.setter
+    def cursor(self, value: str | MouseCursor | None) -> None:
+        self._cursor = value
+
+    def _get_frame(self) -> Frame:
+        parent = self.parent
+        while isinstance(parent, WidgetBase):
+            parent = parent.parent
+        return parent
+
+    def _set_mouse_cursor(self) -> None:
+        self._get_frame()._set_mouse_cursor(self.cursor)  # noqa: SLF001
+
+    def _restore_mouse_cursor(self) -> None:
+        self._get_frame()._set_mouse_cursor()  # noqa: SLF001
+
     # Handlers
 
     def on_resize(self, width: int, height: int) -> None:
@@ -183,9 +207,12 @@ class WidgetBase(EventDispatcher):
 
     def on_mouse_enter_widget(self, x: int, y: int) -> None:
         """Event handler called when the cursor enters this widget."""
+        if self.enabled:
+            self._set_mouse_cursor()
 
     def on_mouse_leave_widget(self, x: int, y: int) -> None:
         """Event handler called when the cursor leaves this widget."""
+        self._restore_mouse_cursor()
 
     def on_text(self, text: str) -> None:
         pass
@@ -210,13 +237,18 @@ class PushButton(WidgetBase):
     Triggers the event 'on_release' when the mouse is released.
     """
 
-    def __init__(self, x: int, y: int,
-                 pressed: _AbstractImage,
-                 unpressed: _AbstractImage,
-                 hover: _AbstractImage | None = None,
-                 batch: Batch | None = None,
-                 group: Group | None = None,
-                 style: ButtonStyle | None = None) -> None:
+    def __init__(
+        self,
+        x: int,
+        y: int,
+        pressed: _AbstractImage,
+        unpressed: _AbstractImage,
+        hover: _AbstractImage | None = None,
+        batch: Batch | None = None,
+        group: Group | None = None,
+        style: ButtonStyle | None = None,
+        cursor: str | MouseCursor | None = "hand",
+    ) -> None:
         """Create a push button.
 
         Args:
@@ -234,8 +266,11 @@ class PushButton(WidgetBase):
                 Optional batch to add the push button to.
             group:
                 Optional parent group of the push button.
+            cursor:
+                System cursor name or custom mouse cursor to show while hovering.
+                Defaults to the pointing hand cursor.
         """
-        super().__init__(x, y, unpressed.width, unpressed.height)
+        super().__init__(x, y, unpressed.width, unpressed.height, cursor)
         self._pressed_img = pressed
         self._unpressed_img = unpressed
         self._hover_img = hover or unpressed
@@ -280,11 +315,15 @@ class PushButton(WidgetBase):
         self.dispatch_event('on_release', self)
 
     def on_mouse_enter_widget(self, x: int, y: int) -> None:
-        if not self.enabled or self._pressed:
+        if not self.enabled:
+            return
+        super().on_mouse_enter_widget(x, y)
+        if self._pressed:
             return
         self._sprite.image = self._hover_img
 
     def on_mouse_leave_widget(self, x: int, y: int) -> None:
+        super().on_mouse_leave_widget(x, y)
         if not self.enabled:
             return
         self._sprite.image = self._unpressed_img
@@ -320,13 +359,19 @@ class TextButton(WidgetBase):
     Triggers the event 'on_release' when the mouse is released.
     """
 
-    def __init__(self, x: int, y: int, text: str,
-                 pressed_color: RGBColor | RGBAColor = (255, 0, 0),
-                 unpressed_color: RGBColor | RGBAColor = (255, 255, 255),
-                 hover_color: RGBColor | RGBAColor = (0, 255, 0),
-                 batch: Batch | None = None,
-                 group: Group | None = None,
-                 style: TextButtonStyle | None = None) -> None:
+    def __init__(
+        self,
+        x: int,
+        y: int,
+        text: str,
+        pressed_color: RGBColor | RGBAColor = (255, 0, 0),
+        unpressed_color: RGBColor | RGBAColor = (255, 255, 255),
+        hover_color: RGBColor | RGBAColor = (0, 255, 0),
+        batch: Batch | None = None,
+        group: Group | None = None,
+        style: TextButtonStyle | None = None,
+        cursor: str | MouseCursor | None = "hand",
+    ) -> None:
         """Create a push button.
 
         Args:
@@ -344,6 +389,9 @@ class TextButton(WidgetBase):
                 Optional batch to add the push button to.
             group:
                 Optional parent group of the push button.
+            cursor:
+                System cursor name or custom mouse cursor to show while hovering.
+                Defaults to the pointing hand cursor.
         """
         self.style = style or TextButtonStyle(
             pressed_color=pressed_color,
@@ -355,10 +403,16 @@ class TextButton(WidgetBase):
         self._user_group = group
         fg_group = Group(order=1, parent=group)
         self._label = pyglet.text.Label(
-            text=self._text, x=x, y=y, anchor_x="center", anchor_y="center",
-            color=self.style.unpressed_color, batch=batch, group=fg_group,
+            text=self._text,
+            x=x,
+            y=y,
+            anchor_x="center",
+            anchor_y="center",
+            color=self.style.unpressed_color,
+            batch=batch,
+            group=fg_group,
         )
-        super().__init__(x, y, self._label.content_width, self._label.content_height)
+        super().__init__(x, y, self._label.content_width, self._label.content_height, cursor)
         self._pressed_color = self.style.pressed_color
         self._unpressed_color = self.style.unpressed_color
         self._hover_color = self.style.hover_color
@@ -434,11 +488,15 @@ class TextButton(WidgetBase):
         self.dispatch_event('on_release', self)
 
     def on_mouse_enter_widget(self, x: int, y: int) -> None:
-        if not self.enabled or self._pressed:
+        if not self.enabled:
+            return
+        super().on_mouse_enter_widget(x, y)
+        if self._pressed:
             return
         self._set_display_color(self._hover_color)
 
     def on_mouse_leave_widget(self, x: int, y: int) -> None:
+        super().on_mouse_leave_widget(x, y)
         if not self.enabled:
             return
         self._set_display_color(self._unpressed_color)
@@ -503,11 +561,17 @@ class Slider(WidgetBase):
     scrolling the mouse wheel.
     """
 
-    def __init__(self, x: int, y: int,
-                 base: _AbstractImage, knob: _AbstractImage,
-                 edge: int = 0,
-                 batch: Batch | None = None,
-                 group: Group | None = None) -> None:
+    def __init__(
+        self,
+        x: int,
+        y: int,
+        base: _AbstractImage,
+        knob: _AbstractImage,
+        edge: int = 0,
+        batch: Batch | None = None,
+        group: Group | None = None,
+        cursor: str | MouseCursor | None = "hand",
+    ) -> None:
         """Create a slider.
 
         Args:
@@ -526,8 +590,11 @@ class Slider(WidgetBase):
                 Optional batch to add the slider to.
             group:
                 Optional parent group of the slider.
+            cursor:
+                System cursor name or custom mouse cursor to show while hovering.
+                Defaults to the pointing hand cursor.
         """
-        super().__init__(x, y, base.width, knob.height)
+        super().__init__(x, y, base.width, knob.height, cursor)
         self._edge = edge
         self._base_img = base
         self._knob_img = knob
@@ -541,7 +608,8 @@ class Slider(WidgetBase):
         fg_group = Group(order=1, parent=group)
         self._base_spr = pyglet.sprite.Sprite(self._base_img, x, y, batch=batch, group=bg_group)
         self._knob_spr = pyglet.sprite.Sprite(
-            self._knob_img, x + edge, y + base.height / 2, batch=batch, group=fg_group,
+            self._knob_img, x + edge, y + base.height / 2, batch=batch, group=fg_group
+        ,
             anchor_y=int(knob.height / 2),
         )
 
@@ -634,13 +702,19 @@ class TextEntry(WidgetBase):
     The current text string is passed along with the event.
     """
 
-    def __init__(self, text: str,
-                 x: int, y: int, width: int,
-                 color: RGBAColor = (255, 255, 255, 255),
-                 text_color: RGBAColor = (0, 0, 0, 255),
-                 caret_color: RGBColor | RGBAColor = (0, 0, 0, 255),
-                 batch: Batch | None = None,
-                 group: Group | None = None) -> None:
+    def __init__(
+        self,
+        text: str,
+        x: int,
+        y: int,
+        width: int,
+        color: RGBAColor = (255, 255, 255, 255),
+        text_color: RGBAColor = (0, 0, 0, 255),
+        caret_color: RGBColor | RGBAColor = (0, 0, 0, 255),
+        batch: Batch | None = None,
+        group: Group | None = None,
+        cursor: str | MouseCursor | None = "text",
+    ) -> None:
         """Create a text entry widget.
 
         Args:
@@ -662,6 +736,9 @@ class TextEntry(WidgetBase):
                 Optional batch to add the text entry widget to.
             group:
                 Optional parent group of text entry widget.
+            cursor:
+                System cursor name or custom mouse cursor to show while hovering.
+                Defaults to the text caret cursor.
         """
         self._doc = pyglet.text.document.UnformattedDocument(text)
         self._doc.set_style(0, len(self._doc.text), {'color': text_color})
@@ -674,7 +751,9 @@ class TextEntry(WidgetBase):
 
         # Rectangular outline with 2-pixel pad:
         self._pad = p = 2
-        self._outline = pyglet.shapes.Rectangle(x-p, y-p, width+p+p, height+p+p, color, batch=batch, group=bg_group)
+        self._outline = pyglet.shapes.Rectangle(
+            x - p, y - p, width + p + p, height + p + p, color, batch=batch, group=bg_group
+        )
 
         # Text and Caret:
         self._layout = IncrementalTextLayout(self._doc, x, y, 0, width, height, batch=batch, group=fg_group)
@@ -683,7 +762,7 @@ class TextEntry(WidgetBase):
 
         self._focus = False
 
-        super().__init__(x, y, width, height)
+        super().__init__(x, y, width, height, cursor)
 
     def _update_position(self) -> None:
         self._layout.position = self._x, self._y, 0
@@ -733,6 +812,8 @@ class TextEntry(WidgetBase):
         self._focus = value
         self._caret.visible = value
         self._caret.layout = self._layout
+        if not value:
+            self._caret.mark = None
 
     def update_groups(self, order: int) -> None:
         self._outline.group = Group(order=order + 1, parent=self._user_group)
@@ -797,12 +878,25 @@ class ScrollableRegion(WidgetBase, LayoutCell[LayoutCellStyle]):
     attribute). ``content_group`` applies the child view and clip to content.
     """
 
-    def __init__(self, x: int, y: int, width: int, height: int, window: BaseWindow | None = None, *,
-                 frame: Frame | None = None, camera: BaseCamera | None = None, view: _CameraViewBase | None = None,
-                 batch: Batch | None = None, group: Group | None = None, horizontal: bool = True,
-                 vertical: bool = True, scroll_step: float = 40) -> None:
+    def __init__(
+        self,
+        x: int,
+        y: int,
+        width: int,
+        height: int,
+        window: BaseWindow | None = None,
+        *,
+        frame: Frame | None = None,
+        camera: BaseCamera | None = None,
+        view: _CameraViewBase | None = None,
+        batch: Batch | None = None,
+        group: Group | None = None,
+        horizontal: bool = True,
+        vertical: bool = True,
+        scroll_step: float = 40,
+    ) -> None:
         if camera is not None and view is not None:
-            raise ValueError("pass a camera or a view, not both")
+            raise ValueError("Requires either a camera or a view, not both.")
         if window is None and frame is not None:
             window = frame._window  # noqa: SLF001
         parent_view = view or (camera.view if camera is not None else getattr(window, "camera", None))
@@ -812,6 +906,7 @@ class ScrollableRegion(WidgetBase, LayoutCell[LayoutCellStyle]):
         WidgetBase.__init__(self, x, y, width, height)
         LayoutCell.__init__(self, LayoutCellStyle(content_alignment=("left", "top")), batch, group)
         self.view = parent_view.create_view(inherit=True)
+        self._window = window
         self.content_group = Group(order=1, parent=group)
         self.content_group.set_camera(self.view)
         self.horizontal = horizontal
@@ -828,41 +923,73 @@ class ScrollableRegion(WidgetBase, LayoutCell[LayoutCellStyle]):
             window.push_handlers(self)
 
     @property
-    def x(self) -> int: return int(self._rect[0])
+    def x(self) -> int:
+        return int(self._rect[0])
+
     @x.setter
-    def x(self, value: int) -> None: self.realign((value, self.y, self.width, self.height))
+    def x(self, value: int) -> None:
+        self.realign((value, self.y, self.width, self.height))
+
     @property
-    def y(self) -> int: return int(self._rect[1])
+    def y(self) -> int:
+        return int(self._rect[1])
+
     @y.setter
-    def y(self, value: int) -> None: self.realign((self.x, value, self.width, self.height))
+    def y(self, value: int) -> None:
+        self.realign((self.x, value, self.width, self.height))
+
     @property
-    def position(self) -> tuple[int, int]: return self.x, self.y
+    def position(self) -> tuple[int, int]:
+        return self.x, self.y
+
     @position.setter
-    def position(self, value: tuple[int, int]) -> None: self.realign((*value, self.width, self.height))
+    def position(self, value: tuple[int, int]) -> None:
+        self.realign((*value, self.width, self.height))
+
     @property
-    def width(self) -> int: return int(self._rect[2])
+    def width(self) -> int:
+        return int(self._rect[2])
+
     @width.setter
-    def width(self, value: int) -> None: self.realign((self.x, self.y, value, self.height))
+    def width(self, value: int) -> None:
+        self.realign((self.x, self.y, value, self.height))
+
     @property
-    def height(self) -> int: return int(self._rect[3])
+    def height(self) -> int:
+        return int(self._rect[3])
+
     @height.setter
-    def height(self, value: int) -> None: self.realign((self.x, self.y, self.width, value))
+    def height(self, value: int) -> None:
+        self.realign((self.x, self.y, self.width, value))
+
     @property
-    def size(self) -> tuple[int, int]: return self.width, self.height
+    def size(self) -> tuple[int, int]:
+        return self.width, self.height
+
     @size.setter
-    def size(self, value: tuple[int, int]) -> None: self.realign((self.x, self.y, *value))
+    def size(self, value: tuple[int, int]) -> None:
+        self.realign((self.x, self.y, *value))
+
     @property
-    def aabb(self) -> tuple[int, int, int, int]: return self.x, self.y, self.x + self.width, self.y + self.height
+    def aabb(self) -> tuple[int, int, int, int]:
+        return self.x, self.y, self.x + self.width, self.y + self.height
+
     @property
-    def content(self) -> LayoutContent | None: return LayoutCell.content.fget(self)
+    def content(self) -> LayoutContent | None:
+        return LayoutCell.content.fget(self)
+
     @content.setter
     def content(self, value: LayoutContent | None) -> None:
         LayoutCell.content.fset(self, value)
         self.set_scroll(self._scroll_x, self._scroll_y)
+
     @property
-    def scroll_x(self) -> float: return self._scroll_x
+    def scroll_x(self) -> float:
+        return self._scroll_x
+
     @property
-    def scroll_y(self) -> float: return self._scroll_y
+    def scroll_y(self) -> float:
+        return self._scroll_y
 
     def update_groups(self, order: int) -> None:
         """The region has no drawable of its own; content uses ``content_group``."""
@@ -875,18 +1002,15 @@ class ScrollableRegion(WidgetBase, LayoutCell[LayoutCellStyle]):
         LayoutCell.on_resize(self, width, height)
 
     def realign(self, new_rect: tuple[float, float, float, float] | None = None) -> None:
-        old_rect = getattr(self, "_rect", None)
+        old_rect = self._rect
         if new_rect is not None:
             self._rect = tuple(new_rect)
             self._x, self._y, self._width, self._height = self._rect
         LayoutCell.realign(self, self._rect if new_rect is not None else None)
-        if hasattr(self, "view"):
-            content_x, content_y, content_width, content_height = self._content_rect()
-            self.view.set_scissor_area(
-                int(content_x), int(content_y), int(content_width), int(content_height)
-            )
-            self.set_scroll(self._scroll_x, self._scroll_y)
-        if old_rect is not None and old_rect != self._rect:
+        content_x, content_y, content_width, content_height = self._content_rect()
+        self.view.set_scissor_area(int(content_x), int(content_y), int(content_width), int(content_height))
+        self.set_scroll(self._scroll_x, self._scroll_y)
+        if old_rect != self._rect:
             self.dispatch_event("on_reposition", self)
 
     def add_widget(self, widget: WidgetBase) -> None:
@@ -901,8 +1025,10 @@ class ScrollableRegion(WidgetBase, LayoutCell[LayoutCellStyle]):
 
     def set_scroll(self, x: float | None = None, y: float | None = None) -> None:
         max_x, max_y = self._scroll_limits()
-        if x is not None: self._scroll_x = min(max(0.0, x), max_x)
-        if y is not None: self._scroll_y = min(max(0.0, y), max_y)
+        if x is not None:
+            self._scroll_x = min(max(0.0, x), max_x)
+        if y is not None:
+            self._scroll_y = min(max(0.0, y), max_y)
         self.view.position = -self._scroll_x, -self._scroll_y
 
     def _content_rect(self) -> tuple[float, float, float, float]:
@@ -916,7 +1042,8 @@ class ScrollableRegion(WidgetBase, LayoutCell[LayoutCellStyle]):
         )
 
     def _scroll_limits(self) -> tuple[float, float]:
-        if self.content is None: return 0.0, 0.0
+        if self.content is None:
+            return 0.0, 0.0
         _, _, viewport_width, viewport_height = self._content_rect()
         return max(0.0, self.content.width - viewport_width), max(0.0, self.content.height - viewport_height)
 
@@ -924,17 +1051,24 @@ class ScrollableRegion(WidgetBase, LayoutCell[LayoutCellStyle]):
         """Convert a window coordinate to the child view's content space."""
         point = self.view.screen_to_world(x, y)
         return point[0], point[1]
-    def _check_hit(self, x: float, y: float) -> bool: return self.x <= x <= self.x + self.width and self.y <= y <= self.y + self.height
+
+    def _check_hit(self, x: float, y: float) -> bool:
+        return self.x <= x <= self.x + self.width and self.y <= y <= self.y + self.height
 
     def on_mouse_scroll(self, x: int, y: int, scroll_x: float, scroll_y: float) -> None:
-        if not self._check_hit(x, y): return
-        if self.vertical: self.set_scroll(y=self._scroll_y - scroll_y * self.scroll_step)
-        if self.horizontal and scroll_x: self.set_scroll(x=self._scroll_x - scroll_x * self.scroll_step)
+        if not self._check_hit(x, y):
+            return
+        if self.vertical:
+            self.set_scroll(y=self._scroll_y - scroll_y * self.scroll_step)
+        if self.horizontal and scroll_x:
+            self.set_scroll(x=self._scroll_x - scroll_x * self.scroll_step)
         cx, cy = self._content_coordinates(x, y)
-        for widget in self._widgets: widget.on_mouse_scroll(cx, cy, scroll_x, scroll_y)
+        for widget in self._widgets:
+            widget.on_mouse_scroll(cx, cy, scroll_x, scroll_y)
 
     def on_mouse_press(self, x: int, y: int, buttons: int, modifiers: int) -> None:
-        if not self._check_hit(x, y): return
+        if not self._check_hit(x, y):
+            return
         cx, cy = self._content_coordinates(x, y)
         for widget in self._widgets:
             if widget._check_hit(cx, cy):  # noqa: SLF001
@@ -943,22 +1077,24 @@ class ScrollableRegion(WidgetBase, LayoutCell[LayoutCellStyle]):
 
     def on_mouse_release(self, x: int, y: int, buttons: int, modifiers: int) -> None:
         cx, cy = self._content_coordinates(x, y)
-        for widget in self._active_widgets: widget.on_mouse_release(cx, cy, buttons, modifiers)
+        for widget in self._active_widgets:
+            widget.on_mouse_release(cx, cy, buttons, modifiers)
         self._active_widgets.clear()
 
     def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int) -> None:
         cx, cy = self._content_coordinates(x, y)
-        for widget in self._active_widgets: widget.on_mouse_drag(cx, cy, dx, dy, buttons, modifiers)
-        self._mouse_pos = x, y
+        for widget in self._active_widgets:
+            widget.on_mouse_drag(cx, cy, dx, dy, buttons, modifiers)
+        self.on_mouse_motion(x, y, dx, dy)
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> None:
         current_widgets = self._hover_widgets_at(x, y)
         previous_widgets = self._hover_widgets_at(*self._mouse_pos) if self._mouse_pos is not None else set()
         cx, cy = self._content_coordinates(x, y)
-        for widget in current_widgets - previous_widgets:
-            widget.dispatch_event("on_mouse_enter_widget", cx, cy)
         for widget in previous_widgets - current_widgets:
             widget.dispatch_event("on_mouse_leave_widget", cx, cy)
+        for widget in current_widgets - previous_widgets:
+            widget.dispatch_event("on_mouse_enter_widget", cx, cy)
         for widget in current_widgets:
             widget.on_mouse_motion(cx, cy, dx, dy)
         self._mouse_pos = x, y
@@ -982,10 +1118,19 @@ class ScrollableRegion(WidgetBase, LayoutCell[LayoutCellStyle]):
             if widget._check_hit(cx, cy):  # noqa: SLF001
                 getattr(widget, method)(*args)
 
-    def on_text(self, text: str) -> None: self._for_mouse_widgets("on_text", text)
-    def on_text_motion(self, motion: int) -> None: self._for_mouse_widgets("on_text_motion", motion)
-    def on_text_motion_select(self, motion: int) -> None: self._for_mouse_widgets("on_text_motion_select", motion)
+    def on_text(self, text: str) -> None:
+        self._for_mouse_widgets("on_text", text)
+
+    def on_text_motion(self, motion: int) -> None:
+        self._for_mouse_widgets("on_text_motion", motion)
+
+    def on_text_motion_select(self, motion: int) -> None:
+        self._for_mouse_widgets("on_text_motion_select", motion)
+
     def on_key_press(self, symbol: int, modifiers: int) -> None:
-        for widget in self._widgets: widget.on_key_press(symbol, modifiers)
+        for widget in self._widgets:
+            widget.on_key_press(symbol, modifiers)
+
     def on_key_release(self, symbol: int, modifiers: int) -> None:
-        for widget in self._widgets: widget.on_key_release(symbol, modifiers)
+        for widget in self._widgets:
+            widget.on_key_release(symbol, modifiers)

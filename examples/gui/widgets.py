@@ -88,11 +88,8 @@ frame.add_widget(slider)
 slider_label = pyglet.text.Label("Slider Value: 0.0", x=300, y=200, batch=batch, color=(0, 0, 0, 255))
 
 
-# This Widget is not added to the Frame. Because it is sensitive
-# to drag-and-select events falling outside the Frame's spatial hash,
-# it's best to let it handle Window events directly.
 text_entry = pyglet.gui.TextEntry("Enter Your Name", 100, 100, 150, batch=batch)
-window.push_handlers(text_entry)
+frame.add_widget(text_entry)
 text_entry.set_handler('on_commit', text_entry_handler)
 text_entry_label = pyglet.text.Label("Text: None", x=300, y=100, batch=batch, color=(0, 0, 0, 255))
 
