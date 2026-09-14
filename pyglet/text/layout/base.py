@@ -26,7 +26,7 @@ from pyglet.text.layout.boxes import (
 from pyglet.text.layout.flow import _FlowLayoutBase
 
 if TYPE_CHECKING:
-    from pyglet.customtypes import AnchorX, AnchorY, ContentVAlign, RGBAColor
+    from pyglet.customtypes import AnchorX, AnchorY, ContentVAlign, HorizontalAlign, RGBAColor
     from pyglet.graphics import Batch
     from pyglet.graphics.shader import ShaderProgram
     from pyglet.graphics import Texture, TextureRenderTarget
@@ -220,6 +220,7 @@ class TextLayout(_FlowLayoutBase):
 
     _anchor_x: AnchorX = "left"
     _anchor_y: AnchorY = "bottom"
+    _content_halign: HorizontalAlign = "left"
     _content_valign: ContentVAlign = "top"
     _multiline: bool = False
     _visible: bool = True
@@ -815,6 +816,32 @@ class TextLayout(_FlowLayoutBase):
         self._update()
 
     @property
+    def content_halign(self) -> HorizontalAlign:
+        """Horizontal alignment of content within a larger layout box.
+
+        This property determines how content is positioned within the layout
+        box when ``content_width`` is less than ``width``.
+
+        The following values are supported:
+
+        ``left`` (default)
+            Content is aligned to the left of the layout box.
+        ``center``
+            Content is centered horizontally within the layout box.
+        ``right``
+            Content is aligned to the right of the layout box.
+
+        This property has no effect when ``content_width`` is greater than
+        ``width`` or when ``width`` is ``None``.
+        """
+        return self._content_halign
+
+    @content_halign.setter
+    def content_halign(self, content_halign: HorizontalAlign) -> None:
+        self._content_halign = content_halign
+        self._update()
+
+    @property
     def left(self) -> float:
         """The x-coordinate of the left side of the layout."""
         return self._x + self._anchor_left
@@ -1028,19 +1055,36 @@ class TextLayout(_FlowLayoutBase):
 
     def _get_left_anchor(self) -> int:
         """Returns the anchor for the X axis from the left."""
-        if self._multiline:
+        if self._content_halign != "left" and self._width is not None:
+            width = self._width
+            offset = self._get_content_halign_offset(width)
+        elif self._multiline:
             width = self._width if self._wrap_lines else self._content_width
+            offset = 0
         else:
             width = self._content_width
+            offset = 0
 
         if self._anchor_x == "left":
-            return 0
+            return offset
         if self._anchor_x == "center":
-            return -(width // 2)
+            return -(width // 2) + offset
         if self._anchor_x == "right":
-            return -width
+            return -width + offset
 
         msg = '`anchor_x` must be either "left", "center", or "right".'
+        raise Exception(msg)
+
+    def _get_content_halign_offset(self, width: int) -> int:
+        """Return the horizontal offset of content within a layout box."""
+        if self._content_width >= width or self._content_halign == "left":
+            return 0
+        if self._content_halign == "center":
+            return (width - self._content_width) // 2
+        if self._content_halign == "right":
+            return width - self._content_width
+
+        msg = '`content_halign` must be either "left", "center", or "right".'
         raise Exception(msg)
 
     def _get_top_anchor(self) -> float:
