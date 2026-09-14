@@ -626,6 +626,7 @@ class Batch:
     _empty_domains: set[_DomainKey]
     _domain_registry: dict[_DomainKey, Any]
     _draw_list: list[Callable]
+    _pass_draw_lists: dict[DrawPass, list[Callable]]
     top_groups: list[Group]
     group_children: dict[Group, list[Group]]
     group_map: dict[Group, dict[_DomainKey, VertexDomain]]
@@ -655,6 +656,7 @@ class Batch:
         self.top_groups = []
 
         self._draw_list = []
+        self._pass_draw_lists = {}
         self._draw_list_dirty = False
 
         # Mapping of DomainKey to a VertexDomain
@@ -797,6 +799,7 @@ class Batch:
         if draw_pass not in self._pass_registrations:
             self._passes.append(draw_pass)
             self._pass_registrations[draw_pass] = []
+            self._draw_list_dirty = True
         return draw_pass
 
     @staticmethod
@@ -836,17 +839,22 @@ class Batch:
             )
             registrations.append(registration)
         registration.bucket.add_vertex_list(vertex_list)
+        self._draw_list_dirty = True
         return registration
 
     def _remove_vertex_list_from_passes(self, vertex_list: VertexList) -> None:
+        changed = False
         for registrations in self._pass_registrations.values():
             for registration in registrations[:]:
                 try:
                     registration.bucket.remove_vertex_list(vertex_list)
                 except (KeyError, ValueError):
                     continue
+                changed = True
                 if registration.bucket.is_empty:
                     registrations.remove(registration)
+        if changed:
+            self._draw_list_dirty = True
 
     def _update_vertex_list_in_passes(self, vertex_list: VertexList, old_start: int, old_count: int) -> None:
         """Keep pass-local range buckets synchronized after a realloc."""
@@ -1069,12 +1077,12 @@ class Batch:
         group._assigned_batches.add(self)  # noqa: SLF001
         self._draw_list_dirty = True
 
-    def _create_draw_list(self) -> list:
-        """Create the backend-specific draw list representation."""
+    def _create_draw_list(self, draw_pass: DrawPass | None = None) -> list:
+        """Create a backend-specific draw list for the default or one additional pass."""
         msg = f"{self.__class__.__name__} must implement _create_draw_list."
         raise NotImplementedError(msg)
 
-    def _compile_draw_list(self, draw_list: list) -> list[Callable]:
+    def _compile_draw_list(self, draw_list: list, draw_pass: DrawPass | None = None) -> list[Callable]:
         """Compile the backend draw list representation into draw callables."""
         return draw_list
 
@@ -1082,6 +1090,10 @@ class Batch:
         if self._draw_list_dirty:
             draw_list = self._create_draw_list()
             self._draw_list = self._compile_draw_list(draw_list)
+            self._pass_draw_lists = {
+                draw_pass: self._compile_draw_list(self._create_draw_list(draw_pass), draw_pass)
+                for draw_pass in self._passes
+            }
             self._draw_list_dirty = False
 
             if _debug_graphics_batch:
@@ -1123,14 +1135,11 @@ class Batch:
         )
 
     def _draw_registered_pass(self, draw_pass: DrawPass) -> None:
+        """Execute the precompiled draw list belonging to ``draw_pass``."""
         draw_ctx = self._create_draw_context(draw_pass)
         draw_ctx.begin()
-        for registration in sorted(self._pass_registrations[draw_pass], key=lambda entry: entry.group):
-            registration.group.set_state_recursive(draw_ctx)
-            registration.binding.bind()
-            registration.binding.commit()
-            registration.domain.draw_buckets(self._geometry_map[registration.mode], [registration.bucket])
-            registration.group.unset_state_recursive(draw_ctx)
+        for func in self._pass_draw_lists[draw_pass]:
+            func(draw_ctx)
 
     def draw_pass(self, draw_pass: DrawPass) -> None:
         """Draw one registered additional rendering pass.
@@ -1141,6 +1150,7 @@ class Batch:
         """
         if draw_pass not in self._pass_registrations:
             raise ValueError("DrawPass is not registered with this Batch.")
+        self._update_draw_list()
         self._draw_registered_pass(draw_pass)
         self.delete_empty_domains()
 
@@ -1252,12 +1262,17 @@ class _BucketBatch(Batch):
             if domain.has_bucket(group):
                 del domain._vertex_buckets[group]  # noqa: SLF001
 
-    def _create_draw_list(self) -> list[tuple[Any, Any, Group]]:
+    def _create_draw_list(
+            self, draw_pass: DrawPass | None = None,
+    ) -> list[tuple[Any, Any, Group]] | list[_PassRegistration]:
         """Rebuild draw list by walking the group tree.
 
         Backends with different draw submission models should override this
         instead of adapting themselves to the bucket representation.
         """
+        if draw_pass is not None:
+            return sorted(self._pass_registrations[draw_pass], key=lambda registration: registration.group)
+
 
         def visit(group: Group) -> list[tuple[Any, Any, Group]]:
             draw_list = []
@@ -1315,6 +1330,27 @@ class _BucketBatch(Batch):
             domain.draw_buckets(mode_func, buckets)
 
         return _draw
+
+    @staticmethod
+    def _input_binding_fn(binding):  # noqa: ANN001, ANN205
+        def _bind(_ctx) -> None:  # noqa: ANN001
+            binding.bind()
+            binding.commit()
+
+        return _bind
+
+    def _compile_pass_draw_list(self, registrations: list[_PassRegistration]) -> list[Callable]:
+        calls: list[Callable] = []
+        for registration in registrations:
+            calls.extend((
+                registration.group.set_state_recursive,
+                self._input_binding_fn(registration.binding),
+                self._draw_bucket_fn(
+                    registration.domain, [registration.bucket], self._geometry_map[registration.mode],
+                ),
+                registration.group.unset_state_recursive,
+            ))
+        return calls
 
     def _optimize_draw_list(self, draw_list: list[tuple]) -> list[Callable]:
         """Turn a flattened ``(domain, mode, group)`` list into optimized callables."""
@@ -1461,7 +1497,11 @@ class _BucketBatch(Batch):
 
         return calls
 
-    def _compile_draw_list(self, draw_list: list[tuple]) -> list[Callable]:
+    def _compile_draw_list(
+            self, draw_list: list[tuple] | list[_PassRegistration], draw_pass: DrawPass | None = None,
+    ) -> list[Callable]:
+        if draw_pass is not None:
+            return self._compile_pass_draw_list(draw_list)
         if pyglet.options.optimize_states:
             return self._optimize_draw_list(draw_list)
         return self._set_draw_functions(draw_list)
