@@ -815,6 +815,9 @@ class TextEntry(WidgetBase):
         self._caret.layout = self._layout
         if not value:
             cast("Any", self._caret).mark = None
+        frame = self._get_frame()
+        if frame is not None:
+            frame._set_focus(self if value else None)
 
     def update_groups(self, order: int) -> None:
         self._outline.group = Group(order=order + 1, parent=self._user_group)

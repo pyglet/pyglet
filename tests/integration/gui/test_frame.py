@@ -1,5 +1,5 @@
 from pyglet.gui.frame import MovableFrame
-from pyglet.gui.widgets import WidgetBase
+from pyglet.gui.widgets import TextEntry, WidgetBase
 
 
 class TrackingWidget(WidgetBase):
@@ -78,6 +78,20 @@ def test_frame_dispatches_input_to_widgets_in_the_current_mouse_cell(frame):
 
     assert target.events == [("key_press", 1, 2), ("text", "x")]
     assert other.events == []
+
+
+def test_frame_dispatches_text_to_the_focused_entry_after_the_mouse_moves(frame):
+    entry = TextEntry('', 0, 0, 40)
+    other_entry = TextEntry('', 100, 100, 40)
+    frame.add_widget(entry)
+    frame.add_widget(other_entry)
+
+    frame.on_mouse_press(5, 5, 1, 0)
+    frame.on_mouse_motion(105, 105, 100, 100)
+    frame.on_text('x')
+
+    assert entry.value == 'x'
+    assert other_entry.value == ''
 
 
 def test_frame_keeps_widget_active_through_a_drag_and_release(frame):

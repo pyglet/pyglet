@@ -47,6 +47,7 @@ class Frame:
         self._widgets: set[WidgetBase] = set()
         self._widget_cells: dict[WidgetBase, set[tuple[int, int]]] = {}
         self._active_widgets: set[WidgetBase] = set()
+        self._focused_widget: WidgetBase | None = None
         self._order = order
         self.cursor = cursor
         self._mouse_pos = 0, 0
@@ -104,6 +105,15 @@ class Frame:
             cursor = self._window.get_system_mouse_cursor(cursor)
         self._window.set_mouse_cursor(cursor)
 
+    def _set_focus(self, widget: WidgetBase | None) -> None:
+        """Set the widget that receives keyboard and text input."""
+        if widget is self._focused_widget:
+            return
+        previous_widget = self._focused_widget
+        self._focused_widget = widget
+        if previous_widget is not None:
+            previous_widget.focus = False
+
     @property
     def enable(self):
         """Whether to enable frame.
@@ -124,6 +134,8 @@ class Frame:
         """Add a Widget to the spatial hash."""
         self._widgets.add(widget)
         widget.parent = self
+        if getattr(widget, 'focus', False):
+            self._set_focus(widget)
         widget.update_groups(self._order)
         # Preserve handlers already registered for this event.
         widget.push_handlers(on_reposition=self._on_reposition_handler)
@@ -132,6 +144,8 @@ class Frame:
 
     def remove_widget(self, widget: WidgetBase) -> None:
         """Remove a Widget from the spatial hash."""
+        if widget is self._focused_widget:
+            self._set_focus(None)
         self._widgets.remove(widget)
         widget.parent = None
         self._active_widgets.discard(widget)
@@ -154,17 +168,24 @@ class Frame:
             self._rebuild_cells()
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
-        """Pass the event to any widgets within range of the mouse."""
-        for widget in self._widgets_at(*self._mouse_pos):
-            widget.on_key_press(symbol, modifiers)
+        """Pass the event to the focused widget, or widgets under the mouse."""
+        if self._focused_widget is not None:
+            self._focused_widget.on_key_press(symbol, modifiers)
+        else:
+            for widget in self._widgets_at(*self._mouse_pos):
+                widget.on_key_press(symbol, modifiers)
 
     def on_key_release(self, symbol: int, modifiers: int) -> None:
-        """Pass the event to any widgets within range of the mouse."""
-        for widget in self._widgets_at(*self._mouse_pos):
-            widget.on_key_release(symbol, modifiers)
+        """Pass the event to the focused widget, or widgets under the mouse."""
+        if self._focused_widget is not None:
+            self._focused_widget.on_key_release(symbol, modifiers)
+        else:
+            for widget in self._widgets_at(*self._mouse_pos):
+                widget.on_key_release(symbol, modifiers)
 
     def on_mouse_press(self, x: int, y: int, buttons: int, modifiers: int) -> None:
         """Pass the event to any widgets within range of the mouse."""
+        self._set_focus(None)
         for widget in self._widgets_at(x, y):
             widget.on_mouse_press(x, y, buttons, modifiers)
             self._active_widgets.add(widget)
@@ -203,19 +224,28 @@ class Frame:
         self._mouse_pos = x, y
 
     def on_text(self, text: str) -> None:
-        """Pass the event to any widgets within range of the mouse."""
-        for widget in self._widgets_at(*self._mouse_pos):
-            widget.on_text(text)
+        """Pass the event to the focused widget, or widgets under the mouse."""
+        if self._focused_widget is not None:
+            self._focused_widget.on_text(text)
+        else:
+            for widget in self._widgets_at(*self._mouse_pos):
+                widget.on_text(text)
 
     def on_text_motion(self, motion: int) -> None:
-        """Pass the event to any widgets within range of the mouse."""
-        for widget in self._widgets_at(*self._mouse_pos):
-            widget.on_text_motion(motion)
+        """Pass the event to the focused widget, or widgets under the mouse."""
+        if self._focused_widget is not None:
+            self._focused_widget.on_text_motion(motion)
+        else:
+            for widget in self._widgets_at(*self._mouse_pos):
+                widget.on_text_motion(motion)
 
     def on_text_motion_select(self, motion: int) -> None:
-        """Pass the event to any widgets within range of the mouse."""
-        for widget in self._widgets_at(*self._mouse_pos):
-            widget.on_text_motion_select(motion)
+        """Pass the event to the focused widget, or widgets under the mouse."""
+        if self._focused_widget is not None:
+            self._focused_widget.on_text_motion_select(motion)
+        else:
+            for widget in self._widgets_at(*self._mouse_pos):
+                widget.on_text_motion_select(motion)
 
 
 class MovableFrame(Frame):
