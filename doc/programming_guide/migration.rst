@@ -25,6 +25,7 @@ Some of the major changes include::
 * Built-in 2D and 3D cameras with managed shader state.
 * Resource image loading improvements.
 * Clearer separation of raw ImageData and Textures.
+* A new UI model with ``UIManager`` and supports common layouts.
 
 
 The sections below should hopefully cover all of the changes that you will need to migrate a project. If you
@@ -415,6 +416,34 @@ This change should only affect you if you utilize any sort of custom groups in y
 You will notice in the above example there is no longer a ``set_state`` or ``unset_state`` method on the Group itself;
 These methods have have been moved into the ``State`` object. Refer to the rendering guide section: "Creating a custom
 state" to learn the new way to do this.
+
+UI manager, widgets, and layouts
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+GUI objects now form a parent owned tree. Create a
+:py:class:`~pyglet.gui.UIManager` for the window and pass the manager as the
+first argument to each widget. Construction now registers the widget
+automatically::
+
+    ui = pyglet.gui.UIManager(window)
+    button = pyglet.gui.PushButton(
+        ui, 40, 40,
+        pressed=pressed_texture,
+        unpressed=unpressed_texture,
+        batch=batch,
+    )
+
+The old event routing ``Frame(window)`` is now ``UIManager(window)``.
+:py:class:`~pyglet.gui.Frame` and
+:py:class:`~pyglet.gui.MovableFrame` are layout containers, and widgets
+inside them use the frame as their parent.
+
+Various other layout options have also been added, such as ``HBox``, ``VBox``,
+and ``ScrollableRegion``.
+
+Some limited styling options have also been added.
+
+See :ref:`guide_gui` for more information on the new UI changes.
 
 Other notable API changes
 ^^^^^^^^^^^^^^^^^^^^^^^^^

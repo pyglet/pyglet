@@ -1,45 +1,90 @@
 pyglet.gui
-===========
+==========
 
 .. automodule:: pyglet.gui
 
-Classes
+
+Input management
+----------------
+
+.. autoclass:: UIManager
+  :members:
+  :show-inheritance:
+
+
+Widgets
 -------
 
 .. autoclass:: WidgetBase
+  :members:
   :show-inheritance:
-
-  .. rubric:: Attributes
-
-  .. autoattribute:: x
-  .. autoattribute:: y
-  .. autoattribute:: width
-  .. autoattribute:: height
-  .. autoattribute:: aabb
 
 .. autoclass:: PushButton
   :members:
-  :undoc-members:
   :show-inheritance:
 
-.. autoclass:: Frame
+.. autoclass:: TextButton
   :members:
-  :undoc-members:
   :show-inheritance:
 
 .. autoclass:: ToggleButton
   :members:
-  :undoc-members:
   :show-inheritance:
 
 .. autoclass:: Slider
   :members:
-  :undoc-members:
   :show-inheritance:
 
 .. autoclass:: TextEntry
   :members:
-  :undoc-members:
   :show-inheritance:
-  
-  
+
+.. autoclass:: ScrollableRegion
+  :members:
+  :show-inheritance:
+
+
+Layouts
+-------
+
+.. autoclass:: LayoutCell
+  :members:
+
+.. autoclass:: Layout
+  :members:
+  :show-inheritance:
+
+.. autoclass:: HBox
+  :members:
+  :show-inheritance:
+
+.. autoclass:: VBox
+  :members:
+  :show-inheritance:
+
+.. autoclass:: Frame
+  :members:
+  :show-inheritance:
+
+.. autoclass:: MovableFrame
+  :members:
+  :show-inheritance:
+
+
+Styles
+------
+
+.. autoclass:: WidgetStyle
+  :members:
+
+.. autoclass:: ButtonStyle
+  :members:
+
+.. autoclass:: TextButtonStyle
+  :members:
+
+.. autoclass:: LayoutCellStyle
+  :members:
+
+.. autoclass:: LayoutStyle
+  :members:
