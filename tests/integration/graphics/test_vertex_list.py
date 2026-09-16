@@ -96,6 +96,25 @@ class VertexListTest(unittest.TestCase):
 
         assert all(not buffer._dirty for buffer in vertex_list.domain.vertex_buffers.buffers)
 
+    def test_separate_storage_expansion_remains_contiguous(self):
+        # Make sure expanded storage will be contiguous for separate
+        program = pyglet.graphics.api.get_default_shader()
+        batch = pyglet.graphics.Batch()
+        group = pyglet.graphics.ShaderGroup(program)
+        layout = pyglet.graphics.VertexLayout(position="3f")
+        storage = batch.create_vertex_storage(sharing_policy="separate")
+        count = 4096
+        data = {"position": (0, 0, 0) * count}
+
+        first = batch.vertex_list(layout, count, GeometryMode.TRIANGLES, group, storage=storage, **data)
+        second = batch.vertex_list(layout, count, GeometryMode.TRIANGLES, group, storage=storage, **data)
+
+        allocator = first.domain.vertex_buffers.allocator
+        assert first.domain is second.domain
+        assert second.start == count
+        assert allocator.capacity == count * 2
+        assert allocator.get_allocated_regions() == ([0], [count * 2])
+
     def test_vertex_list_property_set(self):
         program = pyglet.graphics.api.get_default_shader()
 
