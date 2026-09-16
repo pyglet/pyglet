@@ -5,6 +5,7 @@ import random
 
 import pytest
 
+import pyglet
 from pyglet.enums import GeometryMode
 from tests.annotations import GraphicsAPIGroups, skip_graphics_api
 
@@ -121,6 +122,39 @@ def test_instancing_count(vlist_factory):
 
     assert vlist.instance_bucket is not None
     assert vlist.instance_bucket.instance_count == instance_count  # the initial list
+
+
+def test_nonindexed_instanced_draw_pass_selects_all_instances(shader_program, vlist_non_indexed_factory):
+    """An additional pass draws only its registered list and all its instances."""
+    batch = pyglet.graphics.Batch()
+    group = pyglet.graphics.ShaderGroup(shader_program)
+    vertices = (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+    selected = vlist_non_indexed_factory(vertices, batch=batch, group=group)
+    unselected = vlist_non_indexed_factory(vertices, batch=batch, group=group)
+    selected.create_instances(
+        2,
+        colors=(1.0, 0.0, 0.0, 1.0) * 2,
+        translate=(0.0, 0.0, 0.0, 10.0, 0.0, 0.0),
+    )
+    unselected.create_instance(colors=(0.0, 1.0, 0.0, 1.0), translate=(20.0, 0.0, 0.0))
+
+    first_pass = batch.add_pass(pyglet.graphics.DrawPass(name="first"))
+    second_pass = batch.add_pass(pyglet.graphics.DrawPass(name="second"))
+    selected.add_pass(first_pass, group=group)
+    selected.add_pass(second_pass, group=group)
+
+    registration = batch._pass_registrations[first_pass][0]  # noqa: SLF001
+    drawn = []
+    selected.domain.instance_domain.draw_bucket = lambda mode, bucket: drawn.append((mode, bucket))
+    selected.domain.draw_buckets(GeometryMode.TRIANGLES, [registration.bucket])
+
+    assert drawn == [(GeometryMode.TRIANGLES, selected.instance_bucket)]
+    assert drawn[0][1].instance_count == 2
+
+    selected.delete()
+
+    assert batch._pass_registrations[first_pass] == []  # noqa: SLF001
+    assert batch._pass_registrations[second_pass] == []  # noqa: SLF001
 
 
 def test_bulk_instance_collection(vlist_factory):
