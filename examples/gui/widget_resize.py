@@ -1,4 +1,4 @@
-"""Resizing from a Frame through ScrollableRegion and VBox."""
+"""Resizing from one UI manager through ScrollableRegion and VBox."""
 
 import pyglet
 
@@ -10,19 +10,19 @@ class ResizeAwareButton(pyglet.gui.TextButton):
 
 window = pyglet.window.Window(640, 360, "Widget Layout Resizing", resizable=True)
 batch = pyglet.graphics.Batch()
-frame = pyglet.gui.Frame(window)
+ui = pyglet.gui.UIManager(window)
 
-region = pyglet.gui.ScrollableRegion(40, 40, 560, 260, frame=frame, camera=window.camera, batch=batch)
+region = pyglet.gui.ScrollableRegion(ui, 40, 40, 560, 260, camera=window.camera, batch=batch)
 region.set_style(
     pyglet.gui.LayoutCellStyle(
         background=(25, 35, 55, 255),
         padding=(12, 12, 12, 12),
         stretch_content=(True, False),
         content_alignment=("left", "top"),
-    )
+    ),
 )
 content = pyglet.gui.VBox(
-    40, 40, 560, 500,
+    region, 40, 40, 560, 500,
     style=pyglet.gui.LayoutStyle(
         background=(40, 55, 80, 255),
         padding=(8, 8, 8, 8),
@@ -40,7 +40,7 @@ region.content = content
 
 for index in range(10):
     button = ResizeAwareButton(
-        0, 0, f"Item {index + 1}", batch=batch, group=region.content_group,
+        region, 0, 0, f"Item {index + 1}", batch=batch, group=region.content_group,
         style=pyglet.gui.TextButtonStyle(
             unpressed_color=(225, 235, 255, 255),
             hover_color=(120, 205, 255, 255),
@@ -48,7 +48,6 @@ for index in range(10):
         ),
     )
     content.append(button)
-    region.add_widget(button)
 
 
 @window.event

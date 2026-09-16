@@ -34,7 +34,7 @@ if __name__ == '__main__':
 
 
     # Setup simple UI buttons to demonstrate the behavior.
-    frame = pyglet.gui.Frame(window, order=4)
+    ui = pyglet.gui.UIManager(window, order=4)
 
     def _open_button_release(widget):
         open_dialog.open()
@@ -42,13 +42,11 @@ if __name__ == '__main__':
     def _save_button_release(widget):
         save_dialog.open()
 
-    open_button = pyglet.gui.TextButton(50, 50, text="Open File Dialog", batch=batch)
+    open_button = pyglet.gui.TextButton(ui, 50, 50, text="Open File Dialog", batch=batch)
     open_button.set_handler('on_release', _open_button_release)
-    frame.add_widget(open_button)
 
-    save_button = pyglet.gui.TextButton(230, 50, text="Save File Dialog", batch=batch)
+    save_button = pyglet.gui.TextButton(ui, 230, 50, text="Save File Dialog", batch=batch)
     save_button.set_handler('on_release', _save_button_release)
-    frame.add_widget(save_button)
 
 
     pyglet.app.run()
