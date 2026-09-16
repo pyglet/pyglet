@@ -309,6 +309,15 @@ class GLInstanceDomainArrays(InstanceDomain):  # noqa: D101
         bucket.stream.commit()
         self._gl.drawArraysInstanced(mode, vertex_list.start, vertex_list.count, bucket.instance_count)
 
+    def draw_bucket(self, mode: int, bucket: InstanceBucket) -> None:
+        """Draw all instances belonging to one geometry bucket."""
+        if bucket.instance_count <= 0:
+            return
+        first_vertex, vertex_count = self._geom[bucket]
+        bucket.vao.bind()
+        bucket.stream.commit()
+        self._gl.drawArraysInstanced(mode, first_vertex, vertex_count, bucket.instance_count)
+
 class GLInstanceDomainElements(InstanceDomain):  # noqa: D101
     _ctx: OpenGLSurfaceContext
 
@@ -387,7 +396,9 @@ class WebGLInstancedVertexDomain(InstancedVertexDomain):  # noqa: D101
 
     def draw_buckets(self, mode: int, buckets: list[VertexGroupBucket]) -> None:
         """Draw a specific VertexGroupBucket in the domain."""
-        self.instance_domain.draw(mode)
+        for bucket in buckets:
+            for vertex_range in bucket.ranges:
+                self.instance_domain.draw_bucket(mode, self._instance_map[vertex_range])
 
     def _create_vao(self) -> None:
         """Handled by buckets."""
