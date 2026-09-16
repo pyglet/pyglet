@@ -1253,17 +1253,27 @@ class Batch:
         for func in self._pass_draw_lists[draw_pass]:
             func(draw_ctx)
 
-    def draw_pass(self, draw_pass: DrawPass) -> None:
-        """Draw one registered additional rendering pass.
+    def _draw_default_pass(self) -> None:
+        """Execute the precompiled default draw list without additional passes."""
+        draw_ctx = self._create_draw_context(BatchDrawOptions())
+        draw_ctx.begin()
+        for func in self._draw_list:
+            func(draw_ctx)
+
+    def draw_pass(self, draw_pass: DrawPass | None) -> None:
+        """Draw the default pass or one registered additional rendering pass.
 
         Args:
-            draw_pass: The pass to draw. It must have been registered with
-                :meth:`add_pass`.
+            draw_pass: The registered pass to draw, or ``None`` to draw only
+                the default batch registration without any additional passes.
         """
-        if draw_pass not in self._pass_registrations:
+        if draw_pass is not None and draw_pass not in self._pass_registrations:
             raise ValueError("DrawPass is not registered with this Batch.")
         self._update_draw_list()
-        self._draw_registered_pass(draw_pass)
+        if draw_pass is None:
+            self._draw_default_pass()
+        else:
+            self._draw_registered_pass(draw_pass)
         self.delete_empty_domains()
 
     def draw(self) -> None:
@@ -1272,10 +1282,7 @@ class Batch:
         If the draw list is dirty, a new one will be created and applied.
         """
         self._update_draw_list()
-        draw_ctx = self._create_draw_context(BatchDrawOptions())
-        draw_ctx.begin()
-        for func in self._draw_list:
-            func(draw_ctx)
+        self._draw_default_pass()
 
         for draw_pass in sorted(self._passes, key=lambda current: current.order):
             self._draw_registered_pass(draw_pass)
