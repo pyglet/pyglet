@@ -493,8 +493,10 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
             count:
                 The number of vertices in the list.
             mode:
-                OpenGL drawing mode enumeration; for example, one of
-                ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS`,
+                :attr:`~pyglet.enums.GeometryMode.LINES`, or
+                :attr:`~pyglet.enums.GeometryMode.TRIANGLES`.
                 This determines how the list is drawn in the given batch.
             batch:
                 Batch to add the VertexList to, or ``None`` if a Batch will not be used.
@@ -523,8 +525,10 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
             count:
                 The number of vertices in the list.
             mode:
-                OpenGL drawing mode enumeration; for example, one of
-                ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS`,
+                :attr:`~pyglet.enums.GeometryMode.LINES`, or
+                :attr:`~pyglet.enums.GeometryMode.TRIANGLES`.
                 This determines how the list is drawn in the given batch.
             indices:
                 Sequence of integers giving indices into the vertex list.

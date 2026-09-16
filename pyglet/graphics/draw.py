@@ -679,6 +679,23 @@ class Batch:
             self, *, layouts: Iterable[VertexLayout] = (), chunk_size: int = 4096,
             sharing_policy: Literal['separate', 'shared'] = 'separate',
     ) -> VertexStorage:
+        """Create a storage namespace for geometry owned by this batch.
+
+        Args:
+            layouts:
+                Vertex layouts to register with the storage initially. Layouts
+                supplied to :meth:`vertex_list` methods are registered on
+                demand as well.
+            chunk_size:
+                Initial allocation size, in vertices, for storage buffers.
+            sharing_policy:
+                ``'separate'`` gives each compatible domain its own vertex
+                buffer. ``'shared'`` lets compatible domains share buffers.
+
+        Returns:
+            The new :class:`VertexStorage`, which can be passed as ``storage``
+            to this batch's vertex-list creation methods.
+        """
         storage = VertexStorage(self, layouts, chunk_size=chunk_size, sharing_policy=sharing_policy)
         self._storages.add(storage)
         return storage
@@ -735,6 +752,27 @@ class Batch:
         ``vertex_layout`` defines the buffer components, types, and
         normalization.  The group's shader supplies the matching input
         locations.
+
+        Args:
+            vertex_layout:
+                The authoritative format of the vertex attributes.
+            count:
+                Number of vertices in the list.
+            mode:
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.TRIANGLES` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
+            group:
+                Group containing the shader program and render state for the
+                vertex list.
+            storage:
+                Storage created by this batch to use for the geometry, or
+                ``None`` to use the batch's default storage.
+            data:
+                Initial vertex-attribute data, keyed by attribute name.
+
+        Returns:
+            The created vertex list.
         """
         return self._create_vertex_list(
             vertex_layout, count, mode, group, storage=storage, **data,
@@ -751,7 +789,32 @@ class Batch:
             storage: VertexStorage | None = None,
             **data: Any,
     ) -> IndexedVertexList:
-        """Create an indexed vertex list from authoritative geometry formats."""
+        """Create an indexed vertex list from authoritative geometry formats.
+
+        Args:
+            vertex_layout:
+                The authoritative format of the vertex attributes.
+            count:
+                Number of vertices in the list.
+            mode:
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.TRIANGLES` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
+            indices:
+                Indices into the vertex list that define the primitives to
+                draw.
+            group:
+                Group containing the shader program and render state for the
+                vertex list.
+            storage:
+                Storage created by this batch to use for the geometry, or
+                ``None`` to use the batch's default storage.
+            data:
+                Initial vertex-attribute data, keyed by attribute name.
+
+        Returns:
+            The created indexed vertex list.
+        """
         return self._create_vertex_list(
             vertex_layout, count, mode, group, indices=indices, storage=storage, **data,
         )
@@ -766,7 +829,29 @@ class Batch:
             storage: VertexStorage | None = None,
             **data: Any,
     ) -> VertexList:
-        """Create an instanced vertex list using an instanced group program view."""
+        """Create an instanced vertex list from authoritative geometry formats.
+
+        Args:
+            vertex_layout:
+                The authoritative format of the vertex attributes.
+            count:
+                Number of vertices in the list.
+            mode:
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.TRIANGLES` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
+            group:
+                Group containing the shader program and render state for the
+                vertex list. Its shader must define instanced attributes.
+            storage:
+                Storage created by this batch to use for the geometry, or
+                ``None`` to use the batch's default storage.
+            data:
+                Initial vertex-attribute data, keyed by attribute name.
+
+        Returns:
+            The created instanced vertex list.
+        """
         return self._create_vertex_list(
             vertex_layout, count, mode, group, instanced=True, storage=storage, **data,
         )
@@ -782,7 +867,32 @@ class Batch:
             storage: VertexStorage | None = None,
             **data: Any,
     ) -> IndexedVertexList:
-        """Create an indexed instanced vertex list using an instanced program view."""
+        """Create an indexed instanced vertex list from authoritative geometry formats.
+
+        Args:
+            vertex_layout:
+                The authoritative format of the vertex attributes.
+            count:
+                Number of vertices in the list.
+            mode:
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.TRIANGLES` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
+            indices:
+                Indices into the vertex list that define the primitives to
+                draw.
+            group:
+                Group containing the shader program and render state for the
+                vertex list. Its shader must define instanced attributes.
+            storage:
+                Storage created by this batch to use for the geometry, or
+                ``None`` to use the batch's default storage.
+            data:
+                Initial vertex-attribute data, keyed by attribute name.
+
+        Returns:
+            The created indexed instanced vertex list.
+        """
         return self._create_vertex_list(
             vertex_layout, count, mode, group, indices=indices, instanced=True, storage=storage, **data,
         )
@@ -790,9 +900,11 @@ class Batch:
     def add_pass(self, draw_pass: DrawPass) -> DrawPass:
         """Register an additional ordered rendering pass.
 
-        A pass contains pass-global state (camera, framebuffer, viewport,
-        etc.).  Geometry is added to it with :meth:`VertexList.add_pass`.
+        Geometry is added to it with :meth:`VertexList.add_pass`.
+
         The default geometry registration made by ``batch=`` is unchanged.
+
+        .. versionadded:: 3.0
         """
         assert isinstance(draw_pass, DrawPass), "draw_pass must be a DrawPass."
         draw_pass.resolve(self._context)
@@ -1101,24 +1213,24 @@ class Batch:
 
     def _dump_draw_list(self) -> None:
         def dump(group: Group, indent: str = '') -> None:
-            print(indent, 'Begin group', group)
+            print(indent, 'Begin group', group)  # noqa: T201
             domain_map = self.group_map[group]
             for domain in domain_map.values():
-                print(indent, '  ', domain)
+                print(indent, '  ', domain)  # noqa: T201
                 for start, size in zip(*domain.allocator.get_allocated_regions()):
-                    print(indent, '    ', 'Region %d size %d:' % (start, size))
+                    print(indent, '    ', 'Region %d size %d:' % (start, size))  # noqa: T201
                     for key, buffer in domain.attrib_name_buffers.items():
-                        print(indent, '      ', end=' ')
+                        print(indent, '      ', end=' ')  # noqa: T201
                         try:
                             region = buffer.get_region(start, size)
-                            print(key, region.array[:])
+                            print(key, region.array[:])  # noqa: T201
                         except:  # noqa: E722
-                            print(key, '(unmappable)')
+                            print(key, '(unmappable)')  # noqa: T201
             for child in self.group_children.get(group, ()):
                 dump(child, indent + '  ')
-            print(indent, 'End group', group)
+            print(indent, 'End group', group)  # noqa: T201
 
-        print(f'Draw list for {self!r}:')
+        print(f'Draw list for {self!r}:')  # noqa: T201
         for group in self.top_groups:
             dump(group)
 

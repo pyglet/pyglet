@@ -334,7 +334,9 @@ class GLVertexDomain(VertexDomain):
 
         Args:
             mode:
-                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
 
         """
         self.vao.bind()
@@ -360,7 +362,9 @@ class GLVertexDomain(VertexDomain):
 
         Args:
             mode:
-                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
             vertex_list:
                 Vertex list to draw.
 
@@ -503,7 +507,9 @@ class GLInstancedVertexDomain(InstancedVertexDomain, GLVertexDomain):  # noqa: D
 
         Args:
             mode:
-                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
 
         """
         self.vertex_buffers.commit()
@@ -517,7 +523,9 @@ class GLInstancedVertexDomain(InstancedVertexDomain, GLVertexDomain):  # noqa: D
 
         Args:
             mode:
-                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
             vertex_list:
                 Vertex list to draw.
         """
@@ -611,7 +619,9 @@ class GLIndexedVertexDomain(IndexedVertexDomain):
 
         Args:
             mode:
-                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
 
         """
         self.vao.bind()
@@ -640,7 +650,9 @@ class GLIndexedVertexDomain(IndexedVertexDomain):
 
         Args:
             mode:
-                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
             vertex_list:
                 Vertex list to draw.
         """
@@ -687,7 +699,9 @@ class GLInstancedIndexedVertexDomain(InstancedIndexedVertexDomain, GLIndexedVert
 
         Args:
             mode:
-                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
 
         """
         self.vertex_buffers.commit()
@@ -702,7 +716,9 @@ class GLInstancedIndexedVertexDomain(InstancedIndexedVertexDomain, GLIndexedVert
 
         Args:
             mode:
-                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
             vertex_list:
                 Vertex list to draw.
 
