@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Literal, TypeAlias
+from typing import Literal, Protocol, TypeAlias
 
 from pyglet.customtypes import RGBColor, RGBAColor
 
@@ -13,6 +13,34 @@ Padding: TypeAlias = tuple[int, int, int, int]
 CellMargin: TypeAlias = tuple[float, float]
 LayoutSize: TypeAlias = int | float | str | None
 Color: TypeAlias = RGBColor | RGBAColor
+
+
+class Background(Protocol):
+    """A drawable object that fills a layout cell's rectangular bounds."""
+
+    @property
+    def position(self) -> tuple[float, float]:
+        ...
+
+    @position.setter
+    def position(self, value: tuple[float, float]) -> None:
+        ...
+
+    @property
+    def width(self) -> float:
+        ...
+
+    @width.setter
+    def width(self, value: float) -> None:
+        ...
+
+    @property
+    def height(self) -> float:
+        ...
+
+    @height.setter
+    def height(self, value: float) -> None:
+        ...
 
 
 def _padding(value: int | Padding) -> Padding:
@@ -36,7 +64,7 @@ class WidgetStyle:
     """Common visual style fields shared by GUI components."""
 
     #: RGB/RGBA background color, a drawable background object, or ``None``.
-    background: Color | Any | None = None
+    background: Color | Background | None = None
 
 
 @dataclass
@@ -63,7 +91,7 @@ class LayoutStyle(LayoutCellStyle):
     #: Spacing between cells as one number or ``(horizontal, vertical)``.
     cell_margin: int | float | CellMargin = 1
     #: RGB/RGBA color, drawable object, or ``None`` for each cell background.
-    cell_background: Color | Any | None = None
+    cell_background: Color | Background | None = None
     #: Default cell padding as one integer or ``(top, right, bottom, left)``.
     cell_padding: int | Padding = 0
     #: Default cell content stretching flags.
@@ -74,6 +102,8 @@ class LayoutStyle(LayoutCellStyle):
     row_size: LayoutSize = None
     #: Number, ``"Npx"``, ``"N%"``, or ``None`` for flexible column sizing.
     column_size: LayoutSize = None
+    #: Stretch this layout when it is content in another layout cell.
+    stretch_content: bool | AxisFlags = True
 
     def __post_init__(self) -> None:
         super().__post_init__()

@@ -1,19 +1,25 @@
 """Grid-based layout containers for GUI content.
 
 The layout classes deliberately work with widgets, labels, sprites, and other
-objects exposing ``position``, ``width``, and ``height``.  They do not own the
-objects placed in their cells.
+objects exposing ``position``, ``width``, and ``height``. Each layout is
+constructed with its parent and derives its manager from that parent.
+Interactive widgets remain direct children of a UI manager, frame, or
+scrollable region.
 """
 
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
-from typing import Any, Generic, Protocol, TypeVar, cast
+from typing import TYPE_CHECKING, Generic, Protocol, TypeVar, cast, runtime_checkable
 
 import pyglet
 from pyglet.graphics import Batch, Group
-from pyglet.gui.styles import LayoutCellStyle, LayoutStyle, Padding
+from pyglet.gui.styles import Background, LayoutCellStyle, LayoutStyle, Padding
+
+if TYPE_CHECKING:
+    from pyglet.gui.manager import UIManager
+    from pyglet.gui.widgets import ScrollableRegion, WidgetBase
 
 StyleT = TypeVar("StyleT", bound=LayoutCellStyle)
 
@@ -46,6 +52,23 @@ class LayoutContent(Protocol):
         ...
 
 
+@runtime_checkable
+class ParentOwnedContent(LayoutContent, Protocol):
+    """Layout content that has a declared UI parent."""
+
+    @property
+    def parent(self) -> UIManager | Frame | ScrollableRegion | None:
+        ...
+
+
+@runtime_checkable
+class ResizeAwareContent(Protocol):
+    """Content that responds when its owning UI manager's window is resized."""
+
+    def on_resize(self, width: int, height: int) -> None:
+        ...
+
+
 class LayoutCell(Generic[StyleT]):
     """A rectangular layout cell, optionally containing one drawable object."""
 
@@ -63,10 +86,11 @@ class LayoutCell(Generic[StyleT]):
         self._content: LayoutContent | None = None
         self._batch: Batch | None = batch
         self._group: Group | None = group
-        self._background: Any | None = None
+        self._background: Background | None = None
         self._rect: tuple[float, float, float, float] = (0, 0, 1, 1)
         self._style: StyleT = style if style is not None else cast("StyleT", LayoutCellStyle())
         self._span = (1, 1)
+        self._layout: Layout | None = None
         self._update_background()
 
     @property
@@ -99,8 +123,24 @@ class LayoutCell(Generic[StyleT]):
 
     @content.setter
     def content(self, value: LayoutContent | None) -> None:
+        if value is self._content:
+            raise ValueError("Layout cell already contains this object.")
+        if value is not None:
+            self._validate_content_parent(value)
         self._content = value
         self.realign()
+
+    def _validate_content_parent(self, content: LayoutContent) -> None:
+        """Require managed content to belong to this cell's layout tree."""
+        if self._layout is None:
+            return
+        if isinstance(content, Layout):
+            if content.parent is not self._layout:
+                raise ValueError("A child layout must be constructed with this layout as its parent.")
+            return
+
+        if isinstance(content, ParentOwnedContent) and content.parent is not self._layout.input_parent:
+            raise ValueError("A widget must be constructed with this layout's input parent.")
 
     @property
     def style(self) -> StyleT:
@@ -115,19 +155,15 @@ class LayoutCell(Generic[StyleT]):
 
     def on_resize(self, width: int, height: int) -> None:
         """Forward a window resize event to this cell's content, if supported."""
-        if self._content is not None and hasattr(self._content, "on_resize"):
+        if isinstance(self._content, ResizeAwareContent):
             self._content.on_resize(width, height)
 
     def _update_background(self) -> None:
         background = self._style.background
         if background is None:
-            if self._background is not None and hasattr(self._background, "delete"):
-                self._background.delete()
             self._background = None
         elif isinstance(background, tuple):
             if not isinstance(self._background, pyglet.shapes.Rectangle):
-                if self._background is not None and hasattr(self._background, "delete"):
-                    self._background.delete()
                 self._background = pyglet.shapes.Rectangle(
                     0, 0, 0, 0, color=background, batch=self._batch, group=self._group,
                 )
@@ -147,6 +183,8 @@ class LayoutCell(Generic[StyleT]):
 
         top, right, bottom, left = cast("Padding", self._style.padding)
         stretch_x, stretch_y = cast("tuple[bool, bool]", self._style.stretch_content)
+        if self._layout is not None and isinstance(self._content, Layout):
+            stretch_x, stretch_y = cast("tuple[bool, bool]", self._content.style.stretch_content)
         align_x, align_y = cast("tuple[str, str]", self._style.content_alignment)
         if stretch_x:
             self._content.width = max(0, self.width - left - right)
@@ -165,7 +203,7 @@ class LayoutCell(Generic[StyleT]):
             "top": self.y + self.height - top - content_height,
         }.get(align_y)
         if x is None or y is None:
-            raise ValueError("content alignment must use left/center/right and bottom/center/top")
+            raise ValueError("Content alignment must use left/center/right and bottom/center/top.")
         try:
             self._content.position = x, y
         except (TypeError, ValueError):
@@ -198,7 +236,7 @@ class _Sequence:
         elif isinstance(value, (int, float, str)):
             self.size_type, self.size_data = "pixels", float(value)
         else:
-            raise TypeError(f"Cannot parse layout size {value!r}")
+            raise TypeError(f"Cannot parse layout size {value!r}.")
 
 
 class _Grid:
@@ -243,7 +281,7 @@ class _Grid:
 
     def set_dimensions(self, rows: int, columns: int) -> None:
         if rows <= 0 or columns <= 0:
-            raise ValueError("layouts require at least one row and one column")
+            raise ValueError("Layouts require at least one row and one column.")
         old_cells = self._cells
         self._cells = [[self._new_cell() for _ in range(columns)] for _ in range(rows)]
         for row in range(min(rows, len(old_cells))):
@@ -315,10 +353,18 @@ class _Grid:
 
 
 class Layout(LayoutCell[LayoutStyle]):
-    """A grid layout with fixed, pixel, percentage, and flexible cell sizes."""
+    """A grid layout with fixed, pixel, percentage, and flexible cell sizes.
+
+    ``parent`` establishes the layout tree at construction time. Use a frame,
+    UI manager, another layout, or a scrollable region as the parent.
+    """
+    grid: _Grid
+    _cell_group: Group
+    _parent: UIManager | Frame | Layout | ScrollableRegion | None
 
     def __init__(
         self,
+        parent: UIManager | Frame | Layout | ScrollableRegion,
         x: float,
         y: float,
         width: float,
@@ -330,10 +376,12 @@ class Layout(LayoutCell[LayoutStyle]):
         group: Group | None = None,
     ) -> None:
         layout_style = style or LayoutStyle()
-        layout_style.stretch_content = (True, True)
         super().__init__(layout_style, batch, group)
         self._cell_group = pyglet.graphics.Group(order=1, parent=group)
         self._grid = _Grid(rows, columns, self._style, batch, self._cell_group)
+        self._parent = None
+        parent._add_layout(self)
+        self._assign_cells_to_layout()
         self.realign((x, y, width, height))
 
     @property
@@ -343,6 +391,7 @@ class Layout(LayoutCell[LayoutStyle]):
     @rows.setter
     def rows(self, value: int) -> None:
         self._grid.set_dimensions(value, self.columns)
+        self._assign_cells_to_layout()
 
     @property
     def columns(self) -> int:
@@ -351,6 +400,7 @@ class Layout(LayoutCell[LayoutStyle]):
     @columns.setter
     def columns(self, value: int) -> None:
         self._grid.set_dimensions(self.rows, value)
+        self._assign_cells_to_layout()
 
     def cell(self, row: int, column: int = 0) -> LayoutCell[LayoutCellStyle] | None:
         if not 0 <= row < self.rows or not 0 <= column < self.columns:
@@ -387,6 +437,36 @@ class Layout(LayoutCell[LayoutStyle]):
     def _cells(self) -> Iterator[LayoutCell[LayoutCellStyle]]:
         return (cell for row in self._grid._cells for cell in row if isinstance(cell, LayoutCell))
 
+    def _assign_cells_to_layout(self) -> None:
+        for cell in self._cells():
+            cell._layout = self
+
+    @property
+    def parent(self) -> UIManager | Frame | Layout | ScrollableRegion:
+        """The layout container that owns this layout."""
+        if self._parent is None:
+            raise RuntimeError("Layout has no parent.")
+        return self._parent
+
+    @property
+    def manager(self) -> UIManager | None:
+        """The UI manager derived from this layout's parent."""
+        return self.parent.manager
+
+    @property
+    def input_parent(self) -> UIManager | Frame | ScrollableRegion:
+        """The object that owns input for widgets placed in this layout."""
+        parent = self.parent
+        return parent.input_parent if isinstance(parent, Layout) else parent
+
+    def _add_layout(self, layout: Layout) -> None:
+        layout._set_parent(self)
+
+    def _set_parent(self, parent: UIManager | Frame | Layout | ScrollableRegion) -> None:
+        if self._parent is not None:
+            raise ValueError("Layout is already attached to a parent.")
+        self._parent = parent
+
     def set_row_size(self, index: int, value: int | float | str | None) -> None:
         self._grid._rows[index].parse_size(value)
         self.realign()
@@ -406,10 +486,10 @@ class Layout(LayoutCell[LayoutStyle]):
     def set_cell_span(self, row: int, column: int, rowspan: int | None = None, colspan: int | None = None) -> None:
         cell = self.cell(row, column)
         if cell is None:
-            raise ValueError("a span must start at its top-left cell")
+            raise ValueError("A span must start at its top-left cell.")
         rowspan, colspan = rowspan or cell._span[0], colspan or cell._span[1]
         if rowspan < 1 or colspan < 1 or row + rowspan > self.rows or column + colspan > self.columns:
-            raise ValueError("cell span lies outside the layout")
+            raise ValueError("Cell span lies outside the layout.")
         for r in range(row, row + max(rowspan, cell._span[0])):
             for c in range(column, column + max(colspan, cell._span[1])):
                 if (r, c) != (row, column):
@@ -418,19 +498,21 @@ class Layout(LayoutCell[LayoutStyle]):
                         if r < row + rowspan and c < column + colspan
                         else LayoutCell[LayoutCellStyle](batch=self._batch, group=self._cell_group)
                     )
+                    replacement = self._grid._cells[r][c]
+                    if isinstance(replacement, LayoutCell):
+                        replacement._layout = self
         cell._span = rowspan, colspan
         self.realign()
 
     def realign(self, new_rect: tuple[float, float, float, float] | None = None) -> None:
         super().realign(new_rect)
-        if hasattr(self, "_grid"):
-            self._grid.x, self._grid.y, self._grid.width, self._grid.height = (
-                self.x,
-                self.y,
-                self.width,
-                self.height,
-            )
-            self._grid.realign()
+        self._grid.x, self._grid.y, self._grid.width, self._grid.height = (
+            self.x,
+            self.y,
+            self.width,
+            self.height,
+        )
+        self._grid.realign()
 
     def on_resize(self, width: int, height: int) -> None:
         """Forward a window resize event through this layout's grid."""
@@ -535,7 +617,7 @@ class _SingleSequenceLayout(Layout, ABC):
             )
         )
         if index is None:
-            return
+            raise ValueError("Content is not in this layout.")
         self._shrink(index)
 
 
@@ -546,11 +628,13 @@ class HBox(_SingleSequenceLayout):
     content alignment are configured through :class:`LayoutStyle`.
     """
 
-    def __init__(self, x: float, y: float, width: float, height: float, style: LayoutStyle | None = None,
+    def __init__(self, parent: UIManager | Frame | Layout | ScrollableRegion,
+                 x: float, y: float, width: float, height: float, style: LayoutStyle | None = None,
                  batch: Batch | None = None, group: Group | None = None) -> None:
         """Create a horizontal layout.
 
         Args:
+            parent: The layout's containing UI object.
             x: Left coordinate of the layout.
             y: Bottom coordinate of the layout.
             width: Layout width.
@@ -559,7 +643,7 @@ class HBox(_SingleSequenceLayout):
             batch: Optional batch for layout backgrounds.
             group: Optional group for layout backgrounds and content.
         """
-        super().__init__(x, y, width, height, 1, 1, style, batch, group)
+        super().__init__(parent, x, y, width, height, 1, 1, style, batch, group)
 
     def cell(self, row: int, column: int = 0) -> LayoutCell[LayoutCellStyle] | None:
         return super().cell(0, row)
@@ -589,11 +673,13 @@ class VBox(_SingleSequenceLayout):
     content alignment are configured through :class:`LayoutStyle`.
     """
 
-    def __init__(self, x: float, y: float, width: float, height: float, style: LayoutStyle | None = None,
+    def __init__(self, parent: UIManager | Frame | Layout | ScrollableRegion,
+                 x: float, y: float, width: float, height: float, style: LayoutStyle | None = None,
                  batch: Batch | None = None, group: Group | None = None) -> None:
         """Create a vertical layout.
 
         Args:
+            parent: The layout's containing UI object.
             x: Left coordinate of the layout.
             y: Bottom coordinate of the layout.
             width: Layout width.
@@ -602,7 +688,7 @@ class VBox(_SingleSequenceLayout):
             batch: Optional batch for layout backgrounds.
             group: Optional group for layout backgrounds and content.
         """
-        super().__init__(x, y, width, height, 1, 1, style, batch, group)
+        super().__init__(parent, x, y, width, height, 1, 1, style, batch, group)
 
     def cell(self, row: int, column: int = 0) -> LayoutCell[LayoutCellStyle] | None:
         return super().cell(row, 0)
@@ -623,3 +709,67 @@ class VBox(_SingleSequenceLayout):
             del self._grid._cells[index]
             del self._grid._rows[index]
             self.realign()
+
+
+class Frame(Layout):
+    """A visual layout container owned by one :class:`UIManager`."""
+
+    def __init__(
+        self, parent: UIManager, x: float, y: float, width: float, height: float, rows: int = 1, columns: int = 1,
+        style: LayoutStyle | None = None, batch: Batch | None = None, group: Group | None = None,
+    ) -> None:
+        super().__init__(parent, x, y, width, height, rows, columns, style, batch, group)
+        self._widgets: set[WidgetBase] = set()
+
+    @property
+    def manager(self) -> UIManager:
+        """The UI manager that owns this frame's input routing."""
+        return cast("UIManager", self.parent)
+
+    @property
+    def input_parent(self) -> Frame:
+        """Frames own input for their direct and nested layout widgets."""
+        return self
+
+    def _add_layout(self, layout: Layout) -> None:
+        super()._add_layout(layout)
+
+    def _add_widget(self, widget: WidgetBase) -> None:
+        """Register a widget constructed with this frame as its parent."""
+        if widget.parent is not None:
+            raise ValueError("Widget is already attached to a parent.")
+        self._widgets.add(widget)
+        widget.parent = self
+        self.manager._register_widget(widget, self)
+
+    def remove_widget(self, widget: WidgetBase) -> None:
+        """Remove a child widget from this frame."""
+        if widget not in self._widgets:
+            raise ValueError("Widget is not a child of this frame.")
+        self.manager._unregister_widget(widget)
+        self._widgets.remove(widget)
+
+
+class MovableFrame(Frame):
+    """A frame container that the UI manager moves while a modifier is held."""
+
+    def __init__(
+        self, parent: UIManager, x: float, y: float, width: float, height: float, rows: int = 1, columns: int = 1,
+        style: LayoutStyle | None = None, batch: Batch | None = None, group: Group | None = None,
+        modifier: int = 0,
+    ) -> None:
+        super().__init__(parent, x, y, width, height, rows, columns, style, batch, group)
+        self.modifier = modifier
+
+    def _can_move(self, x: int, y: int, modifiers: int) -> bool:
+        return (
+            bool(self.modifier & modifiers)
+            and self.x <= x <= self.x + self.width
+            and self.y <= y <= self.y + self.height
+        )
+
+    def move(self, dx: float, dy: float) -> None:
+        """Move this frame and its children by ``dx``, ``dy``."""
+        self.position = self.x + dx, self.y + dy
+        for widget in self._widgets:
+            widget.position = widget.x + dx, widget.y + dy

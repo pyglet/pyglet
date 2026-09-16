@@ -3,33 +3,33 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from pyglet.gui.layout import Frame, Layout, MovableFrame
+from pyglet.gui.widgets import WidgetBase
+
 if TYPE_CHECKING:
     from collections.abc import Iterable
-    from pyglet.gui.widgets import WidgetBase
     from pyglet.window import BaseWindow, MouseCursor
 
 
-class Frame:
-    """The base Frame object, implementing a 2D spatial hash.
+class UIManager:
+    """Own a window's GUI input, focus, and widget registration.
 
-    A `Frame` provides an efficient way to handle dispatching
-    keyboard and mouse events to Widgets. This is done by
-    implementing a 2D spatial hash. Only Widgets that are in the
-    vicinity of the mouse pointer will be passed Window events,
-    which can greatly improve efficiency when a large quantity
-    of Widgets are in use.
+    A UI manager is the single event handler for a window's GUI.  It uses a
+    spatial hash to dispatch pointer events efficiently, and owns keyboard
+    focus and mouse capture. Construct widgets, frames, and layouts with this
+    manager as their parent to register them automatically.
     """
 
     def __init__(self, window: BaseWindow, enable: bool = True, cell_size: int = 64, order: int = 0,
                  cursor: str | MouseCursor | None = None) -> None:
-        """Create an instance of a Frame.
+        """Create a UI manager for ``window``.
 
         Args:
             window:
                 The SpatialHash will receive events from this Window.
                 Appropriate events will be passed on to all added Widgets.
             enable:
-                Whether to enable frame.
+                Whether to enable this manager.
             cell_size:
                 The cell ("bucket") size for each cell in the hash.
                 Widgets may span multiple cells.
@@ -45,8 +45,10 @@ class Frame:
         self._cell_size = cell_size
         self._cells: dict[tuple[int, int], set[WidgetBase]] = {}
         self._widgets: set[WidgetBase] = set()
+        self._frames: set[Frame] = set()
         self._widget_cells: dict[WidgetBase, set[tuple[int, int]]] = {}
         self._active_widgets: set[WidgetBase] = set()
+        self._moving_frames: set[MovableFrame] = set()
         self._focused_widget: WidgetBase | None = None
         self._order = order
         self.cursor = cursor
@@ -59,7 +61,7 @@ class Frame:
         """Normalize position to cell."""
         return int(x / self._cell_size), int(y / self._cell_size)
 
-    def _on_reposition_handler(self, widget):
+    def _on_reposition_handler(self, widget: WidgetBase) -> None:
         # Do not update hash until after resize.
         if not self._resizing:
             self._remove_from_cells(widget)
@@ -105,53 +107,87 @@ class Frame:
             cursor = self._window.get_system_mouse_cursor(cursor)
         self._window.set_mouse_cursor(cursor)
 
-    def _set_focus(self, widget: WidgetBase | None) -> None:
+    @property
+    def focused_widget(self) -> WidgetBase | None:
+        """The widget currently receiving keyboard and text input."""
+        return self._focused_widget
+
+    def set_focus(self, widget: WidgetBase | None) -> None:
         """Set the widget that receives keyboard and text input."""
+        if widget is not None and widget.manager is not self:
+            raise ValueError("Focus target is not attached to this UI manager.")
         if widget is self._focused_widget:
             return
         previous_widget = self._focused_widget
         self._focused_widget = widget
         if previous_widget is not None:
-            previous_widget.focus = False
+            previous_widget.dispatch_event("on_focus_lost")
+        if widget is not None:
+            widget.dispatch_event("on_focus_gain")
 
     @property
-    def enable(self):
-        """Whether to enable frame.
+    def manager(self) -> UIManager:
+        """Return this manager so widgets can derive it from their parent."""
+        return self
+
+    @property
+    def enable(self) -> bool:
+        """Whether to enable this UI manager.
 
         :type: bool
         """
         return self._enable
 
     @enable.setter
-    def enable(self, value):
+    def enable(self, value: bool) -> None:
         self._enable = bool(value)
         if self._enable:
             self._window.push_handlers(self)
         else:
             self._window.remove_handlers(self)
 
-    def add_widget(self, widget: WidgetBase) -> None:
-        """Add a Widget to the spatial hash."""
+    def _register_widget(self, widget: WidgetBase, parent: UIManager | Frame) -> None:
+        if widget.manager is not None:
+            raise ValueError("Widget is already attached to a UI manager.")
+        if widget.parent is not None and widget.parent is not parent:
+            raise ValueError("Widget already belongs to another parent.")
+        widget.parent = parent
+        widget._set_ui_manager(self)
         self._widgets.add(widget)
-        widget.parent = self
-        if getattr(widget, 'focus', False):
-            self._set_focus(widget)
         widget.update_groups(self._order)
         # Preserve handlers already registered for this event.
         widget.push_handlers(on_reposition=self._on_reposition_handler)
         if not self._resizing:
             self._add_to_cells(widget)
 
-    def remove_widget(self, widget: WidgetBase) -> None:
-        """Remove a Widget from the spatial hash."""
+    def _unregister_widget(self, widget: WidgetBase) -> None:
+        if widget.manager is not self:
+            raise ValueError("Widget is not attached to this UI manager.")
         if widget is self._focused_widget:
-            self._set_focus(None)
+            self.set_focus(None)
         self._widgets.remove(widget)
-        widget.parent = None
         self._active_widgets.discard(widget)
         widget.remove_handlers(on_reposition=self._on_reposition_handler)
         if not self._resizing:
             self._remove_from_cells(widget)
+        widget._set_ui_manager(None)
+        widget.parent = None
+
+    def _add_widget(self, widget: WidgetBase) -> None:
+        """Register a widget constructed with this manager as its parent."""
+        self._register_widget(widget, self)
+
+    def remove_widget(self, widget: WidgetBase) -> None:
+        """Remove a Widget from the spatial hash."""
+        if widget.parent is not self:
+            raise ValueError("Only widgets parented directly by this manager can be removed here.")
+        self._unregister_widget(widget)
+
+    def _add_layout(self, layout: Layout) -> None:
+        """Register a layout constructed with this manager as its parent."""
+        layout._set_parent(self)
+        if isinstance(layout, Frame):
+            self._frames.add(layout)
 
     # Handlers
 
@@ -185,19 +221,34 @@ class Frame:
 
     def on_mouse_press(self, x: int, y: int, buttons: int, modifiers: int) -> None:
         """Pass the event to any widgets within range of the mouse."""
-        self._set_focus(None)
+        self._moving_frames = {
+            frame
+            for frame in self._frames
+            if isinstance(frame, MovableFrame) and frame._can_move(x, y, modifiers)
+        }
+        if self._moving_frames:
+            self.set_focus(None)
+            return
+        self.set_focus(None)
         for widget in self._widgets_at(x, y):
             widget.on_mouse_press(x, y, buttons, modifiers)
             self._active_widgets.add(widget)
 
     def on_mouse_release(self, x: int, y: int, buttons: int, modifiers: int) -> None:
         """Pass the event to any widgets that are currently active."""
+        if self._moving_frames:
+            self._moving_frames.clear()
+            return
         for widget in self._active_widgets:
             widget.on_mouse_release(x, y, buttons, modifiers)
         self._active_widgets.clear()
 
     def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int) -> None:
         """Pass drag events to active widgets and update hover state."""
+        if self._moving_frames:
+            for frame in self._moving_frames:
+                frame.move(dx, dy)
+            return
         for widget in self._active_widgets:
             widget.on_mouse_drag(x, y, dx, dy, buttons, modifiers)
         self.on_mouse_motion(x, y, dx, dy)
@@ -248,67 +299,3 @@ class Frame:
                 widget.on_text_motion_select(motion)
 
 
-class MovableFrame(Frame):
-    """A Frame that allows Widget repositioning.
-
-    When a specified modifier key is held down, Widgets can be
-    repositioned by dragging them. Examples of modifier keys are
-    Ctrl, Alt, Shift. These are defined in the `pyglet.window.key`
-    module, and start with `MOD_`. For example::
-
-        from pyglet.window.key import MOD_CTRL
-
-        frame = pyglet.gui.frame.MovableFrame(mywindow, modifier=MOD_CTRL)
-
-    For more information, see the `pyglet.window.key` submodule
-    API documentation.
-    """
-
-    def __init__(self, window: BaseWindow, enable: bool = True, order: int = 0, modifier: int = 0,
-                 cursor: str | MouseCursor | None = None) -> None:
-        """Create an instance of a MovableFrame.
-
-        This is a similar to the standard Frame class, except that
-        you can specify a modifier key. When this key is held down,
-        Widgets can be re-positioned by drag-and-dropping.
-
-        Args:
-            window:
-                The SpatialHash will receive events from this Window.
-                Appropriate events will be passed on to all added Widgets.
-            enable:
-                Whether to enable frame.
-            order:
-                Widgets use internal ordered Groups for draw sorting.
-                This is the base value for these Groups.
-            modifier:
-                A key modifier, such as `pyglet.window.key.MOD_CTRL`
-            cursor:
-                System cursor name or custom mouse cursor to show when no widget
-                supplies one.
-        """
-        super().__init__(window, enable=enable, order=order, cursor=cursor)
-        self._modifier = modifier
-        self._moving_widgets: set[WidgetBase] = set()
-
-    def on_mouse_press(self, x: int, y: int, buttons: int, modifiers: int) -> None:
-        if self._modifier & modifiers > 0:
-            for widget in self._widgets_at(x, y):
-                if widget._check_hit(x, y):
-                    self._moving_widgets.add(widget)
-            for widget in self._moving_widgets:
-                self.remove_widget(widget)
-        else:
-            super().on_mouse_press(x, y, buttons, modifiers)
-
-    def on_mouse_release(self, x: int, y: int, buttons: int, modifiers: int) -> None:
-        for widget in self._moving_widgets:
-            self.add_widget(widget)
-        self._moving_widgets.clear()
-        super().on_mouse_release(x, y, buttons, modifiers)
-
-    def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int) -> None:
-        for widget in self._moving_widgets:
-            wx, wy = widget.position
-            widget.position = wx + dx, wy + dy
-        super().on_mouse_drag(x, y, dx, dy, buttons, modifiers)

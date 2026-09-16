@@ -57,39 +57,33 @@ def text_entry_handler(widget, text):
 # Create some Widget instances:
 ###############################
 
-# A Frame instance to hold all widgets, and provide special
-# hashing to avoid sending all the Window events to every widget:
-frame = pyglet.gui.Frame(window, order=4)
+# One UIManager owns window input, focus, and hashing for all widgets.
+ui = pyglet.gui.UIManager(window, order=4)
 
 
-text_button = pyglet.gui.TextButton(100, 500, text="Click me!", unpressed_color=(0, 0, 0, 255), batch=batch)
+text_button = pyglet.gui.TextButton(ui, 100, 500, text="Click me!", unpressed_color=(0, 0, 0, 255), batch=batch)
 text_button.set_handler('on_press', text_button_handler)
 text_button.set_handler('on_release', text_release_button_handler)
-frame.add_widget(text_button)
 text_label = pyglet.text.Label("Text Button: False", x=300, y=500, batch=batch, color=(0, 0, 0, 255))
 
 
-togglebutton = pyglet.gui.ToggleButton(100, 400, pressed=pressed, unpressed=unpressed, hover=hover, batch=batch)
+togglebutton = pyglet.gui.ToggleButton(ui, 100, 400, pressed=pressed, unpressed=unpressed, hover=hover, batch=batch)
 togglebutton.set_handler('on_toggle', toggle_button_handler)
-frame.add_widget(togglebutton)
 toggle_label = pyglet.text.Label("Toggle Button: False", x=300, y=400, batch=batch, color=(0, 0, 0, 255))
 
 
-pushbutton = pyglet.gui.PushButton(100, 300, pressed=pressed, unpressed=unpressed, hover=hover, batch=batch)
+pushbutton = pyglet.gui.PushButton(ui, 100, 300, pressed=pressed, unpressed=unpressed, hover=hover, batch=batch)
 pushbutton.set_handler('on_press', push_button_handler)
 pushbutton.set_handler('on_release', release_button_handler)
-frame.add_widget(pushbutton)
 push_label = pyglet.text.Label("Push Button: False", x=300, y=300, batch=batch, color=(0, 0, 0, 255))
 
 
-slider = pyglet.gui.Slider(100, 200, bar, knob, edge=5, batch=batch)
+slider = pyglet.gui.Slider(ui, 100, 200, bar, knob, edge=5, batch=batch)
 slider.set_handler('on_change', slider_handler)
-frame.add_widget(slider)
 slider_label = pyglet.text.Label("Slider Value: 0.0", x=300, y=200, batch=batch, color=(0, 0, 0, 255))
 
 
-text_entry = pyglet.gui.TextEntry("Enter Your Name", 100, 100, 150, batch=batch)
-frame.add_widget(text_entry)
+text_entry = pyglet.gui.TextEntry(ui, "Enter Your Name", 100, 100, 150, batch=batch)
 text_entry.set_handler('on_commit', text_entry_handler)
 text_entry_label = pyglet.text.Label("Text: None", x=300, y=100, batch=batch, color=(0, 0, 0, 255))
 
