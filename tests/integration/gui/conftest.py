@@ -1,10 +1,10 @@
 import pytest
 
-from pyglet.gui.frame import Frame
+from pyglet.gui.manager import UIManager
 
 
 @pytest.fixture
-def frame(test_window):
-    gui_frame = Frame(test_window)
-    yield gui_frame
-    gui_frame.enable = False
+def manager(test_window):
+    ui_manager = UIManager(test_window)
+    yield ui_manager
+    ui_manager.enable = False

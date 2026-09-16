@@ -8,9 +8,9 @@ def image(width=20, height=10):
     return pyglet.image.ImageData(width, height, "RGBA", bytes((255, 255, 255, 255)) * width * height)
 
 
-def test_push_button_renders_state_images_and_dispatches_events(test_window):
+def test_push_button_renders_state_images_and_dispatches_events(test_window, manager):
     pressed, unpressed, hover = image(), image(), image()
-    button = PushButton(0, 0, pressed, unpressed, hover)
+    button = PushButton(manager, 0, 0, pressed, unpressed, hover)
     events = []
     button.push_handlers(on_press=lambda widget: events.append("press"))
     button.push_handlers(on_release=lambda widget: events.append("release"))
@@ -23,9 +23,9 @@ def test_push_button_renders_state_images_and_dispatches_events(test_window):
     assert events == ["press", "release"]
 
 
-def test_toggle_button_renders_and_dispatches_its_value(test_window):
+def test_toggle_button_renders_and_dispatches_its_value(test_window, manager):
     pressed, unpressed = image(), image()
-    button = ToggleButton(0, 0, pressed, unpressed)
+    button = ToggleButton(manager, 0, 0, pressed, unpressed)
     values = []
     button.push_handlers(on_toggle=lambda widget, value: values.append(value))
 
@@ -36,8 +36,19 @@ def test_toggle_button_renders_and_dispatches_its_value(test_window):
     assert values == [True, False]
 
 
-def test_slider_renders_and_clamps_its_knob(test_window):
-    slider = Slider(0, 0, image(100, 20), image(20, 20), edge=10)
+def test_toggle_button_keeps_its_pressed_image_after_mouse_leave(test_window, manager):
+    pressed, unpressed = image(), image()
+    button = ToggleButton(manager, 0, 0, pressed, unpressed)
+
+    button.on_mouse_press(5, 5, 1, 0)
+    button.on_mouse_leave_widget(25, 5)
+
+    assert button.value is True
+    assert button._sprite.image is pressed.get_texture()
+
+
+def test_slider_renders_and_clamps_its_knob(test_window, manager):
+    slider = Slider(manager, 0, 0, image(100, 20), image(20, 20), edge=10)
     values = []
     slider.push_handlers(on_change=lambda widget, value: values.append(value))
 
@@ -50,8 +61,8 @@ def test_slider_renders_and_clamps_its_knob(test_window):
     assert slider._knob_spr.x == slider._max_knob_x
 
 
-def test_text_button_repositions_real_label_after_resize(test_window):
-    button = TextButton(10, 20, "Centered")
+def test_text_button_repositions_real_label_after_resize(test_window, manager):
+    button = TextButton(manager, 10, 20, "Centered")
 
     button.width = 100
     button.height = 40
@@ -62,8 +73,8 @@ def test_text_button_repositions_real_label_after_resize(test_window):
     assert button._label.color == (*button._hover_color, 255)
 
 
-def test_text_entry_uses_real_layout_caret_and_outline_when_resized(test_window):
-    entry = TextEntry("start", 10, 20, 40)
+def test_text_entry_uses_real_layout_caret_and_outline_when_resized(test_window, manager):
+    entry = TextEntry(manager, "start", 10, 20, 40)
     commits = []
     entry.push_handlers(on_commit=lambda widget, value: commits.append(value))
 
@@ -76,13 +87,13 @@ def test_text_entry_uses_real_layout_caret_and_outline_when_resized(test_window)
 
     assert entry._outline.width == 104
     assert entry._outline.height == 34
-    assert entry.focus is False
+    assert manager.focused_widget is None
     assert commits == ["startx"]
 
 
 @pytest.mark.parametrize("value", [1, None, "yes"])
-def test_push_button_value_requires_boolean(test_window, value):
-    button = PushButton(0, 0, image(), image())
+def test_push_button_value_requires_boolean(test_window, manager, value):
+    button = PushButton(manager, 0, 0, image(), image())
 
     with pytest.raises(AssertionError):
         button.value = value
