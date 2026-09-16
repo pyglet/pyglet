@@ -22,6 +22,9 @@ class RecordingWidget(WidgetBase):
     def on_text(self, text):
         self.events.append(("text", text))
 
+    def on_resize(self, width, height):
+        self.events.append(("resize", width, height))
+
 
 def test_scrollable_region_registers_with_manager_and_child_camera(test_window, manager):
     region = ScrollableRegion(manager, 10, 20, 100, 80, camera=test_window.camera)
@@ -45,6 +48,27 @@ def test_scrollable_child_shares_manager_without_top_level_registration(test_win
     assert widget.parent is region
     manager.on_mouse_press(15, 15, 1, 0)
     assert widget.events == []
+
+
+def test_scrollable_region_forwards_resize_to_children(test_window, manager):
+    region = ScrollableRegion(manager, 10, 20, 100, 80, camera=test_window.camera)
+    widget = RecordingWidget(region, 10, 10, 20, 20)
+    window_resizes = []
+
+    def on_window_resize(width, height):
+        window_resizes.append((width, height))
+
+    test_window.push_handlers(on_resize=on_window_resize)
+
+    previous_allow_dispatch = test_window._allow_dispatch_event
+    test_window._allow_dispatch_event = True
+    try:
+        test_window.dispatch_event("on_resize", 320, 240)
+    finally:
+        test_window._allow_dispatch_event = previous_allow_dispatch
+
+    assert widget.events == [("resize", 320, 240)]
+    assert window_resizes == [(320, 240)]
 
 
 def test_scrollable_region_clamps_real_camera_view_offset(test_window):
