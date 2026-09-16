@@ -5,7 +5,7 @@ import pyglet
 
 class ResizeAwareButton(pyglet.gui.TextButton):
     def on_resize(self, width: int, height: int) -> None:
-        self.text = f"Last resize: {width} x {height}"
+        self.text = f"Resized to: {width} x {height}"
 
 
 window = pyglet.window.Window(640, 360, "Widget Layout Resizing", resizable=True)
@@ -50,10 +50,12 @@ for index in range(10):
     content.append(button)
 
 
-@window.event
 def on_resize(width, height):
     region.position = 40, 40
     region.size = width - 80, height - 100
+
+# Push the resize handlers, as @window.event will replace the event.
+window.push_handlers(on_resize=on_resize)
 
 
 @window.event

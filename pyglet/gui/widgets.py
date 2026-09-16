@@ -1049,8 +1049,10 @@ class ScrollableRegion(WidgetBase, LayoutCell[LayoutCellStyle]):
         pass
 
     def on_resize(self, width: int, height: int) -> None:
-        """Forward the parent frame's resize event through the region layout."""
+        """Forward a window resize event through the region layout and its children."""
         LayoutCell.on_resize(self, width, height)
+        for widget in self._widgets:
+            widget.dispatch_event("on_resize", width, height)
 
     def realign(self, new_rect: tuple[float, float, float, float] | None = None) -> None:
         old_rect = self._rect
