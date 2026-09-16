@@ -1,7 +1,10 @@
 """WIP."""
 from __future__ import annotations
 
+from enum import Flag, auto
 from typing import TYPE_CHECKING
+
+import pyglet
 
 from pyglet.gui.layout import Frame, Layout, MovableFrame
 from pyglet.gui.widgets import WidgetBase
@@ -9,6 +12,13 @@ from pyglet.gui.widgets import WidgetBase
 if TYPE_CHECKING:
     from collections.abc import Iterable
     from pyglet.window import BaseWindow, MouseCursor
+
+
+class UIDirtyFlag(Flag):
+    """Dirty flag to defer UI changes managed by :class:`UIManager`."""
+
+    NONE = 0
+    LAYOUT = auto()
 
 
 class UIManager:
@@ -54,8 +64,43 @@ class UIManager:
         self.cursor = cursor
         self._mouse_pos = 0, 0
         self._resizing = False
+        self._dirty_flags = UIDirtyFlag.NONE
+        self._dirty_layouts: set[Layout] = set()
+        self._dirty_scheduled = False
+        self._dirty_callback = self._process_dirty
         if self._enable:
             self._window.push_handlers(self)
+            self._schedule_dirty_processing()
+
+    def _schedule_dirty_processing(self) -> None:
+        if self._enable and not self._dirty_scheduled:
+            pyglet.clock.schedule_interval(self._dirty_callback, 1 / 60)
+            self._dirty_scheduled = True
+
+    def _stop_dirty_processing(self) -> None:
+        if self._dirty_scheduled:
+            pyglet.clock.unschedule(self._dirty_callback)
+            self._dirty_scheduled = False
+
+    def _invalidate_layout(self, layout: Layout) -> None:
+        """Mark a layout for calculation on the next UI update."""
+        self._dirty_flags |= UIDirtyFlag.LAYOUT
+        self._dirty_layouts.add(layout)
+
+    def _clear_dirty_layout(self, layout: Layout) -> None:
+        """Remove a layout that was calculated explicitly."""
+        self._dirty_layouts.discard(layout)
+        if not self._dirty_layouts:
+            self._dirty_flags &= ~UIDirtyFlag.LAYOUT
+
+    def _process_dirty(self, dt: float = 0.0) -> None:
+        """Calculate queued layouts once after a batch of UI changes."""
+        while self._dirty_layouts:
+            layouts = tuple(self._dirty_layouts)
+            self._dirty_layouts.clear()
+            for layout in layouts:
+                layout._realign()
+        self._dirty_flags &= ~UIDirtyFlag.LAYOUT
 
     def _hash(self, x: float, y: float) -> tuple[int, int]:
         """Normalize position to cell."""
@@ -143,8 +188,10 @@ class UIManager:
         self._enable = bool(value)
         if self._enable:
             self._window.push_handlers(self)
+            self._schedule_dirty_processing()
         else:
             self._window.remove_handlers(self)
+            self._stop_dirty_processing()
 
     def _register_widget(self, widget: WidgetBase, parent: UIManager | Frame) -> None:
         if widget.manager is not None:

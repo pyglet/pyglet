@@ -128,7 +128,10 @@ class LayoutCell(Generic[StyleT]):
         if value is not None:
             self._validate_content_parent(value)
         self._content = value
-        self.realign()
+        if self._layout is None:
+            self.realign()
+        else:
+            self._layout._invalidate()
 
     def _validate_content_parent(self, content: LayoutContent) -> None:
         """Require managed content to belong to this cell's layout tree."""
@@ -151,7 +154,10 @@ class LayoutCell(Generic[StyleT]):
         """Replace the cell style with a typed style object."""
         self._style = style
         self._update_background()
-        self.realign()
+        if self._layout is None:
+            self.realign()
+        else:
+            self._layout._invalidate()
 
     def on_resize(self, width: int, height: int) -> None:
         """Forward a window resize event to this cell's content, if supported."""
@@ -292,7 +298,6 @@ class _Grid:
                     cell._span = min(cell._span[0], rows - row), min(cell._span[1], columns - column)
         self._rows = (self._rows + [self._new_sequence("row-size") for _ in range(rows)])[:rows]
         self._columns = (self._columns + [self._new_sequence("column-size") for _ in range(columns)])[:columns]
-        self.realign()
 
     def _update_sizes(self, sequences: list[_Sequence], extent: float) -> None:
         margins = sum(item.margin_after for item in sequences[:-1])
@@ -392,6 +397,7 @@ class Layout(LayoutCell[LayoutStyle]):
     def rows(self, value: int) -> None:
         self._grid.set_dimensions(value, self.columns)
         self._assign_cells_to_layout()
+        self._invalidate()
 
     @property
     def columns(self) -> int:
@@ -401,6 +407,7 @@ class Layout(LayoutCell[LayoutStyle]):
     def columns(self, value: int) -> None:
         self._grid.set_dimensions(self.rows, value)
         self._assign_cells_to_layout()
+        self._invalidate()
 
     def cell(self, row: int, column: int = 0) -> LayoutCell[LayoutCellStyle] | None:
         if not 0 <= row < self.rows or not 0 <= column < self.columns:
@@ -432,7 +439,7 @@ class Layout(LayoutCell[LayoutStyle]):
         for column in self._grid._columns:
             column.margin_after = cast("tuple[float, float]", style.cell_margin)[0]
             column.parse_size(style.column_size)
-        self.realign()
+        self._invalidate()
 
     def _cells(self) -> Iterator[LayoutCell[LayoutCellStyle]]:
         return (cell for row in self._grid._cells for cell in row if isinstance(cell, LayoutCell))
@@ -467,21 +474,29 @@ class Layout(LayoutCell[LayoutStyle]):
             raise ValueError("Layout is already attached to a parent.")
         self._parent = parent
 
+    def _invalidate(self) -> None:
+        """Queue this layout with its UI manager, or calculate it immediately when unmanaged."""
+        manager = self.manager
+        if manager is not None:
+            manager._invalidate_layout(self)
+        else:
+            self._realign()
+
     def set_row_size(self, index: int, value: int | float | str | None) -> None:
         self._grid._rows[index].parse_size(value)
-        self.realign()
+        self._invalidate()
 
     def set_column_size(self, index: int, value: int | float | str | None) -> None:
         self._grid._columns[index].parse_size(value)
-        self.realign()
+        self._invalidate()
 
     def set_row_margin(self, index: int, value: float) -> None:
         self._grid._rows[index].margin_after = value
-        self.realign()
+        self._invalidate()
 
     def set_column_margin(self, index: int, value: float) -> None:
         self._grid._columns[index].margin_after = value
-        self.realign()
+        self._invalidate()
 
     def set_cell_span(self, row: int, column: int, rowspan: int | None = None, colspan: int | None = None) -> None:
         cell = self.cell(row, column)
@@ -502,10 +517,18 @@ class Layout(LayoutCell[LayoutStyle]):
                     if isinstance(replacement, LayoutCell):
                         replacement._layout = self
         cell._span = rowspan, colspan
-        self.realign()
+        self._invalidate()
 
     def realign(self, new_rect: tuple[float, float, float, float] | None = None) -> None:
+        """Immediately calculate this layout and clear its pending update."""
         super().realign(new_rect)
+        self._realign()
+        manager = self.manager
+        if manager is not None:
+            manager._clear_dirty_layout(self)
+
+    def _realign(self) -> None:
+        """Calculate the grid after the layout has been marked dirty."""
         self._grid.x, self._grid.y, self._grid.width, self._grid.height = (
             self.x,
             self.y,
@@ -524,7 +547,8 @@ class Layout(LayoutCell[LayoutStyle]):
 
     @x.setter
     def x(self, value: float) -> None:
-        self.realign((value, self.y, self.width, self.height))
+        super().realign((value, self.y, self.width, self.height))
+        self._invalidate()
 
     @property
     def y(self) -> float:
@@ -532,7 +556,8 @@ class Layout(LayoutCell[LayoutStyle]):
 
     @y.setter
     def y(self, value: float) -> None:
-        self.realign((self.x, value, self.width, self.height))
+        super().realign((self.x, value, self.width, self.height))
+        self._invalidate()
 
     @property
     def position(self) -> tuple[float, float]:
@@ -540,7 +565,8 @@ class Layout(LayoutCell[LayoutStyle]):
 
     @position.setter
     def position(self, value: tuple[float, float] | tuple[float, float, float]) -> None:
-        self.realign((value[0], value[1], self.width, self.height))
+        super().realign((value[0], value[1], self.width, self.height))
+        self._invalidate()
 
     @property
     def width(self) -> float:
@@ -548,7 +574,8 @@ class Layout(LayoutCell[LayoutStyle]):
 
     @width.setter
     def width(self, value: float) -> None:
-        self.realign((self.x, self.y, value, self.height))
+        super().realign((self.x, self.y, value, self.height))
+        self._invalidate()
 
     @property
     def height(self) -> float:
@@ -556,7 +583,8 @@ class Layout(LayoutCell[LayoutStyle]):
 
     @height.setter
     def height(self, value: float) -> None:
-        self.realign((self.x, self.y, self.width, value))
+        super().realign((self.x, self.y, self.width, value))
+        self._invalidate()
 
     @property
     def size(self) -> tuple[float, float]:
@@ -564,10 +592,13 @@ class Layout(LayoutCell[LayoutStyle]):
 
     @size.setter
     def size(self, value: tuple[float, float]) -> None:
-        self.realign((self.x, self.y, value[0], value[1]))
+        super().realign((self.x, self.y, value[0], value[1]))
+        self._invalidate()
 
     def fit_to_content(self) -> None:
+        self.realign()
         self.size = self._grid.calculated_width, self._grid.calculated_height
+        self.realign()
 
 
 class _SingleSequenceLayout(Layout, ABC):
@@ -663,7 +694,7 @@ class HBox(_SingleSequenceLayout):
         else:
             del self._grid._cells[0][index]
             del self._grid._columns[index]
-            self.realign()
+            self._invalidate()
 
 
 class VBox(_SingleSequenceLayout):
@@ -708,7 +739,7 @@ class VBox(_SingleSequenceLayout):
         else:
             del self._grid._cells[index]
             del self._grid._rows[index]
-            self.realign()
+            self._invalidate()
 
 
 class Frame(Layout):
