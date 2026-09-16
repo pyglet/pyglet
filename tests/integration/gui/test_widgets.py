@@ -1,3 +1,5 @@
+import gc
+
 import pyglet
 import pytest
 
@@ -8,9 +10,14 @@ def image(width=20, height=10):
     return pyglet.image.ImageData(width, height, "RGBA", bytes((255, 255, 255, 255)) * width * height)
 
 
-def test_push_button_renders_state_images_and_dispatches_events(test_window, manager):
+@pytest.fixture
+def batch():
+    return pyglet.graphics.Batch()
+
+
+def test_push_button_renders_state_images_and_dispatches_events(test_window, manager, batch):
     pressed, unpressed, hover = image(), image(), image()
-    button = PushButton(manager, 0, 0, pressed, unpressed, hover)
+    button = PushButton(manager, 0, 0, pressed, unpressed, hover, batch=batch)
     events = []
     button.push_handlers(on_press=lambda widget: events.append("press"))
     button.push_handlers(on_release=lambda widget: events.append("release"))
@@ -23,9 +30,22 @@ def test_push_button_renders_state_images_and_dispatches_events(test_window, man
     assert events == ["press", "release"]
 
 
-def test_toggle_button_renders_and_dispatches_its_value(test_window, manager):
+def test_widget_without_a_batch_can_be_removed_and_recreated(test_window, manager):
     pressed, unpressed = image(), image()
     button = ToggleButton(manager, 0, 0, pressed, unpressed)
+
+    manager.remove_widget(button)
+    del button
+    gc.collect()
+
+    replacement = ToggleButton(manager, 0, 0, pressed, unpressed)
+
+    assert replacement.parent is manager
+
+
+def test_toggle_button_renders_and_dispatches_its_value(test_window, manager, batch):
+    pressed, unpressed = image(), image()
+    button = ToggleButton(manager, 0, 0, pressed, unpressed, batch=batch)
     values = []
     button.push_handlers(on_toggle=lambda widget, value: values.append(value))
 
@@ -36,9 +56,9 @@ def test_toggle_button_renders_and_dispatches_its_value(test_window, manager):
     assert values == [True, False]
 
 
-def test_toggle_button_keeps_its_pressed_image_after_mouse_leave(test_window, manager):
+def test_toggle_button_keeps_its_pressed_image_after_mouse_leave(test_window, manager, batch):
     pressed, unpressed = image(), image()
-    button = ToggleButton(manager, 0, 0, pressed, unpressed)
+    button = ToggleButton(manager, 0, 0, pressed, unpressed, batch=batch)
 
     button.on_mouse_press(5, 5, 1, 0)
     button.on_mouse_leave_widget(25, 5)
@@ -47,8 +67,8 @@ def test_toggle_button_keeps_its_pressed_image_after_mouse_leave(test_window, ma
     assert button._sprite.image is pressed.get_texture()
 
 
-def test_slider_renders_and_clamps_its_knob(test_window, manager):
-    slider = Slider(manager, 0, 0, image(100, 20), image(20, 20), edge=10)
+def test_slider_renders_and_clamps_its_knob(test_window, manager, batch):
+    slider = Slider(manager, 0, 0, image(100, 20), image(20, 20), edge=10, batch=batch)
     values = []
     slider.push_handlers(on_change=lambda widget, value: values.append(value))
 
@@ -61,8 +81,8 @@ def test_slider_renders_and_clamps_its_knob(test_window, manager):
     assert slider._knob_spr.x == slider._max_knob_x
 
 
-def test_text_button_repositions_real_label_after_resize(test_window, manager):
-    button = TextButton(manager, 10, 20, "Centered")
+def test_text_button_repositions_real_label_after_resize(test_window, manager, batch):
+    button = TextButton(manager, 10, 20, "Centered", batch=batch)
 
     button.width = 100
     button.height = 40
@@ -73,8 +93,8 @@ def test_text_button_repositions_real_label_after_resize(test_window, manager):
     assert button._label.color == (*button._hover_color, 255)
 
 
-def test_text_entry_uses_real_layout_caret_and_outline_when_resized(test_window, manager):
-    entry = TextEntry(manager, "start", 10, 20, 40)
+def test_text_entry_uses_real_layout_caret_and_outline_when_resized(test_window, manager, batch):
+    entry = TextEntry(manager, "start", 10, 20, 40, batch=batch)
     commits = []
     entry.push_handlers(on_commit=lambda widget, value: commits.append(value))
 
@@ -92,8 +112,8 @@ def test_text_entry_uses_real_layout_caret_and_outline_when_resized(test_window,
 
 
 @pytest.mark.parametrize("value", [1, None, "yes"])
-def test_push_button_value_requires_boolean(test_window, manager, value):
-    button = PushButton(manager, 0, 0, image(), image())
+def test_push_button_value_requires_boolean(test_window, manager, batch, value):
+    button = PushButton(manager, 0, 0, image(), image(), batch=batch)
 
     with pytest.raises(AssertionError):
         button.value = value
