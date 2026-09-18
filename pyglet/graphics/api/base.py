@@ -74,7 +74,7 @@ class BackendGlobalObject(ABC):  # Temp name for now.
         """Determine whether a backend version is available."""
         raise NotImplementedError
 
-    def get_cached_shader(self, _name: str, *_sources: tuple[str, ShaderType]) -> ShaderProgram:
+    def get_cached_shader(self, _name: str, *_sources: tuple[str, ShaderType], vertex_layout: VertexLayout | None) -> ShaderProgram:
         """Return a cached shader program for the active backend."""
         raise NotImplementedError
 

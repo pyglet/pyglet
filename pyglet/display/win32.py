@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import ctypes
 from ctypes import byref, sizeof
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Sequence
 
 from pyglet.libs.win32 import _gdi32, _user32
 from pyglet.libs.win32.constants import (
@@ -42,9 +42,6 @@ if TYPE_CHECKING:
 if WINDOWS_8_1_OR_GREATER:
     from pyglet.libs.win32 import _shcore
 
-if TYPE_CHECKING:
-    from ctypes.wintypes import HDC, HMONITOR, LPARAM, LPRECT
-
 
 def set_dpi_awareness() -> None:
     """Setting DPI varies per Windows version.
@@ -66,13 +63,13 @@ class Win32Display(Display):  # noqa: D101
     def get_default_screen(self) -> Screen:
         screens = self.get_screens()
         for screen in screens:
-            if screen.is_primary:
+            if isinstance(screen, Win32Screen) and screen.is_primary:
                 return screen
 
         return screens[0]
 
-    def get_screens(self) -> list[Win32Screen]:
-        screens = []
+    def get_screens(self) -> list[Screen]:
+        screens: list[Screen] = []
 
         def enum_proc(hMonitor: HMONITOR, hdcMonitor: HDC, lprcMonitor: LPRECT, dwData: LPARAM) -> bool:  # noqa: N803, ARG001
             r = lprcMonitor.contents
@@ -89,7 +86,7 @@ class Win32Display(Display):  # noqa: D101
 
 class Win32Screen(Screen):  # noqa: D101
     _handle: HMONITOR
-    _initial_mode = None
+    _initial_mode: Win32ScreenMode | None = None
 
     def __init__(self, display: Win32Display, handle: HMONITOR, x: int, y: int, width: int, height: int) -> None:  # noqa: D107
         super().__init__(display, x, y, width, height)
@@ -101,7 +98,7 @@ class Win32Screen(Screen):  # noqa: D101
     def is_primary(self) -> bool:
         """If the screen is considered the primary according to the operating system."""
         info = self._get_monitor_info()
-        return info.dwFlags & MONITORINFOF_PRIMARY
+        return bool(info.dwFlags & MONITORINFOF_PRIMARY)
 
     def _get_friendly_name_display_config_api(self) -> str:
         """Get the friendly name of a monitor using the newer Display Configuration API.
@@ -188,23 +185,23 @@ class Win32Screen(Screen):  # noqa: D101
 
     def get_dpi(self) -> int:
         if WINDOWS_8_1_OR_GREATER:
-            xdpi = UINT()
+            xdpi_value = UINT()
             ydpi = UINT()
-            _shcore.GetDpiForMonitor(self._handle, 0, byref(xdpi), byref(ydpi))
-            xdpi, ydpi = xdpi.value, ydpi.value
+            _shcore.GetDpiForMonitor(self._handle, 0, byref(xdpi_value), byref(ydpi))
+            xdpi = xdpi_value.value
         else:
             dc = _user32.GetDC(None)
             xdpi = _gdi32.GetDeviceCaps(dc, LOGPIXELSX)
             ydpi = _gdi32.GetDeviceCaps(dc, LOGPIXELSY)
             _user32.ReleaseDC(0, dc)
 
-        return xdpi
+        return int(xdpi)
 
     def get_scale(self) -> float:
         xdpi = self.get_dpi()
         return xdpi / USER_DEFAULT_SCREEN_DPI
 
-    def get_modes(self) -> list[Win32ScreenMode]:
+    def get_modes(self) -> Sequence[Win32ScreenMode]:
         device_name = self.get_device_name()
         i = 0
         modes = []
@@ -228,7 +225,8 @@ class Win32Screen(Screen):  # noqa: D101
                                      byref(mode))
         return Win32ScreenMode(self, mode)
 
-    def set_mode(self, mode: Win32ScreenMode) -> None:
+    def set_mode(self, mode: ScreenMode) -> None:
+        assert isinstance(mode, Win32ScreenMode)
         assert mode.screen is self
 
         if not self._initial_mode:

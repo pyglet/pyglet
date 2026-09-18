@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import abc
 from dataclasses import dataclass
-from typing import Any, BinaryIO, ClassVar, TYPE_CHECKING
+from typing import Any, ClassVar, TYPE_CHECKING, TypeVar, cast
 
 import unicodedata
 
@@ -24,6 +24,8 @@ from pyglet.image import ImageData
 
 if TYPE_CHECKING:
     from pyglet.font import FontManager
+    from pyglet.font.harfbuzz import _HarfbuzzResources
+    from pyglet.image import ImageDataRegion
 
 _OTHER_GRAPHEME_EXTEND = {
     chr(x) for x in [0x09be, 0x09d7, 0x0be3, 0x0b57, 0x0bbe, 0x0bd7, 0x0cc2,
@@ -45,7 +47,7 @@ _CATEGORY_SPACING_MARK = {"Mc"}
 _DEFAULT_PRELOAD_GLYPHS = "".join(chr(codepoint) for codepoint in range(0x20, 0x7f))
 
 
-def grapheme_break(left: str, left_cc: str, right: str, right_cc: str) -> bool:
+def grapheme_break(left: str | None, left_cc: str | None, right: str, right_cc: str) -> bool:
     """Determines if there should be a break between characters."""
     # GB1
     if left is None:
@@ -76,11 +78,8 @@ def grapheme_break(left: str, left_cc: str, right: str, right_cc: str) -> bool:
         return False
 
     # GB9b: Do not break after Prepend characters
-    if left in _LOGICAL_ORDER_EXCEPTION:
-        return False
-
-    # GB999: Default to break
-    return True
+    # GB999: Default to break, except after Prepend characters.
+    return left not in _LOGICAL_ORDER_EXCEPTION
 
 
 def get_grapheme_clusters(text: str) -> list[str]:
@@ -95,10 +94,10 @@ def get_grapheme_clusters(text: str) -> list[str]:
     Returns:
          List of Unicode grapheme clusters.
     """
-    clusters = []
-    cluster_chars = []
-    left = None
-    left_cc = None
+    clusters: list[str] = []
+    cluster_chars: list[str] = []
+    left: str | None = None
+    left_cc: str | None = None
 
     for right in text:
         right_cc = unicodedata.category(right)
@@ -180,13 +179,18 @@ class GlyphTextureAtlas(atlas.TextureAtlas):
         self.allocator = atlas.Allocator(width, height)
 
     def add(self, img: ImageData, border: int = 0) -> Glyph:
-        return super().add(img, border)
+        return super().add(img, border)  # type: ignore[return-value]
 
 
 class GlyphTextureBin(atlas.TextureBin):
     """Same as a TextureBin but allows you to specify filter of Glyphs."""
 
-    def add(self, img: ImageData, filters: TextureFilter, border: int = 0) -> Glyph:
+    def __init__(self, texture_width: int = 2048, texture_height: int = 2048,
+                 filters: TextureFilter = TextureFilter.LINEAR) -> None:
+        super().__init__(texture_width, texture_height)
+        self.filters = filters
+
+    def add(self, img: ImageData | ImageDataRegion, border: int = 0) -> Glyph:
         for glyph_atlas in list(self.atlases):
             try:
                 return glyph_atlas.add(img, border)
@@ -196,7 +200,7 @@ class GlyphTextureBin(atlas.TextureBin):
                 if img.width < 64 and img.height < 64:
                     self.atlases.remove(glyph_atlas)
 
-        glyph_atlas = GlyphTextureAtlas(self.texture_width, self.texture_height, filters)
+        glyph_atlas = GlyphTextureAtlas(self.texture_width, self.texture_height, self.filters)
         self.atlases.append(glyph_atlas)
         return glyph_atlas.add(img, border)
 
@@ -285,7 +289,7 @@ class Font:
 
     #: :meta private:
     # The default glyph renderer class. Should not be overridden by users, only other renderer variations.
-    glyph_renderer_class: ClassVar[type[GlyphRenderer]] = GlyphRenderer
+    glyph_renderer_class: ClassVar[type[GlyphRenderer]] = GlyphRenderer  # type: ignore[type-abstract]
 
     #: :meta private:
     # The default type of texture bins. Should not be overridden by users.
@@ -297,6 +301,7 @@ class Font:
 
     # The size of the font in pixels.
     pixel_size: float
+    hb_resource: _HarfbuzzResources | None
 
     def __init__(self, name: str, size: float, weight: Weight | str, style: Style | str, stretch: Stretch | str,
                  dpi: int | None) -> None:
@@ -362,7 +367,7 @@ class Font:
 
     @classmethod
     @abc.abstractmethod
-    def add_font_data(cls: type[Font], data: BinaryIO, manager: FontManager) -> None:
+    def add_font_data(cls: type[Font], data: bytes, manager: FontManager) -> None:
         """Add font data to the font loader.
 
         This is a class method and affects all fonts loaded.  Data must be
@@ -400,9 +405,9 @@ class Font:
         if self.texture_bin is None:
             if self.optimize_fit:
                 self.texture_width, self.texture_height = self._get_optimal_atlas_size(img)
-            self.texture_bin = GlyphTextureBin(self.texture_width, self.texture_height)
+            self.texture_bin = GlyphTextureBin(self.texture_width, self.texture_height, self.filters)
 
-        return self.texture_bin.add(img, self.filters, border=1)
+        return self.texture_bin.add(img, border=1)
 
     def _get_optimal_atlas_size(self, image_data: ImageData) -> tuple[int, int]:
         """Retrieves the optimal atlas size to fit ``image_data`` with ``glyph_fit`` number of glyphs."""
@@ -430,7 +435,7 @@ class Font:
 
         return atlas_size
 
-    def get_glyphs(self, text: str, shaping: bool = False) -> tuple[list[Glyph], list[GlyphPosition]]:
+    def get_glyphs(self, text: str, shaping: bool = False) -> tuple[list[Glyph], list[GlyphPosition]]:  # noqa: ARG002
         """Create and return a list of Glyphs for `text`.
 
         If any characters do not have a known glyph representation in this
@@ -526,8 +531,8 @@ class Font:
                 Maximum width of returned glyphs.
         """
         glyph_renderer = None
-        glyph_buffer = []  # next glyphs to be added, as soon as a BP is found
-        glyphs = []  # glyphs that are committed.
+        glyph_buffer: list[Glyph] = []  # next glyphs to be added, as soon as a BP is found
+        glyphs: list[Glyph] = []  # glyphs that are committed.
         for c in text:
             if c == "\n":
                 glyphs += glyph_buffer

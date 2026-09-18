@@ -54,7 +54,7 @@ import sys
 import weakref
 import zipfile
 from io import BytesIO, StringIO
-from typing import BinaryIO, IO, TYPE_CHECKING, Literal, cast, overload
+from typing import BinaryIO, IO, TYPE_CHECKING, Literal, TextIO, cast, overload
 
 import pyglet
 
@@ -167,7 +167,7 @@ def get_data_path(name: str) -> str:
     """Get a directory to save user data.
 
     For a Posix or Linux based system many distributions have a separate
-    directory to store user data for a specific application and this 
+    directory to store user data for a specific application and this
     function returns the path to that location.
 
     On Linux, a directory ``name`` in the user's data directory is returned
@@ -208,7 +208,19 @@ class Location:
     filesystem.
     """
 
-    def open(self, name: str, mode: str = 'rb') -> BytesIO | StringIO | IO:
+    @overload
+    def open(self, name: str, mode: Literal['rb'] = 'rb') -> BinaryIO:
+        ...
+
+    @overload
+    def open(self, name: str, mode: Literal['r', 'rt']) -> TextIO:
+        ...
+
+    @overload
+    def open(self, name: str, mode: str) -> IO:
+        ...
+
+    def open(self, name: str, mode: str = 'rb') -> BinaryIO | TextIO | IO:
         """Open a file at this location.
 
         Args:
@@ -230,8 +242,20 @@ class FileLocation(Location):
         """Create a location given a relative or absolute path."""
         self.path = filepath
 
-    def open(self, filename: str, mode: str = 'rb') -> IO:
-        return open(os.path.join(self.path, filename), mode)
+    @overload
+    def open(self, name: str, mode: Literal['rb'] = 'rb') -> BinaryIO:
+        ...
+
+    @overload
+    def open(self, name: str, mode: Literal['r', 'rt']) -> TextIO:
+        ...
+
+    @overload
+    def open(self, name: str, mode: str) -> IO:
+        ...
+
+    def open(self, name: str, mode: str = 'rb') -> BinaryIO | TextIO | IO:
+        return open(os.path.join(self.path, name), mode)
 
 
 class ZIPLocation(Location):
@@ -250,19 +274,31 @@ class ZIPLocation(Location):
         self.zip = zipfileobj
         self.dir = directory
 
-    def open(self, filename: str, mode: str='rb') -> BytesIO | StringIO:
+    @overload
+    def open(self, name: str, mode: Literal['rb'] = 'rb') -> BinaryIO:
+        ...
+
+    @overload
+    def open(self, name: str, mode: Literal['r', 'rt']) -> TextIO:
+        ...
+
+    @overload
+    def open(self, name: str, mode: str) -> IO:
+        ...
+
+    def open(self, name: str, mode: str = 'rb') -> BinaryIO | TextIO | IO:
         """Open a file from inside the ZipFile.
 
         Args:
-            filename:
+            name:
                 The filename to open.
             mode:
                 Valid modes are 'r' and 'rb'.
         """
-        _path = f"{self.dir}/{filename}" if self.dir else filename
+        _path = f"{self.dir}/{name}" if self.dir else name
         _forward_slash_path = _path.replace(os.sep, '/')  # zip can only handle forward slashes
         _bytes = self.zip.read(_forward_slash_path)
-        if mode == 'r':
+        if mode in ('r', 'rt'):
             return StringIO(_bytes.decode())
         return BytesIO(_bytes)
 
@@ -281,19 +317,34 @@ class URLLocation(Location):
         """Create a location given a base URL."""
         self.base = base_url
 
-    def open(self, filename: str, mode: str = '') -> IO:
+    @overload
+    def open(self, name: str, mode: Literal['rb'] = 'rb') -> BinaryIO:
+        ...
+
+    @overload
+    def open(self, name: str, mode: Literal['r', 'rt']) -> TextIO:
+        ...
+
+    @overload
+    def open(self, name: str, mode: str) -> IO:
+        ...
+
+    def open(self, name: str, mode: str = 'rb') -> BinaryIO | TextIO | IO:
         """Open a remote file.
 
         Args:
-            filename:
+            name:
                 The name of the remote resource to open.
             mode:
-                Unused, as the mode is determined by the remote server.
+                The file mode. Text modes decode the response as UTF-8.
         """
-        import urllib.parse
-        import urllib.request
-        url = urllib.parse.urljoin(self.base, filename)
-        return BytesIO(urllib.request.urlopen(url).read())
+        import urllib.parse  # noqa: PLC0415
+        import urllib.request  # noqa: PLC0415
+        url = urllib.parse.urljoin(self.base, name)
+        data = urllib.request.urlopen(url).read()
+        if mode in ('r', 'rt'):
+            return StringIO(data.decode())
+        return BytesIO(data)
 
 
 class Loader:
@@ -436,7 +487,19 @@ class Loader:
                         zip_location = ZIPLocation(zipfileobj, zip_directory)
                         self._index_file(filename, zip_location)
 
-    def file(self, name: str, mode: str = 'rb') -> BytesIO | StringIO | IO:
+    @overload
+    def file(self, name: str, mode: Literal['rb'] = 'rb') -> BinaryIO:
+        ...
+
+    @overload
+    def file(self, name: str, mode: Literal['r', 'rt']) -> TextIO:
+        ...
+
+    @overload
+    def file(self, name: str, mode: str) -> IO:
+        ...
+
+    def file(self, name: str, mode: str = 'rb') -> BinaryIO | TextIO | IO:
         """Load a file-like object.
 
         The caller is responsible for closing the returning file object.
@@ -494,7 +557,7 @@ class Loader:
     def _alloc_texture(self, name: str, use_atlas: bool, border: int) -> Texture | TextureRegion:
         fileobj = self.file(name)
         try:
-            img = pyglet.image.load(name, file=cast(BinaryIO, fileobj))
+            img = pyglet.image.load(name, file=fileobj)
         finally:
             fileobj.close()
 
@@ -648,17 +711,17 @@ class Loader:
         else:
             fileobj = self.file(name)
             try:
-                img = pyglet.image.load(name, file=cast(BinaryIO, fileobj))
+                img = pyglet.image.load(name, file=fileobj)
             finally:
                 fileobj.close()
 
             _bin = self._get_texture_array_bin(img.width, img.height)
-            identity = self._cached_texture_arrays[name] = cast(TextureArrayRegion, _bin.add(img))
+            identity = self._cached_texture_arrays[name] = _bin.add(img)
 
         if not rotate and not flip_x and not flip_y:
             return identity
 
-        return cast(TextureArrayRegion, identity.get_transform(flip_x, flip_y, rotate))
+        return identity.get_transform(flip_x, flip_y, rotate)
 
     def animation(self, name: str, flip_x: bool = False, flip_y: bool = False,
                   rotate: Literal[0, 90, 180, 270, 360] = 0, border: int = 1) -> Animation:
@@ -757,7 +820,7 @@ class Loader:
 
             fileobj = file_location.open(name)
             if streaming:
-                return load_func(name, file=cast(BinaryIO, fileobj), streaming=True)
+                return load_func(name, file=fileobj, streaming=True)
             try:
                 return load_func(name, file=fileobj, streaming=False)
             finally:
@@ -813,7 +876,7 @@ class Loader:
         """Load an HTML document."""
         self._ensure_index()
         fileobj = self.file(name)
-        return pyglet.text.load(name, cast(BinaryIO, fileobj), 'text/html')
+        return pyglet.text.load(name, fileobj, 'text/html')
 
     def attributed(self, name: str) -> AbstractDocument:
         """Load an attributed text document.
@@ -822,13 +885,13 @@ class Loader:
         """
         self._ensure_index()
         fileobj = self.file(name)
-        return pyglet.text.load(name, cast(BinaryIO, fileobj), 'text/vnd.pyglet-attributed')
+        return pyglet.text.load(name, fileobj, 'text/vnd.pyglet-attributed')
 
     def text(self, name: str) -> AbstractDocument:
         """Load a plain text document."""
         self._ensure_index()
         fileobj = self.file(name)
-        return pyglet.text.load(name, cast(BinaryIO, fileobj), 'text/plain')
+        return pyglet.text.load(name, fileobj, 'text/plain')
 
     def shader(self, name: str, shader_type: str | None = None) -> Shader:
         """Load a Shader object.
@@ -866,7 +929,7 @@ class Loader:
             raise UndetectableShaderType(name=name)
 
         return pyglet.graphics.Shader(  # type: ignore[abstract, arg-type]
-            cast(str, source_string), cast(ShaderType, shader_type),
+            cast(str, source_string), cast("ShaderType", shader_type),
         )
 
 

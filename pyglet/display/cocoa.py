@@ -54,6 +54,10 @@ class CocoaScreen(Screen):
             if screen_name:
                 self._friendly_name = cfstring_to_string(screen_name)
 
+    @property
+    def is_primary(self) -> bool:
+        return self._cg_display_id == quartz.CGMainDisplayID()
+
     def get_nsscreen(self):
         """Return the current NSScreen associated with this display framebuffer."""
         # Get a list of all currently active NSScreens and then search through

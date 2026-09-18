@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Literal
 
 from pyglet.display.base import Display, Screen
-import js  # noqa: F821
+import js  # type: ignore[import-not-found]  # noqa: F821
 
 class EmscriptenDisplay(Display):
 
@@ -19,6 +19,10 @@ class EmscriptenScreen(Screen):
         width = js.window.screen.width
         height = js.window.screen.height
         super().__init__(display, 0, 0, width, height)
+
+    @property
+    def is_primary(self) -> bool:
+        return True
 
     def get_display_id(self) -> int:
         return 0
@@ -37,3 +41,9 @@ class EmscriptenScreen(Screen):
 
     def restore_mode(self):
         pass
+
+    def get_dpi(self) -> int:
+        return round(96 * self.get_scale())
+
+    def get_scale(self) -> float:
+        return js.window.devicePixelRatio

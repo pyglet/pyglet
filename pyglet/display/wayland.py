@@ -69,7 +69,9 @@ class WaylandDisplay(Display):
             self.client.sync()
             self._query_done.wait()
             # Make Screen instance with the now-filled-in values:
-            self._screens.append(WaylandScreen(self, self._geo, self._modes, self._scale, self._name, self._descript))
+            self._screens.append(
+                WaylandScreen(self, self._geo, self._modes, self._scale, self._name, self._descript, i == 0),
+            )
             wl_output.release()
 
     # Start Wayland Event handlers
@@ -106,13 +108,8 @@ class WaylandDisplay(Display):
 
 class WaylandScreen(Screen):
 
-    def get_display_id(self) -> str | int:
-        return self.name
-
-    def get_monitor_name(self) -> str | Literal["Unknown"]:
-        return self.description
-
-    def __init__(self, display, geometry, modes, scale, name, description):
+    def __init__(self, display, geometry, modes, scale, name, description, is_primary):
+        self._is_primary = is_primary
         self.name = name
         self.description = description
         self._scale = scale
@@ -131,6 +128,16 @@ class WaylandScreen(Screen):
             self._dpi = scale
 
         super().__init__(display, self._geo.x, self._geo.y, _width_pixels, _height_pixels)
+
+    @property
+    def is_primary(self) -> bool:
+        return self._is_primary
+
+    def get_display_id(self) -> str | int:
+        return self.name
+
+    def get_monitor_name(self) -> str | Literal["Unknown"]:
+        return self.description
 
     def get_modes(self):
         return self._modes

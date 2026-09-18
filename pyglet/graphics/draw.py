@@ -1718,7 +1718,7 @@ def get_default_batch() -> Batch:
     raise RuntimeError(msg)
 
 
-if not pyglet.IS_DOC_BUILD:
+if not pyglet.IS_DOC_BUILD and not TYPE_CHECKING:
     if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
         from pyglet.graphics.api.gl.draw import (
             GLBatch as Batch,
