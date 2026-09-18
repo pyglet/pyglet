@@ -226,6 +226,7 @@ MOTION_BACKSPACE         = BACKSPACE
 MOTION_DELETE            = DELETE
 MOTION_COPY              = 7
 MOTION_PASTE             = 8
+MOTION_SELECT_ALL        = 9
 
 # Number pad
 NUMLOCK       = 0xff7f

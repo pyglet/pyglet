@@ -322,6 +322,10 @@ platform.
           - Move the cursor right
           - Right
           - Right
+        * - ``MOTION_SELECT_ALL``
+          - Select the entire document
+          - Ctrl + A
+          - Command + A
         * - ``MOTION_COPY``
           - Copy the current selection to the clipboard
           - Ctrl + C

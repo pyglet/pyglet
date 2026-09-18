@@ -145,6 +145,10 @@ class PygletTextView(NSTextView):
         self._window.dispatch_event('on_text_motion', key.MOTION_DELETE)
 
     @objc_method('v@')
+    def selectAll_(self, sender: ObjCInstance) -> None:
+        self._window.dispatch_event('on_text_motion', key.MOTION_SELECT_ALL)
+
+    @objc_method('v@')
     def moveUpAndModifySelection_(self, sender: ObjCInstance) -> None:
         self._window.dispatch_event('on_text_motion_select', key.MOTION_UP)
 

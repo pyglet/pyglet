@@ -6,8 +6,8 @@ from pyglet.enums import Anchor, BlendFactor, GeometryMode
 from pyglet.sprite import Sprite
 
 if TYPE_CHECKING:
-    from pyglet.image import _AbstractImage, Animation
-    from pyglet.graphics import Batch, Group
+    from pyglet.image import Animation
+    from pyglet.graphics import Batch, Group, Texture
     from pyglet.text.layout import TextLayout
 
 
@@ -15,7 +15,7 @@ class NinePatch(Sprite):
     """Pseudo Nine-patch object for variable sized dialog windows.
 
     This class takes in a single image, splits it into 9 equal parts,
-    and allows creating variable sized dialog windows without distoring
+    and allows creating variable sized dialog windows without distorting
     the aspect of the edges. This is not a "real" nine-patch, as it
     does not look for any embedded markers in the image data. Instead,
     it simply splits the source image into 9 equally sized segments,
@@ -30,15 +30,21 @@ class NinePatch(Sprite):
     properties if you want to change the size after creation.
     """
 
+    _left_edge: float
+    _right_edge: float
+    _bottom_edge: float
+    _top_edge: float
+
     def __init__(self,
-                 img: _AbstractImage | Animation,
+                 img: Texture | Animation,
                  x: float = 0, y: float = 0, z: float = 0,
                  anchor: Anchor | str | tuple[float, float] | None = None,
                  width: int | None = None, height: int | None = None,
                  blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
                  blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
                  batch: Batch | None = None,
-                 group: Group | None = None):
+                 group: Group | None = None,
+                 edge_sizes: tuple[int, int, int, int] | None = None):
         """Create a NinePatch instance.
 
         Args:
@@ -69,14 +75,19 @@ class NinePatch(Sprite):
                 Optional batch to add the NinePatch to.
             group:
                 Optional parent group of the NinePatch.
+            edge_sizes:
+                Optional ``(left, right, bottom, top)`` source-edge dimensions.
+                When omitted, the source image is split into equal thirds.
         """
         self._width = max(width or img.width, img.width)
         self._height = max(height or img.height, img.height)
+        self._set_edge_sizes(edge_sizes, img.width, img.height)
+        self._rgba: tuple[int, int, int, int]
         super().__init__(img, x, y, z, anchor, blend_src, blend_dest, batch, group)
 
     @classmethod
     def create_around_layout(cls,
-                             img: _AbstractImage | Animation,
+                             img: Texture | Animation,
                              layout: TextLayout,
                              border: int = 0,
                              blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
@@ -121,6 +132,25 @@ class NinePatch(Sprite):
         if self._anchor is not None:
             self._anchor_x, self._anchor_y = self._anchor.get_position(self._width, self._height)
 
+    def _set_edge_sizes(
+        self,
+        edge_sizes: tuple[int, int, int, int] | None,
+        width: int,
+        height: int,
+    ) -> None:
+        if edge_sizes is None:
+            self._left_edge = self._right_edge = width / 3
+            self._bottom_edge = self._top_edge = height / 3
+            return
+
+        left, right, bottom, top = edge_sizes
+        if min(left, right, bottom, top) < 0 or left + right >= width or bottom + top >= height:
+            raise ValueError("NinePatch edge dimensions must leave a non-empty center region")
+        self._left_edge = left
+        self._right_edge = right
+        self._bottom_edge = bottom
+        self._top_edge = top
+
     def _create_vertex_list(self) -> None:
         # Vertex layout for 9 quads:
         #
@@ -137,14 +167,6 @@ class NinePatch(Sprite):
                    11, 6, 10, 5, 9, 4, 8,           # center row <--
                    12, 9, 13, 10, 14, 11, 15, 15)   # upper row  -->
 
-        # Get the 1/3 size of texture width & height:
-        uv_x, uv_y, uv_w, uv_h = self._texture.uv
-        seg_w = (uv_w - uv_x) / 3
-        seg_h = (uv_h - uv_y) / 3
-
-        # Create new UV coordinates for each of the 9 quads:
-        uvs = [i for v in range(4) for h in range(4) for i in (uv_x + seg_w * h, uv_y + seg_h * v, 0)]
-
         self._vertex_list = self.program.vertex_list_indexed(
             16, GeometryMode.TRIANGLE_STRIP, indices, self._batch, self._group,
             position=self._get_vertices(),
@@ -152,32 +174,37 @@ class NinePatch(Sprite):
             translate=(self._x, self._y, self._z) * 16,
             scale=(self._scale*self._scale_x, self._scale*self._scale_y) * 16,
             rotation=(self._rotation,) * 16,
-            tex_coords=uvs)
+            tex_coords=self._get_tex_coords())
+
+    def _get_tex_coords(self) -> tuple[float, ...]:
+        """Return texture coordinates split at this patch's source edges."""
+        uv_x, uv_y, uv_w, uv_h = self._texture.uv
+        u_scale = (uv_w - uv_x) / self._texture.width
+        v_scale = (uv_h - uv_y) / self._texture.height
+        u_values = uv_x, uv_x + self._left_edge * u_scale, uv_w - self._right_edge * u_scale, uv_w
+        v_values = uv_y, uv_y + self._bottom_edge * v_scale, uv_h - self._top_edge * v_scale, uv_h
+        return tuple(coordinate for v in v_values for u in u_values for coordinate in (u, v, 0))
 
     def _get_vertices(self) -> tuple:
         if not self._visible:
             return (0, 0, 0) * 16
-        else:
-            img = self._texture
-            edge_width = img.width / 3
-            edge_height = img.height / 3
-            center_width = self._width - edge_width - edge_width
-            center_height = self._height - edge_height - edge_height
+        center_width = self._width - self._left_edge - self._right_edge
+        center_height = self._height - self._bottom_edge - self._top_edge
 
-            x0 = -self._anchor_x
-            x1 = x0 + edge_width
-            x2 = x1 + center_width
-            x3 = x2 + edge_width
-            y0 = -self._anchor_y
-            y1 = y0 + edge_height
-            y2 = y1 + center_height
-            y3 = y2 + edge_height
-            z = 0   # handled by translate attribute
+        x0 = -self._anchor_x
+        x1 = x0 + self._left_edge
+        x2 = x1 + center_width
+        x3 = x2 + self._right_edge
+        y0 = -self._anchor_y
+        y1 = y0 + self._bottom_edge
+        y2 = y1 + center_height
+        y3 = y2 + self._top_edge
+        z = 0   # handled by translate attribute
 
-            return (x0, y0, z, x1, y0, z, x2, y0, z, x3, y0, z,
-                    x0, y1, z, x1, y1, z, x2, y1, z, x3, y1, z,
-                    x0, y2, z, x1, y2, z, x2, y2, z, x3, y2, z,
-                    x0, y3, z, x1, y3, z, x2, y3, z, x3, y3, z)
+        return (x0, y0, z, x1, y0, z, x2, y0, z, x3, y0, z,
+                x0, y1, z, x1, y1, z, x2, y1, z, x3, y1, z,
+                x0, y2, z, x1, y2, z, x2, y2, z, x3, y2, z,
+                x0, y3, z, x1, y3, z, x2, y3, z, x3, y3, z)
 
     @property
     def position(self) -> tuple[float, float, float]:
@@ -229,19 +256,19 @@ class NinePatch(Sprite):
 
     @rotation.setter
     def rotation(self, rotation: float):
-        self._rotation = rotation
+        self._rotation = rotation  # type: ignore[assignment]
         self._vertex_list.rotation[:] = (self._rotation,) * 16
 
-    @property
+    @property  # type: ignore[misc]
     def scale(self) -> float:
         raise NotImplementedError("Not supported. Use `width`/`height` instead.")
 
-    @property
+    @property  # type: ignore[misc]
     def scale_x(self) -> float:
         raise NotImplementedError("Not supported. Use `width` instead.")
 
-    @property
-    def scale_y(self):
+    @property  # type: ignore[misc]
+    def scale_y(self) -> float:
         raise NotImplementedError("Not supported. Use `height` instead.")
 
     def update(self, *args, **kwargs):

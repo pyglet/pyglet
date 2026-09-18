@@ -935,13 +935,14 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     def _get_left_anchor(self) -> float:
         """Returns the anchor for the X axis from the left."""
         width = self.width
+        offset = self._get_content_halign_offset(width)
 
         if self._anchor_x == "left":
-            return 0
+            return offset
         if self._anchor_x == "center":
-            return -(width // 2)
+            return -(width // 2) + offset
         if self._anchor_x == "right":
-            return -width
+            return -width + offset
 
         msg = '`anchor_x` must be either "left", "center", or "right".'
         raise Exception(msg)

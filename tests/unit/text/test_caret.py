@@ -3,6 +3,7 @@ from unittest.mock import Mock, NonCallableMock, MagicMock
 
 import pytest
 from pyglet.text import layout, caret
+from pyglet.window import key
 
 
 class ListSlicesAsTuple(UserList):
@@ -98,6 +99,21 @@ def test_color_setter_preserves_alpha_channel_when_setting_rgb_colors(
 def test_word_selection_bounds_exclude_trailing_space():
     assert caret.Caret._get_word_bounds("This paragraph has text", 8) == (5, 14)
     assert caret.Caret._get_word_bounds("This paragraph has text", 14) == (5, 14)
+
+
+def test_select_all_motion_selects_entire_document():
+    test_caret = caret.Caret.__new__(caret.Caret)
+    test_caret._layout = Mock()
+    test_caret._layout.document.text = "Some text"
+    test_caret._position = 4
+    test_caret._mark = None
+    test_caret._next_attributes = {}
+    test_caret._update = Mock()
+
+    test_caret.on_text_motion(key.MOTION_SELECT_ALL)
+
+    assert test_caret.mark == 0
+    assert test_caret.position == len(test_caret._layout.document.text)
 
 
 def test_color_setter_changes_alpha_channel_when_setting_rgba_colors(
