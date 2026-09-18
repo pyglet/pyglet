@@ -1,9 +1,9 @@
 import unittest
-
 import pytest
 
 import pyglet
 from pyglet.enums import GeometryMode
+from pyglet.graphics.shader import MissingAttributeException
 
 
 def _create_quad_vertices(x, y, z, width, height):
@@ -105,10 +105,10 @@ class VertexListTest(unittest.TestCase):
         program = pyglet.graphics.api.get_default_shader()
         batch = pyglet.graphics.Batch()
         group = pyglet.graphics.ShaderGroup(program)
-        layout = pyglet.graphics.VertexLayout(position="3f")
+        layout = pyglet.graphics.VertexLayout(position="3f", colors="4f")
         storage = batch.create_vertex_storage(sharing_policy="separate")
         count = 4096
-        data = {"position": (0, 0, 0) * count}
+        data = {"position": (0, 0, 0) * count, "colors": (1, 1, 1, 1) * count}
 
         first = batch.vertex_list(layout, count, GeometryMode.TRIANGLES, group, storage=storage, **data)
         second = batch.vertex_list(layout, count, GeometryMode.TRIANGLES, group, storage=storage, **data)
@@ -293,3 +293,12 @@ class VertexListTest(unittest.TestCase):
         assert vertex_list1.domain == vertex_list4.domain == vertex_list3.domain
         assert vertex_list1.bucket == vertex_list4.bucket == vertex_list3.bucket
         assert len(shared_bucket.merged_ranges) == 1  # All 3 should be merged together again.
+
+
+def test_vertex_list_requires_all_shader_attributes(test_window):  # noqa: ARG001
+    """Each active shader input must be supplied when creating geometry."""
+    program = pyglet.graphics.api.get_default_shader()
+
+    with pytest.raises(MissingAttributeException, match="colors"):
+        program.vertex_list(3, GeometryMode.TRIANGLES, position=(0, 0, 0) * 3)
+

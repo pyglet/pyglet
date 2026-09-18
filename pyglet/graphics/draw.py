@@ -1060,14 +1060,17 @@ class Batch:
         """
         attributes = self._normalized_shader_attributes(program, vertex_list.initial_attribs)
 
-        # Changing shaders for existing drawables are limited by the attributes
-        # the drawable originally allocated buffers for.
-        if missing := [name for name in vertex_list.initial_attribs if name not in attributes]:
+        # A shader can only use geometry the vertex list originally allocated.
+        if missing := [name for name in attributes if name not in vertex_list.initial_attribs]:
             if _debug_graphics_batch:
                 warnings.warn(f"Missing required shader attributes for update: {missing}")
             return False
 
-        drawable_attributes = {name: attributes[name] for name in vertex_list.initial_attribs}
+        # Keep geometry attributes that the new shader does not consume. A
+        # vertex list may own more buffers than a shader needs, but it cannot
+        # omit a buffer that the shader requires.
+        drawable_attributes = vertex_list.initial_attribs.copy()
+        drawable_attributes.update(attributes)
 
         # Attribute locations may change between linked programs, but the GPU
         # data can be copied directly when each existing attribute retains the

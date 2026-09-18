@@ -461,14 +461,14 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
         initial_arrays = []
         for name, array in data.items():
             if name not in layout._attributes:
-                msg = f"Attribute {name} not found. Existing attributes: {list(layout._attributes.keys())}"
+                msg = f"Attribute '{name}' not found. Existing attributes: {list(layout._attributes.keys())}"
                 raise MissingAttributeException(msg) from None
             initial_arrays.append((name, array))
 
         domain_attributes = layout.instanced_domain_attributes if instanced else layout.domain_attributes
-        if pyglet.options.debug_api_shaders:
-            if missing_data := [name for name in domain_attributes.attributes if name not in data]:
-                warnings.warn(f"No data was supplied for the following found attributes: `{missing_data}`.\n")
+        if missing_data := [name for name in domain_attributes.attributes if name not in data]:
+            msg = f"No data was supplied for required shader attributes: {missing_data}"
+            raise MissingAttributeException(msg)
 
         batch = batch or pyglet.graphics.get_default_batch()
         if storage is not None:

@@ -283,24 +283,12 @@ def _program_switch_expectations(drawable, new_program) -> tuple[bool, bool]:
     old_key = batch._attributes_key(old_vlist.domain.attribute_meta)
     normalized_attributes = batch._normalized_shader_attributes(new_program, old_vlist.initial_attribs)
 
-    # update_shader compares using drawable-owned attributes.
-    update_attributes = {
-        name: normalized_attributes[name]
-        for name in old_vlist.initial_attribs
-        if name in normalized_attributes
-    }
+    # update_shader preserves geometry attributes that the new program does
+    # not consume, while replacing metadata for the attributes it does.
+    update_attributes = old_vlist.initial_attribs.copy()
+    update_attributes.update(normalized_attributes)
     update_key = batch._attributes_key(update_attributes)
-    if update_key == old_key:
-        return False, True
-
-    # Recreate paths (for Sprite/Shape) only pass object-owned vertex data keys.
-    recreate_attributes = {
-        name: normalized_attributes[name]
-        for name in old_vlist.initial_attribs
-        if name in normalized_attributes
-    }
-    recreate_key = batch._attributes_key(recreate_attributes)
-    return True, recreate_key == old_key
+    return False, update_key == old_key
 
 
 def _assert_program_switch_missing_attribute_raises(drawable, new_program) -> None:
@@ -463,34 +451,28 @@ def test_sprite_program_change_different_attributes_migrates_to_new_domain(test_
         sprite.delete()
 
 
-def test_sprite_program_change_same_attributes_plus_one_recreates_in_same_domain(test_window, sprite_programs, sprite_image):  # noqa: ARG001
-    """Switch Sprite to a program with one additional attribute.
-
-    Verifies domain reuse vs recreation matches backend-resolved attribute-key compatibility for the new program.
-    """
+def test_sprite_program_change_extra_attribute_raises(test_window, sprite_programs, sprite_image):  # noqa: ARG001
+    """Switch Sprite to a program requiring geometry the sprite does not own."""
     batch = pyglet.graphics.Batch()
     sprite = pyglet.sprite.Sprite(sprite_image, x=0, y=0, batch=batch, program=sprite_programs["base"])
-    expect_recreated, expect_same_domain = _program_switch_expectations(sprite, sprite_programs["extra"])
+    _assert_program_switch_missing_attribute_raises(sprite, sprite_programs["extra"])
+
+
+def test_sprite_program_change_dropped_attribute_keeps_geometry(test_window, sprite_programs, sprite_image):  # noqa: ARG001
+    """Switch Sprite to a program that consumes fewer geometry attributes."""
+    batch = pyglet.graphics.Batch()
+    sprite = pyglet.sprite.Sprite(sprite_image, x=0, y=0, batch=batch, program=sprite_programs["base"])
+    expect_recreated, expect_same_domain = _program_switch_expectations(sprite, sprite_programs["missing"])
 
     try:
         _assert_program_switch_success(
             sprite,
-            sprite_programs["extra"],
+            sprite_programs["missing"],
             expect_recreated=expect_recreated,
             expect_same_domain=expect_same_domain,
         )
     finally:
         sprite.delete()
-
-
-def test_sprite_program_change_missing_attribute_raises_and_removes_old_bucket(test_window, sprite_programs, sprite_image):  # noqa: ARG001
-    """Switch Sprite to a program missing a required attribute.
-
-    Verifies assignment raises and the previous bucket allocation is cleaned up.
-    """
-    batch = pyglet.graphics.Batch()
-    sprite = pyglet.sprite.Sprite(sprite_image, x=0, y=0, batch=batch, program=sprite_programs["base"])
-    _assert_program_switch_missing_attribute_raises(sprite, sprite_programs["missing"])
 
 
 def test_shape_program_change_same_attributes_keeps_domain_updates_group(test_window, shape_programs):  # noqa: ARG001
@@ -537,30 +519,25 @@ def test_shape_program_change_different_attributes_migrates_to_new_domain(test_w
         shape.delete()
 
 
-def test_shape_program_change_same_attributes_plus_one_recreates_in_same_domain(test_window, shape_programs):  # noqa: ARG001
-    """Switch Shape to a program that adds one extra attribute.
-
-    Verifies domain reuse vs recreation matches backend-resolved attribute-key compatibility for the new program.
-    """
+def test_shape_program_change_extra_attribute_raises(test_window, shape_programs):  # noqa: ARG001
+    """Switch Shape to a program requiring geometry the shape does not own."""
     batch = pyglet.graphics.Batch()
     shape = pyglet.shapes.Circle(32, 32, 16, batch=batch, program=shape_programs["base"])
-    expect_recreated, expect_same_domain = _program_switch_expectations(shape, shape_programs["extra"])
+    _assert_program_switch_missing_attribute_raises(shape, shape_programs["extra"])
+
+
+def test_shape_program_change_dropped_attribute_keeps_geometry(test_window, shape_programs):  # noqa: ARG001
+    """Switch Shape to a program that consumes fewer geometry attributes."""
+    batch = pyglet.graphics.Batch()
+    shape = pyglet.shapes.Circle(32, 32, 16, batch=batch, program=shape_programs["base"])
+    expect_recreated, expect_same_domain = _program_switch_expectations(shape, shape_programs["missing"])
 
     try:
         _assert_program_switch_success(
             shape,
-            shape_programs["extra"],
+            shape_programs["missing"],
             expect_recreated=expect_recreated,
             expect_same_domain=expect_same_domain,
         )
     finally:
         shape.delete()
-
-
-def test_shape_program_change_missing_attribute_raises_and_removes_old_bucket(test_window, shape_programs):  # noqa: ARG001
-    """Switch Shape to a program missing a required attribute.
-
-    Verifies failure is raised and stale bucket ownership is released."""
-    batch = pyglet.graphics.Batch()
-    shape = pyglet.shapes.Circle(32, 32, 16, batch=batch, program=shape_programs["base"])
-    _assert_program_switch_missing_attribute_raises(shape, shape_programs["missing"])
