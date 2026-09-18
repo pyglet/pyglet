@@ -25,7 +25,10 @@ class VertexLayout:
     def __init__(self, **formats: str) -> None:
         for name, fmt in formats.items():
             if not isinstance(fmt, str) or re.fullmatch(r"[1-4][?fihHbBIqdQ]n?", fmt) is None:
-                raise ValueError(f"Invalid vertex format {fmt!r} for attribute {name!r}.")
+                msg = (f"Invalid vertex format {fmt!r} for attribute {name!r}.\n"
+                       f"Expecting 1-4, followed by a format string and optional 'n' normalization flag.\n"
+                       f"For example: '4Bn' would mean four values, as bytes (0-255), normalized.")
+                raise ValueError(msg)
         object.__setattr__(self, 'formats', formats)
 
 
