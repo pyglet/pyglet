@@ -5,7 +5,8 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Sequence
 
 if TYPE_CHECKING:
-    from pyglet.graphics.vertexdomain import InstanceStream, VertexArrayBinding, InstanceVertexList, InstanceIndexedVertexList
+    from pyglet.graphics.vertexdomain import InstanceVertexList, InstanceIndexedVertexList
+    from pyglet.graphics.vertexstorage import InstanceStream, VertexArrayBinding
     from _weakref import ReferenceType
     from pyglet.customtypes import DataTypes
 

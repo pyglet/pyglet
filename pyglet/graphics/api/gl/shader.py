@@ -38,11 +38,7 @@ from pyglet.graphics.api.gl import (
 )
 from pyglet.graphics.shader import (
     _AbstractShaderProgram,
-    Attribute,
-    AttributeLayout,
-    AttributeView,
     _build_uniform_struct_from_uniforms,
-    GraphicsAttribute,
     _AbstractShader,
     UBOBindingManager,
     UniformArrayBase,
@@ -53,6 +49,7 @@ from pyglet.graphics.shader import (
     ShaderType,
     UnsupportedShaderType,
 )
+from pyglet.graphics.attributes import Attribute, AttributeView, GraphicsAttribute, VertexLayout
 from pyglet.graphics.shader import ShaderException
 
 from pyglet.graphics.api.gl.buffer import GLUniformBufferObject
@@ -1064,9 +1061,9 @@ class GLShaderProgram(ShaderProgram):
 
     __slots__ = '_attributes', '_context', '_id', '_uniform_blocks', '_uniforms', '_shader_storage_blocks'
 
-    def __init__(self, *shaders: GLShader, attribute_layout: AttributeLayout | None) -> None:
+    def __init__(self, *shaders: GLShader, vertex_layout: VertexLayout | None) -> None:
         """Initialize the ShaderProgram using at least two Shader instances."""
-        super().__init__(*shaders, attribute_layout=attribute_layout)
+        super().__init__(*shaders, vertex_layout=vertex_layout)
 
         self._context = pyglet.graphics.api.core.current_context
         self._id = _build_program(self._context, *shaders)
@@ -1085,7 +1082,7 @@ class GLShaderProgram(ShaderProgram):
 
         have_dsa = self._context.info.features.separate_shader_objects
         self._attributes = _introspect_attributes(self._context, self._id)
-        self.apply_attribute_layout()
+        self.apply_vertex_layout()
         self._update_attribute_key()
         self._uniforms = _introspect_uniforms(self._context, self._id, have_dsa)
         self._uniform_blocks = self._get_uniform_blocks()
@@ -1129,8 +1126,8 @@ class GLTransformFeedbackShaderProgram(GLShaderProgram):
 
     def __init__(self, *shaders: GLShader, varyings: Sequence[str],
                  varying_buffer_type: Literal["interleaved", "separate"] = "separate",
-                 attribute_layout: AttributeLayout | None) -> None:
-        ShaderProgram.__init__(self, *shaders, attribute_layout=attribute_layout)
+                 vertex_layout: VertexLayout | None) -> None:
+        ShaderProgram.__init__(self, *shaders, vertex_layout=vertex_layout)
         self._context = pyglet.graphics.api.core.current_context
 
         self._varyings = tuple(varyings)
@@ -1303,6 +1300,6 @@ def get_default_shader() -> GLShaderProgram:
         "default_graphics",
         (_default_vertex_source, 'vertex'),
         (_default_fragment_source, 'fragment'),
-        attribute_layout=None,
+        vertex_layout=None,
     )
     return program

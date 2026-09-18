@@ -47,7 +47,7 @@ from pyglet.graphics.buffer import (
 
 if TYPE_CHECKING:
     from pyglet.customtypes import CTypesPointer, DataTypes
-    from pyglet.graphics.shader import GraphicsAttribute
+    from pyglet.graphics.attributes import GraphicsAttribute
 
 
 class GLBufferObject(AbstractBuffer):

@@ -21,11 +21,11 @@ from pyglet.graphics.api.gl.shader import GLShaderProgram
 from pyglet.graphics import UnsupportedBackendError
 from pyglet.graphics.shader import (
     _AbstractShaderProgram,
-    AttributeLayout,
     ShaderException,
     ShaderSource,
     ShaderType,
 )
+from pyglet.graphics.attributes import VertexLayout
 
 if TYPE_CHECKING:
     from pyglet.graphics.api.base import NullContext
@@ -206,9 +206,9 @@ class TransformFeedbackShaderProgram(ShaderProgram):
         *shaders: Shader,
         varyings: Sequence[str],
         varying_buffer_type: str = "separate",
-        attribute_layout: AttributeLayout | None,
+        vertex_layout: VertexLayout | None,
     ) -> None:
-        _ = shaders, varyings, varying_buffer_type, attribute_layout
+        _ = shaders, varyings, varying_buffer_type, vertex_layout
         raise UnsupportedBackendError("TransformFeedbackShaderProgram")
 
 
@@ -245,6 +245,6 @@ def get_default_shader() -> ShaderProgram:
         "default_graphics",
         (_default_vertex_source, 'vertex'),
         (_default_fragment_source, 'fragment'),
-        attribute_layout=None,
+        vertex_layout=None,
     )
     return program

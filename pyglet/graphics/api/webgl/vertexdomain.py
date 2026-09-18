@@ -46,12 +46,8 @@ from pyglet.graphics.api.webgl.shader import GLAttribute
 from pyglet.graphics.api.webgl.buffer import WebGLAttributeBufferObject, WebGLIndexedBufferObject
 from pyglet.graphics.buffer import _data_type_size
 from pyglet.graphics.instance import InstanceBucket, InstanceDomain, VertexInstance
+from pyglet.graphics.vertexstorage import VertexArrayBinding, VertexArrayProtocol, InstanceStream, VertexStream, IndexStream
 from pyglet.graphics.vertexdomain import (
-    VertexArrayBinding,
-    VertexArrayProtocol,
-    InstanceStream,
-    VertexStream,
-    IndexStream,
     VertexList,
     IndexedVertexList,
     VertexDomain,
@@ -66,10 +62,9 @@ from pyglet.graphics.vertexdomain import (
 )
 
 if TYPE_CHECKING:
-    from pyglet.graphics.shader import AttributeView
+    from pyglet.graphics.attributes import Attribute, AttributeView
     from pyglet.customtypes import DataTypes
     from pyglet.enums import GeometryMode
-    from pyglet.graphics.shader import Attribute
     from pyglet.graphics.api.webgl.context import OpenGLSurfaceContext
 
 _gl_types = {
@@ -82,21 +77,6 @@ _gl_types = {
     'f': GL_FLOAT,
     'd': GL_DOUBLE,
 }
-
-
-def _make_attribute_property(name: str) -> property:
-    def _attribute_getter(self: WebGLVertexList) -> ctypes.Array[float | int]:
-        stream = self.domain.attrib_name_buffers[name]
-        region = stream.get_attribute_region(name, self.start, self.count)
-        stream.invalidate_attribute_region(name, self.start, self.count)
-        return region
-
-    def _attribute_setter(self: WebGLVertexList, data: Any) -> None:
-        stream = self.domain.attrib_name_buffers[name]
-        stream.set_attribute_region(name, self.start, self.count, data)
-
-    return property(_attribute_getter, _attribute_setter)
-
 
 class _GLVertexStreamMix(VertexStream):
     _ctx: OpenGLSurfaceContext
@@ -247,7 +227,9 @@ class WebGLVertexDomain(VertexDomain):
 
         Args:
             mode:
-                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
 
         """
         self.vao.bind()
@@ -278,7 +260,9 @@ class WebGLVertexDomain(VertexDomain):
 
         Args:
             mode:
-                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
             vertex_list:
                 Vertex list to draw.
 
@@ -324,6 +308,15 @@ class GLInstanceDomainArrays(InstanceDomain):  # noqa: D101
         bucket.vao.bind()
         bucket.stream.commit()
         self._gl.drawArraysInstanced(mode, vertex_list.start, vertex_list.count, bucket.instance_count)
+
+    def draw_bucket(self, mode: int, bucket: InstanceBucket) -> None:
+        """Draw all instances belonging to one geometry bucket."""
+        if bucket.instance_count <= 0:
+            return
+        first_vertex, vertex_count = self._geom[bucket]
+        bucket.vao.bind()
+        bucket.stream.commit()
+        self._gl.drawArraysInstanced(mode, first_vertex, vertex_count, bucket.instance_count)
 
 class GLInstanceDomainElements(InstanceDomain):  # noqa: D101
     _ctx: OpenGLSurfaceContext
@@ -403,7 +396,9 @@ class WebGLInstancedVertexDomain(InstancedVertexDomain):  # noqa: D101
 
     def draw_buckets(self, mode: int, buckets: list[VertexGroupBucket]) -> None:
         """Draw a specific VertexGroupBucket in the domain."""
-        self.instance_domain.draw(mode)
+        for bucket in buckets:
+            for vertex_range in bucket.ranges:
+                self.instance_domain.draw_bucket(mode, self._instance_map[vertex_range])
 
     def _create_vao(self) -> None:
         """Handled by buckets."""
@@ -416,7 +411,9 @@ class WebGLInstancedVertexDomain(InstancedVertexDomain):  # noqa: D101
 
         Args:
             mode:
-                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
 
         """
         self.vertex_buffers.commit()
@@ -430,7 +427,9 @@ class WebGLInstancedVertexDomain(InstancedVertexDomain):  # noqa: D101
 
         Args:
             mode:
-                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
             vertex_list:
                 Vertex list to draw.
         """
@@ -499,7 +498,9 @@ class WebGLIndexedVertexDomain(IndexedVertexDomain):
 
         Args:
             mode:
-                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
 
         """
         self.vao.bind()
@@ -532,7 +533,9 @@ class WebGLIndexedVertexDomain(IndexedVertexDomain):
 
         Args:
             mode:
-                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
             vertex_list:
                 Vertex list to draw.
         """
@@ -582,7 +585,9 @@ class WebGLInstancedIndexedVertexDomain(InstancedIndexedVertexDomain):
 
         Args:
             mode:
-                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
 
         """
         self.vertex_buffers.commit()
@@ -602,7 +607,9 @@ class WebGLInstancedIndexedVertexDomain(InstancedIndexedVertexDomain):
 
         Args:
             mode:
-                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
             vertex_list:
                 Vertex list to draw.
 

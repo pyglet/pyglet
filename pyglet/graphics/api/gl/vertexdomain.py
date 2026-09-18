@@ -24,7 +24,8 @@ from __future__ import annotations
 
 import ctypes
 import weakref
-from typing import TYPE_CHECKING, Any, Sequence
+from copy import copy
+from typing import TYPE_CHECKING, Any, Mapping, Sequence
 
 import pyglet
 
@@ -50,12 +51,8 @@ from pyglet.graphics.api.gl.lib import GLException, MissingFunctionException
 from pyglet.graphics.api.gl.shader import GLAttribute
 from pyglet.graphics.buffer import _data_type_size
 from pyglet.graphics.instance import InstanceBucket, InstanceCollection, InstanceDomain, VertexInstance
+from pyglet.graphics.vertexstorage import VertexStream, VertexArrayBinding, VertexArrayProtocol, InstanceStream, IndexStream
 from pyglet.graphics.vertexdomain import (
-    VertexStream,
-    VertexArrayBinding,
-    VertexArrayProtocol,
-    InstanceStream,
-    IndexStream,
     _RunningIndexSupport,
     VertexGroupBucket,
     VertexDomain,
@@ -69,11 +66,11 @@ from pyglet.graphics.vertexdomain import (
 )
 
 if TYPE_CHECKING:
-    from ctypes import Array
-    from pyglet.graphics.shader import AttributeView, GraphicsAttribute
+    from pyglet.graphics.resource import ShaderProgramKey
+    from pyglet.graphics.attributes import Attribute, AttributeView, GraphicsAttribute
+    from pyglet.graphics.shader import ShaderProgram
     from pyglet.graphics import Group
     from pyglet.enums import GeometryMode
-    from pyglet.graphics.shader import Attribute
     from pyglet.customtypes import DataTypes
 
 _gl_types = {
@@ -87,25 +84,11 @@ _gl_types = {
     'd': GL_DOUBLE,
 }
 
-
-def _make_attribute_property(name: str) -> property:
-    def _attribute_getter(self: GLVertexList) -> Array[float | int]:
-        stream = self.domain.attrib_name_buffers[name]
-        region = stream.get_attribute_region(name, self.start, self.count)
-        stream.invalidate_attribute_region(name, self.start, self.count)
-        return region
-
-    def _attribute_setter(self: GLVertexList, data: Any) -> None:
-        stream = self.domain.attrib_name_buffers[name]
-        stream.set_attribute_region(name, self.start, self.count, data)
-
-    return property(_attribute_getter, _attribute_setter)
-
 class _GLVertexStreamMix(VertexStream):
     _ctx: OpenGLSurfaceContext
 
     def __init__(self, ctx: OpenGLSurfaceContext, initial_size: int, attrs: Sequence[Attribute], *, divisor: int = 0):
-        self._linked_vaos = weakref.WeakSet()
+        self._linked_vaos: weakref.WeakSet[GLVertexArrayBinding] = weakref.WeakSet()
         self._persistent_buffers_supported = self._supports_persistent_buffers(ctx)
         self._has_persistent_buffers = False
         super().__init__(ctx, initial_size, attrs, divisor=divisor)
@@ -143,13 +126,30 @@ class _GLVertexStreamMix(VertexStream):
             self.bind_into(vao)
             vao.unbind()
 
-    def bind_into(self, vao) -> None:
-        self._linked_vaos.add(vao)
-        for attribute, buffer in zip(self.attribute_names.values(), self.buffers):
+    def bind_into(self, binding: GLVertexArrayBinding) -> None:
+        """Link this stream into a binding using that binding's target layout."""
+        self._linked_vaos.add(binding)
+        for name, source_attribute in self.attribute_names.items():
+            if binding.attribute_mapping is None:
+                graphics_attribute = source_attribute
+            else:
+                shader_attribute = binding.attribute_mapping.get(name)
+                if shader_attribute is None:
+                    continue
+                attribute = copy(shader_attribute)
+                # Buffer storage belongs to the domain.  The alternate shader
+                # supplies only the input location and enabled subset.
+                attribute.set_data_type(
+                    source_attribute.attribute.fmt.data_type,
+                    source_attribute.attribute.fmt.normalized,
+                )
+                attribute.set_divisor(source_attribute.attribute.fmt.divisor)
+                graphics_attribute = GLAttribute(attribute, source_attribute.view)
+            buffer = self.attrib_name_buffers[name]
             buffer.bind()
-            attribute.enable()
-            attribute.set_pointer()
-            attribute.set_divisor()
+            graphics_attribute.enable()
+            graphics_attribute.set_pointer()
+            graphics_attribute.set_divisor()
 
 class GLVertexStream(_GLVertexStreamMix, VertexStream):  # noqa: D101
     def __init__(self, ctx: OpenGLSurfaceContext, initial_size: int, attrs: Sequence[Attribute]) -> None:
@@ -173,6 +173,16 @@ class GLInstanceStream(_GLVertexStreamMix, InstanceStream):  # noqa: D101
         super().__init__(ctx, initial_size, attrs, divisor=divisor)
 
 class GLVertexArrayBinding(VertexArrayBinding):  # noqa: D101
+    attribute_mapping: Mapping[str, Attribute] | None
+
+    def __init__(
+            self,
+            ctx: OpenGLSurfaceContext,
+            streams: list[VertexStream | InstanceStream | IndexStream],
+            attributes: Mapping[str, Attribute] | None = None,
+    ) -> None:
+        self.attribute_mapping = attributes
+        super().__init__(ctx, streams)
 
     def _create_vao(self) -> VertexArrayProtocol:
         return vertexarray.VertexArray(self._ctx)
@@ -180,7 +190,7 @@ class GLVertexArrayBinding(VertexArrayBinding):  # noqa: D101
     def _link(self) -> None:
         self.vao.bind()
         for stream in self.streams:
-            stream.bind_into(self.vao)
+            stream.bind_into(self)
         self.vao.unbind()
 
     def bind(self) -> None:
@@ -188,7 +198,6 @@ class GLVertexArrayBinding(VertexArrayBinding):  # noqa: D101
 
     def unbind(self) -> None:
         self.vao.unbind()
-
 
 class GLVertexList(VertexList):
     """A list of vertices within a :py:class:`VertexDomain`.
@@ -244,6 +253,7 @@ class GLVertexDomain(VertexDomain):
     Construction of a vertex domain is usually done with the
     :py:func:`create_domain` function.
     """
+    _vertex_input_bindings: dict[ShaderProgramKey, GLVertexArrayBinding]
     _vertex_buckets: dict[Group, VertexGroupBucket]
     streams: list[GLVertexStream | GLInstanceStream | GLIndexStream]
     per_instance: list[Attribute]
@@ -290,6 +300,21 @@ class GLVertexDomain(VertexDomain):
     def _create_vao(self) -> VertexArrayBinding:
         return GLVertexArrayBinding(self._context, self._streams)
 
+    def get_vertex_input_binding(self, program: ShaderProgram) -> GLVertexArrayBinding:
+        super().get_vertex_input_binding(program)
+        if program.attribute_key == self.domain_attributes.key:
+            return self.vao
+        key = program.key
+        try:
+            return self._vertex_input_bindings[key]
+        except AttributeError:
+            self._vertex_input_bindings = {}
+        except KeyError:
+            pass
+        binding = GLVertexArrayBinding(self._context, self._streams, program.attributes)
+        self._vertex_input_bindings[key] = binding
+        return binding
+
     def _create_streams(self, size: int) -> list[VertexStream | IndexStream | InstanceStream]:
         self.vertex_buffers = GLVertexStream(self._context, size, self.per_vertex)
         return [self.vertex_buffers]
@@ -309,7 +334,9 @@ class GLVertexDomain(VertexDomain):
 
         Args:
             mode:
-                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
 
         """
         self.vao.bind()
@@ -335,7 +362,9 @@ class GLVertexDomain(VertexDomain):
 
         Args:
             mode:
-                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
             vertex_list:
                 Vertex list to draw.
 
@@ -373,6 +402,15 @@ class GLInstanceDomainArrays(InstanceDomain):
         bucket.vao.bind()
         bucket.stream.commit()
         self._ctx.glDrawArraysInstanced(mode, vertex_list.start, vertex_list.count, bucket.instance_count)
+
+    def draw_bucket(self, mode: int, bucket: InstanceBucket) -> None:
+        """Draw all instances belonging to one geometry bucket."""
+        if bucket.instance_count <= 0:
+            return
+        first_vertex, vertex_count = self._geom[bucket]
+        bucket.vao.bind()
+        bucket.stream.commit()
+        self._ctx.glDrawArraysInstanced(mode, first_vertex, vertex_count, bucket.instance_count)
 
 class GLInstanceDomainElements(InstanceDomain):
     _ctx: OpenGLSurfaceContext
@@ -468,7 +506,9 @@ class GLInstancedVertexDomain(InstancedVertexDomain, GLVertexDomain):  # noqa: D
 
     def draw_buckets(self, mode: int, buckets: list[VertexGroupBucket]) -> None:
         """Draw a specific VertexGroupBucket in the domain."""
-        self.instance_domain.draw(mode)
+        for bucket in buckets:
+            for vertex_range in bucket.ranges:
+                self.instance_domain.draw_bucket(mode, self._instance_map[vertex_range])
 
     def draw(self, mode: int) -> None:
         """Draw all vertices in the domain.
@@ -478,7 +518,9 @@ class GLInstancedVertexDomain(InstancedVertexDomain, GLVertexDomain):  # noqa: D
 
         Args:
             mode:
-                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
 
         """
         self.vertex_buffers.commit()
@@ -492,7 +534,9 @@ class GLInstancedVertexDomain(InstancedVertexDomain, GLVertexDomain):  # noqa: D
 
         Args:
             mode:
-                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
             vertex_list:
                 Vertex list to draw.
         """
@@ -586,7 +630,9 @@ class GLIndexedVertexDomain(IndexedVertexDomain):
 
         Args:
             mode:
-                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
 
         """
         self.vao.bind()
@@ -615,7 +661,9 @@ class GLIndexedVertexDomain(IndexedVertexDomain):
 
         Args:
             mode:
-                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
             vertex_list:
                 Vertex list to draw.
         """
@@ -662,7 +710,9 @@ class GLInstancedIndexedVertexDomain(InstancedIndexedVertexDomain, GLIndexedVert
 
         Args:
             mode:
-                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
 
         """
         self.vertex_buffers.commit()
@@ -677,7 +727,9 @@ class GLInstancedIndexedVertexDomain(InstancedIndexedVertexDomain, GLIndexedVert
 
         Args:
             mode:
-                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
             vertex_list:
                 Vertex list to draw.
 

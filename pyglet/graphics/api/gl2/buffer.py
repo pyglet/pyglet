@@ -12,7 +12,7 @@ from pyglet.graphics import UnsupportedBackendError
 
 if TYPE_CHECKING:
     from pyglet.customtypes import DataTypes
-    from pyglet.graphics.shader import GraphicsAttribute
+    from pyglet.graphics.attributes import GraphicsAttribute
 
 
 class GL2BufferObject(GLBufferObject):

@@ -15,7 +15,8 @@ if TYPE_CHECKING:
     from pyglet.config import SurfaceConfig
     from pyglet.graphics import Batch
     from pyglet.graphics.buffer import BufferRange
-    from pyglet.graphics.shader import AttributeLayout, Shader, ShaderProgram, ShaderType
+    from pyglet.graphics.attributes import VertexLayout
+    from pyglet.graphics.shader import Shader, ShaderProgram, ShaderType
     from pyglet.window import Window
 
 _debug_print = debug_print("debug_api")
@@ -128,8 +129,8 @@ class NullBackend(BackendGlobalObject):  # noqa: D101
         self._raise_no_backend()
 
     def get_cached_shader(self, _name: str, *sources: tuple[str, ShaderType],
-                          attribute_layout: AttributeLayout | None) -> ShaderProgram:
-        _ = sources, attribute_layout
+                          vertex_layout: VertexLayout | None) -> ShaderProgram:
+        _ = sources, vertex_layout
         self._raise_no_backend()
 
     def create_shader_program(self, *_shaders: Shader) -> NoReturn:

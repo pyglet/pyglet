@@ -14,6 +14,14 @@ from typing import TYPE_CHECKING, Any, Callable, Literal, Protocol, Sequence, ov
 
 import pyglet
 from pyglet.enums import GeometryMode, GraphicsAPI
+from pyglet.graphics.attributes import (
+    Attribute,
+    AttributeView,
+    DataTypeTuple,
+    DomainAttributes,
+    GraphicsAttribute,
+    VertexLayout,
+)
 from pyglet.graphics.buffer import UniformBufferRegion
 from pyglet.graphics.resource import GraphicsResource, ShaderKey, ShaderProgramKey
 
@@ -21,11 +29,9 @@ if TYPE_CHECKING:
     from _weakref import CallableProxyType
 
     from pyglet.customtypes import CType, DataTypes
-    from pyglet.enums import GeometryMode
-    from pyglet.graphics import Batch, Group
+    from pyglet.graphics import Batch, Group, VertexStorage
     from pyglet.graphics.buffer import UniformBufferObject
     from pyglet.graphics.vertexdomain import (
-        DomainAttributes,
         IndexedVertexList,
         InstanceIndexedVertexList,
         InstanceVertexList,
@@ -101,7 +107,7 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
     _vertex_layouts: dict[tuple[Any, ...], ShaderProgramView]
     _format_layouts: dict[frozenset[tuple[str, str]], ShaderProgramView]
 
-    def __init__(self, *shaders: Shader, attribute_layout: AttributeLayout | None = None) -> None:
+    def __init__(self, *shaders: Shader, vertex_layout: VertexLayout | None = None) -> None:
         GraphicsResource.__init__(self)
 
         # Attribute description
@@ -112,7 +118,7 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
         self._instance_attributes = {}
         self._vertex_layouts = {}
         self._format_layouts = {}
-        self._attribute_layout = attribute_layout
+        self._vertex_layout = vertex_layout
 
         # Uniform description
         self._uniforms = {}
@@ -141,10 +147,10 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
             self._attributes[attrib.fmt.name] = attrib
         self._update_attribute_key()
 
-    def apply_attribute_layout(self) -> None:
+    def apply_vertex_layout(self) -> None:
         """Apply the requested default buffer formats to introspected attributes."""
-        if self._attribute_layout is not None:
-            self._attributes = self._copy_attributes_with_formats(self._attributes, self._attribute_layout.formats)
+        if self._vertex_layout is not None:
+            self._attributes = self._copy_attributes_with_formats(self._attributes, self._vertex_layout.formats)
 
     def _update_attribute_key(self) -> None:
         """Cache the platform-independent key used to look up vertex domains."""
@@ -165,8 +171,6 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
     @staticmethod
     def derive_domain_attributes(attributes: dict[str, Attribute], key: str | None = None) -> DomainAttributes:
         """Create domain metadata for an attribute layout."""
-        from pyglet.graphics.vertexdomain import DomainAttributes
-
         if key is None:
             return DomainAttributes.from_attributes(attributes)
         return DomainAttributes(attributes, key)
@@ -225,17 +229,17 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
             )
         return self
 
-    def get_attribute_view(self, attribute_layout: AttributeLayout | None = None) -> ShaderProgramView:
+    def get_vertex_view(self, vertex_layout: VertexLayout | None = None) -> ShaderProgramView:
         """Return the interned shader-program view for the requested vertex formats.
 
         Pyglet's Sprite and Label helpers provide colors as four unsigned bytes.
-        Prefer ``ShaderProgram(..., attribute_layout=AttributeLayout(colors="Bn"))``
+        Prefer ``ShaderProgram(..., vertex_layout=VertexLayout(colors="4Bn"))``
         to set that program's default layout. Use this method only when an
         occasional alternate layout is needed for the same program.
         """
-        if attribute_layout is not None and not isinstance(attribute_layout, AttributeLayout):
-            raise TypeError("attribute_layout must be an AttributeLayout or None.")
-        formats = {} if attribute_layout is None else attribute_layout.formats
+        if vertex_layout is not None and not isinstance(vertex_layout, VertexLayout):
+            raise TypeError("vertex_layout must be an VertexLayout or None.")
+        formats = {} if vertex_layout is None else vertex_layout.formats
         try:
             request_key = frozenset(formats.items())
             return self._format_layouts[request_key]
@@ -272,26 +276,24 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
     def _copy_attributes_with_formats(attributes: dict[str, Attribute], formats: dict[str, str]) -> dict[str, Attribute]:
         adjusted = attributes
         for name, fmt in formats.items():
-            valid = (
-                isinstance(fmt, str)
-                and len(fmt) in (1, 2)
-                and fmt[0] in DataTypeTuple
-                and (len(fmt) == 1 or fmt[1] == 'n')
-            )
-            if not valid:
+            match = re.fullmatch(r"([1-4])([?fihHbBIqdQ])(n?)", fmt) if isinstance(fmt, str) else None
+            if match is None:
                 raise ValueError(f"Invalid vertex format {fmt!r} for attribute {name!r}.")
             try:
                 source = attributes[name]
             except KeyError:
                 msg = f"Attribute {name} not found. Existing attributes: {list(attributes.keys())}"
                 raise MissingAttributeException(msg) from None
-            normalized = len(fmt) == 2
-            if source.fmt.data_type == fmt[0] and source.fmt.normalized == normalized:
+            components_text, data_type, normalized_text = match.groups()
+            if source.fmt.components != int(components_text):
+                raise ValueError(f"Geometry format {fmt!r} for {name!r} is incompatible with the shader input.")
+            normalized = bool(normalized_text)
+            if source.fmt.data_type == data_type and source.fmt.normalized == normalized:
                 continue
             if adjusted is attributes:
                 adjusted = attributes.copy()
             attribute = copy(source)
-            attribute.set_data_type(fmt[0], normalized)
+            attribute.set_data_type(data_type, normalized)
             adjusted[name] = attribute
         return adjusted
 
@@ -451,6 +453,7 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
     def _vertex_list_create(self, count: int, mode: GeometryMode, indices: Sequence[int] | None = None,
                             instanced: bool = False, batch: Batch | None = None, group: Group | None = None,
                             layout: _AbstractShaderProgram | ShaderProgramView | None = None,
+                            storage: VertexStorage | None = None, vertex_layout: VertexLayout | None = None,
                             **data: Any) -> VertexList | InstanceVertexList | IndexedVertexList | InstanceIndexedVertexList:
         assert isinstance(mode, GeometryMode), f"Mode {mode} is not geometry mode."
         layout = layout or self
@@ -468,8 +471,12 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
                 warnings.warn(f"No data was supplied for the following found attributes: `{missing_data}`.\n")
 
         batch = batch or pyglet.graphics.get_default_batch()
+        if storage is not None:
+            storage = batch._resolve_storage(storage)  # noqa: SLF001
+            geometry_layout = storage.get_vertex_layout(layout, vertex_layout)
+            domain_attributes = geometry_layout.instanced_domain_attributes if instanced else geometry_layout.domain_attributes
         group = group or pyglet.graphics.ShaderGroup(program=layout)
-        domain = batch.get_domain(indices is not None, instanced, mode, group, domain_attributes)
+        domain = batch.get_domain(indices is not None, instanced, mode, group, domain_attributes, storage=storage)
         vertex_list = domain.create(group, count, indices)
 
         for name, array in initial_arrays:
@@ -478,6 +485,7 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
         return vertex_list
 
     def vertex_list(self, count: int, mode: GeometryMode, batch: Batch | None = None, group: Group | None = None,
+                    storage: VertexStorage | None = None, vertex_layout: VertexLayout | None = None,
                     **data: Any) -> VertexList:
         """Create a VertexList.
 
@@ -485,8 +493,10 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
             count:
                 The number of vertices in the list.
             mode:
-                OpenGL drawing mode enumeration; for example, one of
-                ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS`,
+                :attr:`~pyglet.enums.GeometryMode.LINES`, or
+                :attr:`~pyglet.enums.GeometryMode.TRIANGLES`.
                 This determines how the list is drawn in the given batch.
             batch:
                 Batch to add the VertexList to, or ``None`` if a Batch will not be used.
@@ -497,7 +507,8 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
                 Initial data for each vertex attribute.
 
         """
-        return self._vertex_list_create(count, mode, None, False, batch=batch, group=group, **data)
+        return self._vertex_list_create(count, mode, None, False, batch=batch, group=group, storage=storage,
+                                        vertex_layout=vertex_layout, **data)
 
     def vertex_list_instanced(self, count: int, mode: GeometryMode, batch: Batch | None = None,
                               group: Group | None = None, **data: Any) -> InstanceVertexList:
@@ -514,8 +525,10 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
             count:
                 The number of vertices in the list.
             mode:
-                OpenGL drawing mode enumeration; for example, one of
-                ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS`,
+                :attr:`~pyglet.enums.GeometryMode.LINES`, or
+                :attr:`~pyglet.enums.GeometryMode.TRIANGLES`.
                 This determines how the list is drawn in the given batch.
             indices:
                 Sequence of integers giving indices into the vertex list.
@@ -549,15 +562,15 @@ class ShaderProgram(_AbstractShaderProgram):
     program state management.
     """
 
-    def __init__(self, *shaders: _AbstractShader, attribute_layout: AttributeLayout | None) -> None:
+    def __init__(self, *shaders: _AbstractShader, vertex_layout: VertexLayout | None) -> None:
         """Initialize a shader program with an optional default attribute layout.
 
-        ``attribute_layout=None`` keeps the introspected attribute formats. An
-        :class:`AttributeLayout` changes only the buffer interpretation of the
+        ``vertex_layout=None`` keeps the introspected attribute formats. An
+        :class:`VertexLayout` changes only the buffer interpretation of the
         named attributes; their component counts remain defined by the shader.
         """
         assert shaders, "At least one Shader object is required."
-        super().__init__(*shaders, attribute_layout=attribute_layout)
+        super().__init__(*shaders, vertex_layout=vertex_layout)
 
 
 class ShaderProgramView(ShaderProgram):
@@ -704,7 +717,7 @@ class TransformFeedbackShaderProgram(ShaderProgram):
         *shaders: _AbstractShader,
         varyings: Sequence[str],
         varying_buffer_type: Literal["interleaved", "separate"] = "separate",
-        attribute_layout: AttributeLayout | None,
+        vertex_layout: VertexLayout | None,
     ) -> None:
         """Initialize a transform feedback shader program.
 
@@ -723,7 +736,7 @@ class TransformFeedbackShaderProgram(ShaderProgram):
             This class is replaced by a backend-specific implementation at
             import time when a supported backend is active.
         """
-        super().__init__(*shaders, attribute_layout=attribute_layout)
+        super().__init__(*shaders, vertex_layout=vertex_layout)
         _ = varyings, varying_buffer_type
         msg = f"{self.__class__.__name__} is backend-specific and must be provided by the active backend."
         raise NotImplementedError(msg)
@@ -795,149 +808,6 @@ class Shader(_AbstractShader):
 
     def delete(self) -> None:
         """Delete the shader program's backend resource."""
-
-DataTypeTuple = ('?', 'f', 'i', 'I', 'h',  'H', 'b', 'B', 'q','Q')
-
-
-@dataclass(frozen=True)
-class AttributeLayout:
-    """Partial overrides for a shader program's default attribute formats.
-
-    Each keyword names an attribute and supplies its buffer data type, with an
-    optional ``"n"`` suffix for normalized values. Component counts always
-    come from the linked shader. For example, ``AttributeLayout(colors="Bn")``
-    binds a GLSL ``vec4`` ``colors`` attribute as four normalized unsigned
-    bytes.
-    """
-    formats: dict[str, str]
-
-    def __init__(self, **formats: str) -> None:  # noqa: D107
-        for name, fmt in formats.items():
-            valid = (
-                isinstance(fmt, str)
-                and len(fmt) in (1, 2)
-                and fmt[0] in DataTypeTuple
-                and (len(fmt) == 1 or fmt[1] == 'n')
-            )
-            if not valid:
-                raise ValueError(f"Invalid vertex format {fmt!r} for attribute {name!r}.")
-        object.__setattr__(self, "formats", formats)
-
-_data_type_to_ctype = {
-    '?': ctypes.c_bool,         # bool
-    'b': ctypes.c_byte,         # signed byte
-    'B': ctypes.c_ubyte,        # unsigned byte
-    'h': ctypes.c_short,        # signed short
-    'H': ctypes.c_ushort,       # unsigned short
-    'i': ctypes.c_int,          # signed int
-    'I': ctypes.c_uint,         # unsigned int
-    'f': ctypes.c_float,        # float
-    'd': ctypes.c_double,       # double
-    'q': ctypes.c_longlong,     # signed long long
-    'Q': ctypes.c_ulonglong,    # unsigned long long
-}
-
-@dataclass(frozen=True)
-class AttributeFormat:
-    """A format describing the properties of an Attribute."""
-    name: str
-    components: int  # for example: 4 for vec4
-    data_type: DataTypes
-    normalized: bool
-    divisor: int            # 0 = per-vertex, 1> = per-instance
-
-    @property
-    def is_instanced(self) -> bool:
-        return self.divisor != 0
-
-@dataclass(frozen=True)
-class AttributeView:
-    """Describes a view of the attribute at its bound buffer."""
-    offset: int  # Offset start of element to this attribute
-    stride: int  # Size from one element to the next
-
-
-class Attribute:
-    """Describes an attribute in a shader."""
-    fmt: AttributeFormat
-    element_size: int
-    c_type: CType
-    location: int
-
-    def __init__(self, name: str, location: int, components: int, data_type: DataTypes, normalize: bool = False,
-                 divisor: int = 0) -> None:
-        """Create the attribute accessor.
-
-        Args:
-            name:
-                Name of the vertex attribute.
-            location:
-                Location (index) of the vertex attribute.
-            components:
-                Number of components in the attribute.
-            data_type:
-                Data type intended for use with the attribute.
-            normalize:
-                True if OpenGL should normalize the values
-            divisor:
-                The divisor value if this is an instanced attribute.
-
-        """
-        self.fmt = AttributeFormat(name, components, data_type, normalize, divisor)
-        self.location = location
-
-        self.c_type = _data_type_to_ctype[self.fmt.data_type]
-        self.element_size = ctypes.sizeof(self.c_type)
-
-    def set_data_type(self, data_type: DataTypes, normalize: bool) -> None:
-        """Set datatype to a new format and normalization.
-
-        Must be done before this attribute is used, or may cause unexpected behavior.
-        """
-        self.fmt = AttributeFormat(self.fmt.name, self.fmt.components, data_type, normalize, self.fmt.divisor)
-        self.c_type = _data_type_to_ctype[self.fmt.data_type]
-        self.element_size = ctypes.sizeof(self.c_type)
-
-    def set_divisor(self, divisor: int) -> None:
-        self.fmt = AttributeFormat(self.fmt.name, self.fmt.components, self.fmt.data_type, self.fmt.normalized, divisor)
-
-    def __repr__(self) -> str:
-        return f"Attribute(location={self.location}, fmt={self.fmt}')"
-
-    @property
-    def key(self) -> tuple[str, int, int, DataTypes, bool, int]:
-        """Stable tuple that describes this attribute's domain-relevant format."""
-        return (
-            self.fmt.name,
-            self.location,
-            self.fmt.components,
-            self.fmt.data_type,
-            self.fmt.normalized,
-            self.fmt.divisor,
-        )
-
-
-class GraphicsAttribute:
-    """A combination of format and view to give the overall attribute information."""
-    def __init__(self, attribute: Attribute, view: AttributeView) -> None:
-        self.attribute = attribute
-        self.view = view
-
-    def enable(self) -> None:
-        """Enable the attribute."""
-        raise NotImplementedError
-
-    def disable(self) -> None:
-        """Disable the attribute."""
-        raise NotImplementedError
-
-    def set_pointer(self) -> None:
-        """Setup this attribute to point to the currently bound buffer at the given offset."""
-        raise NotImplementedError
-
-    def set_divisor(self) -> None:
-        raise NotImplementedError
-
 
 def _ubo_view_repr(view: ctypes.Structure) -> str:
     names_fields = ", ".join((f"{k}={v.__name__}" for k, v in dict(view._fields_).items()))

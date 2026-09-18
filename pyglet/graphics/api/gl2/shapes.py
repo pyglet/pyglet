@@ -48,5 +48,5 @@ def get_default_shader() -> ShaderProgram:
         "default_shapes",
         (vertex_source, 'vertex'),
         (fragment_source, 'fragment'),
-        attribute_layout=pyglet.graphics.AttributeLayout(colors="Bn"),
+        vertex_layout=pyglet.graphics.VertexLayout(colors="4Bn"),
     )

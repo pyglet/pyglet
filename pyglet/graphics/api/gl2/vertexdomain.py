@@ -25,8 +25,6 @@ from __future__ import annotations
 import ctypes
 from typing import TYPE_CHECKING, Any, Sequence
 
-from ctypes import Array
-
 from pyglet.graphics.api.gl import (
     GL_BYTE,
     GL_DOUBLE,
@@ -48,11 +46,8 @@ from pyglet.graphics.api.gl.enums import geometry_map
 from pyglet.graphics.api.gl.shader import GLAttribute
 from pyglet.graphics.api.gl2.buffer import GL2AttributeBufferObject, GL2IndexedBufferObject
 from pyglet.graphics.buffer import _data_type_size
+from pyglet.graphics.vertexstorage import VertexStream, IndexStream, VertexArrayBinding, VertexArrayProtocol
 from pyglet.graphics.vertexdomain import (
-    VertexStream,
-    IndexStream,
-    VertexArrayBinding,
-    VertexArrayProtocol,
     VertexDomain as BaseVertexDomain,
     VertexList as BaseVertexList,
     IndexedVertexDomain as BaseIndexedVertexDomain,
@@ -62,10 +57,9 @@ from pyglet.graphics.vertexdomain import (
 )
 
 if TYPE_CHECKING:
-    from pyglet.graphics.shader import AttributeView
+    from pyglet.graphics.attributes import Attribute, AttributeView
     from pyglet.customtypes import DataTypes
     from pyglet.enums import GeometryMode
-    from pyglet.graphics.shader import Attribute
 
 _gl_types = {
     'b': GL_BYTE,
@@ -77,21 +71,6 @@ _gl_types = {
     'f': GL_FLOAT,
     'd': GL_DOUBLE,
 }
-
-
-def _make_attribute_property(name: str) -> property:
-    def _attribute_getter(self: VertexList) -> Array[float | int]:
-        stream = self.domain.attrib_name_buffers[name]
-        region = stream.get_attribute_region(name, self.start, self.count)
-        stream.invalidate_attribute_region(name, self.start, self.count)
-        return region
-
-    def _attribute_setter(self: VertexList, data: Any) -> None:
-        stream = self.domain.attrib_name_buffers[name]
-        stream.set_attribute_region(name, self.start, self.count, data)
-
-    return property(_attribute_getter, _attribute_setter)
-
 
 class GLVertexArrayBinding(VertexArrayBinding):
     streams: list[GLVertexStream | GLIndexStream]
@@ -229,7 +208,9 @@ class VertexDomain(BaseVertexDomain):
 
         Args:
             mode:
-                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
 
         """
         self.vao.bind()
@@ -258,7 +239,9 @@ class VertexDomain(BaseVertexDomain):
 
         Args:
             mode:
-                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
             vertex_list:
                 Vertex list to draw.
 
@@ -333,7 +316,9 @@ class IndexedVertexDomain(BaseIndexedVertexDomain):
 
         Args:
             mode:
-                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+                A :class:`~pyglet.enums.GeometryMode` value, such as
+                :attr:`~pyglet.enums.GeometryMode.POINTS` or
+                :attr:`~pyglet.enums.GeometryMode.LINES`.
             vertex_list:
                 Vertex list to draw.
         """

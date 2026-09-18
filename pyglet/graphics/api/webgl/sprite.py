@@ -88,7 +88,7 @@ def get_default_shader() -> ShaderProgram:
         "default_sprite",
         (vertex_source, 'vertex'),
         (fragment_source, 'fragment'),
-        attribute_layout=pyglet.graphics.AttributeLayout(colors="Bn"),
+        vertex_layout=pyglet.graphics.VertexLayout(colors="4Bn"),
     )
 
 
@@ -101,7 +101,7 @@ def get_default_array_shader() -> ShaderProgram:
         "default_sprite_array",
         (vertex_source, 'vertex'),
         (fragment_array_source, 'fragment'),
-        attribute_layout=pyglet.graphics.AttributeLayout(colors="Bn"),
+        vertex_layout=pyglet.graphics.VertexLayout(colors="4Bn"),
     )
 
 
@@ -200,5 +200,5 @@ def get_default_multitexture_shader(layers: dict[str, Texture]) -> ShaderProgram
         f"default_multitexture_sprite_{shader_key}",
         (vertex_shader_source, 'vertex'),
         (fragment_shader_source, 'fragment'),
-        attribute_layout=pyglet.graphics.AttributeLayout(colors="Bn"),
+        vertex_layout=pyglet.graphics.VertexLayout(colors="4Bn"),
     )

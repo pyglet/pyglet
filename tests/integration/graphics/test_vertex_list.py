@@ -46,10 +46,14 @@ class VertexListTest(unittest.TestCase):
 
     def test_interned_vertex_layout_creates_vertex_list(self):
         program = pyglet.graphics.api.get_default_shader()
-        assert program.get_attribute_view(None) is program.get_attribute_view(pyglet.graphics.AttributeLayout())
+        assert program.get_vertex_view(None) is program.get_vertex_view(pyglet.graphics.VertexLayout())
         with pytest.raises(TypeError):
-            program.get_attribute_view(colors="Bn")
-        layout = program.get_attribute_view(pyglet.graphics.AttributeLayout(colors="Bn"))
+            program.get_vertex_view(colors="Bn")
+        with pytest.raises(ValueError):
+            pyglet.graphics.VertexLayout(colors="Bn")
+        with pytest.raises(ValueError):
+            program.get_vertex_view(pyglet.graphics.VertexLayout(colors="3Bn"))
+        layout = program.get_vertex_view(pyglet.graphics.VertexLayout(colors="4Bn"))
 
         vertex_list = layout.vertex_list(
             3,
@@ -58,8 +62,62 @@ class VertexListTest(unittest.TestCase):
             colors=(255, 128, 0, 255) * 3,
         )
 
-        assert program.get_attribute_view(pyglet.graphics.AttributeLayout(colors="Bn")) is layout
+        assert program.get_vertex_view(pyglet.graphics.VertexLayout(colors="4Bn")) is layout
         assert tuple(vertex_list.colors[:]) == (255, 128, 0, 255) * 3
+
+    def test_batch_creates_layout_first_vertex_lists(self):
+        program = pyglet.graphics.api.get_default_shader()
+        batch = pyglet.graphics.Batch()
+        group = pyglet.graphics.ShaderGroup(program)
+        layout = pyglet.graphics.VertexLayout(position="3f", colors="4Bn")
+        storage = batch.create_vertex_storage(layouts=[layout])
+        data = {
+            "position": (0, 0, 0, 1, 0, 0, 0, 1, 0),
+            "colors": (255, 128, 0, 255) * 3,
+        }
+
+        vertex_list = batch.vertex_list(layout, 3, GeometryMode.TRIANGLES, group, storage=storage, **data)
+        indexed_vertex_list = batch.vertex_list_indexed(
+            layout, 3, GeometryMode.TRIANGLES, (0, 1, 2), group, storage=storage, **data,
+        )
+        draw_pass = batch.add_pass(pyglet.graphics.DrawPass())
+        vertex_list.add_pass(draw_pass, group=group)
+
+        assert vertex_list.domain.attribute_meta["colors"].fmt.data_type == "B"
+        assert vertex_list.domain.storage is storage
+        assert indexed_vertex_list.indices == [0, 1, 2]
+        assert len(batch._pass_registrations[draw_pass]) == 1
+        assert any(buffer._dirty for buffer in vertex_list.domain.vertex_buffers.buffers)
+
+        batch._update_draw_list()  # noqa: SLF001
+        assert batch._pass_draw_lists[draw_pass]  # noqa: SLF001
+
+        batch.draw_pass(None)
+
+        assert all(not buffer._dirty for buffer in vertex_list.domain.vertex_buffers.buffers)
+
+        batch.draw_pass(draw_pass)
+
+        assert all(not buffer._dirty for buffer in vertex_list.domain.vertex_buffers.buffers)
+
+    def test_separate_storage_expansion_remains_contiguous(self):
+        # Make sure expanded storage will be contiguous for separate
+        program = pyglet.graphics.api.get_default_shader()
+        batch = pyglet.graphics.Batch()
+        group = pyglet.graphics.ShaderGroup(program)
+        layout = pyglet.graphics.VertexLayout(position="3f")
+        storage = batch.create_vertex_storage(sharing_policy="separate")
+        count = 4096
+        data = {"position": (0, 0, 0) * count}
+
+        first = batch.vertex_list(layout, count, GeometryMode.TRIANGLES, group, storage=storage, **data)
+        second = batch.vertex_list(layout, count, GeometryMode.TRIANGLES, group, storage=storage, **data)
+
+        allocator = first.domain.vertex_buffers.allocator
+        assert first.domain is second.domain
+        assert second.start == count
+        assert allocator.capacity == count * 2
+        assert allocator.get_allocated_regions() == ([0], [count * 2])
 
     def test_vertex_list_property_set(self):
         program = pyglet.graphics.api.get_default_shader()

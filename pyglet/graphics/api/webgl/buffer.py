@@ -42,7 +42,7 @@ if TYPE_CHECKING:
     from pyglet.customtypes import DataTypes
     from pyglet.graphics.api.webgl import OpenGLSurfaceContext
     from pyglet.graphics.api.webgl.webgl_js import WebGLBuffer
-    from pyglet.graphics.shader import GraphicsAttribute
+    from pyglet.graphics.attributes import GraphicsAttribute
 
 
 class WebGLDataStore(CTypeDataStore):
