@@ -29,9 +29,11 @@ from pyglet.graphics.state import (
 )
 from pyglet.graphics.vertexstorage import VertexStorage, VertexStorageShared
 from pyglet.graphics.api.base import SurfaceContext, BackendRenderer
+from pyglet.graphics import MissingAttributeError
 
 if TYPE_CHECKING:
 
+    from pyglet.graphics import ShaderProgramView
     from collections.abc import Iterable
     from pyglet.graphics.buffer import UniformBufferRegion
     from pyglet.window.camera.base import BaseCamera, CameraScissor
@@ -544,15 +546,6 @@ _domain_class_map: dict[tuple[bool, bool], type[VertexDomain]] = {
    #  (True, True): vertexdomain.InstancedIndexedVertexDomain,
 }
 
-@dataclass(frozen=True)
-class _DomainKey:
-    indexed: bool
-    instanced: bool
-    mode: GeometryMode
-    attributes: str
-    storage: VertexStorage | None = None
-
-
 @dataclass
 class BatchDrawOptions:
     """A draw pass encompasses the starting data of a batched draw.
@@ -622,13 +615,13 @@ class Batch:
     a custom drawable, get your vertex domains from the given batch instead of
     setting them up yourself.
     """
-    _empty_domains: set[_DomainKey]
-    _domain_registry: dict[_DomainKey, Any]
+    _empty_domains: set[tuple[bool, bool, GeometryMode, VertexLayout, VertexStorage]]
+    _domain_registry: dict[tuple[bool, bool, GeometryMode, VertexLayout, VertexStorage], Any]
     _draw_list: list[Callable]
     _pass_draw_lists: dict[DrawPass, list[Callable]]
     top_groups: list[Group]
     group_children: dict[Group, list[Group]]
-    group_map: dict[Group, dict[_DomainKey, VertexDomain]]
+    group_map: dict[Group, dict[tuple[bool, bool, GeometryMode, VertexLayout, VertexStorage], VertexDomain]]
     initial_count: int
     _domain_class_map: dict[tuple[bool, bool], type[VertexDomain]] = _domain_class_map
 
@@ -711,6 +704,15 @@ class Batch:
             raise ValueError("VertexStorage was not created by this Batch.")
         return storage
 
+    def _resolve_vertex_list_layout(
+            self, storage: VertexStorage | None, vertex_layout: VertexLayout,
+    ) -> tuple[VertexStorage, VertexLayout]:
+        """Resolve the storage and canonical geometry layout for Batch APIs."""
+        storage = self._resolve_storage(storage)
+        resolved_layout = storage.resolve_layout(vertex_layout)
+        assert resolved_layout is not None
+        return storage, resolved_layout
+
     @staticmethod
     def _get_group_program(group: Group) -> ShaderProgram:
         """Return the shader program supplied by ``group``'s state."""
@@ -728,31 +730,29 @@ class Batch:
             *,
             indices: Sequence[int] | None = None,
             instanced: bool = False,
-            storage: VertexStorage | None = None,
+            storage: VertexStorage,
+            data_error_type: type[BaseException] = MissingAttributeError,
             **data: Any,
     ) -> VertexList | IndexedVertexList:
-        """Create geometry from a storage layout, optionally attaching it to a group."""
-        if not isinstance(vertex_layout, VertexLayout):
-            raise TypeError('vertex_layout must be a VertexLayout')
+        """Create geometry from resolved storage and layout inputs."""
         assert isinstance(mode, GeometryMode), f"Mode {mode} is not geometry mode."
+        formats = vertex_layout.attribute_formats
+        if data.keys() != formats.keys():
+            if missing := formats.keys() - data.keys():
+                msg = f"VertexLayout attributes require data: {missing}"
+                raise data_error_type(msg)
 
-        storage = self._resolve_storage(storage)
-        if instanced and not any(attribute.is_instanced for attribute in vertex_layout.attribute_formats.values()):
-            raise ValueError('Instanced geometry requires a VertexLayout with at least one divisor.')
-        storage.resolve_layout(vertex_layout)
+            unknown = data.keys() - formats.keys()
+            msg = f"Vertex data does not match VertexLayout: unknown attributes {unknown}"
+            raise data_error_type(msg)
 
-        attributes = vertex_layout.attribute_formats
-        unknown = [name for name in data if name not in attributes]
-        if unknown:
-            raise ValueError(f"Vertex data does not match VertexLayout: unknown attributes {unknown}")
-        missing = [name for name in attributes if name not in data]
-        if missing:
-            raise ValueError(f"VertexLayout attributes require data: {missing}")
-
-        domain = self.get_domain(indices is not None, instanced, mode, group, vertex_layout, storage=storage)
+        domain = self._get_domain(indices is not None, instanced, mode, group, vertex_layout, storage)
         vertex_list = domain.create(group, count, indices)
-        for name, array in data.items():
-            vertex_list.set_attribute_data(name, array)
+        if instanced:
+            for name, array in data.items():
+                vertex_list.set_attribute_data(name, array)
+        else:
+            domain.vertex_buffers.set_region(vertex_list.start, count, data)
         return vertex_list
 
     def vertex_list(
@@ -792,6 +792,7 @@ class Batch:
         Returns:
             The created vertex list.
         """
+        storage, vertex_layout = self._resolve_vertex_list_layout(storage, vertex_layout)
         return self._create_vertex_list(
             vertex_layout, count, mode, group, storage=storage, **data,
         )
@@ -833,6 +834,7 @@ class Batch:
         Returns:
             The created indexed vertex list.
         """
+        storage, vertex_layout = self._resolve_vertex_list_layout(storage, vertex_layout)
         return self._create_vertex_list(
             vertex_layout, count, mode, group, indices=indices, storage=storage, **data,
         )
@@ -870,6 +872,8 @@ class Batch:
         Returns:
             The created instanced vertex list.
         """
+        assert vertex_layout.has_divisors, 'Instanced geometry requires a VertexLayout with at least one divisor.'
+        storage, vertex_layout = self._resolve_vertex_list_layout(storage, vertex_layout)
         return self._create_vertex_list(
             vertex_layout, count, mode, group, instanced=True, storage=storage, **data,
         )
@@ -911,6 +915,8 @@ class Batch:
         Returns:
             The created indexed instanced vertex list.
         """
+        assert vertex_layout.has_divisors, 'Instanced geometry requires a VertexLayout with at least one divisor.'
+        storage, vertex_layout = self._resolve_vertex_list_layout(storage, vertex_layout)
         return self._create_vertex_list(
             vertex_layout, count, mode, group, indices=indices, instanced=True, storage=storage, **data,
         )
@@ -1167,14 +1173,21 @@ class Batch:
 
         mode is the render mode such as GL_LINES or GL_TRIANGLES
         """
+        storage = self._resolve_storage(storage)
+        vertex_layout = storage.resolve_layout(vertex_layout)
+        assert vertex_layout is not None
+        return self._get_domain(indexed, instanced, mode, group, vertex_layout, storage)
+
+    def _get_domain(self, indexed: bool, instanced: bool, mode: GeometryMode, group: Group | None,
+                    vertex_layout: VertexLayout, storage: VertexStorage) -> VertexDomain:
+        """Get or create a domain using a storage already resolved by the caller."""
         # Group map just used for group lookup now, not domains.
         if group is not None and group not in self.group_map:
             self._add_group(group)
 
         # If instanced, ensure a separate domain, as multiple instance sources can match the key.
         # Find domain given formats, indices and mode
-        storage = self._resolve_storage(storage)
-        key = _DomainKey(indexed, instanced, mode, vertex_layout.key, storage)
+        key = indexed, instanced, mode, vertex_layout, storage
 
         try:
             domain = self._domain_registry[key]
@@ -1367,7 +1380,7 @@ class Batch:
                         else:
                             binding.bind()
                             binding.commit()
-                        domain.draw_subset(domain_key.mode, alist)
+                        domain.draw_subset(domain_key[2], alist)
                         if binding is not None and hasattr(binding, 'unbind'):
                             binding.unbind()
 
@@ -1435,7 +1448,7 @@ class _BucketBatch(Batch):
 
                 bucket = domain.get_drawable_bucket(group)
                 if bucket:
-                    draw_list.append((domain, domain_key.mode, group))
+                    draw_list.append((domain, domain_key[2], group))
                 else:
                     self._empty_domains.add(domain_key)
 
@@ -1695,7 +1708,7 @@ class _BucketBatch(Batch):
 class ShaderGroup(Group):
     """A group that enables and binds a ShaderProgram."""
 
-    def __init__(self, program: ShaderProgram, order: int = 0, parent: Group | None = None) -> None:
+    def __init__(self, program: ShaderProgram | ShaderProgramView, order: int = 0, parent: Group | None = None) -> None:
         super().__init__(order, parent)
         self.set_shader_program(program)
 

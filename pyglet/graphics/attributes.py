@@ -55,11 +55,12 @@ class VertexLayout:
     many instances.
     """
 
-    __slots__ = ("_attribute_formats", "_key")
+    __slots__ = ("_attribute_formats", "_has_divisors", "_key")
 
     def __init__(self, **formats: str | AttributeFormat) -> None:
         attributes: dict[str, AttributeFormat] = {}
 
+        divisors = False
         for name, value in formats.items():
             if isinstance(value, AttributeFormat):
                 if value.name != name:
@@ -91,15 +92,19 @@ class VertexLayout:
                 )
                 raise ValueError(msg)
 
+            divisor = int(match["divisor"] or 0)
             attributes[name] = AttributeFormat(
                 name,
                 int(match["components"]),
                 match["data_type"],  # type: ignore[arg-type]
                 bool(match["normalized"]),
-                int(match["divisor"] or 0),
+                divisor,
             )
+            if divisor:
+                divisors = True
 
         self._attribute_formats = MappingProxyType(attributes)
+        self._has_divisors = divisors
 
         self._key = tuple(
             attribute.key
@@ -108,6 +113,11 @@ class VertexLayout:
                 key=lambda attribute: attribute.name,
             )
         )
+
+    @property
+    def has_divisors(self) -> bool:
+        """Geometry contains divisors for instancing."""
+        return self._has_divisors
 
     @property
     def attribute_formats(self) -> Mapping[str, AttributeFormat]:

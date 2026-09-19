@@ -429,16 +429,17 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
         batch = batch or pyglet.graphics.get_default_batch()
         storage = batch._resolve_storage(storage)  # noqa: SLF001
         vertex_layout = vertex_layout or (layout._legacy_instance_layout if instanced else None) or layout.geometry_layout
-        shader_layout = storage.get_vertex_layout(layout, vertex_layout)
-        geometry_layout = shader_layout.geometry_layout
-        if missing := [name for name in geometry_layout.attribute_formats if name not in data]:
-            raise MissingAttributeException(f"VertexLayout attributes require data: {missing}")
-        if unknown := [name for name in data if name not in geometry_layout.attribute_formats]:
-            raise MissingAttributeException(f"Vertex data does not match VertexLayout: unknown attributes {unknown}")
-        if group is None:
-            group = pyglet.graphics.ShaderGroup(program=layout)
+        if vertex_layout is layout.geometry_layout:
+            geometry_layout = storage.resolve_layout(vertex_layout)
+            assert geometry_layout is not None
+        else:
+            shader_layout = storage.get_vertex_layout(layout, vertex_layout)
+            geometry_layout = shader_layout.geometry_layout
         return batch._create_vertex_list(  # noqa: SLF001
-            geometry_layout, count, mode, group, indices=indices, instanced=instanced,
+            geometry_layout, count, mode, group or pyglet.graphics.ShaderGroup(program=layout),
+            indices=indices,
+            instanced=instanced,
+            data_error_type=MissingAttributeException,
             storage=storage, **data,
         )
 

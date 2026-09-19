@@ -29,6 +29,9 @@ class UnsupportedBackendError(Exception):
         self.functionality = functionality
         self.backend = backend
 
+class MissingAttributeError(ValueError):
+    """Exception for when geometry is missing defined vertex data."""
+
 
 if TYPE_CHECKING:
     from pyglet.enums import GraphicsAPI
