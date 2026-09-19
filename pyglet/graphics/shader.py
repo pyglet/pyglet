@@ -8,27 +8,26 @@ import warnings
 import weakref
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from copy import copy
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Literal, Protocol, Sequence, overload
 
 import pyglet
 from pyglet.enums import GeometryMode, GraphicsAPI
 from pyglet.graphics.attributes import (
-    Attribute,
-    AttributeView,
-    DataTypeTuple,
+    AttributeFormat,
     DomainAttributes,
-    GraphicsAttribute,
+    ShaderAttribute,
     VertexLayout,
 )
 from pyglet.graphics.buffer import UniformBufferRegion
 from pyglet.graphics.resource import GraphicsResource, ShaderKey, ShaderProgramKey
 
+# Backward-compatible public name for shader input metadata.
+Attribute = ShaderAttribute
+
 if TYPE_CHECKING:
     from _weakref import CallableProxyType
 
-    from pyglet.customtypes import CType, DataTypes
     from pyglet.graphics import Batch, Group, VertexStorage
     from pyglet.graphics.buffer import UniformBufferObject
     from pyglet.graphics.vertexdomain import (
@@ -96,6 +95,7 @@ class Sampler:
 class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
     key_type = ShaderProgramKey
     _attributes: dict[str, Attribute]
+    _attribute_formats: dict[str, AttributeFormat]
     _uniforms: dict[str, Any]
     _uniform_blocks: dict[str, UniformBlock]
     _samplers: dict[str, Sampler]
@@ -112,6 +112,7 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
 
         # Attribute description
         self._attributes = {}
+        self._attribute_formats = {}
         self._attribute_key = str(())
         self._attribute_keys = ()
         self._instanced_domain_attributes = None
@@ -140,36 +141,38 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
 
         On some backends like OpenGL, this is unnecessary unless you want to redefine the buffers.
         """
-        if self._vertex_layouts:
-            # Layouts may share the base mapping when a format request was a no-op.
-            self._attributes = self._attributes.copy()
         for attrib in attributes:
-            self._attributes[attrib.fmt.name] = attrib
+            self._attributes[attrib.name] = attrib
+            self._attribute_formats[attrib.name] = AttributeFormat(
+                attrib.name, attrib.components, attrib.data_type, False, 0,
+            )
         self._update_attribute_key()
 
     def apply_vertex_layout(self) -> None:
         """Apply the requested default buffer formats to introspected attributes."""
         if self._vertex_layout is not None:
-            self._attributes = self._copy_attributes_with_formats(self._attributes, self._vertex_layout.formats)
+            self._attribute_formats = self._copy_attribute_formats(
+                self._attribute_formats, self._attributes, self._vertex_layout.formats,
+            )
+            self._update_attribute_key()
 
     def _update_attribute_key(self) -> None:
         """Cache the platform-independent key used to look up vertex domains."""
-        self._attribute_keys = tuple(
-            attribute.key for attribute in sorted(self._attributes.values(), key=lambda attribute: attribute.location)
-        )
+        ordered_formats = sorted(self._attribute_formats.values(), key=lambda attribute: attribute.name)
+        self._attribute_keys = tuple(attribute.key for attribute in ordered_formats)
         self._attribute_key = str(self._attribute_keys)
-        self._domain_attributes = self.derive_domain_attributes(self._attributes, self._attribute_key)
+        self._domain_attributes = self.derive_domain_attributes(self._attribute_formats, self._attribute_key)
         self._vertex_layouts.clear()
         self._format_layouts.clear()
         self._instanced_domain_attributes = (
             self._derive_instanced_domain_attributes(
-                self._attributes, self._instance_attributes, self._attribute_keys,
+                self._attribute_formats, self._instance_attributes, self._attribute_keys,
             )
             if self._instance_attributes else None
         )
 
     @staticmethod
-    def derive_domain_attributes(attributes: dict[str, Attribute], key: str | None = None) -> DomainAttributes:
+    def derive_domain_attributes(attributes: dict[str, AttributeFormat], key: str | None = None) -> DomainAttributes:
         """Create domain metadata for an attribute layout."""
         if key is None:
             return DomainAttributes.from_attributes(attributes)
@@ -177,7 +180,7 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
 
     @property
     def attribute_key(self) -> str:
-        """Stable, cached key describing all attributes, sorted by location."""
+        """Stable, cached key describing the geometry formats by name."""
         return self._attribute_key
 
     @property
@@ -197,15 +200,13 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
     def _vertex_layout_program(self) -> _AbstractShaderProgram:
         return self
 
-    def _derive_instanced_domain_attributes(self, attributes: dict[str, Attribute],
+    def _derive_instanced_domain_attributes(self, attributes: dict[str, AttributeFormat],
                                              instances: dict[str, int],
                                              attribute_keys: tuple[tuple[Any, ...], ...] | None = None,
                                              ) -> DomainAttributes:
         adjusted = attributes.copy()
         for name, divisor in instances.items():
-            attribute = copy(attributes[name])
-            attribute.set_divisor(divisor)
-            adjusted[name] = attribute
+            adjusted[name] = attributes[name].with_divisor(divisor)
         if attribute_keys is None:
             return self.derive_domain_attributes(adjusted)
         adjusted_keys = tuple(adjusted[key[0]].key for key in attribute_keys)
@@ -224,7 +225,7 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
             self._instance_attributes = attributes.copy()
             self._format_layouts.clear()
             self._instanced_domain_attributes = (
-                self._derive_instanced_domain_attributes(self._attributes, attributes, self._attribute_keys)
+                self._derive_instanced_domain_attributes(self._attribute_formats, attributes, self._attribute_keys)
                 if attributes else None
             )
         return self
@@ -249,52 +250,59 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
             pass
 
         program = self._vertex_layout_program
-        attributes = program._copy_attributes_with_formats(self._attributes, formats)  # noqa: SLF001
-        attribute_keys = tuple(attributes[key[0]].key for key in self._attribute_keys)
-        layout = program._get_vertex_layout(attributes, self._instance_attributes, attribute_keys)  # noqa: SLF001
+        attribute_formats = program._copy_attribute_formats(  # noqa: SLF001
+            self._attribute_formats, self._attributes, formats,
+        )
+        attribute_keys = tuple(
+            attribute.key for attribute in sorted(attribute_formats.values(), key=lambda attribute: attribute.name)
+        )
+        layout = program._get_vertex_layout(attribute_formats, self._instance_attributes, attribute_keys)  # noqa: SLF001
         if request_key is not None:
             self._format_layouts[request_key] = layout
         return layout
 
-    def _get_vertex_layout(self, attributes: dict[str, Attribute],
+    def _get_vertex_layout(self, attribute_formats: dict[str, AttributeFormat],
                            instances: dict[str, int],
                            attribute_keys: tuple[tuple[Any, ...], ...] | None = None,
                            ) -> ShaderProgramView:
         if attribute_keys is None:
             attribute_keys = tuple(
-                attribute.key for attribute in sorted(attributes.values(), key=lambda attribute: attribute.location)
+                attribute.key
+                for attribute in sorted(attribute_formats.values(), key=lambda attribute: attribute.name)
             )
         key = attribute_keys, frozenset(instances.items())
         try:
             return self._vertex_layouts[key]
         except KeyError:
-            layout = ShaderProgramView(self, attributes, instances, attribute_keys)
+            layout = ShaderProgramView(self, attribute_formats, instances, attribute_keys)
             self._vertex_layouts[key] = layout
             return layout
 
     @staticmethod
-    def _copy_attributes_with_formats(attributes: dict[str, Attribute], formats: dict[str, str]) -> dict[str, Attribute]:
-        adjusted = attributes
+    def _copy_attribute_formats(
+            attribute_formats: dict[str, AttributeFormat], shader_attributes: dict[str, Attribute],
+            formats: dict[str, str],
+    ) -> dict[str, AttributeFormat]:
+        adjusted = attribute_formats
         for name, fmt in formats.items():
             match = re.fullmatch(r"([1-4])([?fihHbBIqdQ])(n?)", fmt) if isinstance(fmt, str) else None
             if match is None:
                 raise ValueError(f"Invalid vertex format {fmt!r} for attribute {name!r}.")
             try:
-                source = attributes[name]
+                shader_attribute = shader_attributes[name]
+                source = attribute_formats[name]
             except KeyError:
-                msg = f"Attribute {name} not found. Existing attributes: {list(attributes.keys())}"
+                msg = f"Attribute {name} not found. Existing attributes: {list(shader_attributes.keys())}"
                 raise MissingAttributeException(msg) from None
             components_text, data_type, normalized_text = match.groups()
-            if source.fmt.components != int(components_text):
+            if shader_attribute.components != int(components_text):
                 raise ValueError(f"Geometry format {fmt!r} for {name!r} is incompatible with the shader input.")
             normalized = bool(normalized_text)
-            if source.fmt.data_type == data_type and source.fmt.normalized == normalized:
+            if source.data_type == data_type and source.normalized == normalized:
                 continue
-            if adjusted is attributes:
-                adjusted = attributes.copy()
-            attribute = copy(source)
-            attribute.set_data_type(data_type, normalized)
-            adjusted[name] = attribute
+            if adjusted is attribute_formats:
+                adjusted = attribute_formats.copy()
+            adjusted[name] = source.with_data_type(data_type, normalized)
         return adjusted
 
     def set_uniform_blocks(self, *uniform_blocks: UniformBlockDesc) -> None:
@@ -310,7 +318,7 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
 
     @property
     def attributes(self) -> dict[str, Any]:
-        """Attribute metadata dictionary.
+        """Shader input metadata dictionary.
 
         This property returns a dictionary containing metadata of all
         Attributes that were introspected in this ShaderProgram. Modifying
@@ -319,8 +327,13 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
         return self._attributes.copy()
 
     @property
+    def attribute_formats(self) -> dict[str, AttributeFormat]:
+        """Geometry formats used to store values for the shader inputs."""
+        return self._attribute_formats.copy()
+
+    @property
     def attribute_keys(self) -> tuple[tuple[Any, ...], ...]:
-        """Stable tuple describing all attributes, sorted by attribute location."""
+        """Stable tuple describing geometry formats independently of shader locations."""
         return self._attribute_keys
 
     @property
@@ -580,18 +593,20 @@ class ShaderProgramView(ShaderProgram):
     its own vertex formats, instance divisors, and vertex-domain metadata.
     """
 
-    def __init__(self, program: _AbstractShaderProgram, attributes: dict[str, Attribute],
+    def __init__(self, program: _AbstractShaderProgram, attribute_formats: dict[str, AttributeFormat],
                  instances: dict[str, int], attribute_keys: tuple[tuple[Any, ...], ...]) -> None:
         GraphicsResource.__init__(self, key=program.key)
         self._program = program
-        self._attributes = attributes
+        self._attributes = program._attributes
+        self._attribute_formats = attribute_formats
         self._instance_attributes = instances.copy()
         self._attribute_keys = attribute_keys
         self._attribute_key = str(self._attribute_keys)
         self._format_layouts = {}
-        self._domain_attributes = program.derive_domain_attributes(attributes, self._attribute_key)
+        self._domain_attributes = program.derive_domain_attributes(attribute_formats, self._attribute_key)
         self._instanced_domain_attributes = (
-            program._derive_instanced_domain_attributes(attributes, instances, attribute_keys) if instances else None
+            program._derive_instanced_domain_attributes(attribute_formats, instances, attribute_keys)
+            if instances else None
         )
 
     @property
@@ -614,6 +629,10 @@ class ShaderProgramView(ShaderProgram):
     @property
     def attributes(self) -> dict[str, Attribute]:
         return self._attributes.copy()
+
+    @property
+    def attribute_formats(self) -> dict[str, AttributeFormat]:
+        return self._attribute_formats.copy()
 
     @property
     def attribute_keys(self) -> tuple[tuple[Any, ...], ...]:
@@ -641,7 +660,7 @@ class ShaderProgramView(ShaderProgram):
                 raise MissingAttributeException(msg)
             if divisor < 1:
                 raise ValueError(f"Instance divisor for {name!r} must be greater than zero.")
-        return self._program._get_vertex_layout(self._attributes, attributes, self._attribute_keys)
+        return self._program._get_vertex_layout(self._attribute_formats, attributes, self._attribute_keys)
 
     def vertex_list(self, count: int, mode: GeometryMode, batch: Batch | None = None,
                     group: Group | None = None, **data: Any) -> VertexList:

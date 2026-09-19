@@ -365,9 +365,9 @@ class WebGLAttributeBufferObject(WebGLBackedBufferObject):
         super().__init__(
             context,
             size,
-            graphics_attr.attribute.fmt.data_type,
+            graphics_attr.fmt.data_type,
             graphics_attr.view.stride,
-            graphics_attr.attribute.fmt.components,
+            graphics_attr.fmt.components,
             store=store,
         )
 

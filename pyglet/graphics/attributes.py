@@ -8,7 +8,7 @@ from typing import Any
 
 from pyglet.customtypes import CType, DataTypes
 
-DataTypeTuple = ('?', 'f', 'i', 'I', 'h', 'H', 'b', 'B', 'q', 'Q')
+DataTypeTuple = ('?', 'f', 'd', 'i', 'I', 'h', 'H', 'b', 'B', 'q', 'Q')
 _data_type_to_ctype = {
     '?': ctypes.c_bool, 'b': ctypes.c_byte, 'B': ctypes.c_ubyte,
     'h': ctypes.c_short, 'H': ctypes.c_ushort, 'i': ctypes.c_int,
@@ -34,15 +34,35 @@ class VertexLayout:
 
 @dataclass(frozen=True)
 class AttributeFormat:
+    """Geometry-owned vertex attribute format."""
+
     name: str
     components: int
     data_type: DataTypes
-    normalized: bool
-    divisor: int
+    normalized: bool = False
+    divisor: int = 0
 
     @property
     def is_instanced(self) -> bool:
         return self.divisor != 0
+
+    @property
+    def c_type(self) -> CType:
+        return _data_type_to_ctype[self.data_type]
+
+    @property
+    def element_size(self) -> int:
+        return ctypes.sizeof(self.c_type)
+
+    @property
+    def key(self) -> tuple[str, int, DataTypes, bool, int]:
+        return self.name, self.components, self.data_type, self.normalized, self.divisor
+
+    def with_data_type(self, data_type: DataTypes, normalized: bool) -> AttributeFormat:
+        return AttributeFormat(self.name, self.components, data_type, normalized, self.divisor)
+
+    def with_divisor(self, divisor: int) -> AttributeFormat:
+        return AttributeFormat(self.name, self.components, self.data_type, self.normalized, divisor)
 
 
 @dataclass(frozen=True)
@@ -51,51 +71,50 @@ class AttributeView:
     stride: int
 
 
-class Attribute:
-    fmt: AttributeFormat
-    element_size: int
-    c_type: CType
+@dataclass(frozen=True)
+class ShaderAttribute:
+    """Shader-introspected vertex input metadata."""
+
+    name: str
     location: int
-
-    def __init__(self, name: str, location: int, components: int, data_type: DataTypes,
-                 normalize: bool = False, divisor: int = 0) -> None:
-        self.fmt = AttributeFormat(name, components, data_type, normalize, divisor)
-        self.location = location
-        self.c_type = _data_type_to_ctype[data_type]
-        self.element_size = ctypes.sizeof(self.c_type)
-
-    def set_data_type(self, data_type: DataTypes, normalize: bool) -> None:
-        self.fmt = AttributeFormat(self.fmt.name, self.fmt.components, data_type, normalize, self.fmt.divisor)
-        self.c_type = _data_type_to_ctype[data_type]
-        self.element_size = ctypes.sizeof(self.c_type)
-
-    def set_divisor(self, divisor: int) -> None:
-        self.fmt = AttributeFormat(self.fmt.name, self.fmt.components, self.fmt.data_type, self.fmt.normalized, divisor)
+    components: int
+    data_type: DataTypes
+    shader_type: Any = None
 
     @property
-    def key(self) -> tuple[str, int, int, DataTypes, bool, int]:
-        return self.fmt.name, self.location, self.fmt.components, self.fmt.data_type, self.fmt.normalized, self.fmt.divisor
+    def is_integer(self) -> bool:
+        return self.data_type in ('?', 'b', 'B', 'h', 'H', 'i', 'I', 'q', 'Q')
+
+    @property
+    def is_unsigned_integer(self) -> bool:
+        return self.data_type in ('B', 'H', 'I', 'Q')
+
+    @property
+    def is_signed_integer(self) -> bool:
+        return self.data_type in ('b', 'h', 'i', 'q')
+
+
+# Kept as a compatibility alias for code that imports the old name.
+Attribute = ShaderAttribute
 
 
 class GraphicsAttribute:
-    def __init__(self, attribute: Attribute, view: AttributeView) -> None:
-        self.attribute = attribute
-        self.view = view
+    """API-specific geometry layout for an attribute buffer."""
 
-    def enable(self) -> None: raise NotImplementedError
-    def disable(self) -> None: raise NotImplementedError
-    def set_pointer(self) -> None: raise NotImplementedError
-    def set_divisor(self) -> None: raise NotImplementedError
+    def __init__(self, attribute_format: AttributeFormat, view: AttributeView) -> None:
+        self.fmt = attribute_format
+        self.view = view
 
 
 @dataclass(frozen=True)
 class DomainAttributes:
     """Vertex attributes together with their stable domain lookup key."""
-    attributes: dict[str, Any]
+    attributes: dict[str, AttributeFormat]
     key: str
 
     @classmethod
-    def from_attributes(cls, attributes: dict[str, Any], key: str | None = None) -> DomainAttributes:
+    def from_attributes(cls, attributes: dict[str, AttributeFormat], key: str | None = None) -> DomainAttributes:
         if key is None:
-            key = str(tuple(attribute.key for attribute in sorted(attributes.values(), key=lambda attribute: attribute.location)))
+            ordered = sorted(attributes.values(), key=lambda attribute: attribute.name)
+            key = str(tuple(attribute.key for attribute in ordered))
         return cls(attributes, key)

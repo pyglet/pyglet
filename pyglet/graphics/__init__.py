@@ -34,8 +34,8 @@ if TYPE_CHECKING:
     from pyglet.enums import GraphicsAPI
     from pyglet.graphics import api  # noqa: F401
     from pyglet.graphics.draw import BatchDrawOptions, Group, ShaderGroup, Batch, DrawPass  # noqa: F401
-    from pyglet.graphics.vertexstorage import VertexStorage  # noqa: F401
-    from pyglet.graphics.attributes import VertexLayout  # noqa: F401
+    from pyglet.graphics.vertexstorage import VertexStorage, VertexStorageShared  # noqa: F401
+    from pyglet.graphics.attributes import AttributeFormat, ShaderAttribute, VertexLayout  # noqa: F401
     from pyglet.graphics.shader import (  # noqa: F401
         ComputeShaderProgram, Shader, ShaderProgram, ShaderProgramView, TransformFeedbackShaderProgram,
     )
@@ -53,8 +53,8 @@ if TYPE_CHECKING:
 else:
     from pyglet.graphics import api  # noqa: F401
     from pyglet.graphics.draw import BatchDrawOptions, DrawPass, Group, ShaderGroup, Batch, get_default_batch  # noqa: F401
-    from pyglet.graphics.vertexstorage import VertexStorage  # noqa: F401
-    from pyglet.graphics.attributes import VertexLayout  # noqa: F401
+    from pyglet.graphics.vertexstorage import VertexStorage, VertexStorageShared  # noqa: F401
+    from pyglet.graphics.attributes import AttributeFormat, ShaderAttribute, VertexLayout  # noqa: F401
     from pyglet.graphics.shader import (  # noqa: F401
         Shader,
         ShaderProgram,

@@ -4,7 +4,6 @@ import contextlib
 import sys
 import warnings
 import weakref
-from copy import copy
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Sequence, TypeVar, Generator, Literal
 
@@ -28,7 +27,7 @@ from pyglet.graphics.state import (
     ViewportState,
     _expand_states_in_order,
 )
-from pyglet.graphics.vertexstorage import VertexStorage
+from pyglet.graphics.vertexstorage import VertexStorage, VertexStorageShared
 from pyglet.graphics.api.base import SurfaceContext, BackendRenderer
 
 if TYPE_CHECKING:
@@ -696,7 +695,13 @@ class Batch:
             The new :class:`VertexStorage`, which can be passed as ``storage``
             to this batch's vertex-list creation methods.
         """
-        storage = VertexStorage(self, layouts, chunk_size=chunk_size, sharing_policy=sharing_policy)
+        storage_class = {
+            'separate': VertexStorage,
+            'shared': VertexStorageShared,
+        }.get(sharing_policy)
+        if storage_class is None:
+            raise ValueError("sharing_policy must be 'separate' or 'shared'.")
+        storage = storage_class(self, layouts, chunk_size=chunk_size)
         self._storages.add(storage)
         return storage
 
@@ -1002,15 +1007,15 @@ class Batch:
 
     @staticmethod
     def _attributes_key(attributes: dict[str, Any]) -> str:
-        """Sort by the location, since introspection order can change depending on platform."""
+        """Return a stable geometry-layout key independent of shader locations."""
         return str(tuple(
-            attribute.key for attribute in sorted(attributes.values(), key=lambda attribute: attribute.location)
+            attribute.key for attribute in sorted(attributes.values(), key=lambda attribute: attribute.name)
         ))
 
     @staticmethod
-    def _normalized_shader_attributes(program: ShaderProgram, initial_attribs: dict[str, Any]) -> dict[str, Any]:
-        """Return shader attributes adjusted to the vertex-list's original buffer formats."""
-        attributes = program.attributes
+    def _normalized_attribute_formats(program: ShaderProgram, initial_attribs: dict[str, Any]) -> dict[str, Any]:
+        """Return program geometry formats adjusted to the vertex-list's storage formats."""
+        attributes = program.attribute_formats
 
         # Preserve the vertex-list's concrete storage formats for lookup/compatibility.
         for a_name, *_ in program.attribute_keys:
@@ -1020,20 +1025,19 @@ class Batch:
             attribute = attributes[a_name]
 
             needs_data_type = (
-                initial_attribute.fmt.data_type != attribute.fmt.data_type or
-                initial_attribute.fmt.normalized != attribute.fmt.normalized
+                initial_attribute.data_type != attribute.data_type or
+                initial_attribute.normalized != attribute.normalized
             )
-            needs_divisor = initial_attribute.fmt.divisor != attribute.fmt.divisor
+            needs_divisor = initial_attribute.divisor != attribute.divisor
 
             if not needs_data_type and not needs_divisor:
                 continue
 
-            adjusted_attribute = copy(attribute)
             if needs_data_type:
-                adjusted_attribute.set_data_type(initial_attribute.fmt.data_type, initial_attribute.fmt.normalized)
+                attribute = attribute.with_data_type(initial_attribute.data_type, initial_attribute.normalized)
             if needs_divisor:
-                adjusted_attribute.set_divisor(initial_attribute.fmt.divisor)
-            attributes[a_name] = adjusted_attribute
+                attribute = attribute.with_divisor(initial_attribute.divisor)
+            attributes[a_name] = attribute
 
         return attributes
 
@@ -1058,7 +1062,7 @@ class Batch:
         Returns:
             False if the domain's no longer match. The caller should handle this scenario.
         """
-        attributes = self._normalized_shader_attributes(program, vertex_list.initial_attribs)
+        attributes = self._normalized_attribute_formats(program, vertex_list.initial_attribs)
 
         # A shader can only use geometry the vertex list originally allocated.
         if missing := [name for name in attributes if name not in vertex_list.initial_attribs]:
@@ -1074,11 +1078,11 @@ class Batch:
 
         # Attribute locations may change between linked programs, but the GPU
         # data can be copied directly when each existing attribute retains the
-        # same storage shape. ``_normalized_shader_attributes`` has already
+        # same storage shape. ``_normalized_attribute_formats`` has already
         # restored the source data type, normalization, and divisor.
         if incompatible := [
             name for name, initial in vertex_list.initial_attribs.items()
-            if initial.fmt != drawable_attributes[name].fmt
+            if initial != drawable_attributes[name]
         ]:
             if _debug_graphics_batch:
                 warnings.warn(f"Incompatible shader attributes for update: {incompatible}")
@@ -1171,6 +1175,7 @@ class Batch:
             domain.storage = storage
             domain.mode = mode
             storage.attach_domain(domain)
+            domain.set_shader_attributes(self._get_group_program(group).attributes)
             self._domain_registry[key] = domain
             self._draw_list_dirty = True
         return domain
@@ -1342,7 +1347,15 @@ class Batch:
             for domain_key, domain in self._domain_registry.items():
                 for alist in vertex_lists:
                     if alist.domain is domain and alist.group is group:
+                        binding = domain.get_vertex_input_binding(self._get_group_program(group))
+                        if binding is None:
+                            domain.bind_vao()
+                        else:
+                            binding.bind()
+                            binding.commit()
                         domain.draw_subset(domain_key.mode, alist)
+                        if binding is not None and hasattr(binding, 'unbind'):
+                            binding.unbind()
 
             # Sort and visit child groups of this group
             children = self.group_children.get(group)
@@ -1455,18 +1468,27 @@ class _BucketBatch(Batch):
 
     @staticmethod
     def _input_binding_fn(binding):  # noqa: ANN001, ANN205
-        def _bind(_ctx) -> None:  # noqa: ANN001
+        def _bind_vao(_ctx) -> None:  # noqa: ANN001
             binding.bind()
             binding.commit()
 
-        return _bind
+        return _bind_vao
+
+    @classmethod
+    def _binding_fn(cls, domain, binding):  # noqa: ANN001, ANN206
+        return cls._input_binding_fn(binding) if binding is not None else cls._vao_bind_fn(domain)
+
+    def _domain_binding(self, domain, group):  # noqa: ANN001, ANN202
+        if not hasattr(domain, 'get_vertex_input_binding'):
+            return None
+        return domain.get_vertex_input_binding(self._get_group_program(group))
 
     def _compile_pass_draw_list(self, registrations: list[_PassRegistration]) -> list[Callable]:
         calls: list[Callable] = []
         for registration in registrations:
             calls.extend((
                 registration.group.set_state_recursive,
-                self._input_binding_fn(registration.binding),
+                self._binding_fn(registration.domain, registration.binding),
                 self._draw_bucket_fn(
                     registration.domain, [registration.bucket], self._geometry_map[registration.mode],
                 ),
@@ -1530,6 +1552,7 @@ class _BucketBatch(Batch):
             active_states.pop(state_type, None)
 
         last_domain = None
+        last_binding = None
         last_mode = None
         current_buckets = []
 
@@ -1546,17 +1569,20 @@ class _BucketBatch(Batch):
             bucket = domain.get_drawable_bucket(group)
             if not bucket or bucket.is_empty:
                 continue
+            binding = self._domain_binding(domain, group)
+            binding_key = binding if binding is not None else domain
 
-            if last_domain is None:
-                calls.append(self._vao_bind_fn(domain))
-            elif domain != last_domain:
+            if last_binding is None:
+                calls.append(self._binding_fn(domain, binding))
+            elif binding_key is not last_binding:
                 flush_buckets()
-                calls.append(self._vao_bind_fn(domain))
+                calls.append(self._binding_fn(domain, binding))
             elif mode != last_mode:
                 flush_buckets()
 
             current_buckets.append(bucket)
             last_domain = domain
+            last_binding = binding_key
             last_mode = mode
 
         flush_buckets()
@@ -1595,7 +1621,7 @@ class _BucketBatch(Batch):
     def _set_draw_functions(self, draw_list: list[tuple]) -> list[Callable]:
         """Compile a draw list without optimizing state transitions."""
         calls: list[Callable] = []
-        last_domain = None
+        last_binding = None
 
         for domain, mode, group in draw_list:
             if domain is None:
@@ -1610,12 +1636,14 @@ class _BucketBatch(Batch):
             bucket = domain.get_drawable_bucket(group)
             if not bucket or bucket.is_empty:
                 continue
+            binding = self._domain_binding(domain, group)
+            binding_key = binding if binding is not None else domain
 
-            if last_domain is None or domain != last_domain:
-                calls.append(self._vao_bind_fn(domain))
+            if binding_key is not last_binding:
+                calls.append(self._binding_fn(domain, binding))
 
             calls.append(self._draw_bucket_fn(domain, [bucket], self._geometry_map[mode]))
-            last_domain = domain
+            last_binding = binding_key
 
         return calls
 

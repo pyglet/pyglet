@@ -9,10 +9,10 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any, Literal, NoReturn, Protocol, Sequence
+from typing import TYPE_CHECKING, Any, NoReturn, Protocol, Sequence
 
 from pyglet.graphics import allocation
-from pyglet.graphics.attributes import Attribute, AttributeView, DataTypeTuple, GraphicsAttribute, VertexLayout
+from pyglet.graphics.attributes import AttributeFormat, AttributeView, DataTypeTuple, GraphicsAttribute, VertexLayout
 
 if TYPE_CHECKING:
     from ctypes import Array
@@ -127,34 +127,34 @@ class Stream(ABC):
 
 class VertexStream(Stream):
     """A stream of buffers used with per-vertex attributes."""
-
+    attribute_layouts: dict[str, GraphicsAttribute]
     attrib_name_buffers: dict[str, AttributeBufferObject]
-    attribute_meta: Sequence[Attribute]
+    attribute_formats: dict[str, AttributeFormat]
 
-    def __init__(self, ctx: SurfaceContext, initial_size: int, attrs: Sequence[Attribute], *, divisor: int = 0):
+    def __init__(self, ctx: SurfaceContext, initial_size: int, attrs: Sequence[AttributeFormat], *, divisor: int = 0):
         super().__init__(initial_size)
         self._ctx = ctx
-        self.attribute_names = {}
+        self.attribute_formats = {attribute.name: attribute for attribute in attrs}
+        self.attribute_layouts = {}
         self.buffers = []
         self.attrib_name_buffers = {}
         self._property_dict = {}
-        self.attribute_meta = attrs
         self._allocate_buffers()
 
     def get_buffer(self, size: int, attribute: GraphicsAttribute) -> AttributeBufferObject:
         raise NotImplementedError
 
-    def get_graphics_attribute(self, attribute: Attribute, view: AttributeView) -> GraphicsAttribute:
+    def get_attribute_layout(self, attribute: AttributeFormat, view: AttributeView) -> GraphicsAttribute:
         raise NotImplementedError
 
-    def _create_separate_buffers(self, attributes: Sequence[Attribute]) -> None:
+    def _create_separate_buffers(self, attributes: Sequence[AttributeFormat]) -> None:
         """Create a separate buffer for each attribute."""
         for attribute in attributes:
-            name = attribute.fmt.name
-            stride = attribute.fmt.components * attribute.element_size
+            name = attribute.name
+            stride = attribute.components * attribute.element_size
             view = AttributeView(offset=0, stride=stride)
-            self.attribute_names[name] = attribute = self.get_graphics_attribute(attribute, view)
-            self.attrib_name_buffers[name] = buffer = self.get_buffer(stride * self.allocator.capacity, attribute)
+            self.attribute_layouts[name] = layout = self.get_attribute_layout(attribute, view)
+            self.attrib_name_buffers[name] = buffer = self.get_buffer(stride * self.allocator.capacity, layout)
             self.buffers.append(buffer)
             self._property_dict[name] = _make_attribute_property(name)
 
@@ -163,10 +163,11 @@ class VertexStream(Stream):
         raise NotImplementedError
 
     def _allocate_buffers(self) -> None:
-        for attrib in self.attribute_meta:
-            fmt_dt = attrib.fmt.data_type
-            assert fmt_dt in DataTypeTuple, f"'{fmt_dt}' is not a valid attribute format for '{attrib.fmt.name}'."
-        self._create_separate_buffers(self.attribute_meta)
+        for attribute in self.attribute_formats.values():
+            assert attribute.data_type in DataTypeTuple, (
+                f"'{attribute.data_type}' is not a valid attribute format for '{attribute.name}'."
+            )
+        self._create_separate_buffers(tuple(self.attribute_formats.values()))
 
     def set_region(self, start: int, count: int, data_by_attr: dict[str, Any]) -> None:
         for name, buf in self.attrib_name_buffers.items():
@@ -210,7 +211,7 @@ class VertexStream(Stream):
             dst_stream.attrib_name_buffers[name].set_region(dst_slot, count, data)
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}(attributes={list(self.attribute_meta)}, alloc={self.allocator})'
+        return f'{self.__class__.__name__}(attributes={list(self.attribute_formats.values())}, alloc={self.allocator})'
 
 
 class InstanceStream(VertexStream):
@@ -268,9 +269,45 @@ class VertexArrayBinding:
 
     def __init__(self, ctx: SurfaceContext, streams: list[VertexStream | InstanceStream | IndexStream]):
         self._ctx = ctx
-        self.vao = self._create_vao()
         self.streams = streams
+        self._validate_attributes()
+        self.vao = self._create_vao()
         self._link()
+
+    def _validate_attributes(self) -> None:
+        shader_attributes = getattr(self, 'shader_attributes', {})
+        if not shader_attributes:
+            return
+        geometry_formats = {
+            name: attribute_format
+            for stream in self.streams if isinstance(stream, VertexStream)
+            for name, attribute_format in stream.attribute_formats.items()
+        }
+        missing = [name for name in shader_attributes if name not in geometry_formats]
+        incompatible = [
+            name for name, shader_attribute in shader_attributes.items()
+            if name in geometry_formats and geometry_formats[name].components != shader_attribute.components
+        ]
+        invalid_integer_inputs = [
+            name for name, shader_attribute in shader_attributes.items()
+            if name in geometry_formats and shader_attribute.is_integer
+            and (
+                geometry_formats[name].data_type in ('f', 'd')
+                or geometry_formats[name].normalized
+                or (shader_attribute.is_signed_integer
+                    and geometry_formats[name].data_type not in ('b', 'h', 'i', 'q'))
+                or (shader_attribute.is_unsigned_integer
+                    and geometry_formats[name].data_type not in ('B', 'H', 'I', 'Q'))
+            )
+        ]
+        if missing:
+            raise ValueError(f"Shader requires attributes not provided by this geometry: {missing}")
+        if incompatible:
+            raise ValueError(f"Shader attributes incompatible with this geometry: {incompatible}")
+        if invalid_integer_inputs:
+            raise ValueError(
+                f"Integer shader attributes require non-normalized integer geometry: {invalid_integer_inputs}"
+            )
 
     def bind(self) -> None:
         raise NotImplementedError
@@ -304,8 +341,7 @@ class VertexStreamPool:
 
     @staticmethod
     def _attribute_buffer_key(attribute: Any) -> tuple[str, int, str, bool, int]:
-        fmt = attribute.fmt
-        return fmt.name, fmt.components, fmt.data_type, fmt.normalized, fmt.divisor
+        return attribute.key
 
     def _attach_stream(self, domain: VertexDomain) -> None:
         stream = domain.vertex_buffers
@@ -316,7 +352,7 @@ class VertexStreamPool:
 
         changed_buffers = False
         for name, attribute in domain.attribute_meta.items():
-            if attribute.fmt.is_instanced:
+            if attribute.is_instanced:
                 continue
             key = self._attribute_buffer_key(attribute)
             buffer = stream.attrib_name_buffers[name]
@@ -362,7 +398,9 @@ class VertexStreamPool:
 
 
 class VertexStorage:
-    """A batch-owned namespace for reusable, layout-compatible geometry."""
+    """A batch-owned namespace with independent streams and allocators."""
+
+    sharing_policy = 'separate'
 
     def __init__(
         self,
@@ -370,21 +408,15 @@ class VertexStorage:
         layouts: Iterable[VertexLayout] = (),
         *,
         chunk_size: int = 4096,
-        sharing_policy: Literal['separate', 'shared'] = 'separate',
     ) -> None:
         if chunk_size < 1:
             raise ValueError('chunk_size must be positive.')
-        if sharing_policy not in ('separate', 'shared'):
-            raise ValueError("sharing_policy must be 'separate' or 'shared'.")
         self._batch = batch
         self.chunk_size = chunk_size
-        self.sharing_policy = sharing_policy
         self.layouts: list[VertexLayout] = []
         self.attribute_formats: dict[str, set[str]] = {}
         self._vertex_streams: list[VertexStream] = []
-        self._vertex_stream_pool = VertexStreamPool(chunk_size) if sharing_policy == 'shared' else None
         self._index_streams: list[Any] = []
-        self._shared_index_streams: dict[str, Any] = {}
         for layout in layouts:
             self.add_layout(layout)
 
@@ -422,15 +454,11 @@ class VertexStorage:
         return shader_layout.get_vertex_view(layout) if layout is not None else shader_layout
 
     def attach_domain(self, domain: VertexDomain) -> None:
-        """Attach a domain using this storage's selected sharing policy."""
-        if self.sharing_policy == 'shared':
-            assert self._vertex_stream_pool is not None
-            self._vertex_stream_pool.attach_domain(domain)
-        else:
-            self._attach_separate_vertex_stream(domain)
+        """Attach a domain with its own vertex and index streams."""
+        self._attach_vertex_stream(domain)
         self._attach_index_stream(domain)
 
-    def _attach_separate_vertex_stream(self, domain: VertexDomain) -> None:
+    def _attach_vertex_stream(self, domain: VertexDomain) -> None:
         vertex_stream = domain.vertex_buffers
         self._vertex_streams.append(vertex_stream)
         domain.allocator = vertex_stream
@@ -439,11 +467,36 @@ class VertexStorage:
         previous_index_stream = getattr(domain, 'index_stream', None)
         if previous_index_stream is None:
             return
-        assert domain.index_type is not None
-        if self.sharing_policy == 'separate':
-            self._index_streams.append(previous_index_stream)
-            domain.index_allocator = previous_index_stream
+        self._index_streams.append(previous_index_stream)
+        domain.index_allocator = previous_index_stream
+
+
+class VertexStorageShared(VertexStorage):
+    """A batch-owned namespace that pools compatible vertex and index buffers."""
+
+    sharing_policy = 'shared'
+
+    def __init__(
+        self,
+        batch: Batch,
+        layouts: Iterable[VertexLayout] = (),
+        *,
+        chunk_size: int = 4096,
+    ) -> None:
+        super().__init__(batch, layouts, chunk_size=chunk_size)
+        self._vertex_stream_pool = VertexStreamPool(chunk_size)
+        self._shared_index_streams: dict[str, Any] = {}
+
+    def attach_domain(self, domain: VertexDomain) -> None:
+        """Attach a domain to this storage's compatible buffer pools."""
+        self._vertex_stream_pool.attach_domain(domain)
+        self._attach_index_stream(domain)
+
+    def _attach_index_stream(self, domain: VertexDomain) -> None:
+        previous_index_stream = getattr(domain, 'index_stream', None)
+        if previous_index_stream is None:
             return
+        assert domain.index_type is not None
 
         index_stream = self._shared_index_streams.setdefault(domain.index_type, previous_index_stream)
         if index_stream is previous_index_stream:

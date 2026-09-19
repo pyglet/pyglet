@@ -28,7 +28,7 @@ from typing import TYPE_CHECKING, Any, Sequence
 
 import pyglet
 from pyglet.graphics import allocation
-from pyglet.graphics.attributes import Attribute, DomainAttributes
+from pyglet.graphics.attributes import AttributeFormat, DomainAttributes
 from pyglet.graphics.draw import BatchDrawOptions, DrawContext
 from pyglet.graphics.vertexstorage import (
     IndexStream,
@@ -107,7 +107,16 @@ class VertexList:
         )
         draw_ctx.begin()
         self.group.set_state_recursive(draw_ctx)  # noqa: SLF001
+        program = self.domain.batch._get_group_program(self.group)  # noqa: SLF001
+        binding = self.domain.get_vertex_input_binding(program)
+        if binding is None:
+            self.domain.bind_vao()
+        else:
+            binding.bind()
+            binding.commit()
         self.domain.draw_subset(mode, self)
+        if binding is not None and hasattr(binding, 'unbind'):
+            binding.unbind()
         self.group.unset_state_recursive(draw_ctx)  # noqa: SLF001
 
     def resize(self, count: int, index_count: int | None = None) -> None:  # noqa: ARG002
@@ -152,7 +161,7 @@ class VertexList:
             group:
                 The group this vertex list belongs to.
         """
-        assert list(domain.attribute_names.keys()) == list(self.domain.attribute_names.keys()), (
+        assert list(domain.attribute_meta) == list(self.domain.attribute_meta), (
             'Domain attributes must match.'
         )
 
@@ -296,7 +305,7 @@ class InstanceVertexList(VertexList):
         self.instance_bucket.move_to_top(instances)
 
     def set_attribute_data(self, name: str, data: Any) -> None:
-        if self.initial_attribs[name].fmt.is_instanced:
+        if self.initial_attribs[name].is_instanced:
             stream = self.instance_bucket.stream
             count = 1
             start = 0
@@ -615,7 +624,7 @@ class InstanceIndexedVertexList(VertexList):
         self.instance_bucket.move_to_top(instances)
 
     def set_attribute_data(self, name: str, data: Any) -> None:
-        if self.initial_attribs[name].fmt.is_instanced:
+        if self.initial_attribs[name].is_instanced:
             stream = self.instance_bucket.stream
             count = 1
             start = 0
@@ -642,10 +651,9 @@ class VertexDomain(ABC):
     :py:func:`create_domain` function.
     """
 
-    attribute_meta: dict[str, Attribute]
+    attribute_meta: dict[str, AttributeFormat]
     domain_attributes: DomainAttributes
-    buffer_attributes: list[tuple[AttributeBufferObject, Attribute]]
-    attribute_names: dict[str, Attribute]
+    buffer_attributes: list[tuple[AttributeBufferObject, AttributeFormat]]
     attrib_name_buffers: dict[str, VertexStream | InstanceStream]
     vertex_stream: VertexStream
 
@@ -657,17 +665,19 @@ class VertexDomain(ABC):
     storage: VertexStorage
     mode: GeometryMode
 
-    def __init__(self, context: SurfaceContext, initial_count: int, attribute_meta: dict[str, Attribute]) -> None:
+    def __init__(self, context: SurfaceContext, initial_count: int,
+                 attribute_meta: dict[str, AttributeFormat]) -> None:
         self._context = context or pyglet.graphics.api.core.current_context
         self.attribute_meta = attribute_meta
+        self.shader_attributes = {}
         self.attrib_name_buffers = {}
         self._supports_multi_draw = self._has_multi_draw_extension(self._context)
 
         # Separate attributes.
-        self.per_vertex: list[Attribute] = []
-        self.per_instance: list[Attribute] = []
+        self.per_vertex: list[AttributeFormat] = []
+        self.per_instance: list[AttributeFormat] = []
         for attrib in attribute_meta.values():
-            if not attrib.fmt.is_instanced:
+            if not attrib.is_instanced:
                 self.per_vertex.append(attrib)
             else:
                 self.per_instance.append(attrib)
@@ -680,11 +690,16 @@ class VertexDomain(ABC):
         self._vertex_buckets = {}
 
         for name, attrib in attribute_meta.items():
-            if not attrib.fmt.is_instanced:
+            if not attrib.is_instanced:
                 self.attrib_name_buffers[name] = self.vertex_buffers
 
         # Make a custom VertexList class w/ properties for each attribute
         self._vertexlist_class = self._create_vertex_class()
+
+    def set_shader_attributes(self, attributes: dict[str, Any]) -> None:
+        """Set the shader metadata used by this domain's primary input binding."""
+        self.shader_attributes = attributes.copy()
+        self.vao = self._create_vao()
 
     @abstractmethod
     def _has_multi_draw_extension(self, ctx: SurfaceContext) -> bool:
@@ -711,7 +726,7 @@ class VertexDomain(ABC):
             raise ValueError(f"Shader requires attributes not provided by this geometry: {missing}")
         incompatible = [
             name for name, shader_attribute in required.items()
-            if self.attribute_meta[name].fmt.components != shader_attribute.fmt.components
+            if self.attribute_meta[name].components != shader_attribute.components
         ]
         if incompatible:
             raise ValueError(f"Shader attributes incompatible with this geometry: {incompatible}")
@@ -721,10 +736,6 @@ class VertexDomain(ABC):
         """Binds the VAO as well as commit any pending buffer changes to the GPU."""
         self.vao.bind()
         self.vao.commit()
-
-    @property
-    def attribute_names(self):
-        return self.vertex_buffers.attribute_names
 
     def safe_alloc(self, count: int) -> int:
         """Allocate vertices, resizing the buffers if necessary."""
@@ -845,7 +856,7 @@ class IndexedVertexDomain(VertexDomain):
     _vertex_class = IndexedVertexList
     index_stream: IndexStream
 
-    def __init__(self, context: SurfaceContext, initial_count: int, attribute_meta: dict[str, Attribute],
+    def __init__(self, context: SurfaceContext, initial_count: int, attribute_meta: dict[str, AttributeFormat],
                  index_type: DataTypes = "I") -> None:
         self.index_type = index_type
         self._supports_base_vertex = context.info.features.base_vertex
@@ -926,7 +937,8 @@ class IndexedVertexDomain(VertexDomain):
 class InstancedVertexDomain(VertexDomain):
     _instance_map: dict[tuple[int, int], InstanceBucket]
 
-    def __init__(self, context: SurfaceContext, initial_count: int, attribute_meta: dict[str, Attribute]) -> None:
+    def __init__(self, context: SurfaceContext, initial_count: int,
+                 attribute_meta: dict[str, AttributeFormat]) -> None:
         super().__init__(context, initial_count, attribute_meta)
         self.instance_domain = self.create_instance_domain(initial_count)
         self._instance_map = {}
@@ -956,7 +968,7 @@ class InstancedVertexDomain(VertexDomain):
 class InstancedIndexedVertexDomain(IndexedVertexDomain):
     _instance_map: dict[tuple[int, int], InstanceBucket]
 
-    def __init__(self, context: SurfaceContext, initial_count: int, attribute_meta: dict[str, Attribute],
+    def __init__(self, context: SurfaceContext, initial_count: int, attribute_meta: dict[str, AttributeFormat],
                  index_type: DataTypes = "I") -> None:
         super().__init__(context, initial_count, attribute_meta, index_type)
         self.instance_domain = self.create_instance_domain(initial_count)

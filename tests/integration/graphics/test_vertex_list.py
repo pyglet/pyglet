@@ -83,7 +83,7 @@ class VertexListTest(unittest.TestCase):
         draw_pass = batch.add_pass(pyglet.graphics.DrawPass())
         vertex_list.add_pass(draw_pass, group=group)
 
-        assert vertex_list.domain.attribute_meta["colors"].fmt.data_type == "B"
+        assert vertex_list.domain.attribute_meta["colors"].data_type == "B"
         assert vertex_list.domain.storage is storage
         assert indexed_vertex_list.indices == [0, 1, 2]
         assert len(batch._pass_registrations[draw_pass]) == 1
@@ -118,6 +118,30 @@ class VertexListTest(unittest.TestCase):
         assert second.start == count
         assert allocator.capacity == count * 2
         assert allocator.get_allocated_regions() == ([0], [count * 2])
+
+    def test_shared_storage_uses_shared_streams_and_allocators(self):
+        program = pyglet.graphics.api.get_default_shader()
+        batch = pyglet.graphics.Batch()
+        group = pyglet.graphics.ShaderGroup(program)
+        layout = pyglet.graphics.VertexLayout(position="3f", colors="4f")
+        storage = batch.create_vertex_storage(sharing_policy="shared")
+        data = {"position": (0, 0, 0) * 3, "colors": (1, 1, 1, 1) * 3}
+
+        triangles = batch.vertex_list_indexed(
+            layout, 3, GeometryMode.TRIANGLES, (0, 1, 2), group, storage=storage, **data,
+        )
+        lines = batch.vertex_list_indexed(
+            layout, 3, GeometryMode.LINES, (0, 1, 2), group, storage=storage, **data,
+        )
+
+        assert isinstance(storage, pyglet.graphics.VertexStorageShared)
+        assert triangles.domain is not lines.domain
+        assert triangles.domain.vertex_buffers.allocator is lines.domain.vertex_buffers.allocator
+        assert (
+            triangles.domain.vertex_buffers.attrib_name_buffers["position"]
+            is lines.domain.vertex_buffers.attrib_name_buffers["position"]
+        )
+        assert triangles.domain.index_stream is lines.domain.index_stream
 
     def test_vertex_list_property_set(self):
         program = pyglet.graphics.api.get_default_shader()

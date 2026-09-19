@@ -23,7 +23,7 @@ primitives of the same OpenGL primitive mode.
 from __future__ import annotations
 
 import ctypes
-from typing import TYPE_CHECKING, Any, Sequence
+from typing import TYPE_CHECKING, Any, Mapping, Sequence
 
 from pyglet.graphics.api.base import SurfaceContext
 from pyglet.graphics.api.webgl import vertexarray
@@ -62,7 +62,8 @@ from pyglet.graphics.vertexdomain import (
 )
 
 if TYPE_CHECKING:
-    from pyglet.graphics.attributes import Attribute, AttributeView
+    from pyglet.graphics.attributes import Attribute, AttributeFormat, AttributeView
+    from pyglet.graphics.shader import ShaderProgram
     from pyglet.customtypes import DataTypes
     from pyglet.enums import GeometryMode
     from pyglet.graphics.api.webgl.context import OpenGLSurfaceContext
@@ -82,24 +83,53 @@ class _GLVertexStreamMix(VertexStream):
     _ctx: OpenGLSurfaceContext
     attrib_name_buffers: dict[str, WebGLAttributeBufferObject]
 
-    def __init__(self, ctx: OpenGLSurfaceContext, initial_size: int, attrs: Sequence[Attribute], *, divisor: int = 0):
+    def __init__(self, ctx: OpenGLSurfaceContext, initial_size: int, attrs: Sequence[AttributeFormat],
+                 *, divisor: int = 0):
         super().__init__(ctx, initial_size, attrs, divisor=divisor)
 
-    def get_graphics_attribute(self, attribute: Attribute, view: AttributeView) -> GLAttribute:
+    def get_attribute_layout(self, attribute: AttributeFormat, view: AttributeView) -> GLAttribute:
         return GLAttribute(attribute, view)
 
     def get_buffer(self, size: int, attribute) -> WebGLAttributeBufferObject:
         return WebGLAttributeBufferObject(self._ctx, size, attribute)
 
+    def _enable_attribute(self, location: int) -> None:
+        """Enable a shader input at ``location`` in the bound VAO."""
+        self._ctx.gl.enableVertexAttribArray(location)
+
+    def _set_attribute_pointer(self, shader_attribute: Attribute, graphics_attribute: GLAttribute) -> None:
+        """Bind geometry storage to a shader input in the bound VAO."""
+        location = shader_attribute.location
+        geometry_format = graphics_attribute.fmt
+        if shader_attribute.is_integer:
+            self._ctx.gl.vertexAttribIPointer(
+                location, geometry_format.components, graphics_attribute.gl_type,
+                graphics_attribute.view.stride, graphics_attribute.view.offset,
+            )
+        else:
+            self._ctx.gl.vertexAttribPointer(
+                location, geometry_format.components, graphics_attribute.gl_type,
+                geometry_format.normalized, graphics_attribute.view.stride, graphics_attribute.view.offset,
+            )
+
+    def _set_attribute_divisor(self, location: int, graphics_attribute: GLAttribute) -> None:
+        """Set the instance divisor for a shader input in the bound VAO."""
+        self._ctx.gl.vertexAttribDivisor(location, graphics_attribute.fmt.divisor)
+
     def bind_into(self, vao) -> None:
-        for attribute, buffer in zip(self.attribute_names.values(), self.buffers):
+        for name, graphics_attribute in self.attribute_layouts.items():
+            shader_attribute = vao.shader_attributes.get(name)
+            if shader_attribute is None:
+                continue
+            buffer = self.attrib_name_buffers[name]
             buffer.bind()
-            attribute.enable()
-            attribute.set_pointer()
-            attribute.set_divisor()
+            location = shader_attribute.location
+            self._enable_attribute(location)
+            self._set_attribute_pointer(shader_attribute, graphics_attribute)
+            self._set_attribute_divisor(location, graphics_attribute)
 
 class GLVertexStream(_GLVertexStreamMix, VertexStream):  # noqa: D101
-    def __init__(self, ctx: OpenGLSurfaceContext, initial_size: int, attrs: Sequence[Attribute]) -> None:
+    def __init__(self, ctx: OpenGLSurfaceContext, initial_size: int, attrs: Sequence[AttributeFormat]) -> None:
         """Contains data for vertex stream.
 
         Args:
@@ -115,11 +145,18 @@ class GLVertexStream(_GLVertexStreamMix, VertexStream):  # noqa: D101
 class GLInstanceStream(_GLVertexStreamMix, InstanceStream):  # noqa: D101
     _ctx: OpenGLSurfaceContext
 
-    def __init__(self, ctx: OpenGLSurfaceContext, initial_size: int, attrs: Sequence[Attribute],  # noqa: D107
+    def __init__(self, ctx: OpenGLSurfaceContext, initial_size: int, attrs: Sequence[AttributeFormat],  # noqa: D107
                  *, divisor: int = 0) -> None:
         super().__init__(ctx, initial_size, attrs, divisor=divisor)
 
 class GLVertexArrayBinding(VertexArrayBinding):  # noqa: D101
+
+    def __init__(
+            self, ctx: OpenGLSurfaceContext, streams: list[VertexStream | InstanceStream | IndexStream],
+            attributes: Mapping[str, Attribute] | None = None,
+    ) -> None:
+        self.shader_attributes = attributes or {}
+        super().__init__(ctx, streams)
 
     def _create_vao(self) -> VertexArrayProtocol:
         return vertexarray.VertexArray(self._ctx)
@@ -179,7 +216,8 @@ class WebGLVertexDomain(VertexDomain):
     :py:func:`create_domain` function.
     """
 
-    def __init__(self, context: SurfaceContext, initial_count: int, attribute_meta: dict[str, Attribute]) -> None:
+    def __init__(self, context: SurfaceContext, initial_count: int,
+                 attribute_meta: dict[str, AttributeFormat]) -> None:
         super().__init__(context, initial_count, attribute_meta)
         self._gl = context.gl
         if self._supports_multi_draw:
@@ -213,7 +251,21 @@ class WebGLVertexDomain(VertexDomain):
         return ctx.gl.getExtension("WEBGL_multi_draw")
 
     def _create_vao(self) -> GLVertexArrayBinding:
-        return GLVertexArrayBinding(self._context, self._streams)
+        return GLVertexArrayBinding(self._context, self._streams, self.shader_attributes)
+
+    def get_vertex_input_binding(self, program: ShaderProgram) -> GLVertexArrayBinding:
+        super().get_vertex_input_binding(program)
+        if program.attributes == self.shader_attributes:
+            return self.vao
+        try:
+            return self._vertex_input_bindings[program.key]
+        except AttributeError:
+            self._vertex_input_bindings = {}
+        except KeyError:
+            pass
+        binding = GLVertexArrayBinding(self._context, self._streams, program.attributes)
+        self._vertex_input_bindings[program.key] = binding
+        return binding
 
     def _create_streams(self, size: int) -> list[VertexStream | IndexStream | InstanceStream]:
         self.vertex_buffers = GLVertexStream(self._context, size, self.per_vertex)
@@ -267,7 +319,6 @@ class WebGLVertexDomain(VertexDomain):
                 Vertex list to draw.
 
         """
-        self.vao.bind()
         self.vertex_buffers.commit()
         self._gl.drawArrays(geometry_map[mode], vertex_list.start, vertex_list.count)
 
@@ -287,7 +338,9 @@ class GLInstanceDomainArrays(InstanceDomain):  # noqa: D101
 
     def _create_bucket_arrays(self) -> InstanceBucket:
         istream = GLInstanceStream(self._ctx, self._initial, self._domain.per_instance, divisor=1)
-        vao = GLVertexArrayBinding(self._ctx, [self._domain.vertex_buffers, istream])
+        vao = GLVertexArrayBinding(
+            self._ctx, [self._domain.vertex_buffers, istream], self._domain.shader_attributes,
+        )
         return InstanceBucket(istream, vao)
 
     def _create_bucket_elements(self) -> InstanceBucket:
@@ -331,7 +384,10 @@ class GLInstanceDomainElements(InstanceDomain):  # noqa: D101
 
     def _create_bucket_elements(self) -> InstanceBucket:
         istream = GLInstanceStream(self._ctx, self._initial, self._domain.per_instance, divisor=1)
-        vao = GLVertexArrayBinding(self._ctx, [self._domain.vertex_buffers, istream, self._index_stream])
+        vao = GLVertexArrayBinding(
+            self._ctx, [self._domain.vertex_buffers, istream, self._index_stream],
+            self._domain.shader_attributes,
+        )
         return InstanceBucket(istream, vao)
 
     def _create_bucket_arrays(self) -> InstanceBucket:
@@ -385,7 +441,7 @@ class WebGLInstancedVertexDomain(InstancedVertexDomain):  # noqa: D101
         return False
 
     def _create_vao(self) -> GLVertexArrayBinding:
-        return GLVertexArrayBinding(self._context, self._streams)
+        return GLVertexArrayBinding(self._context, self._streams, self.shader_attributes)
 
     def _create_streams(self, size: int) -> list[VertexStream | IndexStream | InstanceStream]:
         self.vertex_buffers = GLVertexStream(self._context, size, self.per_vertex)
@@ -448,7 +504,7 @@ class WebGLIndexedVertexDomain(IndexedVertexDomain):
     _vertex_class = WebGLIndexedVertexList
     _supports_base_vertex: bool = False
 
-    def __init__(self, context: SurfaceContext, initial_count: int, attribute_meta: dict[str, Attribute],
+    def __init__(self, context: SurfaceContext, initial_count: int, attribute_meta: dict[str, AttributeFormat],
                  index_type: DataTypes = "I") -> None:
         super().__init__(context, initial_count, attribute_meta, index_type)
         self._gl = context.gl
@@ -462,7 +518,21 @@ class WebGLIndexedVertexDomain(IndexedVertexDomain):
                                       self.vertex_buffers._property_dict)  # noqa: SLF001
 
     def _create_vao(self) -> GLVertexArrayBinding:
-        return GLVertexArrayBinding(self._context, self._streams)
+        return GLVertexArrayBinding(self._context, self._streams, self.shader_attributes)
+
+    def get_vertex_input_binding(self, program: ShaderProgram) -> GLVertexArrayBinding:
+        super().get_vertex_input_binding(program)
+        if program.attributes == self.shader_attributes:
+            return self.vao
+        try:
+            return self._vertex_input_bindings[program.key]
+        except AttributeError:
+            self._vertex_input_bindings = {}
+        except KeyError:
+            pass
+        binding = GLVertexArrayBinding(self._context, self._streams, program.attributes)
+        self._vertex_input_bindings[program.key] = binding
+        return binding
 
     def _create_streams(self, size: int) -> list[VertexStream | IndexStream | InstanceStream]:
         self.vertex_buffers = GLVertexStream(self._context, size, self.per_vertex)
@@ -539,7 +609,6 @@ class WebGLIndexedVertexDomain(IndexedVertexDomain):
             vertex_list:
                 Vertex list to draw.
         """
-        self.vao.bind()
         self.vertex_buffers.commit()
         self.index_stream.buffer.commit()
 
@@ -561,7 +630,7 @@ class WebGLInstancedIndexedVertexDomain(InstancedIndexedVertexDomain):
                                       self.vertex_buffers._property_dict)  # noqa: SLF001
 
     def _create_vao(self) -> GLVertexArrayBinding:
-        return GLVertexArrayBinding(self._context, self._streams)
+        return GLVertexArrayBinding(self._context, self._streams, self.shader_attributes)
 
     def _create_streams(self, size: int) -> list[VertexStream | IndexStream | InstanceStream]:
         self.vertex_buffers = GLVertexStream(self._context, size, self.per_vertex)

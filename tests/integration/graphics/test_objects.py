@@ -281,7 +281,7 @@ def _program_switch_expectations(drawable, new_program) -> tuple[bool, bool]:
 
     old_vlist = drawable._vertex_list
     old_key = batch._attributes_key(old_vlist.domain.attribute_meta)
-    normalized_attributes = batch._normalized_shader_attributes(new_program, old_vlist.initial_attribs)
+    normalized_attributes = batch._normalized_attribute_formats(new_program, old_vlist.initial_attribs)
 
     # update_shader preserves geometry attributes that the new program does
     # not consume, while replacing metadata for the attributes it does.
@@ -337,8 +337,8 @@ def test_vertex_layout_overrides_buffer_format(test_window):  # noqa: ARG001
     source = _sprite_vertex_source(_SPRITE_ORDER_A if _is_gl2_backend() else _SPRITE_LAYOUT_A)
     program = _build_program(source, _sprite_fragment_source(), vertex_layout=layout)
     try:
-        colors = program.attributes["colors"].fmt
-        position = program.attributes["position"].fmt
+        colors = program.attribute_formats["colors"]
+        position = program.attribute_formats["position"]
         assert (colors.components, colors.data_type, colors.normalized) == (4, "B", True)
         assert (position.components, position.data_type, position.normalized) == (3, "f", False)
     finally:
@@ -371,8 +371,8 @@ def test_cached_shader_vertex_layout_uses_interned_view(test_window):  # noqa: A
         assert same_layout is program
         assert introspected is program.program
         assert introspected.get_vertex_view(layout) is program
-        assert program.attributes["colors"].fmt.normalized is True
-        assert introspected.attributes["colors"].fmt.normalized is False
+        assert program.attribute_formats["colors"].normalized is True
+        assert introspected.attribute_formats["colors"].normalized is False
     finally:
         program.delete()
 
@@ -427,10 +427,10 @@ def test_sprite_program_change_same_attributes_keeps_domain_updates_group(test_w
         sprite.delete()
 
 
-def test_sprite_program_change_different_attributes_migrates_to_new_domain(test_window, sprite_programs, sprite_image):  # noqa: ARG001
-    """Switch Sprite to a program whose attribute layout differs.
+def test_sprite_program_change_different_locations_reuses_domain(test_window, sprite_programs, sprite_image):  # noqa: ARG001
+    """Switch Sprite to a program whose attribute locations differ.
 
-    Verifies the existing vertex list is migrated to a new domain.
+    Verifies geometry and buffers are reused through a separate input binding.
     """
     if _is_gl2_backend():
         names = ("position", "translate", "colors", "tex_coords", "scale", "rotation")
@@ -439,13 +439,22 @@ def test_sprite_program_change_different_attributes_migrates_to_new_domain(test_
 
     batch = pyglet.graphics.Batch()
     sprite = pyglet.sprite.Sprite(sprite_image, x=0, y=0, batch=batch, program=sprite_programs["base"])
+    domain = sprite._vertex_list.domain
+    base_binding = domain.get_vertex_input_binding(sprite_programs["base"])
+    different_binding = domain.get_vertex_input_binding(sprite_programs["different"])
 
     try:
+        assert sprite_programs["base"].attribute_key == sprite_programs["different"].attribute_key
+        assert _location_map(sprite_programs["base"], tuple(_SPRITE_LAYOUT_A)) != _location_map(
+            sprite_programs["different"], tuple(_SPRITE_LAYOUT_A),
+        )
+        assert base_binding is not different_binding
+        assert base_binding.streams[0] is different_binding.streams[0] is domain.vertex_buffers
         _assert_program_switch_success(
             sprite,
             sprite_programs["different"],
             expect_recreated=False,
-            expect_same_domain=False,
+            expect_same_domain=True,
         )
     finally:
         sprite.delete()
@@ -495,10 +504,10 @@ def test_shape_program_change_same_attributes_keeps_domain_updates_group(test_wi
         shape.delete()
 
 
-def test_shape_program_change_different_attributes_migrates_to_new_domain(test_window, shape_programs):  # noqa: ARG001
-    """Switch Shape to a program with a different attribute layout.
+def test_shape_program_change_different_locations_reuses_domain(test_window, shape_programs):  # noqa: ARG001
+    """Switch Shape to a program with different attribute locations.
 
-    Verifies the existing vertex list is migrated to a new domain.
+    Verifies shader locations do not change geometry identity.
     """
     if _is_gl2_backend():
         names = ("position", "translation", "colors", "rotation")
@@ -513,7 +522,7 @@ def test_shape_program_change_different_attributes_migrates_to_new_domain(test_w
             shape,
             shape_programs["different"],
             expect_recreated=False,
-            expect_same_domain=False,
+            expect_same_domain=True,
         )
     finally:
         shape.delete()

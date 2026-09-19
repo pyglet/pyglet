@@ -22,7 +22,7 @@ from ctypes import (
     c_ushort,
     cast,
     create_string_buffer,
-    sizeof, c_void_p,
+    sizeof,
 )
 from typing import TYPE_CHECKING, Any, Callable, Literal, Sequence, Type, Union
 
@@ -49,7 +49,7 @@ from pyglet.graphics.shader import (
     ShaderType,
     UnsupportedShaderType,
 )
-from pyglet.graphics.attributes import Attribute, AttributeView, GraphicsAttribute, VertexLayout
+from pyglet.graphics.attributes import AttributeFormat, AttributeView, GraphicsAttribute, ShaderAttribute, VertexLayout
 from pyglet.graphics.shader import ShaderException
 
 from pyglet.graphics.api.gl.buffer import GLUniformBufferObject
@@ -164,43 +164,20 @@ _vector_scalar_ctype: dict[int, tuple[type, int]] = {
 
 
 class GLAttribute(GraphicsAttribute):
-    """Abstract accessor for an attribute in a mapped buffer."""
+    """OpenGL storage layout for a geometry attribute buffer."""
     gl_type: int
     """OpenGL type enumerant; for example, ``GL_FLOAT``"""
 
-    def __init__(self, attribute: Attribute, view: AttributeView) -> None:
+    def __init__(self, attribute_format: AttributeFormat, view: AttributeView) -> None:
         """Create the attribute accessor.
 
         Args:
-            attribute: The base shader Attribute object.
+            attribute_format: The geometry-owned attribute format.
             view: The view intended for the buffer of this Attribute.
         """
-        self._context = pyglet.graphics.api.core.current_context
-        super().__init__(attribute, view)
-        data_type = self.attribute.fmt.data_type
+        super().__init__(attribute_format, view)
+        data_type = self.fmt.data_type
         self.gl_type = _data_type_to_gl_type[data_type]
-
-        # If the data type is not normalized and is not a float, consider it an int pointer.
-        self._is_int = data_type != "f" and self.attribute.fmt.normalized is False
-
-    def enable(self) -> None:
-        """Enable the attribute."""
-        self._context.glEnableVertexAttribArray(self.attribute.location)
-
-    def disable(self) -> None:
-        self._context.glDisableVertexAttribArray(self.attribute.location)
-
-    def set_pointer(self) -> None:
-        """Setup this attribute to point to the currently bound buffer at the given offset."""
-        if self._is_int:
-            self._context.glVertexAttribIPointer(self.attribute.location, self.attribute.fmt.components, self.gl_type,
-                                                self.view.stride, c_void_p(self.view.offset))
-        else:
-            self._context.glVertexAttribPointer(self.attribute.location, self.attribute.fmt.components, self.gl_type,
-                                                self.attribute.fmt.normalized, self.view.stride, c_void_p(self.view.offset))
-
-    def set_divisor(self) -> None:
-        self._context.glVertexAttribDivisor(self.attribute.location, self.attribute.fmt.divisor)
 
 
 
@@ -512,7 +489,7 @@ def _query_attribute(ctx, program_id: int, index: int) -> tuple[str, int, int]:
         raise ShaderException from exc
 
 
-def _introspect_attributes(ctx, program_id: int) -> dict[str, Attribute]:
+def _introspect_attributes(ctx, program_id: int) -> dict[str, ShaderAttribute]:
     """Introspect a Program's Attributes, and return a dict of accessors."""
     attributes = {}
 
@@ -522,7 +499,7 @@ def _introspect_attributes(ctx, program_id: int) -> dict[str, Attribute]:
         if loc == -1:  # not a user defined attribute
             continue
         count, fmt = _attribute_types[a_type]
-        attributes[a_name] = Attribute(a_name, loc, count, fmt)
+        attributes[a_name] = ShaderAttribute(a_name, loc, count, fmt, a_type)
 
     if _debug_api_shaders:
         for attribute in attributes.values():
@@ -1081,9 +1058,8 @@ class GLShaderProgram(ShaderProgram):
         # Query if Direct State Access is available:
 
         have_dsa = self._context.info.features.separate_shader_objects
-        self._attributes = _introspect_attributes(self._context, self._id)
+        self.set_attributes(*_introspect_attributes(self._context, self._id).values())
         self.apply_vertex_layout()
-        self._update_attribute_key()
         self._uniforms = _introspect_uniforms(self._context, self._id, have_dsa)
         self._uniform_blocks = self._get_uniform_blocks()
         self._shader_storage_blocks = _introspect_shader_storage_blocks(self._context, self)
