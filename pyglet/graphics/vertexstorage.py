@@ -270,44 +270,8 @@ class VertexArrayBinding:
     def __init__(self, ctx: SurfaceContext, streams: list[VertexStream | InstanceStream | IndexStream]):
         self._ctx = ctx
         self.streams = streams
-        self._validate_attributes()
         self.vao = self._create_vao()
         self._link()
-
-    def _validate_attributes(self) -> None:
-        shader_attributes = getattr(self, 'shader_attributes', {})
-        if not shader_attributes:
-            return
-        geometry_formats = {
-            name: attribute_format
-            for stream in self.streams if isinstance(stream, VertexStream)
-            for name, attribute_format in stream.attribute_formats.items()
-        }
-        missing = [name for name in shader_attributes if name not in geometry_formats]
-        incompatible = [
-            name for name, shader_attribute in shader_attributes.items()
-            if name in geometry_formats and geometry_formats[name].components != shader_attribute.components
-        ]
-        invalid_integer_inputs = [
-            name for name, shader_attribute in shader_attributes.items()
-            if name in geometry_formats and shader_attribute.is_integer
-            and (
-                geometry_formats[name].data_type in ('f', 'd')
-                or geometry_formats[name].normalized
-                or (shader_attribute.is_signed_integer
-                    and geometry_formats[name].data_type not in ('b', 'h', 'i', 'q'))
-                or (shader_attribute.is_unsigned_integer
-                    and geometry_formats[name].data_type not in ('B', 'H', 'I', 'Q'))
-            )
-        ]
-        if missing:
-            raise ValueError(f"Shader requires attributes not provided by this geometry: {missing}")
-        if incompatible:
-            raise ValueError(f"Shader attributes incompatible with this geometry: {incompatible}")
-        if invalid_integer_inputs:
-            raise ValueError(
-                f"Integer shader attributes require non-normalized integer geometry: {invalid_integer_inputs}"
-            )
 
     def bind(self) -> None:
         raise NotImplementedError
@@ -344,22 +308,22 @@ class VertexStorageBinding:
         self.index_allocator = index_allocator
 
     def allocate_vertices(self, count: int) -> int:
-        return self.storage.allocate_vertices(self, count)
+        return self.vertex_allocator.alloc(count)
 
     def reallocate_vertices(self, start: int, count: int, new_count: int) -> int:
-        return self.storage.reallocate_vertices(self, start, count, new_count)
+        return self.vertex_allocator.realloc(start, count, new_count)
 
     def deallocate_vertices(self, start: int, count: int) -> None:
-        self.storage.deallocate_vertices(self, start, count)
+        self.vertex_allocator.dealloc(start, count)
 
     def allocate_indices(self, count: int) -> int:
-        return self.storage.allocate_indices(self, count)
+        return self.index_allocator.alloc(count)
 
     def reallocate_indices(self, start: int, count: int, new_count: int) -> int:
-        return self.storage.reallocate_indices(self, start, count, new_count)
+        return self.index_allocator.realloc(start, count, new_count)
 
     def deallocate_indices(self, start: int, count: int) -> None:
-        self.storage.deallocate_indices(self, start, count)
+        self.index_allocator.dealloc(start, count)
 
 
 class VertexStreamPool:
