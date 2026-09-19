@@ -303,7 +303,8 @@ on the property by passing a list or tuple of the correct length. For example::
 
 The default data format is single precision floats. To use another storage format,
 create a :class:`~pyglet.graphics.shader.ShaderProgramView` with
-:py:meth:`~pyglet.graphics.shader.ShaderProgram.get_attribute_view`. A view
+:py:meth:`~pyglet.graphics.shader.ShaderProgram.get_vertex_view` and a
+:class:`~pyglet.graphics.VertexLayout`. A view
 uses the same linked shader program and uniforms as its owner, but has its own
 cached vertex formats and vertex domains.
 The following formats are available:
@@ -343,7 +344,7 @@ The following formats are available:
 For example, if you would like to pass the `position` data as a signed int, you
 can create a configured program view before creating vertex lists::
 
-    int_positions = program.get_attribute_view(position='i')
+    int_positions = program.get_vertex_view(pyglet.graphics.VertexLayout(position='2i'))
     vlist = int_positions.vertex_list(3, pyglet.enums.GeometryMode.TRIANGLES)
 
 By appending ``"n"`` to the format string, you can also specify that the passed
@@ -355,22 +356,22 @@ bytes are divided by 255 to get the normalised value.
 A common case is to use normalized unsigned bytes for the color data. A program
 can have multiple format views at once::
 
-    byte_colors = program.get_attribute_view(colors='Bn')
-    float_colors = program.get_attribute_view(colors='f')
+    byte_colors = program.get_vertex_view(pyglet.graphics.VertexLayout(colors='4Bn'))
+    float_colors = program.get_vertex_view(pyglet.graphics.VertexLayout(colors='4f'))
 
     # Repeated requests for the same configuration return the same view.
-    assert program.get_attribute_view(colors='Bn') is byte_colors
+    assert program.get_vertex_view(pyglet.graphics.VertexLayout(colors='4Bn')) is byte_colors
 
 Pyglet's built-in :class:`~pyglet.sprite.Sprite`, :class:`~pyglet.text.Label`,
 and related rendering helpers upload their ``colors`` data as four unsigned
 bytes in the range ``0``--``255``. Their default shaders therefore use a
-normalized-byte view (``get_attribute_view(colors='Bn')``), converting those
+normalized-byte view (``get_vertex_view(VertexLayout(colors='4Bn'))``), converting those
 values to the ``0``--``1`` range expected by a GLSL ``vec4``. If you provide a
 custom shader program to one of these classes, create the same view before
 passing it in::
 
     shader = pyglet.graphics.ShaderProgram(vertex_shader, fragment_shader)
-    shader = shader.get_attribute_view(colors='Bn')
+    shader = shader.get_vertex_view(pyglet.graphics.VertexLayout(colors='4Bn'))
     sprite = pyglet.sprite.Sprite(image, program=shader)
 
 Without the ``'Bn'`` view, the integer color values can be interpreted as
@@ -385,10 +386,10 @@ can be used where a ShaderProgram is accepted::
     float_list = float_colors.vertex_list(3, pyglet.enums.GeometryMode.TRIANGLES,
                                           position=positions, colors=float_color_data)
 
-Views can also carry a divisor configuration without changing the original
-program or another view::
+Views can also carry instance divisors without changing the original program
+or another view::
 
-    instanced = byte_colors.set_instance_attributes(translation=1)
+    instanced = program.get_vertex_view(pyglet.graphics.VertexLayout(translation="3f/1", colors="4Bn"))
     vlist = instanced.vertex_list_instanced(3, pyglet.enums.GeometryMode.TRIANGLES,
                                             position=positions,
                                             colors=colors,
@@ -403,7 +404,7 @@ pass initial arrays of data on creation. Attribute formats are configured on a
 ShaderProgram view, while vertex-list keyword arguments contain only data. To set the
 position and normalized-byte color data on creation::
 
-    byte_colors = program.get_attribute_view(colors='Bn')
+    byte_colors = program.get_vertex_view(pyglet.graphics.VertexLayout(colors='4Bn'))
     vlist = byte_colors.vertex_list(3, pyglet.enums.GeometryMode.TRIANGLES,
                                 position=(200, 400, 300, 350, 300, 450),
                                 colors=(255, 0, 0, 255,  0, 255, 0, 255,  75, 75, 255, 255))
@@ -439,16 +440,15 @@ Instanced Rendering
 
 Instanced rendering lets you draw many copies of the same geometry with a single
 draw call by providing *per-instance* attributes (such as translation, color,
-or scale). In pyglet, configure an attribute's divisor on the shader program
-before creating an instanced vertex list, then create instances to populate the
-per-instance data.
+or scale). In pyglet, configure an attribute's divisor in the ``VertexLayout``
+used by the shader program or view before creating an instanced vertex list.
 
 There are two instanced creation methods:
 
 * :py:meth:`~pyglet.graphics.shader.ShaderProgram.vertex_list_instanced`
 * :py:meth:`~pyglet.graphics.shader.ShaderProgram.vertex_list_instanced_indexed`
 
-Configure instanced attributes on the program before creating instanced vertex lists.
+Configure instanced attributes in the program or view's ``VertexLayout`` before creating instanced vertex lists.
 For normal per-instance behavior, use a divisor of ``1`` (one attribute row per
 instance). The instanced attributes must exist in your shader just like regular
 attributes.
@@ -475,8 +475,8 @@ instances.
 
 Example (indexed instancing)::
 
-    program.set_instance_attributes(translate=1, colors=1)
-    vlist = program.vertex_list_instanced_indexed(
+    instanced = program.get_vertex_view(pyglet.graphics.VertexLayout(translate="3f/1", colors="4f/1"))
+    vlist = instanced.vertex_list_instanced_indexed(
         4,
         mode=pyglet.enums.GeometryMode.TRIANGLES,
         indices=[0, 1, 2, 0, 2, 3],
@@ -491,9 +491,7 @@ Example (indexed instancing)::
     instance2 = vlist.create_instance(translate=(0, 64, 0), colors=(0, 0, 1, 1))
 
 If a different divisor configuration must coexist with the program's default,
-configure it on a view instead::
-
-    instanced_colors = program.get_attribute_view(colors='Bn').set_instance_attributes(colors=1)
+configure it on a view with another ``VertexLayout`` instead.
 
 
 If you lose track of your instances or wish to get them by index, you can do so via the helper method on the mesh

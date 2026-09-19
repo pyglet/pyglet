@@ -28,7 +28,7 @@ from typing import TYPE_CHECKING, Any, Sequence
 
 import pyglet
 from pyglet.graphics import allocation
-from pyglet.graphics.attributes import AttributeFormat, DomainAttributes
+from pyglet.graphics.attributes import AttributeFormat, VertexLayout
 from pyglet.graphics.draw import BatchDrawOptions, DrawContext
 from pyglet.graphics.vertexstorage import (
     IndexStream,
@@ -67,7 +67,7 @@ class VertexList:
     mode: GeometryMode
     _pass_registrations: list[_PassRegistration]
 
-    def __init__(self, domain: VertexDomain, group: Group, start: int, count: int) -> None:  # noqa: D107
+    def __init__(self, domain: VertexDomain, group: Group | None, start: int, count: int) -> None:  # noqa: D107
         self.domain = domain
         self.group = group
         self.start = start
@@ -100,6 +100,8 @@ class VertexList:
                 :attr:`~pyglet.enums.GeometryMode.POINTS` or
                 :attr:`~pyglet.enums.GeometryMode.LINES`.
         """
+        if self.group is None:
+            raise RuntimeError('Attach this VertexList to a Group before drawing it.')
         draw_ctx = DrawContext(
             surface_ctx=self.domain._context,
             backend_ctx=None,
@@ -150,7 +152,7 @@ class VertexList:
         self.domain.deallocate_vertices(self.start, self.count)
         self.domain.dealloc_from_group(self)
 
-    def migrate(self, domain: VertexDomain, group: Group) -> None:
+    def migrate(self, domain: VertexDomain, group: Group | None) -> None:
         """Move this group from its current domain and add to the specified one.
 
         Attributes on domains must match.
@@ -181,15 +183,28 @@ class VertexList:
         self.domain = domain
         self.group = group
         self.start = new_start
-        domain.alloc_to_group(self, group)
-        assert self.bucket is not None
+        if group is not None:
+            domain.alloc_to_group(self, group)
+            assert self.bucket is not None
 
-    def update_group(self, group: Group) -> None:
-        current_bucket = self.bucket
+    def set_group(self, group: Group | None) -> None:
+        """Attach geometry to render state without moving its storage allocation."""
+        if group is self.group:
+            return
+        if group is not None:
+            batch = self.domain.batch
+            if group not in batch.group_map:
+                batch._add_group(group)  # noqa: SLF001
+            self.domain.get_vertex_input_binding(batch._get_group_program(group))  # noqa: SLF001
         self.domain.dealloc_from_group(self)
         self.group = group
-        new_bucket = self.domain.alloc_to_group(self, group)
-        assert new_bucket != current_bucket, "Changing group resulted in the same bucket."
+        if group is not None:
+            self.domain.alloc_to_group(self, group)
+        self.domain.batch._draw_list_dirty = True  # noqa: SLF001
+
+    def update_group(self, group: Group) -> None:
+        """Compatibility wrapper for changing render state."""
+        self.set_group(group)
 
     def set_attribute_data(self, name: str, data: Any) -> None:
         stream = self.domain.attrib_name_buffers[name]
@@ -653,7 +668,7 @@ class VertexDomain(ABC):
     """
 
     attribute_meta: dict[str, AttributeFormat]
-    domain_attributes: DomainAttributes
+    vertex_layout: VertexLayout
     buffer_attributes: list[tuple[AttributeBufferObject, AttributeFormat]]
     attrib_name_buffers: dict[str, VertexStream | InstanceStream]
     vertex_stream: VertexStream
@@ -764,7 +779,7 @@ class VertexDomain(ABC):
         """Release a vertex range through the storage binding."""
         self.storage_binding.deallocate_vertices(start, count)
 
-    def create(self, group: Group, count: int, indices: Sequence[int] | None = None) -> VertexList:  # noqa: ARG002
+    def create(self, group: Group | None, count: int, indices: Sequence[int] | None = None) -> VertexList:  # noqa: ARG002
         """Create a :py:class:`VertexList` in this domain.
 
         Args:
@@ -777,7 +792,8 @@ class VertexDomain(ABC):
         """
         start = self.safe_alloc(count)
         vlist = self._vertexlist_class(self, group, start, count)
-        self.alloc_to_group(vlist, group)
+        if group is not None:
+            self.alloc_to_group(vlist, group)
         return vlist
 
     def get_drawable_bucket(self, group: Group) -> VertexGroupBucket | None:
@@ -810,7 +826,8 @@ class VertexDomain(ABC):
 
     def dealloc_from_group(self, vertex_list):
         """Removes a vertex list from a specific state in this domain."""
-        assert vertex_list.bucket is not None
+        if vertex_list.bucket is None:
+            return
         vertex_list.bucket.remove_vertex_list(vertex_list)
         vertex_list.bucket = None
 
@@ -900,7 +917,7 @@ class IndexedVertexDomain(VertexDomain):
         """Release an index range through the storage binding."""
         self.storage_binding.deallocate_indices(start, count)
 
-    def create(self, group: Group, count: int, indices: Sequence[int] | None = None) -> IndexedVertexList:
+    def create(self, group: Group | None, count: int, indices: Sequence[int] | None = None) -> IndexedVertexList:
         """Create an :py:class:`IndexedVertexList` in this domain.
 
         Args:
@@ -917,7 +934,8 @@ class IndexedVertexDomain(VertexDomain):
         index_start = self.safe_index_alloc(index_count)
         vertex_list = self._vertexlist_class(self, group, start, count, index_start, index_count)
         vertex_list.indices = indices  # Move into class at some point?
-        self.alloc_to_group(vertex_list, group)
+        if group is not None:
+            self.alloc_to_group(vertex_list, group)
         return vertex_list
 
     def _get_state_bucket(self, group: Group) -> IndexedVertexGroupBucket:
@@ -981,11 +999,12 @@ class InstancedVertexDomain(VertexDomain):
         key = (vertex_list.start, vertex_list.count)
         self._instance_map[key] = vertex_list.instance_bucket
 
-    def create(self, group: Group, count: int, indices: Sequence[int] | None = None) -> VertexList:  # noqa: ARG002
+    def create(self, group: Group | None, count: int, indices: Sequence[int] | None = None) -> VertexList:  # noqa: ARG002
         start = self.safe_alloc(count)
         bucket = self.instance_domain.get_arrays_bucket(mode=0, first_vertex=start, vertex_count=count)
         vlist = self._vertexlist_class(self, group, start, count, bucket)
-        self.alloc_to_group(vlist, group)
+        if group is not None:
+            self.alloc_to_group(vlist, group)
         return vlist
 
 class InstancedIndexedVertexDomain(IndexedVertexDomain):
@@ -1014,7 +1033,7 @@ class InstancedIndexedVertexDomain(IndexedVertexDomain):
         key = (vertex_list.index_start, vertex_list.index_count)
         self._instance_map[key] = vertex_list.instance_bucket
 
-    def create(self, group: Group, count: int, indices: Sequence[int] | None) -> InstanceIndexedVertexList:
+    def create(self, group: Group | None, count: int, indices: Sequence[int] | None) -> InstanceIndexedVertexList:
         """Create an :py:class:`IndexedVertexList` in this domain.
 
         Args:
@@ -1039,7 +1058,8 @@ class InstancedIndexedVertexDomain(IndexedVertexDomain):
         )
         vertex_list = self._vertexlist_class(self, group, start, count, index_start, index_count, self.index_type, base_vertex, bucket)
         vertex_list.indices = indices
-        self.alloc_to_group(vertex_list, group)
+        if group is not None:
+            self.alloc_to_group(vertex_list, group)
         return vertex_list
 
     def _create_vertex_class(self) -> type:

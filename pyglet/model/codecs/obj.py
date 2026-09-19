@@ -244,9 +244,8 @@ class OBJScene(Scene):
                     program = pyglet.model.get_default_shader()
 
                 formats = {a.name: a.fmt for a in primitive.attributes if a.name in program.attributes}
-                layout = program.get_vertex_view(VertexLayout(**formats)).set_instance_attributes(
-                    TRANSLATION=1, ROTATION=1, SCALE=1
-                )
+                formats |= {'TRANSLATION': '3f/1', 'ROTATION': '4f/1', 'SCALE': '3f/1'}
+                layout = program.get_vertex_view(VertexLayout(**formats))
                 if material.texture_name:
                     matgroup = TexturedMaterialGroup(material, layout, _texture, parent=group)
                 else:

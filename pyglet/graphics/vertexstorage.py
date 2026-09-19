@@ -450,8 +450,8 @@ class VertexStorage:
             raise ValueError('chunk_size must be positive.')
         self._batch = batch
         self.chunk_size = chunk_size
-        self.layouts: list[VertexLayout] = []
-        self.attribute_formats: dict[str, set[str]] = {}
+        self.layouts: dict[tuple[Any, ...], VertexLayout] = {}
+        self.attribute_formats: dict[str, set[AttributeFormat]] = {}
         self._vertex_streams: list[VertexStream] = []
         self._index_streams: list[Any] = []
         self._bindings: list[VertexStorageBinding] = []
@@ -459,27 +459,25 @@ class VertexStorage:
             self.add_layout(layout)
 
     def add_layout(self, layout: VertexLayout) -> VertexLayout:
-        if not isinstance(layout, VertexLayout):
-            raise TypeError('layout must be a VertexLayout')
-        if layout not in self.layouts:
-            self.layouts.append(layout)
-            for name, fmt in layout.formats.items():
-                self.attribute_formats.setdefault(name, set()).add(fmt)
+        if existing := self.layouts.get(layout.key):
+            return existing
+
+        self.layouts[layout.key] = layout
+        for name, attribute_format in layout.attribute_formats.items():
+            self.attribute_formats.setdefault(name, set()).add(attribute_format)
         return layout
 
     def resolve_layout(self, vertex_layout: VertexLayout | None = None) -> VertexLayout | None:
         """Register or infer the geometry layout used with this storage."""
         if vertex_layout is None:
             if len(self.layouts) == 1:
-                vertex_layout = self.layouts[0]
+                vertex_layout = next(iter(self.layouts.values()))
             elif len(self.layouts) > 1:
                 raise ValueError('Specify vertex_layout when a VertexStorage supports multiple layouts.')
             else:
                 return None
-        if not isinstance(vertex_layout, VertexLayout):
-            raise TypeError('vertex_layout must be a VertexLayout')
-        self.add_layout(vertex_layout)
-        return vertex_layout
+        assert vertex_layout, "vertex_layout must be a VertexLayout"
+        return self.add_layout(vertex_layout)
 
     def get_vertex_layout(self, shader_layout: Any, vertex_layout: VertexLayout | None = None) -> Any:
         """Return ``shader_layout`` adapted to this storage's vertex layout.
