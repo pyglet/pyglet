@@ -37,6 +37,7 @@ from pyglet.graphics.vertexstorage import (
     VertexArrayBinding,
     VertexArrayProtocol,
     VertexInputBinding,
+    VertexStorageBinding,
     VertexStream,
 )
 
@@ -146,7 +147,7 @@ class VertexList:
         if self._pass_registrations:
             self.domain.batch._remove_vertex_list_from_passes(self)  # noqa: SLF001
             self._pass_registrations.clear()
-        self.domain.vertex_buffers.allocator.dealloc(self.start, self.count)
+        self.domain.deallocate_vertices(self.start, self.count)
         self.domain.dealloc_from_group(self)
 
     def migrate(self, domain: VertexDomain, group: Group) -> None:
@@ -176,7 +177,7 @@ class VertexList:
         # Copy data to new stream.
         self.domain.dealloc_from_group(self)
         self.domain.vertex_buffers.copy_data(new_start, domain.vertex_buffers, self.start, self.count)
-        self.domain.vertex_buffers.allocator.dealloc(self.start, self.count)
+        self.domain.deallocate_vertices(self.start, self.count)
         self.domain = domain
         self.group = group
         self.start = new_start
@@ -333,7 +334,7 @@ class _IndexSupport:
         new_start = domain.safe_alloc(self.count)
         # Copy data to new stream.
         self.domain.vertex_buffers.copy_data(new_start, domain.vertex_buffers, self.start, self.count)
-        self.domain.vertex_buffers.allocator.dealloc(self.start, self.count)
+        self.domain.deallocate_vertices(self.start, self.count)
         self.domain = domain
         self.group = group
         self.start = new_start
@@ -368,7 +369,7 @@ class _LocalIndexSupport(_IndexSupport):
         super().migrate(domain, group)
 
         data = old_dom.index_stream.get_region(src_idx_start, src_idx_count)
-        old_dom.index_stream.allocator.dealloc(src_idx_start, src_idx_count)
+        old_dom.deallocate_indices(src_idx_start, src_idx_count)
 
         new_idx_start = self.domain.safe_index_alloc(src_idx_count)
         self.domain.index_stream.set_region(new_idx_start, src_idx_count, data)
@@ -411,7 +412,7 @@ class _RunningIndexSupport(_IndexSupport):
         super().migrate(domain, group)
 
         data = old_dom.index_stream.get_region(src_idx_start, src_idx_count)
-        old_dom.index_stream.allocator.dealloc(src_idx_start, src_idx_count)
+        old_dom.deallocate_indices(src_idx_start, src_idx_count)
 
         delta: int = self.start - old_start
         if delta:
@@ -488,7 +489,7 @@ class IndexedVertexList(VertexList):
     def delete(self) -> None:
         """Delete this group."""
         super().delete()
-        self.domain.index_stream.dealloc(self.index_start, self.index_count)
+        self.domain.deallocate_indices(self.index_start, self.index_count)
 
     @property
     def indices(self) -> list[int]:
@@ -535,7 +536,7 @@ class InstanceIndexedVertexList(VertexList):
         self.instance_bucket.clear()
 
         super().delete()
-        self.domain.index_stream.dealloc(self.index_start, self.index_count)
+        self.domain.deallocate_indices(self.index_start, self.index_count)
         self.domain._instance_map.pop(key, None)
 
     def migrate(self, domain: InstancedIndexedVertexDomain, group: Group) -> None:
@@ -701,6 +702,20 @@ class VertexDomain(ABC):
         self.shader_attributes = attributes.copy()
         self.vao = self._create_vao()
 
+    def set_storage_binding(self, binding: VertexStorageBinding) -> None:
+        """Attach the storage-owned streams and allocation resources for this domain."""
+        self.storage_binding = binding
+
+    @property
+    def allocator(self):
+        """Compatibility alias for this domain's storage-owned vertex allocator."""
+        return self.storage_binding.vertex_allocator
+
+    @property
+    def index_allocator(self):
+        """Compatibility alias for this domain's storage-owned index allocator."""
+        return self.storage_binding.index_allocator
+
     @abstractmethod
     def _has_multi_draw_extension(self, ctx: SurfaceContext) -> bool:
         raise NotImplementedError
@@ -739,11 +754,15 @@ class VertexDomain(ABC):
 
     def safe_alloc(self, count: int) -> int:
         """Allocate vertices, resizing the buffers if necessary."""
-        return self.vertex_buffers.alloc(count)
+        return self.storage_binding.allocate_vertices(count)
 
     def safe_realloc(self, start: int, count: int, new_count: int) -> int:
         """Reallocate vertices, resizing the buffers if necessary."""
-        return self.vertex_buffers.realloc(start, count, new_count)
+        return self.storage_binding.reallocate_vertices(start, count, new_count)
+
+    def deallocate_vertices(self, start: int, count: int) -> None:
+        """Release a vertex range through the storage binding."""
+        self.storage_binding.deallocate_vertices(start, count)
 
     def create(self, group: Group, count: int, indices: Sequence[int] | None = None) -> VertexList:  # noqa: ARG002
         """Create a :py:class:`VertexList` in this domain.
@@ -840,10 +859,10 @@ class VertexDomain(ABC):
     @property
     def is_empty(self) -> bool:
         """If the domain has no vertices."""
-        return not self.vertex_buffers.allocator.starts
+        return not self.allocator.starts
 
     def __repr__(self) -> str:
-        return f'<{self.__class__.__name__}@{id(self):x} vertex_alloc={self.vertex_buffers.allocator}>'
+        return f'<{self.__class__.__name__}@{id(self):x} vertex_alloc={self.allocator}>'
 
 
 class IndexedVertexDomain(VertexDomain):
@@ -871,11 +890,15 @@ class IndexedVertexDomain(VertexDomain):
 
     def safe_index_alloc(self, count: int) -> int:
         """Allocate indices, resizing the buffers if necessary."""
-        return self.index_stream.alloc(count)
+        return self.storage_binding.allocate_indices(count)
 
     def safe_index_realloc(self, start: int, count: int, new_count: int) -> int:
         """Reallocate indices, resizing the buffers if necessary."""
-        return self.index_stream.realloc(start, count, new_count)
+        return self.storage_binding.reallocate_indices(start, count, new_count)
+
+    def deallocate_indices(self, start: int, count: int) -> None:
+        """Release an index range through the storage binding."""
+        self.storage_binding.deallocate_indices(start, count)
 
     def create(self, group: Group, count: int, indices: Sequence[int] | None = None) -> IndexedVertexList:
         """Create an :py:class:`IndexedVertexList` in this domain.

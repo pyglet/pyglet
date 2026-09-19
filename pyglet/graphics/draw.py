@@ -1664,7 +1664,7 @@ class _BucketBatch(Batch):
                     domain_info = repr(domain).split('@')[-1].replace('>', '')
                     print(f"{indent}  > Domain: {domain.__class__.__name__}@{domain_info}")
 
-                    starts, sizes = domain.vertex_buffers.allocator.get_allocated_regions()
+                    starts, sizes = domain.allocator.get_allocated_regions()
                     for start, size in zip(starts, sizes):
                         print(f"{indent}     - Region start={start:<4} size={size:<4}")
                         attribs = ', '.join(domain.attrib_name_buffers.keys())

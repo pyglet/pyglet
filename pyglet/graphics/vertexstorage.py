@@ -326,6 +326,42 @@ class VertexArrayBinding:
         return f'<{self.__class__.__name__}@{id(self):x} vao={self.vao}, streams={self.streams}>'
 
 
+class VertexStorageBinding:
+    """Storage-owned streams and allocation resources used by one domain."""
+
+    def __init__(
+            self,
+            storage: VertexStorage,
+            vertex_stream: VertexStream,
+            index_stream: IndexStream | None,
+            vertex_allocator: Any,
+            index_allocator: Any | None,
+    ) -> None:
+        self.storage = storage
+        self.vertex_stream = vertex_stream
+        self.index_stream = index_stream
+        self.vertex_allocator = vertex_allocator
+        self.index_allocator = index_allocator
+
+    def allocate_vertices(self, count: int) -> int:
+        return self.storage.allocate_vertices(self, count)
+
+    def reallocate_vertices(self, start: int, count: int, new_count: int) -> int:
+        return self.storage.reallocate_vertices(self, start, count, new_count)
+
+    def deallocate_vertices(self, start: int, count: int) -> None:
+        self.storage.deallocate_vertices(self, start, count)
+
+    def allocate_indices(self, count: int) -> int:
+        return self.storage.allocate_indices(self, count)
+
+    def reallocate_indices(self, start: int, count: int, new_count: int) -> int:
+        return self.storage.reallocate_indices(self, start, count, new_count)
+
+    def deallocate_indices(self, start: int, count: int) -> None:
+        self.storage.deallocate_indices(self, start, count)
+
+
 class VertexStreamPool:
     """Own compatible attribute buffers shared by multiple vertex streams."""
 
@@ -335,15 +371,15 @@ class VertexStreamPool:
         self._streams: list[VertexStream] = []
         self._allocator: allocation.Allocator | None = None
 
-    def attach_domain(self, domain: VertexDomain) -> None:
+    def attach_domain(self, domain: VertexDomain) -> allocation.ChunkAllocator:
         """Share compatible buffers with a domain's existing vertex stream."""
-        self._attach_stream(domain)
+        return self._attach_stream(domain)
 
     @staticmethod
     def _attribute_buffer_key(attribute: Any) -> tuple[str, int, str, bool, int]:
         return attribute.key
 
-    def _attach_stream(self, domain: VertexDomain) -> None:
+    def _attach_stream(self, domain: VertexDomain) -> allocation.ChunkAllocator:
         stream = domain.vertex_buffers
         if self._allocator is None:
             self._allocator = stream.allocator
@@ -366,11 +402,12 @@ class VertexStreamPool:
 
         self._streams.append(stream)
         self._resize_attribute_buffers(self._allocator.capacity)
-        domain.allocator = allocation.ChunkAllocator(
+        allocator = allocation.ChunkAllocator(
             self.chunk_size, self._allocate_attribute_chunk, self._allocator.dealloc,
         )
-        if changed_buffers:
-            domain.vao = domain._create_vao()
+        # The domain's input binding is configured after storage attachment.
+        # Rebinding it here would unnecessarily couple stream replacement to VAO creation.
+        return allocator
 
     def _allocate_attribute_chunk(self, count: int) -> int:
         assert self._allocator is not None
@@ -417,6 +454,7 @@ class VertexStorage:
         self.attribute_formats: dict[str, set[str]] = {}
         self._vertex_streams: list[VertexStream] = []
         self._index_streams: list[Any] = []
+        self._bindings: list[VertexStorageBinding] = []
         for layout in layouts:
             self.add_layout(layout)
 
@@ -455,20 +493,59 @@ class VertexStorage:
 
     def attach_domain(self, domain: VertexDomain) -> None:
         """Attach a domain with its own vertex and index streams."""
-        self._attach_vertex_stream(domain)
-        self._attach_index_stream(domain)
+        vertex_stream = self._attach_vertex_stream(domain)
+        index_stream = self._attach_index_stream(domain)
+        self._bind_domain(domain, vertex_stream, index_stream, vertex_stream, index_stream)
 
-    def _attach_vertex_stream(self, domain: VertexDomain) -> None:
+    def _attach_vertex_stream(self, domain: VertexDomain) -> VertexStream:
         vertex_stream = domain.vertex_buffers
         self._vertex_streams.append(vertex_stream)
-        domain.allocator = vertex_stream
+        return vertex_stream
 
-    def _attach_index_stream(self, domain: VertexDomain) -> None:
+    def _attach_index_stream(self, domain: VertexDomain) -> IndexStream | None:
         previous_index_stream = getattr(domain, 'index_stream', None)
         if previous_index_stream is None:
-            return
+            return None
         self._index_streams.append(previous_index_stream)
-        domain.index_allocator = previous_index_stream
+        return previous_index_stream
+
+    def _bind_domain(
+            self,
+            domain: VertexDomain,
+            vertex_stream: VertexStream,
+            index_stream: IndexStream | None,
+            vertex_allocator: Any,
+            index_allocator: Any | None,
+    ) -> None:
+        binding = VertexStorageBinding(
+            self, vertex_stream, index_stream, vertex_allocator, index_allocator,
+        )
+        self._bindings.append(binding)
+        domain.set_storage_binding(binding)
+
+    def allocate_vertices(self, binding: VertexStorageBinding, count: int) -> int:
+        return binding.vertex_allocator.alloc(count)
+
+    def reallocate_vertices(self, binding: VertexStorageBinding, start: int, count: int, new_count: int) -> int:
+        return binding.vertex_allocator.realloc(start, count, new_count)
+
+    def deallocate_vertices(self, binding: VertexStorageBinding, start: int, count: int) -> None:
+        binding.vertex_allocator.dealloc(start, count)
+
+    def allocate_indices(self, binding: VertexStorageBinding, count: int) -> int:
+        if binding.index_allocator is None:
+            raise RuntimeError('This domain does not have an index allocation resource.')
+        return binding.index_allocator.alloc(count)
+
+    def reallocate_indices(self, binding: VertexStorageBinding, start: int, count: int, new_count: int) -> int:
+        if binding.index_allocator is None:
+            raise RuntimeError('This domain does not have an index allocation resource.')
+        return binding.index_allocator.realloc(start, count, new_count)
+
+    def deallocate_indices(self, binding: VertexStorageBinding, start: int, count: int) -> None:
+        if binding.index_allocator is None:
+            raise RuntimeError('This domain does not have an index allocation resource.')
+        binding.index_allocator.dealloc(start, count)
 
 
 class VertexStorageShared(VertexStorage):
@@ -489,13 +566,14 @@ class VertexStorageShared(VertexStorage):
 
     def attach_domain(self, domain: VertexDomain) -> None:
         """Attach a domain to this storage's compatible buffer pools."""
-        self._vertex_stream_pool.attach_domain(domain)
-        self._attach_index_stream(domain)
+        vertex_allocator = self._vertex_stream_pool.attach_domain(domain)
+        index_stream, index_allocator = self._attach_index_stream(domain)
+        self._bind_domain(domain, domain.vertex_buffers, index_stream, vertex_allocator, index_allocator)
 
-    def _attach_index_stream(self, domain: VertexDomain) -> None:
+    def _attach_index_stream(self, domain: VertexDomain) -> tuple[IndexStream | None, allocation.ChunkAllocator | None]:
         previous_index_stream = getattr(domain, 'index_stream', None)
         if previous_index_stream is None:
-            return
+            return None, None
         assert domain.index_type is not None
 
         index_stream = self._shared_index_streams.setdefault(domain.index_type, previous_index_stream)
@@ -504,7 +582,7 @@ class VertexStorageShared(VertexStorage):
         if index_stream is not previous_index_stream:
             domain.index_stream = index_stream
             domain._streams = [index_stream if stream is previous_index_stream else stream for stream in domain._streams]
-            domain.vao = domain._create_vao()
-        domain.index_allocator = allocation.ChunkAllocator(
+        allocator = allocation.ChunkAllocator(
             self.chunk_size, index_stream.alloc, index_stream.allocator.dealloc,
         )
+        return index_stream, allocator
