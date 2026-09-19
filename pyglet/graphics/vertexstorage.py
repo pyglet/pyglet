@@ -9,10 +9,10 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any, Literal, NoReturn, Protocol, Sequence
+from typing import TYPE_CHECKING, Any, NoReturn, Protocol, Sequence
 
 from pyglet.graphics import allocation
-from pyglet.graphics.attributes import Attribute, AttributeView, DataTypeTuple, GraphicsAttribute, VertexLayout
+from pyglet.graphics.attributes import AttributeFormat, AttributeView, DataTypeTuple, GraphicsAttribute, VertexLayout
 
 if TYPE_CHECKING:
     from ctypes import Array
@@ -127,34 +127,34 @@ class Stream(ABC):
 
 class VertexStream(Stream):
     """A stream of buffers used with per-vertex attributes."""
-
+    attribute_layouts: dict[str, GraphicsAttribute]
     attrib_name_buffers: dict[str, AttributeBufferObject]
-    attribute_meta: Sequence[Attribute]
+    attribute_formats: dict[str, AttributeFormat]
 
-    def __init__(self, ctx: SurfaceContext, initial_size: int, attrs: Sequence[Attribute], *, divisor: int = 0):
+    def __init__(self, ctx: SurfaceContext, initial_size: int, attrs: Sequence[AttributeFormat], *, divisor: int = 0):
         super().__init__(initial_size)
         self._ctx = ctx
-        self.attribute_names = {}
+        self.attribute_formats = {attribute.name: attribute for attribute in attrs}
+        self.attribute_layouts = {}
         self.buffers = []
         self.attrib_name_buffers = {}
         self._property_dict = {}
-        self.attribute_meta = attrs
         self._allocate_buffers()
 
     def get_buffer(self, size: int, attribute: GraphicsAttribute) -> AttributeBufferObject:
         raise NotImplementedError
 
-    def get_graphics_attribute(self, attribute: Attribute, view: AttributeView) -> GraphicsAttribute:
+    def get_attribute_layout(self, attribute: AttributeFormat, view: AttributeView) -> GraphicsAttribute:
         raise NotImplementedError
 
-    def _create_separate_buffers(self, attributes: Sequence[Attribute]) -> None:
+    def _create_separate_buffers(self, attributes: Sequence[AttributeFormat]) -> None:
         """Create a separate buffer for each attribute."""
         for attribute in attributes:
-            name = attribute.fmt.name
-            stride = attribute.fmt.components * attribute.element_size
+            name = attribute.name
+            stride = attribute.components * attribute.element_size
             view = AttributeView(offset=0, stride=stride)
-            self.attribute_names[name] = attribute = self.get_graphics_attribute(attribute, view)
-            self.attrib_name_buffers[name] = buffer = self.get_buffer(stride * self.allocator.capacity, attribute)
+            self.attribute_layouts[name] = layout = self.get_attribute_layout(attribute, view)
+            self.attrib_name_buffers[name] = buffer = self.get_buffer(stride * self.allocator.capacity, layout)
             self.buffers.append(buffer)
             self._property_dict[name] = _make_attribute_property(name)
 
@@ -163,14 +163,20 @@ class VertexStream(Stream):
         raise NotImplementedError
 
     def _allocate_buffers(self) -> None:
-        for attrib in self.attribute_meta:
-            fmt_dt = attrib.fmt.data_type
-            assert fmt_dt in DataTypeTuple, f"'{fmt_dt}' is not a valid attribute format for '{attrib.fmt.name}'."
-        self._create_separate_buffers(self.attribute_meta)
+        for attribute in self.attribute_formats.values():
+            assert attribute.data_type in DataTypeTuple, (
+                f"'{attribute.data_type}' is not a valid attribute format for '{attribute.name}'."
+            )
+        self._create_separate_buffers(tuple(self.attribute_formats.values()))
 
     def set_region(self, start: int, count: int, data_by_attr: dict[str, Any]) -> None:
         for name, buf in self.attrib_name_buffers.items():
-            buf.set_region(start, count, data_by_attr[name])
+            data = data_by_attr[name]
+            try:
+                buf.set_region(start, count, data)
+            except ValueError:
+                msg = f"Invalid data size for '{name}'. Expected {buf.element_count * count}, got {len(data)}."
+                raise ValueError(msg) from None
 
     def set_attribute_region(self, name: str, start: int, count: int, data: Any) -> None:
         self.attrib_name_buffers[name].set_region(start, count, data)
@@ -210,7 +216,7 @@ class VertexStream(Stream):
             dst_stream.attrib_name_buffers[name].set_region(dst_slot, count, data)
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}(attributes={list(self.attribute_meta)}, alloc={self.allocator})'
+        return f'{self.__class__.__name__}(attributes={list(self.attribute_formats.values())}, alloc={self.allocator})'
 
 
 class InstanceStream(VertexStream):
@@ -268,8 +274,8 @@ class VertexArrayBinding:
 
     def __init__(self, ctx: SurfaceContext, streams: list[VertexStream | InstanceStream | IndexStream]):
         self._ctx = ctx
-        self.vao = self._create_vao()
         self.streams = streams
+        self.vao = self._create_vao()
         self._link()
 
     def bind(self) -> None:
@@ -289,6 +295,42 @@ class VertexArrayBinding:
         return f'<{self.__class__.__name__}@{id(self):x} vao={self.vao}, streams={self.streams}>'
 
 
+class VertexStorageBinding:
+    """Storage-owned streams and allocation resources used by one domain."""
+
+    def __init__(
+            self,
+            storage: VertexStorage,
+            vertex_stream: VertexStream,
+            index_stream: IndexStream | None,
+            vertex_allocator: Any,
+            index_allocator: Any | None,
+    ) -> None:
+        self.storage = storage
+        self.vertex_stream = vertex_stream
+        self.index_stream = index_stream
+        self.vertex_allocator = vertex_allocator
+        self.index_allocator = index_allocator
+
+    def allocate_vertices(self, count: int) -> int:
+        return self.vertex_allocator.alloc(count)
+
+    def reallocate_vertices(self, start: int, count: int, new_count: int) -> int:
+        return self.vertex_allocator.realloc(start, count, new_count)
+
+    def deallocate_vertices(self, start: int, count: int) -> None:
+        self.vertex_allocator.dealloc(start, count)
+
+    def allocate_indices(self, count: int) -> int:
+        return self.index_allocator.alloc(count)
+
+    def reallocate_indices(self, start: int, count: int, new_count: int) -> int:
+        return self.index_allocator.realloc(start, count, new_count)
+
+    def deallocate_indices(self, start: int, count: int) -> None:
+        self.index_allocator.dealloc(start, count)
+
+
 class VertexStreamPool:
     """Own compatible attribute buffers shared by multiple vertex streams."""
 
@@ -298,16 +340,15 @@ class VertexStreamPool:
         self._streams: list[VertexStream] = []
         self._allocator: allocation.Allocator | None = None
 
-    def attach_domain(self, domain: VertexDomain) -> None:
+    def attach_domain(self, domain: VertexDomain) -> allocation.ChunkAllocator:
         """Share compatible buffers with a domain's existing vertex stream."""
-        self._attach_stream(domain)
+        return self._attach_stream(domain)
 
     @staticmethod
     def _attribute_buffer_key(attribute: Any) -> tuple[str, int, str, bool, int]:
-        fmt = attribute.fmt
-        return fmt.name, fmt.components, fmt.data_type, fmt.normalized, fmt.divisor
+        return attribute.key
 
-    def _attach_stream(self, domain: VertexDomain) -> None:
+    def _attach_stream(self, domain: VertexDomain) -> allocation.ChunkAllocator:
         stream = domain.vertex_buffers
         if self._allocator is None:
             self._allocator = stream.allocator
@@ -316,7 +357,7 @@ class VertexStreamPool:
 
         changed_buffers = False
         for name, attribute in domain.attribute_meta.items():
-            if attribute.fmt.is_instanced:
+            if attribute.is_instanced:
                 continue
             key = self._attribute_buffer_key(attribute)
             buffer = stream.attrib_name_buffers[name]
@@ -330,11 +371,12 @@ class VertexStreamPool:
 
         self._streams.append(stream)
         self._resize_attribute_buffers(self._allocator.capacity)
-        domain.allocator = allocation.ChunkAllocator(
+        allocator = allocation.ChunkAllocator(
             self.chunk_size, self._allocate_attribute_chunk, self._allocator.dealloc,
         )
-        if changed_buffers:
-            domain.vao = domain._create_vao()
+        # The domain's input binding is configured after storage attachment.
+        # Rebinding it here would unnecessarily couple stream replacement to VAO creation.
+        return allocator
 
     def _allocate_attribute_chunk(self, count: int) -> int:
         assert self._allocator is not None
@@ -362,7 +404,9 @@ class VertexStreamPool:
 
 
 class VertexStorage:
-    """A batch-owned namespace for reusable, layout-compatible geometry."""
+    """A batch-owned namespace with independent streams and allocators."""
+
+    sharing_policy = 'separate'
 
     def __init__(
         self,
@@ -370,46 +414,39 @@ class VertexStorage:
         layouts: Iterable[VertexLayout] = (),
         *,
         chunk_size: int = 4096,
-        sharing_policy: Literal['separate', 'shared'] = 'separate',
     ) -> None:
         if chunk_size < 1:
             raise ValueError('chunk_size must be positive.')
-        if sharing_policy not in ('separate', 'shared'):
-            raise ValueError("sharing_policy must be 'separate' or 'shared'.")
         self._batch = batch
         self.chunk_size = chunk_size
-        self.sharing_policy = sharing_policy
-        self.layouts: list[VertexLayout] = []
-        self.attribute_formats: dict[str, set[str]] = {}
+        self.layouts: dict[tuple[Any, ...], VertexLayout] = {}
+        self.attribute_formats: dict[str, set[AttributeFormat]] = {}
         self._vertex_streams: list[VertexStream] = []
-        self._vertex_stream_pool = VertexStreamPool(chunk_size) if sharing_policy == 'shared' else None
         self._index_streams: list[Any] = []
-        self._shared_index_streams: dict[str, Any] = {}
+        self._bindings: list[VertexStorageBinding] = []
         for layout in layouts:
             self.add_layout(layout)
 
     def add_layout(self, layout: VertexLayout) -> VertexLayout:
-        if not isinstance(layout, VertexLayout):
-            raise TypeError('layout must be a VertexLayout')
-        if layout not in self.layouts:
-            self.layouts.append(layout)
-            for name, fmt in layout.formats.items():
-                self.attribute_formats.setdefault(name, set()).add(fmt)
+        if existing := self.layouts.get(layout.key):
+            return existing
+
+        self.layouts[layout.key] = layout
+        for name, attribute_format in layout.attribute_formats.items():
+            self.attribute_formats.setdefault(name, set()).add(attribute_format)
         return layout
 
     def resolve_layout(self, vertex_layout: VertexLayout | None = None) -> VertexLayout | None:
         """Register or infer the geometry layout used with this storage."""
         if vertex_layout is None:
             if len(self.layouts) == 1:
-                vertex_layout = self.layouts[0]
+                vertex_layout = next(iter(self.layouts.values()))
             elif len(self.layouts) > 1:
                 raise ValueError('Specify vertex_layout when a VertexStorage supports multiple layouts.')
             else:
                 return None
-        if not isinstance(vertex_layout, VertexLayout):
-            raise TypeError('vertex_layout must be a VertexLayout')
-        self.add_layout(vertex_layout)
-        return vertex_layout
+        assert vertex_layout, "vertex_layout must be a VertexLayout"
+        return self.add_layout(vertex_layout)
 
     def get_vertex_layout(self, shader_layout: Any, vertex_layout: VertexLayout | None = None) -> Any:
         """Return ``shader_layout`` adapted to this storage's vertex layout.
@@ -422,28 +459,89 @@ class VertexStorage:
         return shader_layout.get_vertex_view(layout) if layout is not None else shader_layout
 
     def attach_domain(self, domain: VertexDomain) -> None:
-        """Attach a domain using this storage's selected sharing policy."""
-        if self.sharing_policy == 'shared':
-            assert self._vertex_stream_pool is not None
-            self._vertex_stream_pool.attach_domain(domain)
-        else:
-            self._attach_separate_vertex_stream(domain)
-        self._attach_index_stream(domain)
+        """Attach a domain with its own vertex and index streams."""
+        vertex_stream = self._attach_vertex_stream(domain)
+        index_stream = self._attach_index_stream(domain)
+        self._bind_domain(domain, vertex_stream, index_stream, vertex_stream, index_stream)
 
-    def _attach_separate_vertex_stream(self, domain: VertexDomain) -> None:
+    def _attach_vertex_stream(self, domain: VertexDomain) -> VertexStream:
         vertex_stream = domain.vertex_buffers
         self._vertex_streams.append(vertex_stream)
-        domain.allocator = vertex_stream
+        return vertex_stream
 
-    def _attach_index_stream(self, domain: VertexDomain) -> None:
+    def _attach_index_stream(self, domain: VertexDomain) -> IndexStream | None:
         previous_index_stream = getattr(domain, 'index_stream', None)
         if previous_index_stream is None:
-            return
+            return None
+        self._index_streams.append(previous_index_stream)
+        return previous_index_stream
+
+    def _bind_domain(
+            self,
+            domain: VertexDomain,
+            vertex_stream: VertexStream,
+            index_stream: IndexStream | None,
+            vertex_allocator: Any,
+            index_allocator: Any | None,
+    ) -> None:
+        binding = VertexStorageBinding(
+            self, vertex_stream, index_stream, vertex_allocator, index_allocator,
+        )
+        self._bindings.append(binding)
+        domain.set_storage_binding(binding)
+
+    def allocate_vertices(self, binding: VertexStorageBinding, count: int) -> int:
+        return binding.vertex_allocator.alloc(count)
+
+    def reallocate_vertices(self, binding: VertexStorageBinding, start: int, count: int, new_count: int) -> int:
+        return binding.vertex_allocator.realloc(start, count, new_count)
+
+    def deallocate_vertices(self, binding: VertexStorageBinding, start: int, count: int) -> None:
+        binding.vertex_allocator.dealloc(start, count)
+
+    def allocate_indices(self, binding: VertexStorageBinding, count: int) -> int:
+        if binding.index_allocator is None:
+            raise RuntimeError('This domain does not have an index allocation resource.')
+        return binding.index_allocator.alloc(count)
+
+    def reallocate_indices(self, binding: VertexStorageBinding, start: int, count: int, new_count: int) -> int:
+        if binding.index_allocator is None:
+            raise RuntimeError('This domain does not have an index allocation resource.')
+        return binding.index_allocator.realloc(start, count, new_count)
+
+    def deallocate_indices(self, binding: VertexStorageBinding, start: int, count: int) -> None:
+        if binding.index_allocator is None:
+            raise RuntimeError('This domain does not have an index allocation resource.')
+        binding.index_allocator.dealloc(start, count)
+
+
+class VertexStorageShared(VertexStorage):
+    """A batch-owned namespace that pools compatible vertex and index buffers."""
+
+    sharing_policy = 'shared'
+
+    def __init__(
+        self,
+        batch: Batch,
+        layouts: Iterable[VertexLayout] = (),
+        *,
+        chunk_size: int = 4096,
+    ) -> None:
+        super().__init__(batch, layouts, chunk_size=chunk_size)
+        self._vertex_stream_pool = VertexStreamPool(chunk_size)
+        self._shared_index_streams: dict[str, Any] = {}
+
+    def attach_domain(self, domain: VertexDomain) -> None:
+        """Attach a domain to this storage's compatible buffer pools."""
+        vertex_allocator = self._vertex_stream_pool.attach_domain(domain)
+        index_stream, index_allocator = self._attach_index_stream(domain)
+        self._bind_domain(domain, domain.vertex_buffers, index_stream, vertex_allocator, index_allocator)
+
+    def _attach_index_stream(self, domain: VertexDomain) -> tuple[IndexStream | None, allocation.ChunkAllocator | None]:
+        previous_index_stream = getattr(domain, 'index_stream', None)
+        if previous_index_stream is None:
+            return None, None
         assert domain.index_type is not None
-        if self.sharing_policy == 'separate':
-            self._index_streams.append(previous_index_stream)
-            domain.index_allocator = previous_index_stream
-            return
 
         index_stream = self._shared_index_streams.setdefault(domain.index_type, previous_index_stream)
         if index_stream is previous_index_stream:
@@ -451,7 +549,7 @@ class VertexStorage:
         if index_stream is not previous_index_stream:
             domain.index_stream = index_stream
             domain._streams = [index_stream if stream is previous_index_stream else stream for stream in domain._streams]
-            domain.vao = domain._create_vao()
-        domain.index_allocator = allocation.ChunkAllocator(
+        allocator = allocation.ChunkAllocator(
             self.chunk_size, index_stream.alloc, index_stream.allocator.dealloc,
         )
+        return index_stream, allocator

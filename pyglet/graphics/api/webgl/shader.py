@@ -46,7 +46,7 @@ from pyglet.graphics.shader import (
     ShaderSource,
     ShaderType,
 )
-from pyglet.graphics.attributes import Attribute, AttributeView, GraphicsAttribute, VertexLayout
+from pyglet.graphics.attributes import AttributeFormat, AttributeView, GraphicsAttribute, ShaderAttribute, VertexLayout
 
 try:
     import js  # noqa: F821
@@ -129,54 +129,20 @@ _attribute_types: dict[int, tuple[int, DataTypes]] = {
 # Accessor classes:
 
 class GLAttribute(GraphicsAttribute):
-    """Abstract accessor for an attribute in a mapped buffer."""
+    """WebGL storage layout for a geometry attribute buffer."""
     gl_type: int
     """OpenGL type enumerant; for example, ``GL_FLOAT``"""
 
-    def __init__(self, attribute: Attribute, view: AttributeView) -> None:
+    def __init__(self, attribute_format: AttributeFormat, view: AttributeView) -> None:
         """Create the attribute accessor.
 
         Args:
-            attribute: The base shader Attribute object.
+            attribute_format: The geometry-owned attribute format.
             view: The view intended for the buffer of this Attribute.
         """
-        self._gl = pyglet.graphics.api.core.current_context.gl
-        super().__init__(attribute, view)
-        data_type = self.attribute.fmt.data_type
+        super().__init__(attribute_format, view)
+        data_type = self.fmt.data_type
         self.gl_type = _data_type_to_gl_type[data_type]
-
-        # If the data type is not normalized and is not a float, consider it an int pointer.
-        self._is_int = data_type != "f" and self.attribute.fmt.normalized is False
-
-    def enable(self) -> None:
-        """Enable the attribute."""
-        self._gl.enableVertexAttribArray(self.attribute.location)
-
-    def disable(self) -> None:
-        self._gl.disableVertexAttribArray(self.attribute.location)
-
-    def set_pointer(self) -> None:
-        """Setup this attribute to point to the currently bound buffer at the given offset."""
-        if self._is_int:
-            self._gl.vertexAttribIPointer(
-                self.attribute.location,
-                self.attribute.fmt.components,
-                self.gl_type,
-                self.view.stride,
-                self.view.offset,
-            )
-        else:
-            self._gl.vertexAttribPointer(
-                self.attribute.location,
-                self.attribute.fmt.components,
-                self.gl_type,
-                self.attribute.fmt.normalized,
-                self.view.stride,
-                self.view.offset,
-            )
-
-    def set_divisor(self) -> None:
-        self._gl.vertexAttribDivisor(self.attribute.location, self.attribute.fmt.divisor)
 
 
 
@@ -464,7 +430,7 @@ def _get_number(gl_ctx: WebGLRenderingContext, program_id: WebGLProgram, variabl
     return gl_ctx.getProgramParameter(program_id, variable_type)
 
 
-def _introspect_attributes(program_id: WebGLProgram) -> dict[str, Attribute]:
+def _introspect_attributes(program_id: WebGLProgram) -> dict[str, ShaderAttribute]:
     """Introspect a Program's Attributes, and return a dict of accessors."""
     _gl = pyglet.graphics.api.core.current_context.gl
     attributes = {}
@@ -484,7 +450,7 @@ def _introspect_attributes(program_id: WebGLProgram) -> dict[str, Attribute]:
         if loc == -1:  # not a user defined attribute
             continue
         count, fmt = _attribute_types[a_type]
-        attributes[a_name] = Attribute(a_name, loc, count, fmt)
+        attributes[a_name] = ShaderAttribute(a_name, loc, count, fmt, a_type)
 
     if _debug_api_shaders:
         for attribute in attributes.values():
@@ -842,9 +808,8 @@ class WebGLShaderProgram(ShaderProgram):
         # Query if Direct State Access is available:
         self.use()
 
-        self._attributes = _introspect_attributes(self._id)
+        self.set_attributes(*_introspect_attributes(self._id).values())
         self.apply_vertex_layout()
-        self._update_attribute_key()
         self._uniforms = _introspect_uniforms(self._gl, self._id)
         self._uniform_blocks = self._get_uniform_blocks()
         self.stop()

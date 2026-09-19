@@ -30,8 +30,8 @@ void main() {
 def _create_program():
     vertex_shader = pyglet.graphics.Shader(VERTEX_SOURCE, "vertex")
     fragment_shader = pyglet.graphics.Shader(FRAGMENT_SOURCE, "fragment")
-    program = pyglet.graphics.ShaderProgram(vertex_shader, fragment_shader, vertex_layout=None)
-    program.set_instance_attributes(translation=1, colors=1)
+    program = pyglet.graphics.ShaderProgram(vertex_shader, fragment_shader,
+                                            vertex_layout=pyglet.graphics.VertexLayout(translation="2f/1", colors="4f/1"))
     return program, vertex_shader, fragment_shader
 
 

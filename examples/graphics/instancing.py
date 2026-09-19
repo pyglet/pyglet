@@ -50,7 +50,7 @@ _fragment_source: str = """#version 330 core
 
 program = pyglet.graphics.ShaderProgram(pyglet.graphics.Shader(_vertex_source, "vertex"),
                                         pyglet.graphics.Shader(_fragment_source, "fragment"))
-program.set_instance_attributes(colors=1, translate=1)
+program = program.get_vertex_view(pyglet.graphics.VertexLayout(colors="4f/1", translate="3f/1"))
 
 
 def _get_quad_vertices(size: int) -> list[int]:

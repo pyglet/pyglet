@@ -366,9 +366,9 @@ class GLAttributeBufferObject(GLBackedBufferObject):
         super().__init__(
             context,
             size,
-            graphics_attr.attribute.fmt.data_type,
+            graphics_attr.fmt.data_type,
             graphics_attr.view.stride,
-            graphics_attr.attribute.fmt.components,
+            graphics_attr.fmt.components,
             store=store,
         )
 
@@ -560,8 +560,8 @@ class PersistentBufferObject(BaseMappedBufferObject):
         self.usage = usage
         self._context = context
         self.stride = graphics_attr.view.stride
-        self.element_count = graphics_attr.attribute.fmt.components
-        self.data_type = graphics_attr.attribute.fmt.data_type
+        self.element_count = graphics_attr.fmt.components
+        self.data_type = graphics_attr.fmt.data_type
         self.flags = GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT
 
         self._handle = None

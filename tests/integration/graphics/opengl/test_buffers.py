@@ -1,4 +1,5 @@
 import ctypes
+import weakref
 
 import pyglet
 import pytest
@@ -9,6 +10,97 @@ from tests.annotations import GraphicsAPIGroups, require_graphics_api, skip_grap
 
 
 pytestmark = require_graphics_api(GraphicsAPIGroups.GL3)
+
+
+class _RecordingAttributeContext:
+    def __init__(self):
+        self.calls = []
+
+    def glEnableVertexAttribArray(self, location):
+        self.calls.append(("enable", location))
+
+    def glVertexAttribPointer(self, *args):
+        self.calls.append(("pointer", *args))
+
+    def glVertexAttribIPointer(self, *args):
+        self.calls.append(("ipointer", *args))
+
+    def glVertexAttribDivisor(self, location, divisor):
+        self.calls.append(("divisor", location, divisor))
+
+
+class _RecordingBuffer:
+    def __init__(self):
+        self.bind_count = 0
+
+    def bind(self):
+        self.bind_count += 1
+
+
+class _AttributeBinding:
+    def __init__(self, attribute):
+        self.shader_attributes = {attribute.name: attribute}
+
+
+def _bind_test_attribute(geometry_format, shader_attribute):
+    from pyglet.graphics.api.gl.shader import GLAttribute
+    from pyglet.graphics.api.gl.vertexdomain import GLVertexStream
+    from pyglet.graphics.attributes import AttributeView
+
+    stream = object.__new__(GLVertexStream)
+    stream._ctx = context = _RecordingAttributeContext()
+    stream._linked_vaos = weakref.WeakSet()
+    stream.attribute_layouts = {
+        geometry_format.name: GLAttribute(geometry_format, AttributeView(offset=0, stride=geometry_format.element_size)),
+    }
+    buffer = _RecordingBuffer()
+    stream.attrib_name_buffers = {geometry_format.name: buffer}
+    binding = _AttributeBinding(shader_attribute)
+    stream.bind_into(binding)
+    return context.calls, buffer, stream, binding
+
+
+def test_vertex_stream_reuses_buffers_with_different_shader_locations():
+    from pyglet.graphics.attributes import AttributeFormat
+
+    geometry_format = AttributeFormat("colors", 4, "B", True, 0)
+    calls, buffer, stream, _ = _bind_test_attribute(
+        geometry_format, Attribute("colors", 0, 4, "f"),
+    )
+    second_binding = _AttributeBinding(Attribute("colors", 7, 4, "f"))
+    stream.bind_into(second_binding)
+
+    assert buffer is stream.attrib_name_buffers["colors"]
+    assert buffer.bind_count == 2
+    assert [call[1] for call in calls if call[0] == "enable"] == [0, 7]
+
+
+@pytest.mark.parametrize("normalized", [False, True])
+def test_integer_geometry_for_float_shader_uses_vertex_attrib_pointer(normalized):
+    from pyglet.graphics.attributes import AttributeFormat
+
+    calls, _, _, _ = _bind_test_attribute(
+        AttributeFormat("colors", 4, "B", normalized, 0),
+        Attribute("colors", 3, 4, "f"),
+    )
+
+    pointer_call = next(call for call in calls if call[0] in ("pointer", "ipointer"))
+    assert pointer_call[0] == "pointer"
+    assert pointer_call[4] is normalized
+
+
+@pytest.mark.parametrize("shader_data_type", ["i", "I"])
+def test_integer_geometry_for_integer_shader_uses_vertex_attrib_ipointer(shader_data_type):
+    from pyglet.graphics.attributes import AttributeFormat
+
+    geometry_data_type = "b" if shader_data_type == "i" else "B"
+    calls, _, _, _ = _bind_test_attribute(
+        AttributeFormat("values", 4, geometry_data_type, False, 1),
+        Attribute("values", 2, 4, shader_data_type),
+    )
+
+    assert any(call[0] == "ipointer" for call in calls)
+    assert ("divisor", 2, 1) in calls
 
 def test_ctype_data_store_assertions():
     with pytest.raises(AssertionError):
@@ -254,6 +346,7 @@ def test_gl_vertex_stream_persistent_resize_rebinds_vao(test_window):
     from pyglet.graphics.api.gl import GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING, GLint
     from pyglet.graphics.api.gl.buffer import PersistentBufferObject
     from pyglet.graphics.api.gl.vertexdomain import GLVertexArrayBinding, GLVertexStream
+    from pyglet.graphics.attributes import AttributeFormat
 
     test_window.switch_to()
     ctx = test_window.context
@@ -269,11 +362,11 @@ def test_gl_vertex_stream_persistent_resize_rebinds_vao(test_window):
     vao_binding = None
     pyglet.options.opengl_persistent_buffers = True
     try:
-        stream = GLVertexStream(ctx, initial_size=2, attrs=[Attribute("position", 0, 2, "f")])
+        stream = GLVertexStream(ctx, initial_size=2, attrs=[AttributeFormat("position", 2, "f", False, 0)])
         buffer = stream.buffers[0]
         assert isinstance(buffer, PersistentBufferObject)
 
-        vao_binding = GLVertexArrayBinding(ctx, [stream])
+        vao_binding = GLVertexArrayBinding(ctx, [stream], {"position": Attribute("position", 0, 2, "f")})
 
         buffer.set_region(0, 2, [1.0, 2.0, 3.0, 4.0])
         old_id = buffer.id

@@ -82,53 +82,86 @@ and new rendering helpers, refer to the enums.
 
 Shader vertex formats
 ^^^^^^^^^^^^^^^^^^^^^
-Vertex-list creation no longer accepts ``(format, values)`` tuples. Configure
-non-default vertex-buffer storage formats on a ShaderProgram view before creating
-vertex lists instead. For example, replace::
+`ShaderProgram` now requires a `vertex_layout` keyword argument. In most
+cases, define the geometry storage format when creating the program::
 
-    program.vertex_list(3, GeometryMode.TRIANGLES, colors=('Bn', colors))
+```
+program = pyglet.graphics.ShaderProgram(
+    vertex_shader,
+    fragment_shader,
+    vertex_layout=pyglet.graphics.VertexLayout(position="2f", colors="4Bn"),
+)
+```
+
+Pass `None` to infer the default layout from the linked shader inputs::
+
+```
+program = pyglet.graphics.ShaderProgram(
+    vertex_shader,
+    fragment_shader,
+    vertex_layout=None,
+)
+```
+
+Vertex-list creation no longer accepts `(format, values)` tuples. Move the
+format into the program's `VertexLayout` and pass only the attribute data
+when creating the vertex list.
+
+Replace::
+
+```
+program.vertex_list(
+    3,
+    GeometryMode.TRIANGLES,
+    colors=("Bn", colors),
+)
+```
 
 with::
 
-    byte_colors = program.get_attribute_view(colors='Bn')
-    byte_colors.vertex_list(3, GeometryMode.TRIANGLES, colors=colors)
+```
+program = pyglet.graphics.ShaderProgram(
+    vertex_shader,
+    fragment_shader,
+    vertex_layout=pyglet.graphics.VertexLayout(colors="4Bn"),
+)
 
-This is especially useful for normalized color attributes: the ``"Bn"`` format
-stores colors as unsigned bytes and normalizes them for a ``vec4`` shader input.
-The built-in Sprite and Label classes use this normalized-byte color layout by
-default. If a custom shader is supplied to a Sprite, Label, or related helper,
-request the matching view explicitly::
+program.vertex_list(
+    3,
+    GeometryMode.TRIANGLES,
+    colors=colors,
+)
+```
 
-    shader = shader.get_attribute_view(colors="Bn")
-    sprite = pyglet.sprite.Sprite(image, program=shader)
+A `VertexLayout` also defines instance divisors. For example::
 
-Otherwise the uploaded ``0``--``255`` color values may be consumed as
-unnormalized floats and clamp to ``1.0``, producing solid white output.
+```
+layout = pyglet.graphics.VertexLayout(
+    position="3f",
+    translation="3f/1",
+)
+```
 
-Instance attribute divisors are also configured once on the program. Replace::
+Adding a divisor `/` with a number `1` defines it as per-instance and
+larger values advance the attribute once every corresponding number of instances.
 
-    program.vertex_list_instanced(3, GeometryMode.TRIANGLES,
-                                  instance_attributes={'translation': 1},
-                                  translation=translations)
+The program's `vertex_layout` should normally describe the geometry used with
+that program. When the same linked shader needs to consume geometry with a
+different compatible layout, use `get_vertex_view`::
 
-with::
+```
+float_colors = program.get_vertex_view(
+    pyglet.graphics.VertexLayout(colors="4f")
+)
 
-    program.set_instance_attributes(translation=1)
-    program.vertex_list_instanced(3, GeometryMode.TRIANGLES,
-                                  translation=translations)
+byte_colors = program.get_vertex_view(
+    pyglet.graphics.VertexLayout(colors="4Bn")
+)
+```
 
-Use ``program.get_attribute_view(...)`` when one linked shader program needs
-multiple vertex formats. It returns an interned
-:class:`~pyglet.graphics.shader.ShaderProgramView`, which can be used anywhere
-a ShaderProgram is accepted. Equivalent configurations return the same view::
-
-    byte_colors = program.get_attribute_view(colors='Bn')
-    float_colors = program.get_attribute_view(colors='f')
-
-To keep a different divisor configuration alongside the program's default,
-configure it on a view::
-
-    instanced_byte_colors = byte_colors.set_instance_attributes(colors=1)
+This allows the same shader, for example, to consume either floating-point
+colors or normalized unsigned-byte colors without creating another linked
+shader program.
 
 
 Image changes and removal of image.blit

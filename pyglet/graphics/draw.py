@@ -4,13 +4,12 @@ import contextlib
 import sys
 import warnings
 import weakref
-from copy import copy
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Sequence, TypeVar, Generator, Literal
 
 import pyglet
 from pyglet.enums import BlendFactor, BlendOp, CompareOp, GeometryMode, GraphicsAPI
-from pyglet.graphics.attributes import DomainAttributes, VertexLayout
+from pyglet.graphics.attributes import VertexLayout
 from pyglet.graphics.state import (
     BlendState,
     CameraScissorProviderProtocol,
@@ -28,11 +27,13 @@ from pyglet.graphics.state import (
     ViewportState,
     _expand_states_in_order,
 )
-from pyglet.graphics.vertexstorage import VertexStorage
+from pyglet.graphics.vertexstorage import VertexStorage, VertexStorageShared
 from pyglet.graphics.api.base import SurfaceContext, BackendRenderer
+from pyglet.graphics import MissingAttributeError
 
 if TYPE_CHECKING:
 
+    from pyglet.graphics import ShaderProgramView
     from collections.abc import Iterable
     from pyglet.graphics.buffer import UniformBufferRegion
     from pyglet.window.camera.base import BaseCamera, CameraScissor
@@ -40,7 +41,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.shader import ShaderProgram
     from pyglet.graphics.texture import Texture
     from pyglet.graphics.vertexdomain import (
-        DomainAttributes, IndexedVertexGroupBucket, IndexedVertexList, VertexDomain, VertexGroupBucket, VertexList,
+        IndexedVertexGroupBucket, IndexedVertexList, VertexDomain, VertexGroupBucket, VertexList,
     )
 
 
@@ -545,15 +546,6 @@ _domain_class_map: dict[tuple[bool, bool], type[VertexDomain]] = {
    #  (True, True): vertexdomain.InstancedIndexedVertexDomain,
 }
 
-@dataclass(frozen=True)
-class _DomainKey:
-    indexed: bool
-    instanced: bool
-    mode: GeometryMode
-    attributes: str
-    storage: VertexStorage | None = None
-
-
 @dataclass
 class BatchDrawOptions:
     """A draw pass encompasses the starting data of a batched draw.
@@ -623,13 +615,13 @@ class Batch:
     a custom drawable, get your vertex domains from the given batch instead of
     setting them up yourself.
     """
-    _empty_domains: set[_DomainKey]
-    _domain_registry: dict[_DomainKey, Any]
+    _empty_domains: set[tuple[bool, bool, GeometryMode, VertexLayout, VertexStorage]]
+    _domain_registry: dict[tuple[bool, bool, GeometryMode, VertexLayout, VertexStorage], Any]
     _draw_list: list[Callable]
     _pass_draw_lists: dict[DrawPass, list[Callable]]
     top_groups: list[Group]
     group_children: dict[Group, list[Group]]
-    group_map: dict[Group, dict[_DomainKey, VertexDomain]]
+    group_map: dict[Group, dict[tuple[bool, bool, GeometryMode, VertexLayout, VertexStorage], VertexDomain]]
     initial_count: int
     _domain_class_map: dict[tuple[bool, bool], type[VertexDomain]] = _domain_class_map
 
@@ -696,7 +688,13 @@ class Batch:
             The new :class:`VertexStorage`, which can be passed as ``storage``
             to this batch's vertex-list creation methods.
         """
-        storage = VertexStorage(self, layouts, chunk_size=chunk_size, sharing_policy=sharing_policy)
+        storage_class = {
+            'separate': VertexStorage,
+            'shared': VertexStorageShared,
+        }.get(sharing_policy)
+        if storage_class is None:
+            raise ValueError("sharing_policy must be 'separate' or 'shared'.")
+        storage = storage_class(self, layouts, chunk_size=chunk_size)
         self._storages.add(storage)
         return storage
 
@@ -705,6 +703,15 @@ class Batch:
         if storage._batch is not self or storage not in self._storages:  # noqa: SLF001
             raise ValueError("VertexStorage was not created by this Batch.")
         return storage
+
+    def _resolve_vertex_list_layout(
+            self, storage: VertexStorage | None, vertex_layout: VertexLayout,
+    ) -> tuple[VertexStorage, VertexLayout]:
+        """Resolve the storage and canonical geometry layout for Batch APIs."""
+        storage = self._resolve_storage(storage)
+        resolved_layout = storage.resolve_layout(vertex_layout)
+        assert resolved_layout is not None
+        return storage, resolved_layout
 
     @staticmethod
     def _get_group_program(group: Group) -> ShaderProgram:
@@ -719,30 +726,41 @@ class Batch:
             vertex_layout: VertexLayout,
             count: int,
             mode: GeometryMode,
-            group: Group,
+            group: Group | None = None,
             *,
             indices: Sequence[int] | None = None,
             instanced: bool = False,
-            storage: VertexStorage | None = None,
+            storage: VertexStorage,
+            data_error_type: type[BaseException] = MissingAttributeError,
             **data: Any,
     ) -> VertexList | IndexedVertexList:
-        """Create geometry using this batch's group program and vertex layout."""
-        if not isinstance(vertex_layout, VertexLayout):
-            raise TypeError('vertex_layout must be a VertexLayout')
+        """Create geometry from resolved storage and layout inputs."""
+        assert isinstance(mode, GeometryMode), f"Mode {mode} is not geometry mode."
+        formats = vertex_layout.attribute_formats
+        if data.keys() != formats.keys():
+            if missing := formats.keys() - data.keys():
+                msg = f"VertexLayout attributes require data: {missing}"
+                raise data_error_type(msg)
 
-        program = self._get_group_program(group)
-        layout = program.get_vertex_view(vertex_layout)
-        return program._vertex_list_create(  # noqa: SLF001
-            count, mode, indices, instanced, batch=self, group=group, layout=layout,
-            storage=storage, vertex_layout=vertex_layout, **data,
-        )
+            unknown = data.keys() - formats.keys()
+            msg = f"Vertex data does not match VertexLayout: unknown attributes {unknown}"
+            raise data_error_type(msg)
+
+        domain = self._get_domain(indices is not None, instanced, mode, group, vertex_layout, storage)
+        vertex_list = domain.create(group, count, indices)
+        if instanced:
+            for name, array in data.items():
+                vertex_list.set_attribute_data(name, array)
+        else:
+            domain.vertex_buffers.set_region(vertex_list.start, count, data)
+        return vertex_list
 
     def vertex_list(
             self,
             vertex_layout: VertexLayout,
             count: int,
             mode: GeometryMode,
-            group: Group,
+            group: Group | None = None,
             *,
             storage: VertexStorage | None = None,
             **data: Any,
@@ -763,8 +781,8 @@ class Batch:
                 :attr:`~pyglet.enums.GeometryMode.TRIANGLES` or
                 :attr:`~pyglet.enums.GeometryMode.LINES`.
             group:
-                Group containing the shader program and render state for the
-                vertex list.
+                Optional render state. Geometry can be attached later with
+                :meth:`~pyglet.graphics.vertexdomain.VertexList.set_group`.
             storage:
                 Storage created by this batch to use for the geometry, or
                 ``None`` to use the batch's default storage.
@@ -774,6 +792,7 @@ class Batch:
         Returns:
             The created vertex list.
         """
+        storage, vertex_layout = self._resolve_vertex_list_layout(storage, vertex_layout)
         return self._create_vertex_list(
             vertex_layout, count, mode, group, storage=storage, **data,
         )
@@ -784,7 +803,7 @@ class Batch:
             count: int,
             mode: GeometryMode,
             indices: Sequence[int],
-            group: Group,
+            group: Group | None = None,
             *,
             storage: VertexStorage | None = None,
             **data: Any,
@@ -804,8 +823,8 @@ class Batch:
                 Indices into the vertex list that define the primitives to
                 draw.
             group:
-                Group containing the shader program and render state for the
-                vertex list.
+                Optional render state. Geometry can be attached later with
+                :meth:`~pyglet.graphics.vertexdomain.VertexList.set_group`.
             storage:
                 Storage created by this batch to use for the geometry, or
                 ``None`` to use the batch's default storage.
@@ -815,6 +834,7 @@ class Batch:
         Returns:
             The created indexed vertex list.
         """
+        storage, vertex_layout = self._resolve_vertex_list_layout(storage, vertex_layout)
         return self._create_vertex_list(
             vertex_layout, count, mode, group, indices=indices, storage=storage, **data,
         )
@@ -842,7 +862,7 @@ class Batch:
                 :attr:`~pyglet.enums.GeometryMode.LINES`.
             group:
                 Group containing the shader program and render state for the
-                vertex list. Its shader must define instanced attributes.
+                vertex list. Instance divisors are defined by ``vertex_layout``.
             storage:
                 Storage created by this batch to use for the geometry, or
                 ``None`` to use the batch's default storage.
@@ -852,6 +872,8 @@ class Batch:
         Returns:
             The created instanced vertex list.
         """
+        assert vertex_layout.has_divisors, 'Instanced geometry requires a VertexLayout with at least one divisor.'
+        storage, vertex_layout = self._resolve_vertex_list_layout(storage, vertex_layout)
         return self._create_vertex_list(
             vertex_layout, count, mode, group, instanced=True, storage=storage, **data,
         )
@@ -883,7 +905,7 @@ class Batch:
                 draw.
             group:
                 Group containing the shader program and render state for the
-                vertex list. Its shader must define instanced attributes.
+                vertex list. Instance divisors are defined by ``vertex_layout``.
             storage:
                 Storage created by this batch to use for the geometry, or
                 ``None`` to use the batch's default storage.
@@ -893,6 +915,8 @@ class Batch:
         Returns:
             The created indexed instanced vertex list.
         """
+        assert vertex_layout.has_divisors, 'Instanced geometry requires a VertexLayout with at least one divisor.'
+        storage, vertex_layout = self._resolve_vertex_list_layout(storage, vertex_layout)
         return self._create_vertex_list(
             vertex_layout, count, mode, group, indices=indices, instanced=True, storage=storage, **data,
         )
@@ -1002,15 +1026,15 @@ class Batch:
 
     @staticmethod
     def _attributes_key(attributes: dict[str, Any]) -> str:
-        """Sort by the location, since introspection order can change depending on platform."""
+        """Return a stable geometry-layout key independent of shader locations."""
         return str(tuple(
-            attribute.key for attribute in sorted(attributes.values(), key=lambda attribute: attribute.location)
+            attribute.key for attribute in sorted(attributes.values(), key=lambda attribute: attribute.name)
         ))
 
     @staticmethod
-    def _normalized_shader_attributes(program: ShaderProgram, initial_attribs: dict[str, Any]) -> dict[str, Any]:
-        """Return shader attributes adjusted to the vertex-list's original buffer formats."""
-        attributes = program.attributes
+    def _normalized_attribute_formats(program: ShaderProgram, initial_attribs: dict[str, Any]) -> dict[str, Any]:
+        """Return program geometry formats adjusted to the vertex-list's storage formats."""
+        attributes = program.attribute_formats
 
         # Preserve the vertex-list's concrete storage formats for lookup/compatibility.
         for a_name, *_ in program.attribute_keys:
@@ -1020,20 +1044,19 @@ class Batch:
             attribute = attributes[a_name]
 
             needs_data_type = (
-                initial_attribute.fmt.data_type != attribute.fmt.data_type or
-                initial_attribute.fmt.normalized != attribute.fmt.normalized
+                initial_attribute.data_type != attribute.data_type or
+                initial_attribute.normalized != attribute.normalized
             )
-            needs_divisor = initial_attribute.fmt.divisor != attribute.fmt.divisor
+            needs_divisor = initial_attribute.divisor != attribute.divisor
 
             if not needs_data_type and not needs_divisor:
                 continue
 
-            adjusted_attribute = copy(attribute)
             if needs_data_type:
-                adjusted_attribute.set_data_type(initial_attribute.fmt.data_type, initial_attribute.fmt.normalized)
+                attribute = attribute.with_data_type(initial_attribute.data_type, initial_attribute.normalized)
             if needs_divisor:
-                adjusted_attribute.set_divisor(initial_attribute.fmt.divisor)
-            attributes[a_name] = adjusted_attribute
+                attribute = attribute.with_divisor(initial_attribute.divisor)
+            attributes[a_name] = attribute
 
         return attributes
 
@@ -1058,7 +1081,7 @@ class Batch:
         Returns:
             False if the domain's no longer match. The caller should handle this scenario.
         """
-        attributes = self._normalized_shader_attributes(program, vertex_list.initial_attribs)
+        attributes = self._normalized_attribute_formats(program, vertex_list.initial_attribs)
 
         # A shader can only use geometry the vertex list originally allocated.
         if missing := [name for name in attributes if name not in vertex_list.initial_attribs]:
@@ -1074,11 +1097,11 @@ class Batch:
 
         # Attribute locations may change between linked programs, but the GPU
         # data can be copied directly when each existing attribute retains the
-        # same storage shape. ``_normalized_shader_attributes`` has already
+        # same storage shape. ``_normalized_attribute_formats`` has already
         # restored the source data type, normalization, and divisor.
         if incompatible := [
             name for name, initial in vertex_list.initial_attribs.items()
-            if initial.fmt != drawable_attributes[name].fmt
+            if initial != drawable_attributes[name]
         ]:
             if _debug_graphics_batch:
                 warnings.warn(f"Incompatible shader attributes for update: {incompatible}")
@@ -1086,7 +1109,7 @@ class Batch:
 
         domain = self.get_domain(
             vertex_list.indexed, vertex_list.instanced, mode, group,
-            program.derive_domain_attributes(drawable_attributes),
+            VertexLayout(**drawable_attributes),
         )
 
         if domain != vertex_list.domain:
@@ -1131,7 +1154,7 @@ class Batch:
         """
         domain = batch.get_domain(
             vertex_list.indexed, vertex_list.instanced, mode, group,
-            vertex_list.domain.domain_attributes,
+            vertex_list.domain.vertex_layout,
         )
 
         if domain != vertex_list.domain:
@@ -1144,33 +1167,42 @@ class Batch:
             self._draw_list_dirty = True
 
 
-    def get_domain(self, indexed: bool, instanced: bool, mode: GeometryMode, group: Group,
-                   domain_attributes: DomainAttributes, *, storage: VertexStorage | None = None) -> VertexDomain:
+    def get_domain(self, indexed: bool, instanced: bool, mode: GeometryMode, group: Group | None,
+                   vertex_layout: VertexLayout, *, storage: VertexStorage | None = None) -> VertexDomain:
         """Get, or create, the vertex domain corresponding to the given arguments.
 
         mode is the render mode such as GL_LINES or GL_TRIANGLES
         """
+        storage = self._resolve_storage(storage)
+        vertex_layout = storage.resolve_layout(vertex_layout)
+        assert vertex_layout is not None
+        return self._get_domain(indexed, instanced, mode, group, vertex_layout, storage)
+
+    def _get_domain(self, indexed: bool, instanced: bool, mode: GeometryMode, group: Group | None,
+                    vertex_layout: VertexLayout, storage: VertexStorage) -> VertexDomain:
+        """Get or create a domain using a storage already resolved by the caller."""
         # Group map just used for group lookup now, not domains.
-        if group not in self.group_map:
+        if group is not None and group not in self.group_map:
             self._add_group(group)
 
         # If instanced, ensure a separate domain, as multiple instance sources can match the key.
         # Find domain given formats, indices and mode
-        storage = self._resolve_storage(storage)
-        key = _DomainKey(indexed, instanced, mode, domain_attributes.key, storage)
+        key = indexed, instanced, mode, vertex_layout, storage
 
         try:
             domain = self._domain_registry[key]
         except KeyError:
             # Create domain
             domain = self._domain_class_map[(indexed, instanced)](
-                self._context, self.initial_count, domain_attributes.attributes
+                self._context, self.initial_count, vertex_layout.attribute_formats
             )
-            domain.domain_attributes = domain_attributes
+            domain.vertex_layout = vertex_layout
             domain.batch = self
             domain.storage = storage
             domain.mode = mode
             storage.attach_domain(domain)
+            if group is not None:
+                domain.set_shader_attributes(self._get_group_program(group).attributes)
             self._domain_registry[key] = domain
             self._draw_list_dirty = True
         return domain
@@ -1342,7 +1374,15 @@ class Batch:
             for domain_key, domain in self._domain_registry.items():
                 for alist in vertex_lists:
                     if alist.domain is domain and alist.group is group:
-                        domain.draw_subset(domain_key.mode, alist)
+                        binding = domain.get_vertex_input_binding(self._get_group_program(group))
+                        if binding is None:
+                            domain.bind_vao()
+                        else:
+                            binding.bind()
+                            binding.commit()
+                        domain.draw_subset(domain_key[2], alist)
+                        if binding is not None and hasattr(binding, 'unbind'):
+                            binding.unbind()
 
             # Sort and visit child groups of this group
             children = self.group_children.get(group)
@@ -1408,7 +1448,7 @@ class _BucketBatch(Batch):
 
                 bucket = domain.get_drawable_bucket(group)
                 if bucket:
-                    draw_list.append((domain, domain_key.mode, group))
+                    draw_list.append((domain, domain_key[2], group))
                 else:
                     self._empty_domains.add(domain_key)
 
@@ -1455,18 +1495,27 @@ class _BucketBatch(Batch):
 
     @staticmethod
     def _input_binding_fn(binding):  # noqa: ANN001, ANN205
-        def _bind(_ctx) -> None:  # noqa: ANN001
+        def _bind_vao(_ctx) -> None:  # noqa: ANN001
             binding.bind()
             binding.commit()
 
-        return _bind
+        return _bind_vao
+
+    @classmethod
+    def _binding_fn(cls, domain, binding):  # noqa: ANN001, ANN206
+        return cls._input_binding_fn(binding) if binding is not None else cls._vao_bind_fn(domain)
+
+    def _domain_binding(self, domain, group):  # noqa: ANN001, ANN202
+        if not hasattr(domain, 'get_vertex_input_binding'):
+            return None
+        return domain.get_vertex_input_binding(self._get_group_program(group))
 
     def _compile_pass_draw_list(self, registrations: list[_PassRegistration]) -> list[Callable]:
         calls: list[Callable] = []
         for registration in registrations:
             calls.extend((
                 registration.group.set_state_recursive,
-                self._input_binding_fn(registration.binding),
+                self._binding_fn(registration.domain, registration.binding),
                 self._draw_bucket_fn(
                     registration.domain, [registration.bucket], self._geometry_map[registration.mode],
                 ),
@@ -1530,6 +1579,7 @@ class _BucketBatch(Batch):
             active_states.pop(state_type, None)
 
         last_domain = None
+        last_binding = None
         last_mode = None
         current_buckets = []
 
@@ -1546,17 +1596,20 @@ class _BucketBatch(Batch):
             bucket = domain.get_drawable_bucket(group)
             if not bucket or bucket.is_empty:
                 continue
+            binding = self._domain_binding(domain, group)
+            binding_key = binding if binding is not None else domain
 
-            if last_domain is None:
-                calls.append(self._vao_bind_fn(domain))
-            elif domain != last_domain:
+            if last_binding is None:
+                calls.append(self._binding_fn(domain, binding))
+            elif binding_key is not last_binding:
                 flush_buckets()
-                calls.append(self._vao_bind_fn(domain))
+                calls.append(self._binding_fn(domain, binding))
             elif mode != last_mode:
                 flush_buckets()
 
             current_buckets.append(bucket)
             last_domain = domain
+            last_binding = binding_key
             last_mode = mode
 
         flush_buckets()
@@ -1595,7 +1648,7 @@ class _BucketBatch(Batch):
     def _set_draw_functions(self, draw_list: list[tuple]) -> list[Callable]:
         """Compile a draw list without optimizing state transitions."""
         calls: list[Callable] = []
-        last_domain = None
+        last_binding = None
 
         for domain, mode, group in draw_list:
             if domain is None:
@@ -1610,12 +1663,14 @@ class _BucketBatch(Batch):
             bucket = domain.get_drawable_bucket(group)
             if not bucket or bucket.is_empty:
                 continue
+            binding = self._domain_binding(domain, group)
+            binding_key = binding if binding is not None else domain
 
-            if last_domain is None or domain != last_domain:
-                calls.append(self._vao_bind_fn(domain))
+            if binding_key is not last_binding:
+                calls.append(self._binding_fn(domain, binding))
 
             calls.append(self._draw_bucket_fn(domain, [bucket], self._geometry_map[mode]))
-            last_domain = domain
+            last_binding = binding_key
 
         return calls
 
@@ -1636,7 +1691,7 @@ class _BucketBatch(Batch):
                     domain_info = repr(domain).split('@')[-1].replace('>', '')
                     print(f"{indent}  > Domain: {domain.__class__.__name__}@{domain_info}")
 
-                    starts, sizes = domain.vertex_buffers.allocator.get_allocated_regions()
+                    starts, sizes = domain.allocator.get_allocated_regions()
                     for start, size in zip(starts, sizes):
                         print(f"{indent}     - Region start={start:<4} size={size:<4}")
                         attribs = ', '.join(domain.attrib_name_buffers.keys())
@@ -1653,7 +1708,7 @@ class _BucketBatch(Batch):
 class ShaderGroup(Group):
     """A group that enables and binds a ShaderProgram."""
 
-    def __init__(self, program: ShaderProgram, order: int = 0, parent: Group | None = None) -> None:
+    def __init__(self, program: ShaderProgram | ShaderProgramView, order: int = 0, parent: Group | None = None) -> None:
         super().__init__(order, parent)
         self.set_shader_program(program)
 

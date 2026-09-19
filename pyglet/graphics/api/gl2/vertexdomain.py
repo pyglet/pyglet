@@ -23,7 +23,7 @@ primitives of the same OpenGL primitive mode.
 from __future__ import annotations
 
 import ctypes
-from typing import TYPE_CHECKING, Any, Sequence
+from typing import TYPE_CHECKING, Mapping, Sequence
 
 from pyglet.graphics.api.gl import (
     GL_BYTE,
@@ -57,7 +57,8 @@ from pyglet.graphics.vertexdomain import (
 )
 
 if TYPE_CHECKING:
-    from pyglet.graphics.attributes import Attribute, AttributeView
+    from pyglet.graphics.attributes import Attribute, AttributeFormat, AttributeView
+    from pyglet.graphics.shader import ShaderProgram
     from pyglet.customtypes import DataTypes
     from pyglet.enums import GeometryMode
 
@@ -75,6 +76,11 @@ _gl_types = {
 class GLVertexArrayBinding(VertexArrayBinding):
     streams: list[GLVertexStream | GLIndexStream]
 
+    def __init__(self, ctx: OpenGLSurfaceContext, streams: list[VertexStream | IndexStream],
+                 attributes: Mapping[str, Attribute] | None = None) -> None:
+        self.shader_attributes = attributes or {}
+        super().__init__(ctx, streams)
+
     """GL2 doesn't have a real VAO. This just acts as a container."""
     def _create_vao(self) -> VertexArrayProtocol | None:
         return None
@@ -84,11 +90,14 @@ class GLVertexArrayBinding(VertexArrayBinding):
 
     def bind(self) -> None:
         for stream in self.streams:
-            stream.bind_into(self.vao)
+            stream.bind_into(self)
 
     def unbind(self) -> None:
         for stream in self.streams:
-            stream.unbind()
+            if isinstance(stream, GLVertexStream):
+                stream.unbind(self)
+            else:
+                stream.unbind()
 
 
 class InstancedVertexDomain:
@@ -114,26 +123,56 @@ class IndexedVertexList(BaseIndexedVertexList):
 class GLVertexStream(VertexStream):
     _ctx: OpenGLSurfaceContext
 
-    def __init__(self, ctx: OpenGLSurfaceContext, initial_size: int, attrs: Sequence[Attribute], *, divisor: int = 0):
+    def __init__(self, ctx: OpenGLSurfaceContext, initial_size: int, attrs: Sequence[AttributeFormat],
+                 *, divisor: int = 0):
         super().__init__(ctx, initial_size, attrs, divisor=divisor)
 
-    def get_graphics_attribute(self, attribute: Attribute, view: AttributeView) -> GLAttribute:
+    def get_attribute_layout(self, attribute: AttributeFormat, view: AttributeView) -> GLAttribute:
         return GLAttribute(attribute, view)
 
     def get_buffer(self, size: int, attribute) -> GL2AttributeBufferObject:
         return GL2AttributeBufferObject(self._ctx, size, attribute)
 
-    def bind_into(self, _vao: None) -> None:
-        for attribute, buffer in zip(self.attribute_names.values(), self.buffers):
+    def _enable_attribute(self, location: int) -> None:
+        """Enable a shader input at ``location``."""
+        self._ctx.glEnableVertexAttribArray(location)
+
+    def _disable_attribute(self, location: int) -> None:
+        """Disable a shader input at ``location``."""
+        self._ctx.glDisableVertexAttribArray(location)
+
+    def _set_attribute_pointer(self, shader_attribute: Attribute, graphics_attribute: GLAttribute) -> None:
+        """Bind geometry storage to a shader input."""
+        location = shader_attribute.location
+        geometry_format = graphics_attribute.fmt
+        if shader_attribute.is_integer:
+            self._ctx.glVertexAttribIPointer(
+                location, geometry_format.components, graphics_attribute.gl_type,
+                graphics_attribute.view.stride, ctypes.c_void_p(graphics_attribute.view.offset),
+            )
+        else:
+            self._ctx.glVertexAttribPointer(
+                location, geometry_format.components, graphics_attribute.gl_type,
+                geometry_format.normalized, graphics_attribute.view.stride,
+                ctypes.c_void_p(graphics_attribute.view.offset),
+            )
+
+    def bind_into(self, binding: GLVertexArrayBinding) -> None:
+        for name, graphics_attribute in self.attribute_layouts.items():
+            shader_attribute = binding.shader_attributes.get(name)
+            if shader_attribute is None:
+                continue
+            buffer = self.attrib_name_buffers[name]
             # Enforce bind even if buffer is not dirty.
             buffer.bind()
             buffer.commit()
-            attribute.enable()
-            attribute.set_pointer()
+            location = shader_attribute.location
+            self._enable_attribute(location)
+            self._set_attribute_pointer(shader_attribute, graphics_attribute)
 
-    def unbind(self) -> None:
-        for attribute in self.attribute_names.values():
-            attribute.disable()
+    def unbind(self, binding: GLVertexArrayBinding) -> None:
+        for shader_attribute in binding.shader_attributes.values():
+            self._disable_attribute(shader_attribute.location)
 
 
 class GLIndexStream(IndexStream):
@@ -177,7 +216,21 @@ class VertexDomain(BaseVertexDomain):
         return type(self._vertex_class.__name__, (self._vertex_class,), self.vertex_buffers._property_dict)
 
     def _create_vao(self) -> GLVertexArrayBinding:
-        return GLVertexArrayBinding(self._context, self._streams)
+        return GLVertexArrayBinding(self._context, self._streams, self.shader_attributes)
+
+    def get_vertex_input_binding(self, program: ShaderProgram) -> GLVertexArrayBinding:
+        super().get_vertex_input_binding(program)
+        if program.attributes == self.shader_attributes:
+            return self.vao
+        try:
+            return self._vertex_input_bindings[program.key]
+        except AttributeError:
+            self._vertex_input_bindings = {}
+        except KeyError:
+            pass
+        binding = GLVertexArrayBinding(self._context, self._streams, program.attributes)
+        self._vertex_input_bindings[program.key] = binding
+        return binding
 
     def _create_streams(self, size: int) -> list[VertexStream | IndexStream]:
         self.vertex_buffers = GLVertexStream(self._context, size, self.per_vertex)
@@ -228,8 +281,7 @@ class VertexDomain(BaseVertexDomain):
             sizes = (GLsizei * primcount)(*sizes)
             self._context.glMultiDrawArrays(mode, starts, sizes, primcount)
 
-        for _, attribute in self.vertex_buffers.attribute_names.items():
-            attribute.disable()
+        self.vao.unbind()
 
     def draw_subset(self, mode: GeometryMode, vertex_list: VertexList) -> None:
         """Draw a specific VertexList in the domain.
@@ -246,10 +298,8 @@ class VertexDomain(BaseVertexDomain):
                 Vertex list to draw.
 
         """
-        self.vao.bind()
         self.vertex_buffers.commit()
         self._context.glDrawArrays(geometry_map[mode], vertex_list.start, vertex_list.count)
-        self.vao.unbind()
 
     @property
     def is_empty(self) -> bool:
@@ -279,7 +329,21 @@ class IndexedVertexDomain(BaseIndexedVertexDomain):
         return ctx.info.have_extension("GL_EXT_multi_draw_arrays")
 
     def _create_vao(self) -> GLVertexArrayBinding:
-        return GLVertexArrayBinding(self._context, self._streams)
+        return GLVertexArrayBinding(self._context, self._streams, self.shader_attributes)
+
+    def get_vertex_input_binding(self, program: ShaderProgram) -> GLVertexArrayBinding:
+        super().get_vertex_input_binding(program)
+        if program.attributes == self.shader_attributes:
+            return self.vao
+        try:
+            return self._vertex_input_bindings[program.key]
+        except AttributeError:
+            self._vertex_input_bindings = {}
+        except KeyError:
+            pass
+        binding = GLVertexArrayBinding(self._context, self._streams, program.attributes)
+        self._vertex_input_bindings[program.key] = binding
+        return binding
 
     def _create_streams(self, size: int) -> list[VertexStream | IndexStream]:
         self.vertex_buffers = GLVertexStream(self._context, size, self.per_vertex)
@@ -287,7 +351,6 @@ class IndexedVertexDomain(BaseIndexedVertexDomain):
         return [self.vertex_buffers, self.index_stream]
 
     def draw_buckets(self, mode: int, buckets: list[VertexGroupBucket]) -> None:
-        self.vao.bind()
         regions = []
         for bucket in buckets:
             regions.extend(bucket.merged_ranges)
@@ -306,8 +369,6 @@ class IndexedVertexDomain(BaseIndexedVertexDomain):
                 self._context.glDrawElements(
                     mode, size, self.index_stream.gl_type, start * self.index_stream.index_element_size)
 
-        self.vao.unbind()
-
     def draw_subset(self, mode: GeometryMode, vertex_list: IndexedVertexList) -> None:
         """Draw a specific IndexedVertexList in the domain.
 
@@ -322,7 +383,6 @@ class IndexedVertexDomain(BaseIndexedVertexDomain):
             vertex_list:
                 Vertex list to draw.
         """
-        self.vao.bind()
         self.vertex_buffers.commit()
         self.index_stream.commit()
         self._context.glDrawElements(
@@ -331,4 +391,3 @@ class IndexedVertexDomain(BaseIndexedVertexDomain):
             self.index_stream.gl_type,
             vertex_list.index_start * self.index_stream.index_element_size,
         )
-        self.vao.unbind()

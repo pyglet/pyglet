@@ -7,6 +7,7 @@ import pytest
 
 import pyglet
 from pyglet.enums import GeometryMode
+from pyglet.graphics import VertexLayout
 from tests.annotations import GraphicsAPIGroups, skip_graphics_api
 
 
@@ -56,8 +57,8 @@ def shader_program(test_window):
     from pyglet.graphics import ShaderProgram, Shader
     vertex = Shader(_vertex_source, "vertex")
     fragment = Shader(_fragment_source, "fragment")
-    program = ShaderProgram(vertex, fragment, vertex_layout=None)
-    program.set_instance_attributes(colors=1, translate=1)
+    program = ShaderProgram(vertex, fragment,
+                            vertex_layout=VertexLayout(colors="4f/1", translate="3f/1"))
     try:
         yield program
     finally:

@@ -52,8 +52,8 @@ fragment_source = """#version 330 core
 program = pyglet.graphics.ShaderProgram(
     pyglet.graphics.Shader(vertex_source, "vertex"),
     pyglet.graphics.Shader(fragment_source, "fragment"),
+    vertex_layout=pyglet.graphics.VertexLayout(translate="3f/1", colors="4f/1"),
 )
-program.set_instance_attributes(translate=1, colors=1)
 
 group = pyglet.graphics.ShaderGroup(program=program)
 vlist = program.vertex_list_instanced_indexed(
