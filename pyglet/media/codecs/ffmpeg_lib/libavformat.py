@@ -170,6 +170,10 @@ compat.add_version_changes('avformat', 62, AVStream, AVStream_Fields,
                            removals=('codec', 'recommended_encoder_configuration', 'info', 'side_data', 'nb_side_data'),
                            repositions=(compat.Reposition("codecpar", "id"),))
 
+compat.add_version_changes('avformat', 63, AVStream, AVStream_Fields,
+                           removals=('codec', 'recommended_encoder_configuration', 'info', 'side_data', 'nb_side_data'),
+                           repositions=(compat.Reposition("codecpar", "id"),))
+
 
 class AVProgram(Structure):
     pass
@@ -336,7 +340,7 @@ if avformat_version >= 61:
         ('io_close2', CFUNCTYPE(c_int, POINTER(AVFormatContext), POINTER(AVIOContext)))  # Added in 59.
     ]
 
-    for compat_ver in (61, 62):
+    for compat_ver in (61, 62, 63):
         compat.add_version_changes('avformat', compat_ver, AVFormatContext, AVFormatContext_Fields, removals=None)
 
 else:
