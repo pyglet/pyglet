@@ -164,7 +164,7 @@ class GLVertexArrayBinding(VertexArrayBinding):  # noqa: D101
     def _link(self) -> None:
         self.vao.bind()
         for stream in self.streams:
-            stream.bind_into(self.vao)
+            stream.bind_into(self)
         self.vao.unbind()
 
     def bind(self) -> None:
