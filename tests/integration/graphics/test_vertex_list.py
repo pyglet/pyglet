@@ -13,28 +13,6 @@ def _create_quad_vertices(x, y, z, width, height):
             x, y + height, z)
 
 
-def _position_color_program(position_location: int, color_location: int):
-    vertex = pyglet.graphics.Shader(f'''#version 330 core
-        layout(location = {position_location}) in vec2 position;
-        layout(location = {color_location}) in vec4 colors;
-        out vec4 vertex_colors;
-
-        void main() {{
-            gl_Position = vec4(position, 0.0, 1.0);
-            vertex_colors = colors;
-        }}
-    ''', 'vertex')
-    fragment = pyglet.graphics.Shader('''#version 330 core
-        in vec4 vertex_colors;
-        out vec4 final_colors;
-
-        void main() {
-            final_colors = vertex_colors;
-        }
-    ''', 'fragment')
-    return pyglet.graphics.ShaderProgram(vertex, fragment, vertex_layout=None)
-
-
 class VertexListTest(unittest.TestCase):
     def setUp(self):
         self.w = pyglet.window.Window(visible=False)
@@ -226,8 +204,8 @@ class VertexListTest(unittest.TestCase):
 
     def test_layout_geometry_can_be_created_without_a_shader_and_attached_later(self):
         batch = pyglet.graphics.Batch()
-        layout = pyglet.graphics.VertexLayout(position="2f", colors="4Bn")
-        positions = (0, 0, 1, 0, 0, 1)
+        layout = pyglet.graphics.VertexLayout(position="3f", colors="4Bn")
+        positions = (0, 0, 0, 1, 0, 0, 0, 1, 0)
         colors = (255, 0, 0, 255) * 3
         mesh = batch.vertex_list_indexed(
             layout, 3, GeometryMode.TRIANGLES, (0, 1, 2), group=None,
@@ -241,29 +219,24 @@ class VertexListTest(unittest.TestCase):
         assert tuple(mesh.position[:]) == positions
         assert tuple(mesh.colors[:]) == colors
 
-        first_program = _position_color_program(1, 0)
-        second_program = _position_color_program(0, 1)
-        first_group = pyglet.graphics.ShaderGroup(first_program)
-        second_group = pyglet.graphics.ShaderGroup(second_program)
-        try:
-            mesh.set_group(first_group)
-            domain = mesh.domain
-            storage_binding = domain.storage_binding
-            start, index_start = mesh.start, mesh.index_start
+        program = pyglet.graphics.api.get_default_shader()
+        first_group = pyglet.graphics.ShaderGroup(program)
+        second_group = pyglet.graphics.ShaderGroup(program, order=1)
+        mesh.set_group(first_group)
+        domain = mesh.domain
+        storage_binding = domain.storage_binding
+        start, index_start = mesh.start, mesh.index_start
 
-            assert mesh.bucket is domain.get_drawable_bucket(first_group)
-            mesh.set_group(second_group)
+        assert mesh.bucket is domain.get_drawable_bucket(first_group)
+        mesh.set_group(second_group)
 
-            assert mesh.domain is domain
-            assert mesh.domain.storage_binding is storage_binding
-            assert mesh.start == start
-            assert mesh.index_start == index_start
-            assert mesh.bucket is domain.get_drawable_bucket(second_group)
-            assert tuple(mesh.position[:]) == positions
-            assert tuple(mesh.colors[:]) == colors
-        finally:
-            first_program.delete()
-            second_program.delete()
+        assert mesh.domain is domain
+        assert mesh.domain.storage_binding is storage_binding
+        assert mesh.start == start
+        assert mesh.index_start == index_start
+        assert mesh.bucket is domain.get_drawable_bucket(second_group)
+        assert tuple(mesh.position[:]) == positions
+        assert tuple(mesh.colors[:]) == colors
 
     def test_layout_data_validation_does_not_require_a_shader(self):
         batch = pyglet.graphics.Batch()
@@ -295,18 +268,15 @@ class VertexListTest(unittest.TestCase):
 
     def test_shader_vertex_list_creation_delegates_to_layout_geometry(self):
         batch = pyglet.graphics.Batch()
-        program = _position_color_program(1, 0)
-        try:
-            mesh = program.vertex_list(
-                3, GeometryMode.TRIANGLES, batch=batch,
-                position=(0, 0, 1, 0, 0, 1), colors=(1, 0, 0, 1) * 3,
-            )
+        program = pyglet.graphics.api.get_default_shader()
+        mesh = program.vertex_list(
+            3, GeometryMode.TRIANGLES, batch=batch,
+            position=(0, 0, 0, 1, 0, 0, 0, 1, 0), colors=(1, 0, 0, 1) * 3,
+        )
 
-            assert mesh.group is not None
-            assert mesh.domain.attribute_meta == program.attribute_formats
-            assert isinstance(next(iter(mesh.domain.storage.layouts.values())), pyglet.graphics.VertexLayout)
-        finally:
-            program.delete()
+        assert mesh.group is not None
+        assert mesh.domain.attribute_meta == program.attribute_formats
+        assert isinstance(next(iter(mesh.domain.storage.layouts.values())), pyglet.graphics.VertexLayout)
 
     def test_vertex_list_property_set(self):
         program = pyglet.graphics.api.get_default_shader()
@@ -490,4 +460,46 @@ def test_vertex_list_requires_all_shader_attributes(test_window):  # noqa: ARG00
 
     with pytest.raises(MissingAttributeException, match="colors"):
         program.vertex_list(3, GeometryMode.TRIANGLES, position=(0, 0, 0) * 3)
+
+
+def test_shader_vertex_list_resolves_storage_and_layout_once(test_window, monkeypatch):  # noqa: ARG001
+    """Shader creation supplies resolved inputs to the common Batch creation path."""
+    program = pyglet.graphics.api.get_default_shader()
+    batch = pyglet.graphics.Batch()
+    storage = batch.create_vertex_storage()
+    calls = {"storage": 0, "layout": 0, "shader_layout": 0}
+
+    resolve_storage = batch._resolve_storage  # noqa: SLF001
+
+    def count_storage(value):
+        calls["storage"] += 1
+        return resolve_storage(value)
+
+    resolve_layout = storage.resolve_layout
+
+    def count_layout(vertex_layout=None):
+        calls["layout"] += 1
+        return resolve_layout(vertex_layout)
+
+    get_vertex_layout = storage.get_vertex_layout
+
+    def count_shader_layout(shader_layout, vertex_layout=None):
+        calls["shader_layout"] += 1
+        return get_vertex_layout(shader_layout, vertex_layout)
+
+    monkeypatch.setattr(batch, "_resolve_storage", count_storage)
+    monkeypatch.setattr(storage, "resolve_layout", count_layout)
+    monkeypatch.setattr(storage, "get_vertex_layout", count_shader_layout)
+
+    vertex_list = program.vertex_list(
+        3,
+        GeometryMode.TRIANGLES,
+        batch=batch,
+        storage=storage,
+        position=(0, 0, 0) * 3,
+        colors=(1, 1, 1, 1) * 3,
+    )
+
+    assert vertex_list.domain.storage is storage
+    assert calls == {"storage": 1, "layout": 1, "shader_layout": 0}
 

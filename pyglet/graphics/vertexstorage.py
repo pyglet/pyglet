@@ -171,7 +171,12 @@ class VertexStream(Stream):
 
     def set_region(self, start: int, count: int, data_by_attr: dict[str, Any]) -> None:
         for name, buf in self.attrib_name_buffers.items():
-            buf.set_region(start, count, data_by_attr[name])
+            data = data_by_attr[name]
+            try:
+                buf.set_region(start, count, data)
+            except ValueError:
+                msg = f"Invalid data size for '{name}'. Expected {buf.element_count * count}, got {len(data)}."
+                raise ValueError(msg) from None
 
     def set_attribute_region(self, name: str, start: int, count: int, data: Any) -> None:
         self.attrib_name_buffers[name].set_region(start, count, data)

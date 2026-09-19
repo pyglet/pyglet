@@ -6,7 +6,6 @@ import pytest
 import pyglet
 import pyglet.graphics.draw as graphics_draw
 from pyglet.enums import CompareOp, GeometryMode
-from pyglet.graphics.draw import _DomainKey
 from pyglet.graphics.state import State, Viewport
 
 
@@ -123,7 +122,7 @@ def _build_test_batch(*drawable_groups):
             batch._add_group(group)  # noqa: SLF001
 
     domain = _FakeDomain({group: _FakeBucket() for group in drawable_groups})
-    key = _DomainKey(indexed=False, instanced=False, mode=GeometryMode.TRIANGLES, attributes="test")
+    key = False, False, GeometryMode.TRIANGLES, object(), object()
     batch._domain_registry[key] = domain  # noqa: SLF001
     return batch, domain
 
