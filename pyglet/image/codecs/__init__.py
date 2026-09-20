@@ -232,3 +232,11 @@ def add_default_codecs():
         registry.add_decoders(bmp)
     except ImportError:
         pass
+
+    # Fallback: QOI codec
+    try:
+        from pyglet.image.codecs import qoi
+        registry.add_encoders(qoi)
+        registry.add_decoders(qoi)
+    except ImportError:
+        pass
