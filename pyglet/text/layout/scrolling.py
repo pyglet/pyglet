@@ -6,6 +6,8 @@ from pyglet.text.layout.base import (
     ScrollableTextDecorationGroup,
     ScrollableTextLayoutGroup,
     TextLayout,
+    get_default_scrollable_decoration_shader,
+    get_default_scrollable_image_layout_shader,
     get_default_scrollable_layout_shader,
 )
 
@@ -40,6 +42,14 @@ class ScrollableTextLayout(TextLayout):
 
     _translate_x: int = 0
     _translate_y: int = 0
+
+    @staticmethod
+    def _get_default_decoration_shader() -> ShaderProgram:
+        return get_default_scrollable_decoration_shader()
+
+    @staticmethod
+    def _get_default_image_layout_shader() -> ShaderProgram:
+        return get_default_scrollable_image_layout_shader()
 
     def __init__(self, document: AbstractDocument,  # noqa: D107
                  x: float = 0, y: float = 0, z: float = 0,

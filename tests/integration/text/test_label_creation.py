@@ -4,8 +4,10 @@ import random
 import pytest
 
 
+import pyglet
 from pyglet.text import decode_text, decode_attributed, decode_html, DropShadow, LinearGradient, Stroke
 from pyglet.text.document import FormattedDocument
+from pyglet.text.layout import IncrementalTextLayout
 from pyglet.text import DocumentLabel, HTMLLabel, Label
 
 WIDTH = 500
@@ -39,6 +41,35 @@ def test_documentlabel_creation(test_window, document, shaping):
     assert label.y == Y
     assert label.z == Z
     assert label._shaping is shaping  # noqa: SLF001
+
+
+def test_regular_labels_share_their_text_group(test_window):
+    batch = pyglet.graphics.Batch()
+    first = Label("First", batch=batch)
+    second = Label("Second", batch=batch)
+
+    first_group = first._boxes[0]._glyph_vertex_list.group  # noqa: SLF001
+    second_group = second._boxes[0]._glyph_vertex_list.group  # noqa: SLF001
+
+    assert first_group == second_group
+    assert hash(first_group) == hash(second_group)
+    assert batch.top_groups == [first_group]
+
+
+def test_incremental_layout_can_create_decorations(test_window):
+    document = FormattedDocument("Decorated")
+    document.set_style(0, len(document.text), {"underline": (255, 0, 0, 255)})
+
+    layout = IncrementalTextLayout(document, width=200, height=100)
+
+    assert layout.has_view_translation
+
+
+def test_regular_label_decoration_uses_non_scrollable_shader(test_window):
+    label = Label("Decorated")
+    label.document.set_style(0, len(label.document.text), {"underline": (255, 0, 0, 255)})
+
+    assert not label.has_view_translation
 
 
 def test_label_linear_gradient(test_window):

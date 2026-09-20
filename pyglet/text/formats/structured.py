@@ -37,6 +37,7 @@ class ImageElement(pyglet.text.document.InlineElement):
         self.width = width or image.width
         self.height = height or image.height
         self.vertex_lists = {}
+        self._has_view_translation = False
 
         anchor_y = self.height // image.height * image.anchor_y
         ascent = max(0, self.height - anchor_y)
@@ -45,25 +46,27 @@ class ImageElement(pyglet.text.document.InlineElement):
 
     def place(self, layout: TextLayout, x: float, y: float, z: float, line_x: float, line_y: float, rotation: float,
               visible: bool, anchor_x: float, anchor_y: float) -> None:
-        program = pyglet.text.layout.get_default_image_layout_shader()
+        program = layout.image_shader
         group = _InlineElementGroup(self.image.get_texture(), program, 3 if layout.depth_sorting else 0, layout.group)
         layout._set_depth_test(group)  # noqa: SLF001
         x1 = line_x
         y1 = line_y + self.descent
         x2 = line_x + self.width
         y2 = line_y + self.height + self.descent
+        vertex_data = {
+            "position": (x1, y1, z, x2, y1, z, x2, y2, z, x1, y2, z),
+            "translation": (x, y, z, layout.get_depth_offset(0)) * 4,
+            "tex_coords": self.image.tex_coords,
+            "visible": (visible,) * 4,
+            "rotation": (rotation,) * 4,
+            "anchor": (anchor_x, anchor_y) * 4,
+        }
+        if "view_translation" in program.attributes:
+            vertex_data["view_translation"] = (0, 0, 0) * 4
+            self._has_view_translation = True
 
         vertex_list = program.vertex_list_indexed(4, GeometryMode.TRIANGLES, [0, 1, 2, 0, 2, 3],
-                                                  layout.batch, group,
-                                                  position=(x1, y1, z, x2, y1, z, x2, y2, z, x1, y2, z),
-                                                  translation=(x, y, z, layout.get_depth_offset(0)) * 4,
-                                                  tex_coords=self.image.tex_coords,
-                                                  visible=(visible,) * 4,
-                                                  rotation=(rotation,) * 4,
-                                                  anchor=(anchor_x, anchor_y) * 4,
-                                                  view_translation=(0, 0, 0) * 4,
-                                                  #colors=("Bn", (128, 128, 128, 255) * 4),
-                                                  )
+                                                  layout.batch, group, **vertex_data)
 
         self.vertex_lists[layout] = vertex_list
 
@@ -79,7 +82,8 @@ class ImageElement(pyglet.text.document.InlineElement):
     def update_view_translation(self, translate_x: float, translate_y: float) -> None:
         view_translation = (-translate_x, -translate_y, 0)
         for _vertex_list in self.vertex_lists.values():
-            _vertex_list.view_translation[:] = view_translation * _vertex_list.count
+            if self._has_view_translation:
+                _vertex_list.view_translation[:] = view_translation * _vertex_list.count
 
     def update_rotation(self, rotation: float) -> None:
         rot_tuple = (rotation,)
@@ -108,23 +112,30 @@ class HorizontalRuleElement(pyglet.text.document.InlineElement):
         self.color = color
         self.width = width
         self.vertex_lists = {}
+        self._has_view_translation = False
         super().__init__(1, -1, 0)
 
     def place(self, layout: TextLayout, x: float, y: float, z: float, line_x: float, line_y: float, rotation: float,
               visible: bool, anchor_x: float, anchor_y: float) -> None:
         program = layout.decoration_shader
         right = layout.width if layout.width is not None else line_x + self.width
+        vertex_data = {
+            "position": (line_x, line_y, z, right, line_y, z),
+            "translation": (x, y, z, layout.get_depth_offset(1)) * 2,
+            "colors": self.color * 2,
+            "visible": (visible,) * 2,
+            "rotation": (rotation,) * 2,
+            "anchor": (anchor_x, anchor_y) * 2,
+        }
+        if "view_translation" in program.attributes:
+            vertex_data["view_translation"] = (0, 0, 0) * 2
+            self._has_view_translation = True
         vertex_list = program.vertex_list(
             2,
             GeometryMode.LINES,
             layout.batch,
             layout.foreground_decoration_group,
-            position=(line_x, line_y, z, right, line_y, z),
-            translation=(x, y, z, layout.get_depth_offset(1)) * 2,
-            colors=self.color * 2,
-            visible=(visible,) * 2,
-            rotation=(rotation,) * 2,
-            anchor=(anchor_x, anchor_y) * 2,
+            **vertex_data,
         )
         self.vertex_lists[layout] = vertex_list
 
@@ -141,7 +152,8 @@ class HorizontalRuleElement(pyglet.text.document.InlineElement):
     def update_view_translation(self, translate_x: float, translate_y: float) -> None:
         view_translation = (-translate_x, -translate_y, 0)
         for vertex_list in self.vertex_lists.values():
-            vertex_list.view_translation[:] = view_translation * vertex_list.count
+            if self._has_view_translation:
+                vertex_list.view_translation[:] = view_translation * vertex_list.count
 
     def update_rotation(self, rotation: float) -> None:
         for vertex_list in self.vertex_lists.values():

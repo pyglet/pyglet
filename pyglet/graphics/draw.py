@@ -1687,12 +1687,12 @@ class _BucketBatch(Batch):
         def dump(group: Group, indent: str = '') -> None:
             print(indent, 'Begin group', group)
             for domain in self._domain_registry.values():
-                if domain.has_bucket(group):
+                bucket = domain.get_drawable_bucket(group)
+                if bucket:
                     domain_info = repr(domain).split('@')[-1].replace('>', '')
                     print(f"{indent}  > Domain: {domain.__class__.__name__}@{domain_info}")
 
-                    starts, sizes = domain.allocator.get_allocated_regions()
-                    for start, size in zip(starts, sizes):
+                    for start, size in bucket.merged_ranges:
                         print(f"{indent}     - Region start={start:<4} size={size:<4}")
                         attribs = ', '.join(domain.attrib_name_buffers.keys())
                         print(f"{indent}       (Attributes: {attribs})")

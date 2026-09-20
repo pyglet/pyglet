@@ -39,6 +39,8 @@ if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
         get_default_decoration_shader,
         get_default_image_layout_shader,
         get_default_layout_shader,
+        get_default_scrollable_decoration_shader,
+        get_default_scrollable_image_layout_shader,
         get_default_scrollable_layout_shader,  # noqa: F401
     )
 elif pyglet.options.backend in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
@@ -46,6 +48,8 @@ elif pyglet.options.backend in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
         get_default_decoration_shader,
         get_default_image_layout_shader,
         get_default_layout_shader,
+        get_default_scrollable_decoration_shader,
+        get_default_scrollable_image_layout_shader,
         get_default_scrollable_layout_shader,  # noqa: F401
     )
 elif pyglet.options.backend == GraphicsAPI.WEBGL:
@@ -53,6 +57,8 @@ elif pyglet.options.backend == GraphicsAPI.WEBGL:
         get_default_decoration_shader,
         get_default_image_layout_shader,  # noqa: F401
         get_default_layout_shader,
+        get_default_scrollable_decoration_shader,
+        get_default_scrollable_image_layout_shader,
         get_default_scrollable_layout_shader,  # noqa: F401
     )
 
@@ -72,12 +78,10 @@ class TextLayoutGroup(Group):
         parent: Group | None = None,
     ) -> None:
         super().__init__(order=order, parent=parent)
-        self.uniforms = {"scissor": False}
         self.texture = texture
         self.set_shader_program(program)
         self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
         self.set_texture(texture, 0)
-        self.set_shader_uniforms(program, self.uniforms)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.texture})"
@@ -97,10 +101,8 @@ class TextDecorationGroup(Group):
         parent: Group | None = None,
     ) -> None:
         super().__init__(order=order, parent=parent)
-        self.uniforms = {"scissor": False}
         self.set_shader_program(program)
         self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
-        self.set_shader_uniforms(program, self.uniforms)
 
 
 class ScrollableTextLayoutGroup(Group):
@@ -124,7 +126,6 @@ class ScrollableTextLayoutGroup(Group):
         super().__init__(order=order, parent=parent)
         self.texture = texture
         self.uniforms = {
-            "scissor": True,
             "scissor_area": self.scissor_area,
         }
         self.set_shader_program(program)
@@ -157,7 +158,6 @@ class ScrollableTextDecorationGroup(Group):
         self.set_shader_program(program)
         self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
         self.uniforms = {
-            "scissor": True,
             "scissor_area": self.scissor_area,
         }
         self.set_shader_uniforms(program, self.uniforms)
@@ -195,6 +195,7 @@ class TextLayout(_FlowLayoutBase):
     _vertex_lists: list[_LayoutVertexList]
     _boxes: list[_AbstractBox]
     group_cache: dict[Texture | tuple[Texture, int], graphics.Group]
+    has_view_translation: bool
 
     _document: AbstractDocument | None = None
 
@@ -357,6 +358,7 @@ class TextLayout(_FlowLayoutBase):
         self._program = program or get_default_layout_shader()
         self._decoration_shader = decoration_shader
         self._effect_shader = effect_shader
+        self.has_view_translation = "view_translation" in self.decoration_shader.attributes
 
         self._wrap_lines_flag = wrap_lines
         self._wrap_lines_invariant()
@@ -442,13 +444,27 @@ class TextLayout(_FlowLayoutBase):
         Assigning a shader recreates the layout's decoration vertex lists.
         A decoration shader applies to all text runs in the layout.
         """
-        return self._decoration_shader or get_default_decoration_shader()
+        return self._decoration_shader or self._get_default_decoration_shader()
+
+    @staticmethod
+    def _get_default_decoration_shader() -> ShaderProgram:
+        return get_default_decoration_shader()
+
+    @property
+    def image_shader(self) -> ShaderProgram:
+        """Shader applied to inline image elements in this layout."""
+        return self._get_default_image_layout_shader()
+
+    @staticmethod
+    def _get_default_image_layout_shader() -> ShaderProgram:
+        return get_default_image_layout_shader()
 
     @decoration_shader.setter
     def decoration_shader(self, shader: ShaderProgram | None) -> None:
         if self._decoration_shader is shader:
             return
         self._decoration_shader = shader
+        self.has_view_translation = "view_translation" in self.decoration_shader.attributes
         self._background_decoration_group = None
         self._foreground_decoration_group = None
         self._update()

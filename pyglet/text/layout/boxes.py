@@ -754,11 +754,11 @@ class _GlyphBox(_AbstractBox):
                 layout.background_decoration_group,
                 position=geometry.background.vertices,
                 translation=(*translation, bg_layer) * bg_count,
-                view_translation=(0, 0, 0) * bg_count,
                 colors=geometry.background.colors,
                 rotation=(rotation,) * bg_count,
                 visible=(visible,) * bg_count,
                 anchor=(anchor_x, anchor_y) * bg_count,
+                **({"view_translation": (0, 0, 0) * bg_count} if layout.has_view_translation else {}),
             )
             self._add_vertex_list(background_list, context)
 
@@ -773,11 +773,11 @@ class _GlyphBox(_AbstractBox):
                 layout.foreground_decoration_group,
                 position=geometry.underline.vertices,
                 translation=(*translation, fg_layer) * ul_count,
-                view_translation=(0, 0, 0) * ul_count,
                 colors=geometry.underline.colors,
                 rotation=(rotation,) * ul_count,
                 visible=(visible,) * ul_count,
                 anchor=(anchor_x, anchor_y) * ul_count,
+                **({"view_translation": (0, 0, 0) * ul_count} if layout.has_view_translation else {}),
             )
             self._add_vertex_list(underline_list, context)
 
@@ -791,11 +791,11 @@ class _GlyphBox(_AbstractBox):
                 layout.foreground_decoration_group,
                 position=geometry.strikethrough.vertices,
                 translation=(*translation, fg_layer) * st_count,
-                view_translation=(0, 0, 0) * st_count,
                 colors=geometry.strikethrough.colors,
                 rotation=(rotation,) * st_count,
                 visible=(visible,) * st_count,
                 anchor=(anchor_x, anchor_y) * st_count,
+                **({"view_translation": (0, 0, 0) * st_count} if layout.has_view_translation else {}),
             )
             self._add_vertex_list(strikethrough_list, context)
 

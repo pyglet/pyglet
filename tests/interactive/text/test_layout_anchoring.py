@@ -4,7 +4,6 @@ import pyglet
 from tests.base.interactive import InteractiveTestCase
 
 from pyglet import app
-from pyglet import gl
 from pyglet import graphics
 from pyglet import text
 from pyglet.text import caret
@@ -70,7 +69,7 @@ class TestWindow(window.Window):
         self.line2.y2 = self.height // 2
 
     def on_draw(self):
-        gl.glClearColor(1, 1, 1, 1)
+        self.context.set_clear_color(1, 1, 1, 1)
         self.clear()
         self.batch.draw()
 

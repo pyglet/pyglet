@@ -17,6 +17,8 @@ from pyglet.text.layout.base import (
     _LayoutContext,
     _Line,
     get_default_scrollable_layout_shader,
+    get_default_scrollable_decoration_shader,
+    get_default_scrollable_image_layout_shader,
 )
 from pyglet.text.layout import ScrollableTextLayoutGroup, ScrollableTextDecorationGroup
 
@@ -122,6 +124,14 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
     _width: int
     _height: int
+
+    @staticmethod
+    def _get_default_decoration_shader() -> ShaderProgram:
+        return get_default_scrollable_decoration_shader()
+
+    @staticmethod
+    def _get_default_image_layout_shader() -> ShaderProgram:
+        return get_default_scrollable_image_layout_shader()
 
     def __init__(self, document: AbstractDocument,
                  x: float = 0, y: float = 0, z: float = 0,
