@@ -781,6 +781,7 @@ class _TextureArrayShared(_TextureSequenceItems[TArrayRegion], Generic[TArrayReg
             raise TextureArrayDepthExceeded("TextureArray is full.")
 
         self._verify_size(image)
+        self._bind_sequence_texture()
         start_length = len(self.items)
         item = self.region_class(0, 0, start_length, image.width, image.height, self)
 
