@@ -29,7 +29,7 @@ import pyglet.image
 import pyglet.media
 import pyglet.model
 from pyglet import resource
-from pyglet.util import asbytes
+from pyglet.util import DecodeException, asbytes
 
 TEST_DATA_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'data'))
 
@@ -163,9 +163,6 @@ def test_loads_static_resources_from_test_data(data_loader, opened_files, test_w
     image = data_loader.image('images/rgba.png')
     assert_file_closed(opened_files, 'images/rgba.png')
 
-    animation = data_loader.animation('images/dinosaur.gif')
-    assert_file_closed(opened_files, 'images/dinosaur.gif')
-
     document = data_loader.text('media/README')
     assert_file_closed(opened_files, 'media/README')
 
@@ -180,11 +177,21 @@ def test_loads_static_resources_from_test_data(data_loader, opened_files, test_w
 
     assert isinstance(image, pyglet.image.ImageData)
     assert image.width > 0 and image.height > 0
-    assert animation.frames
     assert document.text.startswith('The .wav files')
     assert pyglet.font.have_font('Action Man')
     assert isinstance(audio, pyglet.media.StaticSource)
     assert isinstance(scene, pyglet.model.Scene)
+
+
+def test_loads_animation_from_test_data(data_loader, opened_files, test_window):
+    try:
+        animation = data_loader.animation('images/dinosaur.gif')
+    except DecodeException:
+        assert_file_closed(opened_files, 'images/dinosaur.gif')
+        pytest.skip('GIF decoder is not available on this platform.')
+
+    assert_file_closed(opened_files, 'images/dinosaur.gif')
+    assert animation.frames
 
 
 def test_loads_shader_from_test_data(data_loader, opened_files, test_window):
