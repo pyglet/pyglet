@@ -141,10 +141,6 @@ class Texture(_AbstractImage, GraphicsResource[Any, TextureKey]):
     This defaults to counter-clockwise, starting at the bottom-left.
     """
 
-    # If this backend supports pixel data conversion.
-    # If False, will force data to be RGBA, even if CPU is used to order it.
-    pixel_conversion = True
-
     target: int
     """The GL texture target (e.g., ``GL_TEXTURE_2D``)."""
 
@@ -154,12 +150,18 @@ class Texture(_AbstractImage, GraphicsResource[Any, TextureKey]):
     default_filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR, TextureFilter.LINEAR
     """The default minification and magnification filters, as a tuple.
     Both default to LINEAR. If a texture is created without specifying
-    a filter, these defaults will be used. 
+    a filter, these defaults will be used.
     """
 
     x: int = 0
     y: int = 0
     z: int = 0
+    owner: Texture
+    """The root texture that owns this texture's storage.
+
+    A texture owns itself. Texture regions reference the texture that owns their
+    underlying storage.
+    """
 
     def __init__(self, width: int, height: int, handle: Any,
                  tex_type: TextureType = TextureType.TYPE_2D,
@@ -174,6 +176,7 @@ class Texture(_AbstractImage, GraphicsResource[Any, TextureKey]):
                  ) -> None:
         super().__init__(width, height)
         GraphicsResource.__init__(self, key=key)
+        self.owner = self
         self._handle = handle
         self.tex_type = tex_type
         self.immutable = False
@@ -691,7 +694,7 @@ class _TextureRegionShared:
         rows = []
         for row in range(y, y + height):
             start = row * pixels.pitch + x * pixel_size
-            rows.append(pixels.data[start:start + width * pixel_size])
+            rows.append(bytes(pixels.data[start:start + width * pixel_size]))
         return PixelData(width, height, pixels.format, pixels.data_type, b"".join(rows))
 
     def get_image_data(self) -> ImageDataRegion:
