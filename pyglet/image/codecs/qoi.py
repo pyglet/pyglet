@@ -273,11 +273,3 @@ def get_decoders():
 
 def get_encoders():
     return [QOIImageEncoder()]
-
-
-if __name__ == '__main__':
-    decoder = QOIImageDecoder()
-    encoder = QOIImageEncoder()
-    img = decoder.decode('kodim23.qoi', None)
-    img.save('output.bmp')
-    img.save('output.qoi', encoder=encoder)
