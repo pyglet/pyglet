@@ -59,6 +59,7 @@ fragment_source = """#version 330 core
 program = pyglet.graphics.ShaderProgram(
     pyglet.graphics.Shader(vertex_source, "vertex"),
     pyglet.graphics.Shader(fragment_source, "fragment"),
+    vertex_layout=None,
 )
 
 material_block = program.uniform_blocks["MaterialBlock"]

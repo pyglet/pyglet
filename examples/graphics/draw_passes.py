@@ -88,11 +88,12 @@ instance_color_vertex_source = """#version 330 core
 
 
 def create_instance_program(vertex_source: str) -> pyglet.graphics.ShaderProgram:
-    return create_program(vertex_source, pyglet.graphics.VertexLayout(instance_offset="2f/1"))
+    return create_program(vertex_source, instance_layout)
 
 
-shadow_group = pyglet.graphics.ShaderGroup(create_program(shadow_vertex_source))
-color_group = pyglet.graphics.ShaderGroup(create_program(color_vertex_source))
+shadow_group = pyglet.graphics.ShaderGroup(create_program(shadow_vertex_source, layout))
+color_group = pyglet.graphics.ShaderGroup(create_program(color_vertex_source, layout))
+instance_layout = pyglet.graphics.VertexLayout(position="2f", colors="4Bn", instance_offset="2f/1")
 instance_shadow_group = pyglet.graphics.ShaderGroup(create_instance_program(instance_shadow_vertex_source))
 instance_color_group = pyglet.graphics.ShaderGroup(create_instance_program(instance_color_vertex_source))
 
@@ -133,7 +134,6 @@ mesh.add_pass(color_pass, group=color_group)
 # Instanced lists can also be registered in an additional pass. Every active
 # instance is drawn in both the shadow and color passes without duplicating
 # its geometry or instance buffers.
-instance_layout = pyglet.graphics.VertexLayout(position="2f", colors="4Bn", instance_offset="2f/1")
 triangles = batch.vertex_list_instanced(
     instance_layout,
     3,

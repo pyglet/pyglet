@@ -49,8 +49,8 @@ _fragment_source: str = """#version 330 core
 """
 
 program = pyglet.graphics.ShaderProgram(pyglet.graphics.Shader(_vertex_source, "vertex"),
-                                        pyglet.graphics.Shader(_fragment_source, "fragment"))
-program = program.get_vertex_view(pyglet.graphics.VertexLayout(colors="4f/1", translate="3f/1"))
+                                        pyglet.graphics.Shader(_fragment_source, "fragment"),
+                                        vertex_layout=pyglet.graphics.VertexLayout(colors="4f/1", translate="3f/1"))
 
 
 def _get_quad_vertices(size: int) -> list[int]:
@@ -100,7 +100,8 @@ foreground_group = pyglet.graphics.ShaderGroup(program, order=1)
 
 vertex_list = program.vertex_list(3, GeometryMode.TRIANGLES,
                                   position=(100, 300, 0, 200, 250, 0, 200, 350, 0),
-                                  colors=(1, 0, 0, 1, 0, 1, 0, 1, 0.3, 0.3, 1, 1))
+                                  colors=(1, 0, 0, 1, 0, 1, 0, 1, 0.3, 0.3, 1, 1),
+                                  translate=(0, 0, 0, 0, 0, 0, 0, 0, 0))
 
 vlist_1_size = 15
 vlist_1 = program.vertex_list_instanced_indexed(4, mode=GeometryMode.TRIANGLES, indices=[0, 1, 2, 0, 2, 3],

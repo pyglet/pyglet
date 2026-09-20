@@ -67,7 +67,7 @@ _fragment_source = """#version 330 core
 
 vert_shader = Shader(_vertex_source, 'vertex')
 frag_shader = Shader(_fragment_source, 'fragment')
-shader_program = ShaderProgram(vert_shader, frag_shader)
+shader_program = ShaderProgram(vert_shader, frag_shader, vertex_layout=None)
 
 
 #####################################################

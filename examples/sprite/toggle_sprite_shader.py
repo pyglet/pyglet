@@ -81,6 +81,7 @@ fragment_source = """#version 150 core
 custom_program = pyglet.graphics.ShaderProgram(
     pyglet.graphics.Shader(vertex_source, "vertex"),
     pyglet.graphics.Shader(fragment_source, "fragment"),
+    vertex_layout=pyglet.graphics.VertexLayout(colors="4Bn"),
 )
 
 using_custom_program = False

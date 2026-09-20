@@ -8,7 +8,7 @@ EFFECT_VERTEX_SOURCE = """#version 330 core
     in vec3 position;
     in vec4 colors;
     in vec3 tex_coords;
-    in vec3 translation;
+    in vec4 translation;
     in vec2 anchor;
     in float rotation;
     in float visible;
@@ -39,9 +39,9 @@ EFFECT_VERTEX_SOURCE = """#version 330 core
         m_rotation[1][0] = -sin(-radians(rotation));
         m_rotation[1][1] = cos(-radians(rotation));
 
-        gl_Position = window.projection * window.view * m_translate * m_anchor
-                    * m_rotation * vec4(position + v_anchor, 1.0) * visible;
-        vert_position = vec4(position + translation + v_anchor, 1.0);
+        gl_Position = window.projection * window.view * m_translate * m_anchor * m_rotation * vec4(position + v_anchor, 1.0) * visible;
+        gl_Position.z -= translation.w * gl_Position.w;
+        vert_position = vec4(position + translation.xyz + v_anchor, 1.0);
         text_colors = colors;
         texture_coords = tex_coords.xy;
     }
@@ -110,7 +110,8 @@ def create_effect_shader(fragment_source: str):
     return pyglet.graphics.ShaderProgram(
         pyglet.graphics.Shader(EFFECT_VERTEX_SOURCE, "vertex"),
         pyglet.graphics.Shader(fragment_source, "fragment"),
-    ).get_vertex_view(pyglet.graphics.VertexLayout(colors="4Bn"))
+        vertex_layout=pyglet.graphics.VertexLayout(colors="4Bn"),
+    )
 
 
 window = pyglet.window.Window(960, 400, "Text Effect Shaders")

@@ -98,7 +98,11 @@ sprites = []
 # Reuse vertex source and create new shader with alpha testing.
 vertex_shader = pyglet.graphics.Shader(vertex_source, "vertex")
 fragment_shader = pyglet.graphics.Shader(fragment_source, "fragment")
-depth_shader = pyglet.graphics.ShaderProgram(vertex_shader, fragment_shader)
+depth_shader = pyglet.graphics.ShaderProgram(
+    vertex_shader,
+    fragment_shader,
+    vertex_layout=pyglet.graphics.VertexLayout(colors="4Bn"),
+)
 
 
 def make_sprite(zvalue):
