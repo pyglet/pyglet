@@ -59,6 +59,7 @@ class MultiTextureSamplerState(State):
     handles: tuple[Any, ...] = field(hash=False, compare=False)
 
     sets_state: bool = True
+    unsets_state: bool = True
 
     @classmethod
     def from_textures(
@@ -82,6 +83,9 @@ class MultiTextureSamplerState(State):
 
         for uniform_name, texture_unit in self.uniforms:
             self.program[uniform_name] = texture_unit
+
+    def unset_state(self, ctx: DrawContext) -> None:
+        ctx.surface_ctx.gl.activeTexture(GL_TEXTURE0)
 
 
 @dataclass(frozen=True)
