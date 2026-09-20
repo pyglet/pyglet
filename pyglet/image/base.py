@@ -74,14 +74,19 @@ class _AbstractImage(ABC):
                 are tried, or all encoders if no filename is provided. If all
                 fail, the exception from the first one attempted is raised.
         """
-        if file is None:
+        owns_file = file is None
+        if owns_file:
             assert filename is not None, "Either filename or file must be specified."
             file = open(filename, 'wb')
 
-        if encoder is not None:
-            encoder.encode(self, filename, file)
-        else:
-            _codec_registry.encode(self, filename, file)
+        try:
+            if encoder is not None:
+                encoder.encode(self, filename, file)
+            else:
+                _codec_registry.encode(self, filename, file)
+        finally:
+            if owns_file:
+                file.close()
 
 
 class _AbstractImageSequence(ABC):
