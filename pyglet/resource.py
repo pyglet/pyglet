@@ -425,6 +425,8 @@ class Loader:
     def file(self, name: str, mode: str = 'rb') -> BytesIO | StringIO | IO:
         """Load a file-like object.
 
+        The caller is responsible for closing the returning file object.
+
         Args:
             name:
                 Filename of the resource to load.
@@ -468,7 +470,10 @@ class Loader:
         self._ensure_index()
         from pyglet import font
         fileobj = self.file(filename)
-        font.add_file(fileobj)
+        try:
+            font.add_file(fileobj)
+        finally:
+            fileobj.close()
 
     def _alloc_texture(self, name: str, use_atlas: bool, border: int) -> Texture | TextureRegion:
         fileobj = self.file(name)
@@ -532,7 +537,10 @@ class Loader:
             return self._cached_images[name]
 
         file_obj = self.file(name)
-        img = pyglet.image.load(name, file=file_obj)
+        try:
+            img = pyglet.image.load(name, file=file_obj)
+        finally:
+            file_obj.close()
         self._cached_images[name] = img
         return img
 
@@ -661,7 +669,11 @@ class Loader:
         try:
             identity = self._cached_animations[name]
         except KeyError:
-            _animation = pyglet.image.load_animation(name, self.file(name))
+            fileobj = self.file(name)
+            try:
+                _animation = pyglet.image.load_animation(name, fileobj)
+            finally:
+                fileobj.close()
             texture_bin = self._get_texture_atlas_bin(_animation.get_max_width(),
                                                       _animation.get_max_height(),
                                                       border)
@@ -721,13 +733,18 @@ class Loader:
                 msg = f"Unsupported media capability: {media_capability}"
                 raise ValueError(msg)
 
-            if isinstance(file_location, FileLocation):
+            if isinstance(file_location, FileLocation) and streaming:
                 # Don't open the file if it's streamed from disk
                 file_path = os.path.join(file_location.path, name)
-                return load_func(file_path, streaming=streaming)
+                return load_func(file_path, streaming=True)
 
             fileobj = file_location.open(name)
-            return load_func(name, file=fileobj, streaming=streaming)
+            if streaming:
+                return load_func(name, file=fileobj, streaming=True)
+            try:
+                return load_func(name, file=fileobj, streaming=False)
+            finally:
+                fileobj.close()
         except KeyError:
             raise ResourceNotFoundException(name)
 
@@ -767,7 +784,11 @@ class Loader:
         """Load a 3D Scene."""
         self._ensure_index()
         abspathname = os.path.join(os.path.abspath(self.location(name).path), name)
-        return pyglet.model.load(filename=abspathname, file=self.file(name))
+        fileobj = self.file(name)
+        try:
+            return pyglet.model.load(filename=abspathname, file=fileobj)
+        finally:
+            fileobj.close()
 
     def html(self, name: str) -> AbstractDocument:
         """Load an HTML document."""
@@ -810,7 +831,10 @@ class Loader:
                              'tese': "tesevaluation",
                              'vert': "vertex"}
         fileobj = self.file(name, 'r')
-        source_string = fileobj.read()
+        try:
+            source_string = fileobj.read()
+        finally:
+            fileobj.close()
 
         if not shader_type:
             try:
