@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import math as _math
 import struct as _struct
-from random import uniform as _uniform
+
 from typing import TYPE_CHECKING
+from random import uniform as _uniform
+from dataclasses import dataclass
 
 from pyglet.media.codecs.base import AudioData, AudioFormat, Source
 
@@ -313,50 +315,68 @@ class Sawtooth(SynthesisSource):
 #   Experimental multi-operator FM synthesis:
 #############################################
 
-def sine_operator(sample_rate: int = 44800, frequency: float = 440, index: float = 1,
-                  modulator: Generator | None = None, envelope: Envelope | None = None) -> Generator[float]:
-    """A sine wave generator that can be optionally modulated with another generator.
-
-    This generator represents a single FM Operator. It can be used by itself as a
-    simple sine wave, or modulated by another waveform generator. Multiple operators
-    can be linked together in this way. For example::
-
-        operator1 = sine_operator(samplerate=44800, frequency=1.22)
-        operator2 = sine_operator(samplerate=44800, frequency=99, modulator=operator1)
-        operator3 = sine_operator(samplerate=44800, frequency=333, modulator=operator2)
-        operator4 = sine_operator(samplerate=44800, frequency=545, modulator=operator3)
-
-    Args:
-        sample_rate:
-            Audio samples per second. (CD quality is 44100).
-        frequency:
-            The frequency, in Hz, of the waveform you wish to generate.
-        index:
-            The modulation index. Defaults to 1
-        modulator:
-            An optional operator to modulate this one.
-        envelope:
-            An optional Envelope to apply to the waveform.
-    """
-    # FM equation:  sin((i * 2 * pi * carrier_frequency) + sin(i * 2 * pi * modulator_frequency))
-    envelope = envelope or FlatEnvelope(1.0).get_generator()
-    sin = _math.sin
-    step = 2.0 * _math.pi * frequency / sample_rate
-    i = 0.0
-    if modulator:
-        while True:
-            yield sin(i * step + index * next(modulator)) * next(envelope)
-            i += 1.0
-    else:
-        while True:
-            yield sin(i * step) * next(envelope)
-            i += 1.0
+@dataclass(frozen=True, slots=True)
+class Modulation:
+    """Modulation mappint between two Operators, by index."""
+    source: int
+    target: int
 
 
-def composite_operator(*operators: Generator) -> Generator:
-    """Combine the output from multiple generators.
+@dataclass(frozen=True, slots=True)
+class Algorithm:
+    name: str
+    """The name of the algorithm."""
+    carriers: tuple[int, ...]
+    """A tuple of indices of carrier Operators."""
+    modulations: tuple[Modulation, ...]
+    """A tuple of Modulation objects, Operator interaction indices."""
+    feedback: int | None = None
+    """Index of which Operator to apply feedback to."""
 
-    This does a simple sum & division of the output of
-    two or more generators. A new generator is returned.
-    """
-    return (sum(samples) / len(samples) for samples in zip(*operators))
+
+class Operator:
+    """An FM operator (oscillator + phase modulation + optional feedback)."""
+
+    sample_rate: int = 44800
+
+    def __init__(self, frequency: float = 440.0, index: float = 1.0, feedback: float = 0.0, envelope: Envelope | None = None):
+        self.frequency = frequency
+        self.index = index
+        self.feedback = feedback
+
+        self._step = 2.0 * _math.pi * frequency / self.sample_rate
+        self._phase = 0.0
+        self._last = 0.0             # previous sample (for feedback)
+
+        self.modulators: list[Operator] = []
+
+        # Envelope handling (optional)
+        self._envelope = envelope or FlatEnvelope(1.0)
+        # We don't know duration yet; will be set later or use a flat envelope
+        self._env_gen = self._envelope.get_generator(self.sample_rate, duration=1.0)
+
+    def add_modulator(self, op: Operator) -> None:
+        """Connect another operator as a modulator."""
+        self.modulators.append(op)
+
+    def __next__(self) -> float:
+        # Sum modulation from other operators
+        mod = sum(next(mod_op) for mod_op in self.modulators)
+
+        # Add self-feedback (nop if feedback == 0.0)
+        mod += self.feedback * self._last
+        # Generate sample, and apply envelope
+        value = _math.sin(self._phase + self.index * mod) * next(self._env_gen)
+
+        # Carry state forward
+        self._last = value
+        self._phase += self._step
+
+        return value
+
+    def reset(self) -> None:
+        """Reset phase and feedback state (needed for seeking)."""
+        self._phase = 0.0
+        self._last = 0.0
+        if self._envelope is not None:
+            self._env_gen = self._envelope.get_generator(self.sample_rate, duration=1.0)
