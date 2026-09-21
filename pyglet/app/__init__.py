@@ -31,8 +31,9 @@ default policy is to wait until all windows are closed)::
 
 from __future__ import annotations
 
-import platform
 import sys
+import signal
+import platform
 import weakref
 
 import pyglet
@@ -82,7 +83,11 @@ def run(interval: float | None = 1 / 60) -> None:
 
         pyglet.app.event_loop.run(interval)
 
+    ..note: This convenience function also adds a SIGINT signal handler
+            to automatically call ``pyglet.app.exit`` when this signal
+            is detected.
     """
+    signal.signal(signal.SIGINT, lambda _s, _f: event_loop.exit())
     event_loop.run(interval)
 
 
