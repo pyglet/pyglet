@@ -285,6 +285,33 @@ def test_group_ordering(test_window):
     assert ordered == [low_group, high_group]
 
 
+def test_group_ordering_is_preserved_across_multiple_domains(test_window):
+    """Every domain is drawn for one ordered group before the next group."""
+    batch = pyglet.graphics.Batch()
+    first_group = pyglet.graphics.Group(order=0)
+    second_group = pyglet.graphics.Group(order=1)
+    batch._add_group(second_group)  # noqa: SLF001
+    batch._add_group(first_group)  # noqa: SLF001
+
+    first_domain = _FakeDomain({first_group: _FakeBucket(), second_group: _FakeBucket()})
+    second_domain = _FakeDomain({first_group: _FakeBucket(), second_group: _FakeBucket()})
+    first_key = False, False, GeometryMode.TRIANGLES, object(), object()
+    second_key = False, False, GeometryMode.LINES, object(), object()
+    batch._domain_registry[first_key] = first_domain  # noqa: SLF001
+    batch._domain_registry[second_key] = second_domain  # noqa: SLF001
+
+    assert batch._create_draw_list() == [  # noqa: SLF001
+        (None, "set", first_group),
+        (first_domain, GeometryMode.TRIANGLES, first_group),
+        (second_domain, GeometryMode.LINES, first_group),
+        (None, "unset", first_group),
+        (None, "set", second_group),
+        (first_domain, GeometryMode.TRIANGLES, second_group),
+        (second_domain, GeometryMode.LINES, second_group),
+        (None, "unset", second_group),
+    ]
+
+
 def test_group_consolidation(test_window):
     """Make sure the same groups consolidate properly."""
     batch = pyglet.graphics.Batch()
