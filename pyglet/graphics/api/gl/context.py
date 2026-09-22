@@ -179,6 +179,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
             self._info.query(self)
             apply_extension_function_fallbacks(self.info, self)
             self.uniform_getters, self.uniform_setters = self._get_uniform_func_tables()
+            self.framebuffer_getters, self.framebuffer_setters = self._get_framebuffer_func_tables()
 
         self.object_space.flush(self)
 
@@ -442,3 +443,27 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
             gl.GL_IMAGE_CUBE_MAP_ARRAY: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 3),
         }
         return _uniform_getters, _uniform_setters
+
+    def _get_framebuffer_func_tables(self) -> tuple[
+        dict[str, tuple[Callable, Callable]],
+        dict[str, tuple[Callable, Callable]]
+    ]:
+        """Return paired bind-based and direct-state-access framebuffer functions."""
+        _framebuffer_getters = {
+            "status": (self.glCheckFramebufferStatus, self.glCheckNamedFramebufferStatus),
+        }
+        _framebuffer_setters = {
+            "create": (self.glGenFramebuffers, self.glCreateFramebuffers),
+            "attach_texture": (self.glFramebufferTexture, self.glNamedFramebufferTexture),
+            "attach_texture_layer": (self.glFramebufferTextureLayer, self.glNamedFramebufferTextureLayer),
+            "attach_renderbuffer": (self.glFramebufferRenderbuffer, self.glNamedFramebufferRenderbuffer),
+            "draw_buffers": (self.glDrawBuffers, self.glNamedFramebufferDrawBuffers),
+            "clear_buffer": (self.glClearBufferfv, self.glClearNamedFramebufferfv),
+            "create_renderbuffer": (self.glGenRenderbuffers, self.glCreateRenderbuffers),
+            "renderbuffer_storage": (self.glRenderbufferStorage, self.glNamedRenderbufferStorage),
+            "renderbuffer_storage_multisample": (
+                self.glRenderbufferStorageMultisample,
+                self.glNamedRenderbufferStorageMultisample,
+            ),
+        }
+        return _framebuffer_getters, _framebuffer_setters

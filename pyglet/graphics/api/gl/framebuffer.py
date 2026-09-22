@@ -123,21 +123,39 @@ class GLRenderbuffer(RenderbufferResource):
         """Create a RenderBuffer instance."""
         RenderbufferResource.__init__(self)
         self._context = context or pyglet.graphics.api.core.current_context
+        self._dsa = self._context.info.features.direct_state_access
+        framebuffer_setters = self._context.framebuffer_setters
+        self._create_renderbuffer = framebuffer_setters["create_renderbuffer"][self._dsa]
+        self._set_renderbuffer_storage = framebuffer_setters["renderbuffer_storage"][self._dsa]
+        self._set_renderbuffer_storage_multisample = framebuffer_setters["renderbuffer_storage_multisample"][self._dsa]
         self._id = GLuint()
         self._width = width
         self._height = height
         self._internal_format = _get_internal_format(component_format, bit_size, data_type)
 
-        self._context.glGenRenderbuffers(1, self._id)
+        self._create_renderbuffer(1, self._id)
         self._handle = self._id.value
-        self._context.glBindRenderbuffer(gl.GL_RENDERBUFFER, self._id)
 
-        if samples > 1:
-            self._context.glRenderbufferStorageMultisample(gl.GL_RENDERBUFFER, samples, self._internal_format, width, height)
+        if self._dsa:
+            if samples > 1:
+                self._set_renderbuffer_storage_multisample(
+                    self._id, samples, self._internal_format, width, height,
+                )
+            else:
+                self._set_renderbuffer_storage(
+                    self._id, self._internal_format, width, height,
+                )
         else:
-            self._context.glRenderbufferStorage(gl.GL_RENDERBUFFER, self._internal_format, width, height)
-
-        self._context.glBindRenderbuffer(gl.GL_RENDERBUFFER, 0)
+            self.bind()
+            if samples > 1:
+                self._set_renderbuffer_storage_multisample(
+                    gl.GL_RENDERBUFFER, samples, self._internal_format, width, height,
+                )
+            else:
+                self._set_renderbuffer_storage(
+                    gl.GL_RENDERBUFFER, self._internal_format, width, height,
+                )
+            self.unbind()
 
     @property
     def width(self) -> int:
@@ -190,8 +208,21 @@ class GLFramebuffer(FramebufferResource):
     def __init__(self, target: FramebufferTarget = FramebufferTarget.FRAMEBUFFER, context: OpenGLSurfaceContext | None = None) -> None:
         FramebufferResource.__init__(self)
         self._context = context or pyglet.graphics.api.core.current_context
+
+        # Create functions to map to the mappings.
+        self._dsa = self._context.info.features.direct_state_access
+        framebuffer_getters = self._context.framebuffer_getters
+        framebuffer_setters = self._context.framebuffer_setters
+        self._create_framebuffer = framebuffer_setters["create"][self._dsa]
+        self._get_framebuffer_status = framebuffer_getters["status"][self._dsa]
+        self._attach_texture = framebuffer_setters["attach_texture"][self._dsa]
+        self._attach_texture_layer = framebuffer_setters["attach_texture_layer"][self._dsa]
+        self._attach_renderbuffer = framebuffer_setters["attach_renderbuffer"][self._dsa]
+        self._set_draw_buffers = framebuffer_setters["draw_buffers"][self._dsa]
+        self._clear_color_buffer = framebuffer_setters["clear_buffer"][self._dsa]
+
         self._id = GLuint()
-        self._context.glGenFramebuffers(1, self._id)
+        self._create_framebuffer(1, self._id)
         self._handle = self._id.value
         self._clear_bits = 0
         self._color_attachments: list[int] = []
@@ -233,8 +264,10 @@ class GLFramebuffer(FramebufferResource):
             read_binding = gl.GLint()
             self._context.glGetIntegerv(gl.GL_DRAW_FRAMEBUFFER_BINDING, draw_binding)
             self._context.glGetIntegerv(gl.GL_READ_FRAMEBUFFER_BINDING, read_binding)
-            self._binding_stack.append((draw_binding.value, read_binding.value))
-            self.bind()
+            bindings = (draw_binding.value, read_binding.value)
+            self._binding_stack.append(bindings)
+            if bindings != (self._handle, self._handle):
+                self.bind()
             return self
 
         binding_enum = {
@@ -244,17 +277,34 @@ class GLFramebuffer(FramebufferResource):
         }[self.target]
         binding = gl.GLint()
         self._context.glGetIntegerv(binding_enum, binding)
-        self._binding_stack.append((binding.value,))
-        self.bind()
+        bindings = (binding.value,)
+        self._binding_stack.append(bindings)
+        if binding.value != self._handle:
+            self.bind()
         return self
 
     def __exit__(self, *_args: object) -> None:
         bindings = self._binding_stack.pop()
         if len(bindings) == 2:
-            self._context.glBindFramebuffer(gl.GL_DRAW_FRAMEBUFFER, bindings[0])
-            self._context.glBindFramebuffer(gl.GL_READ_FRAMEBUFFER, bindings[1])
+            draw_binding = gl.GLint()
+            read_binding = gl.GLint()
+            self._context.glGetIntegerv(gl.GL_DRAW_FRAMEBUFFER_BINDING, draw_binding)
+            self._context.glGetIntegerv(gl.GL_READ_FRAMEBUFFER_BINDING, read_binding)
+            if (draw_binding.value, read_binding.value) != bindings:
+                if bindings[0] == bindings[1]:
+                    self._context.glBindFramebuffer(gl.GL_FRAMEBUFFER, bindings[0])
+                else:
+                    self._context.glBindFramebuffer(gl.GL_DRAW_FRAMEBUFFER, bindings[0])
+                    self._context.glBindFramebuffer(gl.GL_READ_FRAMEBUFFER, bindings[1])
         else:
-            self._context.glBindFramebuffer(self._gl_target, bindings[0])
+            binding_enum = {
+                FramebufferTarget.DRAW: gl.GL_DRAW_FRAMEBUFFER_BINDING,
+                FramebufferTarget.READ: gl.GL_READ_FRAMEBUFFER_BINDING,
+            }[self.target]
+            binding = gl.GLint()
+            self._context.glGetIntegerv(binding_enum, binding)
+            if binding.value != bindings[0]:
+                self._context.glBindFramebuffer(self._gl_target, bindings[0])
 
     def clear(self, color: tuple[float, float, float, float] | None = None) -> None:
         """Clear the attachments, optionally using a temporary clear color."""
@@ -286,8 +336,11 @@ class GLFramebuffer(FramebufferResource):
         assert draw_buffers
 
         gl_draw_buffers = (gl.GLenum * len(draw_buffers))(*draw_buffers)
-        with self:
-            self._context.glDrawBuffers(len(draw_buffers), gl_draw_buffers)
+        if self._dsa:
+            self._set_draw_buffers(self._id, len(draw_buffers), gl_draw_buffers)
+        else:
+            with self:
+                self._set_draw_buffers(len(draw_buffers), gl_draw_buffers)
 
     def clear_buffers(self, *colors: tuple[float, float, float, float]) -> None:
         """Clear color draw buffers with the supplied RGBA values.
@@ -296,16 +349,29 @@ class GLFramebuffer(FramebufferResource):
         :meth:`set_draw_buffers`. This uses ``glClearBufferfv`` and therefore
         does not alter the context clear color.
         """
-        with self:
+        if self._dsa:
             for index, color in enumerate(colors):
                 self.clear_buffer(index, color)
+        else:
+            with self:
+                for index, color in enumerate(colors):
+                    self._clear_buffer(index, color)
 
     def clear_buffer(self, index: int, color: tuple[float, float, float, float]) -> None:
         """Clear one color draw buffer by its draw-buffer index."""
+        if self._dsa:
+            self._clear_buffer(index, color)
+        else:
+            with self:
+                self._clear_buffer(index, color)
+
+    def _clear_buffer(self, index: int, color: tuple[float, float, float, float]) -> None:
         assert len(color) == 4, "The clear color must contain four components."
         gl_color = (gl.GLfloat * 4)(*color)
-        with self:
-            self._context.glClearBufferfv(gl.GL_COLOR, index, gl_color)
+        if self._dsa:
+            self._clear_color_buffer(self._id, gl.GL_COLOR, index, gl_color)
+        else:
+            self._clear_color_buffer(gl.GL_COLOR, index, gl_color)
 
     def delete(self) -> None:
         """Explicitly delete the Framebuffer."""
@@ -325,7 +391,10 @@ class GLFramebuffer(FramebufferResource):
     @property
     def is_complete(self) -> bool:
         """True if the framebuffer is 'complete', else False."""
-        return self._context.glCheckFramebufferStatus(gl.GL_FRAMEBUFFER) == gl.GL_FRAMEBUFFER_COMPLETE
+        if self._dsa:
+            return self._get_framebuffer_status(self._id, self._gl_target) == gl.GL_FRAMEBUFFER_COMPLETE
+        with self:
+            return self._get_framebuffer_status(self._gl_target) == gl.GL_FRAMEBUFFER_COMPLETE
 
     def get_status(self) -> str:
         """Get the current Framebuffer status, as a string.
@@ -334,7 +403,11 @@ class GLFramebuffer(FramebufferResource):
         can be used for more information. It will return a
         string with the OpenGL reported status.
         """
-        gl_status = self._context.glCheckFramebufferStatus(self._gl_target)
+        if self._dsa:
+            gl_status = self._get_framebuffer_status(self._id, self._gl_target)
+        else:
+            with self:
+                gl_status = self._get_framebuffer_status(self._gl_target)
 
         return _status_states.get(gl_status, "Unknown error")
 
@@ -351,16 +424,20 @@ class GLFramebuffer(FramebufferResource):
             level:
                 The mipmap level of the targeted texture to attach to the framebuffer.
         """
-        self.bind()
         gl_attachment = _gl_attachment_map[attachment]
-        self._context.glFramebufferTexture(self._gl_target, gl_attachment, texture.handle, level)
+        if self._dsa:
+            self._attach_texture(self._id, gl_attachment, texture.handle, level)
+        else:
+            with self:
+                self._attach_texture(
+                    self._gl_target, gl_attachment, texture.handle, level,
+                )
         self._clear_bits |= _clear_bit_map[attachment]
         if gl.GL_COLOR_ATTACHMENT0 <= gl_attachment <= gl.GL_COLOR_ATTACHMENT15:
             if gl_attachment not in self._color_attachments:
                 self._color_attachments.append(gl_attachment)
         self._width = max(texture.width, self._width)
         self._height = max(texture.height, self._height)
-        self.unbind()
 
     def attach_texture_layer(self, texture: GLTexture, layer: int, level: int,
                              attachment: FramebufferAttachment = FramebufferAttachment.COLOR0) -> None:
@@ -377,16 +454,22 @@ class GLFramebuffer(FramebufferResource):
             attachment:
                 Specifies the attachment point of the framebuffer.
         """
-        self.bind()
         gl_attachment = _gl_attachment_map[attachment]
-        self._context.glFramebufferTextureLayer(self._gl_target, gl_attachment, texture.handle, level, layer)
+        if self._dsa:
+            self._attach_texture_layer(
+                self._id, gl_attachment, texture.handle, level, layer,
+            )
+        else:
+            with self:
+                self._attach_texture_layer(
+                    self._gl_target, gl_attachment, texture.handle, level, layer,
+                )
         self._clear_bits |= _clear_bit_map[attachment]
         if gl.GL_COLOR_ATTACHMENT0 <= gl_attachment <= gl.GL_COLOR_ATTACHMENT15:
             if gl_attachment not in self._color_attachments:
                 self._color_attachments.append(gl_attachment)
         self._width = max(texture.width, self._width)
         self._height = max(texture.height, self._height)
-        self.unbind()
 
     def attach_renderbuffer(self, renderbuffer: GLRenderbuffer,
                             attachment: FramebufferAttachment = FramebufferAttachment.COLOR0) -> None:
@@ -399,16 +482,22 @@ class GLFramebuffer(FramebufferResource):
             attachment:
                 Specifies the attachment point of the framebuffer.
         """
-        self.bind()
         gl_attachment = _gl_attachment_map[attachment]
-        self._context.glFramebufferRenderbuffer(self._gl_target, gl_attachment, gl.GL_RENDERBUFFER, renderbuffer.handle)
+        if self._dsa:
+            self._attach_renderbuffer(
+                self._id, gl_attachment, gl.GL_RENDERBUFFER, renderbuffer.handle,
+            )
+        else:
+            with self:
+                self._attach_renderbuffer(
+                    self._gl_target, gl_attachment, gl.GL_RENDERBUFFER, renderbuffer.handle,
+                )
         self._clear_bits |= _clear_bit_map[attachment]
         if gl.GL_COLOR_ATTACHMENT0 <= gl_attachment <= gl.GL_COLOR_ATTACHMENT15:
             if gl_attachment not in self._color_attachments:
                 self._color_attachments.append(gl_attachment)
         self._width = max(renderbuffer.width, self._width)
         self._height = max(renderbuffer.height, self._height)
-        self.unbind()
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(id={self._id.value})"
