@@ -194,6 +194,7 @@ class GLFramebuffer(FramebufferResource):
         self._context.glGenFramebuffers(1, self._id)
         self._handle = self._id.value
         self._clear_bits = 0
+        self._color_attachments: list[int] = []
         self._width = 0
         self._height = 0
         self._binding_stack: list[tuple[int, ...]] = []
@@ -270,6 +271,42 @@ class GLFramebuffer(FramebufferResource):
                 if previous_color is not None:
                     self._context.glClearColor(*previous_color)
 
+    def set_draw_buffers(self, *attachments: FramebufferAttachment) -> None:
+        """Select the color attachments written by fragment shader outputs.
+
+        The position of each attachment determines the corresponding fragment
+        shader output location. For example, ``COLOR1, COLOR0`` routes output
+        location 0 to COLOR1 and location 1 to COLOR0.
+        """
+        if attachments:
+            draw_buffers = tuple(_gl_attachment_map[attachment] for attachment in attachments)
+        else:
+            draw_buffers = tuple(self._color_attachments)
+
+        assert draw_buffers
+
+        gl_draw_buffers = (gl.GLenum * len(draw_buffers))(*draw_buffers)
+        with self:
+            self._context.glDrawBuffers(len(draw_buffers), gl_draw_buffers)
+
+    def clear_buffers(self, *colors: tuple[float, float, float, float]) -> None:
+        """Clear color draw buffers with the supplied RGBA values.
+
+        Values are matched by draw-buffer index, in the order passed to
+        :meth:`set_draw_buffers`. This uses ``glClearBufferfv`` and therefore
+        does not alter the context clear color.
+        """
+        with self:
+            for index, color in enumerate(colors):
+                self.clear_buffer(index, color)
+
+    def clear_buffer(self, index: int, color: tuple[float, float, float, float]) -> None:
+        """Clear one color draw buffer by its draw-buffer index."""
+        assert len(color) == 4, "The clear color must contain four components."
+        gl_color = (gl.GLfloat * 4)(*color)
+        with self:
+            self._context.glClearBufferfv(gl.GL_COLOR, index, gl_color)
+
     def delete(self) -> None:
         """Explicitly delete the Framebuffer."""
         self._context.glDeleteFramebuffers(1, self._id)
@@ -318,6 +355,9 @@ class GLFramebuffer(FramebufferResource):
         gl_attachment = _gl_attachment_map[attachment]
         self._context.glFramebufferTexture(self._gl_target, gl_attachment, texture.handle, level)
         self._clear_bits |= _clear_bit_map[attachment]
+        if gl.GL_COLOR_ATTACHMENT0 <= gl_attachment <= gl.GL_COLOR_ATTACHMENT15:
+            if gl_attachment not in self._color_attachments:
+                self._color_attachments.append(gl_attachment)
         self._width = max(texture.width, self._width)
         self._height = max(texture.height, self._height)
         self.unbind()
@@ -341,6 +381,9 @@ class GLFramebuffer(FramebufferResource):
         gl_attachment = _gl_attachment_map[attachment]
         self._context.glFramebufferTextureLayer(self._gl_target, gl_attachment, texture.handle, level, layer)
         self._clear_bits |= _clear_bit_map[attachment]
+        if gl.GL_COLOR_ATTACHMENT0 <= gl_attachment <= gl.GL_COLOR_ATTACHMENT15:
+            if gl_attachment not in self._color_attachments:
+                self._color_attachments.append(gl_attachment)
         self._width = max(texture.width, self._width)
         self._height = max(texture.height, self._height)
         self.unbind()
@@ -360,6 +403,9 @@ class GLFramebuffer(FramebufferResource):
         gl_attachment = _gl_attachment_map[attachment]
         self._context.glFramebufferRenderbuffer(self._gl_target, gl_attachment, gl.GL_RENDERBUFFER, renderbuffer.handle)
         self._clear_bits |= _clear_bit_map[attachment]
+        if gl.GL_COLOR_ATTACHMENT0 <= gl_attachment <= gl.GL_COLOR_ATTACHMENT15:
+            if gl_attachment not in self._color_attachments:
+                self._color_attachments.append(gl_attachment)
         self._width = max(renderbuffer.width, self._width)
         self._height = max(renderbuffer.height, self._height)
         self.unbind()
