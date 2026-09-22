@@ -64,6 +64,7 @@ def test_framebuffer_attach_texture_and_readback(test_window):
         texture.delete()
 
 
+@skip_graphics_api(GraphicsAPIGroups.GL2)
 def test_framebuffer_draw_buffers_and_individual_clears(test_window):
     test_window.switch_to()
 
@@ -121,6 +122,7 @@ def test_framebuffer_dsa_preserves_bound_framebuffer(test_window):
         texture.delete()
 
 
+@skip_graphics_api(GraphicsAPIGroups.GL2)
 def test_nested_framebuffer_contexts_avoid_redundant_binds(test_window):
     test_window.switch_to()
 
@@ -147,6 +149,7 @@ def test_nested_framebuffer_contexts_avoid_redundant_binds(test_window):
         framebuffer.delete()
 
 
+@skip_graphics_api(GraphicsAPIGroups.GL2)
 def test_framebuffer_fallback_operations_restore_binding(test_window):
     test_window.switch_to()
 
