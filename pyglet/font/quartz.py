@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import math
 from ctypes import byref, c_char_p, c_float, c_int32, c_void_p, cast, string_at
-from typing import TYPE_CHECKING, BinaryIO
+from typing import TYPE_CHECKING
 
 import pyglet
 import pyglet.image
@@ -702,7 +702,7 @@ class QuartzFont(Font):
         return exists
 
     @classmethod
-    def add_font_data(cls: type[QuartzFont], data: BinaryIO, manager: FontManager) -> None:
+    def add_font_data(cls: type[QuartzFont], data: bytes, manager: FontManager) -> None:
         # Create a cgFont with the data.  There doesn't seem to be a way to
         # register a font loaded from memory such that the operating system will
         # find it later.  So instead we just store the cgFont in a table where
@@ -906,7 +906,7 @@ class QuartzFont(Font):
         cf.CFRelease(line)
         return all_glyphs, all_positions
 
-    def get_glyphs(self, text: str, shaping: bool) -> tuple[list[Glyph], list[GlyphPosition]]:
+    def get_glyphs(self, text: str, shaping: bool = False) -> tuple[list[Glyph], list[GlyphPosition]]:
         """Create and return a list of Glyphs for `text`.
 
         If any characters do not have a known glyph representation in this

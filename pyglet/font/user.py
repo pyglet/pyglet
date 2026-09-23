@@ -63,19 +63,20 @@ from typing import TYPE_CHECKING, ClassVar, Protocol
 import pyglet
 from pyglet.enums import Stretch, Style, Weight
 from pyglet.font import base
+from pyglet.image import ImageData
 
 SCALING_ENABLED = False
 try:
-    from PIL import Image
-    from PIL.Image import Resampling
+    from PIL import Image  # type: ignore[import-not-found]
+    from PIL.Image import Resampling  # type: ignore[import-not-found]
 
     SCALING_ENABLED = True
 except ImportError:
     pass
 
 if TYPE_CHECKING:
+    from pyglet.font import FontManager
     from pyglet.font.base import Glyph, GlyphPosition
-    from pyglet.image import ImageData
 
 
 class UserDefinedGlyphRenderer(base.GlyphRenderer):
@@ -83,7 +84,7 @@ class UserDefinedGlyphRenderer(base.GlyphRenderer):
         super().__init__(font)
         self._font = font
 
-    def render(self, image_data: ImageData) -> Glyph:
+    def render_image(self, image_data: ImageData) -> Glyph:
         if self._font._scaling:  # noqa: SLF001
             image_original = Image.frombytes("RGBA", (image_data.width, image_data.height),
                                              image_data.get_image_data().get_bytes("RGBA"))
@@ -99,6 +100,9 @@ class UserDefinedGlyphRenderer(base.GlyphRenderer):
             glyph.set_bearings(-self._font.descent, 0, image_data.width)
         return glyph
 
+    def render(self, text: str) -> Glyph:
+        raise NotImplementedError("Defined render glyph requires render_image.")
+
 
 class UserDefinedFontBase(base.Font):
     """Used as a base for all user defined fonts.
@@ -106,6 +110,16 @@ class UserDefinedFontBase(base.Font):
     .. versionadded:: 2.0.15
     """
     glyph_renderer_class: ClassVar[type[base.GlyphRenderer]] = UserDefinedGlyphRenderer
+
+    @classmethod
+    def add_font_data(cls, data: bytes, manager: FontManager) -> None:
+        """User-defined fonts cannot be registered from font data."""
+        raise NotImplementedError
+
+    @classmethod
+    def have_font(cls, name: str) -> bool:  # noqa: ARG003
+        """User-defined fonts are not installed system fonts."""
+        return False
 
     def __init__(
             self, name: str, default_char: str, size: int, ascent: int | None = None, descent: int | None = None,
@@ -140,18 +154,18 @@ class UserDefinedFontBase(base.Font):
         """
         super().__init__(name, size, weight, style, stretch, dpi)
         self.default_char = default_char
-        self.ascent = ascent
-        self.descent = descent
+        self.ascent = ascent or 0
+        self.descent = descent or 0
         self.locale = locale
 
-        self._base_size = 0
+        self._base_size: float = 0
         self._scaling = False
 
     @property
     def name(self) -> str:
         return self._name
 
-    def enable_scaling(self, base_size: int) -> None:
+    def enable_scaling(self, base_size: float) -> None:
         if not SCALING_ENABLED:
             msg = "PIL is not installed. User Font Scaling requires PIL."
             raise ImportError(msg)
@@ -242,7 +256,7 @@ class UserDefinedMappingFont(UserDefinedFontBase):
 
         super().__init__(name, default_char, size, ascent, descent, weight, style, stretch, dpi, locale)
 
-    def enable_scaling(self, base_size: int) -> None:
+    def enable_scaling(self, base_size: float) -> None:
         """Enables scaling the font size.
 
         Args:
@@ -250,11 +264,11 @@ class UserDefinedMappingFont(UserDefinedFontBase):
                 The base size is used to calculate the ratio between new sizes and the original.
         """
         super().enable_scaling(base_size)
-        glyphs, offsets = self.get_glyphs(self.default_char, False)
+        glyphs, _offsets = self.get_glyphs(self.default_char, False)
         self.ascent = glyphs[0].height
         self.descent = 0
 
-    def get_glyphs(self, text: str, shaping: bool = False) -> tuple[list[Glyph], list[GlyphPosition]]:
+    def get_glyphs(self, text: str, shaping: bool = False) -> tuple[list[Glyph], list[GlyphPosition]]:  # noqa: ARG002
         """Create and return a list of Glyphs for `text`.
 
         If any characters do not have a known glyph representation in this font, a substitution will be made with
@@ -273,7 +287,7 @@ class UserDefinedMappingFont(UserDefinedFontBase):
                 if not image_data:
                     c = self.default_char
                 else:
-                    self.glyphs[c] = self._glyph_renderer.render(image_data)
+                    self.glyphs[c] = self._glyph_renderer.render_image(image_data)
             glyphs.append(self.glyphs[c])
             offsets.append(base.GlyphPosition(0, 0, 0, 0))
         return glyphs, offsets

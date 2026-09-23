@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, NamedTuple
 
+import pyglet
+
 from pyglet.enums import GraphicsAPI
 
 from .base import SurfaceConfig, UserConfig  # noqa: TC001
@@ -23,7 +25,7 @@ class Config:
 
     __slots__ = 'gl2', 'gles2', 'gles3', 'opengl', 'vulkan', 'webgl'
 
-    def __init__(self):
+    def __init__(self) -> None:  # noqa: D107
         self.opengl: OpenGLUserConfig = OpenGLUserConfig(major_version=3, minor_version=3, api=GraphicsAPI.OPENGL)
         self.gl2: OpenGLUserConfig = OpenGLUserConfig(major_version=2, minor_version=0, api=GraphicsAPI.OPENGL_2)
         self.gles2: OpenGLUserConfig = OpenGLUserConfig(major_version=2, minor_version=0, api=GraphicsAPI.OPENGL_ES_2)
@@ -33,9 +35,15 @@ class Config:
 
 
 def match_surface_config(config: UserConfig, surface: Window) -> SurfaceConfig | None:
-    if isinstance(config, (OpenGLUserConfig, WebGLUserConfig)):
+    if isinstance(config, OpenGLUserConfig):
         from pyglet.config.gl import get_surface_config  # noqa: PLC0415
         return get_surface_config(config, surface)
+
+    if isinstance(config, WebGLUserConfig):
+        if pyglet.compat_platform == 'emscripten':
+            from pyglet.config.gl.webgl import match  # noqa: PLC0415
+            return match(config, surface)
+        return None
 
     msg = f"Matching for '{config.__class__}' is not yet implemented."
     raise NotImplementedError(msg)

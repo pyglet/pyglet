@@ -207,7 +207,7 @@ class _HarfbuzzResources:
         self.face = hb_lib.hb_face_create(self.blob, 0)
         self.font = hb_lib.hb_font_create(self.face)
 
-    def shape_text(self, text: str, pixel_size: int, direction: int=HB_DIRECTION_LTR):
+    def shape_text(self, text: str, pixel_size: int, direction: int=HB_DIRECTION_LTR) -> list[dict]:
         """Shapes the given string using the provided hb_font.
 
         Returns a list of dictionaries for each glyph containing:
@@ -259,10 +259,10 @@ class _HarfbuzzResources:
 
         return glyphs
 
-    def __del__(self):
+    def __del__(self) -> None:
         self.destroy()
 
-    def destroy(self):
+    def destroy(self) -> None:
         if self.font:
             hb_lib.hb_font_destroy(self.font)
             self.font = None

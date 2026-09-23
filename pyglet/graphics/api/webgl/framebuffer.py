@@ -35,7 +35,7 @@ from pyglet.image.base import ImageData
 if TYPE_CHECKING:
     from pyglet.graphics.api.webgl.webgl_js import WebGLFramebuffer as WebGLFramebufferObject, WebGLRenderbuffer as WebGLRenderbufferObject
     from pyglet.customtypes import DataTypes
-    from pyglet.graphics.api.webgl import OpenGLSurfaceContext
+    from pyglet.graphics.api.webgl import WebGL2SurfaceContext
     from pyglet.graphics.api.webgl.texture import WebGLTexture
 
 _gl_target_map = {
@@ -119,7 +119,7 @@ class WebGLRenderbuffer(RenderbufferResource):
 
     def __init__(self, width: int, height: int, component_format: ComponentFormat, bit_size: int,
                  data_type: DataTypes = "I", samples: int = 1,
-                 context: OpenGLSurfaceContext | None = None) -> None:
+                 context: WebGL2SurfaceContext | None = None) -> None:
         """Create a RenderBuffer instance."""
         RenderbufferResource.__init__(self)
         self._context = context or pyglet.graphics.api.core.current_context
@@ -197,7 +197,7 @@ class WebGLFramebuffer(FramebufferResource):
 
     def __init__(self,
                  target: FramebufferTarget = FramebufferTarget.FRAMEBUFFER,
-                 context: OpenGLSurfaceContext | None = None) -> None:
+                 context: WebGL2SurfaceContext | None = None) -> None:
         FramebufferResource.__init__(self)
         self._context = context or pyglet.graphics.api.core.current_context
         self._gl = self._context.gl

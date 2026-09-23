@@ -160,7 +160,7 @@ class AudioData:
         if isinstance(data, bytes):
             # bytes are treated specially by ctypes and can be cast to a void pointer, get
             # their content's address like this
-            self.pointer = ctypes.cast(data, ctypes.c_void_p).value
+            self.pointer = ctypes.cast(data, ctypes.c_void_p).value  # type: ignore[arg-type]
         elif isinstance(data, ctypes.Array):
             self.pointer = ctypes.addressof(data)
         else:
@@ -281,7 +281,7 @@ class Source:
             # Animation requires at least one frame.
             return Animation([])
         frames = []
-        last_ts = 0
+        last_ts = 0.0
         next_ts = self.get_next_video_timestamp()
         while next_ts is not None:
             image = self.get_next_video_frame()
@@ -383,7 +383,7 @@ class Source:
         del timestamp
         raise CannotSeekException
 
-    def get_queue_source(self) -> Source:
+    def get_queue_source(self) -> Source | None:
         """Return the ``Source`` to be used as the queue source for a player.
 
         Default implementation returns ``self``.
@@ -426,7 +426,7 @@ class StreamingSource(Source):
         if self.is_player_source:
             raise MediaException('This source is already queued on a player.')
         self.is_player_source = True
-        return super().get_queue_source()
+        return super().get_queue_source()  # type: ignore[return-value]
 
     def delete(self) -> None:
         """Release the resources held by this StreamingSource."""
@@ -472,8 +472,9 @@ class StaticSource(Source):
 
         self._duration = len(self._data) / self.audio_format.bytes_per_second
 
-    def get_queue_source(self) -> StaticMemorySource | None:
+    def get_queue_source(self) -> Source | None:
         if self._data is not None:
+            assert self.audio_format is not None
             return StaticMemorySource(self._data, self.audio_format)
         return None
 
@@ -547,6 +548,11 @@ class SourceGroup:
     The first source added sets the format.
     """
 
+    audio_format: AudioFormat | None
+    video_format: VideoFormat | None
+    info: SourceInfo | None
+    _sources: list[Source]
+
     def __init__(self) -> None:
         """Create an empty source group."""
         self.audio_format = None
@@ -566,7 +572,10 @@ class SourceGroup:
     def add(self, source: Source) -> None:
         self.audio_format = self.audio_format or source.audio_format
         self.info = self.info or source.info
-        source = source.get_queue_source()
+        queue_source = source.get_queue_source()
+        if queue_source is None:
+            raise MediaException("Source does not provide a queue source.")
+        source = queue_source
         if source.audio_format != self.audio_format:
             raise MediaException("Sources must share the same audio format.")
         self._sources.append(source)

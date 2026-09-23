@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import sys
 import time
 
 import pyglet
@@ -11,7 +10,6 @@ from pyglet.enums import Anchor, BlendFactor, GeometryMode
 from pyglet.graphics import Group
 from pyglet.graphics.draw import BatchDrawOptions, DrawContext
 
-_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 vertex_source = """#version 150
     in vec3 position;
@@ -479,7 +477,7 @@ class Emitter(event.EventDispatcher):
         self._vertex_list.draw(GeometryMode.POINTS)
         self._group.unset_state_recursive(draw_ctx)
 
-    if _is_pyglet_doc_run:
+    if pyglet.IS_DOC_BUILD:
         def on_animation_end(self):
             """The emitter animation reached the final frame.
 

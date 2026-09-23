@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -12,6 +11,7 @@ import pyglet
 from pyglet import graphics
 from pyglet.enums import BlendFactor, CompareOp, GraphicsAPI
 from pyglet.graphics import Group, ShaderProgram
+from pyglet.graphics.vertexdomain import IndexedVertexList, VertexList
 from pyglet.text.effects import LinearGradient
 from pyglet.text.layout.boxes import (
     _AbstractBox,
@@ -32,7 +32,6 @@ if TYPE_CHECKING:
     from pyglet.graphics import Texture, TextureRenderTarget
     from pyglet.text.document import AbstractDocument
 
-_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
     from pyglet.graphics.api.gl.text import (
@@ -70,6 +69,8 @@ class TextLayoutGroup(Group):
     is created; applications usually do not need to explicitly create it.
     """
 
+    uniforms: dict[str, Any]
+
     def __init__(
         self,
         texture: Texture,
@@ -94,6 +95,8 @@ class TextDecorationGroup(Group):
     is created; applications usually do not need to explicitly create it.
     """
 
+    uniforms: dict[str, Any]
+
     def __init__(
         self,
         program: ShaderProgram,
@@ -114,6 +117,7 @@ class ScrollableTextLayoutGroup(Group):
     """
 
     scissor_area: ClassVar[tuple[int, int, int, int]] = 0, 0, 0, 0
+    uniforms: dict[str, Any]
 
     def __init__(
         self,
@@ -151,6 +155,7 @@ class ScrollableTextDecorationGroup(Group):
     """
 
     scissor_area: ClassVar[tuple[int, int, int, int]] = 0, 0, 0, 0
+    uniforms: dict[str, Any]
 
     def __init__(self, program: ShaderProgram, order: int = 0, parent: Group | None = None) -> None:  # noqa: D107
         super().__init__(order=order, parent=parent)
@@ -192,8 +197,13 @@ class TextLayout(_FlowLayoutBase):
             Default group used to set the state for all decorations including background colors and underlines.
     """
 
-    _vertex_lists: list[_LayoutVertexList]
+    _vertex_lists: list[VertexList | _LayoutVertexList]
     _boxes: list[_AbstractBox]
+    _lines: list[_Line]
+    group_cache: dict[Texture | tuple[Texture, int], TextLayoutGroup | ScrollableTextLayoutGroup]
+    effect_group_cache: dict[tuple[Texture, int], TextLayoutGroup | ScrollableTextLayoutGroup]
+    _background_decoration_group: TextDecorationGroup | ScrollableTextDecorationGroup | None
+    _foreground_decoration_group: TextDecorationGroup | ScrollableTextDecorationGroup | None
     group_cache: dict[Texture | tuple[Texture, int], graphics.Group]
     has_view_translation: bool
 
@@ -202,9 +212,9 @@ class TextLayout(_FlowLayoutBase):
     _update_enabled: bool = True
     _own_batch: bool = False
 
-    group_class: ClassVar[type[TextLayoutGroup]] = TextLayoutGroup
-    effect_group_class: ClassVar[type[TextLayoutGroup]] = TextLayoutGroup
-    decoration_class: ClassVar[type[TextDecorationGroup]] = TextDecorationGroup
+    group_class: ClassVar[type[TextLayoutGroup | ScrollableTextLayoutGroup]] = TextLayoutGroup
+    effect_group_class: ClassVar[type[TextLayoutGroup | ScrollableTextLayoutGroup]] = TextLayoutGroup
+    decoration_class: ClassVar[type[TextDecorationGroup | ScrollableTextDecorationGroup]] = TextDecorationGroup
 
     _ascent: float = 0
     _descent: float = 0
@@ -244,7 +254,7 @@ class TextLayout(_FlowLayoutBase):
         anchor_y: AnchorY = 'bottom',
         rotation: float = 0,
         multiline: bool = False,
-        dpi: float | None = None,
+        dpi: int | None = None,
         batch: Batch | None = None,
         group: graphics.Group | None = None,
         program: ShaderProgram | None = None,
@@ -327,7 +337,7 @@ class TextLayout(_FlowLayoutBase):
         self._anchor_y = anchor_y
         self._rotation = rotation
         self._multiline = multiline
-        self._dpi = dpi or 96
+        self._dpi = int(dpi or 96)
         self._shaping = shaping
         self._depth_sorting = depth_sorting
 
@@ -374,7 +384,7 @@ class TextLayout(_FlowLayoutBase):
         self._foreground_decoration_group = None
         self.effect_group_cache = {}
 
-    def get_effect_group(self, texture: Texture, order: int = 0) -> TextLayoutGroup:
+    def get_effect_group(self, texture: Texture, order: int = 0) -> TextLayoutGroup | ScrollableTextLayoutGroup:
         cache_key = texture, order
         try:
             return self.effect_group_cache[cache_key]
@@ -393,7 +403,7 @@ class TextLayout(_FlowLayoutBase):
         return layer * self._depth_layer_offset if self._depth_sorting else 0.0
 
     @property
-    def background_decoration_group(self) -> TextDecorationGroup:
+    def background_decoration_group(self) -> TextDecorationGroup | ScrollableTextDecorationGroup:
         if self._background_decoration_group is None:
             self._background_decoration_group = self.decoration_class(
                 self.decoration_shader,
@@ -404,11 +414,11 @@ class TextLayout(_FlowLayoutBase):
         return self._background_decoration_group
 
     @background_decoration_group.setter
-    def background_decoration_group(self, group: TextDecorationGroup | None) -> None:
+    def background_decoration_group(self, group: TextDecorationGroup | ScrollableTextDecorationGroup | None) -> None:
         self._background_decoration_group = group
 
     @property
-    def foreground_decoration_group(self) -> TextDecorationGroup:
+    def foreground_decoration_group(self) -> TextDecorationGroup | ScrollableTextDecorationGroup:
         if self._foreground_decoration_group is None:
             self._foreground_decoration_group = self.decoration_class(
                 self.decoration_shader,
@@ -419,7 +429,7 @@ class TextLayout(_FlowLayoutBase):
         return self._foreground_decoration_group
 
     @foreground_decoration_group.setter
-    def foreground_decoration_group(self, group: TextDecorationGroup | None) -> None:
+    def foreground_decoration_group(self, group: TextDecorationGroup | ScrollableTextDecorationGroup | None) -> None:
         self._foreground_decoration_group = group
 
     @property
@@ -509,7 +519,7 @@ class TextLayout(_FlowLayoutBase):
         far more efficient to modify a document in-place than to replace
         the document instance on the layout.
         """
-        return self._document
+        return self._document  # type: ignore[return-value]
 
     @document.setter
     def document(self, document: AbstractDocument) -> None:
@@ -920,13 +930,13 @@ class TextLayout(_FlowLayoutBase):
         self._update()
 
     @property
-    def dpi(self) -> float:
+    def dpi(self) -> int:
         """Get DPI used by this layout."""
         return self._dpi
 
     @dpi.setter
-    def dpi(self, value: float) -> None:
-        self._dpi = value
+    def dpi(self, value: int) -> None:
+        self._dpi = int(value)
         self._update()
 
     def delete(self) -> None:
@@ -1004,7 +1014,7 @@ class TextLayout(_FlowLayoutBase):
         if self._own_batch:
             self._batch.draw()
         else:
-            self._batch.draw_subset(self._vertex_lists)
+            self._batch.draw_subset(self._vertex_lists)  # type: ignore[arg-type]
 
     def _update(self) -> None:
         if not self._update_enabled:
@@ -1017,7 +1027,9 @@ class TextLayout(_FlowLayoutBase):
         self._boxes.clear()
         self._lines.clear()
 
-        if not self._document or not self._document.text:
+        assert self._document
+
+        if not self._document.text:
             self._ascent = 0
             self._descent = 0
             self._anchor_left = 0
@@ -1052,9 +1064,12 @@ class TextLayout(_FlowLayoutBase):
             return
 
         colors_iter = self._document.get_style_runs("color")
-        colors = []
-        for iter_start, iter_end, color in colors_iter.ranges(start, end):
-            colors.extend(color * (iter_end - iter_start))
+        colors: list[int] = []
+        for iter_start, iter_end, style_color in colors_iter.ranges(start, end):
+            if isinstance(style_color, LinearGradient):
+                self._init_document()
+                return
+            colors.extend(style_color * (iter_end - iter_start))
 
         char_index = 0
 
@@ -1069,13 +1084,13 @@ class TextLayout(_FlowLayoutBase):
 
             char_index += box_length
 
-    def _get_left_anchor(self) -> int:
+    def _get_left_anchor(self) -> float:
         """Returns the anchor for the X axis from the left."""
         if self._content_halign != "left" and self._width is not None:
             width = self._width
             offset = self._get_content_halign_offset(width)
         elif self._multiline:
-            width = self._width if self._wrap_lines else self._content_width
+            width = self._width if self._wrap_lines and self._width is not None else self._content_width
             offset = 0
         else:
             width = self._content_width

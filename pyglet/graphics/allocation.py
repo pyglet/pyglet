@@ -355,8 +355,11 @@ class RangeAllocator:
     vertex list ranges that belong to the same group/state, and merge
     contiguous ones into larger draw calls.
 
-    .. note:: This preserves insertion order when re-allocating, but sorts by
-    range start when rebuilding, so that the final merged ranges are contiguous for better batched drawing.
+    .. note::
+
+       This preserves insertion order when re-allocating, but sorts by range
+       start when rebuilding, so that the final merged ranges are contiguous
+       for better batched drawing.
 
     Example:
         >>> allocator = RangeAllocator()

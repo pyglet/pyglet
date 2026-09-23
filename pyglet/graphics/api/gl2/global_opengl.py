@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import ctypes
-import sys
 from typing import Sequence, TYPE_CHECKING, Literal
 
 import pyglet
@@ -14,7 +12,6 @@ if TYPE_CHECKING:
     from _ctypes import Array
     from pyglet.graphics.shader import ShaderType
 
-_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 
 class OpenGL2Backend(OpenGLBackend):

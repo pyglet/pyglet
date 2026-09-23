@@ -46,7 +46,6 @@ The information modules are provided for convenience, and are documented below.
 """
 from __future__ import annotations
 
-import sys as _sys
 
 import pyglet as _pyglet
 from pyglet import compat_platform
@@ -54,5 +53,3 @@ from pyglet.graphics.api.gl.gl import *  # Must always be imported before gl_inf
 from pyglet.graphics.api.gl.lib import GLException  # noqa: F401
 from .base import GLSharedObjectSpace  # noqa: F401
 from .context import OpenGLSurfaceContext
-
-_is_pyglet_doc_run = hasattr(_sys, "is_pyglet_doc_run") and _sys.is_pyglet_doc_run

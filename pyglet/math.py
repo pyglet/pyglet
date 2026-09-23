@@ -3,7 +3,7 @@
 This module provides Vector and Matrix objects, including Vec2, Vec3,
 Vec4, Mat3, and Mat4. Most common matrix and vector operations are
 supported. Helper methods are included for rotating, scaling, and
-transforming. The :py:class:`~pyglet.matrix.Mat4` includes class methods
+transforming. The :py:class:`~pyglet.math.Mat4` includes class methods
 for creating orthographic and perspective projection matrixes.
 
 Matrices behave just like they do in GLSL: they are specified in column-major
@@ -354,7 +354,7 @@ class Vec2(_typing.NamedTuple):
     def cross(self, other: Vec2 | tuple[float, float]) -> float:
         """Calculate the cross product of this vector and another 2D vector.
 
-        |a|*|b|*sin(ab)
+        ``|a| * |b| * sin(ab)``
 
         The sign of the result reflects the sign of the angle between them.
         If vectors are normalized, this is the sine of the angle between them.
@@ -366,7 +366,7 @@ class Vec2(_typing.NamedTuple):
     def dot(self, other: Vec2 | tuple[float, float]) -> float:
         """Calculate the dot product of this vector and another 2D vector.
 
-        |a|*|b|*cos(ab)
+        ``|a| * |b| * cos(ab)``
 
         If vectors are normalized, this is the cosine of the angle between them.
         """
@@ -574,7 +574,7 @@ class Vec3(_typing.NamedTuple):
     def cross(self, other: Vec3 | tuple[float, float, float]) -> Vec3:
         """Calculate the cross product of this vector and another 3D vector.
 
-        |a|*|b|*sin(θ) in the direction given by the right-hand rule.
+        ``|a| * |b| * sin(θ)`` in the direction given by the right-hand rule.
 
         The magnitude of the result is the area of the parallelogram
         built on the two vectors (or twice the area of the triangle).
@@ -589,7 +589,7 @@ class Vec3(_typing.NamedTuple):
     def dot(self, other: Vec3 | tuple[float, float, float]) -> float:
         """Calculate the dot product of this vector and another 3D vector.
 
-        |a|*|b|*cos(θ)
+        ``|a| * |b| * cos(θ)``
 
         If the vectors are normalized, this is the cosine of the angle between them.
         """
@@ -693,11 +693,11 @@ class Vec3(_typing.NamedTuple):
 class Vec4(_typing.NamedTuple):
     """A four-dimensional vector represented as X Y Z W coordinates.
 
-    `Vec4` is an immutable 4D Vector, including most common operators.
+    ``Vec4`` is an immutable 4D Vector, including most common operators.
     As an immutable type, all operations return a new object.
 
-    .. note:: The Python ``len` operator returns the number of elements in
-              the vector. For the vector length, use the `length()` method.
+    .. note:: The Python ``len`` operator returns the number of elements in
+              the vector. For the vector length, use the ``length()`` method.
     """
 
     x: float = 0.0

@@ -3,7 +3,6 @@ from __future__ import annotations
 import abc
 import ctypes
 import re
-import sys
 import warnings
 import weakref
 from abc import ABC, abstractmethod
@@ -1234,9 +1233,7 @@ def get_default_shader() -> ShaderProgram:
     """A default shader for rendering primitives."""
     raise NotImplementedError
 
-_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
-
-if not _is_pyglet_doc_run:
+if not pyglet.IS_DOC_BUILD and not TYPE_CHECKING:
     if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
         from pyglet.graphics.api.gl.shader import (
             GLComputeShaderProgram as ComputeShaderProgram,

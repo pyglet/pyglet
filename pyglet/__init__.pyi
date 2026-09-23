@@ -24,6 +24,8 @@ from . import sprite as sprite
 from . import text as text
 from . import window as window
 
+IS_DOC_BUILD: bool
+
 version: str
 MIN_PYTHON_VERSION: tuple[int, int]
 MIN_PYTHON_VERSION_STR: str

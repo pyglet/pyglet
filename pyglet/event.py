@@ -159,8 +159,8 @@ class EventDispatcher:
         for suitable handlers.
         """
         if not hasattr(cls, 'event_types'):
-            cls.event_types = []  # type: ignore reportAttributeAccessIssue
-        cls.event_types.append(name)  # type: ignore reportAttributeAccessIssue
+            cls.event_types = []  # type: ignore[attr-defined]
+        cls.event_types.append(name)  # type: ignore[attr-defined]
         return name
 
     def push_handlers(self, *args: Any, **kwargs: Any) -> None:
@@ -179,10 +179,10 @@ class EventDispatcher:
             self._event_stack = []
 
         # Place dict full of new handlers at beginning of stack
-        self._event_stack.insert(0, {})  # type: ignore reportAttributeAccessIssue
+        self._event_stack.insert(0, {})  # type: ignore[attr-defined]
         self.set_handlers(*args, **kwargs)
 
-    def _get_handlers(self, args: list, kwargs: dict) -> Generator[tuple[str, Callable], None, None]:
+    def _get_handlers(self, args: tuple[Any, ...] | list[Any], kwargs: dict) -> Generator[tuple[str, Callable], None, None]:
         """Implement handler matching on arguments for set_handlers and remove_handlers."""
         for obj in args:
             if inspect.isroutine(obj):
@@ -371,7 +371,7 @@ class EventDispatcher:
 
         return False
 
-    def post_event(self, event_type: str, *args: Any) -> bool | None:
+    def post_event(self, event_type: str, *args: Any) -> None:
         """Post an event to the main application thread.
 
         Unlike the :py:meth:`~pyglet.event.EventDispatcher.dispatch_event`

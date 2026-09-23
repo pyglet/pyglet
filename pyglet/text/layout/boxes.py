@@ -5,10 +5,9 @@ from __future__ import annotations
 import re
 import sys
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, NamedTuple, Pattern, Protocol, Sequence
+from typing import TYPE_CHECKING, NamedTuple, Pattern, Protocol, Sequence, cast
 
 from pyglet.enums import GeometryMode
-from pyglet.font.base import GlyphPosition
 from pyglet.text import runlist
 from pyglet.text.effects import LinearGradient
 
@@ -33,6 +32,7 @@ class _DecorationGeometry(NamedTuple):
 
 
 if TYPE_CHECKING:
+    from pyglet.font.base import GlyphPosition
     from pyglet.customtypes import HorizontalAlign
     from pyglet.font.base import Font, Glyph
     from pyglet.graphics import Texture
@@ -93,7 +93,7 @@ def _parse_distance(distance: str | float, dpi: int) -> int:
 
 class _Line:
     boxes: list[_AbstractBox]
-    vertex_lists: list[VertexList]
+    vertex_lists: list[VertexList | _LayoutVertexList]
     start: int
 
     align: HorizontalAlign = "left"
@@ -109,8 +109,8 @@ class _Line:
     paragraph_begin: bool = False
     paragraph_end: bool = False
 
-    x: int
-    y: int
+    x: float
+    y: float
 
     def __init__(self, start: int) -> None:
         self.start = start
@@ -144,16 +144,18 @@ class _Line:
 
 
 class _LayoutContext:
+    decoration_iter: runlist.AbstractRunIterator | None
     def __init__(
         self,
         layout: TextLayout,
         document: AbstractDocument,
-        colors_iter: RunIterator,
+        colors_iter: AbstractRunIterator,
         background_iter: AbstractRunIterator,
     ) -> None:
         self.layout = layout
         self.colors_iter = colors_iter
         self.stroke_iter = document.get_style_runs("stroke") if document.has_style_run("stroke") else None
+        self.decoration_iter = None
         if self._uses_background_override() or any(
             document.has_style_run(attribute) for attribute in ("background_color", "underline", "strikethrough")
         ):
@@ -175,7 +177,7 @@ class _LayoutContext:
         return False
 
     @abstractmethod
-    def add_list(self, vertex_list: VertexList) -> None: ...
+    def add_list(self, vertex_list: _LayoutVertexList) -> None: ...
 
     @abstractmethod
     def add_box(self, box: _AbstractBox) -> None: ...
@@ -186,14 +188,14 @@ class _StaticLayoutContext(_LayoutContext):
         self,
         layout: TextLayout,
         document: AbstractDocument,
-        colors_iter: RunIterator,
+        colors_iter: AbstractRunIterator,
         background_iter: AbstractRunIterator,
     ) -> None:
         super().__init__(layout, document, colors_iter, background_iter)
         self.vertex_lists = layout._vertex_lists  # noqa: SLF001
         self.boxes = layout._boxes  # noqa: SLF001
 
-    def add_list(self, vertex_list: _LayoutVertexList) -> None:
+    def add_list(self, vertex_list: _LayoutVertexList) -> None:  # type: ignore[override]
         self.vertex_lists.append(vertex_list)
 
     def add_box(self, box: _AbstractBox) -> None:
@@ -285,8 +287,6 @@ class _GlyphBox(_AbstractBox):
             glyphs:
                 Pairs of ``(kern, glyph)``, where ``kern`` gives horizontal
                 displacement of the glyph in pixels (typically 0).
-            offsets:
-                A list of all position transformations done to each glyph.
         """
         advance = sum(self._glyph_advance(kern, glyph, glyph_pos) for kern, glyph, glyph_pos in glyphs)
         super().__init__(font.ascent, font.descent, advance, len(glyphs))
@@ -310,11 +310,11 @@ class _GlyphBox(_AbstractBox):
         span: float,
     ) -> tuple[int, int, int, int]:
         t = 0.0 if span == 0 else min(max((position - start) / span, 0.0), 1.0)
-        return tuple(round(a + (b - a) * t) for a, b in zip(gradient.start, gradient.end, strict=True))
+        return tuple(round(a + (b - a) * t) for a, b in zip(gradient.start, gradient.end, strict=True))  # type: ignore[return-value]
 
     def _add_vertex_list(self, vertex_list: _LayoutVertexList | VertexList, context: _LayoutContext) -> None:
-        self.vertex_lists.append(vertex_list)
-        context.add_list(vertex_list)
+        self.vertex_lists.append(vertex_list)  # type: ignore[arg-type]
+        context.add_list(vertex_list)  # type: ignore[arg-type]
 
     def _create_glyph_geometry(
         self,
@@ -325,8 +325,8 @@ class _GlyphBox(_AbstractBox):
         context: _LayoutContext,
     ) -> tuple[list[float], list[float], int]:
         """Build the position and texture attributes for the fill glyphs."""
-        vertices = []
-        tex_coords = []
+        vertices: list[float] = []
+        tex_coords: list[float] = []
         baseline = 0
         x1 = round(line_x)
         for start, end, baseline_ in context.baseline_iter.ranges(start_index, start_index + self.length):
@@ -392,7 +392,7 @@ class _GlyphBox(_AbstractBox):
             left_edge = vertices[start_glyph * 12]
             right_edge = vertices[(end_glyph - 1) * 12 + 6]
             span = right_edge - left_edge
-            colors = []
+            colors: list[int] = []
             for glyph_idx in range(start_glyph, end_glyph):
                 left = vertices[glyph_idx * 12]
                 right = vertices[glyph_idx * 12 + 6]
@@ -468,6 +468,7 @@ class _GlyphBox(_AbstractBox):
             if shadow_colors is None:
                 shadow_colors = list((0, 0, 0, 0) * ((start - start_index) * 4))
                 shadow_vertices = list(vertices)
+            assert shadow_vertices is not None
             shadow_colors.extend(
                 self._create_range_colors(shadow.color, start, end, start_index, vertices, "Shadow"),
             )
@@ -603,7 +604,7 @@ class _GlyphBox(_AbstractBox):
         line_x: float,
         line_y: float,
         baseline: int,
-        decoration_iter: runlist.ZipRunIterator,
+        decoration_iter: runlist.AbstractRunIterator,
     ) -> _DecorationGeometry | None:
         # Decoration (background color, underline, and strikethrough)
         # Decorations are geometry only and without textures.
@@ -852,7 +853,7 @@ class _GlyphBox(_AbstractBox):
             group,
             **vertex_data,
         )
-        self._glyph_vertex_list = vertex_list
+        self._glyph_vertex_list = vertex_list  # type: ignore[assignment]
         self._add_vertex_list(vertex_list, context)
 
         self._place_strokes(

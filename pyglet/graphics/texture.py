@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import struct
-import sys
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from typing import Any, Generic, Iterator, Literal, Protocol, Sequence, TYPE_CHECKING, TypeVar, overload
@@ -79,7 +78,7 @@ class PixelData:
         return ImageData(self.width, self.height, self.format.value, self.data, self.pitch, self.data_type)
 
 
-class TextureSequence(_AbstractImageSequence, Generic[TTexture]):
+class TextureSequence(_AbstractImageSequence[TTexture], Generic[TTexture]):
     """Interface for a sequence of textures.
 
     Typical implementations store multiple :py:class:`~pyglet.graphics.texture.TextureRegion`s
@@ -130,7 +129,7 @@ class Texture(_AbstractImage, GraphicsResource[Any, TextureKey]):
      The class should be a subclass of TextureRegion.
     """
 
-    tex_coords = (0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0)
+    tex_coords: tuple[float, float, float, float, float, float, float, float, float, float, float, float] = (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0)  # noqa: E501
     """12-tuple of float, named (u1, v1, r1, u2, v2, r2, ...).
     ``u, v, r`` give the 3D texture coordinates for vertices 1-4. The vertices
     are specified in the order bottom-left, bottom-right, top-right and top-left.
@@ -531,11 +530,11 @@ class Texture(_AbstractImage, GraphicsResource[Any, TextureKey]):
         self._flush()
         self._mark_mipmap_valid(level)
 
-    def get_region(self, x: int, y: int, width: int, height: int) -> TextureRegion:
+    def get_region(self, x: int, y: int, width: int, height: int) -> TArrayRegion:
         return self.region_class(x, y, 0, width, height, self)
 
     def get_transform(self, flip_x: bool = False, flip_y: bool = False,
-                      rotate: Literal[0, 90, 180, 270, 360] = 0) -> TextureRegion:
+                      rotate: Literal[0, 90, 180, 270, 360] = 0) -> TArrayRegion:
         """Create a copy of this image applying a simple transformation.
 
         The transformation is applied to the texture coordinates only;
@@ -575,7 +574,7 @@ class Texture(_AbstractImage, GraphicsResource[Any, TextureKey]):
         transform._set_tex_coords_order(bl, br, tr, tl)
         return transform
 
-    def _set_tex_coords_order(self, bl, br, tr, tl):
+    def _set_tex_coords_order(self, bl: int, br: int, tr: int, tl: int) -> None:
         tex_coords = (self.tex_coords[:3],
                       self.tex_coords[3:6],
                       self.tex_coords[6:9],
@@ -655,7 +654,7 @@ class _TextureRegionShared:
     height: int
     owner: Texture
     region_class: type[TextureRegion]
-    tex_coords: tuple[float, ...]
+    tex_coords: tuple[float, float, float, float, float, float, float, float, float, float, float, float]  # noqa: E501
     tex_coords_order: tuple[int, int, int, int]
 
     def _init_region(self, x: int, y: int, z: int, width: int, height: int, owner: Texture) -> None:
@@ -1126,9 +1125,7 @@ class UnsupportedCompressedTexture(CompressedTexture):
         raise UnsupportedBackendError("CompressedTexture")
 
 
-_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
-
-if not _is_pyglet_doc_run:
+if not pyglet.IS_DOC_BUILD and not TYPE_CHECKING:
     if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
         from pyglet.graphics.api.gl.framebuffer import (  # noqa: F401
             GLFramebuffer as Framebuffer,

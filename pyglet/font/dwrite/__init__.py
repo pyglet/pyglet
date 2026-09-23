@@ -1259,7 +1259,7 @@ class Win32DirectWriteFont(base.Font):
         return stroked
 
 
-    def get_glyphs(self, text: str, shaping: bool) -> tuple[list[Glyph], list[base.GlyphPosition]]:
+    def get_glyphs(self, text: str, shaping: bool = False) -> tuple[list[Glyph], list[base.GlyphPosition]]:
         self._initialize_renderer()
 
         if shaping:
@@ -1363,7 +1363,7 @@ class Win32DirectWriteFont(base.Font):
         return _get_font_collection_family_data(cls._custom_collection)
 
     @classmethod
-    def add_font_data(cls: type[Win32DirectWriteFont], data: BinaryIO, font_manager: FontManager) -> None:
+    def add_font_data(cls: type[Win32DirectWriteFont], data: bytes, manager: FontManager) -> None:
         if not cls._write_factory:
             cls._initialize_direct_write()
 
@@ -1422,7 +1422,7 @@ class Win32DirectWriteFont(base.Font):
                 byref(cls._custom_collection),
             )
 
-        font_manager._add_loaded_font(cls.get_added_fonts())
+        manager._add_loaded_font(cls.get_added_fonts())
 
     @classmethod
     def get_collection(cls: type[Win32DirectWriteFont], name: str) -> tuple[int | None, IDWriteFontCollection1 | None]:

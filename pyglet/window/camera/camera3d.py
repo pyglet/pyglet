@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from math import degrees, radians
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from pyglet.math import Mat4, Vec2, Vec3, clamp
 
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from pyglet.window import Window
 
 
-class Camera3DView(_CameraViewBase):
+class Camera3DView(_CameraViewBase["Camera3D"]):
     """A positional view scope belonging to a :class:`Camera3D`.
 
     A view adds a local 3D offset to its camera and can define an independent
@@ -77,7 +77,8 @@ class Camera3DView(_CameraViewBase):
             if self.parent is None:
                 self._world_offset = self.offset
             else:
-                self._world_offset = self.parent._world_offset_cached() + self.offset
+                parent = cast("Camera3DView", self.parent)
+                self._world_offset = parent._world_offset_cached() + self.offset  # noqa: SLF001
             self._world_dirty = False
         return self._world_offset
 

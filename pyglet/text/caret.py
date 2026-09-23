@@ -74,6 +74,8 @@ class Caret(EventDispatcher):
     SCROLL_INCREMENT: int = 12 * 96 // 72
 
     _mark: int | None = None
+    _ideal_x: float | None = None
+    _ideal_line: int | None = None
     _next_attributes: dict[str, Any]
 
     def __init__(self, layout: IncrementalTextLayout, batch: Batch | None = None,
@@ -108,7 +110,7 @@ class Caret(EventDispatcher):
 
         colors = r, g, b, self._visible_alpha, r, g, b, self._visible_alpha
 
-        self._list = self._group.program.vertex_list(2, GeometryMode.LINES, self._batch, self._group,
+        self._list = self._group.program.vertex_list(2, GeometryMode.LINES, self._batch, self._group,  # type: ignore[attr-defined]
                                                         position=(0, 0, 0) * 2,
                                                         translation=(0, 0, 0, layout.get_depth_offset(2)) * 2,
                                                         view_translation=(0, 0, 0) * 2,
@@ -223,7 +225,7 @@ class Caret(EventDispatcher):
         self._update()
 
     @property
-    def mark(self) -> int:
+    def mark(self) -> int | None:
         """Position of immovable end of text selection within document.
 
         An interactive text selection is determined by its immovable end (the
@@ -235,7 +237,7 @@ class Caret(EventDispatcher):
         return self._mark
 
     @mark.setter
-    def mark(self, mark: int) -> None:
+    def mark(self, mark: int | None) -> None:
         self._mark = mark
         self._update(line=self._ideal_line)
         if mark is None:
@@ -257,6 +259,7 @@ class Caret(EventDispatcher):
     def line(self, line: int) -> None:
         if self._ideal_x is None:
             self._ideal_x, _ = self._layout.get_point_from_position(self._position)
+        assert self._ideal_x is not None
         self._position = self._layout.get_position_on_line(line, self._ideal_x)
         self._update(line=line, update_ideal_x=False)
 
@@ -305,6 +308,7 @@ class Caret(EventDispatcher):
         self._layout.document.set_style(start, end, attributes)
 
     def _delete_selection(self) -> None:
+        assert self._mark is not None
         start = min(self._mark, self._position)
         end = max(self._mark, self._position)
         self._position = start
@@ -388,7 +392,7 @@ class Caret(EventDispatcher):
         self._layout.ensure_x_visible(x)
 
         font = self._layout.document.get_font(max(0, self._position - 1))
-        self._list.position[:] = [x, y + font.descent, z, x, y + font.ascent, z]
+        self._list.position[:] = [x, y + font.descent, z, x, y + font.ascent, z]  # type: ignore[assignment]
 
     def on_translation_update(self) -> None:
         depth_offset = self._list.translation[3]
@@ -486,6 +490,7 @@ class Caret(EventDispatcher):
         elif motion == key.MOTION_COPY and self._window:
             pos = self._position
             mark = self._mark
+            assert mark is not None
             if pos > mark:
                 text = self._layout.document.text[mark:pos]
             else:
@@ -533,8 +538,8 @@ class Caret(EventDispatcher):
         The layout viewport is scrolled by `SCROLL_INCREMENT` pixels per
         "click".
         """
-        self._layout.view_x -= scroll_x * self.SCROLL_INCREMENT
-        self._layout.view_y += scroll_y * self.SCROLL_INCREMENT
+        self._layout.view_x -= scroll_x * self.SCROLL_INCREMENT  # type: ignore[assignment]
+        self._layout.view_y += scroll_y * self.SCROLL_INCREMENT  # type: ignore[assignment]
         return event.EVENT_HANDLED
 
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int) -> bool:  # noqa: ARG002

@@ -40,9 +40,8 @@ import pyglet
 from pyglet import compat_platform
 from pyglet.app.base import EventLoop
 
-_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
-if _is_pyglet_doc_run:
+if pyglet.IS_DOC_BUILD:
     from pyglet.app.base import PlatformEventLoop
 else:
     if compat_platform == 'darwin':

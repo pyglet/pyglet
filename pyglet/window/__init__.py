@@ -82,7 +82,8 @@ import sys
 from abc import abstractmethod
 from collections.abc import Iterable
 from collections import deque
-from typing import TYPE_CHECKING, Any, Callable, Sequence
+from typing import TYPE_CHECKING, Any, cast
+from collections.abc import Callable, Sequence
 
 import pyglet
 import pyglet.window.key
@@ -95,13 +96,12 @@ from pyglet.window.camera.base import BaseCamera
 
 if TYPE_CHECKING:
     from pyglet.math import Mat4
-    import BaseWindow as Window
     from pyglet.config import Config, UserConfig
-    from pyglet.graphics.api.base import VerifiedGraphicsConfig, SurfaceContext
+    from pyglet.graphics.api.base import VerifiedGraphicsConfig, SurfaceContext, GraphicsConfig
     from pyglet.display.base import Display, Screen, ScreenMode
     from pyglet.text import Label
 
-_is_pyglet_doc_run = hasattr(sys, 'is_pyglet_doc_run') and sys.is_pyglet_doc_run
+from pyglet import IS_DOC_BUILD
 
 
 class WindowException(Exception):
@@ -218,31 +218,31 @@ def _PlatformEventHandler(data: Any) -> Callable:  # noqa: N802
     """
 
     def _event_wrapper(f: Callable) -> Callable:
-        f._platform_event = True  # noqa: SLF001
+        f._platform_event = True  # type: ignore[attr-defined]  # noqa: SLF001
         if not hasattr(f, '_platform_event_data'):
-            f._platform_event_data = []  # noqa: SLF001
-        f._platform_event_data.append(data)  # noqa: SLF001
+            f._platform_event_data = []  # type: ignore[attr-defined]  # noqa: SLF001
+        f._platform_event_data.append(data)  # type: ignore[attr-defined]  # noqa: SLF001
         return f
 
     return _event_wrapper
 
 
 def _ViewEventHandler(f: Callable) -> Callable:  # noqa: N802
-    f._view = True  # noqa: SLF001
+    f._view = True    # type: ignore[attr-defined]  # noqa: SLF001
     return f
 
 
 class _WindowMetaclass(type):
     """Sets the _platform_event_names class variable on the window subclass."""
 
-    def __init__(cls: type[_WindowMetaclass], name: str, bases: tuple, dct: dict) -> None:
-        cls._platform_event_names = set()
+    def __init__(cls: _WindowMetaclass, name: str, bases: tuple, dct: dict) -> None:
+        cls._platform_event_names = set()  # type: ignore[attr-defined]
         for base in bases:
             if hasattr(base, '_platform_event_names'):
-                cls._platform_event_names.update(base._platform_event_names)
+                cls._platform_event_names.update(base._platform_event_names)  # type: ignore[attr-defined]
         for name, func in dct.items():
             if hasattr(func, '_platform_event'):
-                cls._platform_event_names.add(name)
+                cls._platform_event_names.add(name)  # type: ignore[attr-defined]
         super().__init__(name, bases, dct)
 
 
@@ -357,17 +357,17 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
 
     # Instance variables accessible only via properties
     _dpi: int = 96
-    _width: int | None = None
-    _height: int | None = None
-    _caption: str | None = None
+    _width: int = 0
+    _height: int = 0
+    _caption: str
     _resizable: bool = False
     _style: str | None = WINDOW_STYLE_DEFAULT
     _fullscreen: bool = False
     _visible: bool = False
     _vsync: bool = False
     _file_drops: bool = False
-    _screen: Screen | None = None
-    _config: VerifiedGraphicsConfig | UserConfig |  None = None
+    _screen: Screen
+    _config: VerifiedGraphicsConfig | None = None
     _context: SurfaceContext | None = None
     _context_share: SurfaceContext | None = None
     _projection_matrix: Mat4 = pyglet.math.Mat4()
@@ -393,7 +393,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     _mouse_exclusive: bool = False
     _mouse_in_window: bool = False
 
-    _event_queue = None
+    _event_queue: deque[tuple[Any, ...]]
     _enable_event_queue: bool = True  # overridden by EventLoop.
     _allow_dispatch_event: bool = False  # controlled by dispatch_events stack frame
 
@@ -515,7 +515,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         self._file_drops = file_drops
         self._caption = caption or sys.argv[0]
 
-        from pyglet import app
+        from pyglet import app  # noqa: PLC0415
         app.windows.add(self)
         self._create()
 
@@ -529,7 +529,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
 
     def _assign_config(self) -> None:
         if pyglet.options.backend:
-            config = self._user_config
+            config: Any = self._user_config
             context = self._context
 
             # Pull out the backend specific config/s:
@@ -538,13 +538,16 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             else:
                 config = getattr(config, pyglet.options.backend, None)
 
-            if not config:
-                for template_config in pyglet.graphics.api.get_default_configs():
-                    if self._style in ('transparent', 'overlay'):
-                        template_config.alpha_size = 8
-                        template_config.transparent_framebuffer = True
+            _window_self = cast('Window', self)
 
-                    if config := pyglet.config.match_surface_config(template_config, self):
+            if not config:
+                for default_config in pyglet.graphics.api.get_default_configs():
+                    template_config = default_config
+                    if self._style in ('transparent', 'overlay'):
+                        template_config.alpha_size = 8  # type: ignore[attr-defined]
+                        template_config.transparent_framebuffer = True  # type: ignore[attr-defined]
+
+                    if config := pyglet.config.match_surface_config(template_config, _window_self):
                         break
 
                 if not config:
@@ -557,20 +560,20 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                         config = cfg
                         break
 
-                    if config := pyglet.config.match_surface_config(cfg, self):
+                    if config := pyglet.config.match_surface_config(cfg, _window_self):
                         break
             else:
                 if not config.is_finalized:
-                    config = pyglet.config.match_surface_config(config, self)
+                    config = pyglet.config.match_surface_config(config, _window_self)
 
             if not config:
                 msg = 'No standard config is available.'
                 raise NoSuchConfigException(msg)
 
             if not context:
-                from pyglet.graphics.api import core
+                from pyglet.graphics.api import core  # noqa: PLC0415
                 if core:
-                    context = core.get_surface_context(self, config, shared=self._context_share)
+                    context = core.get_surface_context(_window_self, config, shared=self._context_share)
 
             # Set these in reverse order as above, to ensure we get user preference
             self._context = context
@@ -580,7 +583,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         self._camera = self._create_default_camera()
 
     def _create_default_camera(self) -> Camera2D:
-        return Camera2D(self)
+        return Camera2D(cast('Window', self))
 
     def __del__(self) -> None:
         # Always try to clean up the window when it is dereferenced.
@@ -839,6 +842,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         from pyglet import app
         if app.event_loop.is_running:
             self.close()
+        return None
 
     def on_key_press(self, symbol: int, modifiers: int) -> EVENT_HANDLE_STATE:
         """Default on_key_press handler."""
@@ -846,6 +850,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                                                        key.MOD_CAPSLOCK |
                                                        key.MOD_SCROLLLOCK)):
             self.dispatch_event('on_close')
+        return None
 
     def _on_internal_resize(self, width: int, height: int) -> None:
         w, h = self.get_size()
@@ -942,6 +947,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         else:
             self.screen.restore_mode()
 
+            assert self._windowed_size is not None
             self._width, self._height = self._windowed_size
             if width is not None:
                 self._width = width
@@ -1184,7 +1190,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         return self._resizable
 
     @property
-    def style(self) -> str:
+    def style(self) -> str | None:
         """The window style; one of the ``WINDOW_STYLE_*`` constants. Read-only."""
         return self._style
 
@@ -1214,17 +1220,17 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         return self._screen
 
     @property
-    def config(self) -> VerifiedGraphicsConfig:
+    def config(self) -> VerifiedGraphicsConfig | None:
         """A graphical config describing the context of this window.  Read-only."""
         return self._config
 
     @property
-    def context(self) -> SurfaceContext:
+    def context(self) -> SurfaceContext | None:
         """The graphical context attached to this window.  Read-only."""
         return self._context
 
     @property
-    def ctx(self) -> SurfaceContext:
+    def ctx(self) -> SurfaceContext | None:
         """The graphical context attached to this window.  Read-only."""
         return self._context
 
@@ -1269,7 +1275,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         return self.get_size()
 
     @size.setter
-    def size(self, new_size: Sequence[int, int]) -> None:
+    def size(self, new_size: Sequence[int]) -> None:
         self.set_size(*new_size)
 
     @property
@@ -1355,7 +1361,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
 
     # If documenting, show the event methods.  Otherwise, leave them out
     # as they are not really methods.
-    if _is_pyglet_doc_run:
+    if IS_DOC_BUILD:
         def on_activate(self) -> EVENT_HANDLE_STATE:
             """The window was activated.
 
@@ -1854,6 +1860,8 @@ class FPSDisplay:
              inaccurate readings.
     """
     _delta_times: deque[float]
+    _window_flip: Callable[[], None] | None
+    _context_present: Callable[[], None] | None
 
     #: Time in seconds between updates.
     update_period = 0.25
@@ -1886,11 +1894,11 @@ class FPSDisplay:
 
         if window.context:
             self._context_present = window.context.present
-            window.context.present = self._hook_present
+            window.context.present = self._hook_present  # type: ignore[method-assign]
             self._window_flip = None
         else:
             # Fallback for contexts that are not available yet.
-            self._window_flip, window.flip = window.flip, self._hook_flip
+            self._window_flip, window.flip = window.flip, self._hook_flip  # type: ignore[method-assign]
             self._context_present = None
         self.label = Label('', x=10, y=10, font_size=24, weight="bold", color=color, batch=batch)
 
@@ -1928,17 +1936,30 @@ class FPSDisplay:
             self._context_present()
 
 
-if _is_pyglet_doc_run:
-    # We are building documentation. Trick docs into thinking BaseWindow is Window.
-    import inspect
+if TYPE_CHECKING or IS_DOC_BUILD:
+    # Expose the platform-neutral public API without importing a platform implementation.
+    class Window(BaseWindow):
+        """Platform-independent application window.
 
-    Window = BaseWindow
-    Window.__name__ = 'Window'
-    Window.__qualname__ = 'Window'
+        A window is a "heavyweight" object occupying operating system resources.
+        The "client" or "content" area of a window is filled entirely with
+        a graphical API's viewport, if enabled.  Applications have no access to operating system
+        widgets or controls; all rendering must be done via a graphical API backend.
 
-    # We also need to replace all qualname members so Sphinx and Typing modules pick up the correct class.
-    for _, method_obj in inspect.getmembers(Window, predicate=inspect.isfunction):
-        method_obj.__qualname__ = method_obj.__qualname__.replace('BaseWindow', 'Window')
+        Windows may appear as floating regions or can be set to fill an entire
+        screen (fullscreen).  When floating, windows may appear borderless or
+        decorated with a platform-specific frame (including, for example, the
+        title bar, minimize and close buttons, resize handles, and so on).
+
+        While it is possible to set the location of a window, it is recommended
+        that applications allow the platform to place it according to local
+        conventions.  This will ensure it is not obscured by other windows,
+        and appears on an appropriate screen for the user.
+
+        To render into a window, call :py:meth:`.switch_to` to make its rendering
+        context active for the current backend. If you use only one window in your
+        application, you can usually skip this step as it will already be active.
+        """
 
 else:
     # Try to determine which platform to use.
@@ -1987,7 +2008,7 @@ class _ShadowWindow(Window):
 def _create_shadow_window() -> Window | None:
     # MacOS and browsers don't need a shadow window.
     if pyglet.compat_platform not in ('darwin', 'ios', 'emscripten'):
-        shadow_window = _ShadowWindow()
+        shadow_window = _ShadowWindow()  # type: ignore[abstract]
 
         from pyglet import app  # noqa: PLC0415
         app.windows.remove(shadow_window)
@@ -1997,7 +2018,7 @@ def _create_shadow_window() -> Window | None:
         return shadow_window
     return None
 
-if not _is_pyglet_doc_run:
+if not IS_DOC_BUILD:
     _shadow_window = _create_shadow_window()
 else:
     _shadow_window = None

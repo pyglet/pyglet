@@ -4,7 +4,7 @@ import re
 import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, BinaryIO, Callable, Generic, Iterator, Sequence, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, BinaryIO, Callable, Generic, Iterator, Sequence, TypeVar, Union, cast, overload
 
 from pyglet.image.animation import Animation
 from pyglet.image.codecs import ImageEncoder
@@ -48,7 +48,7 @@ class _AbstractImage(ABC):
         return f"{self.__class__.__name__}(size={self.width}x{self.height})"
 
     @abstractmethod
-    def get_image_data(self) -> ImageData:
+    def get_image_data(self) -> _AbstractImage:
         """Get an ImageData view of this image.
 
         Changes to the returned instance may or may not be reflected in this image.
@@ -89,7 +89,10 @@ class _AbstractImage(ABC):
                 file.close()
 
 
-class _AbstractImageSequence(ABC):
+T = TypeVar('T', bound=_AbstractImage)
+
+
+class _AbstractImageSequence(ABC, Generic[T]):
     """Abstract sequence of images.
 
     Image sequence are useful for storing image animations or slices of a volume.
@@ -98,7 +101,7 @@ class _AbstractImageSequence(ABC):
     """
 
     @abstractmethod
-    def get_texture_sequence(self) -> TextureSequence:
+    def get_texture_sequence(self) -> TextureSequence | TextureGrid:
         """Get a TextureSequence.
 
         .. versionadded:: 1.1
@@ -113,14 +116,26 @@ class _AbstractImageSequence(ABC):
             loop:
                 If True, the animation will loop continuously.
         """
-        return Animation.from_image_sequence(self, period, loop)
+        return Animation.from_image_sequence(self.get_texture_sequence(), period, loop)
+
+    @overload
+    def __getitem__(self, item: int) -> T: ...
+
+    @overload
+    def __getitem__(self, item: slice) -> Sequence[T]: ...
 
     @abstractmethod
-    def __getitem__(self, item) -> ImageData:
+    def __getitem__(self, item: int | slice) -> T | Sequence[T]:
         """Retrieve one or more images by index."""
 
+    @overload
+    def __setitem__(self, item: int, image: ImageData) -> None: ...
+
+    @overload
+    def __setitem__(self, item: slice, image: Sequence[ImageData]) -> None: ...
+
     @abstractmethod
-    def __setitem__(self, item, image: ImageData) -> None:
+    def __setitem__(self, item: int | slice, image: ImageData | Sequence[ImageData]) -> None:
         """Replace one or more images in the sequence.
 
         Args:
@@ -134,7 +149,7 @@ class _AbstractImageSequence(ABC):
         """Length of the image sequence."""
 
     @abstractmethod
-    def __iter__(self) -> Iterator[ImageData]:
+    def __iter__(self) -> Iterator[T]:
         """Iterate over the images in sequence."""
 
 
@@ -466,13 +481,13 @@ class CompressedImageData(_AbstractImage):
         self.mipmap_data += [None] * (level - len(self.mipmap_data))
         self.mipmap_data[level - 1] = data
 
-    def create_texture(self, cls: type[CompressedTexture]) -> Texture:
+    def create_texture(self, cls: CompressedTexture) -> CompressedTexture:
         """Given a texture class, create a texture containing this image."""
         return cls.create_from_image(self)
 
     def get_texture(self) -> CompressedTexture:
         if not self._current_texture:
-            from pyglet.graphics.texture import CompressedTexture
+            from pyglet.graphics.texture import CompressedTexture  # noqa: PLC0415
 
             self._current_texture = self.create_texture(CompressedTexture)
         return self._current_texture
@@ -485,9 +500,6 @@ class CompressedImageData(_AbstractImage):
 
     def blit(self, x: int, y: int, z: int = 0) -> None:
         raise NotImplementedError
-
-
-T = TypeVar('T', bound=_AbstractImage)
 
 
 class _AbstractGrid(ABC, Generic[T]):
@@ -590,8 +602,15 @@ class _AbstractGrid(ABC, Generic[T]):
 
         return items[index]
 
+    @overload
+    def __setitem__(self, index: int, value: T) -> None: ...
+    @overload
+    def __setitem__(self, index: slice, value: Sequence[T]) -> None: ...
+
     def __setitem__(self, index: int | slice, value: T | Sequence[T]) -> None:
-        if isinstance(value, slice):
+        if isinstance(index, slice):
+            if not isinstance(value, Sequence):
+                raise TypeError("Slice assignment requires a sequence of images.")
             for existing_item, new_item in zip(self[index], value):
                 if new_item.width != self.item_width or new_item.height != self.item_height:
                     msg = (
@@ -601,6 +620,8 @@ class _AbstractGrid(ABC, Generic[T]):
                     raise ImageException(msg)
                 self._update_item(existing_item, new_item)
         else:
+            if isinstance(value, Sequence):
+                raise TypeError("Single-item assignment requires an image.")
             new_item = value
             if new_item.width != self.item_width or new_item.height != self.item_height:
                 msg = (
@@ -617,7 +638,7 @@ class _AbstractGrid(ABC, Generic[T]):
         return self.rows * self.columns
 
 
-class ImageGrid(_AbstractGrid[Union[ImageData, ImageDataRegion]], _AbstractImageSequence):
+class ImageGrid(_AbstractGrid[Union[ImageData, ImageDataRegion]], _AbstractImageSequence[ImageData | ImageDataRegion]):
     """An imaginary grid placed over an image allowing easy access to regular regions of that image.
 
     The grid can be accessed either as a complete image, or as a sequence of images.
@@ -679,15 +700,16 @@ class ImageGrid(_AbstractGrid[Union[ImageData, ImageDataRegion]], _AbstractImage
     def _create_item(self, x: int, y: int, width: int, height: int) -> ImageDataRegion:
         return self.image.get_region(x, y, width, height)
 
-    def _update_item(self, existing_item: ImageDataRegion, new_item: ImageData | ImageDataRegion) -> None:
+    def _update_item(self, existing_item: ImageData | ImageDataRegion,
+                     new_item: ImageData | ImageDataRegion) -> None:
         new_item_bytes = new_item.get_bytes(existing_item.format, existing_item.pitch)
-        existing_item.set_data(existing_item.format, existing_item.pitch, new_item_bytes)
+        existing_item.set_bytes(existing_item.format, existing_item.pitch, new_item_bytes)
 
     def get_texture(self) -> Texture:
         """Create a new Texture resource from the underlying image data."""
         return self.image.get_texture()
 
-    def get_image_data(self) -> ImageData:
+    def get_image_data(self) -> _AbstractImage:
         """Retrieve the underlying image data the grid is based upon."""
         return self.image.get_image_data()
 

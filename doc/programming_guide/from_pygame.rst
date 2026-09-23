@@ -222,12 +222,12 @@ to handle these tasks: the GPU.
 
 pyglet separates these concepts into CPU image data from GPU textures more explicitly:
 
-* :py:func:`pyglet.image.load` and :py:func:`pyglet.resource.image` returns CPU-side image data:
-:py:class:`pyglet.image.ImageData`. This is a container of information on the image, including the
-format, size, and bytes that make up that data. This data by itself cannot do anything, it needs to be
-uploaded to the GPU for use in drawing.
+* :py:func:`pyglet.image.load` and :py:func:`pyglet.resource.image` return CPU-side image data:
+  :py:class:`pyglet.image.ImageData`. This is a container of information on the image, including the
+  format, size, and bytes that make up that data. This data by itself cannot do anything; it needs to be
+  uploaded to the GPU for use in drawing.
 * :py:func:`pyglet.resource.texture` returns a GPU texture suitable for drawing. This loads the
-ImageData and uploads the texture for you behind the scenes.
+  ImageData and uploads the texture for you behind the scenes.
 
 There are various ways to display a texture, but the most common will be a ``pyglet.sprite.Sprite``.
 It is a high-level object that has many different properties and functions that can be used to modify

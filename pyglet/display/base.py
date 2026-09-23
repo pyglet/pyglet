@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import abc
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, Sequence
 
 from pyglet import app, display
 
@@ -12,10 +12,10 @@ if TYPE_CHECKING:
 class Display:
     """A display device supporting one or more screens."""
 
-    name: str = None
+    name: str | None = None
     """Name of this display, if applicable."""
 
-    x_screen: int = None
+    x_screen: int | None = None
     """The X11 screen number of this display, if applicable."""
 
     def __init__(self, name: str | None = None, x_screen: int | None = None) -> None:
@@ -35,7 +35,7 @@ class Display:
         On platforms other than X11, :attr:`name` and :attr:`x_screen` are 
         ignored; there is only a single display device on these systems.
         """
-        display._displays.add(self)
+        display._displays.add(self)  # type: ignore[attr-defined]  # noqa: SLF001
 
     def get_screens(self) -> list[Screen]:
         """Get the available screens.
@@ -55,7 +55,7 @@ class Display:
         """Get the default (primary) screen as specified by the user's operating system preferences."""
         screens = self.get_screens()
         for screen in screens:
-            if screen.x == 0 and screen.y == 0:
+            if screen.is_primary:
                 return screen
 
         # No Primary screen found?
@@ -96,24 +96,31 @@ class Screen(abc.ABC):
         self.height = height
         """Height of the screen, in pixels."""
 
+    @property
+    @abc.abstractmethod
+    def is_primary(self) -> bool:
+        """Whether this is the operating system's primary screen."""
+
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(x={self.x}, y={self.y}, width={self.width}, height={self.height})"
 
-    def get_modes(self) -> list[ScreenMode]:
+    @abc.abstractmethod
+    def get_modes(self) -> Sequence[ScreenMode]:
         """Get a list of screen modes supported by this screen.
 
         .. versionadded:: 1.2
         """
         raise NotImplementedError('abstract')
 
-    def get_mode(self) -> ScreenMode:
+    @abc.abstractmethod
+    def get_mode(self) -> ScreenMode | None:
         """Get the current display mode for this screen.
 
         .. versionadded:: 1.2
         """
         raise NotImplementedError('abstract')
 
-    def get_closest_mode(self, width: int, height: int) -> ScreenMode:
+    def get_closest_mode(self, width: int, height: int) -> ScreenMode | None:
         """Get the screen mode that best matches a given size.
 
         If no supported mode exactly equals the requested size, a larger one
@@ -154,6 +161,7 @@ class Screen(abc.ABC):
                     best = mode
         return best
 
+    @abc.abstractmethod
     def set_mode(self, mode: ScreenMode) -> None:
         """Set the display mode for this screen.
 
@@ -162,14 +170,17 @@ class Screen(abc.ABC):
         """
         raise NotImplementedError('abstract')
 
+    @abc.abstractmethod
     def restore_mode(self) -> None:
         """Restore the screen mode to the user's default."""
         raise NotImplementedError('abstract')
 
+    @abc.abstractmethod
     def get_dpi(self) -> int:
         """Get the DPI of the screen."""
         raise NotImplementedError('abstract')
 
+    @abc.abstractmethod
     def get_scale(self) -> float:
         """Get the pixel scale ratio of the screen."""
         raise NotImplementedError('abstract')
@@ -208,16 +219,16 @@ class ScreenMode:
     .. versionadded:: 1.2
     """
 
-    width: int = None
+    width: int
     """Width of screen, in pixels."""
 
-    height: int = None
+    height: int
     """Height of screen, in pixels."""
 
-    depth: int = None
+    depth: int | None
     """Pixel color depth, in bits per pixel."""
 
-    rate: int = None
+    rate: int | None
     """Screen refresh rate in Hz."""
 
     def __init__(self, screen: Screen) -> None:

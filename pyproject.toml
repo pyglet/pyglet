@@ -53,7 +53,7 @@ docs = [
     "sphinx==9.0.4",
     "sphinx_rtd_theme==3.1.0",
     "readthedocs-sphinx-search==0.3.2",
-    "sphinx-autodoc-typehints==3.6.1",
+    "sphinx-autodoc-typehints==3.13.6",
 ]
 
 dev = [
@@ -89,6 +89,7 @@ markers = [
 exclude = [
     "^pyglet/experimental/",
     "^pyglet/libs/",
+    "^pyglet/extlibs/",
     "(^|/)lib_.*\\.py$",
     "(^|/).*_lib\\.py$",
 ]

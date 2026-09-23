@@ -5,7 +5,9 @@ from typing import TYPE_CHECKING, ClassVar
 from pyglet.text.layout.base import (
     ScrollableTextDecorationGroup,
     ScrollableTextLayoutGroup,
+    TextDecorationGroup,
     TextLayout,
+    TextLayoutGroup,
     get_default_scrollable_decoration_shader,
     get_default_scrollable_image_layout_shader,
     get_default_scrollable_layout_shader,
@@ -36,9 +38,15 @@ class ScrollableTextLayout(TextLayout):
             Default group used to set the state for all decorations including background colors and underlines.
     """
 
-    group_class: ClassVar[type[ScrollableTextLayoutGroup]] = ScrollableTextLayoutGroup
-    effect_group_class: ClassVar[type[ScrollableTextLayoutGroup]] = ScrollableTextLayoutGroup
-    decoration_class: ClassVar[type[ScrollableTextDecorationGroup]] = ScrollableTextDecorationGroup
+    group_class: ClassVar[type[TextLayoutGroup | ScrollableTextLayoutGroup]] = (
+        ScrollableTextLayoutGroup
+    )
+    effect_group_class: ClassVar[type[TextLayoutGroup | ScrollableTextLayoutGroup]] = (
+        ScrollableTextLayoutGroup
+    )
+    decoration_class: ClassVar[type[TextDecorationGroup | ScrollableTextDecorationGroup]] = (
+        ScrollableTextDecorationGroup
+    )
 
     _translate_x: int = 0
     _translate_y: int = 0
@@ -55,7 +63,7 @@ class ScrollableTextLayout(TextLayout):
                  x: float = 0, y: float = 0, z: float = 0,
                  width: int | None = None, height: int | None = None,
                  anchor_x: AnchorX = 'left', anchor_y: AnchorY = 'bottom', rotation: float = 0, multiline: bool = False,
-                 dpi: float | None = None, batch: Batch | None = None, group: Group | None = None,
+                 dpi: int | None = None, batch: Batch | None = None, group: Group | None = None,
                  program: ShaderProgram | None = None, decoration_shader: ShaderProgram | None = None,
                  effect_shader: ShaderProgram | None = None, wrap_lines: bool = True,
                  depth_sorting: bool = False) -> None:
@@ -148,16 +156,20 @@ class ScrollableTextLayout(TextLayout):
 
     def _get_bottom_anchor(self) -> float:
         """Returns the anchor for the Y axis from the bottom."""
-        height = self._height
-        if self._content_valign == "top":
-            offset = min(0, self._height)
-        elif self._content_valign == "bottom":
+        if self._height is None:
+            height = self._content_height
             offset = 0
-        elif self._content_valign == "center":
-            offset = min(0, self._height) // 2
         else:
-            msg = '`content_valign` must be either "top", "bottom", or "center".'
-            raise Exception(msg)
+            height = self._height
+            if self._content_valign == "top":
+                offset = min(0, self._height - self._content_height)
+            elif self._content_valign == "bottom":
+                offset = 0
+            elif self._content_valign == "center":
+                offset = min(0, self._height - self._content_height) // 2
+            else:
+                msg = '`content_valign` must be either "top", "bottom", or "center".'
+                raise Exception(msg)
 
         if self._anchor_y == "top":
             return -height + offset
@@ -193,6 +205,7 @@ class ScrollableTextLayout(TextLayout):
 
     @view_x.setter
     def view_x(self, view_x: int) -> None:
+        assert self._width is not None
         translation = max(0, min(self._content_width - self._width, view_x))
         if translation != self._translate_x:
             self._translate_x = translation
@@ -215,7 +228,8 @@ class ScrollableTextLayout(TextLayout):
     @view_y.setter
     def view_y(self, view_y: int) -> None:
         # view_y must be negative.
-        translation = min(0, max(self.height - self._content_height, view_y))
+        assert self._height is not None
+        translation = min(0, max(self._height - self._content_height, view_y))
         if translation != self._translate_y:
             self._translate_y = translation
             self._update_view_translation()

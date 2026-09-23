@@ -10,7 +10,7 @@ from pyglet.enums import BlendFactor, GeometryMode
 if TYPE_CHECKING:
     from pyglet.graphics import Group
     from pyglet.graphics.shader import ShaderProgram
-    from pyglet.image import _AbstractImage, Texture
+    from pyglet.image import _AbstractImage, Texture  # type: ignore[attr-defined]
     from pyglet.resource import Location
     from pyglet.text.document import InlineElement
     from pyglet.text.layout import TextLayout
@@ -31,6 +31,7 @@ class ImageElement(pyglet.text.document.InlineElement):
     """Adds an image into the layout."""
     height: int
     width: int
+    vertex_lists: dict[TextLayout, Any]
 
     def __init__(self, image: _AbstractImage, width: int | None=None, height: int | None=None) -> None:  # noqa: D107
         self.image = image.get_texture()
@@ -107,6 +108,9 @@ class ImageElement(pyglet.text.document.InlineElement):
 
 class HorizontalRuleElement(pyglet.text.document.InlineElement):
     """A horizontal rule that spans the available layout width."""
+
+    color: tuple[int, ...]
+    vertex_lists: dict[TextLayout, Any]
 
     def __init__(self, color: tuple[int, int, int, int], width: int = 100) -> None:
         self.color = color
@@ -210,7 +214,7 @@ class ListBuilder:  # noqa: D101
         style["indent"] = -30
         style["tab_stops"] = tab_stops
 
-    def item(self, decoder: StructuredTextDecoder, style: dict[str, Any], value: str | None=None) -> None:  # noqa: ARG002
+    def item(self, decoder: StructuredTextDecoder, style: dict[str, Any], value: int | None=None) -> None:  # noqa: ARG002
         """Begin a list item.
 
         Args:
@@ -227,7 +231,7 @@ class ListBuilder:  # noqa: D101
             decoder.add_text(mark)
         decoder.add_text("\t")
 
-    def get_mark(self, value: str | None=None) -> str:  # noqa: ARG002
+    def get_mark(self, value: int | None=None) -> str:  # noqa: ARG002
         """Get the mark text for the next list item.
 
         Args:
@@ -251,7 +255,7 @@ class UnorderedListBuilder(ListBuilder):  # noqa: D101
         """
         self.mark = mark
 
-    def get_mark(self, value: str | None=None) -> str:  # noqa: ARG002
+    def get_mark(self, value: int | None=None) -> str:  # noqa: ARG002
         return self.mark
 
 
@@ -288,10 +292,15 @@ class OrderedListBuilder(ListBuilder):  # noqa: D101
         """
         self.next_value = start
 
-        self.prefix, self.numbering, self.suffix = self.format_re.match(fmt).groups()
+        self.prefix: str
+        self.numbering: str
+        self.suffix: str
+        match = self.format_re.match(fmt)
+        assert match is not None
+        self.prefix, self.numbering, self.suffix = match.groups()
         assert self.numbering in "1aAiI"
 
-    def get_mark(self, value: str | None=None) -> str:
+    def get_mark(self, value: int | None=None) -> str:
         if value is None:
             value = self.next_value
         self.next_value = value + 1
@@ -317,6 +326,15 @@ class OrderedListBuilder(ListBuilder):  # noqa: D101
 
 
 class StructuredTextDecoder(pyglet.text.DocumentDecoder):  # noqa: D101
+    current_style: dict[str, Any]
+    next_style: dict[str, Any]
+    stack: list[tuple[str, dict[str, Any]]]
+    list_stack: list[ListBuilder]
+    color: tuple[int, ...]
+    vertex_lists: dict[TextLayout, Any]
+    len_text: int
+    document: pyglet.text.document.FormattedDocument
+
     def decode(self, text: str, location: Location | None=None) -> pyglet.text.document.FormattedDocument:
         self.len_text = 0
         self.current_style = {}
@@ -329,7 +347,7 @@ class StructuredTextDecoder(pyglet.text.DocumentDecoder):  # noqa: D101
         self.decode_structured(text, location)
         return self.document
 
-    def decode_structured(self, text: str, location: Location | None) -> NoReturn:
+    def decode_structured(self, text: str, location: Location | None) -> None:
         raise NotImplementedError
 
     def push_style(self, key: str, styles: dict[str, Any]) -> None:

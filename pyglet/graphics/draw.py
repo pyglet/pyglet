@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import contextlib
-import sys
 import warnings
 import weakref
 from dataclasses import dataclass, field
@@ -1719,12 +1718,7 @@ def get_default_batch() -> Batch:
     raise RuntimeError(msg)
 
 
-try:
-    _is_pyglet_doc_run = sys.is_pyglet_doc_run
-except AttributeError:
-    _is_pyglet_doc_run = False
-
-if not _is_pyglet_doc_run:
+if not pyglet.IS_DOC_BUILD and not TYPE_CHECKING:
     if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
         from pyglet.graphics.api.gl.draw import (
             GLBatch as Batch,
