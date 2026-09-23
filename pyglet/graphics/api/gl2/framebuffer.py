@@ -37,11 +37,16 @@ class GL2Framebuffer(GLFramebuffer):
         binding = gl.GLint()
         self._context.glGetIntegerv(gl.GL_FRAMEBUFFER_BINDING, binding)
         self._binding_stack.append((binding.value,))
-        self.bind()
+        if binding.value != self._handle:
+            self.bind()
         return self
 
     def __exit__(self, *_args: object) -> None:
-        self._context.glBindFramebuffer(gl.GL_FRAMEBUFFER, self._binding_stack.pop()[0])
+        binding = self._binding_stack.pop()[0]
+        current_binding = gl.GLint()
+        self._context.glGetIntegerv(gl.GL_FRAMEBUFFER_BINDING, current_binding)
+        if current_binding.value != binding:
+            self._context.glBindFramebuffer(gl.GL_FRAMEBUFFER, binding)
 
     def attach_texture(
         self,

@@ -197,6 +197,10 @@ class GLInfo(SurfaceInfo):
                 or gles_at_least(3, 0)
                 or self.have_extension("GL_ARB_texture_storage")
             ),
+            direct_state_access=(
+                desktop_at_least(4, 5)
+                or self.have_extension("GL_ARB_direct_state_access")
+            ),
         )
 
         bgra_upload = is_desktop_gl or any(

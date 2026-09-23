@@ -7,13 +7,22 @@ from typing import TYPE_CHECKING
 
 import pyglet
 
-from pyglet.enums import AddressMode, ComponentFormat, FramebufferAttachment, GraphicsAPI, TextureFilter
+from pyglet.enums import (
+    AddressMode,
+    ComponentFormat,
+    FramebufferAttachment,
+    FramebufferTarget,
+    GraphicsAPI,
+    TextureFilter,
+)
+from pyglet.graphics.resource import FramebufferResource, RenderbufferResource
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
     from pyglet.image import ImageData
     from pyglet.graphics.api.base import SurfaceContext
+    from pyglet.customtypes import DataTypes
     from pyglet.graphics.texture import Texture
     from pyglet.window.camera.base import BaseCamera
 
@@ -30,21 +39,170 @@ def get_screenshot() -> ImageData:
     raise NotImplementedError
 
 
-if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
+class Renderbuffer(RenderbufferResource):
+    """GPU-only storage that can be attached to a :class:`Framebuffer`.
+
+    The active graphics backend provides the concrete implementation. Use a
+    renderbuffer for depth, stencil, multisampled, or color attachments whose
+    pixels do not need to be sampled by a shader.
+    """
+
+    def __init__(
+        self,
+        width: int,
+        height: int,
+        component_format: ComponentFormat,
+        bit_size: int,
+        data_type: DataTypes = "I",
+        samples: int = 1,
+        context: SurfaceContext | None = None,
+    ) -> None:
+        """Create storage with the requested dimensions, format, and sample count."""
+        _ = width, height, component_format, bit_size, data_type, samples, context
+        super().__init__()
+
+    @property
+    def width(self) -> int:
+        """Width of the renderbuffer in pixels."""
+        raise NotImplementedError
+
+    @property
+    def height(self) -> int:
+        """Height of the renderbuffer in pixels."""
+        raise NotImplementedError
+
+    def bind(self) -> None:
+        """Bind this renderbuffer to the renderbuffer target."""
+        raise NotImplementedError
+
+    def unbind(self) -> None:
+        """Unbind the current renderbuffer from the renderbuffer target."""
+        raise NotImplementedError
+
+    def delete(self) -> None:
+        """Release this renderbuffer's backend resource."""
+        raise NotImplementedError
+
+
+class Framebuffer(FramebufferResource):
+    """A render target composed from texture and renderbuffer attachments.
+
+    The active graphics backend provides the concrete implementation. Bind the
+    framebuffer directly, or use it as a context manager while issuing draw
+    calls. The context manager restores the previous framebuffer binding.
+    """
+
+    def __init__(
+        self,
+        target: FramebufferTarget = FramebufferTarget.FRAMEBUFFER,
+        context: SurfaceContext | None = None,
+    ) -> None:
+        """Create a framebuffer for the given binding target and context."""
+        _ = target, context
+        super().__init__()
+
+    @property
+    def width(self) -> int:
+        """Width of the widest attachment in pixels."""
+        raise NotImplementedError
+
+    @property
+    def height(self) -> int:
+        """Height of the tallest attachment in pixels."""
+        raise NotImplementedError
+
+    @property
+    def is_complete(self) -> bool:
+        """Whether the attached buffers form a complete framebuffer."""
+        raise NotImplementedError
+
+    def bind(self) -> None:
+        """Bind this framebuffer as its configured target."""
+        raise NotImplementedError
+
+    def unbind(self) -> None:
+        """Unbind this framebuffer's configured target."""
+        raise NotImplementedError
+
+    def __enter__(self) -> Framebuffer:  # noqa: PYI034
+        """Bind this framebuffer and return it for use in a ``with`` statement."""
+        raise NotImplementedError
+
+    def __exit__(self, *_args: object) -> None:
+        """Restore the framebuffer bindings saved when entering the context."""
+        raise NotImplementedError
+
+    def clear(self, color: tuple[float, float, float, float] | None = None) -> None:
+        """Clear every attached buffer, optionally using a temporary RGBA color."""
+        raise NotImplementedError
+
+    def clear_buffers(self, *colors: tuple[float, float, float, float]) -> None:
+        """Clear color draw buffers with RGBA values indexed by draw-buffer location."""
+        raise NotImplementedError
+
+    def clear_buffer(self, index: int, color: tuple[float, float, float, float]) -> None:
+        """Clear one color draw buffer at ``index`` with an RGBA value."""
+        raise NotImplementedError
+
+    def set_draw_buffers(self, *attachments: FramebufferAttachment) -> None:
+        """Select color attachments written by fragment shader outputs.
+
+        The attachment position selects the fragment shader output location.
+        With no attachments, all defined color attachments are selected.
+        """
+        raise NotImplementedError
+
+    def get_status(self) -> str:
+        """Return the backend's description of framebuffer completeness."""
+        raise NotImplementedError
+
+    def attach_texture(
+        self,
+        texture: Texture,
+        attachment: FramebufferAttachment = FramebufferAttachment.COLOR0,
+        level: int = 0,
+    ) -> None:
+        """Attach a texture mipmap level to a framebuffer attachment point."""
+        raise NotImplementedError
+
+    def attach_texture_layer(
+        self,
+        texture: Texture,
+        layer: int,
+        level: int,
+        attachment: FramebufferAttachment = FramebufferAttachment.COLOR0,
+    ) -> None:
+        """Attach one texture layer and mipmap level to an attachment point."""
+        raise NotImplementedError
+
+    def attach_renderbuffer(
+        self,
+        renderbuffer: Renderbuffer,
+        attachment: FramebufferAttachment = FramebufferAttachment.COLOR0,
+    ) -> None:
+        """Attach a renderbuffer to a framebuffer attachment point."""
+        raise NotImplementedError
+
+    def delete(self) -> None:
+        """Release this framebuffer's backend resource."""
+        raise NotImplementedError
+
+
+if not TYPE_CHECKING and pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
     from pyglet.graphics.api.gl.framebuffer import (
         GLFramebuffer as Framebuffer,
         GLRenderbuffer as Renderbuffer,
         get_screenshot,
         get_viewport,
     )
-elif pyglet.options.backend in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
+elif not TYPE_CHECKING and pyglet.options.backend in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
     from pyglet.graphics.api.gl2.framebuffer import (
         GL2Framebuffer as Framebuffer,
         GLRenderbuffer as Renderbuffer,
         get_screenshot,
         get_viewport,
     )
-elif pyglet.options.backend == GraphicsAPI.WEBGL:
+elif not TYPE_CHECKING and pyglet.options.backend == GraphicsAPI.WEBGL:
     from pyglet.graphics.api.webgl.framebuffer import (
         WebGLFramebuffer as Framebuffer,
         WebGLRenderbuffer as Renderbuffer,

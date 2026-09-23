@@ -178,6 +178,8 @@ class SurfaceFeatures:
     pixel_buffer_objects: bool = False
     #: Enables immutable-format texture allocation through glTexStorage.
     texture_storage: bool = False
+    #: Enables framebuffer and renderbuffer operations without binding objects.
+    direct_state_access: bool = False
 
 
 @dataclass(frozen=True)

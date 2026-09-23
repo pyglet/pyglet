@@ -204,7 +204,7 @@ class WebGLFramebuffer(FramebufferResource):
         self._id = self._gl.createFramebuffer()
         self._handle = self._id
         self._clear_bits = 0
-        self._gl_attachment_types = []
+        self._color_attachments: list[int] = []
         self._width = 0
         self._height = 0
         self._binding_stack: list[tuple[WebGLFramebufferObject | None, ...]] = []
@@ -325,7 +325,9 @@ class WebGLFramebuffer(FramebufferResource):
             level,
         )
         self._clear_bits |= _clear_bit_map[attachment]
-        self._gl_attachment_types.append(gl_attachment)
+        if gl.GL_COLOR_ATTACHMENT0 <= gl_attachment <= gl.GL_COLOR_ATTACHMENT15:
+            if gl_attachment not in self._color_attachments:
+                self._color_attachments.append(gl_attachment)
         self._width = max(texture.width, self._width)
         self._height = max(texture.height, self._height)
         self.unbind()
@@ -355,7 +357,9 @@ class WebGLFramebuffer(FramebufferResource):
             layer,
         )
         self._clear_bits |= _clear_bit_map[attachment]
-        self._gl_attachment_types.append(gl_attachment)
+        if gl.GL_COLOR_ATTACHMENT0 <= gl_attachment <= gl.GL_COLOR_ATTACHMENT15:
+            if gl_attachment not in self._color_attachments:
+                self._color_attachments.append(gl_attachment)
         self._width = max(texture.width, self._width)
         self._height = max(texture.height, self._height)
         self.unbind()
@@ -379,17 +383,38 @@ class WebGLFramebuffer(FramebufferResource):
             gl.GL_RENDERBUFFER,
             renderbuffer.handle,
         )
-        self._gl_attachment_types.append(gl_attachment)
         self._clear_bits |= _clear_bit_map[attachment]
+        if gl.GL_COLOR_ATTACHMENT0 <= gl_attachment <= gl.GL_COLOR_ATTACHMENT15:
+            if gl_attachment not in self._color_attachments:
+                self._color_attachments.append(gl_attachment)
         self._width = max(renderbuffer.width, self._width)
         self._height = max(renderbuffer.height, self._height)
         self.unbind()
 
-    def set_draw_buffers(self) -> None:
-        """Enable multiple render targets for the FBO (WebGL2)."""
-        self.bind()
-        self._gl.drawBuffers(self._gl_attachment_types)
-        self.unbind()
+    def set_draw_buffers(self, *attachments: FramebufferAttachment) -> None:
+        """Select the color attachments written by fragment shader outputs."""
+        if attachments:
+            draw_buffers = [_gl_attachment_map[attachment] for attachment in attachments]
+        else:
+            draw_buffers = self._color_attachments
+
+        assert draw_buffers
+
+        with self:
+            self._gl.drawBuffers(draw_buffers)
+
+    def clear_buffers(self, *colors: tuple[float, float, float, float]) -> None:
+        """Clear color draw buffers with the supplied RGBA values."""
+        with self:
+            for index, color in enumerate(colors):
+                assert len(color) == 4
+                self._gl.clearBufferfv(gl.GL_COLOR, index, color)
+
+    def clear_buffer(self, index: int, color: tuple[float, float, float, float]) -> None:
+        """Clear one color draw buffer by its draw-buffer index."""
+        assert len(color) == 4
+        with self:
+            self._gl.clearBufferfv(gl.GL_COLOR, index, color)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(id={self._id})"
