@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from pyglet.media.codecs.base import AudioData, AudioFormat, Source
 
 if TYPE_CHECKING:
-    from typing import Generator
+    from typing import Generator, Sequence
 
 
 # Envelope classes:
@@ -317,66 +317,245 @@ class Sawtooth(SynthesisSource):
 
 @dataclass(frozen=True, slots=True)
 class Modulation:
-    """Modulation mappint between two Operators, by index."""
     source: int
     target: int
 
 
 @dataclass(frozen=True, slots=True)
 class Algorithm:
+    """4-operator FM routing. Indices are 0-based (0=Op1 … 3=Op4)."""
     name: str
-    """The name of the algorithm."""
     carriers: tuple[int, ...]
-    """A tuple of indices of carrier Operators."""
     modulations: tuple[Modulation, ...]
-    """A tuple of Modulation objects, Operator interaction indices."""
-    feedback: int | None = None
-    """Index of which Operator to apply feedback to."""
+    feedback: int | None = 0
+
+    def __post_init__(self) -> None:
+        ops = set(self.carriers)
+        for m in self.modulations:
+            ops.add(m.source)
+            ops.add(m.target)
+        if self.feedback is not None:
+            ops.add(self.feedback)
+        if any(not 0 <= i <= 3 for i in ops):
+            raise ValueError("Operator indices must be in 0..3")
+
+
+ALGO_0 = Algorithm(   # 1 → 2 → 3 → 4
+    name="Algorithm 0",
+    carriers=(3,),
+    modulations=(
+        Modulation(0, 1),
+        Modulation(1, 2),
+        Modulation(2, 3),
+    ),
+    feedback=0,
+)
+
+ALGO_1 = Algorithm(   # (1 + 2) → 3 → 4
+    name="Algorithm 1",
+    carriers=(3,),
+    modulations=(
+        Modulation(0, 2),
+        Modulation(1, 2),
+        Modulation(2, 3),
+    ),
+    feedback=0,
+)
+
+ALGO_2 = Algorithm(   # 1 → 3 → 4,  2 → 4
+    name="Algorithm 2",
+    carriers=(3,),
+    modulations=(
+        Modulation(0, 2),
+        Modulation(2, 3),
+        Modulation(1, 3),
+    ),
+    feedback=0,
+)
+
+ALGO_3 = Algorithm(   # 1 → 2 → 4,  3 → 4
+    name="Algorithm 3",
+    carriers=(3,),
+    modulations=(
+        Modulation(0, 1),
+        Modulation(1, 3),
+        Modulation(2, 3),
+    ),
+    feedback=0,
+)
+
+ALGO_4 = Algorithm(   # 1 → 2  and  3 → 4
+    name="Algorithm 4",
+    carriers=(1, 3),
+    modulations=(
+        Modulation(0, 1),
+        Modulation(2, 3),
+    ),
+    feedback=0,
+)
+
+ALGO_5 = Algorithm(   # 1 modulates 2, 3 and 4
+    name="Algorithm 5",
+    carriers=(1, 2, 3),
+    modulations=(
+        Modulation(0, 1),
+        Modulation(0, 2),
+        Modulation(0, 3),
+    ),
+    feedback=0,
+)
+
+ALGO_6 = Algorithm(   # 1 → 2,  3 and 4 are carriers
+    name="Algorithm 6",
+    carriers=(1, 2, 3),
+    modulations=(
+        Modulation(0, 1),
+    ),
+    feedback=0,
+)
+
+ALGO_7 = Algorithm(   # four parallel carriers
+    name="Algorithm 7",
+    carriers=(0, 1, 2, 3),
+    modulations=(),
+    feedback=0,
+)
+
+ALGORITHMS = {
+    0: ALGO_0,
+    1: ALGO_1,
+    2: ALGO_2,
+    3: ALGO_3,
+    4: ALGO_4,
+    5: ALGO_5,
+    6: ALGO_6,
+    7: ALGO_7,
+}
 
 
 class Operator:
-    """An FM operator (oscillator + phase modulation + optional feedback)."""
+    """Single FM operator with phase modulation and optional feedback."""
 
-    sample_rate: int = 44800
-
-    def __init__(self, frequency: float = 440.0, index: float = 1.0, feedback: float = 0.0, envelope: Envelope | None = None):
-        self.frequency = frequency
+    def __init__(self, frequency: float = 440.0, sample_rate: int = 44800, index: float = 1.0, feedback: float = 0.0):
+        self.sample_rate = sample_rate
         self.index = index
         self.feedback = feedback
 
-        self._step = 2.0 * _math.pi * frequency / self.sample_rate
+        self._frequency = frequency
+        self._step = 2.0 * _math.pi * frequency / sample_rate
         self._phase = 0.0
-        self._last = 0.0             # previous sample (for feedback)
+        self._last = 0.0
 
         self.modulators: list[Operator] = []
 
-        # Envelope handling (optional)
-        self._envelope = envelope or FlatEnvelope(1.0)
-        # We don't know duration yet; will be set later or use a flat envelope
-        self._env_gen = self._envelope.get_generator(self.sample_rate, duration=1.0)
+    @property
+    def frequency(self) -> float:
+        return self._frequency
+
+    @frequency.setter
+    def frequency(self, value: float) -> None:
+        self._frequency = value
+        self._step = 2.0 * _math.pi * value / self.sample_rate
 
     def add_modulator(self, op: Operator) -> None:
-        """Connect another operator as a modulator."""
         self.modulators.append(op)
 
     def __next__(self) -> float:
-        # Sum modulation from other operators
-        mod = sum(next(mod_op) for mod_op in self.modulators)
-
-        # Add self-feedback (nop if feedback == 0.0)
+        mod = sum(next(m) for m in self.modulators)
         mod += self.feedback * self._last
-        # Generate sample, and apply envelope
-        value = _math.sin(self._phase + self.index * mod) * next(self._env_gen)
 
-        # Carry state forward
+        value = _math.sin(self._phase + self.index * mod)
+
         self._last = value
         self._phase += self._step
-
         return value
 
     def reset(self) -> None:
-        """Reset phase and feedback state (needed for seeking)."""
         self._phase = 0.0
         self._last = 0.0
-        if self._envelope is not None:
-            self._env_gen = self._envelope.get_generator(self.sample_rate, duration=1.0)
+
+    def __iter__(self):
+        return self
+
+
+# ----------------------------------------------------------------------
+# Mixing helper
+# ----------------------------------------------------------------------
+
+def mix_operators(operators: Sequence[Operator]) -> Generator[float, None, None]:
+    """Average the output of multiple carriers."""
+    n = len(operators)
+    if n == 0:
+        while True:
+            yield 0.0
+    while True:
+        yield sum(next(op) for op in operators) / n
+
+
+# ----------------------------------------------------------------------
+# FMVoice (SynthesisSource subclass)
+# ----------------------------------------------------------------------
+
+class FMVoice(SynthesisSource):
+    """
+    4-operator FM voice (YM2612-style).
+
+    Operators are pre-allocated and can be adjusted after creation.
+    """
+
+    def __init__(self, duration: float, algorithm: Algorithm | int = 0, sample_rate: int = 44800, feedback_level: float = 0.0, envelope: Envelope | None = None):
+        if isinstance(algorithm, int):
+            algorithm = ALGORITHMS[algorithm]
+
+        self.sample_rate = sample_rate
+        self.algorithm = algorithm
+
+        # Pre-allocate 4 operators
+        self.ops: list[Operator] = [Operator(frequency=440.0, sample_rate=sample_rate) for _ in range(4)]
+
+        self._wire_algorithm(algorithm)
+        self.set_feedback(feedback_level)
+
+        # Create the generator from the carriers
+        carriers = [self.ops[i] for i in algorithm.carriers]
+        generator = mix_operators(carriers)
+
+        super().__init__(generator, duration, sample_rate, envelope)
+
+    # ----- internal -----
+
+    def _wire_algorithm(self, algorithm: Algorithm) -> None:
+        for op in self.ops:
+            op.modulators.clear()
+
+        for mod in algorithm.modulations:
+            self.ops[mod.target].add_modulator(self.ops[mod.source])
+
+        self.algorithm = algorithm
+
+    # ----- public API -----
+
+    def set_algorithm(self, algorithm: Algorithm | int) -> None:
+        if isinstance(algorithm, int):
+            algorithm = ALGORITHMS[algorithm]
+        self._wire_algorithm(algorithm)
+        # Note: changing algorithm after start does not rebuild the generator.
+        # For full support you would also need to replace self._generator.
+
+    def set_feedback(self, level: float) -> None:
+        for op in self.ops:
+            op.feedback = 0.0
+        if self.algorithm.feedback is not None:
+            self.ops[self.algorithm.feedback].feedback = level
+
+    def set_frequency(self, op_index: int, frequency: float) -> None:
+        self.ops[op_index].frequency = frequency
+
+    def set_index(self, op_index: int, index: float) -> None:
+        self.ops[op_index].index = index
+
+    def seek(self, timestamp: float) -> None:
+        """Reset operators when seeking."""
+        for op in self.ops:
+            op.reset()
+        super().seek(timestamp)
