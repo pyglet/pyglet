@@ -12,8 +12,8 @@ _debug = debug_print('debug_media')
 
 avutil = pyglet.lib.load_library(
     'avutil',
-    win32=('avutil-60', 'avutil-59', 'avutil-58', 'avutil-57', 'avutil-56'),
-    darwin=('avutil.60', 'avutil.59', 'avutil.58', 'avutil.57', 'avutil.56')
+    win32=('avutil-61', 'avutil-60', 'avutil-59', 'avutil-58', 'avutil-57', 'avutil-56'),
+    darwin=('avutil.61', 'avutil.60', 'avutil.59', 'avutil.58', 'avutil.57', 'avutil.56')
 )
 
 avutil.avutil_version.restype = c_int
@@ -203,6 +203,15 @@ compat.add_version_changes('avutil', 59, AVFrame, AVFrame_Fields,
                                      ))
 
 compat.add_version_changes('avutil', 60, AVFrame, AVFrame_Fields,
+                           removals=('pkt_pts', 'error', 'qscale_table', 'qstride', 'qscale_type', 'qp_table_buf',
+                                     'channels', 'channel_layout',
+                                     'coded_picture_number', 'display_picture_number', 'reordered_opaque',
+                                     'pkt_duration',
+                                     'interlaced_frame', 'top_field_first', 'palette_has_changed', 'pkt_pos',
+                                     'pkt_size',
+                                     ))
+
+compat.add_version_changes('avutil', 61, AVFrame, AVFrame_Fields,
                            removals=('pkt_pts', 'error', 'qscale_table', 'qstride', 'qscale_type', 'qp_table_buf',
                                      'channels', 'channel_layout',
                                      'coded_picture_number', 'display_picture_number', 'reordered_opaque',
