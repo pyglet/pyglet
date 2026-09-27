@@ -3,10 +3,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, TYPE_CHECKING, Generator
 
-from pyglet.enums import BlendFactor, BlendOp, CompareOp, StencilOp
-from pyglet.graphics.api.webgl.enums import blend_factor_map, compare_op_map, stencil_op_map
+from pyglet.enums import BlendFactor, BlendOp, CompareOp, CullFace, FrontFace, StencilOp
+from pyglet.graphics.api.webgl.enums import (
+    blend_factor_map, blend_op_map, compare_op_map, cull_face_map, front_face_map, stencil_op_map,
+)
 from pyglet.graphics.api.webgl.gl import (
     GL_BLEND,
+    GL_CULL_FACE,
     GL_DEPTH_TEST,
     GL_SCISSOR_TEST,
     GL_STENCIL_BUFFER_BIT,
@@ -156,6 +159,7 @@ class BlendState(State):
 
     def set_state(self, ctx: DrawContext) -> None:
         ctx.surface_ctx.gl.blendFunc(blend_factor_map[self.src], blend_factor_map[self.dst])
+        ctx.surface_ctx.gl.blendEquation(blend_op_map[self.op])
 
 
 @dataclass(frozen=True)
@@ -186,7 +190,40 @@ class DepthBufferComparison(State):
 
 @dataclass(frozen=True)
 class DepthWriteState(State):
-    flag: int
+    flag: bool
+
+    sets_state: bool = True
+    unsets_state: bool = True
+
+    def set_state(self, ctx: DrawContext) -> None:
+        ctx.surface_ctx.gl.depthMask(self.flag)
+
+    def unset_state(self, ctx: DrawContext) -> None:
+        ctx.surface_ctx.gl.depthMask(not self.flag)
+
+
+@dataclass(frozen=True)
+class CullFaceState(State):
+    face: CullFace
+
+    sets_state: bool = True
+    unsets_state: bool = True
+    def set_state(self, ctx: DrawContext) -> None:
+        ctx.surface_ctx.gl.enable(GL_CULL_FACE)
+        ctx.surface_ctx.gl.cullFace(cull_face_map[self.face])
+
+    def unset_state(self, ctx: DrawContext) -> None:
+        ctx.surface_ctx.gl.disable(GL_CULL_FACE)
+
+
+@dataclass(frozen=True)
+class FrontFaceState(State):
+    face: FrontFace
+
+    sets_state: bool = True
+
+    def set_state(self, ctx: DrawContext) -> None:
+        ctx.surface_ctx.gl.frontFace(front_face_map[self.face])
 
 
 @dataclass(frozen=True)
@@ -225,10 +262,6 @@ class StencilFuncState(State):
 
     sets_state: bool = True
 
-    def __post_init__(self) -> None:
-        if not isinstance(self.func, CompareOp):
-            raise TypeError("func must be CompareOp")
-
     def set_state(self, ctx: DrawContext) -> None:
         ctx.surface_ctx.gl.stencilFunc(compare_op_map[self.func], self.ref, self.mask)
 
@@ -240,10 +273,6 @@ class StencilOpState(State):
     zpass: StencilOp
 
     sets_state: bool = True
-
-    def __post_init__(self) -> None:
-        if not all(isinstance(operation, StencilOp) for operation in (self.fail, self.zfail, self.zpass)):
-            raise TypeError("stencil operations must be StencilOp")
 
     def set_state(self, ctx: DrawContext) -> None:
         ctx.surface_ctx.gl.stencilOp(

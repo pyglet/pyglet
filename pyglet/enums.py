@@ -195,6 +195,19 @@ class StencilOp(Enum):
     INVERT = auto()
 
 
+class CullFace(Enum):
+    """Faces removed by face culling."""
+    FRONT = auto()
+    BACK = auto()
+    FRONT_AND_BACK = auto()
+
+
+class FrontFace(Enum):
+    """Order used to identify facing triangles."""
+    CLOCKWISE = auto()
+    COUNTER_CLOCKWISE = auto()
+
+
 class FramebufferTarget(Enum):
     """Framebuffer binding targets."""
     FRAMEBUFFER = auto()

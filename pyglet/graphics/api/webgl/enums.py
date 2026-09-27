@@ -12,9 +12,14 @@ from pyglet.graphics.api.webgl.gl import (
     GL_ONE_MINUS_SRC_ALPHA, GL_DST_ALPHA, GL_ONE_MINUS_DST_ALPHA, GL_CONSTANT_COLOR,
     GL_ONE_MINUS_CONSTANT_COLOR, \
     GL_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_ALPHA, GL_NEVER, GL_LESS, GL_EQUAL, GL_LEQUAL, GL_GREATER, GL_NOTEQUAL,
-    GL_GEQUAL, GL_ALWAYS, GL_KEEP, GL_ZERO, GL_REPLACE, GL_INCR, GL_INCR_WRAP, GL_DECR, GL_DECR_WRAP, GL_INVERT)
+    GL_GEQUAL, GL_ALWAYS, GL_KEEP, GL_ZERO, GL_REPLACE, GL_INCR, GL_INCR_WRAP, GL_DECR, GL_DECR_WRAP, GL_INVERT,
+    GL_FUNC_ADD, GL_FUNC_SUBTRACT, GL_FUNC_REVERSE_SUBTRACT, GL_MIN, GL_MAX, GL_FRONT, GL_BACK, GL_FRONT_AND_BACK,
+    GL_CW, GL_CCW)
 
-from pyglet.enums import BlendFactor, GeometryMode, StencilOp, TextureFilter, TextureType, TextureWrapping, CompareOp
+from pyglet.enums import (
+    BlendFactor, BlendOp, CompareOp, CullFace, FrontFace, GeometryMode, StencilOp, TextureFilter, TextureType,
+    TextureWrapping,
+)
 
 geometry_map = {
     GeometryMode.POINTS: GL_POINTS,
@@ -75,6 +80,14 @@ compare_op_map = {
     CompareOp.ALWAYS: GL_ALWAYS,
 }
 
+blend_op_map = {
+    BlendOp.ADD: GL_FUNC_ADD,
+    BlendOp.SUBTRACT: GL_FUNC_SUBTRACT,
+    BlendOp.REVERSE_SUBTRACT: GL_FUNC_REVERSE_SUBTRACT,
+    BlendOp.MIN: GL_MIN,
+    BlendOp.MAX: GL_MAX,
+}
+
 stencil_op_map = {
     StencilOp.KEEP: GL_KEEP,
     StencilOp.ZERO: GL_ZERO,
@@ -84,4 +97,15 @@ stencil_op_map = {
     StencilOp.DECREMENT: GL_DECR,
     StencilOp.DECREMENT_WRAP: GL_DECR_WRAP,
     StencilOp.INVERT: GL_INVERT,
+}
+
+cull_face_map = {
+    CullFace.FRONT: GL_FRONT,
+    CullFace.BACK: GL_BACK,
+    CullFace.FRONT_AND_BACK: GL_FRONT_AND_BACK,
+}
+
+front_face_map = {
+    FrontFace.CLOCKWISE: GL_CW,
+    FrontFace.COUNTER_CLOCKWISE: GL_CCW,
 }
