@@ -1,11 +1,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, TYPE_CHECKING, Callable, Generator
+from typing import Any, TYPE_CHECKING, Generator
 
-from pyglet.enums import BlendFactor, BlendOp, CompareOp
-from pyglet.graphics.api.webgl.enums import blend_factor_map, compare_op_map
-from pyglet.graphics.api.webgl.gl import GL_BLEND, GL_DEPTH_TEST, GL_SCISSOR_TEST, GL_TEXTURE0
+from pyglet.enums import BlendFactor, BlendOp, CompareOp, StencilOp
+from pyglet.graphics.api.webgl.enums import blend_factor_map, compare_op_map, stencil_op_map
+from pyglet.graphics.api.webgl.gl import (
+    GL_BLEND,
+    GL_DEPTH_TEST,
+    GL_SCISSOR_TEST,
+    GL_STENCIL_BUFFER_BIT,
+    GL_STENCIL_TEST,
+    GL_TEXTURE0,
+)
 from pyglet.graphics.state import State, ViewportProtocol, _BaseScissorState, _BaseViewportState
 
 if TYPE_CHECKING:
@@ -183,17 +190,90 @@ class DepthWriteState(State):
 
 
 @dataclass(frozen=True)
+class StencilTestState(State):
+    enabled: bool
+
+    sets_state: bool = True
+    unsets_state: bool = True
+
+    def set_state(self, ctx: DrawContext) -> None:
+        (ctx.surface_ctx.gl.enable if self.enabled else ctx.surface_ctx.gl.disable)(GL_STENCIL_TEST)
+
+    def unset_state(self, ctx: DrawContext) -> None:
+        (ctx.surface_ctx.gl.disable if self.enabled else ctx.surface_ctx.gl.enable)(GL_STENCIL_TEST)
+
+
+@dataclass(frozen=True)
+class StencilMaskState(State):
+    mask: int
+
+    sets_state: bool = True
+    unsets_state: bool = True
+
+    def set_state(self, ctx: DrawContext) -> None:
+        ctx.surface_ctx.gl.stencilMask(self.mask)
+
+    def unset_state(self, ctx: DrawContext) -> None:
+        ctx.surface_ctx.gl.stencilMask(0xFF)
+
+
+@dataclass(frozen=True)
 class StencilFuncState(State):
-    func: Callable
+    func: CompareOp
     ref: int
     mask: int
+
+    sets_state: bool = True
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.func, CompareOp):
+            raise TypeError("func must be CompareOp")
+
+    def set_state(self, ctx: DrawContext) -> None:
+        ctx.surface_ctx.gl.stencilFunc(compare_op_map[self.func], self.ref, self.mask)
 
 
 @dataclass(frozen=True)
 class StencilOpState(State):
-    fail: int
-    zfail: int
-    zpass: int
+    fail: StencilOp
+    zfail: StencilOp
+    zpass: StencilOp
+
+    sets_state: bool = True
+
+    def __post_init__(self) -> None:
+        if not all(isinstance(operation, StencilOp) for operation in (self.fail, self.zfail, self.zpass)):
+            raise TypeError("stencil operations must be StencilOp")
+
+    def set_state(self, ctx: DrawContext) -> None:
+        ctx.surface_ctx.gl.stencilOp(
+            stencil_op_map[self.fail], stencil_op_map[self.zfail], stencil_op_map[self.zpass],
+        )
+
+
+@dataclass(frozen=True)
+class ColorMaskState(State):
+    red: bool
+    green: bool
+    blue: bool
+    alpha: bool
+
+    sets_state: bool = True
+    unsets_state: bool = True
+
+    def set_state(self, ctx: DrawContext) -> None:
+        ctx.surface_ctx.gl.colorMask(self.red, self.green, self.blue, self.alpha)
+
+    def unset_state(self, ctx: DrawContext) -> None:
+        ctx.surface_ctx.gl.colorMask(True, True, True, True)
+
+
+@dataclass(frozen=True)
+class StencilClearState(State):
+    sets_state: bool = True
+
+    def set_state(self, ctx: DrawContext) -> None:
+        ctx.surface_ctx.gl.clear(GL_STENCIL_BUFFER_BIT)
 
 
 @dataclass(frozen=True)

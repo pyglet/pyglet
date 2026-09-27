@@ -5,7 +5,9 @@ from dataclasses import dataclass
 from pyglet.graphics.state import State
 from typing import TYPE_CHECKING
 from pyglet.graphics.api.gl.state import (TextureState, MultiTextureSamplerState, BlendState, ShaderUniformState,   # noqa: F401
-                                          DepthBufferComparison, ScissorState, UniformBufferState, ViewportState)
+                                          ColorMaskState, DepthBufferComparison, ScissorState, StencilClearState,
+                                          StencilFuncState, StencilMaskState, StencilOpState, StencilTestState,
+                                          UniformBufferState, ViewportState)
 
 
 if TYPE_CHECKING:

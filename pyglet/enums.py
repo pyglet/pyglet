@@ -183,6 +183,18 @@ class CompareOp(Enum):
     ALWAYS = auto()
 
 
+class StencilOp(Enum):
+    """Operations applied to the stencil buffer after a stencil/depth test."""
+    KEEP = auto()
+    ZERO = auto()
+    REPLACE = auto()
+    INCREMENT = auto()
+    INCREMENT_WRAP = auto()
+    DECREMENT = auto()
+    DECREMENT_WRAP = auto()
+    INVERT = auto()
+
+
 class FramebufferTarget(Enum):
     """Framebuffer binding targets."""
     FRAMEBUFFER = auto()
