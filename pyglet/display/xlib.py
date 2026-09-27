@@ -44,7 +44,7 @@ except:
     _have_xf86vmode = False
 
 try:
-    from pyglet.libs.x11 import xrandr  # type: ignore[import-not-found]
+    from pyglet.libs.linux.x11 import xrandr
 
     _have_xrandr = True
 except ImportError:
@@ -54,7 +54,7 @@ except ImportError:
 # Set up error handler
 def _error_handler(display, event):
     # By default, all errors are silently ignored: this has a better chance
-    # of working than the default behaviour of quitting ;-)
+    # of working than the default behavior of quitting ;-)
     #
     # We've actually never seen an error that was our fault; they're always
     # driver bugs (and so the reports are useless).  Nevertheless, set

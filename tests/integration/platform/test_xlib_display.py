@@ -9,7 +9,7 @@ pytestmark = require_platform(Platform.LINUX)
 
 if pyglet.compat_platform in Platform.LINUX:
     from pyglet.display import xlib
-    from pyglet.libs.x11 import xf86vmode, xrandr
+    from pyglet.libs.linux.x11 import xf86vmode, xrandr
 
 
 def _xrandr_mode(dot_clock=712_000_000, h_total=5_312, v_total=2_237):
