@@ -240,7 +240,7 @@ class TextLayout(_FlowLayoutBase):
     _depth_layer_offset: ClassVar[float] = 1e-5
 
     #: Depth comparison used when ``depth_sorting`` is enabled.
-    depth_test_compare_op: ClassVar[CompareOp] = CompareOp.LESS
+    depth_test_compare_op: ClassVar[CompareOp] = CompareOp.LESS_OR_EQUAL
 
     def __init__(
         self,
@@ -422,7 +422,7 @@ class TextLayout(_FlowLayoutBase):
         if self._foreground_decoration_group is None:
             self._foreground_decoration_group = self.decoration_class(
                 self.decoration_shader,
-                order=4 if self._depth_sorting else 2,
+                order=2,
                 parent=self._user_group,
             )
             self._set_depth_test(self._foreground_decoration_group)

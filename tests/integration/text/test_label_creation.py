@@ -7,7 +7,7 @@ import pytest
 import pyglet
 from pyglet.text import decode_text, decode_attributed, decode_html, DropShadow, LinearGradient, Stroke
 from pyglet.text.document import FormattedDocument
-from pyglet.text.layout import IncrementalTextLayout
+from pyglet.text.layout import IncrementalTextLayout, get_default_layout_shader
 from pyglet.text import DocumentLabel, HTMLLabel, Label
 
 WIDTH = 500
@@ -91,9 +91,16 @@ def test_label_effect_linear_gradient(test_window, style_name, effect):
     label = Label("Gradient", **{style_name: effect(gradient)})
 
     vertex_lists = label._boxes[0].vertex_lists  # noqa: SLF001
-    effect_lists = vertex_lists[:-1] if style_name == "shadow" else vertex_lists[1:]
-    assert tuple(effect_lists[0].colors[:8]) == gradient.start * 2
-    assert tuple(effect_lists[-1].colors[-8:]) == gradient.end * 2
+    if style_name == "shadow":
+        assert len(vertex_lists) == 2
+        first_effect = effect_list = vertex_lists[0]
+        effect_colors = effect_list.colors
+    else:
+        first_effect = vertex_lists[1]
+        last_effect = vertex_lists[-1]
+        effect_colors = last_effect.colors
+    assert tuple(first_effect.colors[:8]) == gradient.start * 2
+    assert tuple(effect_colors[-8:]) == gradient.end * 2
 
 
 @pytest.mark.parametrize("style_name", ["background_color", "underline", "strikethrough"])
@@ -131,6 +138,32 @@ def test_shadow_style_does_not_leak_to_earlier_text(test_window):
     assert len(label._boxes[0].vertex_lists) == 2  # noqa: SLF001
     assert tuple(shadow_list.colors[:64]) == (0, 0, 0, 0) * 16
     assert tuple(shadow_list.colors[64:68]) == (1, 2, 3, 255)
+
+
+def test_shadow_uses_separate_vertex_list_with_effect_shader(test_window):
+    label = Label(
+        "Shadow",
+        shadow=DropShadow(),
+        effect_shader=get_default_layout_shader(),
+    )
+
+    assert len(label._boxes[0].vertex_lists) == 2  # noqa: SLF001
+
+
+def test_shadow_uses_glyph_group_without_effect_shader(test_window):
+    label = Label("Shadow", shadow=DropShadow())
+    vertex_lists = label._boxes[0].vertex_lists  # noqa: SLF001
+
+    assert vertex_lists[0].group is vertex_lists[1].group
+
+
+def test_shadow_and_stroke_use_layered_groups_without_effect_shader(test_window):
+    label = Label("A", shadow=DropShadow(), stroke=Stroke())
+    vertex_lists = label._boxes[0].vertex_lists  # noqa: SLF001
+
+    assert vertex_lists[1].group is vertex_lists[2].group
+    assert vertex_lists[1].group.order == 0.5
+    assert vertex_lists[0].group.order == 1
 
 
 def test_solid_color_update_uses_fresh_style_iterator(test_window):

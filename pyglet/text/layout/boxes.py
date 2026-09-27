@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, NamedTuple, Pattern, Protocol, Sequence, cast
 
 from pyglet.enums import GeometryMode
 from pyglet.text import runlist
-from pyglet.text.effects import LinearGradient
+from pyglet.text.effects import DropShadow, LinearGradient
 
 _VertexData = dict[str, Sequence[float | int | bool]]
 
@@ -441,22 +441,23 @@ class _GlyphBox(_AbstractBox):
         translation = vertex_data["translation"]
         return vertex_data | {"translation": (*translation[:3], layout.get_depth_offset(layer)) * vertex_count}
 
-    def _place_shadow(
+    def _create_shadow_data(
         self,
         layout: TextLayout,
         start_index: int,
         vertices: list[float],
-        indices: list[int],
         vertex_data: _VertexData,
-        context: _LayoutContext,
-    ) -> None:
+        shadow_ranges: Sequence[tuple[int, int, DropShadow | None]],
+        stroked_glyphs: set[int],
+    ) -> _VertexData | None:
         # A shadow needs no additional glyph rendering: it uses the same atlas
         # texture and geometry, at an offset below the fill layer.
-        if context.shadow_iter is None:
-            return
+        if not shadow_ranges:
+            return None
         shadow_colors = None
         shadow_vertices = None
-        for start, end, shadow in context.shadow_iter.ranges(start_index, start_index + self.length):
+        has_visible_shadow = False
+        for start, end, shadow in shadow_ranges:
             character_count = end - start
             if shadow is None:
                 if shadow_colors is not None:
@@ -469,17 +470,24 @@ class _GlyphBox(_AbstractBox):
                 shadow_colors = list((0, 0, 0, 0) * ((start - start_index) * 4))
                 shadow_vertices = list(vertices)
             assert shadow_vertices is not None
-            shadow_colors.extend(
-                self._create_range_colors(shadow.color, start, end, start_index, vertices, "Shadow"),
+            range_colors = self._create_range_colors(shadow.color, start, end, start_index, vertices, "Shadow")
+            for glyph_index in stroked_glyphs:
+                if start <= start_index + glyph_index < end:
+                    color_start = (glyph_index - (start - start_index)) * 16
+                    range_colors[color_start:color_start + 16] = (0, 0, 0, 0) * 4
+            has_visible_shadow |= any(
+                glyph_index not in stroked_glyphs
+                for glyph_index in range(start - start_index, end - start_index)
             )
+            shadow_colors.extend(range_colors)
             offset_start = (start - start_index) * 12
             offset_end = offset_start + character_count * 12
             for vertex_index in range(offset_start, offset_end, 3):
                 shadow_vertices[vertex_index] += shadow.offset[0]
                 shadow_vertices[vertex_index + 1] += shadow.offset[1]
 
-        if shadow_colors is None:
-            return
+        if shadow_colors is None or not has_visible_shadow:
+            return None
 
         assert shadow_vertices is not None
         shadow_data = self._set_depth_layer(
@@ -488,15 +496,7 @@ class _GlyphBox(_AbstractBox):
             self.length * 4,
             _SHADOW_DEPTH_LAYER,
         )
-        shadow_list = layout.program.vertex_list_indexed(
-            self.length * 4,
-            GeometryMode.TRIANGLES,
-            indices,
-            layout.batch,
-            layout.get_effect_group(self.owner, order=1 if layout.depth_sorting else 0),
-            **shadow_data,
-        )
-        self._add_vertex_list(shadow_list, context)
+        return shadow_data
 
     def _place_strokes(
         self,
@@ -512,13 +512,17 @@ class _GlyphBox(_AbstractBox):
         anchor_x: float,
         anchor_y: float,
         context: _LayoutContext,
-    ) -> None:
+        shadow_ranges: Sequence[tuple[int, int, DropShadow | None]],
+    ) -> tuple[set[int], list[_LayoutVertexList | VertexList]]:
         # Supported font backends may provide a second, stroked glyph mask. It is drawn
         # in a lower-order group so the regular fill glyph remains on top.
         if context.stroke_iter is None:
-            return
+            return set(), []
         stroke_x = round(line_x)
         glyph_index = 0
+        stroked_glyphs = set()
+        stroke_lists: list[_LayoutVertexList | VertexList] = []
+        shadow_range_index = 0
         for start, end, stroke in context.stroke_iter.ranges(start_index, start_index + self.length):
             if stroke is None:
                 continue
@@ -542,6 +546,7 @@ class _GlyphBox(_AbstractBox):
                 stroke_x += round(kern)
                 stroke_glyph = self.font.get_stroke_glyph(glyph, stroke.size, stroke.join)
                 if stroke_glyph is not None:
+                    stroked_glyphs.add(glyph_index)
                     if gradient_span is not None:
                         left = vertices[glyph_index * 12]
                         right = vertices[glyph_index * 12 + 6]
@@ -586,17 +591,72 @@ class _GlyphBox(_AbstractBox):
                         4,
                         _STROKE_DEPTH_LAYER,
                     )
+                    stroke_group = layout.get_effect_group(
+                        stroke_glyph.owner,
+                        order=0.5,  # type: ignore[assignment]
+                    )
+
+                    document_index = start_index + glyph_index
+                    while shadow_range_index < len(shadow_ranges) and shadow_ranges[shadow_range_index][1] <= document_index:
+                        shadow_range_index += 1
+                    if shadow_range_index < len(shadow_ranges):
+                        shadow_start, shadow_end, shadow = shadow_ranges[shadow_range_index]
+                        if shadow is not None and shadow_start <= document_index < shadow_end:
+                            if len(shadow.offset) != 2:
+                                msg = f"Shadow offset requires 2 values (X, Y). Value received: {shadow.offset}"
+                                raise ValueError(msg)
+                            shadow_colors = self._create_range_colors(
+                                shadow.color,
+                                shadow_start,
+                                shadow_end,
+                                start_index,
+                                vertices,
+                                "Shadow",
+                            )
+                            shadow_color_start = (glyph_index - (shadow_start - start_index)) * 16
+                            shadow_vertices = list(stroke_vertices)
+                            for vertex_index in range(0, len(shadow_vertices), 3):
+                                shadow_vertices[vertex_index] += shadow.offset[0]
+                                shadow_vertices[vertex_index + 1] += shadow.offset[1]
+                            shadow_data = self._create_vertex_data(
+                                layout,
+                                shadow_vertices,
+                                stroke_glyph.tex_coords,
+                                shadow_colors[shadow_color_start:shadow_color_start + 16],
+                                translation,
+                                rotation,
+                                visible,
+                                anchor_x,
+                                anchor_y,
+                                4,
+                            )
+                            shadow_data = self._set_depth_layer(
+                                layout,
+                                shadow_data,
+                                4,
+                                _SHADOW_DEPTH_LAYER,
+                            )
+                            shadow_list = layout.program.vertex_list_indexed(
+                                4,
+                                GeometryMode.TRIANGLES,
+                                (0, 1, 2, 0, 2, 3),
+                                layout.batch,
+                                stroke_group,
+                                **shadow_data,
+                            )
+                            stroke_lists.append(shadow_list)
                     stroke_list = layout.program.vertex_list_indexed(
                         4,
                         GeometryMode.TRIANGLES,
                         (0, 1, 2, 0, 2, 3),
                         layout.batch,
-                        layout.get_effect_group(stroke_glyph.owner, order=2 if layout.depth_sorting else 0),
+                        stroke_group,
                         **stroke_data,
                     )
-                    self._add_vertex_list(stroke_list, context)
+                    stroke_lists.append(stroke_list)
                 stroke_x += round(glyph.advance + glyph_pos.x_advance)
             glyph_index = range_end_glyph
+        return stroked_glyphs, stroke_lists
 
     def _create_decoration_geometry(
         self,
@@ -822,7 +882,7 @@ class _GlyphBox(_AbstractBox):
         try:
             group = layout.group_cache[self.owner]
         except KeyError:
-            group = layout.group_class(self.owner, layout.program, order=3 if layout.depth_sorting else 1, parent=layout.group)
+            group = layout.group_class(self.owner, layout.program, order=1, parent=layout.group)
             layout._set_depth_test(group)  # noqa: SLF001
             layout.group_cache[self.owner] = group
 
@@ -843,20 +903,8 @@ class _GlyphBox(_AbstractBox):
             self.length * 4,
         )
 
-        self._place_shadow(layout, i, vertices, indices, vertex_data, context)
-
-        vertex_list = layout.program.vertex_list_indexed(
-            self.length * 4,
-            GeometryMode.TRIANGLES,
-            indices,
-            layout.batch,
-            group,
-            **vertex_data,
-        )
-        self._glyph_vertex_list = vertex_list  # type: ignore[assignment]
-        self._add_vertex_list(vertex_list, context)
-
-        self._place_strokes(
+        shadow_ranges = tuple(context.shadow_iter.ranges(i, i + self.length)) if context.shadow_iter else ()
+        stroked_glyphs, stroke_lists = self._place_strokes(
             layout,
             i,
             line_x,
@@ -869,7 +917,46 @@ class _GlyphBox(_AbstractBox):
             anchor_x,
             anchor_y,
             context,
+            shadow_ranges,
         )
+
+        shadow_data = self._create_shadow_data(
+            layout,
+            i,
+            vertices,
+            vertex_data,
+            shadow_ranges,
+            stroked_glyphs,
+        )
+        if shadow_data is not None:
+            shadow_group = (
+                layout.get_effect_group(self.owner, order=0.5)  # type: ignore[assignment]
+                if layout._effect_shader is not None  # noqa: SLF001
+                else group
+            )
+            shadow_list = layout.program.vertex_list_indexed(
+                self.length * 4,
+                GeometryMode.TRIANGLES,
+                indices,
+                layout.batch,
+                shadow_group,
+                **shadow_data,
+            )
+            self._add_vertex_list(shadow_list, context)
+
+        vertex_list = layout.program.vertex_list_indexed(
+            self.length * 4,
+            GeometryMode.TRIANGLES,
+            indices,
+            layout.batch,
+            group,
+            **vertex_data,
+        )
+        self._glyph_vertex_list = vertex_list  # type: ignore[assignment]
+        self._add_vertex_list(vertex_list, context)
+        for stroke_list in stroke_lists:
+            self._add_vertex_list(stroke_list, context)
+
         self._place_decorations(
             layout,
             i,
