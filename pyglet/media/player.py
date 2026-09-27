@@ -6,7 +6,7 @@ from collections import deque
 from typing import TYPE_CHECKING, Generator, Iterable
 
 import pyglet
-from pyglet.media.codecs.base import LoopingSource, Source, SourceGroup, StreamingSource
+from pyglet.media.codecs.base import LoopingSource, Source, StreamingSource
 from pyglet.media.drivers import get_audio_driver
 from pyglet.media.exceptions import MediaException
 from pyglet.util import debug_print
@@ -112,7 +112,7 @@ class AudioPlayer(pyglet.event.EventDispatcher):
         If the player has no source, the player will start to play immediately
         or pause depending on its :attr:`.playing` attribute.
         """
-        if isinstance(source, (Source, SourceGroup)):
+        if isinstance(source, Source):
             source = _one_item_playlist(source)
         else:
             try:
@@ -592,11 +592,11 @@ AudioPlayer.register_event_type('on_driver_reset')
 
 
 class GaplessAudioPlayer(AudioPlayer):
-    """An audio-only player which uses a driver's native gapless queue.
+    """An audio-only player for continuous playback between sources.
 
-    The current :attr:`source` remains an individual source.  This makes
-    the queue inspectable and lets the driver submit the following source
-    to the same hardware voice before the current source ends.
+    It prepares the next source before the current one ends, for example when
+    playing an album or a continuous mix. The current :attr:`source` remains
+    an individual source so the queue can still be inspected.
 
     All queued sources must have identical audio formats.
     """
@@ -606,7 +606,7 @@ class GaplessAudioPlayer(AudioPlayer):
         self._sources = deque()
 
     def queue(self, source: Source | Iterable[Source]) -> None:
-        if isinstance(source, (Source, SourceGroup)):
+        if isinstance(source, Source):
             sources = (source,)
         else:
             try:
