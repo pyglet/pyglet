@@ -124,6 +124,14 @@ def test_mat3_inversion(mat3):
     # Confirm that Matrix @ its inverse == identity Matrix:
     assert round(mat3 @ inverse_2, 9) == Mat3()
 
+    # The identity matrix is its own transpose, so it cannot detect an inverse
+    # that is returned transposed. Use a non-symmetric matrix as well:
+    m = Mat3(2, 1, 0,
+             0, 3, 1,
+             1, 0, 4)
+    assert round(m @ ~m, 9) == Mat3()
+    assert round(~m @ m, 9) == Mat3()
+
 
 def test_mat3_associative_mul():
     swap_xy = Mat3(0, 1, 0, 1, 0, 0, 0, 0, 1)

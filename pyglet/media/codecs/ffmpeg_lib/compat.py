@@ -38,6 +38,7 @@ release_versions: dict[Version, dict[LibraryName, Version]] = {
     6: {'avcodec': 60, 'avformat': 60, 'avutil': 58, 'swresample': 4, 'swscale': 7},  # 6.x
     7: {'avcodec': 61, 'avformat': 61, 'avutil': 59, 'swresample': 5, 'swscale': 8},  # 7.x
     8: {'avcodec': 62, 'avformat': 62, 'avutil': 60, 'swresample': 6, 'swscale': 9},  # 8.x
+    9: {'avcodec': 63, 'avformat': 63, 'avutil': 61, 'swresample': 7, 'swscale': 10},  # 9.x
 }
 
 # Removals done per library and version.
