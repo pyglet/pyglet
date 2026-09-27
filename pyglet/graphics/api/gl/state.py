@@ -8,7 +8,9 @@ from pyglet.graphics.api.gl import (
     GL_BLEND,
     GL_CULL_FACE,
     GL_DEPTH_TEST,
+    GL_POLYGON_OFFSET_FILL,
     GL_SCISSOR_TEST,
+    GL_SAMPLE_COVERAGE,
     GL_STENCIL_BUFFER_BIT,
     GL_STENCIL_TEST,
     GL_TEXTURE0,
@@ -214,6 +216,53 @@ class DepthWriteState(State):
 
     def unset_state(self, ctx: DrawContext) -> None:
         ctx.surface_ctx.glDepthMask(not self.flag)
+
+
+@dataclass(frozen=True)
+class DepthRangeState(State):
+    near: float
+    far: float
+
+    sets_state: bool = True
+    unsets_state: bool = True
+
+    def set_state(self, ctx: DrawContext) -> None:
+        ctx.surface_ctx.glDepthRangef(self.near, self.far)
+
+    def unset_state(self, ctx: DrawContext) -> None:
+        ctx.surface_ctx.glDepthRangef(0.0, 1.0)
+
+
+@dataclass(frozen=True)
+class PolygonOffsetState(State):
+    factor: float
+    units: float
+
+    sets_state: bool = True
+    unsets_state: bool = True
+
+    def set_state(self, ctx: DrawContext) -> None:
+        ctx.surface_ctx.glEnable(GL_POLYGON_OFFSET_FILL)
+        ctx.surface_ctx.glPolygonOffset(self.factor, self.units)
+
+    def unset_state(self, ctx: DrawContext) -> None:
+        ctx.surface_ctx.glDisable(GL_POLYGON_OFFSET_FILL)
+
+
+@dataclass(frozen=True)
+class SampleCoverageState(State):
+    value: float
+    invert: bool = False
+
+    sets_state: bool = True
+    unsets_state: bool = True
+
+    def set_state(self, ctx: DrawContext) -> None:
+        ctx.surface_ctx.glEnable(GL_SAMPLE_COVERAGE)
+        ctx.surface_ctx.glSampleCoverage(self.value, self.invert)
+
+    def unset_state(self, ctx: DrawContext) -> None:
+        ctx.surface_ctx.glDisable(GL_SAMPLE_COVERAGE)
 
 
 @dataclass(frozen=True)

@@ -6,9 +6,10 @@ from pyglet.graphics.state import State
 from typing import TYPE_CHECKING
 from pyglet.graphics.api.gl.state import (TextureState, MultiTextureSamplerState, BlendState, ShaderUniformState,   # noqa: F401
                                           ColorMaskState, CullFaceState, DepthBufferComparison, DepthWriteState,
-                                          FrontFaceState,
+                                          DepthRangeState, FrontFaceState, PolygonOffsetState,
                                           ScissorState, StencilClearState,
-                                          StencilFuncState, StencilMaskState, StencilOpState, StencilTestState,
+                                          SampleCoverageState, StencilFuncState, StencilMaskState, StencilOpState,
+                                          StencilTestState,
                                           UniformBufferState, ViewportState)
 
 
