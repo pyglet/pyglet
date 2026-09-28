@@ -332,14 +332,14 @@ class StencilFuncState(State):
 @dataclass(frozen=True)
 class StencilOpState(State):
     fail: StencilOp
-    zfail: StencilOp
-    zpass: StencilOp
+    z_fail: StencilOp
+    z_pass: StencilOp
 
     sets_state: bool = True
 
     def set_state(self, ctx: DrawContext) -> None:
         ctx.surface_ctx.glStencilOp(
-            stencil_op_map[self.fail], stencil_op_map[self.zfail], stencil_op_map[self.zpass],
+            stencil_op_map[self.fail], stencil_op_map[self.z_fail], stencil_op_map[self.z_pass],
         )
 
 

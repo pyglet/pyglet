@@ -7,19 +7,31 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Sequence, TypeVar, Generator, Literal
 
 import pyglet
-from pyglet.enums import BlendFactor, BlendOp, CompareOp, GeometryMode, GraphicsAPI
+from pyglet.enums import BlendFactor, BlendOp, CompareOp, CullFace, FrontFace, GeometryMode, GraphicsAPI, StencilOp
 from pyglet.graphics.attributes import VertexLayout
 from pyglet.graphics.state import (
     BlendState,
     CameraScissorProviderProtocol,
     CameraScopeProtocol,
     CameraScopeState,
+    ColorMaskState,
+    CullFaceState,
     DepthBufferComparison,
+    DepthRangeState,
+    DepthWriteState,
+    FrontFaceState,
     MultiTextureSamplerState,
+    PolygonOffsetState,
+    SampleCoverageState,
     ScissorState,
     ShaderProgramState,
     ShaderUniformState,
     State,
+    StencilFuncState,
+    StencilClearState,
+    StencilMaskState,
+    StencilOpState,
+    StencilTestState,
     TextureState,
     UniformBufferState,
     ViewportProtocol,
@@ -329,6 +341,123 @@ class Group:
                 the depth test.
         """
         self.set_state(DepthBufferComparison(func))
+
+    def set_depth_write(self, flag: bool) -> None:
+        """Set whether drawing to the depth buffer is enabled.
+
+        Args:
+            flag:
+                ``True`` to write depth values, or ``False`` to preserve the depth buffer.
+        """
+        self.set_state(DepthWriteState(flag))
+
+    def set_depth_range(self, near: float, far: float) -> None:
+        """Set the normalized depth range used by the viewport.
+
+        Args:
+            near:
+                Window-space depth value for the near end of the viewport range.
+            far:
+                Window-space depth value for the far end of the viewport range.
+        """
+        self.set_state(DepthRangeState(near, far))
+
+    def set_polygon_offset(self, factor: float, units: float) -> None:
+        """Enable polygon offset for filled primitives.
+
+        Args:
+            factor: Scale applied to the polygon's depth slope.
+            units: Constant depth offset added to the polygon.
+        """
+        self.set_state(PolygonOffsetState(factor, units))
+
+    def set_sample_coverage(self, value: float, invert: bool = False) -> None:
+        """Set multisample coverage and enable sample coverage testing.
+
+        Args:
+            value:
+                Fraction of samples to keep, from ``0.0`` to ``1.0``.
+            invert:
+                Whether to invert the selected sample coverage mask.
+        """
+        self.set_state(SampleCoverageState(value, invert))
+
+    def set_cull_face(self, face: CullFace) -> None:
+        """Enable face culling for the selected face set.
+
+        Args:
+            face:
+                Faces to cull.
+        """
+        self.set_state(CullFaceState(face))
+
+    def set_front_face(self, face: FrontFace) -> None:
+        """Set the winding order used to identify front-facing triangles.
+
+        Args:
+            face:
+                Winding order treated as front-facing.
+        """
+        self.set_state(FrontFaceState(face))
+
+    def set_stencil_test(self, enabled: bool = True) -> None:
+        """Enable or disable stencil testing.
+
+        Args:
+            enabled:
+                ``True`` to reject or accept fragments using the stencil function, or ``False`` to disable it.
+        """
+        self.set_state(StencilTestState(enabled))
+
+    def set_stencil_mask(self, mask: int) -> None:
+        """Set the writable stencil bit mask.
+
+        Args:
+            mask:
+                Bit mask controlling which stencil bits can be changed by drawing.
+        """
+        self.set_state(StencilMaskState(mask))
+
+    def set_stencil_func(self, func: CompareOp, ref: int, mask: int) -> None:
+        """Set the stencil comparison function and reference value.
+
+        Args:
+            func:
+                Comparison applied between the masked stencil value and reference value.
+            ref:
+                Reference value used by the stencil comparison.
+            mask:
+                Bit mask applied to both the stored stencil value and reference value.
+        """
+        self.set_state(StencilFuncState(func, ref, mask))
+
+    def set_stencil_op(self, fail: StencilOp, z_fail: StencilOp, z_pass: StencilOp) -> None:
+        """Set stencil operations for stencil failure, depth failure, and pass.
+
+        Args:
+            fail:
+                Operation when the stencil comparison fails.
+            z_fail:
+                Operation when stencil passes but the depth test fails.
+            z_pass:
+                Operation when both stencil and depth tests pass.
+        """
+        self.set_state(StencilOpState(fail, z_fail, z_pass))
+
+    def set_stencil_clear(self) -> None:
+        """Clear the stencil buffer when this group becomes active."""
+        self.set_state(StencilClearState())
+
+    def set_color_mask(self, red: bool, green: bool, blue: bool, alpha: bool) -> None:
+        """Set which color channels are writable.
+
+        Args:
+            red: Whether drawing may modify the red channel.
+            green: Whether drawing may modify the green channel.
+            blue: Whether drawing may modify the blue channel.
+            alpha: Whether drawing may modify the alpha channel.
+        """
+        self.set_state(ColorMaskState(red, green, blue, alpha))
 
     def set_viewport(self, viewport: ViewportProtocol) -> None:
         """Set the viewport state.
