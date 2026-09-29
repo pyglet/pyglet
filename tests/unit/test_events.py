@@ -1,6 +1,7 @@
 """Testing the events"""
 import gc
 import types
+import weakref
 
 from tests import mock
 
@@ -192,6 +193,35 @@ def test_dispatch_event_not_setup(dispatcher):
 class DummyHandler:
     def mock_event(self):
         return True
+
+
+def test_set_handler_does_not_keep_instance_alive(dispatcher):
+    dispatcher.register_event_type('mock_event')
+    handler = DummyHandler()
+    reference = weakref.ref(handler)
+    dispatcher.set_handler('mock_event', handler.mock_event)
+    assert dispatcher.dispatch_event('mock_event') == EVENT_HANDLED
+    del handler
+    gc.collect()
+    assert reference() is None
+    assert dispatcher.dispatch_event('mock_event') is False
+
+
+@pytest.mark.parametrize('register', ['set_handler', 'set_handlers', 'push_handlers'])
+@pytest.mark.parametrize('remove', ['remove_handler', 'remove_handlers'])
+def test_remove_bound_method_across_registration_apis(dispatcher, register, remove):
+    dispatcher.register_event_type('mock_event')
+    handler = DummyHandler()
+    if register == 'set_handler':
+        dispatcher.set_handler('mock_event', handler.mock_event)
+    else:
+        getattr(dispatcher, register)(mock_event=handler.mock_event)
+    assert dispatcher.dispatch_event('mock_event') == EVENT_HANDLED
+    if remove == 'remove_handler':
+        dispatcher.remove_handler('mock_event', handler.mock_event)
+    else:
+        dispatcher.remove_handlers(mock_event=handler.mock_event)
+    assert dispatcher.dispatch_event('mock_event') is False
 
 
 def test_weakref_to_instance_method(dispatcher):

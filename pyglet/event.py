@@ -232,6 +232,9 @@ class EventDispatcher:
         if type(self._event_stack) is tuple:
             self._event_stack = [{}]
 
+        if inspect.ismethod(handler):
+            handler = WeakMethod(handler, partial(self._remove_handler, name))
+
         self._event_stack[0][name] = handler
 
     def pop_handlers(self) -> None:
@@ -295,6 +298,9 @@ class EventDispatcher:
 
         No error is raised if the event handler is not set.
         """
+        if inspect.ismethod(handler):
+            handler = WeakMethod(handler)
+
         for frame in self._event_stack:
             try:
                 if frame[name] == handler:
