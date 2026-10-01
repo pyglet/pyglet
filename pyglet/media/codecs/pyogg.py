@@ -382,15 +382,15 @@ class PyOggFLACSource(PyOggSource):
         else:
             self._duration_per_frame = self._duration / self._stream.total_samples
 
-    def seek(self, timestamp):
+    def seek(self, timestamp: float) -> None:
+        frame = int(max(0.0, min(timestamp, self._duration)) * self.audio_format.sample_rate)
+        self.seek_to_frame(frame)
+
+    def seek_to_frame(self, frame: int) -> None:
         if self._stream.seekable:
-            # Convert sample to seconds.
-            if self._duration_per_frame:
-                timestamp = max(0.0, min(timestamp, self._duration))
-                position = int(timestamp / self._duration_per_frame)
-            else:  # If we have no duration, we cannot reliably seek. However, 0.0 is still required to play and loop.
-                position = 0
-            seek_succeeded = pyogg.flac.FLAC__stream_decoder_seek_absolute(self._stream.decoder, position)
+            # FLAC exposes an exact decoded sample seek.
+            frame = max(0, min(frame, self._stream.total_samples)) if self._stream.total_samples else 0
+            seek_succeeded = pyogg.flac.FLAC__stream_decoder_seek_absolute(self._stream.decoder, frame)
             if seek_succeeded is False:
                 warnings.warn(f"Failed to seek FLAC file: {self.filename}")
         else:
@@ -432,10 +432,13 @@ class PyOggOpusSource(PyOggSource):
         self._duration = self._stream.pcm_size / self._stream.frequency
         self._duration_per_frame = self._duration / self._stream.pcm_size
 
-    def seek(self, timestamp):
-        timestamp = max(0.0, min(timestamp, self._duration))
-        position = int(timestamp / self._duration_per_frame)
-        error = pyogg.opus.op_pcm_seek(self._stream.of, position)
+    def seek(self, timestamp: float) -> None:
+        frame = int(max(0.0, min(timestamp, self._duration)) * self.audio_format.sample_rate)
+        self.seek_to_frame(frame)
+
+    def seek_to_frame(self, frame: int) -> None:
+        frame = max(0, min(frame, self._stream.pcm_size))
+        error = pyogg.opus.op_pcm_seek(self._stream.of, frame)
         if error:
             warnings.warn(f"Opus stream could not seek properly {error}.")
 

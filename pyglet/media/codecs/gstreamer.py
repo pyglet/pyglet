@@ -209,13 +209,20 @@ class GStreamerSource(StreamingSource):
 
         return AudioData(data, len(data))
 
-    def seek(self, timestamp):
+    def seek(self, timestamp: float) -> None:
+        self._seek(timestamp)
+
+    def seek_to_frame(self, frame: int) -> None:
+        """Seek to a decoded PCM frame."""
+        self._seek(max(0, frame) / self.audio_format.sample_rate)
+
+    def _seek(self, timestamp: float) -> None:
         # First clear any data in the queue:
         while not self.queue.empty():
             self.queue.get_nowait()
 
         self._pipeline.seek_simple(Gst.Format.TIME,
-                                   Gst.SeekFlags.FLUSH | Gst.SeekFlags.KEY_UNIT,
+                                   Gst.SeekFlags.FLUSH | Gst.SeekFlags.ACCURATE,
                                    timestamp * Gst.SECOND)
         self._finished.clear()
 

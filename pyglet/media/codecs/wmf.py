@@ -434,6 +434,9 @@ class WMFSource(Source):
         self._imf_bytestream = None
         self._wfx = None
         self._stride = None
+        # Positions streams at sample edges.
+        # Retain the requested frame to it can be discarded before exposing auto to looping source.
+        self._audio_seek_frame = None
 
         self.set_config_attributes()
 
@@ -700,7 +703,17 @@ class WMFSource(Source):
             imf_buffer.Release()
             imf_sample.Release()
 
-            return AudioData(audio_data, audio_data_length.value)
+            if self._audio_seek_frame is not None:
+                sample_frame = int(timestamp_from_wmf(timestamp.value) * self.audio_format.sample_rate)
+                skip_frames = max(0, self._audio_seek_frame - sample_frame)
+                skip_bytes = skip_frames * self.audio_format.bytes_per_frame
+                if skip_bytes >= len(audio_data):
+                    # The target lies in a later Media Foundation sample.
+                    continue
+                audio_data = audio_data[skip_bytes:]
+                self._audio_seek_frame = None
+
+            return AudioData(audio_data, len(audio_data))
 
         return None
 
@@ -770,8 +783,23 @@ class WMFSource(Source):
     def get_next_video_timestamp(self):
         return self._timestamp
 
-    def seek(self, timestamp):
-        timestamp = min(timestamp, self._duration) if self._duration else timestamp
+    def seek(self, timestamp: float) -> None:
+        timestamp = max(0.0, min(timestamp, self._duration)) if self._duration else max(0.0, timestamp)
+        frame = None if self.audio_format is None else int(timestamp * self.audio_format.sample_rate)
+        self._seek(timestamp, frame)
+
+    def seek_to_frame(self, frame: int) -> None:
+        """Seek to an output PCM frame, decoding past the source-reader boundary."""
+        if self.audio_format is None:
+            self.seek(0.0)
+            return
+        frame = max(0, frame)
+        if self._duration is not None:
+            frame = min(frame, int(self._duration * self.audio_format.sample_rate))
+        self._seek(frame / self.audio_format.sample_rate, frame)
+
+    def _seek(self, timestamp: float, frame: int) -> None:
+        self._audio_seek_frame = frame
 
         prop = PROPVARIANT()
         prop.vt = VT_I8

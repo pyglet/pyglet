@@ -1,8 +1,14 @@
 import math
 import ctypes
+from collections import deque
 
 from . import interface
-from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
+from pyglet.media.codecs import AudioData
+from pyglet.media.drivers.base import (
+    AbstractAudioDriver,
+    AbstractAudioPlayer,
+    GaplessAudioPlayerBase,
+)
 from pyglet.media.drivers.listener import AbstractListener
 from pyglet.media.player_worker_thread import PlayerWorkerThread
 from pyglet.util import debug_print
@@ -52,6 +58,10 @@ class DirectSoundDriver(AbstractAudioDriver):
     def create_audio_player(self, source, player):
         assert self._ds_driver is not None
         return DirectSoundAudioPlayer(self, source, player)
+
+    def create_gapless_audio_player(self, source, player):
+        assert self._ds_driver is not None
+        return DirectSoundGaplessAudioPlayer(self, source, player)
 
     def get_listener(self):
         assert self._ds_driver is not None
@@ -332,3 +342,68 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
 
     def prefill_audio(self):
         self._maybe_fill()
+
+
+class DirectSoundGaplessAudioPlayer(DirectSoundAudioPlayer, GaplessAudioPlayerBase):
+    """Stream adjacent sources into one DirectSound secondary buffer."""
+
+    def __init__(self, driver, source, player):
+        super().__init__(driver, source, player)
+        self._source_end_cursors = deque()
+
+    def clear(self):
+        super().clear()
+        self._source_end_cursors.clear()
+
+    def _finish_source(self, cursor):
+        self._source_end_cursors.append(cursor)
+
+    def _dispatch_completed_sources(self):
+        while self._source_end_cursors and self._play_cursor >= self._source_end_cursors[0]:
+            self._source_end_cursors.popleft()
+            self._dispatch_source_eos_events()
+
+    def _refill(self, size):
+        chunks = []
+        remaining = size
+        final_source_exhausted = False
+
+        while remaining:
+            request_size = remaining
+            audio_data = self._get_audio_data(request_size)
+            if audio_data is not None:
+                length = min(audio_data.length, request_size)
+                chunks.append(ctypes.string_at(audio_data.pointer, length))
+                remaining -= length
+                if length == request_size:
+                    continue
+
+            boundary_cursor = self._write_cursor + sum(map(len, chunks))
+            self._finish_source(boundary_cursor)
+            if not self._advance_source(boundary_cursor):
+                final_source_exhausted = True
+                break
+
+        if chunks:
+            data = b''.join(chunks)
+            self._write(AudioData(data, len(data)), size)
+        else:
+            self._write(None, size)
+
+        if final_source_exhausted:
+            self._eos_cursor = self._possible_eos_cursor
+
+    def work(self):
+        assert self._playing
+
+        self._update_play_cursor()
+        self._dispatch_completed_sources()
+        if self._eos_cursor is None:
+            self._maybe_fill()
+            return
+
+        if (used := self._get_used_buffer_space()) < self._buffered_data_comfortable_limit:
+            self._write(None, self._buffer_size - used)
+
+    def get_play_cursor(self):
+        return self._get_source_play_cursor(self._play_cursor)
