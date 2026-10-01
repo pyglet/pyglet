@@ -123,6 +123,8 @@ class AudioPlayer(pyglet.event.EventDispatcher):
 
         if self.source is None:
             self._set_source(next(self._playlists[0]))
+            if self._audio_player is not None:
+                self._audio_player.set_source(self._source)
 
         self._set_playing(self._playing)
 
@@ -211,6 +213,18 @@ class AudioPlayer(pyglet.event.EventDispatcher):
         This has no effect if the player is already paused.
         """
         self._set_playing(False)
+
+    def stop(self) -> None:
+        """Stop playback and discard the current source and queued sources."""
+        self._set_playing(False)
+        self._timer.reset()
+        self.last_seek_time = 0.0
+        self._playlists.clear()
+        if self._source:
+            self._source.is_player_source = False
+        if self._audio_player is not None:
+            self._audio_player.clear()
+        self._source = None
 
     def delete(self) -> None:
         """Release the resources acquired by this player.
@@ -626,6 +640,8 @@ class GaplessAudioPlayer(AudioPlayer):
             self._sources.append(queued_source)
             if self._source is None:
                 self._source = queued_source
+                if self._audio_player is not None:
+                    self._audio_player.reset_queue(self._sources)
             elif self._audio_player is not None:
                 self._audio_player.queue(queued_source)
 
@@ -712,6 +728,12 @@ class GaplessAudioPlayer(AudioPlayer):
 
     def on_eos(self) -> None:
         """A native backend has already advanced the queue for this EOS."""
+
+    def stop(self) -> None:
+        for source in self._sources:
+            source.is_player_source = False
+        super().stop()
+        self._sources.clear()
 
     def delete(self) -> None:
         for source in self._sources:

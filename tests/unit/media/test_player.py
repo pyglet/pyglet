@@ -214,6 +214,36 @@ class PlayerTestCase(unittest.TestCase):
         self.assert_driver_player_started()
         self.assert_now_playing(self.audio_player, mock_source)
 
+    def test_stop_stops_playback_and_clears_queue(self):
+        source1 = self.create_mock_source(self.audio_format_1, None)
+        source2 = self.create_mock_source(self.audio_format_1, None)
+        self.audio_player.queue([source1, source2])
+        self.audio_player.play()
+
+        self.reset_mocks()
+        self.audio_player.stop()
+
+        self.assert_driver_player_stopped()
+        self.assert_driver_player_cleared()
+        self.assert_not_playing(self.audio_player)
+        self.assertFalse(self.audio_player._playlists)
+
+    def test_stopped_player_gc_deletes_driver_player(self):
+        source = self.create_mock_source(self.audio_format_1, None)
+        player = AudioPlayer()
+        player.queue(source)
+        driver_player = MagicMock()
+        player._audio_player = driver_player
+        player._playing = True
+        player.stop()
+
+        player_ref = weakref.ref(player)
+        del player
+        gc.collect()
+
+        self.assertIsNone(player_ref())
+        driver_player.delete.assert_called_once_with()
+
     def test_set_loop_count_on_current_looping_source(self):
         source = LoopingSource.from_frames(
             LoopTestSource(b'0123456789', self.audio_format_1),
@@ -827,6 +857,20 @@ class GaplessAudioPlayerTestCase(unittest.TestCase):
         self.assertIs(self.audio_player.source, source2.get_queue_source.return_value)
         self.mock_gapless_driver_player.reset_queue.assert_not_called()
         self.mock_gapless_driver_player.clear.assert_not_called()
+
+    def test_stop_clears_gapless_queue(self):
+        source1 = self.create_mock_source(self.audio_format_1, None)
+        source2 = self.create_mock_source(self.audio_format_1, None)
+        self.audio_player.queue([source1, source2])
+        self.audio_player.play()
+        self.mock_gapless_driver_player.reset_mock()
+
+        self.audio_player.stop()
+
+        self.mock_gapless_driver_player.stop.assert_called_once_with()
+        self.mock_gapless_driver_player.clear.assert_called_once_with()
+        self.assertFalse(self.audio_player._sources)
+        self.assertIsNone(self.audio_player.source)
 
     def test_rejects_drivers_without_native_gapless_support(self):
         source = self.create_mock_source(self.audio_format_1, None)
