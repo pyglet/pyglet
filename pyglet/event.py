@@ -140,6 +140,10 @@ class EventException(Exception):  # noqa: N818
     """An exception raised when an event handler could not be attached."""
 
 
+class HandlerMismatchException(TypeError, EventException):
+    """An exception raised when a handler has an invalid signature."""
+
+
 class EventDispatcher:
     """Generic event dispatcher interface.
 
@@ -402,11 +406,11 @@ class EventDispatcher:
         handler_varargs = argspecs.varargs
         handler_defaults = argspecs.defaults
 
-        n_handler_args = len(handler_args)
-
         # Remove "self" arg from handler if it's a bound method
         if inspect.ismethod(handler) and handler.__self__:
-            n_handler_args -= 1
+            handler_args.pop(0)
+
+        n_handler_args = len(handler_args)
 
         # Allow *args varargs to overspecify arguments
         if handler_varargs:
@@ -424,13 +428,10 @@ class EventDispatcher:
             else:
                 descr = repr(handler)
 
-            if 'self' in handler_args:
-                handler_args.remove('self')
-
             caller_name = f"{self.__class__.__name__}.{event_type}"
             msg = (f"The '{caller_name}' event was dispatched with {n_args} arguments:  {list(args)},\n"
                    f"but your handler {descr} is written to expect {n_handler_args} arguments: {handler_args}")
-            raise TypeError(msg)
+            raise HandlerMismatchException(msg)
 
         raise exception
 
