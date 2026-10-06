@@ -232,10 +232,10 @@ is 18 pixels.
     Font family name, as given to :py:func:`pyglet.font.load`.
 ``font_size``
     Font size, in points.
-``bold``
-    Boolean.
-``italic``
-    Boolean.
+``weight``
+    Font weight, such as ``"normal"`` or ``"bold"``. See :py:class:`~pyglet.enums.Weight`.
+``style``
+    Font slant: ``"normal"``, ``"italic"``, or ``"oblique"``. See :py:class:`~pyglet.enums.Style`.
 ``underline``
     4-tuple of ints in range (0, 255) giving RGBA underline color, or None
     (default) for no underline.
