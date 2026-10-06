@@ -1,6 +1,7 @@
 import pyglet
 import pytest
 from pyglet.font.harfbuzz import harfbuzz_available
+from pyglet.enums import Style
 from tests.annotations import skip_platform, require_platform, Platform
 
 
@@ -58,6 +59,15 @@ def test_load_no_custom_from_list(test_data):
     assert myfont.name == "DejaVu Sans"
     # Make sure name resolves to an actual found font.
     assert pyglet.font.manager.get_resolved_name(["Action Man", "DejaVu Sans"]) == 'DejaVu Sans'
+
+@require_platform(Platform.LINUX)
+@pytest.mark.parametrize("style", [Style.NORMAL, Style.ITALIC, Style.OBLIQUE, "normal", "italic", "oblique"])
+def test_font_load_style(test_window, style):
+    font = pyglet.font.load(size=12, style=style, dpi=96)
+    assert font.style == style
+    assert pyglet.font.load(font.name, size=12, style=style, dpi=96) is font
+    glyphs, _ = font.get_glyphs("Style", shaping=False)
+    assert len(glyphs) == 5
 
 def test_load_privatefont(test_window, test_data):
     file = test_data.get_file('fonts', 'action_man.ttf')

@@ -314,12 +314,19 @@ class TestDocumentStyleRuns(unittest.TestCase):
 
 class AttributedTextDecoderTests(unittest.TestCase):
 
-    def testOneNewlineBecomesSpace(self):
+    def test_one_newline_becomes_space(self):
         doc = AttributedTextDecoder().decode('one\ntwo')
         self.assertEqual('one two', doc.text)
 
-    def testTwoNewlinesBecomesParagraph(self):
+    def test_two_newlines_becomes_paragraph(self):
         from pyglet.text.formats.attributed import AttributedTextDecoder
 
         doc = AttributedTextDecoder().decode('one\n\ntwo')
         self.assertEqual('one\ntwo', doc.text)
+
+    def test_italic_style_resets_to_normal(self):
+        doc = AttributedTextDecoder().decode("{style 'italic'}slanted{style 'normal'}regular")
+        self.assertEqual(doc.text, "slantedregular")
+        self.assertEqual(doc.get_style("style", 0), "italic")
+        self.assertEqual(doc.get_style("style", 7), "normal")
+        self.assertFalse(doc.has_style_run("italic"))

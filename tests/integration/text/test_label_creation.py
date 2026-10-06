@@ -5,6 +5,7 @@ import pytest
 
 
 import pyglet
+from pyglet.enums import Stretch, Style, Weight
 from pyglet.text import decode_text, decode_attributed, decode_html, DropShadow, LinearGradient, Stroke
 from pyglet.text.document import FormattedDocument
 from pyglet.text.layout import IncrementalTextLayout, get_default_layout_shader
@@ -29,7 +30,7 @@ def test_label_creation(test_window, label_class, shaping):
 
 @pytest.fixture(params=[(decode_text, "This is a string of regular text."),
                         (decode_html, "<font color=green>This is html text.</font>"),
-                        (decode_attributed, "This is {bold True}attributed{bold False} text.")])
+                        (decode_attributed, "This is {weight 'bold'}attributed{weight 'normal'} text.")])
 def document(request):
     decoder, string = request.param
     return decoder(string)
@@ -41,6 +42,82 @@ def test_documentlabel_creation(test_window, document, shaping):
     assert label.y == Y
     assert label.z == Z
     assert label._shaping is shaping  # noqa: SLF001
+
+
+@pytest.fixture(params=[(Label, ""), (Label, "Font styles"),
+                        (HTMLLabel, "Font styles"), (DocumentLabel, "Font styles")])
+def font_label(request, test_window):
+    label_class, text = request.param
+
+    def create(shaping):
+        if label_class is DocumentLabel:
+            document = FormattedDocument(text)
+            document.set_style(0, len(text), {"style": Style.NORMAL})
+            document.set_style(0, 1, {"style": Style.ITALIC})
+            return DocumentLabel(document, shaping=shaping)
+        return label_class(text, shaping=shaping)
+    return create
+
+
+@pytest.mark.parametrize("style", [Style.NORMAL, Style.ITALIC, Style.OBLIQUE, "normal", "italic", "oblique"])
+@pytest.mark.parametrize("shaping", [True, False])
+def test_label_style_property(font_label, style, shaping):
+    label = font_label(shaping)
+    try:
+        assert label.style == label.document.get_style("style")
+        for value in (style, Style.NORMAL):
+            label.style = value
+            assert label.style == value
+            assert label.get_style("style") == value
+            assert label.font.style == value
+            assert not label.document.has_style_run("italic")
+        assert not hasattr(type(label), "italic")
+    finally:
+        label.delete()
+
+
+@pytest.mark.parametrize("style", [Style.NORMAL, Style.ITALIC, Style.OBLIQUE, "normal", "italic", "oblique"])
+def test_label_constructor_style(test_window, style):
+    label = Label("Style", style=style)
+    try:
+        assert label.style == style
+        assert label.font.style == style
+    finally:
+        label.delete()
+
+
+@pytest.mark.parametrize("style", [Style.NORMAL, Style.ITALIC, Style.OBLIQUE])
+@pytest.mark.parametrize("shaping", [True, False])
+def test_label_font_setter(font_label, style, shaping):
+    label = font_label(shaping)
+    font = pyglet.font.load(size=18, weight=Weight.BOLD, style=style, stretch=Stretch.CONDENSED, dpi=96)
+    try:
+        label.font = font
+        for name, value in {"font_name": font.name, "font_size": font.size, "weight": font.weight,
+                            "style": font.style, "stretch": font.stretch}.items():
+            assert label.get_style(name) == value
+        assert label.style == font.style
+        assert label.font is font
+        assert not label.document.has_style_run("italic")
+    finally:
+        label.delete()
+
+
+@pytest.mark.parametrize(("attribute", "value"), [("style", Style.ITALIC), ("stretch", Stretch.CONDENSED)])
+def test_incremental_font_attribute_rebuilds_glyphs(test_window, attribute, value):
+    document = FormattedDocument("AAAA")
+    document.set_style(0, 4, {"font_size": 12, "style": Style.NORMAL, "stretch": Stretch.NORMAL})
+    layout = IncrementalTextLayout(document, width=200, height=100)
+    try:
+        original_glyphs = list(layout.glyphs)
+        for new_value in (value, "normal"):
+            document.set_style(1, 3, {attribute: new_value})
+            expected, _ = document.get_font(1, dpi=layout.dpi).get_glyphs("AA", shaping=layout._shaping)
+            assert all(actual is target for actual, target in zip(layout.glyphs[1:3], expected))
+            assert layout.glyphs[0] is original_glyphs[0]
+            assert layout.glyphs[3] is original_glyphs[3]
+    finally:
+        layout.delete()
 
 
 def test_regular_labels_share_their_text_group(test_window):
