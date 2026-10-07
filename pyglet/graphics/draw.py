@@ -318,8 +318,14 @@ class Group:
         if scissor is not None:
             self.set_state(ScissorState(scissor, owned_by_camera=True))
 
-    def set_blend(self, blend_src: BlendFactor, blend_dst: BlendFactor, blend_op: BlendOp = BlendOp.ADD) -> None:
+    def set_blend(self, blend_src: BlendFactor, blend_dst: BlendFactor, blend_op: BlendOp = BlendOp.ADD,
+                  *, blend_src_alpha: BlendFactor | None = None, blend_dst_alpha: BlendFactor | None = None,
+                  blend_op_alpha: BlendOp | None = None) -> None:
         """Set the blend state.
+
+        Supplying either alpha factor selects separate RGB/alpha blending.
+        Supplying an alpha operation selects separate RGB/alpha equations.
+        Regular and separate blending replace each other as one group state.
 
         Args:
             blend_src:
@@ -328,9 +334,17 @@ class Group:
                 Destination blend factor used for framebuffer color values.
             blend_op:
                 Blend operation used to combine the source and destination
-                values. Defaults to additive blending.
+                RGB values, and alpha when ``blend_op_alpha`` is omitted. Defaults to additive blending.
+            blend_src_alpha:
+                Independent source alpha factor. Defaults to ``blend_src``.
+            blend_dst_alpha:
+                Independent destination alpha factor. Defaults to ``blend_dst``.
+            blend_op_alpha:
+                Independent alpha blend operation. Defaults to ``blend_op``.
         """
-        self.set_state(BlendState(blend_src, blend_dst, blend_op))
+        self.set_state(BlendState(blend_src, blend_dst, blend_op,
+                                 src_alpha=blend_src_alpha, dst_alpha=blend_dst_alpha,
+                                  op_alpha=blend_op_alpha))
 
     def set_depth_test(self, func: CompareOp) -> None:
         """Set the depth comparison state.

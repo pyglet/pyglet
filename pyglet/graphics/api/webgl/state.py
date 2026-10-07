@@ -149,9 +149,13 @@ class BlendStateEnable(State):
 
 @dataclass(frozen=True)
 class BlendState(State):
+    """Blend factors and equations, with optional independent alpha settings."""
     src: BlendFactor
     dst: BlendFactor
     op: BlendOp = BlendOp.ADD
+    src_alpha: BlendFactor | None = field(default=None, kw_only=True)
+    dst_alpha: BlendFactor | None = field(default=None, kw_only=True)
+    op_alpha: BlendOp | None = field(default=None, kw_only=True)
 
     sets_state: bool = True
     parents: bool = True
@@ -160,8 +164,19 @@ class BlendState(State):
         yield BlendStateEnable()
 
     def set_state(self, ctx: DrawContext) -> None:
-        ctx.surface_ctx.gl.blendFunc(blend_factor_map[self.src], blend_factor_map[self.dst])
-        ctx.surface_ctx.gl.blendEquation(blend_op_map[self.op])
+        if self.src_alpha is None and self.dst_alpha is None:
+            ctx.surface_ctx.gl.blendFunc(blend_factor_map[self.src], blend_factor_map[self.dst])
+        else:
+            src_alpha = self.src if self.src_alpha is None else self.src_alpha
+            dst_alpha = self.dst if self.dst_alpha is None else self.dst_alpha
+            ctx.surface_ctx.gl.blendFuncSeparate(
+                blend_factor_map[self.src], blend_factor_map[self.dst],
+                blend_factor_map[src_alpha], blend_factor_map[dst_alpha],
+            )
+        if self.op_alpha is None:
+            ctx.surface_ctx.gl.blendEquation(blend_op_map[self.op])
+        else:
+            ctx.surface_ctx.gl.blendEquationSeparate(blend_op_map[self.op], blend_op_map[self.op_alpha])
 
 
 @dataclass(frozen=True)
