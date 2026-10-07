@@ -17,7 +17,7 @@ from ctypes import c_byte as _c_byte
 import pyglet
 
 from .evdev_constants import *
-from pyglet.app.linux import LinuxSelectDevice
+from pyglet.app.linux import LinuxPollDevice
 from pyglet.libs.linux.ioctl import _IOR, _IOR_str, _IOR_len, _IOW
 from pyglet.input.base import Device, RelativeAxis, AbsoluteAxis, Button, Joystick, Controller
 from pyglet.input.base import DeviceOpenException, ControllerManager
@@ -273,9 +273,8 @@ event_types = {
 }
 
 
-class EvdevDevice(LinuxSelectDevice, Device):
+class EvdevDevice(LinuxPollDevice, Device):
     _fileno: int | None
-    _poll: "select.poll | None"
 
     def __init__(self, display, filename):
         self._filename = filename
@@ -331,7 +330,6 @@ class EvdevDevice(LinuxSelectDevice, Device):
         self.controls.sort(key=lambda ctrl: ctrl.event_code)
         os.close(fileno)
 
-        self._poll = select.poll()
         self._event_size = ctypes.sizeof(InputEvent)
         self._event_buffer = (InputEvent * 64)()
         self._syn_dropped = False
@@ -351,11 +349,10 @@ class EvdevDevice(LinuxSelectDevice, Device):
     def open(self, window=None, exclusive=False):
         try:
             self._fileno = os.open(self._filename, os.O_RDWR | os.O_NONBLOCK)
-            self._poll.register(self._fileno, select.POLLIN | select.POLLPRI)
         except OSError as e:
             raise DeviceOpenException(e)
 
-        pyglet.app.platform_event_loop.select_devices.add(self)
+        pyglet.app.platform_event_loop.register(self)
         super().open(window, exclusive)
 
     def close(self):
@@ -364,10 +361,7 @@ class EvdevDevice(LinuxSelectDevice, Device):
         if not self._fileno:
             return
 
-        if self._poll:
-            self._poll.unregister(self._fileno)
-
-        pyglet.app.platform_event_loop.select_devices.remove(self)
+        pyglet.app.platform_event_loop.unregister(self)
         os.close(self._fileno)
         self._fileno = None
 
@@ -398,10 +392,7 @@ class EvdevDevice(LinuxSelectDevice, Device):
     def fileno(self):
         return self._fileno
 
-    def poll(self):
-        return True if self._poll.poll(0) else False
-
-    def select(self):
+    def process(self):
         """When the file descriptor is ready, read and process InputEvents.
 
         This method has the following behavior:
@@ -498,7 +489,7 @@ class FFController(Controller):
         self.device.ff_upload_effect(self._stop_strong_event)
 
 
-class EvdevControllerManager(ControllerManager, LinuxSelectDevice):
+class EvdevControllerManager(ControllerManager, LinuxPollDevice):
 
     def __init__(self, display=None):
         super().__init__()
@@ -516,7 +507,7 @@ class EvdevControllerManager(ControllerManager, LinuxSelectDevice):
             if controller := _create_controller(device):
                 self._controllers[name] = controller
 
-        pyglet.app.platform_event_loop.select_devices.add(self)
+        pyglet.app.platform_event_loop.register(self)
 
     def __del__(self):
         self._devices_file.close()
@@ -546,7 +537,7 @@ class EvdevControllerManager(ControllerManager, LinuxSelectDevice):
             # Post the event in the main thread:
             self.post_event('on_connect', controller)
 
-    def select(self):
+    def process(self):
         """Triggered whenever the devices_file changes."""
         new_device_files = self._get_device_names()
         appeared = new_device_files - self._device_names
