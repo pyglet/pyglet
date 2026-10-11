@@ -127,7 +127,11 @@ entire paragraph, otherwise results are undefined.
     the text layout.  Defaults to the empty list.  When the tab stops
     are exhausted, they implicitly continue at 50 pixel intervals.
 ``wrap``
-    Boolean.  If True (the default), text wraps within the width of the layout.
+    True (the default) or ``"word"`` wraps at spaces, zero-width spaces, tabs,
+    and wide CJK character boundaries, with basic opening/closing punctuation
+    rules. Narrow Latin words are not split. ``"char"`` wraps at
+    individual characters. False disables automatic wrapping. An indivisible
+    word or character group may exceed the layout width.
 
 Other attributes can be used to store additional style information within the
 document; it will be ignored by the built-in text classes.

@@ -156,8 +156,11 @@ optional `multiline` and `wrap_lines` flags.
 `wrap_lines`
   If you expect that your document lines will be wider than the display width
   then pyglet can automatically wrap them to fit the width by setting this
-  option to ``True``. Note that wrapping only works if there are spaces in the
-  text, so it may not be suitable for languages without spaces.
+  option to ``True``. Word wrapping breaks at spaces, zero-width spaces, tabs,
+  and wide Chinese, Japanese, and Korean characters. Basic punctuation rules
+  prevent breaks after opening brackets/quotes or before closing punctuation.
+  The current implementation uses basic CJK rules, rather than full Unicode line
+  breaking solutions.
 
 Like labels, layouts are positioned through their `x`, `y`,
 `anchor_x` and `anchor_y` properties.
@@ -289,7 +292,10 @@ These styles are ignored for layouts without the ``multiline`` flag set.
     the text layout.  Defaults to the empty list.  When the tab stops
     are exhausted, they implicitly continue at 50 pixel intervals.
 ``wrap``
-    Boolean.  If True (the default), text wraps within the width of the layout.
+    True (the default) or ``"word"`` wraps at spaces, zero-width spaces, tabs,
+    and suitable CJK character boundaries. ``"char"`` wraps at individual
+    characters. False disables automatic wrapping. An indivisible word or
+    character group may exceed the layout width.
 
 For the purposes of these attributes, paragraphs are split by the newline
 character (U+0010) or the paragraph break character (U+2029).  Line breaks

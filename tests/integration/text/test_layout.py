@@ -6,6 +6,7 @@ import unittest
 
 import pyglet
 import pytest
+from pyglet.text.effects import DropShadow
 
 from pyglet.text import caret, document, decode_text, decode_attributed
 from pyglet.text import layout
@@ -21,6 +22,67 @@ Z = random.randint(-10, 10)
 document_classes = [document.UnformattedDocument, document.FormattedDocument]
 layout_classes = [layout.TextLayout, layout.ScrollableTextLayout, layout.IncrementalTextLayout]
 all_combinations = list(itertools.product(document_classes, layout_classes))
+
+
+@pytest.mark.parametrize('doctype, layouttype', all_combinations)
+@pytest.mark.parametrize('text', ['中文自动换行测试', '日本語の文章テスト', '한국어자동줄바꿈테스트'])
+@pytest.mark.parametrize('wrap', [True, 'char'])
+def test_cjk_wrapping(test_window, doctype, layouttype, text, wrap):
+    doc = doctype(text)
+    doc.set_style(0, len(text), {'wrap': wrap})
+    glyphs, offsets = doc.get_font(0).get_glyphs(text)
+    width = max(g.advance + offset.x_advance for g, offset in zip(glyphs, offsets)) * 2.5
+    text_layout = layouttype(doc, width=width, height=200, multiline=True)
+    try:
+        lines = text_layout.lines if isinstance(text_layout, layout.IncrementalTextLayout) else text_layout._get_lines()
+        assert len(lines) > 1
+        assert sum(line.length for line in lines) == len(text)
+        assert lines[0].start == 0
+        assert all(a.start + a.length == b.start for a, b in zip(lines, lines[1:]))
+        assert text_layout.content_width <= width
+    finally:
+        text_layout.delete()
+
+
+@pytest.mark.parametrize('doctype', document_classes)
+@pytest.mark.parametrize('wrap', [True, 'char'])
+def test_incremental_cjk_reflow_matches_fresh_layout(test_window, doctype, wrap):
+    doc = doctype('中文自动换行测试')
+    doc.set_style(0, len(doc.text), {'wrap': wrap})
+    glyphs, offsets = doc.get_font(0).get_glyphs(doc.text)
+    width = max(g.advance + offset.x_advance for g, offset in zip(glyphs, offsets)) * 2.5
+    incremental = layout.IncrementalTextLayout(doc, width=width, height=200, multiline=True)
+
+    def assert_matches_fresh():
+        fresh = layout.TextLayout(doc, width=incremental.width, height=200, multiline=True)
+        try:
+            old_lines = incremental.lines
+            new_lines = fresh._get_lines()
+            assert [(line.start, line.length) for line in old_lines] == [
+                (line.start, line.length) for line in new_lines
+            ]
+            assert [line.width for line in old_lines] == pytest.approx([line.width for line in new_lines])
+            assert incremental.content_width == fresh.content_width
+        finally:
+            fresh.delete()
+
+    try:
+        assert_matches_fresh()
+        doc.insert_text(1, '（')
+        doc.insert_text(4, '）')
+        assert_matches_fresh()
+        doc.insert_text(3, '\u0301')
+        assert_matches_fresh()
+        doc.insert_text(6, 'Python')
+        assert_matches_fresh()
+        doc.delete_text(1, 6)
+        assert_matches_fresh()
+        incremental.width = width * 1.5
+        assert_matches_fresh()
+        doc.text = '한국어자동줄바꿈テスト中文'
+        assert_matches_fresh()
+    finally:
+        incremental.delete()
 
 
 @pytest.mark.parametrize('doctype, layouttype', all_combinations)
@@ -94,19 +156,21 @@ def test_layout_get_as_texture_with_reusable_target(test_window):
             text_layout.delete()
 
 
-def test_text_layout_reuses_groups_until_group_state_changes(test_window, monkeypatch):
+def test_text_layout_reuses_groups_until_group_state_changes(test_window):
     # Test to make sure labels don't disappear on group/state change.
     text_layout = layout.TextLayout(document.UnformattedDocument("Reusable groups"))
-    original_groups = dict(text_layout.group_cache)
+    try:
+        original_groups = dict(text_layout.group_cache)
+        text_layout._update()  # noqa: SLF001
+        assert text_layout.group_cache == original_groups
 
-    text_layout._update()  # noqa: SLF001
-    assert text_layout.group_cache == original_groups
-
-    monkeypatch.setattr(text_layout, "_update", lambda: None)
-    text_layout.program = object()  # type: ignore[assignment]
-    assert not text_layout.group_cache
-
-    text_layout.delete()
+        parent_group = pyglet.graphics.Group()
+        text_layout.group = parent_group
+        assert text_layout.group_cache
+        assert all(group.parent is parent_group for group in text_layout.group_cache.values())
+        assert not set(original_groups.values()).intersection(text_layout.group_cache.values())
+    finally:
+        text_layout.delete()
 
 
 def test_incremental_layout_selection_creates_background_decoration(test_window):
@@ -140,6 +204,150 @@ def test_caret_selection_scrolls_incremental_layout(test_window):
 
     assert text_layout.view_x > 0
     assert text_caret._list.translation[3] == pytest.approx(text_layout.get_depth_offset(2))  # noqa: SLF001
+
+
+@pytest.mark.parametrize('layouttype', layout_classes)
+def test_layout_visibility_updates_glyphs_and_decorations(test_window, layouttype):
+    doc = document.FormattedDocument('First line\nSecond line\nThird line')
+    doc.set_style(0, len(doc.text), {'background_color': (50, 50, 50, 255),
+                                    'underline': (255, 255, 255, 255), 'shadow': DropShadow()})
+    text_layout = layouttype(doc, width=500, height=100, multiline=True)
+    try:
+        lines = text_layout.lines if isinstance(text_layout, layout.IncrementalTextLayout) else text_layout._lines
+        vertex_lists = [vertex_list for line in lines
+                        for box in line.boxes for vertex_list in box.vertex_lists]
+        assert vertex_lists
+        for visible in (False, True, False):
+            text_layout.visible = visible
+            assert text_layout.visible is visible
+            assert vertex_lists == [vertex_list for line in lines
+                                    for box in line.boxes for vertex_list in box.vertex_lists]
+            assert all(all(value == visible for value in vertex_list.visible) for vertex_list in vertex_lists)
+    finally:
+        text_layout.delete()
+
+
+def test_incremental_layout_remains_hidden_after_edits_and_scrolling(test_window):
+    doc = document.FormattedDocument('\n'.join(['Some text'] * 20))
+    text_layout = layout.IncrementalTextLayout(doc, width=200, height=50, multiline=True)
+    try:
+        text_layout.visible = False
+        doc.insert_text(0, 'New text\n')
+        text_layout.view_y = -text_layout.content_height
+        for visible in (False, True):
+            text_layout.visible = visible
+            vertex_lists = [vertex_list for line in text_layout.lines for vertex_list in line.vertex_lists]
+            assert vertex_lists
+            assert all(all(value == visible for value in vertex_list.visible) for vertex_list in vertex_lists)
+    finally:
+        text_layout.delete()
+
+
+@pytest.mark.parametrize('property_name', ['batch', 'group', 'depth_sorting'])
+@pytest.mark.parametrize('deferred', [False, True])
+def test_incremental_layout_render_properties_rebuild_all_lines(test_window, property_name, deferred):
+    doc = document.FormattedDocument('First line\nSecond line\nThird line')
+    doc.set_style(0, len(doc.text), {'background_color': (50, 50, 50, 255), 'shadow': DropShadow()})
+    text_layout = layout.IncrementalTextLayout(doc, width=500, height=100, multiline=True)
+    try:
+        if property_name == 'batch':
+            value = pyglet.graphics.Batch()
+        elif property_name == 'group':
+            value = pyglet.graphics.Group()
+        else:
+            value = True
+
+        old_lists = [list(line.vertex_lists) for line in text_layout.lines]
+        assert len(old_lists) == 3 and all(old_lists)
+        if deferred:
+            text_layout.begin_update()
+        setattr(text_layout, property_name, value)
+        if deferred:
+            assert [line.vertex_lists for line in text_layout.lines] == old_lists
+            text_layout.end_update()
+        for line, previous in zip(text_layout.lines, old_lists):
+            assert line.vertex_lists
+            assert all(vertex_list not in previous for vertex_list in line.vertex_lists)
+        if property_name == 'group':
+            assert all(group.parent is value for group in text_layout.group_cache.values())
+        elif property_name == 'batch':
+            assert all(vertex_list.domain.batch is value
+                       for line in text_layout.lines for vertex_list in line.vertex_lists)
+        elif property_name == 'depth_sorting':
+            assert any(vertex_list.translation[3] != 0
+                       for line in text_layout.lines for vertex_list in line.vertex_lists)
+        text_layout.draw()
+    finally:
+        text_layout.delete()
+
+
+@pytest.mark.parametrize('property_name, value', [('content_halign', 'right'), ('content_valign', 'bottom'),
+                                                ('height', 200)])
+def test_incremental_layout_alignment_updates_all_lines(test_window, property_name, value):
+    text_layout = layout.IncrementalTextLayout(
+        document.UnformattedDocument('First line\nSecond line\nThird line'),
+        width=500, height=100, multiline=True,
+    )
+    try:
+        old_anchor = tuple(text_layout.lines[-1].vertex_lists[0].anchor[:2])
+        setattr(text_layout, property_name, value)
+        expected = {
+            'content_halign': (500 - text_layout.content_width, 100),
+            'content_valign': (0, text_layout.content_height),
+            'height': (0, 200),
+        }[property_name]
+        assert expected != old_anchor
+        for line in text_layout.lines:
+            assert tuple(line.vertex_lists[0].anchor[:2]) == expected
+        assert all(group.uniforms['scissor_area'] == (text_layout.left, text_layout.bottom, 500, text_layout.height)
+                   for group in text_layout.group_cache.values())
+    finally:
+        text_layout.delete()
+
+
+def test_incremental_layout_dpi_reflows_glyphs(test_window):
+    text_layout = layout.IncrementalTextLayout(
+        document.UnformattedDocument('Some text\nSome text'), width=500, height=200, multiline=True, dpi=96,
+    )
+    try:
+        old_width = text_layout.content_width
+        old_height = text_layout.content_height
+        text_layout.dpi = 192
+        assert text_layout.content_width > old_width
+        assert text_layout.content_height > old_height
+    finally:
+        text_layout.delete()
+
+
+def test_incremental_layout_draw_with_shared_batch(test_window, monkeypatch):
+    batch = pyglet.graphics.Batch()
+    text_layout = layout.IncrementalTextLayout(
+        document.UnformattedDocument('First line\nSecond line'), width=500, height=100, multiline=True, batch=batch,
+    )
+    captured = []
+    monkeypatch.setattr(batch, 'draw_subset', lambda vertex_lists: captured.extend(vertex_lists))
+    try:
+        text_layout.draw()
+        expected = [vertex_list for line in text_layout.lines for vertex_list in line.vertex_lists]
+        assert expected
+        assert captured == expected
+    finally:
+        text_layout.delete()
+
+
+def test_incremental_layout_visibility_updates_inline_elements(test_window):
+    from pyglet.text.formats.structured import HorizontalRuleElement
+
+    element = HorizontalRuleElement(color=(255, 255, 255, 255), width=10)
+    doc = document.FormattedDocument('Text with element ')
+    doc.insert_element(len(doc.text), element)
+    text_layout = layout.IncrementalTextLayout(doc, width=200, height=100)
+    try:
+        for visible in (False, True):
+            text_layout.visible = visible
+            assert all(value == visible for value in element.vertex_lists[text_layout].visible)
+    finally:
+        text_layout.delete()
 
 
 class TestIssues(unittest.TestCase):
