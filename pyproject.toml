@@ -15,6 +15,26 @@ requires-python = ">=3.8"
 [project.urls]
 Home = "https://pyglet.org"
 
+[tool.flit.sdist]
+# flit 4 no longer adds every git-tracked file to the sdist, so list the
+# extra files downstream packagers need (tests, docs, examples) explicitly.
+include = [
+    "RELEASE_NOTES",
+    "pytest.ini",
+    ".coveragerc",
+    "make.py",
+    "contrib/",
+    "doc/",
+    "examples/",
+    "experimental/",
+    "tests/",
+    "tools/",
+]
+exclude = [
+    "doc/_build/",
+    "**/*.log",
+]
+
 [[tool.mypy.overrides]]
 # mypy incorrectly reports issues everywhere in pyglet.math because:
 # 1. pyglet.math is almost entirely typing.NamedTuple subclasses
