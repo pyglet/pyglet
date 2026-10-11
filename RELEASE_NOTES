@@ -1,3 +1,10 @@
+pyglet 2.1.19
+
+Bugfixes
+--------
+- build: Update pyproject to ensure misc files are still included with flit 4+
+
+
 pyglet 2.1.17
 
 Bugfixes
