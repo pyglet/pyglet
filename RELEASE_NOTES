@@ -1,3 +1,19 @@
+pyglet 2.1.17
+
+Bugfixes
+--------
+- math: Fix Mat3.__invert__ returning the transpose of the inverse. (#1491)
+- text: Fix text selection and caret positioning.
+- window: Preserve fractional refresh rates on Xlib and Win32 displays. (#1496)
+- event: Use weak references consistently for event methods. (#1506)
+
+Improvements
+------------
+- math: Add Vec2.cross method. (#1467)
+- media: Add compatibility for FFmpeg 9.0.
+- build: Permit building with flit core 4. (#1490)
+
+
 pyglet 2.1.16
 
 Bugfixes
