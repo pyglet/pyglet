@@ -1,6 +1,8 @@
 """Glyph collection, line wrapping, and flow algorithms for text layouts."""
 from __future__ import annotations
 
+import re
+import unicodedata
 from typing import Callable, Iterator, TypeAlias
 
 from pyglet.text import runlist
@@ -13,6 +15,39 @@ _empty_pos = GlyphPosition(0, 0, 0, 0)
 _FlowElement: TypeAlias = _InlineElementBox | Glyph
 _FlowGlyphEntry = tuple[int, _FlowElement, GlyphPosition]
 _GlyphEntry = tuple[int, Glyph, GlyphPosition]
+
+
+_CJK_TEXT_RE = re.compile(r"[\u1100-\u11ff\u2e80-\U0010ffff]")
+
+_CJK_NONSTARTERS = frozenset("、。，．！？：；・…‥,!?:;.")
+_CJK_NO_BREAK = frozenset("\u00a0\u202f\u2060\ufeff\u200c\u200d\"'")
+_FLOW_SEPARATORS = frozenset(" \u200b\t\n\u2028\u2029\0")
+
+def _cjk_break(text: str, index: int) -> bool:
+    """Allow wide character breaks with basic punctuation rules.
+
+    Based on Unicode UAX #14, LB13 (no breaks before closing
+    punctuation) and LB14 (no breaks after opening punctuation):
+    https://www.unicode.org/reports/tr14/#LB13
+    https://www.unicode.org/reports/tr14/#LB14
+
+    This is not the full algorithm but a simplified faster CJK policy.
+    """
+    if index == 0:
+        return False
+    left, right = text[index - 1], text[index]
+    if left in _FLOW_SEPARATORS or right in _FLOW_SEPARATORS:
+        return False
+    if left in _CJK_NO_BREAK or right in _CJK_NO_BREAK:
+        return False
+    right_category = unicodedata.category(right)
+    if right_category.startswith("M"):
+        return False
+    if right_category in ("Pe", "Pf") or right in _CJK_NONSTARTERS:
+        return False
+    if unicodedata.category(left) in ("Ps", "Pi"):
+        return False
+    return unicodedata.east_asian_width(left) in ("W", "F") or unicodedata.east_asian_width(right) in ("W", "F")
 
 
 class _FlowLayoutBase:
@@ -215,6 +250,9 @@ class _FlowLayoutBase:
 
         # Amount of whitespace accumulated at end of line
         eol_ws: float = 0
+        next_start = start
+        # Check text for CJK to determine if a CJK wrap should even be applied.
+        cjk_wrap = self._wrap_lines and _CJK_TEXT_RE.search(self.document.text) is not None
 
         # Iterate over glyph owners (texture states); these form GlyphBoxes,
         # but broken into lines.
@@ -238,12 +276,24 @@ class _FlowLayoutBase:
 
             # Current glyph index
             index = start
-            next_start = start
 
             # Iterate over glyphs in this owner run.  `text` is the
             # corresponding character data for the glyph, and is used to find
             # whitespace and newlines.
             for text, glyph, offset in zip(self.document.text[start:end], glyphs[start:end], offsets[start:end]):
+                if cjk_wrap and wrap in (True, "word") and _cjk_break(self.document.text, index):
+                    # A visible character boundary commits the preceding text,
+                    # without treating any of its advance as trailing whitespace.
+                    for run in run_accum:
+                        line.add_box(run)
+                    run_accum = []
+                    run_accum_width = 0
+                    owner_accum_commit.extend(owner_accum)
+                    owner_accum_commit_width += owner_accum_width
+                    owner_accum = []
+                    owner_accum_width = 0
+                    next_start = index
+
                 if nokern:
                     kern = 0
                     nokern = False
@@ -307,9 +357,10 @@ class _FlowLayoutBase:
                             owner_accum = []
                             owner_accum_width = 0
 
-                            line.length += 1
                             next_start = index
                             if new_line:
+                                # Explicit separators consume chars, wrapping does not.
+                                line.length += 1
                                 next_start += 1
 
                         # Create the _GlyphBox for the committed glyphs in the
@@ -351,15 +402,20 @@ class _FlowLayoutBase:
 
                             # Remove kern from first glyph of line
                             if run_accum and isinstance(run_accum[0], _GlyphBox) and run_accum[0].glyphs:
-                                kern, first_glyph, _ = run_accum[0].glyphs[0]
-                                run_accum[0].glyphs[0] = (0, first_glyph, _empty_pos)
-                                run_accum_width -= kern
+                                leading_kern, first_glyph, first_offset = run_accum[0].glyphs[0]
+                                run_accum[0].glyphs[0] = (0, first_glyph, first_offset)
+                                run_accum[0].advance -= leading_kern
+                                run_accum_width -= leading_kern
                             elif owner_accum:
-                                kern, first_entry, _ = owner_accum[0]
-                                owner_accum[0] = (0, first_entry, _empty_pos)
-                                owner_accum_width -= kern
+                                leading_kern, first_entry, first_offset = owner_accum[0]
+                                owner_accum[0] = (0, first_entry, first_offset)
+                                owner_accum_width -= leading_kern
                             else:
-                                nokern = True
+                                if wrap == "char":
+                                    nokern = True
+                                else:
+                                    kern = 0
+                                    nokern = new_line
 
                             x = run_accum_width + owner_accum_width
                             if self._wrap_lines:
