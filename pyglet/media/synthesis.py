@@ -84,6 +84,8 @@ class ADSREnvelope(Envelope):
     sustain volume. This defaults to a value of 0.5, but can be provided
     on a scale from 0.0 to 1.0.
 
+    Stages shorter than one audio sample are skipped.
+
     Args:
         attack:
             The attack time, in seconds.
@@ -108,8 +110,8 @@ class ADSREnvelope(Envelope):
         decay_bytes = int(sample_rate * self.decay)
         release_bytes = int(sample_rate * self.release)
         sustain_bytes = total_bytes - attack_bytes - decay_bytes - release_bytes
-        decay_step = (1 - sustain_amplitude) / decay_bytes
-        release_step = sustain_amplitude / release_bytes
+        decay_step = (1 - sustain_amplitude) / decay_bytes if decay_bytes else 0
+        release_step = sustain_amplitude / release_bytes if release_bytes else 0
         for i in range(1, attack_bytes + 1):
             yield i / attack_bytes
         for i in range(1, decay_bytes + 1):
