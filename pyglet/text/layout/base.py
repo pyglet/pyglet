@@ -445,7 +445,7 @@ class TextLayout(_FlowLayoutBase):
         self._user_group = group
         self._initialize_groups()
         self.group_cache.clear()
-        self._update()
+        self._recreate_vertex_lists()
 
     @property
     def decoration_shader(self) -> ShaderProgram:
@@ -477,7 +477,7 @@ class TextLayout(_FlowLayoutBase):
         self.has_view_translation = "view_translation" in self.decoration_shader.attributes
         self._background_decoration_group = None
         self._foreground_decoration_group = None
-        self._update()
+        self._recreate_vertex_lists()
 
     @property
     def effect_shader(self) -> ShaderProgram:
@@ -494,7 +494,7 @@ class TextLayout(_FlowLayoutBase):
             return
         self._effect_shader = shader
         self.effect_group_cache.clear()
-        self._update()
+        self._recreate_vertex_lists()
 
     @property
     def depth_sorting(self) -> bool:
@@ -509,7 +509,7 @@ class TextLayout(_FlowLayoutBase):
         self._depth_sorting = enabled
         self._initialize_groups()
         self.group_cache.clear()
-        self._update()
+        self._recreate_vertex_lists()
 
     @property
     def document(self) -> AbstractDocument:
@@ -549,11 +549,11 @@ class TextLayout(_FlowLayoutBase):
         if batch is None:
             self._batch = pyglet.graphics.Batch()
             self._own_batch = True
-            self._update()
+            self._recreate_vertex_lists()
         elif batch is not None:
             self._batch = batch
             self._own_batch = False
-            self._update()
+            self._recreate_vertex_lists()
 
     @property
     def program(self) -> ShaderProgram:
@@ -572,6 +572,10 @@ class TextLayout(_FlowLayoutBase):
         self.group_cache.clear()
         if self._effect_shader is None:
             self.effect_group_cache.clear()
+        self._recreate_vertex_lists()
+
+    def _recreate_vertex_lists(self) -> None:
+        """Rebuild vertex list after a change to rendering state."""
         self._update()
 
     @property
@@ -684,9 +688,11 @@ class TextLayout(_FlowLayoutBase):
     def visible(self, value: bool) -> None:
         if value != self._visible:
             self._visible = value
+            self._update_visibility()
 
-            for box in self._boxes:
-                box.update_visibility(value)
+    def _update_visibility(self) -> None:
+        for box in self._boxes:
+            box.update_visibility(self._visible)
 
     @property
     def content_width(self) -> int:
