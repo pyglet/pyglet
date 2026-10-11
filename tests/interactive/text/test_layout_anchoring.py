@@ -32,18 +32,20 @@ class TestWindow(window.Window):
         self.margin = 2
         self.anchor_x = anchor_x
         self.anchor_y = anchor_y
-        self.layout = layout.TextLayout(self.document,
-                                        x=0,
-                                        anchor_x=anchor_x,
-                                        anchor_y=anchor_y,
-                                       width=300,
-                                       height=500,
-                                       multiline=True,
-                                       batch=self.batch)
+        self.layout = layout.TextLayout(
+            self.document,
+            x=0,
+            anchor_x=anchor_x,
+            anchor_y=anchor_y,
+            width=300,
+            height=500,
+            multiline=True,
+            batch=self.batch
+        )
 
     def _set_doc_format(self):
         self.document.set_style(0, 20, {'color': (255, 0, 0, 255), 'font_size': 15})
-        self.document.set_style(0, 3, {'italic': True})
+        self.document.set_style(0, 3, {'style': 'italic'})
 
     def on_key_press(self, symbol, modifiers):
         if symbol == key.SPACE:

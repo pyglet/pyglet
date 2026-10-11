@@ -33,8 +33,8 @@ Once your font is created, you also must register it within pyglet to use it. Th
  :py:func:`~pyglet.font.add_user_font` function.
 
 When you register a user defined font, only those parameters will used to identify the font. If you have a font, but
-want to have a ``italic`` enabled version. You must make a new instance of your font, but with the ``italic``
-parameter set as ``True``. Same applies to the ``size`` parameter. The ``weight`` parameter can also be provided as
+want to have an italic version. You must make a new instance of your font, but with the ``style``
+parameter set as ``"italic"``. Same applies to the ``size`` parameter. The ``weight`` parameter can also be provided as
 a string.
 
 Scaling
@@ -143,7 +143,8 @@ class UserDefinedFontBase(base.Font):
             weight:
                 The font weight, as a string. Defaults to "normal".
             style:
-                If True, this font will be used when ``italic`` is enabled for the font name.
+                Font slant, as a string or :py:class:`~pyglet.enums.Style` value:
+                "normal", "italic", or "oblique". Defaults to "normal".
             stretch:
                 If True, this font will be used when ``stretch`` is enabled for the font name.
             dpi:

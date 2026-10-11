@@ -26,7 +26,7 @@ from pyglet.text.layout import ScrollableTextLayoutGroup, ScrollableTextDecorati
 
 if TYPE_CHECKING:
     from pyglet.text.layout.boxes import _LayoutVertexList
-    from pyglet.customtypes import AnchorX, AnchorY
+    from pyglet.customtypes import AnchorX, AnchorY, ContentVAlign, HorizontalAlign
     from pyglet.graphics import Batch, Group
     from pyglet.graphics.shader import ShaderProgram
     from pyglet.text.document import AbstractDocument
@@ -195,6 +195,35 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     def _get_lines(self) -> list[_Line]:
         return self.lines
 
+    def _recreate_vertex_lists(self) -> None:
+        # Rendering state changes shouldn't invalidate document text or line flow.
+        self._invalid_vertex_lines.invalidate(0, len(self.lines))
+        self._update()
+
+    def draw(self) -> None:
+        """Draw the vertex lists belonging to this layout's lines."""
+        if self._own_batch:
+            self._batch.draw()
+        else:
+            vertex_lists = [vertex_list for line in self.lines for vertex_list in line.vertex_lists]
+            self._batch.draw_subset(vertex_lists)  # type: ignore[arg-type]
+
+    @TextLayout.dpi.setter
+    def dpi(self, value: int) -> None:
+        self._dpi = int(value)
+        self._invalid_glyphs.invalidate(0, len(self.document.text))
+        self._update()
+
+    @TextLayout.content_valign.setter
+    def content_valign(self, content_valign: ContentVAlign) -> None:
+        self._content_valign = content_valign
+        self._recreate_vertex_lists()
+
+    @TextLayout.content_halign.setter
+    def content_halign(self, content_halign: HorizontalAlign) -> None:
+        self._content_halign = content_halign
+        self._recreate_vertex_lists()
+
     def delete(self) -> None:
         for line in self.lines:
             line.delete(self)
@@ -256,7 +285,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         self._update()
 
     def on_style_text(self, start: int, end: int, attributes: dict[str, Any]) -> None:
-        if "font_name" in attributes or "font_size" in attributes or "weight" in attributes or "italic" in attributes:
+        if any(name in attributes for name in ("font_name", "font_size", "weight", "style", "stretch")):
             self._invalid_glyphs.invalidate(start, end)
         elif "color" in attributes or "background_color" in attributes:
             self._invalid_style.invalidate(start, end)
@@ -619,9 +648,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         if height == self._height:
             return
         self._height = height
-        self._update_visible_lines()
-        if self._update_enabled:
-            self._update_vertex_lists()
+        self._recreate_vertex_lists()
 
     @property
     def multiline(self) -> bool:
@@ -647,6 +674,11 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         for line in self.lines[self._visible_lines.start:self._visible_lines.end]:
             for box in line.boxes:
                 box.update_translation(self._x, self._y, self._z)
+
+    def _update_visibility(self) -> None:
+        for line in self.lines[self._visible_lines.start:self._visible_lines.end]:
+            for box in line.boxes:
+                box.update_visibility(self._visible)
 
     def _update_anchor(self) -> None:
         self._anchor_left = self._get_left_anchor()

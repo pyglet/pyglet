@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+import pyglet
 from pyglet import app, text, window
 from pyglet.text import caret, layout
 from pyglet.window import key
@@ -24,6 +25,24 @@ newline_wrap = """{font_size 24}Multiline=True -- Wrap_line=True\n
 pyglet {font_size 16}accepts{font_size 12} due to the parameter multiline=True.\n
 For example this line should be in a new line.\n
 And, because the parameter wrap_lines=True the {font_size 16}long lines are broken{font_size 12}, as you can see in this line."""
+
+
+cjk_wrap = """{font_name ['Microsoft YaHei', 'PingFang SC', 'Noto Sans CJK SC', 'Noto Sans CJK JP', 'Malgun Gothic']}{font_size 14}
+Click between characters, move with arrow keys, and use Shift or mouse dragging to select.
+Type, delete, and press Enter to check editing. Resize the window to change the wrapping.
+Check the caret and selection at the end of each wrapped line. Scroll to see all samples.
+Press ESC to finish.
+
+{font_size 20}这是一个很长的中文句子它没有空格所以应该自动换行到下一行这是另一个没有空格的中文句子。
+
+中文标点：「开头的括号应该跟着文字，结尾的标点应该留在前一行。」测试（括号）和句号。再检查逗号、问号？感叹号！
+
+これは空白のない長い日本語の文章です。「括弧と句読点の位置」を確認しながらカーソルを動かしてください。ウィンドウの幅を変えて折り返しを確認してください。
+
+한국어문장이공백없이계속이어져도줄바꿈이되어야합니다.커서를움직이고글자를입력하거나삭제하면서줄끝의위치를확인하세요.
+
+pyglet是一个用于Python的跨平台窗口和多媒体库，可以用来开发游戏和其他视觉丰富的应用程序。Latin words should stay together with default wrapping.
+"""
 
 
 class BaseTestWindow(window.Window):
@@ -111,4 +130,32 @@ class MultilineWrapTestCase(InteractiveTestCase):
         self.window.set_visible()
         app.run()
         self.user_verify('Pass test?', take_screenshot=False)
+
+    def _test_cjk_wrap(self, wrap):
+        self.window = BaseTestWindow(
+            multiline=True, wrap_lines=True,
+            msg=f"{{wrap {wrap!r}}}" + cjk_wrap, resizable=True, visible=False)
+        self.window.set_caption(f"CJK wrapping and caret placement: wrap={wrap!r}")
+        self.window.set_visible()
+        app.run()
+        self.user_verify('Did wrapping, caret placement, selection, and editing work correctly?', take_screenshot=False)
+
+    def test_cjk_word_wrap(self):
+        """Check CJK word wrapping and caret placement while editing and resizing.
+
+        Closing punctuation should stay with the preceding text, and opening
+        brackets should stay with the following text. Narrow Latin words should
+        remain intact. Verify clicks, arrows, selection, typing, and deletion
+        across wrapped line boundaries. Press ESC to finish.
+        """
+        self._test_cjk_wrap(True)
+
+    def test_cjk_char_wrap(self):
+        """Check CJK character wrapping and caret placement while editing and resizing.
+
+        Characters may wrap individually, including Latin words and punctuation.
+        Verify clicks, arrows, selection, typing, and deletion across wrapped
+        line boundaries. Press ESC to finish.
+        """
+        self._test_cjk_wrap("char")
 

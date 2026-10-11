@@ -320,8 +320,8 @@ class Font:
                 If set, a specific weight variant is returned if one exists for the given font
                 family and size. The weight is provided as a string. For example: "bold" or "light".
             style:
-                If True, an italic variant is returned, if one exists for the given family and size. For some Font
-                renderers, italics may have an "oblique" variation which can be specified as a string.
+                Font slant, as a string or :py:class:`~pyglet.enums.Style` value:
+                "normal", "italic", or "oblique".
             stretch:
                 If True, a stretch variant is returned, if one exists for the given family and size.  Currently only
                 supported by Windows through the ``DirectWrite`` font renderer. For example, "condensed" or "expanded".

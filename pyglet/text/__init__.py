@@ -359,7 +359,7 @@ class DocumentLabel(layout.TextLayout):
             "font_name": font.name,
             "font_size": font.size,
             "weight": font.weight,
-            "italic": font.style,
+            "style": font.style,
             "stretch": font.stretch,
         })
 
@@ -386,13 +386,16 @@ class DocumentLabel(layout.TextLayout):
         self.document.set_style(0, len(self.document.text), {"weight": str(weight)})
 
     @property
-    def italic(self) -> bool | str:
-        """Italic font style."""
-        return self.document.get_style("italic")
+    def style(self) -> Style | str:
+        """The font slant: ``"normal"``, ``"italic"``, or ``"oblique"``.
 
-    @italic.setter
-    def italic(self, italic: bool | str) -> None:
-        self.document.set_style(0, len(self.document.text), {"italic": italic})
+        See :py:class:`~pyglet.enums.Style` for valid cross-platform values.
+        """
+        return self.document.get_style("style")
+
+    @style.setter
+    def style(self, style: Style | str) -> None:
+        self.document.set_style(0, len(self.document.text), {"style": style})
 
     def get_style(self, name: str) -> Any:
         """Get a document style value by name.
