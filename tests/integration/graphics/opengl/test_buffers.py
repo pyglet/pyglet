@@ -4,7 +4,7 @@ import weakref
 import pyglet
 import pytest
 from pyglet.graphics.api.gl.buffer import GLBufferObject, GLIndexedBufferObject, GLMappedBufferObject
-from pyglet.graphics.buffer import CTypeDataStore
+from pyglet.graphics.buffer import CTypeDataStore, UniformBufferRegion
 from pyglet.graphics.shader import Attribute
 from tests.annotations import GraphicsAPIGroups, require_graphics_api, skip_graphics_api
 
@@ -412,6 +412,54 @@ def test_uniform_buffer_reserves_resource_ranges_and_grows(test_window):
         assert ranges_a[1].offset == ubo.slice_stride * 2
         assert ranges_b[0].offset == ubo.slice_stride * 3
         assert ranges_b[2].offset == ubo.slice_stride * 5
+        assert ubo.size >= ubo.planned_size
+    finally:
+        ubo.delete()
+
+
+@require_graphics_api(GraphicsAPIGroups.GL3)
+def test_uniform_buffer_regions_reserve_storage_before_commit(test_window, monkeypatch):
+    test_window.switch_to()
+
+    program = pyglet.graphics.get_default_shader()
+    ubo = program.uniform_blocks["WindowBlock"].create_ubo(copies_per_resource=2, strict=True)
+    try:
+        regions = [UniformBufferRegion(ubo), UniformBufferRegion(ubo)]
+        assert ubo.size >= ubo.planned_size
+
+        def unexpected_resize(_size):
+            pytest.fail("Committing a reserved region must not resize its backing buffer.")
+
+        monkeypatch.setattr(ubo.buffer, "resize", unexpected_resize)
+        for region in regions:
+            region.commit()
+            assert not region.dirty
+    finally:
+        ubo.delete()
+
+
+@require_graphics_api(GraphicsAPIGroups.GL3)
+def test_uniform_buffer_strict_reservation_failure_leaves_ranges_unchanged(test_window):
+    test_window.switch_to()
+
+    program = pyglet.graphics.get_default_shader()
+    ubo = program.uniform_blocks["WindowBlock"].create_ubo(copies_per_resource=1, strict=True)
+    try:
+        region = UniformBufferRegion(ubo)
+        region.commit()
+        ranges_before = list(ubo._ranges)  # noqa: SLF001
+        planned_size_before = ubo.planned_size
+        next_offset_before = ubo._next_offset  # noqa: SLF001
+        size_before = ubo.size
+
+        with pytest.raises(RuntimeError, match="UniformBufferObject backing store full"):
+            ubo.reserve_resource_range()
+
+        assert ubo._ranges == ranges_before  # noqa: SLF001
+        assert ubo.planned_size == planned_size_before
+        assert ubo._next_offset == next_offset_before  # noqa: SLF001
+        assert ubo.size == size_before
+        ubo.bind_slice(region._current_binding)  # noqa: SLF001
     finally:
         ubo.delete()
 
@@ -645,10 +693,18 @@ def test_ubo_resource_ranges_stay_valid_across_multiple_resizes(test_window):
         before_a = ubo.buffer.get_data_region(binding_a.offset, binding_a.size)
         before_b = ubo.buffer.get_data_region(binding_b.offset, binding_b.size)
 
-        # 2 -> 4 on third allocation, then 4 -> 8 on fifth allocation.
+        size_before = ubo.size
         ubo.reserve_resource_range(copies_per_resource=2)
+        assert ubo.size > size_before
+        assert ubo.size >= ubo.planned_size
+        size_before = ubo.size
         ubo.reserve_resource_range(copies_per_resource=2)
+        assert ubo.size > size_before
+        assert ubo.size >= ubo.planned_size
+        size_before = ubo.size
         ranges_e = ubo.reserve_resource_range(copies_per_resource=2)
+        assert ubo.size >= size_before
+        assert ubo.size >= ubo.planned_size
 
         assert ubo.buffer.get_data_region(binding_a.offset, binding_a.size) == before_a
         assert ubo.buffer.get_data_region(binding_b.offset, binding_b.size) == before_b
