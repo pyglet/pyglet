@@ -256,7 +256,7 @@ class GLFramebuffer(FramebufferResource):
         to the framebuffer, or if you wish to access data
         from its Texture atachments.
         """
-        self._context.glBindFramebuffer(self._gl_target, 0)
+        self._context.glBindFramebuffer(self._gl_target, self._context.default_framebuffer)
 
     def __enter__(self) -> GLFramebuffer:  # noqa: PYI034
         if self.target == FramebufferTarget.FRAMEBUFFER:
