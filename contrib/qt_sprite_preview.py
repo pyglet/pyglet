@@ -140,6 +140,7 @@ print(f"Selected {backend} as the Qt binding from the {reason}'s value.")
 
 # Perform UI imports according to the detected configuration
 import pyglet
+from pyglet.graphics.api.gl.context import OpenGLSurfaceContext
 
 # Use PySide6 for type checking, static analysis, tests, and linting
 # to help avoid infection by PyQt6's GPL license since tools will mark
@@ -434,7 +435,7 @@ class Ui_MainWindow:
             print("No images have been loaded.")
             return
 
-        self.openGLWidget.makeCurrent()
+        self.openGLWidget.pyglet_context.set_current()
 
         if self.sprite:
             self.sprite.delete()
@@ -448,7 +449,8 @@ class Ui_MainWindow:
             vertex_ = pyglet.graphics.Shader(self.vertex_source_edit.toPlainText(), 'vertex')
             fragment_ = pyglet.graphics.Shader(self.fragSourceEdit.toPlainText(), 'fragment')
 
-            self.program = pyglet.graphics.ShaderProgram(vertex_, fragment_)
+            self.program = pyglet.graphics.ShaderProgram(
+                vertex_, fragment_, vertex_layout=pyglet.graphics.VertexLayout(colors="4Bn"))
 
             if len(self.images) == 1:
                 self.sprite = pyglet.sprite.Sprite(
@@ -466,7 +468,7 @@ class Ui_MainWindow:
 
             if self.program:
                 print("Successfully compiled shader.")
-        except pyglet.graphics.api.gl.GLException as err:
+        except pyglet.graphics.shader.ShaderException as err:
             print(f"Failed to compile shader: {err}")
 
     def loadImages(self) -> None:
@@ -485,7 +487,7 @@ class Ui_MainWindow:
             action.fileName = fileName
             action.setCheckable(True)
             action.setChecked(True)
-            action.triggered.connect(lambda: self.removeImage(action))
+            action.triggered.connect(lambda checked=False, action=action: self.removeImage(action))
             image = pyglet.image.load(fileName)
             image.shader_name = shader_name
             action.image = image
@@ -564,6 +566,18 @@ class Ui_MainWindow:
         self.fragSourceEdit.setText(default_frag_src)
 
 
+class QtPygletContext(OpenGLSurfaceContext):
+    """Track pyglet resources in the OpenGL context owned by Qt."""
+
+    def set_current(self) -> None:
+        self.window.makeCurrent()
+        super().set_current()
+
+    def present(self) -> None:
+        # QOpenGLWidget handles composition and presentation.
+        pass
+
+
 class PygletWidget(QOpenGLWidget):
     _default_vertex_source = """#version 150 core
         in vec4 position;
@@ -592,6 +606,8 @@ class PygletWidget(QOpenGLWidget):
         super().__init__(parent)
         self.mainWindow = mainWindow
         self.setMinimumSize(width, height)
+        self._cleaned_up = True
+        QtWidgets.QApplication.instance().aboutToQuit.connect(self.cleanup)
 
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self._pyglet_update)
@@ -621,6 +637,7 @@ class PygletWidget(QOpenGLWidget):
         self.elapsed += dt
 
         if self.mainWindow.program:
+            self.pyglet_context.set_current()
             self.mainWindow.program.use()
 
             # Ignore time if it doesn't exist.
@@ -640,9 +657,12 @@ class PygletWidget(QOpenGLWidget):
 
     def paintGL(self) -> None:
         """Pyglet equivalent of on_draw event for window"""
-        #glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-
-        self.batch.draw()
+        self.pyglet_context.set_current()
+        self.pyglet_context.clear()
+        self._default_program.uniform_blocks['WindowBlock'].bind(self.ubo)
+        with self.batch.draw_with_options() as options:
+            options.camera = None
+            options.viewport = tuple(int(value * self.devicePixelRatioF()) for value in self.viewport)
 
     def resizeGL(self, width: int, height: int) -> None:
         self.projection = pyglet.math.Mat4.orthogonal_projection(0, width, 0, height, -255, 255)
@@ -651,11 +671,9 @@ class PygletWidget(QOpenGLWidget):
 
     def initializeGL(self) -> None:
         """Call anything that needs a context to be created."""
-        # Requires a window to create a backend context.
-        self._shadow_window = pyglet.window.Window(1, 1, visible=False)
-
-        # Set back to widget's context.
-        self.makeCurrent()
+        self.pyglet_context = QtPygletContext(pyglet.graphics.api.core, self, None)
+        self.pyglet_context.set_current()
+        self.context().aboutToBeDestroyed.connect(self.cleanup)
 
         self._projection_matrix = pyglet.math.Mat4()
         self._view_matrix = pyglet.math.Mat4()
@@ -664,7 +682,7 @@ class PygletWidget(QOpenGLWidget):
 
         self._default_program = pyglet.graphics.ShaderProgram(
             pyglet.graphics.Shader(self._default_vertex_source, 'vertex'),
-            pyglet.graphics.Shader(self._default_fragment_source, 'fragment'))
+            pyglet.graphics.Shader(self._default_fragment_source, 'fragment'), vertex_layout=None)
 
         window_block = self._default_program.uniform_blocks['WindowBlock']
         self.ubo = window_block.create_ubo()
@@ -673,6 +691,25 @@ class PygletWidget(QOpenGLWidget):
         self.view = pyglet.math.Mat4()
         self.projection = pyglet.math.Mat4.orthogonal_projection(0, self.width(), 0, self.height(), -255, 255)
         self.viewport = 0, 0, self.width(), self.height()
+        self._cleaned_up = False
+
+    def cleanup(self) -> None:
+        """Stop callbacks and release resources before Qt destroys its context."""
+        if self._cleaned_up:
+            return
+        self._cleaned_up = True
+        self.timer.stop()
+        pyglet.clock.unschedule(self.update_time_uniform)
+        self.pyglet_context.set_current()
+        if self.mainWindow.sprite:
+            self.mainWindow.sprite.delete()
+            self.mainWindow.sprite = None
+        if self.mainWindow.program:
+            self.mainWindow.program.delete()
+            self.mainWindow.program = None
+        self._default_program.delete()
+        self.pyglet_context.destroy()
+        self.doneCurrent()
 
     @property
     def viewport(self) -> tuple[int, int, int, int]:
@@ -687,9 +724,10 @@ class PygletWidget(QOpenGLWidget):
     @viewport.setter
     def viewport(self, values: tuple[int, int, int, int]) -> None:
         self._viewport = values
-        pr = 1.0
+        pr = self.devicePixelRatioF()
         x, y, w, h = values
-        pyglet.graphics.api.gl.gl.glViewport(int(x * pr), int(y * pr), int(w * pr), int(h * pr))
+        self.pyglet_context.set_current()
+        self.pyglet_context.glViewport(int(x * pr), int(y * pr), int(w * pr), int(h * pr))
 
     @property
     def projection(self) -> pyglet.math.Mat4:
@@ -697,6 +735,7 @@ class PygletWidget(QOpenGLWidget):
 
     @projection.setter
     def projection(self, matrix: pyglet.math.Mat4) -> None:
+        self.pyglet_context.set_current()
         with self.ubo as window_block:
             window_block.projection[:] = matrix
 
@@ -714,7 +753,7 @@ class PygletWidget(QOpenGLWidget):
 
     @view.setter
     def view(self, matrix: pyglet.math.Mat4) -> None:
-
+        self.pyglet_context.set_current()
         with self.ubo as window_block:
             window_block.view[:] = matrix
 
