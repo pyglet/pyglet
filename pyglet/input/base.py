@@ -644,16 +644,16 @@ class Controller(EventDispatcher):
             def on_change(value):
                 normalized_value = value * scale + bias
                 setattr(self, axis_name, normalized_value)
-                self.left_analog = Vec2(self.leftx, -self.lefty)
-                self.dispatch_event('on_stick_motion', self, "leftstick", self.left_analog)
+                self.leftanalog = Vec2(self.leftx, -self.lefty)
+                self.dispatch_event('on_stick_motion', self, "leftstick", self.leftanalog)
 
         elif axis_name in ("rightx", "righty"):
             @control.event
             def on_change(value):
                 normalized_value = value * scale + bias
                 setattr(self, axis_name, normalized_value)
-                self.right_analog = Vec2(self.rightx, -self.righty)
-                self.dispatch_event('on_stick_motion', self, "rightstick", self.right_analog)
+                self.rightanalog = Vec2(self.rightx, -self.righty)
+                self.dispatch_event('on_stick_motion', self, "rightstick", self.rightanalog)
 
     def _bind_button_control(self, relation: Relation, control: Button, button_name: str) -> None:
         if button_name in ("dpleft", "dpright", "dpup", "dpdown"):
