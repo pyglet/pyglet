@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import asyncio
 from typing import TYPE_CHECKING, NoReturn
 
-import pyglet
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.drivers.listener import AbstractListener
 
@@ -159,7 +157,7 @@ class PyodideJSAudioPlayer(AbstractAudioPlayer):
         def on_ended(_) -> None:  # noqa: ANN001
             self._playing = False
             # Dispatch EOS event if needed.
-            asyncio.create_task(pyglet.app.platform_event_loop.post_event(self.player, 'on_eos'))
+            self.dispatch_eos()
 
         self._source_player.onended = on_ended
 
