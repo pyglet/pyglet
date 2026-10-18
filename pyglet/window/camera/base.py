@@ -16,11 +16,38 @@ if TYPE_CHECKING:
     from pyglet.math import Mat4
     from pyglet.graphics.buffer import UniformBufferObject
     from pyglet.graphics.shader import ShaderProgram, UniformBlock
-    from pyglet.window import Window
+    from pyglet.graphics.api.base import SurfaceContext
 
 
 ViewportType = tuple[int, int, int, int]
 ScissorArea = tuple[int, int, int, int]
+
+
+class CameraWindowProtocol(Protocol):
+    """Window data used by camera.
+
+    Instances must support weak references and outlive their cameras. Wrappers
+    without pyglet event dispatch should use ``register_handlers=False`` and
+    forward resize/scale changes from their host.
+    """
+
+    @property
+    def context(self) -> SurfaceContext | None:
+        """Graphics context attached to this surface."""
+        ...
+
+    def get_size(self) -> tuple[int, int]:
+        """Return the logical window dimensions."""
+        ...
+
+    def get_framebuffer_size(self) -> tuple[int, int]:
+        """Return the framebuffer dimensions in pixels."""
+        ...
+
+
+@runtime_checkable
+class _CameraEventSource(Protocol):
+    def push_handlers(self, *args: Any, **kwargs: Any) -> None: ...
 
 
 def _divide_w(point: Vec4) -> Vec3:
@@ -591,7 +618,7 @@ class BaseCamera(Generic[ViewT]):
 
     def __init__(
         self,
-        window: Window,
+        window: CameraWindowProtocol,
         view_storage: CameraViewStorage | None = None,
         *,
         viewport: ViewportType | None = None,
@@ -601,7 +628,7 @@ class BaseCamera(Generic[ViewT]):
 
         Args:
             window:
-                Window that this camera controls.
+                Window or wrapper supplying context and dimensions.
             view_storage:
                 Target for resolved projection/view matrix writes. If ``None``,
                 no output target is applied unless a view provides one.
@@ -611,9 +638,9 @@ class BaseCamera(Generic[ViewT]):
                 resize/scale events.
             register_handlers:
                 If ``True``, register the camera for window resize and scale
-                events. Disable this for fixed-size offscreen cameras.
+                events. Disable this for wrappers without pyglet event dispatch.
         """
-        self._window = weakref.proxy(window)
+        self._window: CameraWindowProtocol = weakref.proxy(window)
 
         if not isinstance(view_storage, CameraViewStorage):
             msg = (
@@ -629,17 +656,19 @@ class BaseCamera(Generic[ViewT]):
         framebuffer_width, framebuffer_height = window.get_framebuffer_size()
         default_viewport = (0, 0, max(1, int(framebuffer_width)), max(1, int(framebuffer_height)))
         self._initial_auto_viewport = viewport is None
-        self._initial_viewport = default_viewport if viewport is None else tuple(map(int, viewport))  # type: ignore[assignment]
+        self._initial_viewport = default_viewport if viewport is None else tuple(map(int, viewport))
         self._view: ViewT | None = None
 
         self._resolved_viewport: tuple[int, int, int, int] | None = None
 
         if register_handlers:
+            if not isinstance(window, _CameraEventSource):
+                raise TypeError('This camera window has no event dispatcher; use register_handlers=False.')
             window.push_handlers(self)
 
     def _create_default_view_storage(
         self,
-        window: Window,
+        window: CameraWindowProtocol,
         *,
         window_block: UniformBlock | None = None,
         copies_per_resource: int = 3,
@@ -647,7 +676,10 @@ class BaseCamera(Generic[ViewT]):
         view_uniform: str = "u_view",
     ) -> CameraViewStorage:
         """Create the root view storage for this camera."""
-        if not window.context.info.features.uniform_buffers:
+        context = window.context
+        if context is None:
+            raise RuntimeError('Camera storage requires a window with a graphics context.')
+        if not context.info.features.uniform_buffers:
             return UniformSetCameraRegion(
                 projection_uniform=projection_uniform,
                 view_uniform=view_uniform,

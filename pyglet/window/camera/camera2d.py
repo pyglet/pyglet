@@ -11,13 +11,13 @@ from .base import (
     BaseCamera,
     CameraScissor,
     CameraViewStorage,
+    CameraWindowProtocol,
     ViewportType,
     _CameraViewBase,
 )
 
 if TYPE_CHECKING:
     from pyglet.graphics.shader import UniformBlock
-    from pyglet.window import Window
 
 
 class Camera2DView(_CameraViewBase["Camera2D"]):
@@ -161,7 +161,7 @@ class Camera2D(BaseCamera[Camera2DView]):
 
     def __init__(
         self,
-        window: Window,
+        window: CameraWindowProtocol,
         *,
         scroll_speed: float = 1.0,
         min_zoom: float = 1.0,
@@ -174,7 +174,7 @@ class Camera2D(BaseCamera[Camera2DView]):
         projection_uniform: str = "u_projection",
         view_uniform: str = "u_view",
     ) -> None:
-        """Create a 2D camera for a window.
+        """Create a 2D camera for a window or wrapper.
 
         The root view initially uses a lower-left origin and a zoom of ``1.0``.
         Unless an explicit viewport is supplied, it follows the full framebuffer
@@ -182,8 +182,9 @@ class Camera2D(BaseCamera[Camera2DView]):
 
         Args:
             window:
-                Window whose graphics context and framebuffer dimensions are
-                used by this camera.
+                Window or wrapper supplying the graphics context and
+                dimensions. Set ``register_handlers=False`` for wrappers without
+                pyglet event dispatch and handle resize in the host.
             scroll_speed:
                 Distance applied to each axis by :meth:`move`. Scale input by
                 elapsed time when using it for continuous movement.

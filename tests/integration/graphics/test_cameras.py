@@ -158,6 +158,36 @@ def test_camera2d_manual_viewport_is_not_overwritten_by_internal_resize(test_win
     assert camera.viewport == (32, 48, 320, 180)
 
 
+def test_camera_wrapper_supports_resize_and_child_views(monkeypatch):
+    class CameraHost:
+        context = None
+        framebuffer_size = (800, 600)
+
+        def get_size(self) -> tuple[int, int]:
+            return 800, 600
+
+        def get_framebuffer_size(self) -> tuple[int, int]:
+            return self.framebuffer_size
+
+    host = CameraHost()
+    storage = RecordingStorage()
+    _set_default_view_storage(monkeypatch, storage)
+    camera = pyglet.window.camera.Camera2D(host, register_handlers=False)
+    camera.position = (5, 10)
+    camera.zoom = 2
+    child = camera.create_view(inherit=True)
+
+    _assert_vec3_close(camera.world_to_screen(25, 30), Vec3(40, 40, 0))
+    assert child.viewport == camera.viewport
+    host.framebuffer_size = (400, 300)
+    camera._on_internal_resize(400, 300)
+    assert child.viewport == (0, 0, 400, 300)
+    assert camera.projection == Mat4.orthogonal_projection(0, 400, 0, 300, -255, 255)
+    camera.viewport = (10, 20, 100, 100)
+    camera.viewport = None
+    assert camera.viewport == (0, 0, 400, 300)
+
+
 def test_camera2d_root_view_coordinate_conversions(test_window, monkeypatch):
     _set_default_view_storage(monkeypatch, RecordingStorage())
     camera = pyglet.window.camera.Camera2D(test_window)
