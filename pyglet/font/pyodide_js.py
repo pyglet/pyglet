@@ -47,8 +47,12 @@ class PyodideGlyphRenderer(base.GlyphRenderer):
         metrics = _font_context.measureText(text)
         padding = math.ceil(stroke_size * (10 if stroke_join == "miter" else 1)) + 1 if stroke_size else 0
         w = max(1, int(math.ceil(metrics.width)) + padding * 2)
-        h = max(1, int(math.ceil(metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent)) + padding * 2)
-        baseline_y = max(1, int(math.ceil(metrics.actualBoundingBoxAscent)) + padding)
+        # Round the ascent and the descent separately: the baseline drawn at baseline_y from the top must be
+        # at ceil(descent) from the bottom, where the glyph declares it.
+        ascent = max(1, int(math.ceil(metrics.actualBoundingBoxAscent)))
+        descent = int(math.ceil(metrics.actualBoundingBoxDescent))
+        h = max(1, ascent + descent + padding * 2)
+        baseline_y = ascent + padding
 
         # Setting the canvas size seems to reset the context settings?
         _font_canvas.width = w
