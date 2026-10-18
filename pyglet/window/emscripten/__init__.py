@@ -223,7 +223,11 @@ def js_key_to_pyglet(event):
     """Convert JS event code to the equivalent key mapping."""
     modifiers = 0
 
-    if event.key in _key_map:
+    # event.key of a numpad key is its character or its NumLock-off action ("1" or "End"), as for the main
+    # keys: use event.code to report NUM_* keys, as on the other platforms.
+    if event.code and event.code.startswith("Numpad") and event.code in _key_map:
+        symbol = _key_map[event.code]
+    elif event.key in _key_map:
         symbol = _key_map[event.key]
     # Doesn't exist in either mapping. Unknown.
     else:
