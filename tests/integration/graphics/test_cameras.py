@@ -138,6 +138,33 @@ def test_default_camera_storage_uniform_buffer_capability(
     assert storage.copies_per_resource == 5
 
 
+@pytest.mark.parametrize("camera_type", ["Camera2D", "Camera3D"])
+def test_camera_delete_releases_shared_buffer(test_window, camera_type):
+    camera = getattr(pyglet.window.camera, camera_type)(test_window)
+    if not isinstance(camera.view_storage, UniformBufferCameraRegion):
+        pytest.skip("This backend does not use uniform-buffer camera storage.")
+    child = camera.view.create_view()
+    ubo = camera.view_storage.ubo
+    assert child.storage.ubo is ubo
+    assert ubo.buffer.handle is not None
+
+    camera.delete()
+
+    assert ubo.buffer.handle is None
+    assert child.storage.ubo is ubo
+
+
+@pytest.mark.parametrize("camera_type", ["Camera2D", "Camera3D"])
+def test_camera_delete_without_buffer(test_window, monkeypatch, camera_type):
+    storage = UniformSetCameraRegion()
+    _set_default_view_storage(monkeypatch, storage)
+    camera = getattr(pyglet.window.camera, camera_type)(test_window)
+
+    camera.delete()
+
+    assert camera.view_storage is storage
+
+
 def test_camera2d_auto_viewport_tracks_internal_resize(test_window):
     test_window = test_window
     camera = pyglet.window.camera.Camera2D(test_window)

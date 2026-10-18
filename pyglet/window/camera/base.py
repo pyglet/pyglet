@@ -666,6 +666,19 @@ class BaseCamera(Generic[ViewT]):
                 raise TypeError('This camera window has no event dispatcher; use register_handlers=False.')
             window.push_handlers(self)
 
+    def delete(self) -> None:
+        """Delete the backing uniform buffer owned by this camera, if any.
+
+        This is intended for explicit resource cleanup. Reusing cameras and
+        their views is recommended whenever possible.
+
+        After deletion, this camera and any views using it are unusable.
+        Existing views are not detached, repaired, or checked for further use.
+        Storage that does not use a uniform buffer requires no cleanup.
+        """
+        if isinstance(self.view_storage, UniformBufferCameraRegion):
+            self.view_storage.ubo.delete()
+
     def _create_default_view_storage(
         self,
         window: CameraWindowProtocol,
