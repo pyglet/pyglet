@@ -53,3 +53,4 @@ from pyglet.graphics.api.gl.gl import *  # Must always be imported before gl_inf
 from pyglet.graphics.api.gl.lib import GLException  # noqa: F401
 from .base import GLSharedObjectSpace  # noqa: F401
 from .context import OpenGLSurfaceContext
+from .external import ExternalOpenGLContext
