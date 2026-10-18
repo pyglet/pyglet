@@ -298,7 +298,7 @@ class WebGLVertexDomain(VertexDomain):
             if self._multi_draw_array:
                 starts = (GLint * primcount)(*starts)
                 sizes = (GLsizei * primcount)(*sizes)
-                self._multi_draw_array(starts[:], 0, sizes[:], 0, primcount)
+                self._multi_draw_array(mode, starts[:], 0, sizes[:], 0, primcount)
             else:
                 # If not available, draw separately.
                 for start, size in zip(starts, sizes):
