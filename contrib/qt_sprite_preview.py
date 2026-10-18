@@ -45,7 +45,10 @@ To load images, choose File -> Open Image.
 
 Images loaded will be listed in the Images menu. By selecting an image in
 the menu list, it will be unloaded. Names in parentheses will be used for
-the sampler2D name.
+the sampler2D name. Each layer supplies a vertex attribute named
+<sampler_name>_coords (for example, sprite_texture0_coords).
+The default shaders combine two images. When changing the image count, update
+the shaders to declare and use each loaded layer's coordinates and sampler.
 
 You can open a shader (both vert and frag) at the same time. Text is
 allowed, but will load into the fragment shader. Saving a shader saves
@@ -61,9 +64,12 @@ import sys
 import traceback
 from pathlib import Path
 from textwrap import dedent
-from typing import TYPE_CHECKING, Final, Mapping
+from typing import TYPE_CHECKING, Final
 
-from pyglet.enums import BlendFactor
+import pyglet
+from pyglet.graphics.api.gl import ExternalOpenGLContext
+from pyglet.graphics.api.gl.gl_info import GLInfo
+from pyglet.window.camera import Camera2D
 
 # Constants for choosing a Qt backend and summarizing their licensing
 ENV_VARIABLE: Final[str] = 'PYGLET_QT_BACKEND'
@@ -138,8 +144,6 @@ reason, backend = next(filter(
 print(f"Selected {backend} as the Qt binding from the {reason}'s value.")
 
 
-# Perform UI imports according to the detected configuration
-import pyglet
 
 # Use PySide6 for type checking, static analysis, tests, and linting
 # to help avoid infection by PyQt6's GPL license since tools will mark
@@ -168,13 +172,15 @@ else:  # Handle import edge cases
 default_vertex_src = """#version 150 core
 in vec3 translate;
 in vec4 colors;
-in vec3 tex_coords;
+in vec3 sprite_texture0_coords;
+in vec3 sprite_texture1_coords;
 in vec2 scale;
 in vec3 position;
 in float rotation;
 
 out vec4 vertex_colors;
 out vec3 texture_coords;
+out vec3 texture_coords1;
 
 uniform WindowBlock
 {
@@ -201,13 +207,15 @@ void main()
     gl_Position = window.projection * window.view * m_translate * m_rotation * m_scale * vec4(position, 1.0);
 
     vertex_colors = colors;
-    texture_coords = tex_coords;
+    texture_coords = sprite_texture0_coords;
+    texture_coords1 = sprite_texture1_coords;
 }
 """
 
 default_frag_src = """#version 150 core
 in vec4 vertex_colors;
 in vec3 texture_coords;
+in vec3 texture_coords1;
 out vec4 final_colors;
 
 uniform sampler2D sprite_texture0;
@@ -218,83 +226,13 @@ void main()
 {
     vec2 uv = texture_coords.xy;
     vec3 col = 0.5 + 0.5 * cos(time + uv.xyx + vec3(0, 2, 4));
-    
-    final_colors = texture(sprite_texture1, uv) * texture(sprite_texture0, uv) * vertex_colors * vec4(col, 1.0);
+
+    final_colors = texture(sprite_texture1, texture_coords1.xy) * texture(sprite_texture0, uv) * vertex_colors * vec4(col, 1.0);
 }"""
 
-class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
-    """A sprite group that uses multiple active textures."""
-
-    def __init__(self, textures: dict[str, pyglet.graphics.Texture],
-                 blend_src: BlendFactor, blend_dest: BlendFactor,
-                 program: pyglet.graphics.ShaderProgram | None = None,
-                 parent: pyglet.graphics.Group | None = None) -> None:
-        """Create a sprite group for multiple textures and samplers.
-
-        All textures must share the same target type.
-
-        Args:
-            textures:
-                A dictionary of textures, with the keys being the GLSL sampler name.
-            blend_src:
-                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
-            blend_dest:
-                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
-            parent:
-                Optional parent group.
-        """
-        self.textures = textures
-        texture_list = list(self.textures.values())
-        texture = texture_list[0]
-        self.target = texture.target
-        super().__init__(texture, blend_src, blend_dest, program, parent)
-        for idx, texture_ in enumerate(texture_list[1:]):
-            self.set_texture(texture_, idx+1)
-
-        self.uniforms = {}
-        for idx, name in enumerate(self.textures):
-            self.uniforms[name] = idx
-
-        self.set_shader_uniforms(program, self.uniforms)
-
-    def __repr__(self) -> str:
-        return f'{self.__class__.__name__}({self.texture!r}-{int(self.texture.id)})'
-
-
-class MultiTextureSprite(pyglet.sprite.Sprite):
-
-    def __init__(
-            self,
-            imgs: Mapping[str, pyglet.graphics.Texture],
-            x: float = 0, y: float = 0, z: float = 0,
-            blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
-            blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
-            batch: pyglet.graphics.Batch | None = None,
-            group: MultiTextureSpriteGroup | None = None,
-            subpixel: bool = False,
-            program: pyglet.graphics.ShaderProgram = None,
-    ) -> None:
-
-        self._x = x
-        self._y = y
-        self._z = z
-
-        self._texture = list(imgs.values())[0]
-
-        if isinstance(self._texture, pyglet.graphics.texture.TextureArrayRegion):
-            self._program = program or pyglet.sprite.get_default_array_shader()
-        else:
-            self._program = program or pyglet.sprite.get_default_shader()
-
-        self._batch = batch or pyglet.graphics.get_default_batch()
-
-        self._group = MultiTextureSpriteGroup(imgs, blend_src, blend_dest, self.program, group)
-
-        self._subpixel = subpixel
-        self._create_vertex_list()
-
-
 class Ui_MainWindow:
+    program: pyglet.graphics.ShaderProgram | None
+    sprite: pyglet.sprite.MultiTextureSprite | None
     SPRITE_POSITION = (0, 0)
 
     def __init__(self, use_native_file_dialog: bool = True):
@@ -434,7 +372,7 @@ class Ui_MainWindow:
             print("No images have been loaded.")
             return
 
-        self.openGLWidget.makeCurrent()
+        self.openGLWidget.pyglet_context.set_current()
 
         if self.sprite:
             self.sprite.delete()
@@ -448,25 +386,19 @@ class Ui_MainWindow:
             vertex_ = pyglet.graphics.Shader(self.vertex_source_edit.toPlainText(), 'vertex')
             fragment_ = pyglet.graphics.Shader(self.fragSourceEdit.toPlainText(), 'fragment')
 
-            self.program = pyglet.graphics.ShaderProgram(vertex_, fragment_)
+            self.program = pyglet.graphics.ShaderProgram(
+                vertex_, fragment_, vertex_layout=pyglet.graphics.VertexLayout(colors="4Bn"))
 
-            if len(self.images) == 1:
-                self.sprite = pyglet.sprite.Sprite(
-                    self.images[0],
-                    x=self.SPRITE_POSITION[0], y=self.SPRITE_POSITION[1],
-                    group=self.group, batch=self.openGLWidget.batch,
-                    program=self.program)
-            else:
-                textures = {image.shader_name: image.get_texture() for image in self.images}
-                self.sprite = MultiTextureSprite(
-                    textures,
-                    x=self.SPRITE_POSITION[0], y=self.SPRITE_POSITION[1],
-                    group=self.group, batch=self.openGLWidget.batch,
-                    program=self.program)
+            images = {image.shader_name: image for image in self.images}
+            self.sprite = pyglet.sprite.MultiTextureSprite(
+                images,
+                x=self.SPRITE_POSITION[0], y=self.SPRITE_POSITION[1],
+                group=self.group, batch=self.openGLWidget.batch,
+                program=self.program)
 
             if self.program:
                 print("Successfully compiled shader.")
-        except pyglet.graphics.api.gl.GLException as err:
+        except pyglet.graphics.shader.ShaderException as err:
             print(f"Failed to compile shader: {err}")
 
     def loadImages(self) -> None:
@@ -485,7 +417,7 @@ class Ui_MainWindow:
             action.fileName = fileName
             action.setCheckable(True)
             action.setChecked(True)
-            action.triggered.connect(lambda: self.removeImage(action))
+            action.triggered.connect(lambda checked=False, action=action: self.removeImage(action))
             image = pyglet.image.load(fileName)
             image.shader_name = shader_name
             action.image = image
@@ -564,161 +496,118 @@ class Ui_MainWindow:
         self.fragSourceEdit.setText(default_frag_src)
 
 
+class QtWindowWrapper(pyglet.event.EventDispatcher):
+    """Bridge Qt window data and resize notifications to pyglet cameras."""
+
+    def __init__(self, widget: QOpenGLWidget, context: ExternalOpenGLContext) -> None:
+        self.widget = widget
+        self.context = context
+        self.camera = Camera2D(self, min_zoom=0.125, max_zoom=40.0)
+        self.context.camera = self.camera
+
+    def get_size(self) -> tuple[int, int]:
+        return self.widget.width(), self.widget.height()
+
+    def get_framebuffer_size(self) -> tuple[int, int]:
+        ratio = self.widget.devicePixelRatioF()
+        return int(self.widget.width() * ratio), int(self.widget.height() * ratio)
+
+    def close(self) -> None:
+        """Release the owned camera while the graphics context is current."""
+        self.context.camera = None
+        self.remove_handlers(self.camera)
+        self.camera.delete()
+
+
+QtWindowWrapper.register_event_type('_on_internal_resize')
+QtWindowWrapper.register_event_type('_on_internal_scale')
+
+
 class PygletWidget(QOpenGLWidget):
-    _default_vertex_source = """#version 150 core
-        in vec4 position;
-
-        uniform WindowBlock
-        {
-            mat4 projection;
-            mat4 view;
-        } window;
-
-        void main()
-        {
-            gl_Position = window.projection * window.view * position;
-        }
-    """
-    _default_fragment_source = """#version 150 core
-        out vec4 color;
-
-        void main()
-        {
-            color = vec4(1.0, 0.0, 0.0, 1.0);
-        }
-    """
-
     def __init__(self, width, height, parent, mainWindow) -> None:
         super().__init__(parent)
         self.mainWindow = mainWindow
         self.setMinimumSize(width, height)
+        self._cleaned_up = True
+        QtWidgets.QApplication.instance().aboutToQuit.connect(self.cleanup)
 
-        self.timer = QtCore.QTimer()
+        self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self._pyglet_update)
         self.timer.setInterval(0)
-        self.timer.start()
-
-        self.zoom = 1.0
-
+        self._window_wrapper: QtWindowWrapper | None = None
         self.elapsed = 0
-
-        pyglet.clock.schedule_interval(self.update_time_uniform, 1 / 60.0)
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         super().wheelEvent(event)
+        if self._window_wrapper is None:
+            return
         if event.angleDelta().y() > 0:
-            self.zoom *= 2
+            self._window_wrapper.camera.zoom *= 2
         else:
-            self.zoom /= 2
-
-        self.zoom = pyglet.math.clamp(self.zoom, 0.125, 40.0)
-        self.view = pyglet.math.Mat4().scale(pyglet.math.Vec3(
-            self.zoom, self.zoom, 1.0))
-
+            self._window_wrapper.camera.zoom /= 2
         event.accept()
 
-    def update_time_uniform(self, dt: float) -> None:
+    def advance_time(self, dt: float) -> None:
         self.elapsed += dt
 
-        if self.mainWindow.program:
-            self.mainWindow.program.use()
-
-            # Ignore time if it doesn't exist.
-            try:
-                self.mainWindow.program['time'] = self.elapsed
-            except Exception:
-                pass
-
-            self.mainWindow.program.stop()
-
     def _pyglet_update(self) -> None:
-        # Tick the pyglet clock, so scheduled events can work.
+        # Clock callbacks update CPU state; GPU writes happen during paintGL.
         pyglet.clock.tick()
-
-        # Force widget to update, otherwise paintGL will not be called.
-        self.update()  # self.updateGL() for pyqt5
+        self.update()
 
     def paintGL(self) -> None:
-        """Pyglet equivalent of on_draw event for window"""
-        #glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-
-        self.batch.draw()
+        """Render with the camera while pyglet's context and frame are active."""
+        with self.pyglet_context.frame():
+            self.pyglet_context.clear()
+            program = self.mainWindow.program
+            if program is not None and 'time' in program.uniforms:
+                with program:
+                    program['time'] = self.elapsed
+            self.batch.draw()
 
     def resizeGL(self, width: int, height: int) -> None:
-        self.projection = pyglet.math.Mat4.orthogonal_projection(0, width, 0, height, -255, 255)
-
-        self.viewport = 0, 0, width, height
+        if self._window_wrapper is not None:
+            self._window_wrapper.dispatch_event('_on_internal_resize', width, height)
 
     def initializeGL(self) -> None:
-        """Call anything that needs a context to be created."""
-        # Requires a window to create a backend context.
-        self._shadow_window = pyglet.window.Window(1, 1, visible=False)
-
-        # Set back to widget's context.
-        self.makeCurrent()
-
-        self._projection_matrix = pyglet.math.Mat4()
-        self._view_matrix = pyglet.math.Mat4()
-
+        """Create GPU resources after Qt has created the native context."""
+        self.pyglet_context = ExternalOpenGLContext(
+            make_current=self.makeCurrent,
+            is_current=lambda: QtGui.QOpenGLContext.currentContext() == self.context(),
+            get_proc_address=lambda name: self.context().getProcAddress(name),
+            get_framebuffer=self.defaultFramebufferObject,
+        )
+        self.pyglet_context.set_current()
+        # Query Qt's context for info.
+        self.gl_info = GLInfo(platform_info=None)
+        self.gl_info.query(self.pyglet_context)
+        print(f"Qt OpenGL Version: {self.gl_info.version}, renderer: {self.gl_info.renderer}")
+        self.context().aboutToBeDestroyed.connect(self.cleanup)
         self.batch = pyglet.graphics.Batch()
+        self._window_wrapper = QtWindowWrapper(self, self.pyglet_context)
+        self.resizeGL(self.width(), self.height())
+        self._cleaned_up = False
+        self.timer.start()
+        pyglet.clock.schedule_interval(self.advance_time, 1 / 60.0)
 
-        self._default_program = pyglet.graphics.ShaderProgram(
-            pyglet.graphics.Shader(self._default_vertex_source, 'vertex'),
-            pyglet.graphics.Shader(self._default_fragment_source, 'fragment'))
+    def cleanup(self) -> None:
+        """Release GPU resources before Qt destroys its native context."""
+        if self._cleaned_up:
+            return
+        self._cleaned_up = True
+        self.timer.stop()
+        pyglet.clock.unschedule(self.advance_time)
+        self.pyglet_context.set_current()
+        if self.mainWindow.sprite:
+            self.mainWindow.sprite.delete()
+            self.mainWindow.sprite = None
+        if self.mainWindow.program:
+            self.mainWindow.program.delete()
+            self.mainWindow.program = None
+        self._window_wrapper.close()
+        self._window_wrapper = None
+        self.pyglet_context.destroy()
 
-        window_block = self._default_program.uniform_blocks['WindowBlock']
-        self.ubo = window_block.create_ubo()
-        window_block.bind(self.ubo)
-
-        self.view = pyglet.math.Mat4()
-        self.projection = pyglet.math.Mat4.orthogonal_projection(0, self.width(), 0, self.height(), -255, 255)
-        self.viewport = 0, 0, self.width(), self.height()
-
-    @property
-    def viewport(self) -> tuple[int, int, int, int]:
-        """The Window viewport.
-
-        The Window viewport, expressed as (x, y, width, height).
-
-        :return: The viewport size as a tuple of four ints.
-        """
-        return self._viewport
-
-    @viewport.setter
-    def viewport(self, values: tuple[int, int, int, int]) -> None:
-        self._viewport = values
-        pr = 1.0
-        x, y, w, h = values
-        pyglet.graphics.api.gl.gl.glViewport(int(x * pr), int(y * pr), int(w * pr), int(h * pr))
-
-    @property
-    def projection(self) -> pyglet.math.Mat4:
-        return self._projection_matrix
-
-    @projection.setter
-    def projection(self, matrix: pyglet.math.Mat4) -> None:
-        with self.ubo as window_block:
-            window_block.projection[:] = matrix
-
-        self._projection_matrix = matrix
-
-    @property
-    def view(self) -> pyglet.math.Mat4:
-        """The OpenGL window view matrix. Read-write.
-
-        The default view is an identity matrix, but a custom
-        :py:class:`pyglet.math.Mat4` instance can be set.
-        Alternatively, you can supply a flat tuple of 16 values.
-        """
-        return self._view_matrix
-
-    @view.setter
-    def view(self, matrix: pyglet.math.Mat4) -> None:
-
-        with self.ubo as window_block:
-            window_block.view[:] = matrix
-
-        self._view_matrix = matrix
 
 
 def excepthook(exc_type, exc_value, exc_tb) -> None:

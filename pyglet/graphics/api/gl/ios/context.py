@@ -92,13 +92,14 @@ class IOSContext(OpenGLSurfaceContext):
             raise ContextException('Could not make the EAGL context current')
         super().set_current()
 
-    def _bind_default_fbo(self) -> None:
-        """Bind the EAGL drawable used as this window's default framebuffer."""
-        self.glBindFramebuffer(GL_FRAMEBUFFER, self._framebuffer)
+    @property
+    def default_framebuffer(self) -> int:
+        """Return the current framebuffer backed by the EAGL drawable."""
+        return self._framebuffer.value
 
     def frame_begin(self) -> None:
         super().frame_begin()
-        self._bind_default_fbo()
+        self.bind_default_framebuffer()
 
     def update_geometry(self) -> None:
         self.set_current()
@@ -126,6 +127,6 @@ class IOSContext(OpenGLSurfaceContext):
         return self._vsync
 
     def present(self) -> None:
-        self._bind_default_fbo()
+        self.bind_default_framebuffer()
         self.glBindRenderbuffer(GL_RENDERBUFFER, self._color_renderbuffer)
         self.eagl_context.presentRenderbuffer_(GL_RENDERBUFFER)

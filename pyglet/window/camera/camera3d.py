@@ -10,13 +10,13 @@ from pyglet.math import Mat4, Vec2, Vec3, clamp
 from .base import (
     BaseCamera,
     CameraViewStorage,
+    CameraWindowProtocol,
     ViewportType,
     _CameraViewBase,
 )
 
 if TYPE_CHECKING:
     from pyglet.graphics.shader import UniformBlock
-    from pyglet.window import Window
 
 
 class Camera3DView(_CameraViewBase["Camera3D"]):
@@ -109,7 +109,7 @@ class Camera3D(BaseCamera[Camera3DView]):
 
     def __init__(
         self,
-        window: Window,
+        window: CameraWindowProtocol,
         *,
         position: Vec3 | None = None,
         target: Vec3 | None = None,
@@ -316,7 +316,7 @@ class FPSCamera(Camera3D):
 
     def __init__(
         self,
-        window: Window,
+        window: CameraWindowProtocol,
         **kwargs: Any,
     ) -> None:
         super().__init__(window, **kwargs)
@@ -329,7 +329,7 @@ class ThirdPersonCamera(Camera3D):
 
     def __init__(
         self,
-        window: Window,
+        window: CameraWindowProtocol,
         *,
         target: Vec3 | None = None,
         distance: float = 8.0,
