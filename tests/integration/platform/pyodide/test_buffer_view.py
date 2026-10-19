@@ -29,3 +29,13 @@ def test_view_survives_webassembly_memory_growth():
     finally:
         view.release()
         allocations.clear()
+
+
+def test_view_of_an_empty_buffer_is_kept():
+    view = PersistentBufferView(bytearray())
+    buffer = view._buffer
+    try:
+        assert view.data.byteLength == 0
+        assert view._buffer is buffer
+    finally:
+        view.release()

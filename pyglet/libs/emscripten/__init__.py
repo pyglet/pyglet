@@ -39,9 +39,9 @@ class PersistentBufferView:
     def data(self) -> js.Uint8Array:
         """The JavaScript view of the buffer."""
         data = self._buffer.data
-        if data.buffer.byteLength == 0:
-            # Growing the WebAssembly memory detaches the views on it. The Python
-            # buffer does not move: take a new view of it.
+        if data.byteLength == 0 and self._buffer.nbytes:
+            # Growing the WebAssembly memory detaches the views on it (their length
+            # becomes 0). The Python buffer does not move: take a new view of it.
             self._buffer.release()
             self._buffer = self._proxy.getBuffer("u8")
             data = self._buffer.data
