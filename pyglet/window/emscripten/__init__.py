@@ -387,21 +387,37 @@ class EmscriptenWindow(BaseWindow):
         """
         return self._canvas
 
+    @staticmethod
+    def _wake_event_loop_after(func: Callable) -> Callable:
+        """Wake the event loop after a browser event.
+
+        The browser calls these handlers outside the event loop, which may be waiting with nothing scheduled:
+        without a wakeup, it would not see the functions that the event handlers schedule.
+        """
+        def handler(event: Any) -> Any:
+            try:
+                return func(event)
+            finally:
+                pyglet.app.platform_event_loop.notify()
+
+        return handler
+
     def _set_event_handlers(self) -> None:
         assert self._canvas, "Canvas has not been created."
         for func_name in self._platform_event_names:
             if not hasattr(self, func_name):
                 continue
             func = getattr(self, func_name)
+            handler = self._wake_event_loop_after(func)
             for message in func._platform_event_data:  # noqa: SLF001
                 assert message not in self._event_handlers, f"event: '{message}' already exists."
                 if hasattr(func, '_canvas'):
                     proxy = self._proxies.add_event_listener(
-                        self._canvas, message, func, passive=func._passive,
+                        self._canvas, message, handler, passive=func._passive,
                     )
                     self._canvas_event_handlers[message] = proxy
                 else:
-                    proxy = self._proxies.add_event_listener(js.window, message, func)
+                    proxy = self._proxies.add_event_listener(js.window, message, handler)
                     self._event_handlers[message] = proxy
 
         self._proxy_resize = self._proxies.create(self._event_resized)
