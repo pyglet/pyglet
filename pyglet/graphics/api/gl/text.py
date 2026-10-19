@@ -304,7 +304,7 @@ def get_default_image_layout_shader() -> ShaderProgram:
         "default_text_image",
         (layout_vertex_source, "vertex"),
         (layout_fragment_image_source, "fragment"),
-        vertex_layout=pyglet.graphics.VertexLayout(colors="4Bn"),
+        vertex_layout=None,
     )
 
 
@@ -314,7 +314,7 @@ def get_default_scrollable_image_layout_shader() -> ShaderProgram:
         "default_scrollable_text_image",
         (scrollable_layout_vertex_source, "vertex"),
         (scrollable_layout_fragment_image_source, "fragment"),
-        vertex_layout=pyglet.graphics.VertexLayout(colors="4Bn"),
+        vertex_layout=None,
     )
 
 
