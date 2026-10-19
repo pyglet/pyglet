@@ -431,3 +431,15 @@ def test_incremental_layout_hit_testing_and_decorations_match_glyph_positions(te
     incremental_layout.set_selection(0, 3)
     background_list = next(vertex_list for vertex_list in glyph_box.vertex_lists if vertex_list.count == 8)
     assert list(background_list.indices) == [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7]
+
+
+@pytest.mark.parametrize('text', ['a\t\tb', '\t\t', 'a\tb\n\t\t\tc'])
+@pytest.mark.parametrize('shaping', [True, False])
+def test_multiline_layout_with_consecutive_tabs(test_window, text, shaping):
+    # Every character needs a glyph: a run of tabs has no glyph in some shapers (DirectWrite)
+    font = pyglet.font.load(None, 12)
+    glyphs, offsets = font.get_glyphs(text, shaping)
+    assert len(glyphs) == len(offsets) == len(text)
+
+    text_layout = layout.TextLayout(decode_text(text), width=WIDTH, multiline=True, shaping=shaping)
+    text_layout.draw()
