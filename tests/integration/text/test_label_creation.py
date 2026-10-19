@@ -253,3 +253,12 @@ def test_solid_color_update_uses_fresh_style_iterator(test_window):
 
     assert colors[:64] == (255, 0, 0, 255) * 16
     assert colors[64:] == (0, 0, 255, 255) * 16
+
+
+def test_html_label_with_image(test_window, test_data):
+    location = pyglet.resource.FileLocation(test_data.get_file("images"))
+    label = HTMLLabel('Before <img src="icon1.png" width="16" height="8"> after', location=location)
+    element = label.document.get_element(len("Before "))
+    assert (element.ascent, element.descent, element.advance) == (8, 0, 16)
+    test_window.clear()
+    label.draw()

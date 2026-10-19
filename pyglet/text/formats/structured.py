@@ -40,10 +40,8 @@ class ImageElement(pyglet.text.document.InlineElement):
         self.vertex_lists = {}
         self._has_view_translation = False
 
-        anchor_y = self.height // image.height * image.anchor_y
-        ascent = max(0, self.height - anchor_y)
-        descent = min(0, -anchor_y)
-        super().__init__(ascent, descent, self.width)
+        # Images have no anchor: the image stands on the baseline
+        super().__init__(self.height, 0, self.width)
 
     def place(self, layout: TextLayout, x: float, y: float, z: float, line_x: float, line_y: float, rotation: float,
               visible: bool, anchor_x: float, anchor_y: float) -> None:
@@ -65,6 +63,9 @@ class ImageElement(pyglet.text.document.InlineElement):
         if "view_translation" in program.attributes:
             vertex_data["view_translation"] = (0, 0, 0) * 4
             self._has_view_translation = True
+        if "colors" in program.attributes:
+            # Not used by the image fragment shader, but kept by some shader compilers (WebGL)
+            vertex_data["colors"] = (255, 255, 255, 255) * 4
 
         vertex_list = program.vertex_list_indexed(4, GeometryMode.TRIANGLES, [0, 1, 2, 0, 2, 3],
                                                   layout.batch, group, **vertex_data)
