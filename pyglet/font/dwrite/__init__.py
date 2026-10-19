@@ -304,9 +304,11 @@ class _DWriteTextRenderer(com.COMObject):
         font_ref = self._get_font_reference(glyph_run.fontFace)
 
         if glyph_run.glyphCount == 0:
+            # A run without glyphs, such as consecutive tabs: one empty glyph per character, as the layout expects
             glyph = glyph_renderer.font._zero_glyph  # noqa: SLF001
-            glyph_renderer.current_glyphs.append(glyph)
-            glyph_renderer.current_offsets.append(GlyphPosition(0, 0, 0, 0))
+            for _ in range(pystr_len):
+                glyph_renderer.current_glyphs.append(glyph)
+                glyph_renderer.current_offsets.append(GlyphPosition(0, 0, 0, 0))
             return 0
 
         # Process any glyphs we haven't rendered.
