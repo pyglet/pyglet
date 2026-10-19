@@ -59,3 +59,19 @@ def test_request_animation_frame_draw_source_uses_browser_timestamps(monkeypatch
     source.stop()
 
     assert draws == pytest.approx([0.0, 0.016])
+
+
+def test_request_animation_frame_wakes_the_event_loop_after_drawing(monkeypatch):
+    # The browser draws outside the event loop: it must wake up to see what the draw handlers schedule
+    loop = AsyncEventLoop()
+    calls: list[str] = []
+    monkeypatch.setattr(loop, "_redraw_windows", lambda dt: calls.append("draw"))
+    monkeypatch.setattr(app.platform_event_loop, "notify", lambda: calls.append("notify"))
+    source = RequestAnimationFrameDrawSource(loop)
+    monkeypatch.setattr(source, "_request_next_frame", lambda: None)
+
+    source.start(1 / 60)
+    source._on_animation_frame(1000)  # noqa: SLF001
+    source.stop()
+
+    assert calls == ["draw", "notify"]

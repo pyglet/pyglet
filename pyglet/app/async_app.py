@@ -282,6 +282,9 @@ class RequestAnimationFrameDrawSource(WindowDrawSource):
         self._last_timestamp = now
         self._request_id = None
         self._event_loop._redraw_windows(dt)  # noqa: SLF001
+        # The browser calls this outside the event loop, which may be waiting with nothing scheduled: wake it up to
+        # see the functions scheduled by the draw handlers.
+        app.platform_event_loop.notify()
 
         if self._running:
             self._request_next_frame()

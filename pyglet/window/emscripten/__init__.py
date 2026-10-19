@@ -389,14 +389,14 @@ class EmscriptenWindow(BaseWindow):
 
     @staticmethod
     def _wake_event_loop_after(func: Callable) -> Callable:
-        """Wake the event loop after a browser event.
+        """Wake the event loop after a browser event or a resize.
 
         The browser calls these handlers outside the event loop, which may be waiting with nothing scheduled:
         without a wakeup, it would not see the functions that the event handlers schedule.
         """
-        def handler(event: Any) -> Any:
+        def handler(*args: Any) -> Any:
             try:
-                return func(event)
+                return func(*args)
             finally:
                 pyglet.app.platform_event_loop.notify()
 
@@ -420,7 +420,7 @@ class EmscriptenWindow(BaseWindow):
                     proxy = self._proxies.add_event_listener(js.window, message, handler)
                     self._event_handlers[message] = proxy
 
-        self._proxy_resize = self._proxies.create(self._event_resized)
+        self._proxy_resize = self._proxies.create(self._wake_event_loop_after(self._event_resized))
         self._observer = js.ResizeObserver.new(self._proxy_resize)
         self._observer.observe(self._canvas)
 

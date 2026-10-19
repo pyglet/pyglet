@@ -21,3 +21,13 @@ def test_browser_event_wakes_the_event_loop(webgl_window, monkeypatch):
 
     assert pressed == [pyglet.window.key.A]
     assert len(wakeups) >= 2
+
+
+def test_resize_wakes_the_event_loop(webgl_window, monkeypatch):
+    # The ResizeObserver also calls the window outside the event loop
+    wakeups = []
+    monkeypatch.setattr(pyglet.app.platform_event_loop, "notify", lambda: wakeups.append(True))
+
+    webgl_window._proxy_resize(to_js([]), None)  # noqa: SLF001
+
+    assert wakeups == [True]
