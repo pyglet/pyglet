@@ -740,6 +740,15 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         """
         return self.get_size()
 
+    def get_current_screen(self) -> Screen:
+        """Return the screen currently occupied by this window.
+
+        Unlike :py:attr:`screen`, which is the fullscreen target, this follows
+        the window's position when it moves between monitors. On unsupported
+        platforms, including macOS, this method raises NotImplementedError.
+        """
+        raise NotImplementedError("Current screen lookup is not supported on this platform")
+
     @abstractmethod
     def get_location(self) -> tuple[int, int]:
         """Return the current position of the window.
