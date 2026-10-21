@@ -188,6 +188,28 @@ def test_dom_handler_can_schedule_without_frames(running_loop):
     run_sync(scenario())
 
 
+def test_resize_handler_can_schedule_without_frames(running_loop):
+    async def scenario():
+        async with running_loop(interval=None) as (loop, platform, task, timeouts):
+            window = pyglet.window.Window(width=128, height=96, resizable=True)
+            received_size = asyncio.get_running_loop().create_future()
+
+            def on_resize(width, height):
+                clock.schedule_once(lambda dt: received_size.set_result((width, height)), 0.01)
+
+            window.push_handlers(on_resize=on_resize)
+            try:
+                # Changing the canvas size makes the browser's ResizeObserver call on_resize.
+                window.set_size(160, 120)
+                expected_size = window.get_size()
+                assert await asyncio.wait_for(received_size, 2) == expected_size
+            finally:
+                window.pop_handlers()
+                window.close()
+
+    run_sync(scenario())
+
+
 def test_scheduling_inside_clock_callback_does_not_add_a_wakeup(running_loop, monkeypatch):
     async def scenario():
         async with running_loop() as (loop, platform, task, timeouts):
