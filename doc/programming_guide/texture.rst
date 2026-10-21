@@ -189,6 +189,35 @@ of images or from an
 Slicing a :py:class:`~pyglet.graphics.texture.Texture3D` returns
 :py:class:`~pyglet.graphics.texture.TextureRegion` objects for layers.
 
+Texture arrays
+^^^^^^^^^^^^^^
+
+A :py:class:`~pyglet.graphics.texture.TextureArray` stores multiple 2D images
+as separate layers in one GPU texture. This is useful for collections of
+same-sized tiles or animation frames. Create an array from images with matching
+width and height::
+
+    images = [
+        pyglet.image.load('grass.png'),
+        pyglet.image.load('stone.png'),
+    ]
+    tiles = pyglet.graphics.TextureArray.create_for_images(images)
+    grass = tiles[0]
+
+Indexing returns a :py:class:`~pyglet.graphics.texture.TextureArrayRegion`
+for that layer. Pass ``max_depth`` to reserve capacity for additional images::
+
+    tiles = pyglet.graphics.TextureArray.create_for_images(images, max_depth=16)
+    water = tiles.add(pyglet.image.load('water.png'))
+
+You can also create an empty array and add images later. For 64-by-64 tiles::
+
+    tiles = pyglet.graphics.TextureArray.create(64, 64, max_depth=16)
+    grass = tiles.add(pyglet.image.load('grass.png'))
+
+Images added with ``add`` must fit within the array's layer dimensions.
+``max_depth`` is the layer capacity; ``len(tiles)`` counts the images added.
+
 Framebuffers
 ------------
 
