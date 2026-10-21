@@ -1,6 +1,11 @@
 import unittest
 
-from pyglet.graphics.texture import TextureArray
+import pytest
+
+from pyglet.enums import AddressMode, ComponentFormat, TextureFilter, TextureType
+from pyglet.image import ImageException
+
+from pyglet.graphics.texture import TextureArray, TextureArrayDepthExceeded
 from pyglet.image import ImageData, ImageGrid
 from pyglet.window import Window
 
@@ -117,3 +122,86 @@ class TestTextureArray(unittest.TestCase):
         self.set_grid_image(3, 8, rows, cols, 0, 0)
         for i in range(rows * cols):
             self.check_cell(self.grid[i], i)
+
+
+@skip_graphics_api(GraphicsAPIGroups.GL2)
+def test_texture_array_create_positional_options(test_window):
+    test_window.switch_to()
+    ctx = test_window.context
+    filters = (TextureFilter.NEAREST, TextureFilter.LINEAR)
+    texture = TextureArray.create(
+        4, 2, TextureType.TYPE_2D_ARRAY, ComponentFormat.RGBA, 8, 'B', filters,
+        AddressMode.CLAMP_TO_EDGE, 0, True, False, 1, ctx, max_depth=3,
+    )
+    try:
+        assert texture.max_depth == 3
+        assert texture.filters == filters
+        assert texture.address_mode == AddressMode.CLAMP_TO_EDGE
+        assert texture._context is ctx
+        assert texture.valid_mipmaps == (0,)
+        assert bytes(texture.fetch(z=2).get_bytes('RGBA', 16)) == bytes(32)
+    finally:
+        texture.delete()
+
+
+@skip_graphics_api(GraphicsAPIGroups.GL2)
+def test_texture_array_create_for_images_options_and_capacity(test_window):
+    test_window.switch_to()
+    images = [ImageData(2, 2, 'RGBA', bytes((value, 0, 0, 255)) * 4) for value in (21, 43)]
+    filters = (TextureFilter.NEAREST, TextureFilter.LINEAR)
+    texture = TextureArray.create_for_images(
+        images, 8, 'B', filters, AddressMode.CLAMP_TO_EDGE, 0, test_window.context, max_depth=4,
+    )
+    try:
+        assert len(texture) == 2
+        assert texture.max_depth == 4
+        assert texture.filters == filters
+        assert texture.address_mode == AddressMode.CLAMP_TO_EDGE
+        assert bytes(texture.fetch(z=1).get_bytes('RGBA', 8)) == bytes((43, 0, 0, 255)) * 4
+    finally:
+        texture.delete()
+
+
+@skip_graphics_api(GraphicsAPIGroups.GL2)
+def test_texture_array_rejects_incompatible_type_and_capacity(test_window):
+    cls = TextureArray
+    with pytest.raises(ImageException, match='TYPE_2D_ARRAY'):
+        cls.create(2, 2, TextureType.TYPE_2D, context=test_window.context)
+    with pytest.raises(ImageException, match='Array depth'):
+        cls.create(2, 2, max_depth=0, context=test_window.context)
+    images = [ImageData(1, 1, 'RGBA', bytes(4)) for _ in range(2)]
+    with pytest.raises(TextureArrayDepthExceeded):
+        cls.create_for_images(images, max_depth=1, context=test_window.context)
+
+
+@skip_graphics_api(GraphicsAPIGroups.GL2)
+@pytest.mark.parametrize('use_region', [False, True])
+def test_texturearray_create_from_image_forwards_positional_options(test_window, use_region):
+    test_window.switch_to()
+    if use_region:
+        source = ImageData(4, 4, 'RGBA', bytes(range(64))).get_region(1, 1, 2, 3)
+        expected = b''.join((bytes(range(start, start + 8)) for start in (20, 36, 52)))
+    else:
+        expected = bytes((17, 53, 89, 255)) * 6
+        source = ImageData(2, 3, 'RGBA', expected)
+    filters = (TextureFilter.NEAREST, TextureFilter.LINEAR)
+    cls = TextureArray
+    texture = cls.create_from_image(
+        source, TextureType.TYPE_2D_ARRAY, 8, filters, AddressMode.CLAMP_TO_EDGE, 0, test_window.context,
+    )
+    try:
+        assert isinstance(texture, cls)
+        assert texture.tex_type == TextureType.TYPE_2D_ARRAY
+        assert texture.filters == filters
+        assert texture.address_mode == AddressMode.CLAMP_TO_EDGE
+        assert texture._context is test_window.context
+        assert (texture.width, texture.height) == (2, 3)
+        assert bytes(texture.fetch().get_bytes('RGBA', 8)) == expected
+        assert len(texture) == 1
+    finally:
+        texture.delete()
+
+
+def test_texturearray_create_for_images_rejects_empty_images():
+    with pytest.raises(ImageException, match='At least one image'):
+        TextureArray.create_for_images([])

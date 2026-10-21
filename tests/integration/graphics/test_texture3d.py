@@ -1,5 +1,10 @@
 import unittest
 
+import pytest
+
+from pyglet.enums import AddressMode, TextureFilter, TextureType
+from pyglet.image import ImageException
+
 from pyglet.graphics import Texture3D
 from pyglet.image import ImageData, ImageGrid
 from pyglet.window import Window
@@ -124,3 +129,36 @@ class TestTexture3D(unittest.TestCase):
         self.set_grid_image(10, 9, rows, cols, 3, 7)
         for i in range(rows * cols):
             self.check_cell(self.grid[i], i)
+
+
+@skip_graphics_api(GraphicsAPIGroups.GL2)
+@pytest.mark.parametrize('use_region', [False, True])
+def test_texture3d_create_from_image_forwards_positional_options(test_window, use_region):
+    test_window.switch_to()
+    if use_region:
+        source = ImageData(4, 4, 'RGBA', bytes(range(64))).get_region(1, 1, 2, 3)
+        expected = b''.join((bytes(range(start, start + 8)) for start in (20, 36, 52)))
+    else:
+        expected = bytes((17, 53, 89, 255)) * 6
+        source = ImageData(2, 3, 'RGBA', expected)
+    filters = (TextureFilter.NEAREST, TextureFilter.LINEAR)
+    cls = Texture3D
+    texture = cls.create_from_image(
+        source, TextureType.TYPE_3D, 8, filters, AddressMode.CLAMP_TO_EDGE, 0, test_window.context,
+    )
+    try:
+        assert isinstance(texture, cls)
+        assert texture.tex_type == TextureType.TYPE_3D
+        assert texture.filters == filters
+        assert texture.address_mode == AddressMode.CLAMP_TO_EDGE
+        assert texture._context is test_window.context
+        assert (texture.width, texture.height) == (2, 3)
+        assert bytes(texture.fetch().get_bytes('RGBA', 8)) == expected
+        assert len(texture) == 1
+    finally:
+        texture.delete()
+
+
+def test_texture3d_create_for_images_rejects_empty_images():
+    with pytest.raises(ImageException, match='At least one image'):
+        Texture3D.create_for_images([])

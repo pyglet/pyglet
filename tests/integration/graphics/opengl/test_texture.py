@@ -3,7 +3,7 @@ from ctypes import Array, byref, c_float
 import pyglet
 import pytest
 
-from pyglet.enums import ComponentFormat
+from pyglet.enums import ComponentFormat, TextureFilter
 from pyglet.graphics import Texture
 from pyglet.graphics.api.gl import gl
 from pyglet.graphics.api.gl.framebuffer import GLFramebuffer
@@ -12,6 +12,23 @@ from tests.annotations import GraphicsAPIGroups, require_graphics_api
 
 
 pytestmark = require_graphics_api(GraphicsAPIGroups.GL3)
+
+
+def test_texture_array_creation_sets_distinct_sampler_filters(test_window):
+    test_window.switch_to()
+    context = test_window.context
+    texture = pyglet.graphics.TextureArray.create(
+        2, 2, filters=(TextureFilter.NEAREST, TextureFilter.LINEAR), max_depth=1, context=context,
+    )
+    try:
+        texture.bind()
+        value = gl.GLint()
+        context.glGetTexParameteriv(texture.target, gl.GL_TEXTURE_MIN_FILTER, value)
+        assert value.value == gl.GL_NEAREST
+        context.glGetTexParameteriv(texture.target, gl.GL_TEXTURE_MAG_FILTER, value)
+        assert value.value == gl.GL_LINEAR
+    finally:
+        texture.delete()
 
 
 def test_read_pixels_returns_zero_copy_typed_buffer(test_window):
