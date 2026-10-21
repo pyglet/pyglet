@@ -50,7 +50,15 @@ if TYPE_CHECKING:
         ResourceKey, ShaderKey, ShaderProgramKey, TextureKey, VertexArrayKey, VertexArrayResource,
     )
     from pyglet.graphics.draw import get_default_batch  # noqa: F401
-    from pyglet.graphics.texture import PixelData, Texture, TextureGrid, Texture3D, TextureArray  # noqa: F401
+    from pyglet.graphics.texture import (
+        PixelData,
+        Texture,
+        TextureGrid,
+        Texture3D,
+        TextureArray,
+        TextureStreamer,
+        TextureUploadJob,
+        TextureDownloadJob)  # noqa: F401
     from pyglet.graphics.atlas import TextureBin, TextureArrayBin, TextureAtlas  # noqa: F401
     from pyglet.graphics.framebuffer import Framebuffer, RenderTexture, Renderbuffer, TextureRenderTarget  # noqa: F401
 else:
@@ -73,6 +81,15 @@ else:
         BufferKey, FramebufferKey, FramebufferResource, GraphicsResource, RenderbufferKey, RenderbufferResource,
         ResourceKey, ShaderKey, ShaderProgramKey, TextureKey, VertexArrayKey, VertexArrayResource,
     )
-    from pyglet.graphics.texture import PixelData, Texture, TextureGrid, Texture3D, TextureArray  # noqa: F401
+    from pyglet.graphics.texture import (  # noqa: F401
+        PixelData,
+        Texture,
+        TextureGrid,
+        Texture3D,
+        TextureArray,
+        TextureStreamer,
+        TextureUploadJob,
+        TextureDownloadJob,
+    )
     from pyglet.graphics.atlas import TextureBin, TextureArrayBin, TextureAtlas  # noqa: F401
     from pyglet.graphics.framebuffer import Framebuffer, RenderTexture, Renderbuffer, TextureRenderTarget  # noqa: F401
