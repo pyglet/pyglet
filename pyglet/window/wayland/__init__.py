@@ -4,7 +4,7 @@ import ctypes
 import mmap
 import os
 from ctypes import create_string_buffer
-from typing import Sequence
+from typing import TYPE_CHECKING, Sequence
 
 import pyglet
 
@@ -14,6 +14,9 @@ from pyglet.libs.linux.wayland import xkbcommon
 from pyglet.window import BaseWindow, _PlatformEventHandler, _ViewEventHandler, key, mouse
 from pyglet.libs.linux.wayland.client import Client, Interface
 from pyglet.libs.linux.wayland.wayland_egl import *
+
+if TYPE_CHECKING:
+    from pyglet.display.base import Screen
 
 # Platform event data is single item, so use platform event handler directly.
 WaylandEventHandler = _PlatformEventHandler
@@ -70,6 +73,7 @@ class WaylandWindow(BaseWindow):
         self._mouse_buttons = 0
         self._key_modifiers = 0
         self._has_keyboard_focus = False
+        self._entered_outputs = {}
 
         self.xkb_context = xkbcommon.xkb_context_new(xkbcommon.enum_xkb_context_flags(xkbcommon.XKB_CONTEXT_NO_FLAGS))
         self.xkb_keymap = None
@@ -99,6 +103,19 @@ class WaylandWindow(BaseWindow):
 
     def get_size(self) -> tuple[int, int]:
         return self._width, self._height
+
+    def get_current_screen(self) -> Screen:
+        """Return the most recently entered output still occupied by the surface.
+
+        Wayland reports output membership without overlap areas. Before any
+        output is entered, or after all outputs are left, use the configured
+        fullscreen target.
+        """
+        for output in reversed(tuple(self._entered_outputs)):
+            screen = self.display._output_screens.get(output)
+            if screen is not None:
+                return screen
+        return self._screen
 
     def set_location(self, x: int, y: int) -> None:
         pass
@@ -161,7 +178,12 @@ class WaylandWindow(BaseWindow):
         self.wl_compositor = self.client.protocol_dict['wayland'].bind_interface('wl_compositor')
 
         self.wl_surface = self.wl_compositor.create_surface(next(self.client.oid_pool))
-        self.wl_surface.set_handler('preferred_buffer_scale', self.wl_surface_preferred_buffer_scale_handler)
+        self._entered_outputs.clear()
+        self.wl_surface.set_handlers(
+            preferred_buffer_scale=self.wl_surface_preferred_buffer_scale_handler,
+            enter=self.wl_surface_enter_handler,
+            leave=self.wl_surface_leave_handler,
+        )
 
         self.xdg_wm_base = self.client.protocol_dict['xdg_shell'].bind_interface('xdg_wm_base')
         self.xdg_wm_base.set_handler('ping', self.xdg_base_ping_handler)
@@ -236,6 +258,14 @@ class WaylandWindow(BaseWindow):
             self.dispatch_event('_on_internal_resize', self._width, self._height)
 
     # Start Wayland event handlers
+
+    def wl_surface_enter_handler(self, output) -> None:
+        output_id = ctypes.cast(output, ctypes.c_void_p).value
+        self._entered_outputs.pop(output_id, None)
+        self._entered_outputs[output_id] = None
+
+    def wl_surface_leave_handler(self, output) -> None:
+        self._entered_outputs.pop(ctypes.cast(output, ctypes.c_void_p).value, None)
 
     def xdg_base_ping_handler(self, serial):
         """Keep-alive response to the ping event"""

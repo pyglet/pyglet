@@ -18,6 +18,7 @@ from pyglet.libs.darwin.cocoapy import (
 from pyglet.window import BaseWindow
 
 if TYPE_CHECKING:
+    from pyglet.display.base import Screen
     from pyglet.graphics.api.base import SurfaceContext
 
 
@@ -132,6 +133,10 @@ class IOSWindow(BaseWindow):
 
     def get_size(self) -> tuple[int, int]:
         return self._width, self._height
+
+    def get_current_screen(self) -> Screen:
+        """Return the main screen used by this UIKit window."""
+        return self._screen
 
     def set_location(self, x: int, y: int) -> None:
         """Behavior not available on iOS."""

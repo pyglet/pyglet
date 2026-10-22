@@ -807,6 +807,10 @@ class EmscriptenWindow(BaseWindow):
             return self._context.gl.drawingBufferWidth, self._context.gl.drawingBufferHeight
         return self.get_size()
 
+    def get_current_screen(self) -> Screen:
+        """Return the single screen exposed by the browser display."""
+        return self._screen
+
     def _event_resized(self, entries, observer):
         for entry in entries:
             rect = entry.contentRect
