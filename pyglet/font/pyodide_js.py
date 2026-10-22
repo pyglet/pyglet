@@ -46,7 +46,13 @@ class PyodideGlyphRenderer(base.GlyphRenderer):
         _font_context.font = self.font.js_name
         metrics = _font_context.measureText(text)
         padding = math.ceil(stroke_size * (10 if stroke_join == "miter" else 1)) + 1 if stroke_size else 0
-        w = max(1, int(math.ceil(metrics.width)) + padding * 2)
+        advance = int(math.ceil(metrics.width))
+        # The ink can extend beyond the origin and the advance (italic letters, the hook of an f): the canvas
+        # spans it, else it is cut.
+        ink_left = max(0, math.ceil(metrics.actualBoundingBoxLeft))
+        ink_right = max(advance, math.ceil(metrics.actualBoundingBoxRight))
+        w = max(1, ink_left + ink_right + padding * 2)
+        origin_x = ink_left + padding
         # Round the ascent and the descent separately: the baseline drawn at baseline_y from the top must be
         # at ceil(descent) from the bottom, where the glyph declares it.
         ascent = max(1, int(math.ceil(metrics.actualBoundingBoxAscent)))
@@ -72,9 +78,9 @@ class PyodideGlyphRenderer(base.GlyphRenderer):
         _font_context.scale(1, -1)  # Flip vertically
 
         if stroke_size:
-            _font_context.strokeText(text, padding, baseline_y)
+            _font_context.strokeText(text, origin_x, baseline_y)
         else:
-            _font_context.fillText(text, 0, baseline_y)
+            _font_context.fillText(text, origin_x, baseline_y)
 
         image_data = _font_context.getImageData(0, 0, w, h)
         if stroke_size:
@@ -86,14 +92,14 @@ class PyodideGlyphRenderer(base.GlyphRenderer):
             # supplied to pyglet with a positive (bottom-to-top) pitch.
             # Therefore Canvas's top rows are the glyph's bottom rows.
             baseline = int(math.ceil(metrics.actualBoundingBoxDescent)) + padding - top
-            left_side_bearing = left - padding
+            left_side_bearing = left - origin_x
         else:
             baseline = int(math.ceil(metrics.actualBoundingBoxDescent))
-            left_side_bearing = 0
+            left_side_bearing = -origin_x
 
         image = ImageData(image_data.width, image_data.height, 'RGBA', image_data.data)
         glyph = self.font.create_glyph(image)
-        glyph.set_bearings(baseline, left_side_bearing, math.ceil(metrics.width))
+        glyph.set_bearings(baseline, left_side_bearing, advance)
         return glyph
 
     @staticmethod
