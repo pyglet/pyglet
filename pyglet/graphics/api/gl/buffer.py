@@ -46,7 +46,7 @@ from pyglet.graphics.buffer import (
 )
 
 if TYPE_CHECKING:
-    from pyglet.customtypes import CTypesPointer, DataTypes
+    from pyglet.customtypes import Buffer, CTypesPointer, DataTypes
     from pyglet.graphics.attributes import GraphicsAttribute
 
 
@@ -428,6 +428,37 @@ class GLPixelUnpackBufferObject(GLPixelBufferObject, PixelUnpackBuffer):
 
     def __init__(self, context: OpenGLSurfaceContext, size: int, usage: int = GL_DYNAMIC_DRAW) -> None:
         super().__init__(context, size, pack=False, usage=usage)
+
+
+class _GLPersistentPixelUnpackBuffer(GLPixelUnpackBufferObject):
+    """Streamer-owned upload storage, reused only after its batch fence signals.
+
+    Coherent persistent mapping avoids allocation and map/unmap calls on each
+    upload. The streamer must never hand this buffer out while it is in flight.
+    """
+
+    _mapped_ptr = None
+
+    def write_transfer(self, data: Buffer, offset: int = 0) -> None:
+        raw = bytes(data)
+        self._validate_byte_range(offset, len(raw))
+        if self._mapped_ptr is None:
+            flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT
+            self.bind()
+            self._context.glBufferStorage(self.target, self.size, None, flags)
+            self._allocated = True
+            self._mapped_ptr = self._context.glMapBufferRange(self.target, 0, self.size, flags)
+            if not self._mapped_ptr:
+                from pyglet.graphics import GraphicsAPIError
+
+                raise GraphicsAPIError("Could not map persistent texture upload buffer.")
+        ctypes.memmove(ctypes.cast(self._mapped_ptr, ctypes.c_void_p).value + offset, raw, len(raw))
+        self._set_data_uploaded()
+
+    def delete(self) -> None:
+        # Deleting the buffer also ends its mapping.
+        super().delete()
+        self._mapped_ptr = None
 
 
 class GLTransformFeedbackBufferObject(GLBufferObject, TransformFeedbackBuffer):

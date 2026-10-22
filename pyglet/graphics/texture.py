@@ -123,7 +123,11 @@ class TextureSequence(_AbstractImageSequence[TTexture], Generic[TTexture]):
 
 @dataclass
 class TextureUploadJob:
-    """Queued texture upload operation managed by :class:`TextureStreamer`."""
+    """A batch of uploads with one fence and one completion notification.
+
+    ``submitted`` becomes true once every region has been issued to the GPU.
+    A limited submission may leave the batch partially issued across frames.
+    """
 
     texture: Texture
     uploads: Sequence[tuple[ImageData | ImageDataRegion, int, int, int, int]]
@@ -133,21 +137,46 @@ class TextureUploadJob:
     completed: bool = False
     fence: Any | None = None
     pbos: list[PixelUnpackBuffer] = field(default_factory=list)
+    _next_upload: int = field(default=0, init=False, repr=False)
 
-    def _submit(self, streamer: TextureStreamer) -> None:
-        self.submitted = True
+    def _submit(self, streamer: TextureStreamer, max_uploads: int | None = None,
+                max_bytes: int | None = None, allow_oversized: bool = True) -> tuple[int, int]:
         context = streamer.context
         if hasattr(context, "set_current"):
             context.set_current()
 
-        for image, x, y, z, level in self.uploads:
-            size = self.texture.get_pbo_upload_size(image)
-            pbo = streamer._acquire_upload_pbo(size)
-            self.texture.upload_to_pbo(pbo, image, x, y, z, level=level)
+        end = len(self.uploads) if max_uploads is None else min(len(self.uploads), self._next_upload + max_uploads)
+        issued = transferred = 0
+        while self._next_upload < end:
+            group = []
+            packed_size = group_bytes = 0
+            for upload in self.uploads[self._next_upload:end]:
+                size = self.texture.get_pbo_upload_size(upload[0])
+                if max_bytes is not None and transferred + group_bytes + size > max_bytes:
+                    if group or issued or not allow_oversized:
+                        break
+                next_size = ((packed_size + 7) & ~7) + size
+                if group and next_size > streamer.upload_buffer_size:
+                    break
+                group.append(upload)
+                packed_size = next_size
+                group_bytes += size
+            if not group:
+                break
+            pbo = streamer._acquire_upload_pbo(packed_size)
+            # Retain ownership even if the backend raises during submission.
             self.pbos.append(pbo)
+            self.texture.upload_regions_to_pbo(pbo, group)
+            self._next_upload += len(group)
+            issued += len(group)
+            transferred += group_bytes
 
-        self.fence = context.create_frame_fence()
+        if self._next_upload == len(self.uploads):
+            self.fence = context.create_frame_fence()
+            self.submitted = True
+        # Partial batches also make progress without depending on presentation.
         self.texture._flush()
+        return issued, transferred
 
     def _delete_resources(self, context: SurfaceContext) -> None:
         context.delete_frame_fence(self.fence)
@@ -201,9 +230,9 @@ class TextureDownloadJob:
         if hasattr(context, "set_current"):
             context.set_current()
 
-        size = self.texture.get_pbo_fetch_size(self.z, level=self.level)
+        size = self.width * self.height * 4
         self.pbo = streamer._acquire_download_pbo(size)
-        self.texture.fetch_to_pbo(self.pbo, self.z, level=self.level)
+        self.texture.fetch_region_to_pbo(self.pbo, self.x, self.y, self.width, self.height, self.z, self.level)
         self.fence = context.create_frame_fence()
         self.texture._flush()
 
@@ -226,15 +255,12 @@ class TextureDownloadJob:
         context.delete_frame_fence(self.fence)
         self.fence = None
         assert self.pbo is not None
-        self.destination = self.texture.fetch_from_pbo(
-            self.pbo,
-            z=self.z,
-            level=self.level,
-            x=self.x,
-            y=self.y,
-            width=self.width,
-            height=self.height,
-        )
+        self.pbo._set_data_uploaded()
+        try:
+            data = self.pbo.get_bytes_region(0, self.width * self.height * 4)
+        finally:
+            self.pbo.unbind()
+        self.destination = ImageData(self.width, self.height, "RGBA", data)
         streamer._release_pbo(streamer._download_pbo_pool, self.pbo)
         self.pbo = None
         self.completed = True
@@ -242,13 +268,44 @@ class TextureDownloadJob:
 
 
 class TextureStreamer(EventDispatcher):
-    """Submit queued texture uploads and downloads, then poll completion later."""
+    """Queue texture transfers through reusable pixel buffers and track completion."""
 
     def __init__(self, window: pyglet.window.Window | SurfaceContext, upload_pool_size: int = 2,
-                 download_pool_size: int = 2) -> None:
+                 download_pool_size: int = 2, *, persistent_uploads: bool = False,
+                 upload_buffer_size: int = 1024 * 1024) -> None:
+        """Create a texture streamer for a window or graphics context.
+
+        Transfer buffers are allocated on demand and retained for re-use until
+        :meth:`delete` is called. Upload buffers remain owned by their batch
+        until its single final fence signals.
+
+        Args:
+            window:
+                The window or graphics context that owns the transfers.
+            upload_pool_size:
+                Maximum number of active upload jobs, clamped to at least one.
+                This limits jobs, rather than buffer count or memory usage.
+            download_pool_size:
+                Maximum number of active download jobs, clamped to at least one.
+            persistent_uploads:
+                Permit coherent persistent upload-buffer mapping when the backend
+                supports both persistent storage and synchronization objects.
+                Otherwise, use ordinary pixel unpack buffers. Defaults to False.
+            upload_buffer_size:
+                Preferred maximum size of a packed upload block in bytes.
+                Defaults to 1 MiB. Only the required storage
+                is allocated. Images larger than this size get dedicated buffers.
+                Multiple upload regions can share a block on both OpenGL and WebGL.
+
+        Raises:
+            AssertionError: If upload_buffer_size is not positive.
+        """
+        assert upload_buffer_size > 0, "Size must be a positive value."
         self.context = window.context if hasattr(window, "context") and not hasattr(window, "create_frame_fence") else window
         self.upload_pool_size = max(1, upload_pool_size)
         self.download_pool_size = max(1, download_pool_size)
+        self.persistent_uploads = persistent_uploads
+        self.upload_buffer_size = upload_buffer_size
         self._upload_pbo_pool: list[PixelUnpackBuffer] = []
         self._download_pbo_pool: list[PixelPackBuffer] = []
         self._queued_uploads: deque[TextureUploadJob] = deque()
@@ -261,6 +318,31 @@ class TextureStreamer(EventDispatcher):
 
     def queue_upload(self, texture: Texture, image: ImageData | ImageDataRegion, x: int = 0, y: int = 0,
                      z: int = 0, level: int = 0) -> TextureUploadJob:
+        """Queue one image for upload when :meth:`submit` is called.
+
+        The image is retained for later submission; its pixels are not copied
+        by this call. Keep the image data valid until it has been submitted.
+
+        Args:
+            texture:
+                Destination texture or texture region in this streamer's context.
+            image:
+                Source pixels to upload.
+            x:
+                Destination's lower-left x coordinate, relative to the texture view.
+            y:
+                Destination's lower-left y coordinate, relative to the texture view.
+            z:
+                Destination layer or depth slice, relative to the texture view.
+            level:
+                Destination mipmap level, which must already be allocated.
+
+        Returns:
+            An upload job containing the destination region and completion state.
+
+        Raises:
+            ImageException: If the destination rectangle, layer or level is invalid.
+        """
         texture._validate_pbo_region(x, y, image.width, image.height, z, level)
         region = texture.get_region(x, y, image.width, image.height)
         job = TextureUploadJob(texture, [(image, x, y, z, level)], region=region, regions=[region])
@@ -271,6 +353,27 @@ class TextureStreamer(EventDispatcher):
                       uploads: Sequence[tuple[ImageData | ImageDataRegion, int, int] |
                                         tuple[ImageData | ImageDataRegion, int, int, int] |
                                         tuple[ImageData | ImageDataRegion, int, int, int, int]]) -> TextureUploadJob:
+        """Queue image uploads as one job with one final completion fence.
+
+        Images are retained for later submission. Keep their data valid until
+        submitted. Submission can span multiple frames while completion is
+        reported once for the entire job.
+
+        Args:
+            texture:
+                Destination texture or texture region in this streamer's context.
+            uploads:
+                Entries of ``(image, x, y)``, ``(image, x, y, z)`` or
+                ``(image, x, y, z, level)``. Coordinates are relative to the
+                destination texture view. Omitted z and level values default
+                to zero; each mipmap level must already be allocated.
+
+        Returns:
+            An upload job containing the destination regions and completion state.
+
+        Raises:
+            ImageException: If any destination rectangle, layer or level is invalid.
+        """
         normalized_uploads = []
         regions = []
         for upload in uploads:
@@ -287,30 +390,176 @@ class TextureStreamer(EventDispatcher):
 
     def queue_download(self, texture: Texture, x: int = 0, y: int = 0, width: int | None = None,
                        height: int | None = None, z: int = 0, level: int = 0) -> TextureDownloadJob:
-        """Queue a mip-level rectangle.
+        """Queue a rectangle for readback when :meth:`submit` is called.
 
-        Omitted dimensions extend to the view edge.
+        Args:
+            texture:
+                Source texture or texture region in this streamer's context.
+            x:
+                Source rectangle's lower-left x coordinate, relative to the view.
+            y:
+                Source rectangle's lower-left y coordinate, relative to the view.
+            width:
+                Rectangle width in pixels, or None to extend to the mip-level view edge.
+            height:
+                Rectangle height in pixels, or None to extend to the mip-level view edge.
+            z:
+                Source layer or depth slice, relative to the texture view.
+            level:
+                Source mipmap level, which must already be allocated.
+
+        Returns:
+            A download job whose destination becomes tightly packed RGBA image
+            data when completion is processed by :meth:`poll` or :meth:`process`.
+
+        Raises:
+            ImageException: If the source rectangle, layer or level is invalid.
         """
         width, height = texture._validate_pbo_region(x, y, width, height, z, level)
         job = TextureDownloadJob(texture, x, y, width, height, z, level)
         self._queued_downloads.append(job)
         return job
 
-    def submit(self) -> None:
+    def submit(self, *, max_uploads: int | None = None, max_bytes: int | None = None) -> None:
+        """Accept queued jobs and issue transfers within the upload allowances.
+
+        Continues partially submitted jobs before starting waiting upload jobs.
+        Each upload job retains one final fence, even when submitted across
+        multiple calls. This method does not poll completion or dispatch events.
+
+        Args:
+            max_uploads:
+                Maximum number of upload regions issued across all jobs in this
+                call. Must be positive, or None for no region-count limit.
+            max_bytes:
+                Maximum upload pixel payload in bytes across all jobs in this
+                call. Must be positive, or None for no byte limit. One oversized
+                image is allowed if no uploads have been issued yet, so it cannot
+                prevent queue progress. Padding between images is not counted.
+
+        These limits apply to uploads only. They do not split individual images
+        or enforce a CPU-time deadline. Download submissions are limited only by
+        the number of active download jobs.
+
+        Raises:
+            ValueError: If either upload allowance is not positive or None.
+        """
+        self._validate_upload_limit(max_uploads, max_bytes)
         self._pending_uploads.extend(self._queued_uploads)
         self._pending_downloads.extend(self._queued_downloads)
         self._queued_uploads.clear()
         self._queued_downloads.clear()
-        self._submit_pending(self._pending_uploads, self._active_uploads, self.upload_pool_size)
+        self._submit_uploads(max_uploads, max_bytes)
         self._submit_pending(self._pending_downloads, self._active_downloads, self.download_pool_size)
 
-    def process(self) -> None:
+    def poll(self) -> None:
+        """Retire completed jobs without issuing uploads or downloads.
+
+        Checks active jobs without waiting for their GPU fences to signal.
+        Completed upload buffers return to the reusable pool. Completed
+        downloads copy their pixels into CPU image data before releasing buffers.
+
+        Dispatches ``on_upload_complete`` or ``on_download_complete``, followed
+        by ``on_job_complete``, for each completed job. Copies and event handlers
+        run during this call, so its CPU cost is not limited to fence checks.
+        Queued and partially submitted transfers are left for :meth:`submit`
+        or :meth:`process` to issue.
+        """
+        if hasattr(self.context, "set_current"):
+            self.context.set_current()
         self._process_active(self._active_uploads, "on_upload_complete")
         self._process_active(self._active_downloads, "on_download_complete")
-        self._submit_pending(self._pending_uploads, self._active_uploads, self.upload_pool_size)
+
+    def process(self, *, max_uploads: int | None = None, max_bytes: int | None = None) -> None:
+        """Poll completion, then continue jobs previously accepted by :meth:`submit`.
+
+        Performs the completion handling described by :meth:`poll`, then issues
+        waiting transfers. Newly queued jobs are not accepted until submit is
+        called again.
+
+        Args:
+            max_uploads:
+                Maximum upload regions issued across all jobs in this call.
+                Must be positive, or None for no region-count limit.
+            max_bytes:
+                Maximum upload pixel payload in bytes across all jobs in this
+                call. Must be positive, or None for no byte limit. As with
+                :meth:`submit`, one oversized image may exceed this allowance
+                if no uploads have been issued yet. Padding is not counted.
+
+        Upload allowances do not split images, limit download work or bound
+        time spent polling, copying pixels and running completion handlers.
+
+        Raises:
+            ValueError: If either upload allowance is not positive or None.
+        """
+        self._validate_upload_limit(max_uploads, max_bytes)
+        self.poll()
+        self._submit_uploads(max_uploads, max_bytes)
         self._submit_pending(self._pending_downloads, self._active_downloads, self.download_pool_size)
 
+    @staticmethod
+    def _validate_upload_limit(max_uploads: int | None, max_bytes: int | None) -> None:
+        """Validate upload allowances before accepting or processing jobs.
+
+        Args:
+            max_uploads:
+                Positive region-count limit, or None for no limit.
+            max_bytes:
+                Positive pixel-payload byte limit, or None for no limit.
+
+        Raises:
+            ValueError: If either allowance is not positive or None.
+        """
+        if max_uploads is not None and max_uploads < 1:
+            raise ValueError("max_uploads must be positive or None")
+        if max_bytes is not None and max_bytes < 1:
+            raise ValueError("max_bytes must be positive or None")
+
+    def _submit_uploads(self, max_uploads: int | None, max_bytes: int | None) -> None:
+        """Continue active uploads, then start pending jobs as capacity permits.
+
+        Args:
+            max_uploads:
+                Region-count allowance shared by all jobs in this call.
+            max_bytes:
+                Pixel-payload byte allowance shared by all jobs in this call.
+        """
+        remaining = max_uploads
+        bytes_left = max_bytes
+        issued_total = 0
+        for job in self._active_uploads:
+            if not job.submitted:
+                issued, size = job._submit(self, remaining, bytes_left, issued_total == 0)
+                issued_total += issued
+                if bytes_left is not None:
+                    bytes_left -= size
+                    if bytes_left <= 0:
+                        return
+                if remaining is not None:
+                    remaining -= issued
+                    if remaining == 0:
+                        return
+        while self._pending_uploads and len(self._active_uploads) < self.upload_pool_size:
+            job = self._pending_uploads.popleft()
+            self._active_uploads.append(job)
+            issued, size = job._submit(self, remaining, bytes_left, issued_total == 0)
+            issued_total += issued
+            if bytes_left is not None:
+                bytes_left -= size
+                if bytes_left <= 0:
+                    return
+            if remaining is not None:
+                remaining -= issued
+                if remaining == 0:
+                    return
+
     def delete(self) -> None:
+        """Release transfer buffers and discard all queued and active jobs.
+
+        Discarded jobs do not dispatch completion events. Repeated calls have
+        no effect. The streamer must not be used after deletion.
+        """
         if self._deleted:
             return
         for job in (*self._active_uploads, *self._active_downloads):
@@ -326,19 +575,64 @@ class TextureStreamer(EventDispatcher):
         self._deleted = True
 
     def _acquire_upload_pbo(self, size: int) -> PixelUnpackBuffer:
+        """Acquire a reusable upload buffer, allocating one if necessary.
+
+        Args:
+            size: Minimum required buffer capacity in bytes.
+
+        Returns:
+            A pixel unpack buffer with at least the requested capacity.
+        """
         return self._acquire_pbo(self._upload_pbo_pool, size, self.get_backend_pixel_unpack_buffer)
 
     def get_backend_pixel_unpack_buffer(self, size: int) -> PixelUnpackBuffer:
+        """Create an upload buffer using the graphics backend.
+
+        Args:
+            size: Required buffer capacity in bytes.
+
+        Returns:
+            A new pixel unpack buffer owned by this streamer.
+        """
         raise NotImplementedError
 
     def _acquire_download_pbo(self, size: int) -> PixelPackBuffer:
+        """Acquire a reusable download buffer, allocating one if necessary.
+
+        Args:
+            size: Minimum required buffer capacity in bytes.
+
+        Returns:
+            A pixel pack buffer with at least the requested capacity.
+        """
         return self._acquire_pbo(self._download_pbo_pool, size, self.get_backend_pixel_pack_buffer)
 
     def get_backend_pixel_pack_buffer(self, size: int) -> PixelPackBuffer:
+        """Create a download buffer using the graphics backend.
+
+        Args:
+            size: Required buffer capacity in bytes.
+
+        Returns:
+            A new pixel pack buffer owned by this streamer.
+        """
         raise NotImplementedError
 
     @staticmethod
     def _acquire_pbo(pool: list[TPixelBuffer], size: int, create: Any) -> TPixelBuffer:
+        """Remove the first sufficiently large buffer from a pool, or create one.
+
+        Args:
+            pool:
+                Available buffers to search, in reuse order.
+            size:
+                Minimum required buffer capacity in bytes.
+            create:
+                Backend factory accepting a size and returning a new buffer.
+
+        Returns:
+            A pooled or newly allocated buffer with the requested capacity.
+        """
         for index, pbo in enumerate(pool):
             if pbo.size >= size:
                 return pool.pop(index)
@@ -346,10 +640,23 @@ class TextureStreamer(EventDispatcher):
 
     @staticmethod
     def _release_pbo(pool: list[TPixelBuffer], pbo: TPixelBuffer) -> None:
+        """Return a completed transfer's buffer to its reusable pool.
+
+        Args:
+            pool:
+                Available buffers of the matching transfer direction.
+            pbo:
+                Buffer whose GPU transfer has completed.
+        """
         pool.append(pbo)
 
     @staticmethod
     def _delete_pbo_pool(pool: list[PixelPackBuffer] | list[PixelUnpackBuffer]) -> None:
+        """Delete every available buffer and clear the pool.
+
+        Args:
+            pool: Available buffers whose storage should be released.
+        """
         for pbo in pool:
             pbo.delete()
         pool.clear()
@@ -357,12 +664,30 @@ class TextureStreamer(EventDispatcher):
     def _submit_pending(self, pending: deque[TextureUploadJob] | deque[TextureDownloadJob],
                         active: list[TextureUploadJob] | list[TextureDownloadJob],
                         pool_size: int) -> None:
+        """Submit pending jobs until the active-job limit is reached.
+
+        Args:
+            pending:
+                Accepted jobs waiting to be submitted.
+            active:
+                Jobs whose completion will be polled.
+            pool_size:
+                Maximum number of jobs allowed in active.
+        """
         while pending and len(active) < pool_size:
             job = pending.popleft()
             job._submit(self)
             active.append(job)
 
     def _process_active(self, active: list[TextureUploadJob] | list[TextureDownloadJob], event: str) -> None:
+        """Retire completed active jobs and dispatch their completion events.
+
+        Args:
+            active:
+                Submitted jobs to poll; completed jobs are removed in place.
+            event:
+                Transfer-specific event dispatched before on_job_complete.
+        """
         for job in active[:]:
             if job._poll(self):
                 active.remove(job)
@@ -632,6 +957,17 @@ class Texture(_AbstractImage, GraphicsResource[Any, TextureKey]):
             raise ImageException(msg0)
         return width, height
 
+    def upload_regions_to_pbo(
+        self, pbo: PixelUnpackBuffer,
+        uploads: Sequence[tuple[ImageData | ImageDataRegion, int, int, int, int]],
+    ) -> None:
+        """Upload regions through one caller-owned pixel unpack buffer.
+
+        Each entry is ``(image, x, y, z, level)``. Backends pack the source
+        images at eight-byte-aligned offsets and issue their texture transfers.
+        """
+        raise NotImplementedError
+
     def get_pbo_upload_size(self, image: ImageData | ImageDataRegion) -> int:
         """Return the pixel unpack buffer size required to upload image data."""
         raise NotImplementedError
@@ -641,13 +977,18 @@ class Texture(_AbstractImage, GraphicsResource[Any, TextureKey]):
         width, height = self._validate_pbo_region(0, 0, None, None, z, level)
         return width * height * 4
 
-    def upload_to_pbo(self, pbo: Any, image: ImageData | ImageDataRegion, x: int, y: int, z: int,
+    def upload_to_pbo(self, pbo: PixelUnpackBuffer, image: ImageData | ImageDataRegion, x: int, y: int, z: int,
                       level: int = 0) -> None:
         """Submit an upload through a caller-owned backend pixel unpack buffer."""
         raise NotImplementedError
 
     def fetch_to_pbo(self, pbo: Any, z: int = 0, level: int = 0) -> None:
         """Submit a readback through a caller-owned backend pixel pack buffer."""
+        raise NotImplementedError
+
+    def fetch_region_to_pbo(self, pbo: Any, x: int, y: int, width: int, height: int,
+                            z: int = 0, level: int = 0) -> None:
+        """Read exactly this rectangle into a tightly packed RGBA byte PBO."""
         raise NotImplementedError
 
     def fetch_from_pbo(self, pbo: Any, z: int = 0, level: int = 0, x: int = 0, y: int = 0,
@@ -1031,11 +1372,28 @@ class _TextureRegionShared:
     def get_pbo_upload_size(self, image: ImageData | ImageDataRegion) -> int:
         return self.owner.get_pbo_upload_size(image)
 
+    def upload_regions_to_pbo(
+        self, pbo: PixelUnpackBuffer,
+        uploads: Sequence[tuple[ImageData | ImageDataRegion, int, int, int, int]],
+    ) -> None:
+        translated: list[tuple[ImageData | ImageDataRegion, int, int, int, int]] = []
+        for image, x, y, z, level in uploads:
+            self._validate_pbo_region(x, y, image.width, image.height, z, level)
+            offset_x, offset_y, offset_z = self._get_pbo_region_offset(level)
+            translated.append((image, x + offset_x, y + offset_y, z + offset_z, level))
+        self.owner.upload_regions_to_pbo(pbo, translated)
+
+    def fetch_region_to_pbo(self, pbo: Any, x: int, y: int, width: int, height: int,
+                            z: int = 0, level: int = 0) -> None:
+        self._validate_pbo_region(x, y, width, height, z, level)
+        offset_x, offset_y, offset_z = self._get_pbo_region_offset(level)
+        self.owner.fetch_region_to_pbo(pbo, x + offset_x, y + offset_y, width, height, z + offset_z, level)
+
     def get_pbo_fetch_size(self, z: int = 0, level: int = 0) -> int:
         self._validate_pbo_region(0, 0, None, None, z, level)
         return self.owner.get_pbo_fetch_size(self._get_pbo_region_offset(level)[2] + z, level=level)
 
-    def upload_to_pbo(self, pbo: Any, image: ImageData | ImageDataRegion, x: int, y: int, z: int,
+    def upload_to_pbo(self, pbo: PixelUnpackBuffer, image: ImageData | ImageDataRegion, x: int, y: int, z: int,
                       level: int = 0) -> None:
         self._validate_pbo_region(x, y, image.width, image.height, z, level)
         offset_x, offset_y, offset_z = self._get_pbo_region_offset(level)

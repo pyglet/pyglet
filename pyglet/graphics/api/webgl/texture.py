@@ -21,6 +21,9 @@ from pyglet.graphics.api.webgl.gl import (
     GL_DRAW_FRAMEBUFFER_BINDING,
     GL_LINEAR_MIPMAP_LINEAR,
     GL_PACK_ALIGNMENT,
+    GL_PACK_ROW_LENGTH,
+    GL_PACK_SKIP_PIXELS,
+    GL_PACK_SKIP_ROWS,
     GL_PIXEL_PACK_BUFFER,
     GL_PIXEL_UNPACK_BUFFER,
     GL_READ_WRITE,
@@ -491,66 +494,90 @@ class WebGLTexture(Texture):
         upload_fmt = _normalize_upload_format(self.internal_format.value)
         return image.width * image.height * len(upload_fmt)
 
-    def upload_to_pbo(self, pbo, image: ImageData | ImageDataRegion, x: int, y: int, z: int,
+    def upload_to_pbo(self, pbo: WebGLPixelUnpackBufferObject, image: ImageData | ImageDataRegion, x: int, y: int, z: int,
                       level: int = 0) -> None:
-        self._validate_pbo_region(x, y, image.width, image.height, z, level)
-        data_format = _normalize_upload_format(self.internal_format.value)
-        data_pitch = image.width * len(data_format)
-        data = image.get_bytes(data_format, data_pitch)
-        assert pbo.size >= len(data), f"Pixel unpack buffer is too small for upload ({pbo.size} < {len(data)})."
+        self.upload_regions_to_pbo(pbo, [(image, x, y, z, level)])
+
+    def upload_regions_to_pbo(
+        self, pbo: WebGLPixelUnpackBufferObject,
+        uploads: Sequence[tuple[ImageData | ImageDataRegion, int, int, int, int]],
+    ) -> None:
+        """Pack upload regions into one PBO and issue their texture transfers."""
+        prepared: list[tuple[ImageData | ImageDataRegion, int, int, int, int, int, int, int, bytes]] = []
+        end = 0
+        for image, x, y, z, level in uploads:
+            self._validate_pbo_region(x, y, image.width, image.height, z, level)
+            data_format = _normalize_upload_format(self.internal_format.value)
+            data = bytes(image.get_bytes(data_format, image.width * len(data_format)))
+            offset = (end + 7) & ~7
+            end = offset + len(data)
+            fmt, gl_type = _get_gl_format_and_type(data_format)
+            prepared.append((image, x, y, z, level, fmt, gl_type, offset, data))
+        assert pbo.size >= end, "Pixel unpack buffer is too small for grouped upload."
         try:
-            if pbo.size == len(data):
-                pbo.set_bytes(data)
+            if len(prepared) == 1 and pbo.size == end:
+                pbo.set_bytes(prepared[0][-1])
             else:
                 pbo.invalidate()
-                pbo.bind()
-                with zero_copy(data) as js_array:
-                    self._gl.bufferSubData(pbo.target, 0, js_array)
+                for *_, offset, data in prepared:
+                    with zero_copy(data) as js_array:
+                        self._gl.bufferSubData(pbo.target, offset, js_array)
                 pbo._set_data_uploaded()
 
-            fmt, gl_type = _get_gl_format_and_type(data_format)
             self.bind()
             pbo.bind()
             self._gl.pixelStorei(GL_UNPACK_ALIGNMENT, 1)
             self._gl.pixelStorei(GL_UNPACK_ROW_LENGTH, 0)
             self._gl.pixelStorei(GL_UNPACK_SKIP_PIXELS, 0)
             self._gl.pixelStorei(GL_UNPACK_SKIP_ROWS, 0)
-            if self.target == GL_TEXTURE_3D or self.target == GL_TEXTURE_2D_ARRAY:
+            layered = self.target in (GL_TEXTURE_3D, GL_TEXTURE_2D_ARRAY)
+            if layered:
                 self._gl.pixelStorei(GL_UNPACK_IMAGE_HEIGHT, 0)
                 self._gl.pixelStorei(GL_UNPACK_SKIP_IMAGES, 0)
-                self._gl.texSubImage3D(
-                    self.target, level, x, y, z,
-                    image.width, image.height, 1, fmt, gl_type, 0,
-                )
-            else:
-                self._gl.texSubImage2D(
-                    self.target, level, x, y,
-                    image.width, image.height, fmt, gl_type, 0,
-                )
+            for image, x, y, z, level, fmt, gl_type, offset, _ in prepared:
+                if layered:
+                    self._gl.texSubImage3D(
+                        self.target, level, x, y, z,
+                        image.width, image.height, 1, fmt, gl_type, offset,
+                    )
+                else:
+                    self._gl.texSubImage2D(
+                        self.target, level, x, y,
+                        image.width, image.height, fmt, gl_type, offset,
+                    )
+                self._mark_mipmap_valid(level)
         finally:
             pbo.unbind()
-        self._mark_mipmap_valid(level)
 
     def fetch_to_pbo(self, pbo, z: int = 0, level: int = 0) -> None:
-        size = self.get_pbo_fetch_size(z, level=level)
-        assert pbo.size >= size, f"Pixel pack buffer is too small for fetch ({pbo.size} < {size})."
         width, height, _ = self._get_mipmap_dimensions(level)
+        self.fetch_region_to_pbo(pbo, 0, 0, width, height, z, level)
+
+    def fetch_region_to_pbo(self, pbo, x: int, y: int, width: int, height: int,
+                            z: int = 0, level: int = 0) -> None:
+        self._validate_pbo_region(x, y, width, height, z, level)
+        size = width * height * 4
+        assert pbo.size >= size, f"Pixel pack buffer is too small for fetch ({pbo.size} < {size})."
         read_framebuffer = self._gl.getParameter(GL_READ_FRAMEBUFFER_BINDING)
         draw_framebuffer = self._gl.getParameter(GL_DRAW_FRAMEBUFFER_BINDING)
-        alignment = self._gl.getParameter(GL_PACK_ALIGNMENT)
+        pack_fields = ((GL_PACK_ALIGNMENT, 1), (GL_PACK_ROW_LENGTH, 0),
+                       (GL_PACK_SKIP_PIXELS, 0), (GL_PACK_SKIP_ROWS, 0))
+        pack_state = [(field, self._gl.getParameter(field)) for field, _ in pack_fields]
         fbo = self._gl.createFramebuffer()
         try:
             pbo.invalidate()
-            self._gl.pixelStorei(GL_PACK_ALIGNMENT, 1)
+            for field, value in pack_fields:
+                self._gl.pixelStorei(field, value)
             self._gl.bindFramebuffer(GL_FRAMEBUFFER, fbo)
             self._attach_texture_to_fbo(z, level)
             if self._gl.checkFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE:
                 raise ImageException("Texture readback framebuffer is incomplete.")
-            self._gl.readPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, 0)
+            self._gl.readPixels(x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, 0)
         finally:
             self._gl.bindFramebuffer(GL_READ_FRAMEBUFFER, read_framebuffer)
             self._gl.bindFramebuffer(GL_DRAW_FRAMEBUFFER, draw_framebuffer)
-            self._gl.pixelStorei(GL_PACK_ALIGNMENT, alignment)
+            for field, value in pack_state:
+                self._gl.pixelStorei(field, value)
             self._gl.deleteFramebuffer(fbo)
             pbo.unbind()
 

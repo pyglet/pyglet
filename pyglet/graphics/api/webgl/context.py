@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Callable
 from pyodide.ffi import create_proxy  # noqa: F401, F821
 
 from pyglet.graphics.api.base import SurfaceContext, NullContext
+from pyglet.graphics import GraphicsAPIError
 from pyglet.graphics.api.webgl import gl
 from pyglet.graphics.api.webgl.gl import GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT
 from pyglet.graphics.api.webgl.gl_info import WebGLInfo
@@ -15,7 +16,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.api.webgl.shader import GLDataType
     from pyglet.config import SurfaceConfig
     from pyglet.graphics.api import WebGLBackend
-    from pyglet.graphics.api.webgl.webgl_js import WebGL2RenderingContext
+    from pyglet.graphics.api.webgl.webgl_js import WebGL2RenderingContext, WebGLSync
     from pyglet.window import Window
     from pyglet.window.emscripten import EmscriptenWindow
 
@@ -128,6 +129,41 @@ class WebGL2SurfaceContext(SurfaceContext):
 
     def set_current(self) -> None:
         """WebGL contexts are always current on their owning canvas."""
+
+    def create_frame_fence(self) -> WebGLSync:
+        """Insert a GPU completion fence for previously issued commands."""
+        fence = self.gl.fenceSync(gl.GL_SYNC_GPU_COMMANDS_COMPLETE, 0)
+        if not fence:
+            raise GraphicsAPIError("Could not create a WebGL completion fence.")
+        return fence
+
+    def poll_frame_fence(self, fence: WebGLSync | None) -> bool:
+        """Check a fence without waiting.
+
+        Browser event loop ticks allow progress.
+        """
+        if fence is None:
+            return True
+        result = self.gl.clientWaitSync(fence, 0, 0)
+        if result in (gl.GL_ALREADY_SIGNALED, gl.GL_CONDITION_SATISFIED):
+            return True
+        if result == gl.GL_TIMEOUT_EXPIRED:
+            return False
+        raise GraphicsAPIError(f"WebGL clientWaitSync failed: {result}")
+
+    def wait_frame_fence(self, fence: WebGLSync | None) -> None:
+        """Finish pending GPU commands when a blocking resource wait is required.
+
+        WebGL does not permit an indefinite clientWaitSync timeout. The
+        streamer's normal completion polling does not use this blocking path.
+        """
+        if fence is not None:
+            self.gl.finish()
+
+    def delete_frame_fence(self, fence: WebGLSync | None) -> None:
+        """Release a completion fence after its job or frame is retired."""
+        if fence is not None:
+            self.gl.deleteSync(fence)
 
     def _create_uniform_dicts(self) -> None:
         self._uniform_setters: dict[int, tuple[GLDataType, Callable, int]] = {
