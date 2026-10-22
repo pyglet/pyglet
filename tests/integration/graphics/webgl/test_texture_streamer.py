@@ -79,7 +79,7 @@ def test_partial_batch_limits_and_completion(webgl_window, finish_texture_stream
         return fence
 
     monkeypatch.setattr(context, "create_frame_fence", record_fence)
-    streamer.push_handlers(on_upload_complete=events.append)
+    streamer.push_handlers(on_upload_complete=lambda job: events.append(job))
     try:
         colors = [(index * 10, 20, 30, 255) for index in range(5)]
         job = streamer.queue_uploads(texture, [(_image(color), index, 0) for index, color in enumerate(colors)])

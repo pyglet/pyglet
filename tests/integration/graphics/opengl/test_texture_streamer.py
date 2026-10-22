@@ -540,7 +540,7 @@ def test_texture_streamer_partial_batch_uses_one_final_fence(test_window, monkey
         return fence
 
     monkeypatch.setattr(ctx, "create_frame_fence", record_fence)
-    streamer.push_handlers(on_upload_complete=events.append)
+    streamer.push_handlers(on_upload_complete=lambda job: events.append(job))
     try:
         colors = [(index, 20, 30, 255) for index in range(5)]
         job = streamer.queue_uploads(texture, [(_image(1, 1, color), index, 0)
