@@ -241,6 +241,8 @@ def test_texture_streamer_download_region(test_window):
         texture.upload(ImageData(2, 2, "RGBA", pixels), 0, 0, 0)
 
         job = streamer.queue_download(texture, x=1, y=1, width=1, height=1)
+        streamer.submit()
+        assert job.pbo.size == 4
         _finish_streamer(ctx, streamer, job)
 
         assert job.destination is not None
@@ -250,8 +252,9 @@ def test_texture_streamer_download_region(test_window):
         texture.delete()
 
 
-@pytest.mark.parametrize("layout", ["region", "padded", "negative_pitch", "argb"])
-def test_texture_streamer_upload_image_layouts(test_window, layout):
+@pytest.mark.parametrize("persistent", [False, True])
+@pytest.mark.parametrize("layout", ["region", "padded", "negative_pitch", "argb", "bytearray", "memoryview"])
+def test_texture_streamer_upload_image_layouts(test_window, layout, persistent):
     test_window.switch_to()
     ctx = test_window.context
     expected = bytes((1, 2, 3, 255, 4, 5, 6, 255, 7, 8, 9, 255, 10, 11, 12, 255))
@@ -263,11 +266,13 @@ def test_texture_streamer_upload_image_layouts(test_window, layout):
         source = ImageData(2, 2, "RGBA", expected[:8] + b"pad!" + expected[8:] + b"pad!", pitch=12)
     elif layout == "negative_pitch":
         source = ImageData(2, 2, "RGBA", expected[8:] + expected[:8], pitch=-8)
-    else:
+    elif layout == "argb":
         source = ImageData(2, 2, "ARGB", b"".join(expected[i + 3:i + 4] + expected[i:i + 3]
                                                  for i in range(0, len(expected), 4)))
+    else:
+        source = ImageData(2, 2, "RGBA", bytearray(expected) if layout == "bytearray" else memoryview(expected))
     texture = pyglet.graphics.Texture.create(2, 2, context=ctx)
-    streamer = pyglet.graphics.TextureStreamer(ctx)
+    streamer = pyglet.graphics.TextureStreamer(ctx, persistent_uploads=persistent)
     try:
         job = streamer.queue_upload(texture, source)
         streamer.submit()
@@ -296,13 +301,14 @@ def test_texture_streamer_download_restores_client_readbacks(test_window):
 
 
 @pytest.mark.parametrize("use_region", [False, True])
-def test_texture_streamer_mipmap_upload_and_download(test_window, use_region):
+@pytest.mark.parametrize("persistent", [False, True])
+def test_texture_streamer_mipmap_upload_and_download(test_window, use_region, persistent):
     test_window.switch_to()
     ctx = test_window.context
     texture = pyglet.graphics.Texture.create(8, 4, context=ctx)
     texture.init_mipmaps()
     target = texture.get_region(4, 0, 4, 4) if use_region else texture
-    streamer = pyglet.graphics.TextureStreamer(ctx)
+    streamer = pyglet.graphics.TextureStreamer(ctx, persistent_uploads=persistent)
     try:
         expected = bytes((31, 63, 95, 255)) * 4
         upload = streamer.queue_upload(target, ImageData(2, 2, "RGBA", expected), level=1)
@@ -321,14 +327,15 @@ def test_texture_streamer_mipmap_upload_and_download(test_window, use_region):
 
 
 @pytest.mark.parametrize("texture_class", ["Texture3D", "TextureArray"])
-def test_texture_streamer_nonzero_layer(test_window, texture_class):
+@pytest.mark.parametrize("persistent", [False, True])
+def test_texture_streamer_nonzero_layer(test_window, texture_class, persistent):
     test_window.switch_to()
     ctx = test_window.context
     texture = getattr(pyglet.graphics, texture_class).create_for_images(
         [_image(4, 4, (0, 0, 0, 255)) for _ in range(4)], context=ctx,
     )
     texture.init_mipmaps()
-    streamer = pyglet.graphics.TextureStreamer(ctx)
+    streamer = pyglet.graphics.TextureStreamer(ctx, persistent_uploads=persistent)
     try:
         expected = bytes((12, 34, 56, 255)) * 4
         upload = streamer.queue_upload(texture, ImageData(2, 2, "RGBA", expected), z=1, level=1)
@@ -378,6 +385,331 @@ def test_texture_streamer_default_download_bounds(test_window):
         job = streamer.queue_download(texture, x=1, y=1)
         _finish_streamer(test_window.context, streamer, job)
         assert (job.image_data.width, job.image_data.height) == (3, 1)
+    finally:
+        streamer.delete()
+        texture.delete()
+
+
+@pytest.mark.parametrize("persistent", [False, True])
+@pytest.mark.parametrize("block_size,expected_blocks", [(1, 5), (12, 3), (1024, 1)])
+def test_texture_streamer_packs_distinct_regions(test_window, persistent, block_size, expected_blocks):
+    test_window.switch_to()
+    ctx = test_window.context
+    texture = pyglet.graphics.Texture.create(5, 1, blank_data=True, context=ctx)
+    streamer = pyglet.graphics.TextureStreamer(ctx, persistent_uploads=persistent, upload_buffer_size=block_size)
+    try:
+        colors = [(index * 10, 20, 30, 255) for index in range(5)]
+        # RGB payloads require padding between offsets, and format conversion
+        # must remain independent for each region in the shared buffer.
+        uploads = [(ImageData(1, 1, "RGB", bytes(color[:3])), index, 0)
+                   for index, color in enumerate(colors)]
+        job = streamer.queue_uploads(texture, uploads)
+        streamer.submit()
+        assert len(job.pbos) == expected_blocks
+        _finish_submitted_streamer(ctx, streamer, job)
+        assert bytes(texture.fetch().get_bytes("RGBA", 20)) == b"".join(bytes(color) for color in colors)
+    finally:
+        streamer.delete()
+        texture.delete()
+
+
+def test_texture_streamer_byte_budget_shared_across_jobs(test_window):
+    test_window.switch_to()
+    ctx = test_window.context
+    texture = pyglet.graphics.Texture.create(1, 1, context=ctx)
+    streamer = pyglet.graphics.TextureStreamer(ctx, upload_pool_size=2)
+    try:
+        image = _image(1, 1, (1, 2, 3, 255))
+        first = streamer.queue_uploads(texture, [(image, 0, 0)] * 2)
+        second = streamer.queue_uploads(texture, [(image, 0, 0)] * 2)
+        streamer.submit(max_bytes=12)
+        assert first.submitted
+        assert second._next_upload == 1
+        assert not second.submitted
+        streamer.process(max_bytes=4)
+        assert second.submitted
+        _finish_submitted_streamer(ctx, streamer, first, second)
+    finally:
+        streamer.delete()
+        texture.delete()
+
+
+def test_texture_streamer_oversized_region_makes_progress(test_window):
+    test_window.switch_to()
+    ctx = test_window.context
+    texture = pyglet.graphics.Texture.create(2, 2, context=ctx)
+    streamer = pyglet.graphics.TextureStreamer(ctx, upload_buffer_size=4)
+    try:
+        image = _image(2, 2, (1, 2, 3, 255))
+        job = streamer.queue_uploads(texture, [(image, 0, 0)] * 2)
+        streamer.submit(max_bytes=4)
+        assert job._next_upload == 1
+        assert job.pbos[0].size == 16
+        assert not job.submitted
+        streamer.process(max_bytes=4)
+        assert job.submitted
+        _finish_submitted_streamer(ctx, streamer, job)
+    finally:
+        streamer.delete()
+        texture.delete()
+
+
+@pytest.mark.parametrize("persistent", [False, True])
+def test_texture_streamer_packed_texture_region_mipmap_uploads(test_window, persistent):
+    test_window.switch_to()
+    ctx = test_window.context
+    texture = pyglet.graphics.Texture.create(8, 4, context=ctx)
+    texture.init_mipmaps()
+    target = texture.get_region(4, 0, 4, 4)
+    streamer = pyglet.graphics.TextureStreamer(ctx, persistent_uploads=persistent)
+    try:
+        first = _image(2, 2, (10, 20, 30, 255))
+        second = _image(1, 1, (40, 50, 60, 255))
+        job = streamer.queue_uploads(target, [(first, 0, 0, 0, 1), (second, 1, 1, 0, 1)])
+        streamer.submit()
+        assert len(job.pbos) == 1
+        _finish_submitted_streamer(ctx, streamer, job)
+        expected = bytes((10, 20, 30, 255)) * 3 + bytes((40, 50, 60, 255))
+        download = streamer.queue_download(target, level=1)
+        _finish_streamer(ctx, streamer, download)
+        assert bytes(download.image_data.get_bytes("RGBA", 8)) == expected
+    finally:
+        streamer.delete()
+        texture.delete()
+
+
+@pytest.mark.parametrize("limit", [0, -1])
+def test_texture_streamer_rejects_invalid_byte_limit(test_window, limit):
+    test_window.switch_to()
+    streamer = pyglet.graphics.TextureStreamer(test_window.context)
+    try:
+        with pytest.raises(ValueError):
+            streamer.submit(max_bytes=limit)
+        with pytest.raises(ValueError):
+            streamer.process(max_bytes=limit)
+    finally:
+        streamer.delete()
+
+
+def test_texture_streamer_rectangle_readback_restores_pack_state(test_window):
+    from pyglet.graphics.api.gl import gl
+
+    test_window.switch_to()
+    ctx = test_window.context
+    texture = pyglet.graphics.Texture.create(4, 4, context=ctx)
+    streamer = pyglet.graphics.TextureStreamer(ctx)
+    fields = (gl.GL_PACK_ROW_LENGTH, gl.GL_PACK_SKIP_PIXELS, gl.GL_PACK_SKIP_ROWS)
+    previous = []
+    try:
+        texture.upload(_image(4, 4, (1, 2, 3, 255)), 0, 0, 0)
+        for field, value in zip(fields, (9, 2, 1)):
+            saved = gl.GLint()
+            ctx.glGetIntegerv(field, saved)
+            previous.append((field, saved.value))
+            ctx.glPixelStorei(field, value)
+        job = streamer.queue_download(texture.get_region(1, 1, 2, 2), x=1, y=1, width=1, height=1)
+        streamer.submit()
+        assert job.pbo.size == 4
+        _finish_submitted_streamer(ctx, streamer, job)
+        assert bytes(job.image_data.get_bytes("RGBA", 4)) == bytes((1, 2, 3, 255))
+        for field, expected in zip(fields, (9, 2, 1)):
+            value = gl.GLint()
+            ctx.glGetIntegerv(field, value)
+            assert value.value == expected
+    finally:
+        for field, value in previous:
+            ctx.glPixelStorei(field, value)
+        streamer.delete()
+        texture.delete()
+
+
+@pytest.mark.parametrize("persistent", [False, True])
+@pytest.mark.parametrize("block_size", [1, 1024 * 1024])
+def test_texture_streamer_partial_batch_uses_one_final_fence(test_window, monkeypatch, persistent, block_size):
+    test_window.switch_to()
+    ctx = test_window.context
+    texture = pyglet.graphics.Texture.create(5, 1, context=ctx)
+    streamer = pyglet.graphics.TextureStreamer(ctx, persistent_uploads=persistent, upload_buffer_size=block_size)
+    fences = []
+    events = []
+    create_fence = ctx.create_frame_fence
+
+    def record_fence():
+        fence = create_fence()
+        fences.append(fence)
+        return fence
+
+    monkeypatch.setattr(ctx, "create_frame_fence", record_fence)
+    streamer.push_handlers(on_upload_complete=events.append)
+    try:
+        colors = [(index, 20, 30, 255) for index in range(5)]
+        job = streamer.queue_uploads(texture, [(_image(1, 1, color), index, 0)
+                                               for index, color in enumerate(colors)])
+        streamer.submit(max_uploads=2)
+        assert len(job.pbos) == (2 if block_size == 1 else 1)
+        assert not job.submitted
+        assert not fences
+        ctx.glFinish()
+        streamer.poll()
+        assert not job.completed
+        assert len(job.pbos) == (2 if block_size == 1 else 1)
+        assert not events
+        assert not streamer._upload_pbo_pool
+
+        streamer.process(max_uploads=2)
+        assert len(job.pbos) == (4 if block_size == 1 else 2)
+        assert not fences
+        streamer.process(max_uploads=2)
+        assert job.submitted
+        assert len(fences) == 1
+        ctx.glFinish()
+        streamer.poll()
+        streamer.poll()
+        assert job.completed
+        assert events == [job]
+        assert len(fences) == 1
+        assert len(streamer._upload_pbo_pool) == (5 if block_size == 1 else 3)
+        assert bytes(texture.fetch().get_bytes("RGBA", 20)) == b"".join(bytes(color) for color in colors)
+    finally:
+        streamer.delete()
+        texture.delete()
+
+
+def test_texture_streamer_poll_does_not_submit_waiting_jobs(test_window):
+    test_window.switch_to()
+    ctx = test_window.context
+    texture = pyglet.graphics.Texture.create(1, 1, context=ctx)
+    streamer = pyglet.graphics.TextureStreamer(ctx, upload_pool_size=1)
+    try:
+        first = streamer.queue_upload(texture, _image(1, 1, (1, 2, 3, 255)))
+        second = streamer.queue_upload(texture, _image(1, 1, (4, 5, 6, 255)))
+        streamer.submit()
+        ctx.glFinish()
+        streamer.poll()
+        assert first.completed
+        assert not second.submitted
+        streamer.submit()
+        assert second.submitted
+        _finish_submitted_streamer(ctx, streamer, second)
+    finally:
+        streamer.delete()
+        texture.delete()
+
+
+def test_texture_streamer_deletes_partial_batch(test_window):
+    test_window.switch_to()
+    ctx = test_window.context
+    texture = pyglet.graphics.Texture.create(1, 1, context=ctx)
+    streamer = pyglet.graphics.TextureStreamer(ctx)
+    try:
+        image = _image(1, 1, (1, 2, 3, 255))
+        job = streamer.queue_uploads(texture, [(image, 0, 0)] * 3)
+        streamer.submit(max_uploads=1)
+        pbo = job.pbos[0]
+        streamer.delete()
+        assert pbo.handle is None
+        assert not job.pbos
+        assert not job.completed
+        assert not streamer._active_uploads
+    finally:
+        streamer.delete()
+        texture.delete()
+
+
+def test_texture_streamer_upload_limit_is_shared_across_jobs(test_window):
+    test_window.switch_to()
+    ctx = test_window.context
+    texture = pyglet.graphics.Texture.create(1, 1, context=ctx)
+    streamer = pyglet.graphics.TextureStreamer(ctx, upload_pool_size=2)
+    try:
+        image = _image(1, 1, (1, 2, 3, 255))
+        first = streamer.queue_uploads(texture, [(image, 0, 0)] * 2)
+        second = streamer.queue_uploads(texture, [(image, 0, 0)] * 2)
+        streamer.submit(max_uploads=3)
+        assert first.submitted
+        assert len(first.pbos) == 1
+        assert not second.submitted
+        assert len(second.pbos) == 1
+        streamer.process(max_uploads=1)
+        assert second.submitted
+        _finish_submitted_streamer(ctx, streamer, first, second)
+    finally:
+        streamer.delete()
+        texture.delete()
+
+
+@pytest.mark.parametrize("limit", [0, -1])
+def test_texture_streamer_rejects_invalid_upload_limit(test_window, limit):
+    test_window.switch_to()
+    ctx = test_window.context
+    texture = pyglet.graphics.Texture.create(1, 1, context=ctx)
+    streamer = pyglet.graphics.TextureStreamer(ctx)
+    try:
+        job = streamer.queue_upload(texture, _image(1, 1, (1, 2, 3, 255)))
+        with pytest.raises(ValueError):
+            streamer.submit(max_uploads=limit)
+        assert not job.submitted
+        assert not streamer._active_uploads
+        _finish_streamer(ctx, streamer, job)
+    finally:
+        streamer.delete()
+        texture.delete()
+
+
+def test_texture_streamer_persistent_storage_reused_after_completion(test_window, monkeypatch):
+    from pyglet.graphics.api.gl import gl
+    from pyglet.graphics.api.gl.buffer import _GLPersistentPixelUnpackBuffer
+
+    test_window.switch_to()
+    ctx = test_window.context
+    if not (ctx.info.features.persistent_buffers and ctx.info.features.sync_objects):
+        pytest.skip("Persistent uploads require buffer storage and sync objects")
+    texture = pyglet.graphics.Texture.create(2, 2, context=ctx)
+    streamer = pyglet.graphics.TextureStreamer(ctx, persistent_uploads=True)
+    allocations = []
+    allocate = ctx.glBufferStorage
+
+    def record_allocation(*args):
+        if args[0] == gl.GL_PIXEL_UNPACK_BUFFER:
+            allocations.append(args[1])
+        return allocate(*args)
+
+    monkeypatch.setattr(ctx, "glBufferStorage", record_allocation)
+    try:
+        first = streamer.queue_upload(texture, _image(2, 2, (1, 2, 3, 255)))
+        streamer.submit()
+        pbo = first.pbos[0]
+        assert isinstance(pbo, _GLPersistentPixelUnpackBuffer)
+        _finish_submitted_streamer(ctx, streamer, first)
+        # Reusing a larger PBO must not orphan immutable storage or copy stale bytes.
+        second = streamer.queue_upload(texture, _image(1, 1, (4, 5, 6, 255)), x=1, y=1)
+        streamer.submit()
+        assert second.pbos == [pbo]
+        _finish_submitted_streamer(ctx, streamer, second)
+        assert allocations == [16]
+        expected = bytes((1, 2, 3, 255)) * 3 + bytes((4, 5, 6, 255))
+        assert bytes(texture.fetch().get_bytes("RGBA", 8)) == expected
+    finally:
+        streamer.delete()
+        texture.delete()
+
+
+@pytest.mark.parametrize("missing_feature", ["persistent_buffers", "sync_objects"])
+def test_texture_streamer_persistent_upload_fallback(test_window, monkeypatch, missing_feature):
+    from dataclasses import replace
+    from pyglet.graphics.api.gl.buffer import GLPixelUnpackBufferObject
+
+    test_window.switch_to()
+    ctx = test_window.context
+    monkeypatch.setattr(ctx.info, "features", replace(ctx.info.features, **{missing_feature: False}))
+    texture = pyglet.graphics.Texture.create(1, 1, context=ctx)
+    streamer = pyglet.graphics.TextureStreamer(ctx, persistent_uploads=True)
+    try:
+        job = streamer.queue_upload(texture, _image(1, 1, (1, 2, 3, 255)))
+        streamer.submit()
+        assert type(job.pbos[0]) is GLPixelUnpackBufferObject
+        _finish_submitted_streamer(ctx, streamer, job)
+        assert bytes(texture.fetch().get_bytes("RGBA", 4)) == bytes((1, 2, 3, 255))
     finally:
         streamer.delete()
         texture.delete()
