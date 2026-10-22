@@ -4,13 +4,15 @@ from __future__ import annotations
 import asyncio
 from contextlib import suppress
 import sys
-from typing import Any, Callable, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 import pyglet
 from pyglet import app, clock, event
 from pyglet.app.base import ClockWindowDrawSource, WindowDrawSource
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from pyglet.event import EventDispatcher
     from pyglet.window import BaseWindow
 
@@ -22,19 +24,69 @@ except ImportError as exc:
 from pyglet.libs.emscripten.proxies import ProxyRegistry
 
 
+class _AsyncClock(clock.Clock):
+    """Wake the event loop when new clock work is due sooner."""
+
+    def __init__(self, time_function: Callable[[], float], on_schedule: Callable[[float | None], None]) -> None:
+        """Bind the clock to the event loop's deadline notification callback."""
+        super().__init__(time_function)
+        self._schedule_callback = on_schedule
+
+    def _next_interval_deadline(self) -> float:
+        if self._schedule_interval_items:
+            return self._schedule_interval_items[0].next_ts
+        return float('inf')
+
+    def _notify_earlier_deadline(self, previous_deadline: float) -> None:
+        deadline = self._next_interval_deadline()
+        if deadline < previous_deadline:
+            self._schedule_callback(deadline)
+
+    def schedule(self, func: Callable, *args: Any, **kwargs: Any) -> None:
+        super().schedule(func, *args, **kwargs)
+        self._schedule_callback(None)
+
+    def schedule_once(self, func: Callable, delay: float, *args: Any, **kwargs: Any) -> None:
+        previous_deadline = self._next_interval_deadline()
+        super().schedule_once(func, delay, *args, **kwargs)
+        self._notify_earlier_deadline(previous_deadline)
+
+    def schedule_interval(self, func: Callable, interval: float, *args: Any, **kwargs: Any) -> None:
+        previous_deadline = self._next_interval_deadline()
+        super().schedule_interval(func, interval, *args, **kwargs)
+        self._notify_earlier_deadline(previous_deadline)
+
+    def schedule_interval_fixed_delay(self, func: Callable, interval: float, *args: Any, **kwargs: Any) -> None:
+        previous_deadline = self._next_interval_deadline()
+        super().schedule_interval_fixed_delay(func, interval, *args, **kwargs)
+        self._notify_earlier_deadline(previous_deadline)
+
+    def schedule_interval_soft(self, func: Callable, interval: float, *args: Any, **kwargs: Any) -> None:
+        previous_deadline = self._next_interval_deadline()
+        super().schedule_interval_soft(func, interval, *args, **kwargs)
+        self._notify_earlier_deadline(previous_deadline)
+
+
 class AsyncEventLoop(event.EventDispatcher):
     """Browser event loop which preserves pyglet's normal clock semantics."""
 
     def __init__(self) -> None:
         """Create the browser clock and callback state."""
         self._has_exit_event = asyncio.Event()
-        self.clock = clock.Clock(self._get_js_time)
+        self._clock_wait_deadline: float | None = None
+        self.clock = _AsyncClock(self._get_js_time, self._on_clock_schedule)
         pyglet.clock.set_default(self.clock)
         self.is_running = False
         self._interval: float | None = None
         self._run_task: asyncio.Task[None] | None = None
         self._window_draw_source: WindowDrawSource | None = None
         self._window_draw_exception: tuple[type[BaseException], BaseException, Any] | None = None
+
+    def _on_clock_schedule(self, next_ts: float | None) -> None:
+        """Wake the loop if new work is due before its next wakeup."""
+        deadline = self._clock_wait_deadline
+        if deadline is not None and (next_ts is None or next_ts < deadline):
+            app.platform_event_loop.notify()
 
     def _get_js_time(self) -> float:
         """Use Javascripts performance.now for the clock accuracy.
@@ -113,7 +165,16 @@ class AsyncEventLoop(event.EventDispatcher):
 
             while not self._has_exit_event.is_set():
                 timeout = self.idle()
-                await platform_event_loop.wait(timeout)
+                # idle finishes before wait() yields, so its timeout includes
+                # any work scheduled during that clock tick.
+                if timeout is None:
+                    self._clock_wait_deadline = float('inf')
+                elif timeout > 0:
+                    self._clock_wait_deadline = self.clock.time() + timeout
+                try:
+                    await platform_event_loop.wait(timeout)
+                finally:
+                    self._clock_wait_deadline = None
                 platform_event_loop.dispatch_posted_events()
         finally:
             self.is_running = False
@@ -195,20 +256,16 @@ class AsyncPlatformEventLoop:
         self._is_running = True
 
     async def wait(self, timeout: float | None) -> None:
-        if not self._event_queue.empty():
-            return
-
+        # Keep a wakeup sent before the wait(), so the loop can process it now.
+        if self._event_queue.empty() and not self._wake_event.is_set():
+            if timeout is None:
+                await self._wake_event.wait()
+            elif timeout > 0:
+                with suppress(asyncio.TimeoutError):
+                    await asyncio.wait_for(self._wake_event.wait(), timeout)
+            else:
+                await asyncio.sleep(0)
         self._wake_event.clear()
-        if not self._event_queue.empty():
-            return
-
-        if timeout is None:
-            await self._wake_event.wait()
-        elif timeout > 0:
-            with suppress(asyncio.TimeoutError):
-                await asyncio.wait_for(self._wake_event.wait(), timeout)
-        else:
-            await asyncio.sleep(0)
 
     async def step(self, timeout: float | None = None) -> None:
         await self.wait(timeout)
