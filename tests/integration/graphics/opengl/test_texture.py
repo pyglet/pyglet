@@ -14,6 +14,20 @@ from tests.annotations import GraphicsAPIGroups, require_graphics_api
 pytestmark = require_graphics_api(GraphicsAPIGroups.GL3)
 
 
+@pytest.mark.parametrize("source_format", ["RGB", "BGR"])
+def test_rgb_upload_to_rgba_texture_is_opaque(test_window, source_format):
+    test_window.switch_to()
+    pixels = [(0, 20, 30), (40, 50, 60)]
+    data = bytes(value for pixel in pixels for value in (pixel if source_format == "RGB" else pixel[::-1]))
+    texture = Texture.create(2, 1, context=test_window.context)
+    try:
+        texture.bind()
+        texture.upload(ImageData(2, 1, source_format, data), 0, 0, 0)
+        assert bytes(texture.fetch().get_bytes("RGBA", 8)) == bytes((0, 20, 30, 255, 40, 50, 60, 255))
+    finally:
+        texture.delete()
+
+
 def test_texture_array_creation_sets_distinct_sampler_filters(test_window):
     test_window.switch_to()
     context = test_window.context

@@ -5,6 +5,7 @@ import asyncio
 
 import pyglet
 import pytest
+from pyglet.enums import ComponentFormat
 
 
 @pytest.fixture
@@ -32,9 +33,11 @@ def _image(color: tuple[int, int, int, int]) -> pyglet.image.ImageData:
 
 @pytest.mark.parametrize("persistent", [False, True])
 @pytest.mark.parametrize("block_size,expected_blocks", [(1, 5), (12, 3), (1024, 1)])
-def test_packed_uploads_and_pool_reuse(webgl_window, finish_texture_streamer, persistent, block_size, expected_blocks):
+@pytest.mark.parametrize("texture_format", [ComponentFormat.RGB, ComponentFormat.RGBA])
+def test_packed_uploads_and_pool_reuse(webgl_window, finish_texture_streamer, persistent, block_size,
+                                     expected_blocks, texture_format):
     gl = webgl_window.context.gl
-    texture = pyglet.graphics.Texture.create(5, 1, internal_format=pyglet.enums.ComponentFormat.RGB,
+    texture = pyglet.graphics.Texture.create(5, 1, internal_format=texture_format,
                                              blank_data=True, context=webgl_window.context)
     streamer = pyglet.graphics.TextureStreamer(webgl_window, persistent_uploads=persistent,
                                                 upload_buffer_size=block_size)
@@ -42,7 +45,8 @@ def test_packed_uploads_and_pool_reuse(webgl_window, finish_texture_streamer, pe
         first_handles = None
         for generation in range(2):
             colors = [(index * 10, generation * 40, 30, 255) for index in range(5)]
-            # Three-byte RGB pixels require padding between PBO byte offsets.
+            # Exercise both RGB storage and CPU expansion to opaque RGBA.
+            # Either payload size requires padding between PBO byte offsets.
             uploads = [(pyglet.image.ImageData(1, 1, "RGB", bytes(color[:3])), index, 0)
                        for index, color in enumerate(colors)]
             job = streamer.queue_uploads(texture, uploads)

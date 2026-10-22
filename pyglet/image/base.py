@@ -234,6 +234,10 @@ class ImageData(_AbstractImage):
         to another format. Switching the sign of the ``pitch`` will cause the image
         to appear "upside-down".
 
+        When converting RGB or BGR data to a format with alpha, the added
+        alpha is 255 (opaque). Other missing components copy the first source
+        component, including alpha when expanding single-channel data.
+
         Args:
             fmt:
                 If provided, get the data in another format.
@@ -313,6 +317,9 @@ class ImageData(_AbstractImage):
                 try:
                     idx = current_format.index(c) + 1
                 except ValueError:
+                    if c == 'A' and current_format in ('RGB', 'BGR'):
+                        repl += b'\xff'
+                        continue
                     idx = 1
                 repl += asbytes(r'\%d' % idx)
 
