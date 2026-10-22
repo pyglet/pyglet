@@ -16,6 +16,7 @@ from .pyglet_window import PygletToolWindow, PygletWindow
 from .systemcursor import SystemCursor
 
 if TYPE_CHECKING:
+    from pyglet.display.base import Screen
     from pyglet.graphics.api.gl.cocoa.context import CocoaContext
 
 NSApplication = cocoapy.ObjCClass('NSApplication')
@@ -543,6 +544,10 @@ class CocoaWindow(BaseWindow):
         NSApp = NSApplication.sharedApplication()
         NSApp.setApplicationIconImage_(nsimage)
         nsimage.release()
+
+    def get_current_screen(self) -> Screen:
+        """Return the current window monitor (not yet implemented on macOS)."""
+        raise NotImplementedError("Current screen lookup is not implemented on macOS")
 
     def get_location(self) -> tuple[int, int]:
         window_frame = self._nswindow.frame()
