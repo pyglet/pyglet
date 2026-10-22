@@ -26,6 +26,8 @@ class _FractionalMetricsContext:
         ascent_fraction, descent_fraction = self._fractions
         return SimpleNamespace(
             width=metrics.width,
+            actualBoundingBoxLeft=metrics.actualBoundingBoxLeft,
+            actualBoundingBoxRight=metrics.actualBoundingBoxRight,
             actualBoundingBoxAscent=math.floor(metrics.actualBoundingBoxAscent) + ascent_fraction,
             actualBoundingBoxDescent=math.floor(metrics.actualBoundingBoxDescent) + descent_fraction,
         )
