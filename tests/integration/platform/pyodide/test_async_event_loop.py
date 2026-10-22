@@ -156,11 +156,21 @@ def test_existing_interval_keeps_running_without_frames(running_loop):
     run_sync(scenario())
 
 
-def test_later_work_does_not_interrupt_existing_wait(running_loop):
+def test_later_work_does_not_interrupt_existing_wait(running_loop, monkeypatch):
     async def scenario():
         async with running_loop(initial_delay=60) as (loop, platform, task, timeouts):
+            notifications = []
+            original_notify = platform.notify
+
+            def notify():
+                notifications.append(True)
+                original_notify()
+
+            monkeypatch.setattr(platform, "notify", notify)
             loop.clock.schedule_once(lambda dt: None, 120)
-            await asyncio.sleep(0)
+            # Check the notification instead of counting asyncio turns
+            # wait_for() needs extra turns to resume on Python 3.11 and older.
+            assert notifications == []
             assert len(timeouts) == 1
 
     run_sync(scenario())
