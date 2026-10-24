@@ -800,7 +800,7 @@ class Sprite(event.EventDispatcher):
 
     @paused.setter
     def paused(self, pause: bool) -> None:
-        if not hasattr(self, '_animation') or pause == self._paused:
+        if self._animation is None or pause == self._paused:
             return
         if pause is True:
             clock.unschedule(self._animate)
