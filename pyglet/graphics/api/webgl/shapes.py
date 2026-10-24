@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pyglet
+from pyglet.graphics.attributes import color_byte_layout
 from pyglet.enums import BlendFactor
 from pyglet.graphics.draw import Group
 
@@ -56,7 +57,7 @@ def get_default_shader() -> ShaderProgram:
         "default_shapes",
         (vertex_source, 'vertex'),
         (fragment_source, 'fragment'),
-        vertex_layout=pyglet.graphics.VertexLayout(colors="4Bn"),
+        vertex_layout=color_byte_layout,
     )
 
 

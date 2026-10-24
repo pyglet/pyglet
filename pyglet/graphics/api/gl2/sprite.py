@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pyglet
+from pyglet.graphics.attributes import color_byte_layout
 from pyglet.graphics.texture import Texture, TextureArray
 
 
@@ -68,7 +69,7 @@ def get_default_shader() -> ShaderProgram:
         "default_sprite",
         (vertex_source, 'vertex'),
         (fragment_source, 'fragment'),
-        vertex_layout=pyglet.graphics.VertexLayout(colors="4Bn"),
+        vertex_layout=color_byte_layout,
     )
 
 def get_default_array_shader() -> ShaderProgram:
@@ -162,5 +163,5 @@ def get_default_multitexture_shader(layers: dict[str, Texture]) -> ShaderProgram
         f"default_multitexture_sprite_{shader_key}",
         (vertex_shader_source, 'vertex'),
         (fragment_shader_source, 'fragment'),
-        vertex_layout=pyglet.graphics.VertexLayout(colors="4Bn"),
+        vertex_layout=color_byte_layout,
     )

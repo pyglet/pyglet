@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pyglet
+from pyglet.graphics.attributes import color_byte_layout
 
 
 if TYPE_CHECKING:
@@ -260,7 +261,7 @@ def get_default_layout_shader() -> ShaderProgram:
         "default_text_layout",
         (layout_vertex_source, "vertex"),
         (layout_fragment_source, "fragment"),
-        vertex_layout=pyglet.graphics.VertexLayout(colors="4Bn"),
+        vertex_layout=color_byte_layout,
     )
 
 
@@ -270,7 +271,7 @@ def get_default_scrollable_layout_shader() -> ShaderProgram:
         "default_scrollable_text_layout",
         (scrollable_layout_vertex_source, "vertex"),
         (scrollable_layout_fragment_source, "fragment"),
-        vertex_layout=pyglet.graphics.VertexLayout(colors="4Bn"),
+        vertex_layout=color_byte_layout,
     )
 
 
@@ -300,7 +301,7 @@ def get_default_decoration_shader() -> ShaderProgram:
         "default_text_decoration",
         (decoration_vertex_source, "vertex"),
         (decoration_fragment_source, "fragment"),
-        vertex_layout=pyglet.graphics.VertexLayout(colors="4Bn"),
+        vertex_layout=color_byte_layout,
     )
 
 
@@ -310,5 +311,5 @@ def get_default_scrollable_decoration_shader() -> ShaderProgram:
         "default_scrollable_text_decoration",
         (scrollable_decoration_vertex_source, "vertex"),
         (scrollable_decoration_fragment_source, "fragment"),
-        vertex_layout=pyglet.graphics.VertexLayout(colors="4Bn"),
+        vertex_layout=color_byte_layout,
     )
