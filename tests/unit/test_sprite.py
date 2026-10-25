@@ -218,3 +218,10 @@ def test_blend_setter(request, fixture):
         _sprite.blend_mode = blend_mode
         assert _sprite._group.blend_src == 1  # noqa: SLF001
         assert _sprite._group.blend_dest == 1  # noqa: SLF001
+
+
+def test_pausing_static_sprite_has_no_effect(sprite):
+    sprite.paused = True
+    sprite.paused = False
+
+    assert sprite.paused is False
