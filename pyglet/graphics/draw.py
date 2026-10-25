@@ -1167,9 +1167,12 @@ class Batch:
 
     def _update_vertex_list_in_passes(self, vertex_list: VertexList, old_start: int, old_count: int) -> None:
         """Keep pass-local range buckets synchronized after a realloc."""
+        vertex_registrations = vertex_list._pass_registrations  # noqa: SLF001
+        if not vertex_registrations:
+            return
         for registrations in self._pass_registrations.values():
             for registration in registrations:
-                if registration in vertex_list._pass_registrations:  # noqa: SLF001
+                if registration in vertex_registrations:
                     registration.bucket.remove(old_start, old_count)
                     registration.bucket.add(vertex_list.start, vertex_list.count)
 

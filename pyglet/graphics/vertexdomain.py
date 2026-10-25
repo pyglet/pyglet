@@ -65,7 +65,7 @@ class VertexList:
     instanced: bool = False
     initial_attribs: dict
     mode: GeometryMode
-    _pass_registrations: list[_PassRegistration]
+    _pass_registrations: list[_PassRegistration] | None = None
 
     def __init__(self, domain: VertexDomain, group: Group | None, start: int, count: int) -> None:  # noqa: D107
         self.domain = domain
@@ -75,7 +75,6 @@ class VertexList:
         self.mode = domain.mode
         self.initial_attribs = domain.attribute_meta
         self.bucket = None
-        self._pass_registrations = []
 
     def add_pass(self, draw_pass: DrawPass, *, group: Group) -> None:
         """Draw this geometry again in an additional :class:`DrawPass`.
@@ -89,6 +88,8 @@ class VertexList:
         except AttributeError as exc:
             raise RuntimeError("VertexList is not owned by a Batch.") from exc
         registration = batch._add_vertex_list_to_pass(self, draw_pass, group)  # noqa: SLF001
+        if self._pass_registrations is None:
+            self._pass_registrations = []
         self._pass_registrations.append(registration)
 
     def draw(self, mode: GeometryMode) -> None:
