@@ -119,6 +119,15 @@ class Allocator:
 
             raise AllocatorMemoryException(size)
 
+        # Sequential allocations form one block starting at zero, with no gaps to search.
+        if len(self.starts) == 1 and self.starts[0] == 0:
+            start = self.sizes[0]
+            end = start + size
+            if end > self.capacity:
+                raise AllocatorMemoryException(end)
+            self.sizes[0] = end
+            return start
+
         # Restart from zero if space exists
         if self.starts[0] > size:
             self.starts.insert(0, 0)
