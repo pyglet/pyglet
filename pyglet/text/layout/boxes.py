@@ -268,7 +268,7 @@ class _AbstractBox(ABC):
 class _GlyphBox(_AbstractBox):
     owner: Texture
     font: Font
-    glyphs: list[tuple[int, Glyph, GlyphPosition]]
+    glyphs: list[tuple[float, Glyph, GlyphPosition]]
     advance: int
     vertex_lists: list[_LayoutVertexList]
     _glyph_vertex_list: _LayoutVertexList | None
@@ -277,7 +277,7 @@ class _GlyphBox(_AbstractBox):
         self,
         owner: Texture,
         font: Font,
-        glyphs: list[tuple[int, Glyph, GlyphPosition]],
+        glyphs: list[tuple[float, Glyph, GlyphPosition]],
     ) -> None:
         """Create a run of glyphs sharing the same texture.
 
@@ -982,6 +982,18 @@ class _GlyphBox(_AbstractBox):
             anchor_y,
             context,
         )
+
+    def update_placement(self, layout: TextLayout, line_x: float, line_y: float,
+                         anchor_x: float, anchor_y: float, context: _LayoutContext) -> None:
+        """Update a retained plain glyph run after reshaping or a style change."""
+        vertices, tex_coords, _ = self._create_glyph_geometry(layout, 0, line_x, line_y, context)
+        colors = self._create_glyph_colors(0, vertices, context)
+        vertex_list = self._glyph_vertex_list
+        assert vertex_list is not None
+        vertex_list.set_attribute_data("position", vertices)
+        vertex_list.set_attribute_data("tex_coords", tex_coords)
+        vertex_list.set_attribute_data("colors", colors)
+        vertex_list.set_attribute_data("anchor", (anchor_x, anchor_y) * vertex_list.count)
 
     def update_translation(self, x: float, y: float, z: float) -> None:
         for _vertex_list in self.vertex_lists:

@@ -26,9 +26,10 @@ all_combinations = list(itertools.product(document_classes, layout_classes))
 
 @pytest.mark.parametrize('shaping', [False, True])
 @pytest.mark.parametrize('anchor_x', ['left', 'center', 'right'])
-def test_label_text_update_reuses_vertex_list_after_shaping(test_window, monkeypatch, shaping, anchor_x):
+@pytest.mark.parametrize('width', [20, 200])
+def test_label_text_update_reuses_vertex_list_after_shaping(test_window, monkeypatch, shaping, anchor_x, width):
     batch = pyglet.graphics.Batch()
-    label = pyglet.text.Label('iiii', width=200, align='center', anchor_x=anchor_x,
+    label = pyglet.text.Label('iiii', width=width, align='center', anchor_x=anchor_x,
                               rotation=17, batch=batch, shaping=shaping)
     expected = None
     try:
@@ -48,11 +49,11 @@ def test_label_text_update_reuses_vertex_list_after_shaping(test_window, monkeyp
         label.text = 'WWWW'
         assert calls == [('WWWW', shaping)]
         assert label._vertex_lists[0] is vertex_list
-        assert label._boxes[0] is not old_box
-        assert label._lines[0] is not old_line
-        assert not old_box.vertex_lists
+        assert label._boxes[0] is old_box
+        assert label._lines[0] is old_line
+        assert old_box.vertex_lists == [vertex_list]
 
-        expected = pyglet.text.Label('WWWW', width=200, align='center', anchor_x=anchor_x,
+        expected = pyglet.text.Label('WWWW', width=width, align='center', anchor_x=anchor_x,
                                      rotation=17, shaping=shaping)
         assert (label.content_width, label.content_height) == (expected.content_width, expected.content_height)
         for name in label.program.attributes:
@@ -134,6 +135,86 @@ def test_label_text_update_preserves_deferred_updates(test_window):
         label.draw()
     finally:
         label.delete()
+
+
+def test_retained_label_placement_updates_only_affected_attributes(test_window, monkeypatch):
+    from pyglet.text.effects import LinearGradient
+
+    label = pyglet.text.Label('iiii', x=20, y=30, z=2, width=200, align='center', anchor_x='right', rotation=25)
+    expected = None
+    try:
+        label.visible = False
+        label.color = LinearGradient((255, 0, 0, 255), (0, 255, 0, 128))
+        vertex_list = label._vertex_lists[0]
+        set_attribute_data = vertex_list.set_attribute_data
+        writes = []
+
+        def record_write(name, values):
+            writes.append(name)
+            set_attribute_data(name, values)
+
+        monkeypatch.setattr(vertex_list, 'set_attribute_data', record_write)
+        label.text = 'WWWW'
+        assert writes == ['position', 'tex_coords', 'colors', 'anchor']
+
+        # A fresh layout exercises initial placement instead of the update path.
+        doc = document.UnformattedDocument(label.text)
+        doc.styles.update(label.document.styles)
+        expected = pyglet.text.DocumentLabel(doc, x=20, y=30, z=2, width=200, anchor_x='right', rotation=25)
+        expected.visible = False
+        for name in label.program.attributes:
+            assert list(getattr(vertex_list, name)) == list(getattr(expected._vertex_lists[0], name))
+
+        label.begin_update()
+        label.document.set_style(0, 4, {'color': (10, 20, 30, 255), 'kerning': 2})
+        label.end_update()
+        assert label._vertex_lists[0] is vertex_list
+        assert list(vertex_list.colors) == [10, 20, 30, 255] * 16
+    finally:
+        label.delete()
+        if expected is not None:
+            expected.delete()
+
+
+def test_label_placement_reuse_checks_shaped_glyph_count(test_window, monkeypatch):
+    label = pyglet.text.Label('iiii', shaping=True)
+    try:
+        old_vertex_list = label._vertex_lists[0]
+        old_line = label._lines[0]
+        get_glyphs = label.font.get_glyphs
+        calls = []
+
+        def shaped_glyphs(text, shaping=False):
+            calls.append((text, shaping))
+            return get_glyphs('WWW' if text == 'WWWW' else text, shaping)
+
+        monkeypatch.setattr(label.font, 'get_glyphs', shaped_glyphs)
+        label.text = 'WWWW'
+        assert calls == [('WWWW', True)]
+        assert label._lines[0] is not old_line
+        assert label._vertex_lists[0] is not old_vertex_list
+        assert label._vertex_lists[0].count == 12
+        label.draw()
+    finally:
+        label.delete()
+
+
+def test_retained_scrollable_placement_preserves_view_translation(test_window):
+    doc = document.UnformattedDocument('0123456789')
+    text_layout = layout.ScrollableTextLayout(doc, width=20, height=30, multiline=False)
+    try:
+        text_layout.view_x = 5
+        vertex_list = text_layout._vertex_lists[0]
+        view_translation = list(vertex_list.view_translation)
+        assert view_translation[0] != 0
+        text_layout.begin_update()
+        doc.text = '9876543210'
+        text_layout.end_update()
+        assert text_layout._vertex_lists[0] is vertex_list
+        assert list(vertex_list.view_translation) == view_translation
+        text_layout.draw()
+    finally:
+        text_layout.delete()
 
 
 def test_plain_text_shares_glyph_effect_and_decoration_groups(test_window):

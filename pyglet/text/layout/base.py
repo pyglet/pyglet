@@ -30,6 +30,7 @@ from pyglet.text.layout.boxes import (
 from pyglet.text.layout.flow import _FlowLayoutBase
 
 if TYPE_CHECKING:
+    from pyglet.font.base import Font, Glyph, GlyphPosition
     from pyglet.customtypes import AnchorX, AnchorY, ContentVAlign, HorizontalAlign, RGBAColor
     from pyglet.graphics import Batch
     from pyglet.graphics.shader import ShaderProgram
@@ -1034,6 +1035,30 @@ class TextLayout(_FlowLayoutBase):
         else:
             self._batch.draw_subset(self._vertex_lists)  # type: ignore[arg-type]
 
+    def _get_unformatted_line(self, font: Font, glyphs: list[Glyph], offsets: list[GlyphPosition],
+                              kerning: float) -> _Line:
+        assert self._document is not None
+        if (len(self._lines) == 1 and len(self._boxes) == 1
+                and type(self._boxes[0]) is _GlyphBox
+                and not any(self._document.has_style_run(name) for name in (
+                    "shadow", "stroke", "background_color", "underline", "strikethrough"))):
+            line = self._lines[0]
+            box = cast(_GlyphBox, self._boxes[0])
+            vertex_list = cast(VertexList, box._glyph_vertex_list)
+            if (box.font is font and box.length == len(glyphs) and len(box.vertex_lists) == 1
+                    and vertex_list is not None and vertex_list.count == len(glyphs) * 4
+                    and vertex_list.domain.batch is self._batch
+                    and vertex_list.group is self.group_cache.get(box.owner)
+                    and all(glyph.owner is box.owner for glyph in glyphs)):
+                advance = 0
+                for i, (glyph, offset) in enumerate(zip(glyphs, offsets)):
+                    box.glyphs[i] = kerning, glyph, offset
+                    advance += box._glyph_advance(kerning, glyph, offset)
+                box.advance = advance
+                line.width = advance
+                return line
+        return super()._get_unformatted_line(font, glyphs, offsets, kerning)
+
     def _update(self) -> None:
         if not self._update_enabled:
             return
@@ -1067,6 +1092,9 @@ class TextLayout(_FlowLayoutBase):
                             and vertex_list.group is self.group_cache.get(box.owner)):
                         anchor_x = round(self._anchor_left) if self._rotation == 0 else self._anchor_left
                         line = lines[0]
+                        if box is old_box:
+                            box.update_placement(self, line.x, line.y, anchor_x, anchor_top, context)
+                            return
                         box.place(self, line.start, self._x, self._y, self._z, line.x, line.y,
                                   self._rotation, self._visible, anchor_x, anchor_top, context,
                                   reuse_vertex_list=vertex_list)  # type: ignore[arg-type]

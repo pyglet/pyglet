@@ -8,13 +8,13 @@ from typing import Callable, Iterator, TypeAlias
 from pyglet.text import runlist
 from pyglet.text.document import AbstractDocument, UnformattedDocument
 from pyglet.text.layout.boxes import _AbstractBox, _GlyphBox, _InlineElementBox, _Line
-from pyglet.font.base import Glyph, GlyphPosition
+from pyglet.font.base import Font, Glyph, GlyphPosition
 
 # Just have one object for empty positions in layout. It won't be modified.
 _empty_pos = GlyphPosition(0, 0, 0, 0)
 _FlowElement: TypeAlias = _InlineElementBox | Glyph
-_FlowGlyphEntry = tuple[int, _FlowElement, GlyphPosition]
-_GlyphEntry = tuple[int, Glyph, GlyphPosition]
+_FlowGlyphEntry = tuple[float, _FlowElement, GlyphPosition]
+_GlyphEntry = tuple[float, Glyph, GlyphPosition]
 
 
 _CJK_TEXT_RE = re.compile(r"[\u1100-\u11ff\u2e80-\U0010ffff]")
@@ -104,16 +104,23 @@ class _FlowLayoutBase:
         font = document.get_font(0, dpi=self._dpi)
         glyphs, offsets = font.get_glyphs(text, self._shaping)
 
-        line = _Line(0)
+        kerning = document.get_style("kerning") or 0
+        line = self._get_unformatted_line(font, glyphs, offsets, kerning)
+        line.x = 0
+        line.align = "left"
         if self._width:
             align = document.get_style("align")
             if align in ("left", "right", "center"):
                 line.align = align
 
-        kerning = document.get_style("kerning")
-        if kerning is None:
-            kerning = 0
+        self._content_width = round(line.width)
+        self._line_count = 1
+        self._flow_unformatted_single_line(line)
+        return [line]
 
+    def _get_unformatted_line(self, font: Font, glyphs: list[Glyph], offsets: list[GlyphPosition],
+                              kerning: float) -> _Line:
+        line = _Line(0)
         owner = glyphs[0].owner
         owner_glyphs: list[_GlyphEntry] = []
         for glyph, offset in zip(glyphs, offsets):
@@ -127,10 +134,7 @@ class _FlowLayoutBase:
         line.add_box(_GlyphBox(owner, font, owner_glyphs))
         line.paragraph_begin = line.paragraph_end = True
 
-        self._content_width = round(line.width)
-        self._line_count = 1
-        self._flow_unformatted_single_line(line)
-        return [line]
+        return line
 
     def _flow_unformatted_single_line(self, line: _Line) -> None:
         """Position a uniform single line without paragraph run processing."""
