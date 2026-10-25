@@ -35,7 +35,7 @@ class WaveSource(StreamingSource):
 
         self._bytes_per_frame = nchannels * sampwidth
         self._duration = nframes / framerate
-        self._duration_per_frame = self._duration / nframes
+        self._duration_per_frame = 1.0 / framerate
         self._num_frames = nframes
 
         self._wave.rewind()
