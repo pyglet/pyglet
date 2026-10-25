@@ -208,7 +208,7 @@ class _GroupMeta(type):
             group = super().__call__(*args, **kwargs)
             # Keep identity keyed inputs alive so their IDs cannot be reused
             # while this instance remains in the cache.
-            group._constructor_inputs = args, kwargs
+            group._constructor_inputs = (args, kwargs) if kwargs else args
             _GroupMeta._cache[key] = group
         return group
 
