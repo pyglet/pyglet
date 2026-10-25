@@ -158,9 +158,12 @@ class EventDispatcher:
         Registering event types allows the dispatcher to validate event
         handler names as they are attached, and to search attached objects
         for suitable handlers.
+
+        Subclasses inherit event types, but new registrations only affect
+        the class on which this method is called.
         """
-        if not hasattr(cls, 'event_types'):
-            cls.event_types = []  # type: ignore reportAttributeAccessIssue
+        if 'event_types' not in cls.__dict__:
+            cls.event_types = list(getattr(cls, 'event_types', ()))  # type: ignore reportAttributeAccessIssue
         cls.event_types.append(name)  # type: ignore reportAttributeAccessIssue
         return name
 
