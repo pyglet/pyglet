@@ -536,7 +536,10 @@ class TextLayout(_FlowLayoutBase):
         if self._document:
             self._document.remove_handlers(self)
             self._uninit_document()
-        document.push_handlers(self)
+        # Look up the document's events without scanning every layout attribute.
+        document.push_handlers(**{
+            name: getattr(self, name) for name in document.event_types if hasattr(self, name)
+        })
         self._document = document
 
     @property
