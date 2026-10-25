@@ -17,7 +17,6 @@ if TYPE_CHECKING:
     from pyglet.graphics.allocation import RangeAllocator
     from pyglet.graphics.draw import DrawContext
     from pyglet.graphics.vertexdomain import VertexDomain
-    from pyglet.graphics.vertexstorage import IndexStream
 
 
 def get_default_batch() -> GLBatch:
@@ -42,10 +41,9 @@ class GLBackendDrawContext:
 
 
 def _cached_multidraw(context: OpenGLSurfaceContext, buckets: list[RangeAllocator], mode: int,
-                      index_stream: IndexStream | None = None) -> Callable[[DrawContext], None]:
+                      *, index_type: int | None = None, element_size: int = 1) -> Callable[[DrawContext], None]:
     """Keep native draw arrays alive for one compiled GL or GL2 command."""
-    element_size = index_stream.index_element_size if index_stream is not None else 1
-    start_type = ctypes.c_void_p if index_stream is not None else GLint
+    start_type = ctypes.c_void_p if index_type is not None else GLint
     versions = None
     starts = sizes = None
     primcount = 0
@@ -60,8 +58,8 @@ def _cached_multidraw(context: OpenGLSurfaceContext, buckets: list[RangeAllocato
             sizes = (GLsizei * primcount)(*[size for _, size in regions])
             versions = tuple(bucket._version for bucket in buckets)
 
-        if index_stream is not None:
-            context.glMultiDrawElements(mode, sizes, index_stream.gl_type, starts, primcount)
+        if index_type is not None:
+            context.glMultiDrawElements(mode, sizes, index_type, starts, primcount)
         else:
             context.glMultiDrawArrays(mode, starts, sizes, primcount)
 
@@ -88,5 +86,7 @@ class GLBatch(_BucketBatch):
                 or not domain._supports_multi_draw):
             return _BucketBatch._draw_bucket_fn(domain, buckets, mode_func)
 
-        index_stream = domain.index_stream if isinstance(domain, vertexdomain.GLIndexedVertexDomain) else None
-        return _cached_multidraw(domain._context, buckets, mode_func, index_stream)
+        if isinstance(domain, vertexdomain.GLIndexedVertexDomain):
+            return _cached_multidraw(domain._context, buckets, mode_func, index_type=domain.index_stream.gl_type,
+                                     element_size=domain.index_stream.index_element_size)
+        return _cached_multidraw(domain._context, buckets, mode_func)

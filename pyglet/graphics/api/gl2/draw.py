@@ -47,5 +47,7 @@ class GL2Batch(_BucketBatch):
     def _draw_bucket_fn(domain, buckets, mode_func):
         if type(domain) not in (VertexDomain, IndexedVertexDomain) or not domain._supports_multi_draw:
             return _BucketBatch._draw_bucket_fn(domain, buckets, mode_func)
-        index_stream = domain.index_stream if isinstance(domain, IndexedVertexDomain) else None
-        return _cached_multidraw(domain._context, buckets, mode_func, index_stream)
+        if isinstance(domain, IndexedVertexDomain):
+            return _cached_multidraw(domain._context, buckets, mode_func, index_type=domain.index_stream.gl_type,
+                                     element_size=domain.index_stream.index_element_size)
+        return _cached_multidraw(domain._context, buckets, mode_func)

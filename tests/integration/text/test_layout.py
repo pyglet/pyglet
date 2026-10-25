@@ -24,6 +24,143 @@ layout_classes = [layout.TextLayout, layout.ScrollableTextLayout, layout.Increme
 all_combinations = list(itertools.product(document_classes, layout_classes))
 
 
+def test_plain_text_shares_glyph_effect_and_decoration_groups(test_window):
+    batch = pyglet.graphics.Batch()
+    parent = pyglet.graphics.Group()
+    layouts = []
+    try:
+        for x in (0, 100):
+            doc = document.FormattedDocument('Shared text')
+            doc.set_style(0, len(doc.text), {'background_color': (50, 50, 50, 255),
+                                           'underline': (255, 255, 255, 255), 'shadow': DropShadow()})
+            layouts.append(layout.TextLayout(doc, x=x, batch=batch, group=parent))
+        first, second = layouts
+        texture = next(iter(first.group_cache))
+        assert next(iter(first.group_cache.values())) is next(iter(second.group_cache.values()))
+        assert first.get_effect_group(texture) is second.get_effect_group(texture)
+        assert first.background_decoration_group is second.background_decoration_group
+        assert first.foreground_decoration_group is second.foreground_decoration_group
+        batch.draw()
+        first.x = 20
+        assert second.x == 100
+    finally:
+        for text_layout in layouts:
+            text_layout.delete()
+
+
+@pytest.mark.parametrize('depth_first', [False, True])
+def test_cached_text_groups_keep_depth_configuration_separate(test_window, depth_first):
+    from pyglet.graphics.state import DepthBufferComparison
+
+    batch = pyglet.graphics.Batch()
+    parent = pyglet.graphics.Group()
+    layouts = []
+    try:
+        for depth in (depth_first, not depth_first):
+            layouts.append(layout.TextLayout(document.UnformattedDocument('Depth text'), batch=batch,
+                                             group=parent, depth_sorting=depth))
+        first, second = layouts
+        first_group = next(iter(first.group_cache.values()))
+        second_group = next(iter(second.group_cache.values()))
+        assert first_group is not second_group
+        matching = layout.TextLayout(document.UnformattedDocument('Depth text'), batch=batch,
+                                     group=parent, depth_sorting=depth_first)
+        layouts.append(matching)
+        assert next(iter(matching.group_cache.values())) is first_group
+        assert matching.background_decoration_group is first.background_decoration_group
+        assert matching.foreground_decoration_group is first.foreground_decoration_group
+        for text_layout in layouts:
+            groups = [*text_layout.group_cache.values(), text_layout.background_decoration_group,
+                      text_layout.foreground_decoration_group]
+            assert all(any(isinstance(state, DepthBufferComparison) for state in group.states)
+                       == text_layout.depth_sorting for group in groups)
+        batch.draw()
+    finally:
+        for text_layout in layouts:
+            text_layout.delete()
+
+
+def test_cached_text_groups_separate_depth_comparison_values(test_window):
+    from pyglet.enums import CompareOp
+    from pyglet.graphics.state import DepthBufferComparison
+
+    class GreaterDepthLayout(layout.TextLayout):
+        depth_test_compare_op = CompareOp.GREATER
+
+    batch = pyglet.graphics.Batch()
+    parent = pyglet.graphics.Group()
+    layouts = []
+    try:
+        for layout_class in (layout.TextLayout, GreaterDepthLayout):
+            layouts.append(layout_class(document.UnformattedDocument('Depth text'), batch=batch,
+                                        group=parent, depth_sorting=True))
+        first, second = layouts
+        first_group = next(iter(first.group_cache.values()))
+        second_group = next(iter(second.group_cache.values()))
+        assert first_group is not second_group
+        assert next(state for state in first_group.states if isinstance(state, DepthBufferComparison)) != next(
+            state for state in second_group.states if isinstance(state, DepthBufferComparison))
+        assert first.background_decoration_group is not second.background_decoration_group
+        batch.draw()
+    finally:
+        for text_layout in layouts:
+            text_layout.delete()
+
+
+@pytest.mark.parametrize('layouttype', [layout.ScrollableTextLayout, layout.IncrementalTextLayout])
+def test_scrollable_groups_and_uniforms_remain_independent(test_window, layouttype):
+    batch = pyglet.graphics.Batch()
+    parent = pyglet.graphics.Group()
+    layouts = []
+    try:
+        for x in (0, 150):
+            layouts.append(layouttype(document.UnformattedDocument('Scrollable text'), x=x, width=100, height=50,
+                                      batch=batch, group=parent))
+        first, second = layouts
+        first_group = next(iter(first.group_cache.values()))
+        second_group = next(iter(second.group_cache.values()))
+        assert first_group is not second_group
+        assert first_group.uniforms is not second_group.uniforms
+        assert first.background_decoration_group is not second.background_decoration_group
+        assert first_group.uniforms is first._uniforms
+        assert first.background_decoration_group.uniforms is first._uniforms
+        assert first.foreground_decoration_group.uniforms is first._uniforms
+        assert first.get_effect_group(first_group.texture).uniforms is first._uniforms
+        assert first.group_class(first_group.texture, first.program, first._uniforms,
+                                 order=1, parent=parent, depth_test=None) is first_group
+        previous = second_group.uniforms['scissor_area']
+        first.x = 25
+        assert first_group.uniforms['scissor_area'][0] == 25
+        assert second_group.uniforms['scissor_area'] == previous
+        batch.draw()
+    finally:
+        for text_layout in layouts:
+            text_layout.delete()
+
+
+@pytest.mark.parametrize('layouttype', [layout.ScrollableTextLayout, layout.IncrementalTextLayout])
+def test_scrollable_groups_created_later_use_current_uniforms(test_window, layouttype):
+    doc = document.UnformattedDocument('')
+    text_layout = layouttype(doc, width=100, height=50)
+    try:
+        text_layout.x = 25
+        text_layout.width = 150
+        doc.insert_text(0, 'New text')
+        group = next(iter(text_layout.group_cache.values()))
+        expected = (text_layout.left, text_layout.bottom, 150, 50)
+        assert group.uniforms is text_layout._uniforms
+        assert group.uniforms['scissor_area'] == expected
+        decoration = text_layout.background_decoration_group
+        assert decoration.uniforms is group.uniforms
+        assert decoration.uniforms['scissor_area'] == expected
+
+        text_layout.x = 40
+        assert decoration.uniforms['scissor_area'][0] == 40
+        text_layout.draw()
+    finally:
+        text_layout.delete()
+
+
 @pytest.mark.parametrize('doctype, layouttype', all_combinations)
 @pytest.mark.parametrize('text', ['中文自动换行测试', '日本語の文章テスト', '한국어자동줄바꿈테스트'])
 @pytest.mark.parametrize('wrap', [True, 'char'])

@@ -503,3 +503,50 @@ def test_shader_vertex_list_resolves_storage_and_layout_once(test_window, monkey
     assert vertex_list.domain.storage is storage
     assert calls == {"storage": 1, "layout": 1, "shader_layout": 0}
 
+
+@pytest.mark.parametrize("indexed", [False, True])
+def test_lazy_pass_registrations_preserve_independent_list_lifetimes(test_window, indexed):
+    program = pyglet.graphics.api.get_default_shader()
+    batch = pyglet.graphics.Batch()
+    group = pyglet.graphics.ShaderGroup(program)
+    data = {"position": (0, 0, 0) * 3, "colors": (1, 1, 1, 1) * 3}
+
+    def create():
+        if indexed:
+            return program.vertex_list_indexed(3, GeometryMode.TRIANGLES, (0, 1, 2),
+                                               batch=batch, group=group, **data)
+        return program.vertex_list(3, GeometryMode.TRIANGLES, batch=batch, group=group, **data)
+
+    first, second = create(), create()
+    try:
+        assert first._pass_registrations is None
+        assert second._pass_registrations is None
+        with pytest.raises(ValueError, match="DrawPass must be added"):
+            first.add_pass(pyglet.graphics.DrawPass(), group=group)
+        assert first._pass_registrations is None
+
+        shared_pass = batch.add_pass(pyglet.graphics.DrawPass())
+        first_only_pass = batch.add_pass(pyglet.graphics.DrawPass())
+        first.add_pass(shared_pass, group=group)
+        first.add_pass(first_only_pass, group=group)
+        second.add_pass(shared_pass, group=group)
+        assert first._pass_registrations is not second._pass_registrations
+        assert len(first._pass_registrations) == 2
+        assert len(second._pass_registrations) == 1
+        if not indexed:
+            first.resize(2)
+        batch.draw_pass(shared_pass)
+
+        first.delete()
+        first = None
+        assert len(batch._pass_registrations[shared_pass]) == 1
+        assert batch._pass_registrations[first_only_pass] == []
+        second.delete()
+        second = None
+        assert batch._pass_registrations[shared_pass] == []
+    finally:
+        if first is not None:
+            first.delete()
+        if second is not None:
+            second.delete()
+

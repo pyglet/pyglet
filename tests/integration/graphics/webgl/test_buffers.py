@@ -13,5 +13,14 @@ def test_ctypes_backed_buffer_uploads_direct_memoryview(webgl_window):
         buffer.set_region(1, 1, (12,))
         buffer.commit()
         assert WebGLBufferObject.get_bytes(buffer) == buffer.get_bytes()
+
+        buffer.resize(16)
+        buffer.set_region(2, 2, (20, 21))
+        buffer.set_region(0, 1, (3,))
+        buffer.commit()
+        assert WebGLBufferObject.get_bytes(buffer) == buffer.get_bytes()
+        buffer.set_region(1, 1, (7,))
+        buffer.commit()
+        assert WebGLBufferObject.get_bytes(buffer) == buffer.get_bytes()
     finally:
         buffer.delete()
