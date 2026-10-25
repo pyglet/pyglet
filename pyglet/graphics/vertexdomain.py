@@ -137,9 +137,11 @@ class VertexList:
         new_start = self.domain.safe_realloc(self.start, self.count, count)
         if new_start != self.start:
             # Copy contents to new location
-            for buffer in self.domain.attrib_name_buffers.values():
-                old_data = buffer.get_region(self.start, self.count)
-                buffer.set_region(new_start, self.count, old_data)
+            copy_count = min(self.count, count)
+            if copy_count:
+                for name, stream in self.domain.attrib_name_buffers.items():
+                    old_data = stream.get_attribute_region(name, self.start, copy_count)
+                    stream.set_attribute_region(name, new_start, copy_count, old_data)
         self.start = new_start
         self.count = count
         if self._pass_registrations:

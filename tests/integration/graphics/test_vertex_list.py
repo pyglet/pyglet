@@ -504,6 +504,42 @@ def test_shader_vertex_list_resolves_storage_and_layout_once(test_window, monkey
     assert calls == {"storage": 1, "layout": 1, "shader_layout": 0}
 
 
+@pytest.mark.parametrize("grow_buffers", [False, True])
+def test_vertex_list_resize_preserves_attributes_after_relocation(test_window, grow_buffers):
+    batch = pyglet.graphics.Batch()
+    layout = pyglet.graphics.VertexLayout(position="3f", colors="4Bn")
+    positions = (1, 2, 3, 4, 5, 6, 7, 8, 9)
+    colors = (255, 128, 64, 255) * 3
+    neighbor_positions = (10, 11, 12) * 3
+    neighbor_colors = (32, 64, 128, 255) * 3
+    first = batch.vertex_list(layout, 3, GeometryMode.TRIANGLES,
+                              position=positions, colors=colors)
+    second = batch.vertex_list(layout, 3, GeometryMode.TRIANGLES,
+                               position=neighbor_positions, colors=neighbor_colors)
+    assert first.domain is second.domain
+    old_start = first.start
+    neighbor_start = second.start
+    assert neighbor_start == old_start + first.count
+    count = first.domain.vertex_buffers.allocator.capacity + 1 if grow_buffers else 6
+
+    first.resize(count)
+
+    assert first.start != old_start
+    assert first.count == count
+    assert tuple(first.position[:9]) == positions
+    assert tuple(first.colors[:12]) == colors
+    assert second.start == neighbor_start
+    assert second.count == 3
+    assert tuple(second.position[:]) == neighbor_positions
+    assert tuple(second.colors[:]) == neighbor_colors
+    first.position[-3:] = (20, 21, 22)
+    first.colors[-4:] = (1, 2, 3, 4)
+    assert tuple(first.position[-3:]) == (20, 21, 22)
+    assert tuple(first.colors[-4:]) == (1, 2, 3, 4)
+    first.delete()
+    second.delete()
+
+
 @pytest.mark.parametrize("indexed", [False, True])
 def test_lazy_pass_registrations_preserve_independent_list_lifetimes(test_window, indexed):
     program = pyglet.graphics.api.get_default_shader()
