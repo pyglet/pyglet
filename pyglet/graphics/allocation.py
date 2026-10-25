@@ -387,14 +387,16 @@ class RangeAllocator:
 
     _ranges: list[tuple[int, int]]
     _merged: list[tuple[int, int]]
+    _version: int
     is_dirty: bool
 
-    __slots__ = ("_merged", "_ranges", "is_dirty")
+    __slots__ = ("_merged", "_ranges", "_version", "is_dirty")
 
     def __init__(self) -> None:
         """Initialize an empty range collector."""
         self._ranges = []
         self._merged = []
+        self._version = 0
         self.is_dirty = False
 
     def add(self, start: int, count: int) -> None:
@@ -407,6 +409,7 @@ class RangeAllocator:
                 Number of elements in the range.
         """
         self._ranges.append((start, count))
+        self._version += 1
         self.is_dirty = True
 
     def remove(self, start: int, count: int) -> None:
@@ -420,6 +423,7 @@ class RangeAllocator:
         """
         try:
             self._ranges.remove((start, count))
+            self._version += 1
             self.is_dirty = True
         except ValueError:
             pass  # Silently ignore if not found
@@ -427,6 +431,7 @@ class RangeAllocator:
     def clear(self) -> None:
         self._ranges.clear()
         self._merged.clear()
+        self._version += 1
         self.is_dirty = False
 
     def _rebuild(self) -> None:
