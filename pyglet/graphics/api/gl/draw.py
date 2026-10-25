@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.allocation import RangeAllocator
     from pyglet.graphics.draw import DrawContext
     from pyglet.graphics.vertexdomain import VertexDomain
+    from pyglet.graphics.vertexstorage import IndexStream
 
 
 def get_default_batch() -> GLBatch:
@@ -40,6 +41,33 @@ class GLBackendDrawContext:
     current_fbo: int | None = None
 
 
+def _cached_multidraw(context: OpenGLSurfaceContext, buckets: list[RangeAllocator], mode: int,
+                      index_stream: IndexStream | None = None) -> Callable[[DrawContext], None]:
+    """Keep native draw arrays alive for one compiled GL or GL2 command."""
+    element_size = index_stream.index_element_size if index_stream is not None else 1
+    start_type = ctypes.c_void_p if index_stream is not None else GLint
+    versions = None
+    starts = sizes = None
+    primcount = 0
+
+    def _draw(_ctx: DrawContext) -> None:
+        nonlocal versions, starts, sizes, primcount
+        # Dirty flags can be consumed by other readers; versions survive merging.
+        if versions is None or any(bucket._version != version for bucket, version in zip(buckets, versions)):
+            regions = [region for bucket in buckets for region in bucket.merged_ranges]
+            primcount = len(regions)
+            starts = (start_type * primcount)(*[start * element_size for start, _ in regions])
+            sizes = (GLsizei * primcount)(*[size for _, size in regions])
+            versions = tuple(bucket._version for bucket in buckets)
+
+        if index_stream is not None:
+            context.glMultiDrawElements(mode, sizes, index_stream.gl_type, starts, primcount)
+        else:
+            context.glMultiDrawArrays(mode, starts, sizes, primcount)
+
+    return _draw
+
+
 class GLBatch(_BucketBatch):
     """OpenGL batch implementation."""
 
@@ -61,25 +89,4 @@ class GLBatch(_BucketBatch):
             return _BucketBatch._draw_bucket_fn(domain, buckets, mode_func)
 
         index_stream = domain.index_stream if isinstance(domain, vertexdomain.GLIndexedVertexDomain) else None
-        element_size = index_stream.index_element_size if index_stream is not None else 1
-        start_type = ctypes.c_void_p if index_stream is not None else GLint
-        versions = None
-        starts = sizes = None
-        primcount = 0
-
-        def _draw(_ctx: DrawContext) -> None:
-            nonlocal versions, starts, sizes, primcount
-            # Dirty flags can be consumed by other readers; versions survive merging.
-            if versions is None or any(bucket._version != version for bucket, version in zip(buckets, versions)):
-                regions = [region for bucket in buckets for region in bucket.merged_ranges]
-                primcount = len(regions)
-                starts = (start_type * primcount)(*[start * element_size for start, _ in regions])
-                sizes = (GLsizei * primcount)(*[size for _, size in regions])
-                versions = tuple(bucket._version for bucket in buckets)
-
-            if index_stream is not None:
-                domain._context.glMultiDrawElements(mode_func, sizes, index_stream.gl_type, starts, primcount)
-            else:
-                domain._context.glMultiDrawArrays(mode_func, starts, sizes, primcount)
-
-        return _draw
+        return _cached_multidraw(domain._context, buckets, mode_func, index_stream)

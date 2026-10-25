@@ -333,7 +333,8 @@ class WebGLBackedBufferObject(BaseBackedBufferObject, WebGLBufferObject):
 
     def set_region(self, start: int, count: int, data: Sequence[float | int]) -> None:
         self.store.set_region(start, count, data)
-        self.invalidate_region(start, count)
+        if self._dirty_min != 0 or self._dirty_max != self.size:
+            self.invalidate_region(start, count)
 
     def copy_region(self, dst: int, src: int, count: int) -> None:
         self.store.copy_region(dst, src, count)
