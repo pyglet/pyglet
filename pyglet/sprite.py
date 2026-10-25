@@ -72,7 +72,7 @@ from typing import TYPE_CHECKING, Callable, ClassVar, NoReturn, cast
 import pyglet
 from pyglet import event, clock
 from pyglet.customtypes import RGBColor, RGBAColor
-from pyglet.graphics.draw import BatchDrawOptions, DrawContext
+from pyglet.graphics.draw import BatchDrawOptions, DrawContext, _GroupMeta
 
 if TYPE_CHECKING:
     from typing import Literal
@@ -108,8 +108,12 @@ elif pyglet.options.backend == GraphicsAPI.WEBGL:
 
 
 
-class SpriteGroup(Group):
-    """Shared Sprite rendering Group."""
+class SpriteGroup(Group, metaclass=_GroupMeta):
+    """Shared Sprite rendering Group.
+
+    Matching constructor inputs reuse an existing instance, including for
+    subclasses. Initialization runs only when a new instance is needed.
+    """
 
     def __init__(self, texture: Texture, blend_src: BlendFactor, blend_dest: BlendFactor,
                  program: ShaderProgram, parent: Group | None = None) -> None:

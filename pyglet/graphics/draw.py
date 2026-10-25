@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Sequence, Ty
 import pyglet
 from pyglet.enums import BlendFactor, BlendOp, CompareOp, CullFace, FrontFace, GeometryMode, GraphicsAPI, StencilOp
 from pyglet.graphics.attributes import VertexLayout
+from pyglet.graphics.resource import GraphicsResource
 from pyglet.graphics.state import (
     BlendState,
     CameraScissorProviderProtocol,
@@ -180,6 +181,36 @@ class DrawContext(Generic[SurfaceContextT, BackendContextT]):
     def begin(self) -> None:
         self.apply_clear_color(*self.draw_pass.clear_color)
         self.apply_camera_scope()
+
+
+def _group_input_key(value: Any) -> Any:
+    if isinstance(value, GraphicsResource):
+        return value.key
+    if value is None:
+        return None
+    if isinstance(value, (str, bytes, int, float)):
+        return type(value), value
+    if isinstance(value, tuple):
+        return tuple(_group_input_key(item) for item in value)
+    return type(value), id(value)
+
+
+class _GroupMeta(type):
+    """Reuse completed group instances without rerunning subclass constructors."""
+
+    _cache: weakref.WeakValueDictionary[tuple, Group] = weakref.WeakValueDictionary()
+
+    def __call__(cls, *args: Any, **kwargs: Any) -> Group:
+        key = (cls, tuple(_group_input_key(arg) for arg in args),
+               tuple(sorted((name, _group_input_key(value)) for name, value in kwargs.items())))
+        group = _GroupMeta._cache.get(key)
+        if group is None:
+            group = super().__call__(*args, **kwargs)
+            # Keep identity keyed inputs alive so their IDs cannot be reused
+            # while this instance remains in the cache.
+            group._constructor_inputs = args, kwargs
+            _GroupMeta._cache[key] = group
+        return group
 
 
 class Group:
