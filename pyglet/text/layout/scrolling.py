@@ -77,18 +77,8 @@ class ScrollableTextLayout(TextLayout):
                          wrap_lines=wrap_lines, depth_sorting=depth_sorting)
 
     def _update_scissor_area(self) -> None:
-        if not self.document.text:
-            return
-
-        area = (self.left, self.bottom, self._width, self._height)
-
-        for group in self.group_cache.values():
-            group.uniforms["scissor_area"] = area
-        for group in self.effect_group_cache.values():
-            group.uniforms["scissor_area"] = area
-
-        self.background_decoration_group.uniforms["scissor_area"] = area
-        self.foreground_decoration_group.uniforms["scissor_area"] = area
+        if self._uniforms is not None:
+            self._uniforms["scissor_area"] = (self.left, self.bottom, self._width, self._height)
 
     def _update(self) -> None:
         super()._update()

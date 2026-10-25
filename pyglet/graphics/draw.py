@@ -206,6 +206,9 @@ class _GroupMeta(type):
         group = _GroupMeta._cache.get(key)
         if group is None:
             group = super().__call__(*args, **kwargs)
+            # The base constructor creates builders configured after construction.
+            if cls.__init__ is Group.__init__:
+                return group
             # Keep identity keyed inputs alive so their IDs cannot be reused
             # while this instance remains in the cache.
             group._constructor_inputs = (args, kwargs) if kwargs else args
@@ -213,13 +216,18 @@ class _GroupMeta(type):
         return group
 
 
-class Group:
+class Group(metaclass=_GroupMeta):
     """Group of common state.
 
     ``Group`` provides extra control over how drawables are handled within a
     ``Batch``. When a batch draws a drawable, it ensures its group's state is set;
     this can include binding textures, shaders, or setting any other parameters.
     It also sorts the groups before drawing.
+
+    Subclasses with their own constructors reuse existing instances for matching
+    constructor inputs. Supply their rendering configuration through the
+    constructor. Groups using the base constructor remain independent so their
+    states can be configured afterwards.
 
     In the following example, the background sprite is guaranteed to be drawn
     before the car and the boat::

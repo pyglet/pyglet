@@ -882,8 +882,7 @@ class _GlyphBox(_AbstractBox):
         try:
             group = layout.group_cache[self.owner]
         except KeyError:
-            group = layout.group_class(self.owner, layout.program, order=1, parent=layout.group)
-            layout._set_depth_test(group)  # noqa: SLF001
+            group = layout._create_group(layout.group_class, self.owner, layout.program, order=1)  # noqa: SLF001
             layout.group_cache[self.owner] = group
 
         vertices, tex_coords, baseline = self._create_glyph_geometry(layout, i, line_x, line_y, context)

@@ -4,6 +4,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
+    TypeVar,
 )
 
 import pyglet
@@ -77,12 +78,16 @@ class TextLayoutGroup(Group):
         program: ShaderProgram,
         order: int = 1,  # noqa: D107
         parent: Group | None = None,
+        *,
+        depth_test: CompareOp | None = None,
     ) -> None:
         super().__init__(order=order, parent=parent)
         self.texture = texture
         self.set_shader_program(program)
         self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
         self.set_texture(texture, 0)
+        if depth_test is not None:
+            self.set_depth_test(depth_test)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.texture})"
@@ -102,39 +107,39 @@ class TextDecorationGroup(Group):
         program: ShaderProgram,
         order: int = 0,  # noqa: D107
         parent: Group | None = None,
+        *,
+        depth_test: CompareOp | None = None,
     ) -> None:
         super().__init__(order=order, parent=parent)
         self.set_shader_program(program)
         self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
+        if depth_test is not None:
+            self.set_depth_test(depth_test)
 
 
-class ScrollableTextLayoutGroup(Group):
+class ScrollableTextLayoutGroup(TextLayoutGroup):
     """Default rendering group for :py:class:`~pyglet.text.layout.ScrollableTextLayout`.
 
     The group maintains internal state for specifying the viewable
-    area, and for scrolling. Because the group has internal state
-    specific to the text layout, the group is never shared.
+    area, and for scrolling. Groups can be shared when they use the same
+    layout-owned uniforms dictionary.
     """
 
-    scissor_area: ClassVar[tuple[int, int, int, int]] = 0, 0, 0, 0
     uniforms: dict[str, Any]
 
     def __init__(
         self,
         texture: Texture,
         program: ShaderProgram,
+        uniforms: dict[str, Any],
         order: int = 1,  # noqa: D107
         parent: Group | None = None,
+        *,
+        depth_test: CompareOp | None = None,
     ) -> None:
 
-        super().__init__(order=order, parent=parent)
-        self.texture = texture
-        self.uniforms = {
-            "scissor_area": self.scissor_area,
-        }
-        self.set_shader_program(program)
-        self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
-        self.set_texture(texture, 0)
+        super().__init__(texture, program, order=order, parent=parent, depth_test=depth_test)
+        self.uniforms = uniforms
         self.set_shader_uniforms(program, self.uniforms)
 
     def __repr__(self) -> str:
@@ -147,34 +152,33 @@ class ScrollableTextLayoutGroup(Group):
         return id(self)
 
 
-class ScrollableTextDecorationGroup(Group):
+class ScrollableTextDecorationGroup(TextDecorationGroup):
     """Create a text decoration rendering group.
 
     The group is created internally when a :py:class:`~pyglet.text.Label`
     is created; applications usually do not need to explicitly create it.
     """
 
-    scissor_area: ClassVar[tuple[int, int, int, int]] = 0, 0, 0, 0
     uniforms: dict[str, Any]
 
-    def __init__(self, program: ShaderProgram, order: int = 0, parent: Group | None = None) -> None:  # noqa: D107
-        super().__init__(order=order, parent=parent)
+    def __init__(self, program: ShaderProgram, uniforms: dict[str, Any], order: int = 0,
+                 parent: Group | None = None, *, depth_test: CompareOp | None = None) -> None:  # noqa: D107
+        super().__init__(program, order=order, parent=parent, depth_test=depth_test)
         self.program = program
-        self.set_shader_program(program)
-        self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
-        self.uniforms = {
-            "scissor_area": self.scissor_area,
-        }
+        self.uniforms = uniforms
         self.set_shader_uniforms(program, self.uniforms)
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(scissor={self.scissor_area})"
+        return f"{self.__class__.__name__}(scissor={self.uniforms['scissor_area']})"
 
     def __eq__(self, other: object) -> bool:
         return self is other
 
     def __hash__(self) -> int:
         return id(self)
+
+
+_GroupT = TypeVar("_GroupT", bound=Group)
 
 
 class TextLayout(_FlowLayoutBase):
@@ -208,6 +212,7 @@ class TextLayout(_FlowLayoutBase):
     has_view_translation: bool
 
     _document: AbstractDocument | None = None
+    _uniforms: dict[str, Any] | None = None
 
     _update_enabled: bool = True
     _own_batch: bool = False
@@ -389,14 +394,17 @@ class TextLayout(_FlowLayoutBase):
         try:
             return self.effect_group_cache[cache_key]
         except KeyError:
-            group = self.effect_group_class(texture, self.effect_shader, order=order, parent=self._user_group)
-            self._set_depth_test(group)
+            group = self._create_group(self.effect_group_class, texture, self.effect_shader, order=order)
             self.effect_group_cache[cache_key] = group
             return group
 
-    def _set_depth_test(self, group: Group) -> None:
-        if self._depth_sorting:
-            group.set_depth_test(self.depth_test_compare_op)
+    def _create_group(self, group_class: type[_GroupT], *args: Any, order: int) -> _GroupT:
+        if issubclass(group_class, (ScrollableTextLayoutGroup, ScrollableTextDecorationGroup)):
+            if self._uniforms is None:
+                self._uniforms = {"scissor_area": (self.left, self.bottom, self._width, self._height)}
+            args = (*args, self._uniforms)
+        return group_class(*args, order=order, parent=self._user_group,
+                           depth_test=self.depth_test_compare_op if self._depth_sorting else None)
 
     def get_depth_offset(self, layer: int) -> float:
         """Return the clip-space depth offset for a text rendering layer."""
@@ -405,12 +413,11 @@ class TextLayout(_FlowLayoutBase):
     @property
     def background_decoration_group(self) -> TextDecorationGroup | ScrollableTextDecorationGroup:
         if self._background_decoration_group is None:
-            self._background_decoration_group = self.decoration_class(
+            self._background_decoration_group = self._create_group(
+                self.decoration_class,
                 self.decoration_shader,
                 order=0,
-                parent=self._user_group,
             )
-            self._set_depth_test(self._background_decoration_group)
         return self._background_decoration_group
 
     @background_decoration_group.setter
@@ -420,12 +427,11 @@ class TextLayout(_FlowLayoutBase):
     @property
     def foreground_decoration_group(self) -> TextDecorationGroup | ScrollableTextDecorationGroup:
         if self._foreground_decoration_group is None:
-            self._foreground_decoration_group = self.decoration_class(
+            self._foreground_decoration_group = self._create_group(
+                self.decoration_class,
                 self.decoration_shader,
                 order=2,
-                parent=self._user_group,
             )
-            self._set_depth_test(self._foreground_decoration_group)
         return self._foreground_decoration_group
 
     @foreground_decoration_group.setter
