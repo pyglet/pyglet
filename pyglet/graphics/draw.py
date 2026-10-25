@@ -201,8 +201,8 @@ class _GroupMeta(type):
     _cache: weakref.WeakValueDictionary[tuple, Group] = weakref.WeakValueDictionary()
 
     def __call__(cls, *args: Any, **kwargs: Any) -> Group:
-        key = (cls, tuple(_group_input_key(arg) for arg in args),
-               tuple(sorted((name, _group_input_key(value)) for name, value in kwargs.items())))
+        keyword_key = tuple(sorted((name, _group_input_key(value)) for name, value in kwargs.items())) if kwargs else ()
+        key = cls, tuple(_group_input_key(arg) for arg in args), keyword_key
         group = _GroupMeta._cache.get(key)
         if group is None:
             group = super().__call__(*args, **kwargs)
