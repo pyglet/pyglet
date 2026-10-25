@@ -905,7 +905,7 @@ class Batch:
             instanced: bool = False,
             storage: VertexStorage,
             data_error_type: type[BaseException] = MissingAttributeError,
-            **data: Any,
+            data: dict[str, Any],
     ) -> VertexList | IndexedVertexList:
         """Create geometry from resolved storage and layout inputs."""
         assert isinstance(mode, GeometryMode), f"Mode {mode} is not geometry mode."
@@ -967,7 +967,7 @@ class Batch:
         """
         storage, vertex_layout = self._resolve_vertex_list_layout(storage, vertex_layout)
         return self._create_vertex_list(
-            vertex_layout, count, mode, group, storage=storage, **data,
+            vertex_layout, count, mode, group, storage=storage, data=data,
         )
 
     def vertex_list_indexed(
@@ -1009,7 +1009,7 @@ class Batch:
         """
         storage, vertex_layout = self._resolve_vertex_list_layout(storage, vertex_layout)
         return self._create_vertex_list(
-            vertex_layout, count, mode, group, indices=indices, storage=storage, **data,
+            vertex_layout, count, mode, group, indices=indices, storage=storage, data=data,
         )
 
     def vertex_list_instanced(
@@ -1048,7 +1048,7 @@ class Batch:
         assert vertex_layout.has_divisors, 'Instanced geometry requires a VertexLayout with at least one divisor.'
         storage, vertex_layout = self._resolve_vertex_list_layout(storage, vertex_layout)
         return self._create_vertex_list(
-            vertex_layout, count, mode, group, instanced=True, storage=storage, **data,
+            vertex_layout, count, mode, group, instanced=True, storage=storage, data=data,
         )
 
     def vertex_list_instanced_indexed(
@@ -1091,7 +1091,7 @@ class Batch:
         assert vertex_layout.has_divisors, 'Instanced geometry requires a VertexLayout with at least one divisor.'
         storage, vertex_layout = self._resolve_vertex_list_layout(storage, vertex_layout)
         return self._create_vertex_list(
-            vertex_layout, count, mode, group, indices=indices, instanced=True, storage=storage, **data,
+            vertex_layout, count, mode, group, indices=indices, instanced=True, storage=storage, data=data,
         )
 
     def add_pass(self, draw_pass: DrawPass) -> DrawPass:

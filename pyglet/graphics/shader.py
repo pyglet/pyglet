@@ -398,32 +398,32 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
     @overload
     def _vertex_list_create(self, count: int, mode: GeometryMode, indices: None = None,
                             instanced: Literal[False] = False, batch: Batch | None = None, group: Group | None = None,
-                            **data: Any) -> VertexList:
+                            *, data: dict[str, Any]) -> VertexList:
         ...
 
     @overload
     def _vertex_list_create(self, count: int, mode: GeometryMode, indices: Sequence[int] = ...,
                             instanced: Literal[False] = False, batch: Batch | None = None, group: Group | None = None,
-                            **data: Any) -> IndexedVertexList:
+                            *, data: dict[str, Any]) -> IndexedVertexList:
         ...
 
     @overload
     def _vertex_list_create(self, count: int, mode: GeometryMode, indices: None = None,
                             instanced: Literal[True] = True, batch: Batch | None = None, group: Group | None = None,
-                            **data: Any) -> InstanceVertexList:
+                            *, data: dict[str, Any]) -> InstanceVertexList:
         ...
 
     @overload
     def _vertex_list_create(self, count: int, mode: GeometryMode, indices: Sequence[int] = ...,
                             instanced: Literal[True] = True, batch: Batch | None = None, group: Group | None = None,
-                            **data: Any) -> InstanceIndexedVertexList:
+                            *, data: dict[str, Any]) -> InstanceIndexedVertexList:
         ...
 
     def _vertex_list_create(self, count: int, mode: GeometryMode, indices: Sequence[int] | None = None,
                             instanced: bool = False, batch: Batch | None = None, group: Group | None = None,
                             layout: _AbstractShaderProgram | ShaderProgramView | None = None,
                             storage: VertexStorage | None = None, vertex_layout: VertexLayout | None = None,
-                            **data: Any) -> VertexList | InstanceVertexList | IndexedVertexList | InstanceIndexedVertexList:
+                            *, data: dict[str, Any]) -> VertexList | InstanceVertexList | IndexedVertexList | InstanceIndexedVertexList:
         layout = layout or self
         batch = batch or pyglet.graphics.get_default_batch()
         storage = batch._resolve_storage(storage)  # noqa: SLF001
@@ -439,7 +439,7 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
             indices=indices,
             instanced=instanced,
             data_error_type=MissingAttributeException,
-            storage=storage, **data,
+            storage=storage, data=data,
         )
 
     def vertex_list(self, count: int, mode: GeometryMode, batch: Batch | None = None, group: Group | None = None,
@@ -467,12 +467,12 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
 
         """
         return self._vertex_list_create(count, mode, None, False, batch=batch, group=group, storage=storage,
-                                        vertex_layout=vertex_layout, **data)
+                                        vertex_layout=vertex_layout, data=data)
 
     def vertex_list_instanced(self, count: int, mode: GeometryMode, batch: Batch | None = None,
                               group: Group | None = None, **data: Any) -> InstanceVertexList:
         return self._vertex_list_create(
-            count, mode, None, True, batch=batch, group=group, **data
+            count, mode, None, True, batch=batch, group=group, data=data
         )
 
     def vertex_list_indexed(self, count: int, mode: GeometryMode, indices: Sequence[int], batch: Batch | None = None,
@@ -499,13 +499,13 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
             data:
                 Initial data for each vertex attribute.
         """
-        return self._vertex_list_create(count, mode, indices, False, batch=batch, group=group, **data)
+        return self._vertex_list_create(count, mode, indices, False, batch=batch, group=group, data=data)
 
     def vertex_list_instanced_indexed(self, count: int, *, mode: GeometryMode, indices: Sequence[int],
                                       batch: Batch | None = None, group: Group | None = None,
                                       **data: Any) -> InstanceIndexedVertexList:
         return self._vertex_list_create(
-            count, mode, indices, True, batch=batch, group=group, **data
+            count, mode, indices, True, batch=batch, group=group, data=data
         )
 
     def __repr__(self) -> str:
@@ -604,27 +604,27 @@ class ShaderProgramView(ShaderProgram):
     def vertex_list(self, count: int, mode: GeometryMode, batch: Batch | None = None,
                     group: Group | None = None, **data: Any) -> VertexList:
         return self._program._vertex_list_create(
-            count, mode, batch=batch, group=group, layout=self, **data
+            count, mode, batch=batch, group=group, layout=self, data=data
         )
 
     def vertex_list_indexed(self, count: int, mode: GeometryMode, indices: Sequence[int],
                             batch: Batch | None = None, group: Group | None = None,
                             **data: Any) -> IndexedVertexList:
         return self._program._vertex_list_create(
-            count, mode, indices, batch=batch, group=group, layout=self, **data
+            count, mode, indices, batch=batch, group=group, layout=self, data=data
         )
 
     def vertex_list_instanced(self, count: int, mode: GeometryMode, batch: Batch | None = None,
                               group: Group | None = None, **data: Any) -> InstanceVertexList:
         return self._program._vertex_list_create(
-            count, mode, None, True, batch=batch, group=group, layout=self, **data
+            count, mode, None, True, batch=batch, group=group, layout=self, data=data
         )
 
     def vertex_list_instanced_indexed(self, count: int, *, mode: GeometryMode, indices: Sequence[int],
                                       batch: Batch | None = None, group: Group | None = None,
                                       **data: Any) -> InstanceIndexedVertexList:
         return self._program._vertex_list_create(
-            count, mode, indices, True, batch=batch, group=group, layout=self, **data
+            count, mode, indices, True, batch=batch, group=group, layout=self, data=data
         )
 
     def __getattr__(self, name: str) -> Any:
