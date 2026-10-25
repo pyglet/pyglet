@@ -5,6 +5,7 @@ from typing import (
     Any,
     ClassVar,
     TypeVar,
+    cast,
 )
 
 import pyglet
@@ -13,9 +14,11 @@ from pyglet import graphics
 from pyglet.enums import BlendFactor, CompareOp, GraphicsAPI
 from pyglet.graphics import Group, ShaderProgram
 from pyglet.graphics.vertexdomain import IndexedVertexList, VertexList
+from pyglet.text.document import UnformattedDocument
 from pyglet.text.effects import LinearGradient
 from pyglet.text.layout.boxes import (
     _AbstractBox,
+    _GlyphBox,
     _InlineElementBox,  # noqa: F401
     _InvalidRange,  # noqa: F401
     _LayoutContext,
@@ -1035,35 +1038,58 @@ class TextLayout(_FlowLayoutBase):
         if not self._update_enabled:
             return
 
+        assert self._document
+        lines = self._get_lines() if self._document.text else []
+
+        if lines:
+            self._ascent = lines[0].ascent
+            self._descent = lines[0].descent
+            self._anchor_left = self._get_left_anchor()
+            self._anchor_bottom = self._get_bottom_anchor()
+            anchor_top = self._get_top_anchor()
+            context = _StaticLayoutContext(
+                self, self._document, self._document.get_style_runs("color"),
+                self._document.get_style_runs("background_color"),
+            )
+
+            # A plain single-line run can keep its allocation after reshaping.
+            if (len(self._boxes) == 1 and len(lines) == 1 and len(lines[0].boxes) == 1
+                    and not self._multiline and type(self._document) is UnformattedDocument
+                    and context.shadow_iter is None and context.stroke_iter is None
+                    and context.decoration_iter is None):
+                old_box = self._boxes[0]
+                box = lines[0].boxes[0]
+                if (type(old_box) is _GlyphBox and type(box) is _GlyphBox
+                        and old_box.owner is box.owner and old_box.length == box.length
+                        and len(old_box.vertex_lists) == 1):
+                    vertex_list = cast(VertexList, old_box._glyph_vertex_list)
+                    if (vertex_list is not None and vertex_list.domain.batch is self._batch
+                            and vertex_list.group is self.group_cache.get(box.owner)):
+                        anchor_x = round(self._anchor_left) if self._rotation == 0 else self._anchor_left
+                        line = lines[0]
+                        box.place(self, line.start, self._x, self._y, self._z, line.x, line.y,
+                                  self._rotation, self._visible, anchor_x, anchor_top, context,
+                                  reuse_vertex_list=vertex_list)  # type: ignore[arg-type]
+                        old_box.vertex_lists.clear()
+                        old_box._glyph_vertex_list = None
+                        self._vertex_lists[:] = box.vertex_lists
+                        self._boxes[:] = line.boxes
+                        self._lines = lines
+                        return
+
         for box in self._boxes:
             box.delete(self)
 
         self._vertex_lists.clear()
         self._boxes.clear()
-        self._lines.clear()
+        self._lines = lines
 
-        assert self._document
-
-        if not self._document.text:
+        if not lines:
             self._ascent = 0
             self._descent = 0
             self._anchor_left = 0
             self._anchor_bottom = 0
             return
-
-        self._lines = self._get_lines()
-        self._ascent = self._lines[0].ascent
-        self._descent = self._lines[0].descent
-
-        colors_iter = self._document.get_style_runs("color")
-
-        background_iter = self._document.get_style_runs("background_color")
-
-        self._anchor_left = self._get_left_anchor()
-        self._anchor_bottom = self._get_bottom_anchor()
-        anchor_top = self._get_top_anchor()
-
-        context = _StaticLayoutContext(self, self._document, colors_iter, background_iter)
 
         for line in self._lines:
             self._boxes.extend(line.boxes)

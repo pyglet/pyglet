@@ -24,6 +24,118 @@ layout_classes = [layout.TextLayout, layout.ScrollableTextLayout, layout.Increme
 all_combinations = list(itertools.product(document_classes, layout_classes))
 
 
+@pytest.mark.parametrize('shaping', [False, True])
+@pytest.mark.parametrize('anchor_x', ['left', 'center', 'right'])
+def test_label_text_update_reuses_vertex_list_after_shaping(test_window, monkeypatch, shaping, anchor_x):
+    batch = pyglet.graphics.Batch()
+    label = pyglet.text.Label('iiii', width=200, align='center', anchor_x=anchor_x,
+                              rotation=17, batch=batch, shaping=shaping)
+    expected = None
+    try:
+        vertex_list = label._vertex_lists[0]
+        old_box = label._boxes[0]
+        old_line = label._lines[0]
+        font = label.font
+        get_glyphs = font.get_glyphs
+        calls = []
+
+        def record_shaping(text, shaping=False):
+            calls.append((text, shaping))
+            return get_glyphs(text, shaping)
+
+        monkeypatch.setattr(font, 'get_glyphs', record_shaping)
+        batch.draw()
+        label.text = 'WWWW'
+        assert calls == [('WWWW', shaping)]
+        assert label._vertex_lists[0] is vertex_list
+        assert label._boxes[0] is not old_box
+        assert label._lines[0] is not old_line
+        assert not old_box.vertex_lists
+
+        expected = pyglet.text.Label('WWWW', width=200, align='center', anchor_x=anchor_x,
+                                     rotation=17, shaping=shaping)
+        assert (label.content_width, label.content_height) == (expected.content_width, expected.content_height)
+        for name in label.program.attributes:
+            assert list(getattr(vertex_list, name)) == list(getattr(expected._vertex_lists[0], name))
+        batch.draw()
+    finally:
+        label.delete()
+        if expected is not None:
+            expected.delete()
+
+
+def test_label_text_update_rebuilds_for_length_changes_and_empty_text(test_window):
+    label = pyglet.text.Label('1234')
+    try:
+        original = label._vertex_lists[0]
+        label.text = '12345'
+        assert label._vertex_lists[0] is not original
+        assert label._vertex_lists[0].count == 20
+        label.text = ''
+        assert not label._vertex_lists
+        label.text = '6789'
+        assert label._vertex_lists[0].count == 16
+        label.draw()
+    finally:
+        label.delete()
+
+
+def test_label_reuse_respects_batch_group_and_font_changes(test_window):
+    label = pyglet.text.Label('1234')
+    try:
+        original = label._vertex_lists[0]
+        batch = pyglet.graphics.Batch()
+        label.batch = batch
+        assert label._vertex_lists[0] is not original
+        assert label._vertex_lists[0].domain.batch is batch
+        previous_group = label._vertex_lists[0].group
+        label.group = pyglet.graphics.Group(order=10)
+        assert label._vertex_lists[0].group is not previous_group
+        previous_owner = label._boxes[0].owner
+        label.font_size = 48
+        assert label._boxes[0].owner is not previous_owner
+        label.text = '5678'
+        batch.draw()
+    finally:
+        label.delete()
+
+
+def test_label_text_updates_keep_effect_geometry(test_window):
+    label = pyglet.text.Label('1234')
+    try:
+        label.shadow = DropShadow()
+        label.document.set_style(0, 4, {'underline': (255, 255, 255, 255)})
+        before = label._vertex_lists.copy()
+        label.text = '5678'
+        assert len(label._vertex_lists) == len(before) == 3
+        assert all(current is not previous for current, previous in zip(label._vertex_lists, before))
+        label.draw()
+        label.shadow = None
+        label.document.set_style(0, 4, {'underline': None})
+        vertex_list = label._vertex_lists[0]
+        label.text = '9012'
+        assert label._vertex_lists == [vertex_list]
+    finally:
+        label.delete()
+
+
+def test_label_text_update_preserves_deferred_updates(test_window):
+    label = pyglet.text.Label('iiii')
+    try:
+        vertex_list = label._vertex_lists[0]
+        positions = list(vertex_list.position)
+        label.begin_update()
+        label.text = 'WWWW'
+        assert not label._update_enabled
+        assert list(vertex_list.position) == positions
+        label.end_update()
+        assert label._vertex_lists[0] is vertex_list
+        assert list(vertex_list.position) != positions
+        label.draw()
+    finally:
+        label.delete()
+
+
 def test_plain_text_shares_glyph_effect_and_decoration_groups(test_window):
     batch = pyglet.graphics.Batch()
     parent = pyglet.graphics.Group()

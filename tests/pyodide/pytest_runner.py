@@ -20,6 +20,11 @@ test_files = sorted(
 test_files.extend(
     str(tests_root / "integration" / "text" / "test_layout.py") + "::" + name
     for name in (
+        "test_label_text_update_reuses_vertex_list_after_shaping",
+        "test_label_text_update_rebuilds_for_length_changes_and_empty_text",
+        "test_label_reuse_respects_batch_group_and_font_changes",
+        "test_label_text_updates_keep_effect_geometry",
+        "test_label_text_update_preserves_deferred_updates",
         "test_plain_text_shares_glyph_effect_and_decoration_groups",
         "test_cached_text_groups_keep_depth_configuration_separate",
         "test_cached_text_groups_separate_depth_comparison_values",

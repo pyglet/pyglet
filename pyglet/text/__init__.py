@@ -264,7 +264,16 @@ class DocumentLabel(layout.TextLayout):
 
     @text.setter
     def text(self, text: str) -> None:
-        self.document.text = text
+        if text == self.document.text or not self._update_enabled:
+            self.document.text = text
+            return
+        # Apply the deletion and insertion together so the old geometry is
+        # available when laying out the replacement text.
+        self.begin_update()
+        try:
+            self.document.text = text
+        finally:
+            self.end_update()
 
     @property
     def color(self) -> tuple[int, int, int, int] | LinearGradient:

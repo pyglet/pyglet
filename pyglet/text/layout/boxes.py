@@ -56,6 +56,8 @@ class _LayoutVertexList(Protocol):
 
     def delete(self) -> None: ...
 
+    def set_attribute_data(self, name: str, data: Sequence[float | int | bool]) -> None: ...
+
 
 _distance_re: Pattern[str] = re.compile(r"([-0-9.]+)([a-zA-Z]+)")
 
@@ -874,10 +876,15 @@ class _GlyphBox(_AbstractBox):
         anchor_x: float,
         anchor_y: float,
         context: _LayoutContext,
+        *,
+        reuse_vertex_list: _LayoutVertexList | None = None,
     ) -> None:
-        """Create the initial attributes and vertex lists for this glyph run."""
+        """Create or update the attributes and vertex lists for this glyph run."""
         assert self.glyphs
         assert not self.vertex_lists
+        assert reuse_vertex_list is None or (
+            context.shadow_iter is None and context.stroke_iter is None and context.decoration_iter is None
+        )
 
         try:
             group = layout.group_cache[self.owner]
@@ -887,7 +894,8 @@ class _GlyphBox(_AbstractBox):
 
         vertices, tex_coords, baseline = self._create_glyph_geometry(layout, i, line_x, line_y, context)
         colors = self._create_glyph_colors(i, vertices, context)
-        indices = [element + glyph_index * 4 for glyph_index in range(self.length) for element in (0, 1, 2, 0, 2, 3)]
+        indices = ([element + glyph_index * 4 for glyph_index in range(self.length) for element in (0, 1, 2, 0, 2, 3)]
+                   if reuse_vertex_list is None else ())
         translation = (x, y, z)
         vertex_data = self._create_vertex_data(
             layout,
@@ -943,14 +951,19 @@ class _GlyphBox(_AbstractBox):
             )
             self._add_vertex_list(shadow_list, context)
 
-        vertex_list = layout.program.vertex_list_indexed(
-            self.length * 4,
-            GeometryMode.TRIANGLES,
-            indices,
-            layout.batch,
-            group,
-            **vertex_data,
-        )
+        if reuse_vertex_list is None:
+            vertex_list = layout.program.vertex_list_indexed(
+                self.length * 4,
+                GeometryMode.TRIANGLES,
+                indices,
+                layout.batch,
+                group,
+                **vertex_data,
+            )
+        else:
+            vertex_list = reuse_vertex_list
+            for name, values in vertex_data.items():
+                vertex_list.set_attribute_data(name, values)
         self._glyph_vertex_list = vertex_list  # type: ignore[assignment]
         self._add_vertex_list(vertex_list, context)
         for stroke_list in stroke_lists:
