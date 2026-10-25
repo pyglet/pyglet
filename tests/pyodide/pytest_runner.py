@@ -28,6 +28,7 @@ test_files.extend(
         "test_retained_label_placement_updates_only_affected_attributes",
         "test_label_placement_reuse_checks_shaped_glyph_count",
         "test_retained_scrollable_placement_preserves_view_translation",
+        "test_retained_label_reads_uniform_styles_without_run_iterators",
         "test_plain_text_shares_glyph_effect_and_decoration_groups",
         "test_cached_text_groups_keep_depth_configuration_separate",
         "test_cached_text_groups_separate_depth_comparison_values",

@@ -1072,6 +1072,14 @@ class TextLayout(_FlowLayoutBase):
             self._anchor_left = self._get_left_anchor()
             self._anchor_bottom = self._get_bottom_anchor()
             anchor_top = self._get_top_anchor()
+            # A retained plain run has uniform styles and needs no run iterators.
+            if len(lines) == 1 and len(self._lines) == 1 and lines[0] is self._lines[0]:
+                line = lines[0]
+                box = cast(_GlyphBox, self._boxes[0])
+                anchor_x = round(self._anchor_left) if self._rotation == 0 else self._anchor_left
+                box.update_placement(self, line.x, line.y, anchor_x, anchor_top,
+                                     self._document.get_style("baseline"), self._document.get_style("color"))
+                return
             context = _StaticLayoutContext(
                 self, self._document, self._document.get_style_runs("color"),
                 self._document.get_style_runs("background_color"),
@@ -1092,9 +1100,6 @@ class TextLayout(_FlowLayoutBase):
                             and vertex_list.group is self.group_cache.get(box.owner)):
                         anchor_x = round(self._anchor_left) if self._rotation == 0 else self._anchor_left
                         line = lines[0]
-                        if box is old_box:
-                            box.update_placement(self, line.x, line.y, anchor_x, anchor_top, context)
-                            return
                         box.place(self, line.start, self._x, self._y, self._z, line.x, line.y,
                                   self._rotation, self._visible, anchor_x, anchor_top, context,
                                   reuse_vertex_list=vertex_list)  # type: ignore[arg-type]

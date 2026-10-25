@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 import sys
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, NamedTuple, Pattern, Protocol, Sequence, cast
+from typing import TYPE_CHECKING, Iterable, NamedTuple, Pattern, Protocol, Sequence, cast
 
 from pyglet.enums import GeometryMode
 from pyglet.text import runlist
@@ -324,14 +324,14 @@ class _GlyphBox(_AbstractBox):
         start_index: int,
         line_x: float,
         line_y: float,
-        context: _LayoutContext,
+        baseline_runs: Iterable[tuple[int, int, str | float | None]],
     ) -> tuple[list[float], list[float], int]:
         """Build the position and texture attributes for the fill glyphs."""
         vertices: list[float] = []
         tex_coords: list[float] = []
         baseline = 0
         x1 = round(line_x)
-        for start, end, baseline_ in context.baseline_iter.ranges(start_index, start_index + self.length):
+        for start, end, baseline_ in baseline_runs:
             baseline = layout._parse_distance(baseline_) or 0  # noqa: SLF001
             glyphs = self.glyphs[start - start_index : end - start_index]
             assert len(glyphs) == end - start
@@ -892,7 +892,9 @@ class _GlyphBox(_AbstractBox):
             group = layout._create_group(layout.group_class, self.owner, layout.program, order=1)  # noqa: SLF001
             layout.group_cache[self.owner] = group
 
-        vertices, tex_coords, baseline = self._create_glyph_geometry(layout, i, line_x, line_y, context)
+        vertices, tex_coords, baseline = self._create_glyph_geometry(
+            layout, i, line_x, line_y, context.baseline_iter.ranges(i, i + self.length),
+        )
         colors = self._create_glyph_colors(i, vertices, context)
         indices = ([element + glyph_index * 4 for glyph_index in range(self.length) for element in (0, 1, 2, 0, 2, 3)]
                    if reuse_vertex_list is None else ())
@@ -984,10 +986,15 @@ class _GlyphBox(_AbstractBox):
         )
 
     def update_placement(self, layout: TextLayout, line_x: float, line_y: float,
-                         anchor_x: float, anchor_y: float, context: _LayoutContext) -> None:
+                         anchor_x: float, anchor_y: float, baseline: str | float | None,
+                         color: tuple[int, int, int, int] | LinearGradient | None) -> None:
         """Update a retained plain glyph run after reshaping or a style change."""
-        vertices, tex_coords, _ = self._create_glyph_geometry(layout, 0, line_x, line_y, context)
-        colors = self._create_glyph_colors(0, vertices, context)
+        vertices, tex_coords, _ = self._create_glyph_geometry(
+            layout, 0, line_x, line_y, ((0, self.length, baseline),),
+        )
+        if color is None:
+            color = (0, 0, 0, 255)
+        colors = self._create_range_colors(color, 0, self.length, 0, vertices, "Color")
         vertex_list = self._glyph_vertex_list
         assert vertex_list is not None
         vertex_list.set_attribute_data("position", vertices)

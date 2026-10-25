@@ -199,6 +199,39 @@ def test_label_placement_reuse_checks_shaped_glyph_count(test_window, monkeypatc
         label.delete()
 
 
+@pytest.mark.parametrize('baseline', [None, 3, '2pt', -2.5])
+@pytest.mark.parametrize('color_kind', ['default', 'solid', 'gradient'])
+def test_retained_label_reads_uniform_styles_without_run_iterators(test_window, monkeypatch, baseline, color_kind):
+    from pyglet.text.effects import LinearGradient
+
+    color = {'default': None, 'solid': (20, 50, 80, 120),
+             'gradient': LinearGradient((255, 0, 0, 255), (0, 255, 0, 128))}[color_kind]
+    label = pyglet.text.Label('iiii', x=10, y=15, width=80, anchor_x='center', rotation=13)
+    expected = None
+    try:
+        label.document.set_style(0, 4, {'baseline': baseline, 'color': color})
+        vertex_list = label._vertex_lists[0]
+
+        def unexpected_style_runs(name):
+            raise AssertionError(f'Retained uniform text requested style runs for {name}')
+
+        monkeypatch.setattr(label.document, 'get_style_runs', unexpected_style_runs)
+        label.text = 'WWWW'
+        assert label._vertex_lists[0] is vertex_list
+
+        doc = document.UnformattedDocument(label.text)
+        doc.styles.update(label.document.styles)
+        expected = pyglet.text.DocumentLabel(doc, x=10, y=15, width=80, anchor_x='center', rotation=13)
+        assert (label.content_width, label.content_height) == (expected.content_width, expected.content_height)
+        for name in label.program.attributes:
+            assert list(getattr(vertex_list, name)) == list(getattr(expected._vertex_lists[0], name))
+        label.draw()
+    finally:
+        label.delete()
+        if expected is not None:
+            expected.delete()
+
+
 def test_retained_scrollable_placement_preserves_view_translation(test_window):
     doc = document.UnformattedDocument('0123456789')
     text_layout = layout.ScrollableTextLayout(doc, width=20, height=30, multiline=False)
