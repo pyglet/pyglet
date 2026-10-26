@@ -31,11 +31,14 @@ class WaveSource(StreamingSource):
         if sampwidth not in (1, 2):
             raise WAVEDecodeException(f"incompatible sample width {sampwidth}")
 
+        if nframes == 0:
+            raise WAVEDecodeException("WAV file contains no audio frames")
+
         self.audio_format = AudioFormat(channels=nchannels, sample_size=sampwidth * 8, sample_rate=framerate)
 
         self._bytes_per_frame = nchannels * sampwidth
         self._duration = nframes / framerate
-        self._duration_per_frame = 1.0 / framerate
+        self._duration_per_frame = self._duration / nframes
         self._num_frames = nframes
 
         self._wave.rewind()
