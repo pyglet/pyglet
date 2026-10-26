@@ -4,20 +4,25 @@ import wave
 import pytest
 
 import pyglet.media
-from pyglet.media.codecs.wave import WaveDecoder
+from pyglet.media.codecs.wave import WAVEDecodeException, WaveDecoder
 
 
 @pytest.mark.parametrize("channels", [1, 2])
 @pytest.mark.parametrize("sample_width", [1, 2])
 @pytest.mark.parametrize("streaming", [False, True])
 @pytest.mark.parametrize("frame_count", [0, 2])
-def test_loading_wave_with_or_without_frames(channels, sample_width, streaming, frame_count):
+def test_wave_decoder_empty_and_nonempty_files(channels, sample_width, streaming, frame_count):
     pcm = bytes(range(channels * sample_width * frame_count))
     audio_file = BytesIO()
     with wave.open(audio_file, "wb") as writer:
         writer.setparams((channels, sample_width, 8000, frame_count, "NONE", "not compressed"))
         writer.writeframes(pcm)
     audio_file.seek(0)
+
+    if frame_count == 0:
+        with pytest.raises(WAVEDecodeException, match="no audio frames"):
+            pyglet.media.load("audio.wav", audio_file, streaming=streaming, decoder=WaveDecoder())
+        return
 
     source = pyglet.media.load("audio.wav", audio_file, streaming=streaming, decoder=WaveDecoder())
 
@@ -29,7 +34,4 @@ def test_loading_wave_with_or_without_frames(channels, sample_width, streaming, 
     assert queue_source.get_audio_data(64) is None
     queue_source.seek(0)
     data = queue_source.get_audio_data(64)
-    if frame_count:
-        assert data.data == pcm
-    else:
-        assert data is None
+    assert data.data == pcm
