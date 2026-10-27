@@ -570,10 +570,10 @@ load, in points::
 
 Bold and italic variants of the font can specified with keyword parameters::
 
-    times_bold = pyglet.font.load('Times New Roman', 16, bold=True)
+    times_bold = pyglet.font.load('Times New Roman', 16, weight='bold')
     times_italic = pyglet.font.load('Times New Roman', 16, italic=True)
     times_bold_italic = pyglet.font.load('Times New Roman', 16,
-                                         bold=True, italic=True)
+                                         weight='bold', italic=True)
 
 For maximum compatibility on all platforms, you can specify a list of font
 names to load, in order of preference.  For example, many users will have
