@@ -161,11 +161,11 @@ def parse_obj_file(filename, file=None) -> list[Mesh]:
             for i, v in enumerate(values[1:]):
                 v_i, t_i, n_i = (list(map(int, [j or 0 for j in v.split('/')])) + [0, 0])[:3]
                 if v_i < 0:
-                    v_i += len(vertices) - 1
+                    v_i += len(vertices)
                 if t_i < 0:
-                    t_i += len(tex_coords) - 1
+                    t_i += len(tex_coords)
                 if n_i < 0:
-                    n_i += len(normals) - 1
+                    n_i += len(normals)
 
                 mesh.primitives[0].attributes[0].array += vertices[v_i]
                 mesh.primitives[0].attributes[1].array += normals[n_i]
