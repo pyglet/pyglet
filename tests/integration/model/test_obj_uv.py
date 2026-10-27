@@ -9,7 +9,8 @@ import pyglet
     ('vt 0.25 0.5\nvt 0.5 0.75\nvt 0.75 1\n', (0.25, 0.5, 0.5, 0.75, 0.75, 1)),
 ])
 def test_textured_obj_uploads_a_pair_of_coordinates_per_vertex(tmp_path, monkeypatch, texture_vertices, expected):
-    pyglet.image.SolidColorImagePattern().create_image(1, 1).save(str(tmp_path / 'texture.png'))
+    with (tmp_path / 'texture.png').open('wb') as texture_file:
+        pyglet.image.SolidColorImagePattern().create_image(1, 1).save('texture.png', file=texture_file)
     (tmp_path / 'material.mtl').write_text('newmtl Surface\nmap_Kd texture.png\n')
     loader = pyglet.resource.Loader([str(tmp_path)])
     monkeypatch.setattr(pyglet.resource, 'texture', loader.texture)
