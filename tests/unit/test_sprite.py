@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 import pyglet
+import pyglet.sprite
 
 
 @pytest.fixture(autouse=True)
