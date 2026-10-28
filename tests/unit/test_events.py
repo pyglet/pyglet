@@ -77,6 +77,40 @@ def test_register_event_type(dispatcher):
     assert len(dispatcher.event_types) == 1
 
 
+def test_register_subclass_event_preserves_parent_and_sibling_events() -> None:
+    """Child events must not be accepted by parent or sibling dispatchers."""
+    class Parent(pyglet.event.EventDispatcher):
+        pass
+
+    Parent.event_types = ['on_parent']
+
+    class Child(Parent):
+        pass
+
+    class Sibling(Parent):
+        pass
+
+    Child.register_event_type('on_child')
+    Child.register_event_type('on_other_child')
+    Sibling.register_event_type('on_sibling')
+
+    assert Parent.event_types == ['on_parent']
+    assert Child.event_types == ['on_parent', 'on_child', 'on_other_child']
+    assert Sibling.event_types == ['on_parent', 'on_sibling']
+
+    child = Child()
+    handler = mock.Mock()
+    child.push_handlers(on_parent=handler, on_child=handler)
+    child.dispatch_event('on_parent')
+    child.dispatch_event('on_child')
+    assert handler.call_count == 2
+
+    with pytest.raises(pyglet.event.EventException, match='Unknown event "on_child"'):
+        Parent().push_handlers(on_child=handler)
+    with pytest.raises(pyglet.event.EventException, match='Unknown event "on_child"'):
+        Sibling().push_handlers(on_child=handler)
+
+
 def test_push_handlers_args(dispatcher, mock_handler):
     dispatcher.push_handlers(mock_handler)
     result = dispatcher.dispatch_event('mock_event')
