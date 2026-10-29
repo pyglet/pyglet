@@ -13,14 +13,16 @@ from .. import Model, MaterialGroup, TexturedMaterialGroup
 from ...graphics import Batch, Group
 
 
-def _new_mesh(name, material):
+def _new_primitive(material: SimpleMaterial) -> Primitive:
     # The three primitive types used in .obj files:
     attributes = [Attribute('POSITION', 'f', 'VEC3', 0, []),
                   Attribute('NORMAL', 'f', 'VEC3', 0, []),
                   Attribute('TEXCOORD_0', 'f', 'VEC3', 0, [])]
-    primitive = Primitive(attributes=attributes, indices=None, material=material, mode=GL_TRIANGLES)
-    mesh = Mesh(primitives=[primitive], name=name)
-    return mesh
+    return Primitive(attributes=attributes, indices=None, material=material, mode=GL_TRIANGLES)
+
+
+def _new_mesh(name, material):
+    return Mesh(primitives=[_new_primitive(material)], name=name)
 
 
 def load_material_library(filename):
@@ -86,6 +88,16 @@ def load_material_library(filename):
 
 
 def parse_obj_file(filename, file=None) -> list[Mesh]:
+    """Parse OBJ objects into meshes with separate primitives for material runs.
+
+    Args:
+        filename: Source filename, also used to locate material libraries.
+        file: An optional open source file. Otherwise, open ``filename``.
+
+    Returns:
+        Meshes in object order. Consecutive faces using the same material share
+        a primitive. Material selections carry across object boundaries.
+    """
     materials = {}
     meshes = []
 
@@ -136,19 +148,23 @@ def parse_obj_file(filename, file=None) -> list[Mesh]:
 
         elif values[0] in ('usemtl', 'usemat'):
             material = materials.get(values[1])
-            if mesh is not None:
-                mesh.primitives[0].material = material
 
         elif values[0] == 'o':
-            mesh = _new_mesh(name=values[1], material=default_material)
+            mesh = _new_mesh(name=values[1], material=material or default_material)
             meshes.append(mesh)
 
         elif values[0] == 'f':
-            if material is None:
-                material = SimpleMaterial()
             if mesh is None:
-                mesh = _new_mesh(name='unknown', material=material)
+                mesh = _new_mesh(name='unknown', material=material or SimpleMaterial())
                 meshes.append(mesh)
+
+            primitive = mesh.primitives[-1]
+            if material is not None and primitive.material is not material:
+                if primitive.attributes[0].array:
+                    primitive = _new_primitive(material)
+                    mesh.primitives.append(primitive)
+                else:
+                    primitive.material = material
 
             # For fan triangulation, remember first and latest vertices
             n1 = None
@@ -167,14 +183,14 @@ def parse_obj_file(filename, file=None) -> list[Mesh]:
                 if n_i < 0:
                     n_i += len(normals) - 1
 
-                mesh.primitives[0].attributes[0].array += vertices[v_i]
-                mesh.primitives[0].attributes[1].array += normals[n_i]
-                mesh.primitives[0].attributes[2].array += tex_coords[t_i]
+                primitive.attributes[0].array += vertices[v_i]
+                primitive.attributes[1].array += normals[n_i]
+                primitive.attributes[2].array += tex_coords[t_i]
 
                 if i >= 3:
-                    mesh.primitives[0].attributes[0].array += v1 + vlast
-                    mesh.primitives[0].attributes[1].array += n1 + nlast
-                    mesh.primitives[0].attributes[2].array += t1 + tlast
+                    primitive.attributes[0].array += v1 + vlast
+                    primitive.attributes[1].array += n1 + nlast
+                    primitive.attributes[2].array += t1 + tlast
 
                 if i == 0:
                     n1 = normals[n_i]
@@ -199,23 +215,24 @@ class OBJScene(Scene):
         groups = []
         for node in self.nodes:
             for mesh in node.meshes:
-                material = mesh.primitives[0].material
-                count = mesh.primitives[0].attributes[0].count
+                for primitive in mesh.primitives:
+                    material = primitive.material
+                    count = primitive.attributes[0].count
 
-                if material.texture_name:
-                    program = pyglet.model.get_default_textured_shader()
-                    texture = pyglet.resource.texture(material.texture_name)
-                    matgroup = TexturedMaterialGroup(material, program, texture, parent=group)
-                else:
-                    program = pyglet.model.get_default_shader()
-                    matgroup = MaterialGroup(material, program, parent=group)
+                    if material.texture_name:
+                        program = pyglet.model.get_default_textured_shader()
+                        texture = pyglet.resource.texture(material.texture_name)
+                        matgroup = TexturedMaterialGroup(material, program, texture, parent=group)
+                    else:
+                        program = pyglet.model.get_default_shader()
+                        matgroup = MaterialGroup(material, program, parent=group)
 
-                data = {a.name: (a.fmt, a.array) for a in mesh.primitives[0].attributes}
-                # Add additional material data:
-                data['COLOR_0'] = 'f', material.diffuse * count
+                    data = {a.name: (a.fmt, a.array) for a in primitive.attributes}
+                    # Add additional material data:
+                    data['COLOR_0'] = 'f', material.diffuse * count
 
-                vertex_lists.append(program.vertex_list(count, GL_TRIANGLES, batch, matgroup, **data))
-                groups.append(matgroup)
+                    vertex_lists.append(program.vertex_list(count, GL_TRIANGLES, batch, matgroup, **data))
+                    groups.append(matgroup)
 
         return [Model(vertex_lists=vertex_lists, groups=groups, batch=batch)]
 
