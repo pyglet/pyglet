@@ -221,6 +221,65 @@ def test_blend_setter(request, fixture):
         assert _sprite._group.blend_dest == 1  # noqa: SLF001
 
 
+@pytest.mark.parametrize('paused', [True, False])
+@pytest.mark.parametrize('replace_with_static_first', [True, False])
+def test_animation_replacement_preserves_playback_state(monkeypatch, paused, replace_with_static_first):
+    """Changing the image must not restart an animation while paused."""
+    now = [0.0]
+    animation_clock = pyglet.clock.Clock(time_function=lambda: now[0])
+    monkeypatch.setattr(pyglet.sprite, 'clock', animation_clock)
+    animation_clock.tick()
+
+    original = pyglet.image.Animation.from_image_sequence([MagicMock(), MagicMock()], duration=0.1)
+    replacement = pyglet.image.Animation.from_image_sequence([MagicMock(), MagicMock()], duration=0.3)
+    sprite = pyglet.sprite.Sprite(original)
+    try:
+        sprite.paused = paused
+        if replace_with_static_first:
+            sprite.image = MagicMock()
+        sprite.image = replacement
+        assert sprite.image is replacement
+        assert sprite.frame_index == 0
+        assert sprite._texture is replacement.frames[0].image.get_texture()  # noqa: SLF001
+
+        now[0] = 1.0
+        animation_clock.tick()
+        assert sprite.paused is paused
+        assert sprite.frame_index == (0 if paused else 1)
+
+        if paused:
+            sprite.paused = False
+            now[0] += 0.31
+            animation_clock.tick()
+            assert sprite.frame_index == 1
+    finally:
+        sprite.delete()
+
+
+def test_replacement_with_nonadvancing_animation(monkeypatch):
+    """A terminal first frame remains unscheduled after replacement and resume."""
+    now = [0.0]
+    animation_clock = pyglet.clock.Clock(time_function=lambda: now[0])
+    monkeypatch.setattr(pyglet.sprite, 'clock', animation_clock)
+    animation_clock.tick()
+    original = pyglet.image.Animation.from_image_sequence([MagicMock(), MagicMock()], duration=0.1)
+    replacement = pyglet.image.Animation([pyglet.image.AnimationFrame(MagicMock(), None)])
+    sprite = pyglet.sprite.Sprite(original)
+    try:
+        sprite.paused = True
+        sprite.image = replacement
+        now[0] = 1.0
+        animation_clock.tick()
+        assert sprite.frame_index == 0
+        sprite.paused = False
+        now[0] = 2.0
+        animation_clock.tick()
+        assert sprite.frame_index == 0
+        assert sprite.image is replacement
+    finally:
+        sprite.delete()
+
+
 def test_pausing_static_sprite_has_no_effect(sprite):
     sprite.paused = True
     sprite.paused = False

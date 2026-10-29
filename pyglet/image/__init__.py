@@ -337,20 +337,26 @@ class AbstractImage(ABC):
                 Used to set the image file format, and to open the output file
                 if ``file`` is unspecified.
             file:
-                An optional file-like object to write image data to.
+                An optional file-like object to write image data to. Files opened
+                by this method are closed before returning; supplied files remain open.
             encoder:
                 If unspecified, all encoders matching the filename extension
                 are tried, or all encoders if no filename is provided. If all
                 fail, the exception from the first one attempted is raised.
         """
+        close_file = file is None
         if file is None:
             assert filename is not None, "Either filename or file must be specified."
             file = open(filename, 'wb')
 
-        if encoder is not None:
-            encoder.encode(self, filename, file)
-        else:
-            _codec_registry.encode(self, filename, file)
+        try:
+            if encoder is not None:
+                encoder.encode(self, filename, file)
+            else:
+                _codec_registry.encode(self, filename, file)
+        finally:
+            if close_file:
+                file.close()
 
     @abstractmethod
     def blit(self, x: int, y: int, z: int = 0) -> None:

@@ -31,6 +31,9 @@ class WaveSource(StreamingSource):
         if sampwidth not in (1, 2):
             raise WAVEDecodeException(f"incompatible sample width {sampwidth}")
 
+        if nframes == 0:
+            raise WAVEDecodeException("WAV file contains no audio frames")
+
         self.audio_format = AudioFormat(channels=nchannels, sample_size=sampwidth * 8, sample_rate=framerate)
 
         self._bytes_per_frame = nchannels * sampwidth
