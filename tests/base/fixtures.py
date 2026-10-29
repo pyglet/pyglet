@@ -19,7 +19,7 @@ def get_dummy_shader_program():
     in module-specific single test files or conftest.py instances for
     test modules::
 
-        # Example from ./shapes/conftest.py
+        # Example from tests/unit/shapes/conftest.py
 
         @fixture(autouse=True)  # Force this to be used for every test in the module
         def monkeypatch_default_shape_shader(monkeypatch, get_dummy_shader_program):
