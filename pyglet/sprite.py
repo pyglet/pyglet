@@ -466,6 +466,8 @@ class Sprite(event.EventDispatcher):
     def image(self) -> AbstractImage | Animation:
         """The Sprite's Image or Animation to display.
 
+        Replacing the image preserves the animation's paused state.
+
         .. note:: Changing this can be an expensive operation if the texture is not part of the same texture or atlas.
         """
         if self._animation:
@@ -483,7 +485,7 @@ class Sprite(event.EventDispatcher):
             self._frame_index = 0
             self._set_texture(img.frames[0].image.get_texture())
             self._next_dt = img.frames[0].duration
-            if self._next_dt:
+            if self._next_dt and not self._paused:
                 clock.schedule_once(self._animate, self._next_dt)
         else:
             self._set_texture(img.get_texture())
