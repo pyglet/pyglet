@@ -283,6 +283,58 @@ def test_wait_preserves_pending_notification(timeout):
     run_sync(scenario())
 
 
+def test_wait_handles_deadline_expiring_during_timer_setup(monkeypatch):
+    async def scenario():
+        web_loop = asyncio.get_running_loop()
+        original_call_at = web_loop.call_at
+
+        def call_at(when, callback, *args, **kwargs):
+            if 0 < when - web_loop.time() < 0.1:
+                # Simulate runner preemption between asyncio's deadline check
+                # and WebLoop.call_at converting it back to a relative delay.
+                when = web_loop.time() - 1
+            return original_call_at(when, callback, *args, **kwargs)
+
+        monkeypatch.setattr(web_loop, "call_at", call_at)
+        platform = AsyncPlatformEventLoop()
+        await asyncio.wait_for(platform.wait(0.005), 2)
+        assert not platform._wake_event.is_set()
+
+    run_sync(scenario())
+
+
+@pytest.mark.parametrize("completion", ["notify", "cancel"])
+def test_wait_cancels_timeout_on_early_completion(monkeypatch, completion):
+    async def scenario():
+        web_loop = asyncio.get_running_loop()
+        original_call_later = web_loop.call_later
+        timers = []
+
+        def call_later(delay, callback, *args, **kwargs):
+            handle = original_call_later(delay, callback, *args, **kwargs)
+            if 59 < delay <= 60:
+                timers.append(handle)
+            return handle
+
+        monkeypatch.setattr(web_loop, "call_later", call_later)
+        platform = AsyncPlatformEventLoop()
+        task = asyncio.create_task(platform.wait(60))
+        await asyncio.sleep(0)
+        if completion == "notify":
+            platform.notify()
+            await asyncio.wait_for(task, 2)
+        else:
+            task.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await task
+
+        assert len(timers) == 1
+        assert timers[0].cancelled()
+        assert not platform._wake_event.is_set()
+
+    run_sync(scenario())
+
+
 
 
 def test_drawing_only_wakes_clock_when_it_schedules_work(running_loop):

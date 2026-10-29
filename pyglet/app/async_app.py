@@ -261,8 +261,13 @@ class AsyncPlatformEventLoop:
             if timeout is None:
                 await self._wake_event.wait()
             elif timeout > 0:
-                with suppress(asyncio.TimeoutError):
-                    await asyncio.wait_for(self._wake_event.wait(), timeout)
+                # wait_for() uses call_at(); Pyodide rejects its deadline if
+                # it expires during timer setup. Keep the delay relative.
+                timer = asyncio.get_running_loop().call_later(timeout, self._wake_event.set)
+                try:
+                    await self._wake_event.wait()
+                finally:
+                    timer.cancel()
             else:
                 await asyncio.sleep(0)
         self._wake_event.clear()
