@@ -2,8 +2,7 @@ from __future__ import annotations
 
 
 from contextlib import contextmanager
-from ctypes import byref, Array, c_void_p, cast as ctypes_cast, memmove, sizeof
-from struct import calcsize
+from ctypes import byref, Array, sizeof
 from typing import cast, Iterator, Sequence, TYPE_CHECKING
 
 import pyglet
@@ -107,12 +106,11 @@ from pyglet.graphics.api.gl.gl import (
 
 from pyglet.graphics.api.gl import gl
 from pyglet.graphics.api.gl.enums import texture_map
-from pyglet.graphics.api.gl.buffer import GLPixelPackBufferObject, GLPixelUnpackBufferObject, _GLPersistentPixelUnpackBuffer
 from pyglet.image.base import ImageData, ImageDataRegion, CompressionFormat, \
     CompressedImageData
 from pyglet.image.base import ImageException
 from pyglet.graphics.texture import TextureArrayDepthExceeded
-from pyglet.graphics.texture import PixelData, PixelReadback, Texture, TextureStreamer, UniformTextureSequence, CompressedTexture, \
+from pyglet.graphics.texture import PixelData, PixelReadback, Texture, UniformTextureSequence, CompressedTexture, \
     _TextureRegionShared, _Texture3DShared, _TextureArrayShared, TextureGrid
 
 if TYPE_CHECKING:
@@ -716,118 +714,6 @@ class GLTexture(Texture):
         )
         return PixelData(width, height, ComponentFormat.RGBA, data_type, data)
 
-    def _get_pbo_upload_format(self, image: ImageData | ImageDataRegion) -> str:
-        upload_fmt = _get_upload_format(self._context, image.format)
-        if self._context.info.get_opengl_api() in (GraphicsAPI.OPENGL_ES_2, GraphicsAPI.OPENGL_ES_3):
-            upload_fmt = self.internal_format.value
-        return upload_fmt
-
-    def get_pbo_upload_size(self, image: ImageData | ImageDataRegion) -> int:
-        return image.width * image.height * len(self._get_pbo_upload_format(image)) * calcsize(image.data_type)
-
-    def upload_to_pbo(self, pbo: GLPixelUnpackBufferObject, image: ImageData | ImageDataRegion, x: int, y: int, z: int,
-                      level: int = 0) -> None:
-        self.upload_regions_to_pbo(pbo, [(image, x, y, z, level)])
-
-    def upload_regions_to_pbo(
-        self, pbo: GLPixelUnpackBufferObject,
-        uploads: Sequence[tuple[ImageData | ImageDataRegion, int, int, int, int]],
-    ) -> None:
-        """Pack upload regions into one PBO and issue their texture transfers."""
-        prepared: list[tuple[ImageData | ImageDataRegion, int, int, int, int, int, int, int, bytes]] = []
-        chunks: list[bytes] = []
-        end = 0
-        for image, x, y, z, level in uploads:
-            self._validate_pbo_region(x, y, image.width, image.height, z, level)
-            upload_fmt = self._get_pbo_upload_format(image)
-            pitch = image.width * len(upload_fmt) * calcsize(image.data_type)
-            data = bytes(image.get_bytes(upload_fmt, pitch))
-            offset = (end + 7) & ~7
-            chunks.extend((b"\0" * (offset - end), data))
-            end = offset + len(data)
-            fmt, gl_type = _get_gl_format_and_type(upload_fmt, image.data_type)
-            prepared.append((image, x, y, z, level, fmt, gl_type, offset, data))
-        assert pbo.size >= end, "Pixel unpack buffer is too small for grouped upload."
-        try:
-            if isinstance(pbo, _GLPersistentPixelUnpackBuffer):
-                for *_, offset, data in prepared:
-                    pbo.write_transfer(data, offset)
-            elif len(prepared) > 1 and (self._context.info.have_version(3, 0) or
-                                        self._context.info.have_extension("GL_ARB_map_buffer_range")):
-                pbo._ensure_allocated()
-                pbo.bind()
-                pointer = self._context.glMapBufferRange(
-                    pbo.target, 0, end, gl.GL_MAP_WRITE_BIT | gl.GL_MAP_INVALIDATE_BUFFER_BIT,
-                )
-                if not pointer:
-                    raise GraphicsAPIError("Could not map grouped texture upload buffer.")
-                address = ctypes_cast(pointer, c_void_p).value
-                try:
-                    for *_, offset, data in prepared:
-                        memmove(address + offset, data, len(data))
-                finally:
-                    valid = self._context.glUnmapBuffer(pbo.target)
-                if not valid:
-                    raise GraphicsAPIError("Grouped texture upload buffer contents became invalid.")
-                pbo._set_data_uploaded()
-            else:
-                upload_data = chunks[1] if len(prepared) == 1 else b"".join(chunks)
-                if pbo.size == len(upload_data):
-                    pbo.set_bytes(upload_data)
-                else:
-                    pbo.invalidate()
-                    pbo.bind()
-                    self._context.glBufferSubData(pbo.target, 0, len(upload_data), upload_data)
-                    pbo._set_data_uploaded()
-            self.bind()
-            pbo.bind()
-            self._context.glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
-            if self._context.info.pixel_transfer.unpack_row_length:
-                self._context.glPixelStorei(GL_UNPACK_ROW_LENGTH, 0)
-                self._context.glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0)
-                self._context.glPixelStorei(GL_UNPACK_SKIP_ROWS, 0)
-            layered = self.tex_type in (TextureType.TYPE_3D, TextureType.TYPE_2D_ARRAY)
-            if layered:
-                self._context.glPixelStorei(gl.GL_UNPACK_IMAGE_HEIGHT, 0)
-                self._context.glPixelStorei(gl.GL_UNPACK_SKIP_IMAGES, 0)
-            for image, x, y, z, level, fmt, gl_type, offset, _ in prepared:
-                if layered:
-                    self._context.glTexSubImage3D(
-                        self.target, level, x, y, z, image.width, image.height, 1, fmt, gl_type, c_void_p(offset),
-                    )
-                else:
-                    self._context.glTexSubImage2D(
-                        self.target, level, x, y, image.width, image.height, fmt, gl_type, c_void_p(offset),
-                    )
-                self._mark_mipmap_valid(level)
-        finally:
-            pbo.unbind()
-
-    def fetch_to_pbo(self, pbo, z: int = 0, level: int = 0) -> None:
-        width, height, _ = self._get_mipmap_dimensions(level)
-        self.fetch_region_to_pbo(pbo, 0, 0, width, height, z, level)
-
-    def fetch_region_to_pbo(self, pbo, x: int, y: int, width: int, height: int,
-                            z: int = 0, level: int = 0) -> None:
-        self._validate_pbo_region(x, y, width, height, z, level)
-        size = width * height * 4
-        assert pbo.size >= size, f"Pixel pack buffer is too small for fetch ({pbo.size} < {size})."
-        try:
-            pbo.invalidate()
-            self.bind()
-            with self._context.pixel_readback._pack_state():
-                framebuffer = self._context.pixel_readback.get_framebuffer()
-                with framebuffer:
-                    self._set_readback_framebuffer_attachment(self.handle, z, level)
-                    try:
-                        if not framebuffer.is_complete:
-                            raise GraphicsAPIError("Texture readback framebuffer is incomplete.")
-                        self._context.glReadPixels(x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, c_void_p(0))
-                    finally:
-                        self._set_readback_framebuffer_attachment(0, z, level)
-        finally:
-            pbo.unbind()
-
     def _update_subregion(self, image_data: ImageData | ImageDataRegion, x: int, y: int, z: int,
                           level: int = 0) -> None:
         data_pitch = abs(image_data._current_pitch)
@@ -872,19 +758,6 @@ class GLTextureRegion(_TextureRegionShared, GLTexture):
 
 
 GLTexture.region_class = GLTextureRegion
-
-
-class GLTextureStreamer(TextureStreamer):
-    """OpenGL texture streamer with reusable pixel transfer buffers."""
-
-    def get_backend_pixel_unpack_buffer(self, size: int) -> GLPixelUnpackBufferObject:
-        features = self.context.info.features
-        if self.persistent_uploads and features.persistent_buffers and features.sync_objects:
-            return _GLPersistentPixelUnpackBuffer(self.context, size)
-        return GLPixelUnpackBufferObject(self.context, size)
-
-    def get_backend_pixel_pack_buffer(self, size: int) -> GLPixelPackBufferObject:
-        return GLPixelPackBufferObject(self.context, size)
 
 
 class GLTexture3D(_Texture3DShared[GLTextureRegion], GLTexture, UniformTextureSequence[GLTextureRegion]):
