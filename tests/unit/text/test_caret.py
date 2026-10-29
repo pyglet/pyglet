@@ -52,7 +52,7 @@ def mock_layout():
     return _layout
 
 
-# Color fixtures are defined in pyglet's tests/unit/conftest.py
+# Color fixtures are defined in pyglet's tests/base/fixtures.py
 @pytest.fixture
 def rgba_caret(mock_layout, original_rgba_color):
     return caret.Caret(layout=mock_layout, color=original_rgba_color)
