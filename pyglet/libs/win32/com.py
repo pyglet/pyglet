@@ -40,8 +40,10 @@ import re
 import sys
 from typing import Sequence
 
+import pyglet
 from pyglet.util import debug_print
 
+_debug_com_enabled = pyglet.options.debug_com
 _debug_com = debug_print('debug_com')
 
 if sys.platform != 'win32':
@@ -151,7 +153,7 @@ _StructMeta = type(ctypes.Structure)
 class _InterfaceMeta(_StructMeta):
     def __new__(cls, name, bases, dct, /, create_pointer_type=True):
         if len(bases) > 1:
-            assert _debug_com(f"Ignoring {len(bases) - 1} bases on {name}")
+            assert not _debug_com_enabled or _debug_com(f"Ignoring {len(bases) - 1} bases on {name}")
             bases = (bases[0],)
 
         if not '_methods_' in dct:
@@ -169,9 +171,11 @@ class _InterfaceMeta(_StructMeta):
 
         all_methods = tuple(inh_methods) + new_methods
         for i, (method_name, mt) in enumerate(all_methods):
-            assert _debug_com(f"{name}[{i}]: {method_name}: "
-                              f"{(', '.join(t.__name__ for t in mt.argtypes) or 'void')} -> "
-                              f"{'void' if mt.restype is None else mt.restype.__name__}")
+            assert not _debug_com_enabled or _debug_com(
+                f"{name}[{i}]: {method_name}: "
+                f"{(', '.join(t.__name__ for t in mt.argtypes) or 'void')} -> "
+                f"{'void' if mt.restype is None else mt.restype.__name__}"
+            )
 
         vtbl_struct_type = _StructMeta(f"Vtable_{name}",
                                        (ctypes.Structure,),
@@ -215,8 +219,10 @@ class _pInterfaceMeta(_PointerMeta):
         for i, (method_name, method) in enumerate(target._methods_):
             m = method.get_com_proxy(i + target.vtbl_own_offset, method_name)
             def pinterface_method_forward(self, *args, _m=m, _i=i):
-                assert _debug_com(f'Calling COM {_i} of {target.__name__} ({_m})[{method_name}] through '
-                                  f'pointer: ({", ".join(map(repr, (self, *args)))})')
+                assert not _debug_com_enabled or _debug_com(
+                    f'Calling COM {_i} of {target.__name__} ({_m})[{method_name}] through '
+                    f'pointer: ({", ".join(map(repr, (self, *args)))})'
+                )
                 return _m(self, *args)
             dct[method_name] = pinterface_method_forward
 
@@ -281,7 +287,7 @@ def _missing_impl(interface_name, method_name):
     """Create a callback returning E_NOTIMPL for methods not present on a COMObject."""
 
     def missing_cb_func(*_):
-        assert _debug_com(f"Non-implemented method {method_name} called in {interface_name}")
+        assert not _debug_com_enabled or _debug_com(f"Non-implemented method {method_name} called in {interface_name}")
         return E_NOTIMPL
 
     return missing_cb_func
@@ -293,7 +299,9 @@ def _found_impl(interface_name, method_name, method_func, self_distance):
     """
 
     def self_extracting_cb_func(p, *args):
-        assert _debug_com(f"COMObject method {method_name} called through interface {interface_name}")
+        assert not _debug_com_enabled or _debug_com(
+            f"COMObject method {method_name} called through interface {interface_name}"
+        )
         self = ctypes.cast(p + self_distance, ctypes.POINTER(ctypes.py_object)).contents.value
         result = method_func(self, *args)
         # Assume no return statement translates to success
@@ -308,8 +316,10 @@ def _adjust_impl(interface_name, method_name, original_method, offset):
     """
 
     def adjustor_cb_func(p, *args):
-        assert _debug_com(f"COMObject method {method_name} called through interface "
-                          f"{interface_name}, adjusting pointer by {offset}")
+        assert not _debug_com_enabled or _debug_com(
+            f"COMObject method {method_name} called through interface "
+            f"{interface_name}, adjusting pointer by {offset}"
+        )
         return original_method(p + offset, *args)
 
     return adjustor_cb_func
@@ -370,7 +380,7 @@ class COMObject:
 
             def Release(self):
                 if self._vrefcount <= 0:
-                    assert _debug_com(
+                    assert not _debug_com_enabled or _debug_com(
                         f"COMObject {self}: Release while refcount was {self._vrefcount}"
                     )
                 self._vrefcount -= 1

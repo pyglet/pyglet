@@ -63,17 +63,11 @@ class _IncrementalLayoutContext(_LayoutContext):
 
 
 class IncrementalTextLayoutGroup(ScrollableTextLayoutGroup):  # noqa: D101
-    # Subclass so that the scissor_area isn't shared with the
-    # ScrollableTextLayout. We use a class variable here so
-    # that it can be set before the document glyphs are created.
-    scissor_area: ClassVar[tuple[int, int, int, int]] = 0, 0, 0, 0
+    pass
 
 
 class IncrementalTextDecorationGroup(ScrollableTextDecorationGroup):  # noqa: D101
-    # Subclass so that the scissor_area isn't shared with the
-    # ScrollableTextDecorationGroup. We use a class variable here so
-    # that it can be set before the document glyphs are created.
-    scissor_area: ClassVar[tuple[int, int, int, int]] = 0, 0, 0, 0
+    pass
 
 
 class IncrementalTextLayout(TextLayout, EventDispatcher):
@@ -176,14 +170,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
                          wrap_lines=wrap_lines, depth_sorting=depth_sorting)
 
     def _update_scissor_area(self) -> None:
-        area = (self.left, self.bottom, self._width, self._height)
-
-        for group in self.group_cache.values():
-            group.uniforms["scissor_area"] = area
-        for group in self.effect_group_cache.values():
-            group.uniforms["scissor_area"] = area
-        self.background_decoration_group.uniforms["scissor_area"] = area
-        self.foreground_decoration_group.uniforms["scissor_area"] = area
+        if self._uniforms is not None:
+            self._uniforms["scissor_area"] = (self.left, self.bottom, self._width, self._height)
 
     def _init_document(self) -> None:
         assert self._document, "Cannot remove document from IncrementalTextLayout"

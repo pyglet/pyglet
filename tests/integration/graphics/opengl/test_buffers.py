@@ -3,7 +3,7 @@ import weakref
 
 import pyglet
 import pytest
-from pyglet.graphics.api.gl.buffer import GLBufferObject, GLIndexedBufferObject, GLMappedBufferObject
+from pyglet.graphics.api.gl.buffer import GLBackedBufferObject, GLBufferObject, GLIndexedBufferObject, GLMappedBufferObject
 from pyglet.graphics.buffer import CTypeDataStore, UniformBufferRegion
 from pyglet.graphics.shader import Attribute
 from tests.annotations import GraphicsAPIGroups, require_graphics_api, skip_graphics_api
@@ -216,6 +216,33 @@ def test_mapped_buffer_region_updates(test_window):
 
     buffer.delete()
     assert buffer.id is None
+
+
+@pytest.mark.parametrize("data_type, ctype", [("f", ctypes.c_float), ("I", ctypes.c_uint32)])
+def test_backed_buffer_writes_before_and_after_full_upload(test_window, data_type, ctype):
+    test_window.switch_to()
+    buffer = GLBackedBufferObject(test_window.context, 16, data_type, stride=4, element_count=1)
+    try:
+        buffer.set_region(0, 4, (1, 2, 3, 4))
+        buffer.set_region(2, 1, (9,))
+        buffer.commit()
+        assert tuple((ctype * 4).from_buffer_copy(GLBufferObject.get_bytes(buffer))) == (1, 2, 9, 4)
+
+        buffer.resize(32)
+        buffer.set_region(6, 1, (12,))
+        buffer.set_region(0, 1, (7,))
+        buffer.commit()
+        expected = [7, 2, 9, 4, 0, 0, 12, 0]
+        assert tuple((ctype * 8).from_buffer_copy(GLBufferObject.get_bytes(buffer))) == tuple(expected)
+
+        # After the full upload, separated edits must start a new dirty range.
+        buffer.set_region(1, 1, (8,))
+        buffer.set_region(5, 1, (10,))
+        buffer.commit()
+        expected[1], expected[5] = 8, 10
+        assert tuple((ctype * 8).from_buffer_copy(GLBufferObject.get_bytes(buffer))) == tuple(expected)
+    finally:
+        buffer.delete()
 
 
 def test_backed_index_buffer_commit_resize_and_delete(test_window):

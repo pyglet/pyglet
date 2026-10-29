@@ -109,7 +109,11 @@ elif pyglet.options.backend == GraphicsAPI.WEBGL:
 
 
 class SpriteGroup(Group):
-    """Shared Sprite rendering Group."""
+    """Shared Sprite rendering Group.
+
+    Matching constructor inputs reuse an existing instance, including for
+    subclasses. Initialization runs only when a new instance is needed.
+    """
 
     def __init__(self, texture: Texture, blend_src: BlendFactor, blend_dest: BlendFactor,
                  program: ShaderProgram, parent: Group | None = None) -> None:

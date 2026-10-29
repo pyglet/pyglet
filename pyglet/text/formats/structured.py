@@ -5,7 +5,7 @@ import re
 from typing import TYPE_CHECKING, Any, NoReturn
 
 import pyglet
-from pyglet.enums import BlendFactor, GeometryMode
+from pyglet.enums import BlendFactor, CompareOp, GeometryMode
 
 if TYPE_CHECKING:
     from pyglet.graphics import Group
@@ -18,13 +18,15 @@ if TYPE_CHECKING:
 
 class _InlineElementGroup(pyglet.graphics.Group):
     def __init__(self, texture: Texture, program: ShaderProgram, order: int = 1,
-                 parent: Group | None = None) -> None:
+                 parent: Group | None = None, *, depth_test: CompareOp | None = None) -> None:
         super().__init__(order, parent)
         self.texture = texture
         self.program = program
         self.set_shader_program(program)
         self.set_texture(texture, 0)
         self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
+        if depth_test is not None:
+            self.set_depth_test(depth_test)
 
 
 class ImageElement(pyglet.text.document.InlineElement):
@@ -46,8 +48,9 @@ class ImageElement(pyglet.text.document.InlineElement):
     def place(self, layout: TextLayout, x: float, y: float, z: float, line_x: float, line_y: float, rotation: float,
               visible: bool, anchor_x: float, anchor_y: float) -> None:
         program = layout.image_shader
-        group = _InlineElementGroup(self.image.get_texture(), program, 3 if layout.depth_sorting else 0, layout.group)
-        layout._set_depth_test(group)  # noqa: SLF001
+        group = layout._create_group(  # noqa: SLF001
+            _InlineElementGroup, self.image.get_texture(), program, order=3 if layout.depth_sorting else 0,
+        )
         x1 = line_x
         y1 = line_y + self.descent
         x2 = line_x + self.width

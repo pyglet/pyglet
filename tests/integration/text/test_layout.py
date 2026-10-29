@@ -24,6 +24,369 @@ layout_classes = [layout.TextLayout, layout.ScrollableTextLayout, layout.Increme
 all_combinations = list(itertools.product(document_classes, layout_classes))
 
 
+@pytest.mark.parametrize('shaping', [False, True])
+@pytest.mark.parametrize('anchor_x', ['left', 'center', 'right'])
+@pytest.mark.parametrize('width', [20, 200])
+def test_label_text_update_reuses_vertex_list_after_shaping(test_window, monkeypatch, shaping, anchor_x, width):
+    batch = pyglet.graphics.Batch()
+    label = pyglet.text.Label('iiii', width=width, align='center', anchor_x=anchor_x,
+                              rotation=17, batch=batch, shaping=shaping)
+    expected = None
+    try:
+        vertex_list = label._vertex_lists[0]
+        old_box = label._boxes[0]
+        old_line = label._lines[0]
+        font = label.font
+        get_glyphs = font.get_glyphs
+        calls = []
+
+        def record_shaping(text, shaping=False):
+            calls.append((text, shaping))
+            return get_glyphs(text, shaping)
+
+        monkeypatch.setattr(font, 'get_glyphs', record_shaping)
+        batch.draw()
+        label.text = 'WWWW'
+        assert calls == [('WWWW', shaping)]
+        assert label._vertex_lists[0] is vertex_list
+        assert label._boxes[0] is old_box
+        assert label._lines[0] is old_line
+        assert old_box.vertex_lists == [vertex_list]
+
+        expected = pyglet.text.Label('WWWW', width=width, align='center', anchor_x=anchor_x,
+                                     rotation=17, shaping=shaping)
+        assert (label.content_width, label.content_height) == (expected.content_width, expected.content_height)
+        for name in label.program.attributes:
+            assert list(getattr(vertex_list, name)) == list(getattr(expected._vertex_lists[0], name))
+        batch.draw()
+    finally:
+        label.delete()
+        if expected is not None:
+            expected.delete()
+
+
+def test_label_text_update_rebuilds_for_length_changes_and_empty_text(test_window):
+    label = pyglet.text.Label('1234')
+    try:
+        original = label._vertex_lists[0]
+        label.text = '12345'
+        assert label._vertex_lists[0] is not original
+        assert label._vertex_lists[0].count == 20
+        label.text = ''
+        assert not label._vertex_lists
+        label.text = '6789'
+        assert label._vertex_lists[0].count == 16
+        label.draw()
+    finally:
+        label.delete()
+
+
+def test_label_reuse_respects_batch_group_and_font_changes(test_window):
+    label = pyglet.text.Label('1234')
+    try:
+        original = label._vertex_lists[0]
+        batch = pyglet.graphics.Batch()
+        label.batch = batch
+        assert label._vertex_lists[0] is not original
+        assert label._vertex_lists[0].domain.batch is batch
+        previous_group = label._vertex_lists[0].group
+        label.group = pyglet.graphics.Group(order=10)
+        assert label._vertex_lists[0].group is not previous_group
+        previous_owner = label._boxes[0].owner
+        label.font_size = 48
+        assert label._boxes[0].owner is not previous_owner
+        label.text = '5678'
+        batch.draw()
+    finally:
+        label.delete()
+
+
+def test_label_text_updates_keep_effect_geometry(test_window):
+    label = pyglet.text.Label('1234')
+    try:
+        label.shadow = DropShadow()
+        label.document.set_style(0, 4, {'underline': (255, 255, 255, 255)})
+        before = label._vertex_lists.copy()
+        label.text = '5678'
+        assert len(label._vertex_lists) == len(before) == 3
+        assert all(current is not previous for current, previous in zip(label._vertex_lists, before))
+        label.draw()
+        label.shadow = None
+        label.document.set_style(0, 4, {'underline': None})
+        vertex_list = label._vertex_lists[0]
+        label.text = '9012'
+        assert label._vertex_lists == [vertex_list]
+    finally:
+        label.delete()
+
+
+def test_label_text_update_preserves_deferred_updates(test_window):
+    label = pyglet.text.Label('iiii')
+    try:
+        vertex_list = label._vertex_lists[0]
+        positions = list(vertex_list.position)
+        label.begin_update()
+        label.text = 'WWWW'
+        assert not label._update_enabled
+        assert list(vertex_list.position) == positions
+        label.end_update()
+        assert label._vertex_lists[0] is vertex_list
+        assert list(vertex_list.position) != positions
+        label.draw()
+    finally:
+        label.delete()
+
+
+def test_retained_label_placement_updates_only_affected_attributes(test_window, monkeypatch):
+    from pyglet.text.effects import LinearGradient
+
+    label = pyglet.text.Label('iiii', x=20, y=30, z=2, width=200, align='center', anchor_x='right', rotation=25)
+    expected = None
+    try:
+        label.visible = False
+        label.color = LinearGradient((255, 0, 0, 255), (0, 255, 0, 128))
+        vertex_list = label._vertex_lists[0]
+        set_attribute_data = vertex_list.set_attribute_data
+        writes = []
+
+        def record_write(name, values):
+            writes.append(name)
+            set_attribute_data(name, values)
+
+        monkeypatch.setattr(vertex_list, 'set_attribute_data', record_write)
+        label.text = 'WWWW'
+        assert writes == ['position', 'tex_coords', 'colors', 'anchor']
+
+        # A fresh layout exercises initial placement instead of the update path.
+        doc = document.UnformattedDocument(label.text)
+        doc.styles.update(label.document.styles)
+        expected = pyglet.text.DocumentLabel(doc, x=20, y=30, z=2, width=200, anchor_x='right', rotation=25)
+        expected.visible = False
+        for name in label.program.attributes:
+            assert list(getattr(vertex_list, name)) == list(getattr(expected._vertex_lists[0], name))
+
+        label.begin_update()
+        label.document.set_style(0, 4, {'color': (10, 20, 30, 255), 'kerning': 2})
+        label.end_update()
+        assert label._vertex_lists[0] is vertex_list
+        assert list(vertex_list.colors) == [10, 20, 30, 255] * 16
+    finally:
+        label.delete()
+        if expected is not None:
+            expected.delete()
+
+
+def test_label_placement_reuse_checks_shaped_glyph_count(test_window, monkeypatch):
+    label = pyglet.text.Label('iiii', shaping=True)
+    try:
+        old_vertex_list = label._vertex_lists[0]
+        old_line = label._lines[0]
+        get_glyphs = label.font.get_glyphs
+        calls = []
+
+        def shaped_glyphs(text, shaping=False):
+            calls.append((text, shaping))
+            return get_glyphs('WWW' if text == 'WWWW' else text, shaping)
+
+        monkeypatch.setattr(label.font, 'get_glyphs', shaped_glyphs)
+        label.text = 'WWWW'
+        assert calls == [('WWWW', True)]
+        assert label._lines[0] is not old_line
+        assert label._vertex_lists[0] is not old_vertex_list
+        assert label._vertex_lists[0].count == 12
+        label.draw()
+    finally:
+        label.delete()
+
+
+@pytest.mark.parametrize('baseline', [None, 3, '2pt', -2.5])
+@pytest.mark.parametrize('color_kind', ['default', 'solid', 'gradient'])
+def test_retained_label_reads_uniform_styles_without_run_iterators(test_window, monkeypatch, baseline, color_kind):
+    from pyglet.text.effects import LinearGradient
+
+    color = {'default': None, 'solid': (20, 50, 80, 120),
+             'gradient': LinearGradient((255, 0, 0, 255), (0, 255, 0, 128))}[color_kind]
+    label = pyglet.text.Label('iiii', x=10, y=15, width=80, anchor_x='center', rotation=13)
+    expected = None
+    try:
+        label.document.set_style(0, 4, {'baseline': baseline, 'color': color})
+        vertex_list = label._vertex_lists[0]
+
+        def unexpected_style_runs(name):
+            raise AssertionError(f'Retained uniform text requested style runs for {name}')
+
+        monkeypatch.setattr(label.document, 'get_style_runs', unexpected_style_runs)
+        label.text = 'WWWW'
+        assert label._vertex_lists[0] is vertex_list
+
+        doc = document.UnformattedDocument(label.text)
+        doc.styles.update(label.document.styles)
+        expected = pyglet.text.DocumentLabel(doc, x=10, y=15, width=80, anchor_x='center', rotation=13)
+        assert (label.content_width, label.content_height) == (expected.content_width, expected.content_height)
+        for name in label.program.attributes:
+            assert list(getattr(vertex_list, name)) == list(getattr(expected._vertex_lists[0], name))
+        label.draw()
+    finally:
+        label.delete()
+        if expected is not None:
+            expected.delete()
+
+
+def test_retained_scrollable_placement_preserves_view_translation(test_window):
+    doc = document.UnformattedDocument('0123456789')
+    text_layout = layout.ScrollableTextLayout(doc, width=20, height=30, multiline=False)
+    try:
+        text_layout.view_x = 5
+        vertex_list = text_layout._vertex_lists[0]
+        view_translation = list(vertex_list.view_translation)
+        assert view_translation[0] != 0
+        text_layout.begin_update()
+        doc.text = '9876543210'
+        text_layout.end_update()
+        assert text_layout._vertex_lists[0] is vertex_list
+        assert list(vertex_list.view_translation) == view_translation
+        text_layout.draw()
+    finally:
+        text_layout.delete()
+
+
+def test_plain_text_shares_glyph_effect_and_decoration_groups(test_window):
+    batch = pyglet.graphics.Batch()
+    parent = pyglet.graphics.Group()
+    layouts = []
+    try:
+        for x in (0, 100):
+            doc = document.FormattedDocument('Shared text')
+            doc.set_style(0, len(doc.text), {'background_color': (50, 50, 50, 255),
+                                           'underline': (255, 255, 255, 255), 'shadow': DropShadow()})
+            layouts.append(layout.TextLayout(doc, x=x, batch=batch, group=parent))
+        first, second = layouts
+        texture = next(iter(first.group_cache))
+        assert next(iter(first.group_cache.values())) is next(iter(second.group_cache.values()))
+        assert first.get_effect_group(texture) is second.get_effect_group(texture)
+        assert first.background_decoration_group is second.background_decoration_group
+        assert first.foreground_decoration_group is second.foreground_decoration_group
+        batch.draw()
+        first.x = 20
+        assert second.x == 100
+    finally:
+        for text_layout in layouts:
+            text_layout.delete()
+
+
+@pytest.mark.parametrize('depth_first', [False, True])
+def test_cached_text_groups_keep_depth_configuration_separate(test_window, depth_first):
+    from pyglet.graphics.state import DepthBufferComparison
+
+    batch = pyglet.graphics.Batch()
+    parent = pyglet.graphics.Group()
+    layouts = []
+    try:
+        for depth in (depth_first, not depth_first):
+            layouts.append(layout.TextLayout(document.UnformattedDocument('Depth text'), batch=batch,
+                                             group=parent, depth_sorting=depth))
+        first, second = layouts
+        first_group = next(iter(first.group_cache.values()))
+        second_group = next(iter(second.group_cache.values()))
+        assert first_group is not second_group
+        matching = layout.TextLayout(document.UnformattedDocument('Depth text'), batch=batch,
+                                     group=parent, depth_sorting=depth_first)
+        layouts.append(matching)
+        assert next(iter(matching.group_cache.values())) is first_group
+        assert matching.background_decoration_group is first.background_decoration_group
+        assert matching.foreground_decoration_group is first.foreground_decoration_group
+        for text_layout in layouts:
+            groups = [*text_layout.group_cache.values(), text_layout.background_decoration_group,
+                      text_layout.foreground_decoration_group]
+            assert all(any(isinstance(state, DepthBufferComparison) for state in group.states)
+                       == text_layout.depth_sorting for group in groups)
+        batch.draw()
+    finally:
+        for text_layout in layouts:
+            text_layout.delete()
+
+
+def test_cached_text_groups_separate_depth_comparison_values(test_window):
+    from pyglet.enums import CompareOp
+    from pyglet.graphics.state import DepthBufferComparison
+
+    class GreaterDepthLayout(layout.TextLayout):
+        depth_test_compare_op = CompareOp.GREATER
+
+    batch = pyglet.graphics.Batch()
+    parent = pyglet.graphics.Group()
+    layouts = []
+    try:
+        for layout_class in (layout.TextLayout, GreaterDepthLayout):
+            layouts.append(layout_class(document.UnformattedDocument('Depth text'), batch=batch,
+                                        group=parent, depth_sorting=True))
+        first, second = layouts
+        first_group = next(iter(first.group_cache.values()))
+        second_group = next(iter(second.group_cache.values()))
+        assert first_group is not second_group
+        assert next(state for state in first_group.states if isinstance(state, DepthBufferComparison)) != next(
+            state for state in second_group.states if isinstance(state, DepthBufferComparison))
+        assert first.background_decoration_group is not second.background_decoration_group
+        batch.draw()
+    finally:
+        for text_layout in layouts:
+            text_layout.delete()
+
+
+@pytest.mark.parametrize('layouttype', [layout.ScrollableTextLayout, layout.IncrementalTextLayout])
+def test_scrollable_groups_and_uniforms_remain_independent(test_window, layouttype):
+    batch = pyglet.graphics.Batch()
+    parent = pyglet.graphics.Group()
+    layouts = []
+    try:
+        for x in (0, 150):
+            layouts.append(layouttype(document.UnformattedDocument('Scrollable text'), x=x, width=100, height=50,
+                                      batch=batch, group=parent))
+        first, second = layouts
+        first_group = next(iter(first.group_cache.values()))
+        second_group = next(iter(second.group_cache.values()))
+        assert first_group is not second_group
+        assert first_group.uniforms is not second_group.uniforms
+        assert first.background_decoration_group is not second.background_decoration_group
+        assert first_group.uniforms is first._uniforms
+        assert first.background_decoration_group.uniforms is first._uniforms
+        assert first.foreground_decoration_group.uniforms is first._uniforms
+        assert first.get_effect_group(first_group.texture).uniforms is first._uniforms
+        assert first.group_class(first_group.texture, first.program, first._uniforms,
+                                 order=1, parent=parent, depth_test=None) is first_group
+        previous = second_group.uniforms['scissor_area']
+        first.x = 25
+        assert first_group.uniforms['scissor_area'][0] == 25
+        assert second_group.uniforms['scissor_area'] == previous
+        batch.draw()
+    finally:
+        for text_layout in layouts:
+            text_layout.delete()
+
+
+@pytest.mark.parametrize('layouttype', [layout.ScrollableTextLayout, layout.IncrementalTextLayout])
+def test_scrollable_groups_created_later_use_current_uniforms(test_window, layouttype):
+    doc = document.UnformattedDocument('')
+    text_layout = layouttype(doc, width=100, height=50)
+    try:
+        text_layout.x = 25
+        text_layout.width = 150
+        doc.insert_text(0, 'New text')
+        group = next(iter(text_layout.group_cache.values()))
+        expected = (text_layout.left, text_layout.bottom, 150, 50)
+        assert group.uniforms is text_layout._uniforms
+        assert group.uniforms['scissor_area'] == expected
+        decoration = text_layout.background_decoration_group
+        assert decoration.uniforms is group.uniforms
+        assert decoration.uniforms['scissor_area'] == expected
+
+        text_layout.x = 40
+        assert decoration.uniforms['scissor_area'][0] == 40
+        text_layout.draw()
+    finally:
+        text_layout.delete()
+
+
 @pytest.mark.parametrize('doctype, layouttype', all_combinations)
 @pytest.mark.parametrize('text', ['中文自动换行测试', '日本語の文章テスト', '한국어자동줄바꿈테스트'])
 @pytest.mark.parametrize('wrap', [True, 'char'])

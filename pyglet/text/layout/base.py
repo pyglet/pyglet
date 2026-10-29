@@ -4,6 +4,8 @@ from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
+    TypeVar,
+    cast,
 )
 
 import pyglet
@@ -12,9 +14,11 @@ from pyglet import graphics
 from pyglet.enums import BlendFactor, CompareOp, GraphicsAPI
 from pyglet.graphics import Group, ShaderProgram
 from pyglet.graphics.vertexdomain import IndexedVertexList, VertexList
+from pyglet.text.document import UnformattedDocument
 from pyglet.text.effects import LinearGradient
 from pyglet.text.layout.boxes import (
     _AbstractBox,
+    _GlyphBox,
     _InlineElementBox,  # noqa: F401
     _InvalidRange,  # noqa: F401
     _LayoutContext,
@@ -26,6 +30,7 @@ from pyglet.text.layout.boxes import (
 from pyglet.text.layout.flow import _FlowLayoutBase
 
 if TYPE_CHECKING:
+    from pyglet.font.base import Font, Glyph, GlyphPosition
     from pyglet.customtypes import AnchorX, AnchorY, ContentVAlign, HorizontalAlign, RGBAColor
     from pyglet.graphics import Batch
     from pyglet.graphics.shader import ShaderProgram
@@ -77,12 +82,16 @@ class TextLayoutGroup(Group):
         program: ShaderProgram,
         order: int = 1,  # noqa: D107
         parent: Group | None = None,
+        *,
+        depth_test: CompareOp | None = None,
     ) -> None:
         super().__init__(order=order, parent=parent)
         self.texture = texture
         self.set_shader_program(program)
         self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
         self.set_texture(texture, 0)
+        if depth_test is not None:
+            self.set_depth_test(depth_test)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.texture})"
@@ -102,39 +111,39 @@ class TextDecorationGroup(Group):
         program: ShaderProgram,
         order: int = 0,  # noqa: D107
         parent: Group | None = None,
+        *,
+        depth_test: CompareOp | None = None,
     ) -> None:
         super().__init__(order=order, parent=parent)
         self.set_shader_program(program)
         self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
+        if depth_test is not None:
+            self.set_depth_test(depth_test)
 
 
-class ScrollableTextLayoutGroup(Group):
+class ScrollableTextLayoutGroup(TextLayoutGroup):
     """Default rendering group for :py:class:`~pyglet.text.layout.ScrollableTextLayout`.
 
     The group maintains internal state for specifying the viewable
-    area, and for scrolling. Because the group has internal state
-    specific to the text layout, the group is never shared.
+    area, and for scrolling. Groups can be shared when they use the same
+    layout-owned uniforms dictionary.
     """
 
-    scissor_area: ClassVar[tuple[int, int, int, int]] = 0, 0, 0, 0
     uniforms: dict[str, Any]
 
     def __init__(
         self,
         texture: Texture,
         program: ShaderProgram,
+        uniforms: dict[str, Any],
         order: int = 1,  # noqa: D107
         parent: Group | None = None,
+        *,
+        depth_test: CompareOp | None = None,
     ) -> None:
 
-        super().__init__(order=order, parent=parent)
-        self.texture = texture
-        self.uniforms = {
-            "scissor_area": self.scissor_area,
-        }
-        self.set_shader_program(program)
-        self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
-        self.set_texture(texture, 0)
+        super().__init__(texture, program, order=order, parent=parent, depth_test=depth_test)
+        self.uniforms = uniforms
         self.set_shader_uniforms(program, self.uniforms)
 
     def __repr__(self) -> str:
@@ -147,34 +156,33 @@ class ScrollableTextLayoutGroup(Group):
         return id(self)
 
 
-class ScrollableTextDecorationGroup(Group):
+class ScrollableTextDecorationGroup(TextDecorationGroup):
     """Create a text decoration rendering group.
 
     The group is created internally when a :py:class:`~pyglet.text.Label`
     is created; applications usually do not need to explicitly create it.
     """
 
-    scissor_area: ClassVar[tuple[int, int, int, int]] = 0, 0, 0, 0
     uniforms: dict[str, Any]
 
-    def __init__(self, program: ShaderProgram, order: int = 0, parent: Group | None = None) -> None:  # noqa: D107
-        super().__init__(order=order, parent=parent)
+    def __init__(self, program: ShaderProgram, uniforms: dict[str, Any], order: int = 0,
+                 parent: Group | None = None, *, depth_test: CompareOp | None = None) -> None:  # noqa: D107
+        super().__init__(program, order=order, parent=parent, depth_test=depth_test)
         self.program = program
-        self.set_shader_program(program)
-        self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
-        self.uniforms = {
-            "scissor_area": self.scissor_area,
-        }
+        self.uniforms = uniforms
         self.set_shader_uniforms(program, self.uniforms)
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(scissor={self.scissor_area})"
+        return f"{self.__class__.__name__}(scissor={self.uniforms['scissor_area']})"
 
     def __eq__(self, other: object) -> bool:
         return self is other
 
     def __hash__(self) -> int:
         return id(self)
+
+
+_GroupT = TypeVar("_GroupT", bound=Group)
 
 
 class TextLayout(_FlowLayoutBase):
@@ -208,6 +216,7 @@ class TextLayout(_FlowLayoutBase):
     has_view_translation: bool
 
     _document: AbstractDocument | None = None
+    _uniforms: dict[str, Any] | None = None
 
     _update_enabled: bool = True
     _own_batch: bool = False
@@ -389,14 +398,17 @@ class TextLayout(_FlowLayoutBase):
         try:
             return self.effect_group_cache[cache_key]
         except KeyError:
-            group = self.effect_group_class(texture, self.effect_shader, order=order, parent=self._user_group)
-            self._set_depth_test(group)
+            group = self._create_group(self.effect_group_class, texture, self.effect_shader, order=order)
             self.effect_group_cache[cache_key] = group
             return group
 
-    def _set_depth_test(self, group: Group) -> None:
-        if self._depth_sorting:
-            group.set_depth_test(self.depth_test_compare_op)
+    def _create_group(self, group_class: type[_GroupT], *args: Any, order: int) -> _GroupT:
+        if issubclass(group_class, (ScrollableTextLayoutGroup, ScrollableTextDecorationGroup)):
+            if self._uniforms is None:
+                self._uniforms = {"scissor_area": (self.left, self.bottom, self._width, self._height)}
+            args = (*args, self._uniforms)
+        return group_class(*args, order=order, parent=self._user_group,
+                           depth_test=self.depth_test_compare_op if self._depth_sorting else None)
 
     def get_depth_offset(self, layer: int) -> float:
         """Return the clip-space depth offset for a text rendering layer."""
@@ -405,12 +417,11 @@ class TextLayout(_FlowLayoutBase):
     @property
     def background_decoration_group(self) -> TextDecorationGroup | ScrollableTextDecorationGroup:
         if self._background_decoration_group is None:
-            self._background_decoration_group = self.decoration_class(
+            self._background_decoration_group = self._create_group(
+                self.decoration_class,
                 self.decoration_shader,
                 order=0,
-                parent=self._user_group,
             )
-            self._set_depth_test(self._background_decoration_group)
         return self._background_decoration_group
 
     @background_decoration_group.setter
@@ -420,12 +431,11 @@ class TextLayout(_FlowLayoutBase):
     @property
     def foreground_decoration_group(self) -> TextDecorationGroup | ScrollableTextDecorationGroup:
         if self._foreground_decoration_group is None:
-            self._foreground_decoration_group = self.decoration_class(
+            self._foreground_decoration_group = self._create_group(
+                self.decoration_class,
                 self.decoration_shader,
                 order=2,
-                parent=self._user_group,
             )
-            self._set_depth_test(self._foreground_decoration_group)
         return self._foreground_decoration_group
 
     @foreground_decoration_group.setter
@@ -530,7 +540,10 @@ class TextLayout(_FlowLayoutBase):
         if self._document:
             self._document.remove_handlers(self)
             self._uninit_document()
-        document.push_handlers(self)
+        # Look up the document's events without scanning every layout attribute.
+        document.push_handlers(**{
+            name: getattr(self, name) for name in document.event_types if hasattr(self, name)
+        })
         self._document = document
 
     @property
@@ -1022,39 +1035,94 @@ class TextLayout(_FlowLayoutBase):
         else:
             self._batch.draw_subset(self._vertex_lists)  # type: ignore[arg-type]
 
+    def _get_unformatted_line(self, font: Font, glyphs: list[Glyph], offsets: list[GlyphPosition],
+                              kerning: float) -> _Line:
+        assert self._document is not None
+        if (len(self._lines) == 1 and len(self._boxes) == 1
+                and type(self._boxes[0]) is _GlyphBox
+                and not any(self._document.has_style_run(name) for name in (
+                    "shadow", "stroke", "background_color", "underline", "strikethrough"))):
+            line = self._lines[0]
+            box = cast(_GlyphBox, self._boxes[0])
+            vertex_list = cast(VertexList, box._glyph_vertex_list)
+            if (box.font is font and box.length == len(glyphs) and len(box.vertex_lists) == 1
+                    and vertex_list is not None and vertex_list.count == len(glyphs) * 4
+                    and vertex_list.domain.batch is self._batch
+                    and vertex_list.group is self.group_cache.get(box.owner)
+                    and all(glyph.owner is box.owner for glyph in glyphs)):
+                advance = 0
+                for i, (glyph, offset) in enumerate(zip(glyphs, offsets)):
+                    box.glyphs[i] = kerning, glyph, offset
+                    advance += box._glyph_advance(kerning, glyph, offset)
+                box.advance = advance
+                line.width = advance
+                return line
+        return super()._get_unformatted_line(font, glyphs, offsets, kerning)
+
     def _update(self) -> None:
         if not self._update_enabled:
             return
+
+        assert self._document
+        lines = self._get_lines() if self._document.text else []
+
+        if lines:
+            self._ascent = lines[0].ascent
+            self._descent = lines[0].descent
+            self._anchor_left = self._get_left_anchor()
+            self._anchor_bottom = self._get_bottom_anchor()
+            anchor_top = self._get_top_anchor()
+            # A retained plain run has uniform styles and needs no run iterators.
+            if len(lines) == 1 and len(self._lines) == 1 and lines[0] is self._lines[0]:
+                line = lines[0]
+                box = cast(_GlyphBox, self._boxes[0])
+                anchor_x = round(self._anchor_left) if self._rotation == 0 else self._anchor_left
+                box.update_placement(self, line.x, line.y, anchor_x, anchor_top,
+                                     self._document.get_style("baseline"), self._document.get_style("color"))
+                return
+            context = _StaticLayoutContext(
+                self, self._document, self._document.get_style_runs("color"),
+                self._document.get_style_runs("background_color"),
+            )
+
+            # A plain single-line run can keep its allocation after reshaping.
+            if (len(self._boxes) == 1 and len(lines) == 1 and len(lines[0].boxes) == 1
+                    and not self._multiline and type(self._document) is UnformattedDocument
+                    and context.shadow_iter is None and context.stroke_iter is None
+                    and context.decoration_iter is None):
+                old_box = self._boxes[0]
+                box = lines[0].boxes[0]
+                if (type(old_box) is _GlyphBox and type(box) is _GlyphBox
+                        and old_box.owner is box.owner and old_box.length == box.length
+                        and len(old_box.vertex_lists) == 1):
+                    vertex_list = cast(VertexList, old_box._glyph_vertex_list)
+                    if (vertex_list is not None and vertex_list.domain.batch is self._batch
+                            and vertex_list.group is self.group_cache.get(box.owner)):
+                        anchor_x = round(self._anchor_left) if self._rotation == 0 else self._anchor_left
+                        line = lines[0]
+                        box.place(self, line.start, self._x, self._y, self._z, line.x, line.y,
+                                  self._rotation, self._visible, anchor_x, anchor_top, context,
+                                  reuse_vertex_list=vertex_list)  # type: ignore[arg-type]
+                        old_box.vertex_lists.clear()
+                        old_box._glyph_vertex_list = None
+                        self._vertex_lists[:] = box.vertex_lists
+                        self._boxes[:] = line.boxes
+                        self._lines = lines
+                        return
 
         for box in self._boxes:
             box.delete(self)
 
         self._vertex_lists.clear()
         self._boxes.clear()
-        self._lines.clear()
+        self._lines = lines
 
-        assert self._document
-
-        if not self._document.text:
+        if not lines:
             self._ascent = 0
             self._descent = 0
             self._anchor_left = 0
             self._anchor_bottom = 0
             return
-
-        self._lines = self._get_lines()
-        self._ascent = self._lines[0].ascent
-        self._descent = self._lines[0].descent
-
-        colors_iter = self._document.get_style_runs("color")
-
-        background_iter = self._document.get_style_runs("background_color")
-
-        self._anchor_left = self._get_left_anchor()
-        self._anchor_bottom = self._get_bottom_anchor()
-        anchor_top = self._get_top_anchor()
-
-        context = _StaticLayoutContext(self, self._document, colors_iter, background_iter)
 
         for line in self._lines:
             self._boxes.extend(line.boxes)

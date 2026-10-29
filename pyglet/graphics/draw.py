@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Sequence, Ty
 import pyglet
 from pyglet.enums import BlendFactor, BlendOp, CompareOp, CullFace, FrontFace, GeometryMode, GraphicsAPI, StencilOp
 from pyglet.graphics.attributes import VertexLayout
+from pyglet.graphics.resource import GraphicsResource
 from pyglet.graphics.state import (
     BlendState,
     CameraScissorProviderProtocol,
@@ -182,13 +183,51 @@ class DrawContext(Generic[SurfaceContextT, BackendContextT]):
         self.apply_camera_scope()
 
 
-class Group:
+def _group_input_key(value: Any) -> Any:
+    if isinstance(value, GraphicsResource):
+        return value.key
+    if value is None:
+        return None
+    if isinstance(value, (str, bytes, int, float)):
+        return type(value), value
+    if isinstance(value, tuple):
+        return tuple(_group_input_key(item) for item in value)
+    return type(value), id(value)
+
+
+class _GroupMeta(type):
+    """Reuse completed group instances without rerunning subclass constructors."""
+
+    _cache: weakref.WeakValueDictionary[tuple, Group] = weakref.WeakValueDictionary()
+
+    def __call__(cls, *args: Any, **kwargs: Any) -> Group:
+        keyword_key = tuple(sorted((name, _group_input_key(value)) for name, value in kwargs.items())) if kwargs else ()
+        key = cls, tuple(_group_input_key(arg) for arg in args), keyword_key
+        group = _GroupMeta._cache.get(key)
+        if group is None:
+            group = super().__call__(*args, **kwargs)
+            # The base constructor creates builders configured after construction.
+            if cls.__init__ is Group.__init__:
+                return group
+            # Keep identity keyed inputs alive so their IDs cannot be reused
+            # while this instance remains in the cache.
+            group._constructor_inputs = (args, kwargs) if kwargs else args
+            _GroupMeta._cache[key] = group
+        return group
+
+
+class Group(metaclass=_GroupMeta):
     """Group of common state.
 
     ``Group`` provides extra control over how drawables are handled within a
     ``Batch``. When a batch draws a drawable, it ensures its group's state is set;
     this can include binding textures, shaders, or setting any other parameters.
     It also sorts the groups before drawing.
+
+    Subclasses with their own constructors reuse existing instances for matching
+    constructor inputs. Supply their rendering configuration through the
+    constructor. Groups using the base constructor remain independent so their
+    states can be configured afterwards.
 
     In the following example, the background sprite is guaranteed to be drawn
     before the car and the boat::
@@ -874,7 +913,7 @@ class Batch:
             instanced: bool = False,
             storage: VertexStorage,
             data_error_type: type[BaseException] = MissingAttributeError,
-            **data: Any,
+            data: dict[str, Any],
     ) -> VertexList | IndexedVertexList:
         """Create geometry from resolved storage and layout inputs."""
         assert isinstance(mode, GeometryMode), f"Mode {mode} is not geometry mode."
@@ -936,7 +975,7 @@ class Batch:
         """
         storage, vertex_layout = self._resolve_vertex_list_layout(storage, vertex_layout)
         return self._create_vertex_list(
-            vertex_layout, count, mode, group, storage=storage, **data,
+            vertex_layout, count, mode, group, storage=storage, data=data,
         )
 
     def vertex_list_indexed(
@@ -978,7 +1017,7 @@ class Batch:
         """
         storage, vertex_layout = self._resolve_vertex_list_layout(storage, vertex_layout)
         return self._create_vertex_list(
-            vertex_layout, count, mode, group, indices=indices, storage=storage, **data,
+            vertex_layout, count, mode, group, indices=indices, storage=storage, data=data,
         )
 
     def vertex_list_instanced(
@@ -1017,7 +1056,7 @@ class Batch:
         assert vertex_layout.has_divisors, 'Instanced geometry requires a VertexLayout with at least one divisor.'
         storage, vertex_layout = self._resolve_vertex_list_layout(storage, vertex_layout)
         return self._create_vertex_list(
-            vertex_layout, count, mode, group, instanced=True, storage=storage, **data,
+            vertex_layout, count, mode, group, instanced=True, storage=storage, data=data,
         )
 
     def vertex_list_instanced_indexed(
@@ -1060,7 +1099,7 @@ class Batch:
         assert vertex_layout.has_divisors, 'Instanced geometry requires a VertexLayout with at least one divisor.'
         storage, vertex_layout = self._resolve_vertex_list_layout(storage, vertex_layout)
         return self._create_vertex_list(
-            vertex_layout, count, mode, group, indices=indices, instanced=True, storage=storage, **data,
+            vertex_layout, count, mode, group, indices=indices, instanced=True, storage=storage, data=data,
         )
 
     def add_pass(self, draw_pass: DrawPass) -> DrawPass:
@@ -1136,9 +1175,12 @@ class Batch:
 
     def _update_vertex_list_in_passes(self, vertex_list: VertexList, old_start: int, old_count: int) -> None:
         """Keep pass-local range buckets synchronized after a realloc."""
+        vertex_registrations = vertex_list._pass_registrations  # noqa: SLF001
+        if not vertex_registrations:
+            return
         for registrations in self._pass_registrations.values():
             for registration in registrations:
-                if registration in vertex_list._pass_registrations:  # noqa: SLF001
+                if registration in vertex_registrations:
                     registration.bucket.remove(old_start, old_count)
                     registration.bucket.add(vertex_list.start, vertex_list.count)
 

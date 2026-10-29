@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 import sys
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, NamedTuple, Pattern, Protocol, Sequence, cast
+from typing import TYPE_CHECKING, Iterable, NamedTuple, Pattern, Protocol, Sequence, cast
 
 from pyglet.enums import GeometryMode
 from pyglet.text import runlist
@@ -55,6 +55,8 @@ class _LayoutVertexList(Protocol):
     count: int
 
     def delete(self) -> None: ...
+
+    def set_attribute_data(self, name: str, data: Sequence[float | int | bool]) -> None: ...
 
 
 _distance_re: Pattern[str] = re.compile(r"([-0-9.]+)([a-zA-Z]+)")
@@ -266,7 +268,7 @@ class _AbstractBox(ABC):
 class _GlyphBox(_AbstractBox):
     owner: Texture
     font: Font
-    glyphs: list[tuple[int, Glyph, GlyphPosition]]
+    glyphs: list[tuple[float, Glyph, GlyphPosition]]
     advance: int
     vertex_lists: list[_LayoutVertexList]
     _glyph_vertex_list: _LayoutVertexList | None
@@ -275,7 +277,7 @@ class _GlyphBox(_AbstractBox):
         self,
         owner: Texture,
         font: Font,
-        glyphs: list[tuple[int, Glyph, GlyphPosition]],
+        glyphs: list[tuple[float, Glyph, GlyphPosition]],
     ) -> None:
         """Create a run of glyphs sharing the same texture.
 
@@ -322,14 +324,14 @@ class _GlyphBox(_AbstractBox):
         start_index: int,
         line_x: float,
         line_y: float,
-        context: _LayoutContext,
+        baseline_runs: Iterable[tuple[int, int, str | float | None]],
     ) -> tuple[list[float], list[float], int]:
         """Build the position and texture attributes for the fill glyphs."""
         vertices: list[float] = []
         tex_coords: list[float] = []
         baseline = 0
         x1 = round(line_x)
-        for start, end, baseline_ in context.baseline_iter.ranges(start_index, start_index + self.length):
+        for start, end, baseline_ in baseline_runs:
             baseline = layout._parse_distance(baseline_) or 0  # noqa: SLF001
             glyphs = self.glyphs[start - start_index : end - start_index]
             assert len(glyphs) == end - start
@@ -874,21 +876,28 @@ class _GlyphBox(_AbstractBox):
         anchor_x: float,
         anchor_y: float,
         context: _LayoutContext,
+        *,
+        reuse_vertex_list: _LayoutVertexList | None = None,
     ) -> None:
-        """Create the initial attributes and vertex lists for this glyph run."""
+        """Create or update the attributes and vertex lists for this glyph run."""
         assert self.glyphs
         assert not self.vertex_lists
+        assert reuse_vertex_list is None or (
+            context.shadow_iter is None and context.stroke_iter is None and context.decoration_iter is None
+        )
 
         try:
             group = layout.group_cache[self.owner]
         except KeyError:
-            group = layout.group_class(self.owner, layout.program, order=1, parent=layout.group)
-            layout._set_depth_test(group)  # noqa: SLF001
+            group = layout._create_group(layout.group_class, self.owner, layout.program, order=1)  # noqa: SLF001
             layout.group_cache[self.owner] = group
 
-        vertices, tex_coords, baseline = self._create_glyph_geometry(layout, i, line_x, line_y, context)
+        vertices, tex_coords, baseline = self._create_glyph_geometry(
+            layout, i, line_x, line_y, context.baseline_iter.ranges(i, i + self.length),
+        )
         colors = self._create_glyph_colors(i, vertices, context)
-        indices = [element + glyph_index * 4 for glyph_index in range(self.length) for element in (0, 1, 2, 0, 2, 3)]
+        indices = ([element + glyph_index * 4 for glyph_index in range(self.length) for element in (0, 1, 2, 0, 2, 3)]
+                   if reuse_vertex_list is None else ())
         translation = (x, y, z)
         vertex_data = self._create_vertex_data(
             layout,
@@ -944,14 +953,19 @@ class _GlyphBox(_AbstractBox):
             )
             self._add_vertex_list(shadow_list, context)
 
-        vertex_list = layout.program.vertex_list_indexed(
-            self.length * 4,
-            GeometryMode.TRIANGLES,
-            indices,
-            layout.batch,
-            group,
-            **vertex_data,
-        )
+        if reuse_vertex_list is None:
+            vertex_list = layout.program.vertex_list_indexed(
+                self.length * 4,
+                GeometryMode.TRIANGLES,
+                indices,
+                layout.batch,
+                group,
+                **vertex_data,
+            )
+        else:
+            vertex_list = reuse_vertex_list
+            for name, values in vertex_data.items():
+                vertex_list.set_attribute_data(name, values)
         self._glyph_vertex_list = vertex_list  # type: ignore[assignment]
         self._add_vertex_list(vertex_list, context)
         for stroke_list in stroke_lists:
@@ -970,6 +984,23 @@ class _GlyphBox(_AbstractBox):
             anchor_y,
             context,
         )
+
+    def update_placement(self, layout: TextLayout, line_x: float, line_y: float,
+                         anchor_x: float, anchor_y: float, baseline: str | float | None,
+                         color: tuple[int, int, int, int] | LinearGradient | None) -> None:
+        """Update a retained plain glyph run after reshaping or a style change."""
+        vertices, tex_coords, _ = self._create_glyph_geometry(
+            layout, 0, line_x, line_y, ((0, self.length, baseline),),
+        )
+        if color is None:
+            color = (0, 0, 0, 255)
+        colors = self._create_range_colors(color, 0, self.length, 0, vertices, "Color")
+        vertex_list = self._glyph_vertex_list
+        assert vertex_list is not None
+        vertex_list.set_attribute_data("position", vertices)
+        vertex_list.set_attribute_data("tex_coords", tex_coords)
+        vertex_list.set_attribute_data("colors", colors)
+        vertex_list.set_attribute_data("anchor", (anchor_x, anchor_y) * vertex_list.count)
 
     def update_translation(self, x: float, y: float, z: float) -> None:
         for _vertex_list in self.vertex_lists:
