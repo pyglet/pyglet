@@ -243,7 +243,8 @@ class Texture:
 
         # TODO: verify how this works. Default sampler?
         self._sampler_index = data.get('sampler')
-        self.sampler = owner.samplers[self._sampler_index] if self._sampler_index else Sampler(data={})
+        self.sampler = (owner.samplers[self._sampler_index]
+                        if self._sampler_index is not None else Sampler(data={}))
 
         self.source = data.get('source')            # technically NOT required
         self.image = owner.images[self.source]
@@ -274,7 +275,8 @@ class Image:
     def __init__(self, data, owner):
         self.uri = data.get('uri')
         self._buffer_view_index = data.get('bufferView')
-        self.buffer_view = owner.buffer_views[self._buffer_view_index] if self._buffer_view_index else None
+        self.buffer_view = (owner.buffer_views[self._buffer_view_index]
+                            if self._buffer_view_index is not None else None)
         self.mime_type = data.get('mimeType')
         self.name = data.get('name')
         self.extensions = data.get('extensions')
