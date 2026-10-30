@@ -367,7 +367,11 @@ class _TweenManager:
 
     def add(self, operation: _TweenOperation) -> None:
         if not self._operations:
-            self._clock.schedule(self._tick)
+            interval = self._clock.tween_interval
+            if interval is None:
+                self._clock.schedule(self._tick)
+            else:
+                self._clock.schedule_interval(self._tick, interval)
         self._operations[operation] = None
 
     def remove(self, operation: _TweenOperation) -> None:
@@ -1282,6 +1286,9 @@ class Clock:
 
     # If True, a sleep(0) is inserted on every tick.
     _force_sleep: bool = False
+
+    #: Interval between tween updates, in seconds. ``None`` updates tweens on every tick.
+    tween_interval: float | None = 1 / 60
 
     def __init__(self, time_function: Callable = _time.perf_counter) -> None:
         """Initialize a Clock, with optional custom time function.
