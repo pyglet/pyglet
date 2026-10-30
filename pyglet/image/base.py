@@ -375,12 +375,15 @@ class ImageDataRegion(ImageData):
         super().__init__(width, height, image_data._current_format, image_data._current_data, image_data._current_pitch)  # noqa: SLF001
         self.x = x
         self.y = y
+        self._source_height = getattr(image_data, "_source_height", image_data.height)
 
     def __getstate__(self) -> dict:
+        # Materialize before recording the buffer and its matching pitch.
+        self.get_bytes(self._current_format, self.width * len(self._current_format))
         return {
             'width': self.width,
             'height': self.height,
-            '_current_data': self.get_bytes(self._current_format, self._current_pitch),
+            '_current_data': self._current_data,
             '_current_format': self._current_format,
             '_desired_format': self._desired_format,
             '_current_pitch': self._current_pitch,
@@ -394,11 +397,14 @@ class ImageDataRegion(ImageData):
         x2 = len(self._current_format) * (self.x + self.width)
 
         self._ensure_bytes()
-        data = self.convert(self._current_format, abs(self._current_pitch))
         new_pitch = abs(self._current_pitch)
-        rows = [data[i : i + new_pitch] for i in range(0, len(data), new_pitch)]
+        source_height = getattr(self, "_source_height", self.height)
+        rows = [self._current_data[i * new_pitch : (i + 1) * new_pitch] for i in range(source_height)]
+        if self._current_pitch < 0:
+            rows.reverse()
         rows = [row[x1:x2] for row in rows[self.y : self.y + self.height]]
         self._current_data = b''.join(rows)
+        self._source_height = self.height
         self._current_pitch = self.width * len(self._current_format)
         self._current_texture = None
         self.x = 0
@@ -409,6 +415,7 @@ class ImageDataRegion(ImageData):
         return super().get_bytes(fmt, pitch)
 
     def set_bytes(self, fmt: str, pitch: int, data: bytes) -> None:
+        self._source_height = self.height
         self.x = 0
         self.y = 0
         super().set_bytes(fmt, pitch, data)
