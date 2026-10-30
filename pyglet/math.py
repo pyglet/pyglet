@@ -1553,6 +1553,9 @@ class Quaternion(_typing.NamedTuple):
         This function uses the equations from the GLTF 2.0 Specification book.
         https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#interpolation-slerp
 
+        Both inputs must be unit quaternions. The result follows the shortest
+        rotation path, including when the two inputs have opposite signs.
+
         Args:
             other: The other quaternion
             t: The parametric variable in the range [0, 1]
@@ -1563,13 +1566,12 @@ class Quaternion(_typing.NamedTuple):
         """
         dot = self.dot(other)
 
-        abs_dot = min(abs(dot), 0.999)
+        abs_dot = min(abs(dot), 1.0)
+        s = -1.0 if dot < 0 else 1.0
         x = acos(abs_dot)
 
         if x < 0.005:
-            return self * (1 - t) + other * t
-
-        s = dot / abs_dot
+            return (self * (1 - t) + other * (s * t)).normalize()
 
         v = self * (sin(x * (1 - t)) / sin(x)) + \
             other * s * (sin(x * t) / sin(x))
