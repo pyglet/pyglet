@@ -474,15 +474,15 @@ class Loader:
 
                 if zipfile.is_zipfile(_path_name):
                     zipfileobj = zipfile.ZipFile(_path_name, 'r')
+                    prefix = zip_directory + '/' if zip_directory else ''
                     # Returns zipfile.ZipInfo objects:
                     for fileinfo in zipfileobj.infolist():
                         if fileinfo.is_dir():
                             continue
-                        if zip_directory not in fileinfo.filename:
+                        if not fileinfo.filename.startswith(prefix):
                             continue
 
-                        filename = fileinfo.filename.lstrip(zip_directory)
-                        filename = filename.lstrip('/')
+                        filename = fileinfo.filename[len(prefix):]
 
                         zip_location = ZIPLocation(zipfileobj, zip_directory)
                         self._index_file(filename, zip_location)

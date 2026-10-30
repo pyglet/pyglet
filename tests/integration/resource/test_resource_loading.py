@@ -19,6 +19,7 @@ Layout:
 """
 
 import os
+import zipfile
 from builtins import open as builtin_open
 from unittest import mock
 
@@ -72,6 +73,21 @@ def get_open_file(opened_files, relative_path):
 
 def test_base_path_only(loader):
     assert loader.file('f1.txt').read().strip() == asbytes('F1')
+
+
+def test_nested_zip_texture_pixels(tmp_path, test_window):
+    expected = bytes((255, 0, 0, 255, 0, 0, 255, 255))
+    image_path = tmp_path / 'tile.png'
+    pyglet.image.ImageData(2, 1, 'RGBA', expected).save(str(image_path))
+    archive_path = tmp_path / 'resources.zip'
+    with zipfile.ZipFile(archive_path, 'w') as archive:
+        archive.write(image_path, 'assets/textures/tile.png')
+    loader = resource.Loader([str(archive_path) + '/assets/textures'])
+    texture = loader.texture('tile.png', atlas=False)
+    try:
+        assert bytes(texture.get_image_data().get_bytes('RGBA', 8)) == expected
+    finally:
+        texture.delete()
 
 
 def test_blank_base_path(loader):
