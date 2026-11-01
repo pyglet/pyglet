@@ -211,7 +211,7 @@ class Material(PBRMaterial):
         self.occlusion_texture = data.get('occlusionTexture')
         self.emissive_texture = data.get('emissiveTexture')
 
-        self.pbr_metallic_roughness = data.get('pbrMetallicRoughness')
+        self.pbr_metallic_roughness = data.get('pbrMetallicRoughness', {})
         self.base_color_factor = self.pbr_metallic_roughness.get('baseColorFactor', (1.0, 1.0, 1.0, 1.0))
         self.metalic_factor = self.pbr_metallic_roughness.get('metallicFactor', 1.0)
         self.roughness_factor = self.pbr_metallic_roughness.get('roughnessFactor', 1.0)
