@@ -602,54 +602,56 @@ class GLTF:
 
 
 def load_gltf(filename, file=None) -> GLTF:
+    binary_format = filename.lower().endswith('.glb')
+    owns_file = file is None
+    if owns_file:
+        try:
+            file = pyglet.resource.file(filename, 'rb' if binary_format else 'r')
+        except pyglet.resource.ResourceNotFoundException:
+            raise ModelDecodeException
 
     try:
-        if file is None:
-            file = pyglet.resource.file(filename, 'r')
-    except pyglet.resource.ResourceNotFoundException:
-        raise ModelDecodeException
+        if binary_format:
+            # Check header
+            magic = file.read(4)
+            if magic != b"glTF":
+                raise ModelDecodeException(f"Invalid header for .glb file: {magic}")
 
-    if filename.endswith('glb'):
-        file.close()
-        file = pyglet.resource.file(filename, 'rb')
-        # Check header
-        magic = file.read(4)
-        if magic != b"glTF":
-            raise ModelDecodeException(f"Invalid header for .glb file: {magic}")
+            version = struct.unpack("<I", file.read(4))[0]
+            if version != 2:
+                raise ModelDecodeException(f"Unsupported glTF version: {version}")
 
-        version = struct.unpack("<I", file.read(4))[0]
-        if version != 2:
-            raise ModelDecodeException(f"Unsupported glTF version: {version}")
+            # Total file size including headers
+            _ = struct.unpack("<I", file.read(4))[0]  # noqa
 
-        # Total file size including headers
-        _ = struct.unpack("<I", file.read(4))[0]  # noqa
+            # Chunk 0 - json
+            chunk_0_length = struct.unpack("<I", file.read(4))[0]
+            chunk_0_type = file.read(4)
+            if chunk_0_type != b"JSON":
+                raise ModelDecodeException(f"glTF 'chunk 0 type' is not 'JSON': {chunk_0_type}")
 
-        # Chunk 0 - json
-        chunk_0_length = struct.unpack("<I", file.read(4))[0]
-        chunk_0_type = file.read(4)
-        if chunk_0_type != b"JSON":
-            raise ModelDecodeException(f"glTF 'chunk 0 type' is not 'JSON': {chunk_0_type}")
+            json_meta = file.read(chunk_0_length).decode()
 
-        json_meta = file.read(chunk_0_length).decode()
+            # chunk 1 - binary buffer
+            chunk_1_length = struct.unpack("<I", file.read(4))[0]
+            chunk_1_type = file.read(4)
+            if chunk_1_type != b"BIN\x00":
+                raise ModelDecodeException(f"glTF 'chunk 1 type' is not 'BIN': {chunk_0_type}")
 
-        # chunk 1 - binary buffer
-        chunk_1_length = struct.unpack("<I", file.read(4))[0]
-        chunk_1_type = file.read(4)
-        if chunk_1_type != b"BIN\x00":
-            raise ModelDecodeException(f"glTF 'chunk 1 type' is not 'BIN': {chunk_0_type}")
+            binary_buffer = file.read(chunk_1_length)
 
-        binary_buffer = file.read(chunk_1_length)
+        else:
+            json_meta = file.read()
+            binary_buffer = None
 
-    else:
-        json_meta = file.read()
-        binary_buffer = None
+        try:
+            gltf_data = json.loads(json_meta)
+        except json.JSONDecodeError as e:
+            raise ModelDecodeException(f"Json error. Does not appear to be a valid glTF file. {e}")
 
-    try:
-        gltf_data = json.loads(json_meta)
-    except json.JSONDecodeError as e:
-        raise ModelDecodeException(f"Json error. Does not appear to be a valid glTF file. {e}")
     finally:
-        file.close()
+        if owns_file:
+            file.close()
 
     if 'asset' not in gltf_data:
         raise ModelDecodeException("Not a valid glTF file: 'asset' property not found.")
