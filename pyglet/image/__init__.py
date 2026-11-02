@@ -101,7 +101,10 @@ if TYPE_CHECKING:
 
 from pyglet.image import animation  # noqa: F401
 from pyglet.image.animation import Animation, AnimationFrame  # noqa: F401, TC001
-from pyglet.image.base import ImageData, ImageDataRegion, CompressedImageData, ImageException  # noqa: F401
+from pyglet.image.base import (  # noqa: F401
+    ImageData, ImageDataRegion, CompressedImageData, CompressedImageDecoder, ImageException,
+    UnsupportedCompressedTextureError,
+)
 
 from pyglet.image.base import ImageGrid, ImagePattern, _color_as_bytes  # noqa: F401
 from pyglet.image.codecs import ImageDecoder

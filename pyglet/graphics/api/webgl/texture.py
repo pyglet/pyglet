@@ -80,7 +80,6 @@ from pyglet.graphics.api.webgl.gl import (
     GL_UNPACK_SKIP_ROWS,
     GL_UNSIGNED_BYTE,
 )
-from pyglet.graphics import UnsupportedBackendError
 from pyglet.graphics.texture import CompressedTexture, Texture, UniformTextureSequence, _TextureRegionShared, _Texture3DShared, \
     _TextureArrayShared, TextureGrid
 from pyglet.image.base import (
@@ -88,6 +87,7 @@ from pyglet.image.base import (
     CompressionFormat,
     ImageData,
     ImageDataRegion,
+    UnsupportedCompressedTextureError,
     ImageException,
     _AbstractImage,
 )
@@ -233,11 +233,21 @@ def _get_webgl_compression_format(fmt: CompressionFormat) -> tuple[int, str]:
     if fmt.fmt == b"KTX2" and (result := _vk_to_webgl_format.get(fmt.vk_format)):
         return result
     msg = f"Compressed texture format is not supported by WebGL: {fmt!r}"
-    raise UnsupportedBackendError(msg)
+    raise UnsupportedCompressedTextureError(msg)
 
 
 class WebGLCompressedTexture(CompressedTexture):
     """A WebGL texture created from GPU-ready compressed image data."""
+
+    @classmethod
+    def supports_format(cls, fmt: CompressionFormat, context: SurfaceContext | None = None) -> bool:
+        """Check format support before allocating a WebGL texture."""
+        ctx = cast("WebGL2SurfaceContext", context or pyglet.graphics.api.core.current_context)
+        try:
+            _, extension = _get_webgl_compression_format(fmt)
+        except UnsupportedCompressedTextureError:
+            return False
+        return ctx.info.have_extension(extension) and ctx.gl.getExtension(extension) is not None
 
     def __init__(self, context: WebGL2SurfaceContext, width: int, height: int, handle: Any,
                  compression_fmt: CompressionFormat,
@@ -253,10 +263,12 @@ class WebGLCompressedTexture(CompressedTexture):
         self._gl_mag_filter = texture_map[self.mag_filter]
         self._gl_format, self._extension_name = _get_webgl_compression_format(compression_fmt)
         if not context.info.have_extension(self._extension_name):
-            raise UnsupportedBackendError(f"Compressed texture format '{compression_fmt.fmt.decode()}'")
+            msg = f"Unsupported compressed texture format {compression_fmt!r}."
+            raise UnsupportedCompressedTextureError(msg)
         self._extension = self._gl.getExtension(self._extension_name)
         if self._extension is None:
-            raise UnsupportedBackendError(f"Compressed texture format '{compression_fmt.fmt.decode()}'")
+            msg = f"Unsupported compressed texture format {compression_fmt!r}."
+            raise UnsupportedCompressedTextureError(msg)
         self.mipmap_data: list[bytes | None] = []
         self._mipmap_levels = 1
         self._valid_mipmaps: set[int] = set()
@@ -267,8 +279,11 @@ class WebGLCompressedTexture(CompressedTexture):
                           filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                           address_mode: AddressMode = AddressMode.REPEAT,
                           anisotropic_level: int = 0,
-                          context: WebGL2SurfaceContext | None = None) -> WebGLCompressedTexture:
-        ctx = context or pyglet.graphics.api.core.current_context
+                          context: SurfaceContext | None = None) -> WebGLCompressedTexture:
+        ctx = cast("WebGL2SurfaceContext", context or pyglet.graphics.api.core.current_context)
+        if not cls.supports_format(image_data.fmt, ctx):
+            msg = f"Compressed texture format {image_data.fmt!r}"
+            raise UnsupportedCompressedTextureError(msg)
         tex_id = ctx.gl.createTexture()
         texture = cls(ctx, image_data.width, image_data.height, tex_id, image_data.fmt, tex_type,
                       filters, address_mode, anisotropic_level)

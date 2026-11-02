@@ -3,8 +3,11 @@ from __future__ import annotations
 import re
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, BinaryIO, Callable, ClassVar, Generic, Iterator, Sequence, TypeVar, Union, cast, overload
+from typing import (
+    TYPE_CHECKING, Any, BinaryIO, ClassVar, Generic, Protocol, TypeVar, Union, cast, overload,
+)
 
 from pyglet.image.animation import Animation
 from pyglet.image.codecs import ImageEncoder
@@ -16,6 +19,7 @@ if TYPE_CHECKING:
 
     from pyglet.customtypes import RGBAColor
     from pyglet.customtypes import DataTypes
+    from pyglet.graphics.api.base import SurfaceContext
     from pyglet.graphics.texture import CompressedTexture, Texture, TextureGrid, TextureSequence
 
 
@@ -36,6 +40,10 @@ def _color_as_bytes(color: RGBAColor) -> bytes:
 
 class ImageException(Exception):
     pass
+
+
+class UnsupportedCompressedTextureError(ImageException):
+    """Raised when a compressed texture format is unsupported."""
 
 
 class _AbstractImage(ABC):
@@ -457,15 +465,79 @@ class ImageDataRegion(ImageData):
 
 @dataclass(frozen=True)
 class CompressionFormat:
+    """Immutable description of a compressed image's pixel format.
+
+    Legacy DDS formats use a FourCC directly. DX10 DDS and KTX2 images use
+    a container tag together with a DXGI or Vulkan format identifier, which
+    the graphics backend maps to its native compressed texture format.
+    """
+
     fmt: bytes
+    """FourCC or container tag, such as b'DXT1', b'DX10', or b'KTX2'."""
+
     alpha: bool
+    """Whether the image declares an alpha channel."""
+
     dxgi_format: int = 0
+    """DXGI format identifier for DX10 DDS images, or zero when unused."""
+
     vk_format: int = 0
+    """Vulkan format identifier for KTX2 images, or zero when unused."""
+
+    def __str__(self) -> str:
+        """Return the format tag, active identifiers, and alpha flag."""
+        parts = [self.fmt.decode("ascii", errors="backslashreplace").strip()]
+        if self.dxgi_format:
+            parts.append(f"DXGI={self.dxgi_format}")
+        if self.vk_format:
+            parts.append(f"Vulkan={self.vk_format}")
+        return f"{', '.join(parts)} (alpha={self.alpha})"
+
+
+class CompressedImageDecoder(Protocol):
+    """Decode one compressed mipmap level into uncompressed pixel data.
+
+    The callback must understand the image's compression format and return an
+    ImageData with the requested dimensions. Functions and callable objects
+    can implement this protocol; no inheritance is required.
+    """
+
+    def __call__(self, data: bytes, width: int, height: int, /) -> ImageData:
+        """Decode compressed bytes for a level of the given size."""
+        ...
+
 
 class CompressedImageData(_AbstractImage):
-    """Compressed image data suitable for direct uploading to GPU."""
+    """Compressed image data suitable for direct uploading to GPU.
 
-    _current_texture = None
+    If the active backend cannot upload the compression format, an optional
+    :class:`CompressedImageDecoder` can decode each supplied mipmap level into
+    ordinary :class:`ImageData`. The resulting texture is cached as usual.
+    Pyglet does not supply a software decoder; the application must provide one
+    that understands this image's compression format.
+
+    Attach the decoder before requesting a texture. For example, given an
+    application-provided ``decode_bc7(data, width, height)`` function::
+
+        image = pyglet.resource.image("terrain.dds")
+        if isinstance(image, pyglet.image.CompressedImageData):
+            image.decoder = decode_bc7
+        texture = image.get_texture()
+
+    Native compressed uploads take priority, so the callback only runs when
+    the backend does not support the format. Without a callback, an unsupported
+    format raises :class:`UnsupportedCompressedTextureError`.
+
+    .. note::
+        ``pyglet.resource.texture()`` loads the source internally and currently
+        has no argument for supplying this fallback decoder. It also loads
+        independently of the ``pyglet.resource.image()`` cache. Configuring the
+        cached image's decoder therefore does not configure subsequent
+        ``resource.texture()`` calls. Use the image's ``get_texture()`` method
+        as shown above to select the native upload or software fallback path.
+    """
+
+    _current_texture: Texture | CompressedTexture | None = None
 
     def __init__(
         self,
@@ -473,8 +545,7 @@ class CompressedImageData(_AbstractImage):
         height: int,
         fmt: CompressionFormat,
         data: bytes,
-        extension: str | None = None,
-        decoder: Callable[[bytes, int, int], _AbstractImage] | None = None,
+        decoder: CompressedImageDecoder | None = None,
     ) -> None:
         """Construct a CompressedImageData with the given compressed data.
 
@@ -483,25 +554,22 @@ class CompressedImageData(_AbstractImage):
                 The width of the image.
             height:
                 The height of the image.
+            fmt:
+                Compression format understood by the backend and any supplied decoder.
             data:
                 An array of bytes containing the compressed image data.
-            extension:
-                If specified, gives the name of the extension to check for
-                before creating a texture.
             decoder:
-                An optional fallback function used to decode the compressed data.
-                This function is called if the required extension is not present.
+                Optional software decoder for this compression format, called
+                as ``decoder(data, width, height)`` when the backend cannot
+                upload it directly. Must return ImageData of the given size.
+                Supplied mipmap levels are decoded separately.
         """
         super().__init__(width, height)
         self.data = data
         self.fmt = fmt
-        self.extension = extension
         self.decoder = decoder
         self.data_type = "B"
         self.mipmap_data: list[bytes | None] = []
-
-    def _have_extension(self) -> bool:
-        raise NotImplementedError
 
     def set_mipmap_data(self, level: int, data: bytes) -> None:
         """Set compressed image data for a mipmap level.
@@ -517,15 +585,55 @@ class CompressedImageData(_AbstractImage):
         self.mipmap_data += [None] * (level - len(self.mipmap_data))
         self.mipmap_data[level - 1] = data
 
-    def create_texture(self, cls: CompressedTexture) -> CompressedTexture:
-        """Given a texture class, create a texture containing this image."""
-        return cls.create_from_image(self)
+    def create_texture(self, cls: type[CompressedTexture], *,
+                       context: SurfaceContext | None = None) -> Texture | CompressedTexture:
+        """Upload compressed data, or use the supplied software decoder.
 
-    def get_texture(self) -> CompressedTexture:
-        if not self._current_texture:
+        Capability is checked before allocating a GPU texture.
+
+        Args:
+            cls:
+                Backend compressed texture class used for direct uploads.
+            context:
+                Context to use for either upload path, or None for the current context.
+        """
+        if cls.supports_format(self.fmt, context=context):
+            return cls.create_from_image(self, context=context)
+        if self.decoder is None:
+            msg = f"Unsupported compressed texture format {self.fmt!r}; no software decoder supplied."
+            raise UnsupportedCompressedTextureError(msg)
+
+        from pyglet.graphics.texture import Texture  # noqa: PLC0415
+
+        images: list[ImageData] = []
+        for level, data in enumerate([self.data, *self.mipmap_data]):
+            if data is None:
+                msg = f"Compressed texture mipmap level {level} has no data."
+                raise ImageException(msg)
+            width, height = max(1, self.width >> level), max(1, self.height >> level)
+            image = self.decoder(data, width, height)
+            if not isinstance(image, ImageData) or (image.width, image.height) != (width, height):
+                msg = f"Software decoder must return ImageData of size {width}x{height}."
+                raise ImageException(msg)
+            images.append(image)
+
+        texture = Texture.create_from_image(images[0], context=context)
+        try:
+            if len(images) > 1:
+                texture.init_mipmaps(levels=len(images), blank_data=False)
+                texture.bind()
+                for level, image in enumerate(images[1:], start=1):
+                    texture.upload(image, 0, 0, 0, level=level)
+        except Exception:
+            texture.delete()
+            raise
+        return texture
+
+    def get_texture(self) -> Texture | CompressedTexture:
+        if self._current_texture is None:
             from pyglet.graphics.texture import CompressedTexture  # noqa: PLC0415
 
-            self._current_texture = self.create_texture(CompressedTexture)
+            self._current_texture = self.create_texture(cast("type[CompressedTexture]", CompressedTexture))
         return self._current_texture
 
     def get_image_data(self) -> CompressedImageData:

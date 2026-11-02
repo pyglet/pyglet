@@ -108,7 +108,7 @@ from pyglet.graphics.api.gl import gl
 from pyglet.graphics.api.gl.enums import texture_map
 from pyglet.image.base import ImageData, ImageDataRegion, CompressionFormat, \
     CompressedImageData
-from pyglet.image.base import ImageException
+from pyglet.image.base import ImageException, UnsupportedCompressedTextureError
 from pyglet.graphics.texture import PixelData, PixelReadback, Texture, UniformTextureSequence, CompressedTexture, \
     _TextureRegionShared, _Texture3DShared, _TextureArrayShared, TextureGrid
 
@@ -1050,10 +1050,10 @@ vk_to_gl_format: dict[int, int] = {
 }
 
 _required_exts = {
-    "S3TC": ["GL_EXT_texture_compression_s3tc", "GL_EXT_texture_compression_dxt1"],
-    "RGTC": ["GL_EXT_texture_compression_rgtc"],
+    "S3TC": ["GL_EXT_texture_compression_s3tc"],
+    "RGTC": ["GL_EXT_texture_compression_rgtc", "GL_ARB_texture_compression_rgtc"],
     "BPTC": ["GL_ARB_texture_compression_bptc"],
-    "ETC2": ["GL_ARB_ES3_compatibility", "GL_OES_compressed_ETC2_RGB8_texture"],
+    "ETC2": ["GL_ARB_ES3_compatibility"],
     "ASTC": ["GL_KHR_texture_compression_astc_ldr"],
 }
 
@@ -1112,7 +1112,7 @@ def _get_gl_compression_format(cf: CompressionFormat) -> int:
         return fmt
 
     msg = f"Unsupported compression format: {cf!r}"
-    raise ValueError(msg)
+    raise UnsupportedCompressedTextureError(msg)
 
 class GLCompressedTexture(CompressedTexture):
     """A compressed texture created from CompressedImageData."""
@@ -1134,16 +1134,33 @@ class GLCompressedTexture(CompressedTexture):
         self.mipmap_data: list[bytes | None] = []
 
     def _is_format_supported(self) -> bool:
-        family = _get_format_family(self._gl_internal_format)
-        if not family:
-            msg = f"Unsupported compression format: {self._compression_fmt}"
-            raise ValueError(msg)
+        return self.supports_format(self._compression_fmt, self._context)
 
-        if family == "ETC2" and self._context.info.get_opengl_api() == GraphicsAPI.OPENGL_ES_3:
+    @classmethod
+    def supports_format(cls, fmt: CompressionFormat, context: SurfaceContext | None = None) -> bool:
+        """Check compressed format support without allocating a texture."""
+        ctx = cast("OpenGLSurfaceContext", context or pyglet.graphics.api.core.current_context)
+        try:
+            internal_format = _get_gl_compression_format(fmt)
+        except UnsupportedCompressedTextureError:
+            return False
+        family = _get_format_family(internal_format)
+        if not family:
+            return False
+
+        if family == "ETC2" and ctx.info.get_opengl_api() == GraphicsAPI.OPENGL_ES_3:
+            return True
+
+        # Extensions for one format do not imply support for the whole family.
+        if (internal_format in (GL_COMPRESSED_RGB_S3TC_DXT1_EXT, GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
+                and ctx.info.have_extension("GL_EXT_texture_compression_dxt1")):
+            return True
+        if (internal_format == GL_COMPRESSED_RGB8_ETC2
+                and ctx.info.have_extension("GL_OES_compressed_ETC2_RGB8_texture")):
             return True
 
         required = _required_exts.get(family, [])
-        return any(self._context.info.have_extension(ext) for ext in required)
+        return any(ctx.info.have_extension(ext) for ext in required)
 
     @classmethod
     def create(cls, width: int, height: int,
@@ -1156,6 +1173,9 @@ class GLCompressedTexture(CompressedTexture):
                context: OpenGLSurfaceContext | None = None) -> GLCompressedTexture:
         """Create a compressed texture from a complete compressed base level."""
         ctx = context or pyglet.graphics.api.core.current_context
+        if not cls.supports_format(fmt, ctx):
+            msg = f"Unsupported compressed texture format {fmt!r}."
+            raise UnsupportedCompressedTextureError(msg)
 
         tex_id = GLuint()
         target = texture_map[tex_type]
@@ -1177,7 +1197,7 @@ class GLCompressedTexture(CompressedTexture):
                           filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                           address_mode: AddressMode = AddressMode.REPEAT,
                           anisotropic_level: int = 0,
-                          context: OpenGLSurfaceContext | None = None,
+                          context: SurfaceContext | None = None,
                           ) -> GLCompressedTexture:
         """Create a Texture from image data.
 
@@ -1198,7 +1218,10 @@ class GLCompressedTexture(CompressedTexture):
         Returns:
             A currently bound texture.
         """
-        ctx = context or pyglet.graphics.api.core.current_context
+        ctx = cast("OpenGLSurfaceContext", context or pyglet.graphics.api.core.current_context)
+        if not cls.supports_format(image_data.fmt, ctx):
+            msg = f"Unsupported compressed texture format {image_data.fmt!r}."
+            raise UnsupportedCompressedTextureError(msg)
 
         tex_id = GLuint()
         ctx.glGenTextures(1, byref(tex_id))
@@ -1300,20 +1323,15 @@ class GLCompressedTexture(CompressedTexture):
         self._mipmap_levels = len(self.mipmap_data) + 1
         self._valid_mipmaps = set(range(self._mipmap_levels))
 
-    def _allocate(self, data: None | Array) -> None:
+    def _allocate(self, data: bytes | Array) -> None:
         if self._can_gpu_decode:
             self._context.glCompressedTexImage2D(self.target, 0,
                                                  self._gl_internal_format,
                                                  self.width, self.height, 0,
                                                  len(data), data)
             self._valid_mipmaps = {0}
-        elif self.decoder:
-            image = self.decoder(data, self.width, self.height)
-            texture = image.get_texture()
-            assert texture.width == self.width
-            assert texture.height == self.height
         else:
-            msg = f"No extension or fallback decoder is available to decode {self}"
-            raise ImageException(msg)
+            msg = f"Unsupported compressed texture format {self._compression_fmt!r}."
+            raise UnsupportedCompressedTextureError(msg)
 
         self._context.glFlush()
