@@ -179,7 +179,7 @@ class Texture(_AbstractImage, GraphicsResource[Any, TextureKey], Generic[Surface
                  tex_type: TextureType = TextureType.TYPE_2D,
                  internal_format: ComponentFormat = ComponentFormat.RGBA,
                  internal_format_size: int = 8,
-                 internal_format_type: str = "b",
+                 internal_format_type: str = "B",
                  filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT,
                  anisotropic_level: int = 0,
@@ -776,7 +776,7 @@ class _Texture3DShared(_TextureSequenceItems[TRegion], Generic[TRegion, SurfaceC
         @classmethod
         def _create_for_images(cls: type[_Texture3DShared[TRegion, SurfaceContextT]], images: Sequence[ImageData],
                      internal_format_size: int = 8,
-                     internal_format_type: str = "b",
+                     internal_format_type: str = "B",
                      filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                      address_mode: AddressMode = AddressMode.REPEAT,
                      anisotropic_level: int = 0,
@@ -828,7 +828,7 @@ class _Texture3DShared(_TextureSequenceItems[TRegion], Generic[TRegion, SurfaceC
     @classmethod
     def create_for_images(cls: type[TTexture3D], images: Sequence[ImageData],  # noqa: PYI019
                  internal_format_size: int = 8,
-                 internal_format_type: str = "b",
+                 internal_format_type: str = "B",
                  filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT,
                  anisotropic_level: int = 0,
@@ -980,7 +980,7 @@ class _TextureArrayShared(_TextureSequenceItems[TArrayRegion], Generic[TArrayReg
     @classmethod
     def create_for_images(cls: type[TTextureArray], images: Sequence[ImageData],  # noqa: PYI019
                           internal_format_size: int = 8,
-                          internal_format_type: str = "b",
+                          internal_format_type: str = "B",
                           filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                           address_mode: AddressMode = AddressMode.REPEAT,
                           anisotropic_level: int = 0,
@@ -1038,7 +1038,7 @@ class TextureArray(_TextureArrayShared[TextureArrayRegion[SurfaceContextT], Surf
     def __init__(self, width: int, height: int, tex_id: int, max_depth: int,
                  internal_format: ComponentFormat = ComponentFormat.RGBA,
                  internal_format_size: int = 8,
-                 internal_format_type: str = "b",
+                 internal_format_type: str = "B",
                  filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT,
                  anisotropic_level: int = 0,

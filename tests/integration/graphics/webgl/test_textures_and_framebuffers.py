@@ -6,6 +6,78 @@ import pyglet
 import pytest
 
 
+@pytest.mark.parametrize("texture_class", ["Texture3D", "TextureArray"])
+def test_image_sequence_defaults_to_unsigned_bytes(webgl_window, texture_class):
+    """Keep unsigned image values when no storage type is explicitly supplied."""
+    values = bytes((128, 192, 254, 255)) * 4
+    image = pyglet.image.ImageData(2, 2, "RGBA", values)
+    texture = getattr(pyglet.graphics, texture_class).create_for_images(
+        [image], context=webgl_window.context,
+    )
+    try:
+        assert texture.internal_format_type == "B"
+        assert bytes(texture.fetch(z=0).get_bytes("RGBA", 8)) == values
+    finally:
+        texture.delete()
+
+
+@pytest.mark.parametrize("data_type, values", [
+    ("i", (-2147483648, -1, 0, 2147483647)),
+    ("I", (0, 1, 2147483648, 4294967295)),
+])
+@pytest.mark.parametrize("blank_data", [False, True])
+@pytest.mark.parametrize("kind", ["2d", "3d", "array"])
+def test_integer_texture_allocation(webgl_window, data_type, values, blank_data, kind):
+    """Allocate integer storage and mip levels with matching WebGL transfer types."""
+    import js
+    from pyglet.enums import TextureFilter, TextureType
+
+    context = webgl_window.context
+    gl = context.gl
+    texture_class = {"2d": pyglet.graphics.Texture, "3d": pyglet.graphics.Texture3D,
+                     "array": pyglet.graphics.TextureArray}[kind]
+    kwargs = {"max_depth": 2} if kind == "array" else {}
+    if kind == "3d":
+        kwargs["tex_type"] = TextureType.TYPE_3D
+    texture = texture_class.create(
+        2, 2, internal_format_size=32, internal_format_type=data_type,
+        filters=TextureFilter.NEAREST, blank_data=blank_data, context=context, **kwargs,
+    )
+    framebuffer = gl.createFramebuffer()
+    previous_framebuffer = gl.getParameter(gl.FRAMEBUFFER_BINDING)
+    component_type = js.Int32Array if data_type == "i" else js.Uint32Array
+    gl_type = gl.INT if data_type == "i" else gl.UNSIGNED_INT
+    try:
+        assert gl.getError() == gl.NO_ERROR
+        texture.init_mipmaps(2, blank_data=blank_data)
+        assert gl.getError() == gl.NO_ERROR
+        gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer)
+        for level in range(2):
+            width = 2 >> level
+            if kind == "2d":
+                gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, texture.target, texture.handle, level)
+            else:
+                gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, texture.handle, level, 0)
+            assert gl.checkFramebufferStatus(gl.FRAMEBUFFER) == gl.FRAMEBUFFER_COMPLETE
+            pixels = component_type.new(width * width * 4)
+            if blank_data:
+                gl.readPixels(0, 0, width, width, gl.RGBA_INTEGER, gl_type, pixels)
+                assert tuple(pixels.to_py()) == (0,) * (width * width * 4)
+            source = component_type.new(values * (width * width))
+            if kind == "2d":
+                gl.texSubImage2D(texture.target, level, 0, 0, width, width, gl.RGBA_INTEGER, gl_type, source)
+            else:
+                gl.texSubImage3D(texture.target, level, 0, 0, 0, width, width, 1,
+                                 gl.RGBA_INTEGER, gl_type, source)
+            gl.readPixels(0, 0, width, width, gl.RGBA_INTEGER, gl_type, pixels)
+            assert tuple(pixels.to_py()) == values * (width * width)
+            assert gl.getError() == gl.NO_ERROR
+    finally:
+        gl.bindFramebuffer(gl.FRAMEBUFFER, previous_framebuffer)
+        gl.deleteFramebuffer(framebuffer)
+        texture.delete()
+
+
 def test_texture_resource_cleanup_deletes_javascript_handle(webgl_window):
     """Release the real WebGL texture through the cleanup hook used by garbage collection."""
     gl = webgl_window.context.gl

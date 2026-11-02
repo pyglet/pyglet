@@ -170,6 +170,32 @@ def test_integer_texture_read_pixels(test_window, data_type, component_type, val
         texture.delete()
 
 
+@pytest.mark.parametrize("data_type", ["i", "I"])
+@pytest.mark.parametrize("blank_data", [False, True])
+@pytest.mark.parametrize("immutable", [False, True])
+@pytest.mark.parametrize("mipmap_levels", [1, 2])
+def test_integer_texture_allocation(test_window, data_type, blank_data, immutable, mipmap_levels):
+    """Use valid integer transfer types even when allocating without initial data."""
+    test_window.switch_to()
+    context = test_window.context
+    if immutable and not context.info.features.texture_storage:
+        pytest.skip("Immutable texture storage is not supported by this context.")
+    texture = Texture.create(
+        2, 2, internal_format_size=32, internal_format_type=data_type,
+        blank_data=blank_data, immutable=immutable, mipmap_levels=mipmap_levels, context=context,
+    )
+    try:
+        assert texture.mipmap_count == mipmap_levels
+        if blank_data:
+            for level in range(mipmap_levels):
+                pixels = texture.read_pixels(level=level)
+                assert pixels.width == pixels.height == max(1, 2 >> level)
+                assert pixels.data_type == data_type
+                assert tuple(pixels.data) == (0,) * (pixels.width * pixels.height * 4)
+    finally:
+        texture.delete()
+
+
 def test_deleted_texture_cannot_be_read_or_used_as_region_owner(test_window):
     """Allow repeated deletion while rejecting readback and regions of deleted storage."""
     test_window.switch_to()

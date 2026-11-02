@@ -386,6 +386,8 @@ class GLTexture(Texture[OpenGLSurfaceContext]):
         self._gl_min_filter = texture_map[self.min_filter]
         self._gl_mag_filter = texture_map[self.mag_filter]
         self._gl_internal_format = _get_internal_format(internal_format, internal_format_size, internal_format_type)
+        self._gl_allocation_type = _data_types[internal_format_type]
+        self._allocation_component_type = _component_types[internal_format_type]
         if (
             internal_format == ComponentFormat.BGRA
             and context.info.get_opengl_api() in (GraphicsAPI.OPENGL_ES_2, GraphicsAPI.OPENGL_ES_3)
@@ -459,12 +461,13 @@ class GLTexture(Texture[OpenGLSurfaceContext]):
 
     def _allocate_mipmap_level(self, level: int, width: int, height: int, depth: int,
                                data_size: int | None) -> None:
-        data = (GLubyte * data_size)() if data_size is not None else None
+        data = (self._allocation_component_type * data_size)() if data_size is not None else None
         if self.immutable:
             if data is not None:
                 self._context.glTexSubImage2D(
                     self.target, level, 0, 0, width, height,
-                    _get_base_format(self.internal_format, self.internal_format_type), GL_UNSIGNED_BYTE, data,
+                    _get_base_format(self.internal_format, self.internal_format_type),
+                    self._gl_allocation_type, data,
                 )
             return
         self._context.glTexImage2D(self.target, level,
@@ -472,7 +475,7 @@ class GLTexture(Texture[OpenGLSurfaceContext]):
                                    width, height,
                                    0,
                                    _get_base_format(self.internal_format, self.internal_format_type),
-                                   GL_UNSIGNED_BYTE,
+                                   self._gl_allocation_type,
                                    data)
 
     def _generate_mipmaps(self) -> None:
@@ -634,7 +637,7 @@ class GLTexture(Texture[OpenGLSurfaceContext]):
         if immutable or mipmap_levels > 1:
             ctx.glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, mipmap_levels - 1)
 
-        data = (GLubyte * (width * height * len(internal_format)))() if blank_data else None
+        data = (texture._allocation_component_type * (width * height * len(internal_format)))() if blank_data else None
         texture._allocate(data)
         if blank_data:
             texture._mark_mipmap_valid(0)
@@ -659,7 +662,8 @@ class GLTexture(Texture[OpenGLSurfaceContext]):
             if data is not None:
                 self._context.glTexSubImage2D(
                     self.target, 0, 0, 0, self.width, self.height,
-                    _get_base_format(self.internal_format, self.internal_format_type), GL_UNSIGNED_BYTE, data,
+                    _get_base_format(self.internal_format, self.internal_format_type),
+                    self._gl_allocation_type, data,
                 )
             self._context.glFlush()
             return
@@ -669,7 +673,7 @@ class GLTexture(Texture[OpenGLSurfaceContext]):
                              self.width, self.height,
                              0,
                              _get_base_format(self.internal_format, self.internal_format_type),
-                             GL_UNSIGNED_BYTE,
+                             self._gl_allocation_type,
                              data)
         self._context.glFlush()
 
@@ -859,7 +863,7 @@ class GLTexture3D(_GLLayeredTexture, _Texture3DShared[GLTextureRegion, OpenGLSur
     @classmethod
     def _create_for_images(cls: type[GLTexture3D], images: Sequence[ImageData],
                  internal_format_size: int = 8,
-                 internal_format_type: str = "b",
+                 internal_format_type: str = "B",
                  filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT,
                  anisotropic_level: int = 0,
@@ -920,7 +924,7 @@ class GLTextureArray(_GLLayeredTexture, _TextureArrayShared[GLTextureArrayRegion
     def __init__(self, context: OpenGLSurfaceContext, width: int, height: int, tex_id: int, max_depth: int,
                  internal_format: ComponentFormat = ComponentFormat.RGBA,
                  internal_format_size: int = 8,
-                 internal_format_type: str = "b",
+                 internal_format_type: str = "B",
                  filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT,
                  anisotropic_level: int = 0) -> None:

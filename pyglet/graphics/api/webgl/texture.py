@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 import js  # noqa: F821
 
 import pyglet
+from pyglet.graphics.api.webgl import gl
 from pyglet.graphics import TextureError, TextureFormatError, UnsupportedCompressedTextureError
 from pyglet.libs.emscripten import zero_copy
 from pyglet.enums import TextureFilter, TextureType, ComponentFormat, \
@@ -121,8 +122,11 @@ _api_base_pixel_formats = {
 }
 
 
-def _get_base_format(component_format: ComponentFormat) -> int:
-    return globals()[_api_base_pixel_formats[component_format]]
+def _get_base_format(component_format: ComponentFormat, data_type: str = "B") -> int:
+    format_name = _api_base_pixel_formats[component_format]
+    if data_type in ("i", "I") and component_format not in (ComponentFormat.D, ComponentFormat.DS):
+        format_name += "_INTEGER"
+    return globals()[format_name]
 
 
 def _get_internal_format(component_format: ComponentFormat, bit_size: int = 8, data_type: str = "B") -> int:
@@ -166,6 +170,22 @@ _api_pixel_formats = {
     'RGBAI': GL_RGBA_INTEGER,
     'D': GL_DEPTH_COMPONENT,
     'DS': GL_DEPTH_STENCIL,
+}
+
+_data_types = {
+    "b": gl.GL_BYTE,
+    "B": gl.GL_UNSIGNED_BYTE,
+    "i": gl.GL_INT,
+    "I": gl.GL_UNSIGNED_INT,
+    "f": gl.GL_FLOAT,
+}
+
+_component_types = {
+    "b": js.Int8Array,
+    "B": js.Uint8Array,
+    "i": js.Int32Array,
+    "I": js.Uint32Array,
+    "f": js.Float32Array,
 }
 
 def _get_gl_format_and_type(fmt: str) -> tuple[int, int]:
@@ -364,6 +384,8 @@ class WebGLTexture(Texture["WebGL2SurfaceContext"]):
         self._gl_min_filter = texture_map[self.min_filter]
         self._gl_mag_filter = texture_map[self.mag_filter]
         self._gl_internal_format = _get_internal_format(internal_format, internal_format_size, internal_format_type)
+        self._gl_allocation_type = _data_types[internal_format_type]
+        self._allocation_component_type = _component_types[internal_format_type]
 
     def delete(self) -> None:
         """Delete this texture and the memory it occupies.
@@ -437,7 +459,7 @@ class WebGLTexture(Texture["WebGL2SurfaceContext"]):
 
     def _allocate_mipmap_level(self, level: int, width: int, height: int, depth: int,
                                data_size: int | None) -> None:
-        data = js.Uint8Array.new(data_size) if data_size is not None else None
+        data = self._allocation_component_type.new(data_size) if data_size is not None else None
         self._gl.texImage2D(
             self.target,
             level,
@@ -445,8 +467,8 @@ class WebGLTexture(Texture["WebGL2SurfaceContext"]):
             width,
             height,
             0,
-            _get_base_format(self.internal_format),
-            GL_UNSIGNED_BYTE,
+            _get_base_format(self.internal_format, self.internal_format_type),
+            self._gl_allocation_type,
             data,
         )
 
@@ -623,19 +645,19 @@ class WebGLTexture(Texture["WebGL2SurfaceContext"]):
         gl.texParameteri(target, GL_TEXTURE_MIN_FILTER, texture._gl_min_filter)
         gl.texParameteri(target, GL_TEXTURE_MAG_FILTER, texture._gl_mag_filter)
 
-        data = js.Uint8Array.new(width * height * len(internal_format)) if blank_data else None
+        data = texture._allocation_component_type.new(width * height * len(internal_format)) if blank_data else None
         texture._allocate(data)
         if blank_data:
             texture._mark_mipmap_valid(0)
         return texture
 
-    def _allocate(self, data: None | js.Uint8Array) -> None:
+    def _allocate(self, data: Any) -> None:
         self._gl.texImage2D(self.target, 0,
                              self._gl_internal_format,
                              self.width, self.height,
                              0,
-                             _get_base_format(self.internal_format),
-                             GL_UNSIGNED_BYTE,
+                             _get_base_format(self.internal_format, self.internal_format_type),
+                             self._gl_allocation_type,
                              data)
         self._gl.flush()
 
@@ -705,6 +727,9 @@ class _WebGLLayeredTexture:
     target: int
     _gl_internal_format: int
     internal_format: ComponentFormat
+    internal_format_type: str
+    _gl_allocation_type: int
+    _allocation_component_type: Any
 
     def _attach_texture_to_fbo(self, z: int = 0, level: int = 0) -> None:
         self._gl.framebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self._handle, level, z)
@@ -714,7 +739,7 @@ class _WebGLLayeredTexture:
 
     def _allocate_mipmap_level(self, level: int, width: int, height: int, depth: int,
                                data_size: int | None) -> None:
-        data = js.Uint8Array.new(data_size) if data_size is not None else None
+        data = self._allocation_component_type.new(data_size) if data_size is not None else None
         self._gl.texImage3D(
             self.target,
             level,
@@ -723,8 +748,8 @@ class _WebGLLayeredTexture:
             height,
             depth,
             0,
-            _get_base_format(self.internal_format),
-            GL_UNSIGNED_BYTE,
+            _get_base_format(self.internal_format, self.internal_format_type),
+            self._gl_allocation_type,
             data,
         )
 
@@ -745,7 +770,7 @@ class WebGLTexture3D(_WebGLLayeredTexture, _Texture3DShared[WebGLTextureRegion, 
     @classmethod
     def _create_for_images(cls: type[WebGLTexture3D], images: Sequence[ImageData],
                           internal_format_size: int = 8,
-                          internal_format_type: str = "b",
+                          internal_format_type: str = "B",
                           filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                           address_mode: AddressMode = AddressMode.REPEAT,
                           anisotropic_level: int = 0,
@@ -768,13 +793,13 @@ class WebGLTexture3D(_WebGLLayeredTexture, _Texture3DShared[WebGLTextureRegion, 
         texture.images = len(images)
 
         size = (texture.width * texture.height * texture.images * len(internal_format))
-        data = js.Uint8Array.new(size)
+        data = texture._allocation_component_type.new(size)
         gl.pixelStorei(GL_UNPACK_ALIGNMENT, 1)
         texture._allocate(data)
 
         return texture
 
-    def _allocate(self, data: None | js.Uint8Array) -> None:
+    def _allocate(self, data: Any) -> None:
         self._gl.texImage3D(
             self.target,
             0,
@@ -783,8 +808,8 @@ class WebGLTexture3D(_WebGLLayeredTexture, _Texture3DShared[WebGLTextureRegion, 
             self.height,
             self.images,
             0,
-            _get_base_format(self.internal_format),
-            GL_UNSIGNED_BYTE,
+            _get_base_format(self.internal_format, self.internal_format_type),
+            self._gl_allocation_type,
             data,
         )
 
@@ -811,7 +836,7 @@ class WebGLTextureArray(_WebGLLayeredTexture, _TextureArrayShared[WebGLTextureAr
     def __init__(self, context: WebGL2SurfaceContext, width, height, tex_id, max_depth,
                  internal_format: ComponentFormat = ComponentFormat.RGBA,
                  internal_format_size: int = 8,
-                 internal_format_type: str = "b",
+                 internal_format_type: str = "B",
                  filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT,
                  anisotropic_level: int = 0):
@@ -856,14 +881,14 @@ class WebGLTextureArray(_WebGLLayeredTexture, _TextureArrayShared[WebGLTextureAr
         texture.bind()
         ctx.gl.texParameteri(texture.target, GL_TEXTURE_MIN_FILTER, texture._gl_min_filter)
         ctx.gl.texParameteri(texture.target, GL_TEXTURE_MAG_FILTER, texture._gl_mag_filter)
-        data = js.Uint8Array.new(width * height * max_depth * len(internal_format)) if blank_data else None
+        data = texture._allocation_component_type.new(width * height * max_depth * len(internal_format)) if blank_data else None
         ctx.gl.pixelStorei(GL_UNPACK_ALIGNMENT, 1)
         texture._allocate(data)
         if blank_data:
             texture._mark_mipmap_valid(0)
         return texture
 
-    def _allocate(self, data: None | js.Uint8Array) -> None:
+    def _allocate(self, data: Any) -> None:
         self._gl.texImage3D(
             self.target,
             0,
@@ -872,8 +897,8 @@ class WebGLTextureArray(_WebGLLayeredTexture, _TextureArrayShared[WebGLTextureAr
             self.height,
             self.max_depth,
             0,
-            _get_base_format(self.internal_format),
-            GL_UNSIGNED_BYTE,
+            _get_base_format(self.internal_format, self.internal_format_type),
+            self._gl_allocation_type,
             data,
         )
 
