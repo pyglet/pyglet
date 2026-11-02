@@ -81,7 +81,6 @@ from pyglet.graphics.api.webgl.gl import (
     GL_UNSIGNED_BYTE,
 )
 from pyglet.graphics import UnsupportedBackendError
-from pyglet.graphics.texture import TextureArrayDepthExceeded
 from pyglet.graphics.texture import CompressedTexture, Texture, UniformTextureSequence, _TextureRegionShared, _Texture3DShared, \
     _TextureArrayShared, TextureGrid
 from pyglet.image.base import (
@@ -688,84 +687,20 @@ class WebGLTextureRegion(_TextureRegionShared, WebGLTexture):
 WebGLTexture.region_class = WebGLTextureRegion
 
 
-class WebGLTexture3D(_Texture3DShared[WebGLTextureRegion], WebGLTexture, UniformTextureSequence[WebGLTextureRegion]):
-    """A texture with more than one image slice.
+class _WebGLLayeredTexture:
+    """Backend operations shared by 3D and array textures."""
 
-    Use the :py:meth:`create_for_images` or :py:meth:`create_for_image_grid`
-    classmethod to construct a Texture3D.
-    """
+    _gl: WebGL2RenderingContext
+    _handle: Any
+    target: int
+    _gl_internal_format: int
+    internal_format: ComponentFormat
 
-    item_width: int = 0
-    item_height: int = 0
-    items: tuple
+    def _attach_texture_to_fbo(self, z: int = 0, level: int = 0) -> None:
+        self._gl.framebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self._handle, level, z)
 
-    @classmethod
-    def create_for_images(cls, images: Sequence[ImageData],
-                          internal_format_size: int = 8,
-                          internal_format_type: str = "b",
-                          filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
-                          address_mode: AddressMode = AddressMode.REPEAT,
-                          anisotropic_level: int = 0,
-                          context: SurfaceContext | None = None) -> WebGLTexture3D:
-        if not images:
-            raise ImageException("At least one image is required.")
-        ctx = cast("WebGL2SurfaceContext", context or pyglet.graphics.api.core.current_context)
-        gl = ctx.gl
-        item_width = images[0].width
-        item_height = images[0].height
-        pixel_fmt = images[0].format
-        internal_format = ComponentFormat(pixel_fmt)
-
-        if not all(img.width == item_width and img.height == item_height for img in images):
-            raise ImageException('Images do not have same dimensions.')
-
-        tex_id = gl.createTexture()
-        target = texture_map[TextureType.TYPE_3D]
-        gl.bindTexture(target, tex_id)
-        texture = cls(ctx, item_width, item_height, tex_id, TextureType.TYPE_3D, internal_format, internal_format_size,
-                             internal_format_type, filters, address_mode, anisotropic_level)
-        gl.texParameteri(target, GL_TEXTURE_MIN_FILTER, texture._gl_min_filter)
-        gl.texParameteri(target, GL_TEXTURE_MAG_FILTER, texture._gl_mag_filter)
-
-        texture.images = len(images)
-
-        size = (texture.width * texture.height * texture.images * len(internal_format))
-        data = js.Uint8Array.new(size)
-        gl.pixelStorei(GL_UNPACK_ALIGNMENT, 1)
-        texture._allocate(data)
-
-        items = []
-        for i, image in enumerate(images):
-            item = cls.region_class(0, 0, i, item_width, item_height, texture)
-            items.append(item)
-            texture.upload(image, 0, 0, z=i)
-        gl.flush()
-
-        texture.items = items
-        texture.item_width = item_width
-        texture.item_height = item_height
-        return texture
-
-    def _allocate(self, data: None | js.Uint8Array) -> None:
-        self._gl.texImage3D(
-            self.target,
-            0,
-            self._gl_internal_format,
-            self.width,
-            self.height,
-            self.images,
-            0,
-            _get_base_format(self.internal_format),
-            GL_UNSIGNED_BYTE,
-            data,
-        )
-
-    def upload(self, image: ImageData | ImageDataRegion, x: int, y: int, z: int, level: int = 0) -> None:
-        WebGLTexture.upload(self, image, x, y, z, level=level)
-
-    def _get_mipmap_depth(self, level: int) -> int:
-        depth = max(1, int(self.images))
-        return max(1, depth >> level)
+    def _bind_sequence_texture(self) -> None:
+        self._gl.bindTexture(self.target, self._handle)
 
     def _allocate_mipmap_level(self, level: int, width: int, height: int, depth: int,
                                data_size: int | None) -> None:
@@ -783,27 +718,67 @@ class WebGLTexture3D(_Texture3DShared[WebGLTextureRegion], WebGLTexture, Uniform
             data,
         )
 
-    def _attach_texture_to_fbo(self, z: int = 0, level: int = 0) -> None:
-        self._gl.framebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self._handle, level, z)
 
-    def _bind_sequence_texture(self) -> None:
-        self._gl.bindTexture(self.target, self._handle)
+class WebGLTexture3D(_WebGLLayeredTexture, _Texture3DShared[WebGLTextureRegion], WebGLTexture, UniformTextureSequence[WebGLTextureRegion]):
+    """A texture with more than one image slice.
+
+    Use the :py:meth:`create_for_images` or :py:meth:`create_for_image_grid`
+    classmethod to construct a Texture3D.
+    """
+
+    item_width: int = 0
+    item_height: int = 0
+    items: tuple
 
     @classmethod
-    def create_from_image(cls, image_data: ImageData | ImageDataRegion,
-                          tex_type: TextureType = TextureType.TYPE_3D,
+    def _create_for_images(cls, images: Sequence[ImageData],
                           internal_format_size: int = 8,
+                          internal_format_type: str = "b",
                           filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                           address_mode: AddressMode = AddressMode.REPEAT,
                           anisotropic_level: int = 0,
                           context: SurfaceContext | None = None) -> WebGLTexture3D:
-        """Create a one image layer texture from an image."""
-        if tex_type != TextureType.TYPE_3D:
-            raise ImageException("Texture3D requires tex_type=TextureType.TYPE_3D.")
-        return cls.create_for_images(
-            [image_data], internal_format_size=internal_format_size, internal_format_type=image_data.data_type,
-            filters=filters, address_mode=address_mode, anisotropic_level=anisotropic_level, context=context,
+        ctx = cast("WebGL2SurfaceContext", context or pyglet.graphics.api.core.current_context)
+        gl = ctx.gl
+        item_width = images[0].width
+        item_height = images[0].height
+        pixel_fmt = images[0].format
+        internal_format = ComponentFormat(pixel_fmt)
+
+        tex_id = gl.createTexture()
+        target = texture_map[TextureType.TYPE_3D]
+        gl.bindTexture(target, tex_id)
+        texture = cls(ctx, item_width, item_height, tex_id, TextureType.TYPE_3D, internal_format, internal_format_size,
+                             internal_format_type, filters, address_mode, anisotropic_level)
+        gl.texParameteri(target, GL_TEXTURE_MIN_FILTER, texture._gl_min_filter)
+        gl.texParameteri(target, GL_TEXTURE_MAG_FILTER, texture._gl_mag_filter)
+
+        texture.images = len(images)
+
+        size = (texture.width * texture.height * texture.images * len(internal_format))
+        data = js.Uint8Array.new(size)
+        gl.pixelStorei(GL_UNPACK_ALIGNMENT, 1)
+        texture._allocate(data)
+
+        return texture
+
+    def _allocate(self, data: None | js.Uint8Array) -> None:
+        self._gl.texImage3D(
+            self.target,
+            0,
+            self._gl_internal_format,
+            self.width,
+            self.height,
+            self.images,
+            0,
+            _get_base_format(self.internal_format),
+            GL_UNSIGNED_BYTE,
+            data,
         )
+
+    def _get_mipmap_depth(self, level: int) -> int:
+        depth = max(1, int(self.images))
+        return max(1, depth >> level)
 
 
 class WebGLTextureArrayRegion(WebGLTextureRegion):
@@ -813,7 +788,7 @@ class WebGLTextureArrayRegion(WebGLTextureRegion):
         return f"{self.__class__.__name__}(handle={self._handle}, size={self.width}x{self.height}, layer={self.z})"
 
 
-class WebGLTextureArray(_TextureArrayShared[WebGLTextureArrayRegion], WebGLTexture, UniformTextureSequence[WebGLTextureArrayRegion]):
+class WebGLTextureArray(_WebGLLayeredTexture, _TextureArrayShared[WebGLTextureArrayRegion], WebGLTexture, UniformTextureSequence[WebGLTextureArrayRegion]):
     items: list[WebGLTextureArrayRegion]
 
     def __init__(self, context: WebGL2SurfaceContext, width, height, tex_id, max_depth,
@@ -870,41 +845,6 @@ class WebGLTextureArray(_TextureArrayShared[WebGLTextureArrayRegion], WebGLTextu
             texture._mark_mipmap_valid(0)
         return texture
 
-    @classmethod
-    def create_for_images(cls, images: Sequence[ImageData],
-                          internal_format_size: int = 8,
-                          internal_format_type: str = "b",
-                          filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
-                          address_mode: AddressMode = AddressMode.REPEAT,
-                          anisotropic_level: int = 0,
-                          context: SurfaceContext | None = None,
-                          *, max_depth: int | None = None) -> WebGLTextureArray:
-        """Create an array from equally sized images, with optional layer capacity."""
-        if not images:
-            raise ImageException("At least one image is required.")
-        item_width, item_height = images[0].width, images[0].height
-        if not all(image.width == item_width and image.height == item_height for image in images):
-            raise ImageException("Images do not have same dimensions.")
-        if max_depth is not None and max_depth < len(images):
-            raise TextureArrayDepthExceeded("The images exceed the requested array capacity.")
-        texture = cls.create(
-            width=item_width, height=item_height,
-            internal_format=ComponentFormat(images[0].format), internal_format_size=internal_format_size,
-            internal_format_type=internal_format_type, filters=filters, address_mode=address_mode,
-            anisotropic_level=anisotropic_level, context=context,
-            max_depth=max_depth if max_depth is not None else len(images),
-        )
-        texture.images = len(images)
-        texture.allocate(*images)
-        texture.item_width, texture.item_height = item_width, item_height
-        return texture
-
-    def upload(self, image: ImageData | ImageDataRegion, x: int, y: int, z: int, level: int = 0) -> None:
-        WebGLTexture.upload(self, image, x, y, z, level=level)
-
-    def _attach_texture_to_fbo(self, z: int = 0, level: int = 0) -> None:
-        self._gl.framebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self._handle, level, z)
-
     def _allocate(self, data: None | js.Uint8Array) -> None:
         self._gl.texImage3D(
             self.target,
@@ -921,48 +861,6 @@ class WebGLTextureArray(_TextureArrayShared[WebGLTextureArrayRegion], WebGLTextu
 
     def _get_mipmap_depth(self, level: int) -> int:
         return max(1, int(self.max_depth))
-
-    def _allocate_mipmap_level(self, level: int, width: int, height: int, depth: int,
-                               data_size: int | None) -> None:
-        data = js.Uint8Array.new(data_size) if data_size is not None else None
-        self._gl.texImage3D(
-            self.target,
-            level,
-            self._gl_internal_format,
-            width,
-            height,
-            self.max_depth,
-            0,
-            _get_base_format(self.internal_format),
-            GL_UNSIGNED_BYTE,
-            data,
-        )
-
-    def _generate_mipmaps(self) -> None:
-        self._gl.generateMipmap(self.target)
-        self._gl.flush()
-
-    def _bind_sequence_texture(self) -> None:
-        self._gl.bindTexture(self.target, self._handle)
-
-    def _allocate_image(self, image: ImageData, layer: int) -> None:
-        self.upload(image, 0, 0, layer)
-
-    @classmethod
-    def create_from_image(cls, image_data: ImageData | ImageDataRegion,
-                          tex_type: TextureType = TextureType.TYPE_2D_ARRAY,
-                          internal_format_size: int = 8,
-                          filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
-                          address_mode: AddressMode = AddressMode.REPEAT,
-                          anisotropic_level: int = 0,
-                          context: SurfaceContext | None = None) -> WebGLTextureArray:
-        """Create a one-layer texture from an image."""
-        if tex_type != TextureType.TYPE_2D_ARRAY:
-            raise ImageException("TextureArray requires tex_type=TextureType.TYPE_2D_ARRAY.")
-        return cls.create_for_images(
-            [image_data], internal_format_size=internal_format_size, internal_format_type=image_data.data_type,
-            filters=filters, address_mode=address_mode, anisotropic_level=anisotropic_level, context=context,
-        )
 
 WebGLTextureArray.region_class = WebGLTextureArrayRegion
 WebGLTextureArrayRegion.region_class = WebGLTextureArrayRegion

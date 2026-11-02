@@ -624,6 +624,13 @@ TArrayRegion = TypeVar("TArrayRegion", bound=_SupportsZ)
 class _TextureSequenceItems(Generic[TRegion]):
     items: list[TRegion] | tuple[TRegion, ...]
 
+    if TYPE_CHECKING:
+        # Use type checking otherwise it would override mixins due inheritance order.
+        # Supplied by Texture in each concrete sequence's method resolution order.
+        def upload(self, image: ImageData | ImageDataRegion, x: int, y: int, z: int,
+                   level: int = 0) -> None:
+            ...
+
     def __len__(self) -> int:
         return len(self.items)
 
@@ -720,6 +727,20 @@ class _TextureRegionShared:
     def __del__(self) -> None:
         pass
 
+    @property
+    def mipmap_count(self) -> int:
+        return self.owner.mipmap_count
+
+    @property
+    def valid_mipmaps(self) -> tuple[int, ...]:
+        return self.owner.valid_mipmaps
+
+    def init_mipmaps(self, levels: int | None = None, blank_data: bool = True) -> int:
+        return self.owner.init_mipmaps(levels=levels, blank_data=blank_data)
+
+    def generate_mipmaps(self) -> None:
+        self.owner.generate_mipmaps()
+
 
 class _Texture3DShared(_TextureSequenceItems[TRegion], Generic[TRegion]):
     items: list[TRegion] | tuple[TRegion, ...]
@@ -727,7 +748,7 @@ class _Texture3DShared(_TextureSequenceItems[TRegion], Generic[TRegion]):
     if TYPE_CHECKING:
         # Implemented by each concrete backend texture class.
         @classmethod
-        def create_for_images(cls, images: Sequence[ImageData],
+        def _create_for_images(cls, images: Sequence[ImageData],
                      internal_format_size: int = 8,
                      internal_format_type: str = "b",
                      filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
@@ -737,9 +758,6 @@ class _Texture3DShared(_TextureSequenceItems[TRegion], Generic[TRegion]):
             ...
 
     def _bind_sequence_texture(self) -> None:
-        raise NotImplementedError
-
-    def upload(self, image: ImageData, x: int, y: int, z: int) -> None:
         raise NotImplementedError
 
     @classmethod
@@ -764,6 +782,53 @@ class _Texture3DShared(_TextureSequenceItems[TRegion], Generic[TRegion]):
         else:
             image: ImageData = value
             self.upload(image, 0, 0, self[index].z)
+
+    @classmethod
+    def create_from_image(cls, image_data: ImageData | ImageDataRegion,
+                          tex_type: TextureType = TextureType.TYPE_3D,
+                          internal_format_size: int = 8,
+                          filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
+                          address_mode: AddressMode = AddressMode.REPEAT,
+                          anisotropic_level: int = 0,
+                          context: SurfaceContext | None = None) -> Texture3D:
+        """Create a one-layer texture from an image."""
+        if tex_type != TextureType.TYPE_3D:
+            raise ImageException("Texture3D requires tex_type=TextureType.TYPE_3D.")
+        return cls.create_for_images(
+            [image_data], internal_format_size=internal_format_size, internal_format_type=image_data.data_type,
+            filters=filters, address_mode=address_mode, anisotropic_level=anisotropic_level, context=context,
+        )
+
+
+    @classmethod
+    def create_for_images(cls, images: Sequence[ImageData],
+                 internal_format_size: int = 8,
+                 internal_format_type: str = "b",
+                 filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
+                 address_mode: AddressMode = AddressMode.REPEAT,
+                 anisotropic_level: int = 0,
+                 context: SurfaceContext | None = None) -> Texture3D:
+        if not images:
+            raise ImageException("At least one image is required.")
+        item_width, item_height = images[0].width, images[0].height
+        if not all(image.width == item_width and image.height == item_height for image in images):
+            raise ImageException("Images do not have same dimensions.")
+        texture = cls._create_for_images(
+            images, internal_format_size, internal_format_type, filters,
+            address_mode, anisotropic_level, context,
+        )
+
+        items = []
+        for i, image in enumerate(images):
+            item = cls.region_class(0, 0, i, item_width, item_height, texture)
+            items.append(item)
+            texture.upload(image, 0, 0, z=i)
+        texture._flush()
+
+        texture.items = items
+        texture.item_width = item_width
+        texture.item_height = item_height
+        return texture
 
 
 class _TextureArrayShared(_TextureSequenceItems[TArrayRegion], Generic[TArrayRegion]):
@@ -794,11 +859,8 @@ class _TextureArrayShared(_TextureSequenceItems[TArrayRegion], Generic[TArrayReg
     def _bind_sequence_texture(self) -> None:
         raise NotImplementedError
 
-    def upload(self, image: ImageData, x: int, y: int, z: int) -> None:
-        raise NotImplementedError
-
     def _allocate_image(self, image: ImageData, layer: int) -> None:
-        raise NotImplementedError
+        self.upload(image, 0, 0, layer)
 
     def _verify_size(self, image: ImageData) -> None:
         if image.width > self.width or image.height > self.height:
@@ -870,8 +932,54 @@ class _TextureArrayShared(_TextureSequenceItems[TArrayRegion], Generic[TArrayReg
             self.upload(image, 0, 0, index)
             self.items[index] = item
 
+    @classmethod
+    def create_from_image(cls, image_data: ImageData | ImageDataRegion,
+                          tex_type: TextureType = TextureType.TYPE_2D_ARRAY,
+                          internal_format_size: int = 8,
+                          filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
+                          address_mode: AddressMode = AddressMode.REPEAT,
+                          anisotropic_level: int = 0,
+                          context: SurfaceContext | None = None) -> TextureArray:
+        """Create a one-layer texture from an image."""
+        if tex_type != TextureType.TYPE_2D_ARRAY:
+            raise ImageException("TextureArray requires tex_type=TextureType.TYPE_2D_ARRAY.")
+        return cls.create_for_images(
+            [image_data], internal_format_size=internal_format_size, internal_format_type=image_data.data_type,
+            filters=filters, address_mode=address_mode, anisotropic_level=anisotropic_level, context=context,
+        )
 
-class TextureRegion(Texture, _TextureRegionShared):
+
+    @classmethod
+    def create_for_images(cls, images: Sequence[ImageData],
+                          internal_format_size: int = 8,
+                          internal_format_type: str = "b",
+                          filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
+                          address_mode: AddressMode = AddressMode.REPEAT,
+                          anisotropic_level: int = 0,
+                          context: SurfaceContext | None = None,
+                          *, max_depth: int | None = None) -> TextureArray:
+        """Create an array from equally sized images, with optional layer capacity."""
+        if not images:
+            raise ImageException("At least one image is required.")
+        item_width, item_height = images[0].width, images[0].height
+        if not all(image.width == item_width and image.height == item_height for image in images):
+            raise ImageException("Images do not have same dimensions.")
+        if max_depth is not None and max_depth < len(images):
+            raise TextureArrayDepthExceeded("The images exceed the requested array capacity.")
+        texture = cls.create(
+            width=item_width, height=item_height,
+            internal_format=ComponentFormat(images[0].format), internal_format_size=internal_format_size,
+            internal_format_type=internal_format_type, filters=filters, address_mode=address_mode,
+            anisotropic_level=anisotropic_level, context=context,
+            max_depth=max_depth if max_depth is not None else len(images),
+        )
+        texture.images = len(images)
+        texture.allocate(*images)
+        texture.item_width, texture.item_height = item_width, item_height
+        return texture
+
+
+class TextureRegion(_TextureRegionShared, Texture):
     """A rectangular region of a texture, presented as if it were a separate texture."""
 
     def __init__(self, x: int, y: int, z: int, width: int, height: int, owner: Texture):
@@ -879,20 +987,6 @@ class TextureRegion(Texture, _TextureRegionShared):
                          owner.internal_format_size, owner.internal_format_type, owner.filters, owner.address_mode,
                          owner.anisotropic_level, key=owner.key)
         self._init_region(x, y, z, width, height, owner)
-
-    @property
-    def mipmap_count(self) -> int:
-        return self.owner.mipmap_count
-
-    @property
-    def valid_mipmaps(self) -> tuple[int, ...]:
-        return self.owner.valid_mipmaps
-
-    def init_mipmaps(self, levels: int | None = None, blank_data: bool = True) -> int:
-        return self.owner.init_mipmaps(levels=levels, blank_data=blank_data)
-
-    def generate_mipmaps(self) -> None:
-        self.owner.generate_mipmaps()
 
 
 class UniformTextureSequence(TextureSequence[TTexture], Generic[TTexture]):
@@ -938,32 +1032,6 @@ class TextureArray(_TextureArrayShared[TextureArrayRegion], Texture,
         """Create an empty texture array with capacity for ``max_depth`` layers."""
         raise NotImplementedError
 
-    def _allocate_image(self, image: ImageData, layer: int) -> None:
-        raise NotImplementedError
-
-    @classmethod
-    def create_for_images(cls, images: Sequence[ImageData],
-                          internal_format_size: int = 8,
-                          internal_format_type: str = "b",
-                          filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
-                          address_mode: AddressMode = AddressMode.REPEAT,
-                          anisotropic_level: int = 0,
-                          context: SurfaceContext | None = None,
-                          *, max_depth: int | None = None) -> TextureArray:
-        """Create an array from equally sized images, with optional layer capacity."""
-        raise NotImplementedError
-
-    @classmethod
-    def create_from_image(cls, image_data: ImageData | ImageDataRegion,
-                          tex_type: TextureType = TextureType.TYPE_2D_ARRAY,
-                          internal_format_size: int = 8,
-                          filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
-                          address_mode: AddressMode = AddressMode.REPEAT,
-                          anisotropic_level: int = 0,
-                          context: SurfaceContext | None = None) -> TextureArray:
-        """Create a one-layer texture from an image."""
-        raise NotImplementedError
-
 class Texture3D(_Texture3DShared[TextureRegion], Texture, UniformTextureSequence[TextureRegion]):
     """A texture with more than one image slice.
 
@@ -974,30 +1042,8 @@ class Texture3D(_Texture3DShared[TextureRegion], Texture, UniformTextureSequence
     item_height: int = 0
     items: tuple
 
-    @classmethod
-    def create_for_images(cls, images: Sequence[ImageData],
-                 internal_format_size: int = 8,
-                 internal_format_type: str = "b",
-                 filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
-                 address_mode: AddressMode = AddressMode.REPEAT,
-                 anisotropic_level: int = 0,
-                 context: SurfaceContext | None = None) -> Texture3D:
-        raise NotImplementedError
-
     def _bind_sequence_texture(self) -> None:
         raise NotImplementedError
-
-    @classmethod
-    def create_from_image(cls, image_data: ImageData | ImageDataRegion,
-                          tex_type: TextureType = TextureType.TYPE_3D,
-                          internal_format_size: int = 8,
-                          filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
-                          address_mode: AddressMode = AddressMode.REPEAT,
-                          anisotropic_level: int = 0,
-                          context: SurfaceContext | None = None) -> Texture3D:
-        """Create a one-layer texture from an image."""
-        raise NotImplementedError
-
 
 class TextureGrid(_AbstractGrid[TextureRegion]):
     """A texture containing a regular grid of texture regions.

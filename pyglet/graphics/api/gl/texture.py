@@ -109,7 +109,6 @@ from pyglet.graphics.api.gl.enums import texture_map
 from pyglet.image.base import ImageData, ImageDataRegion, CompressionFormat, \
     CompressedImageData
 from pyglet.image.base import ImageException
-from pyglet.graphics.texture import TextureArrayDepthExceeded
 from pyglet.graphics.texture import PixelData, PixelReadback, Texture, UniformTextureSequence, CompressedTexture, \
     _TextureRegionShared, _Texture3DShared, _TextureArrayShared, TextureGrid
 
@@ -760,7 +759,48 @@ class GLTextureRegion(_TextureRegionShared, GLTexture):
 GLTexture.region_class = GLTextureRegion
 
 
-class GLTexture3D(_Texture3DShared[GLTextureRegion], GLTexture, UniformTextureSequence[GLTextureRegion]):
+class _GLLayeredTexture:
+    """Backend operations shared by 3D and array textures."""
+
+    _context: OpenGLSurfaceContext
+    _handle: int
+    target: int
+    _gl_internal_format: int
+    internal_format: ComponentFormat
+
+    def _set_readback_framebuffer_attachment(self, texture_id: int, z: int = 0, level: int = 0) -> None:
+        self._context.glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture_id, level, z)
+
+    def _bind_sequence_texture(self) -> None:
+        self._context.glBindTexture(self.target, self._handle)
+
+    def _allocate_mipmap_level(self, level: int, width: int, height: int, depth: int,
+                               data_size: int | None) -> None:
+        data = (GLubyte * data_size)() if data_size is not None else None
+        self._context.glTexImage3D(self.target, level,
+                                   self._gl_internal_format,
+                                   width, height, depth,
+                                   0,
+                                   _get_base_format(self.internal_format),
+                                   GL_UNSIGNED_BYTE,
+                                   data)
+
+    def _update_subregion(self, image_data: ImageData | ImageDataRegion, x: int, y: int, z: int,
+                          level: int = 0) -> None:
+        data_pitch = abs(image_data._current_pitch)
+
+        data = image_data.convert(image_data.format, data_pitch)
+
+        fmt, gl_type = _get_pixel_format(image_data)
+
+        self._context.glTexSubImage3D(self.target, level,
+                                      x, y, z,
+                                      image_data.width, image_data.height, 1,
+                                      fmt, gl_type,
+                                      data)
+
+
+class GLTexture3D(_GLLayeredTexture, _Texture3DShared[GLTextureRegion], GLTexture, UniformTextureSequence[GLTextureRegion]):
     """A texture with more than one image slice.
 
     Use the :py:meth:`create_for_images` or :py:meth:`create_for_image_grid`
@@ -780,46 +820,23 @@ class GLTexture3D(_Texture3DShared[GLTextureRegion], GLTexture, UniformTextureSe
                              data)
         self._context.glFlush()
 
-    def upload(self, image: ImageData | ImageDataRegion, x: int, y: int, z: int, level: int = 0) -> None:
-        GLTexture.upload(self, image, x, y, z, level=level)
-
     def _get_mipmap_depth(self, level: int) -> int:
         depth = max(1, int(self.images))
         return max(1, depth >> level)
 
-    def _allocate_mipmap_level(self, level: int, width: int, height: int, depth: int,
-                               data_size: int | None) -> None:
-        data = (GLubyte * data_size)() if data_size is not None else None
-        self._context.glTexImage3D(self.target, level,
-                                   self._gl_internal_format,
-                                   width, height, depth,
-                                   0,
-                                   _get_base_format(self.internal_format),
-                                   GL_UNSIGNED_BYTE,
-                                   data)
-
-    def _generate_mipmaps(self) -> None:
-        self._context.glGenerateMipmap(self.target)
-        self._context.glFlush()
-
     @classmethod
-    def create_for_images(cls, images: Sequence[ImageData],
+    def _create_for_images(cls, images: Sequence[ImageData],
                  internal_format_size: int = 8,
                  internal_format_type: str = "b",
                  filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT,
                  anisotropic_level: int = 0,
                  context: SurfaceContext | None = None) -> GLTexture3D:
-        if not images:
-            raise ImageException("At least one image is required.")
         ctx = cast("OpenGLSurfaceContext", context or pyglet.graphics.api.core.current_context)
         item_width = images[0].width
         item_height = images[0].height
         pixel_fmt = images[0].format
         internal_format = ComponentFormat(pixel_fmt)
-
-        if not all(img.width == item_width and img.height == item_height for img in images):
-            raise ImageException('Images do not have same dimensions.')
 
         tex_id = GLuint()
         target = texture_map[TextureType.TYPE_3D]
@@ -850,53 +867,7 @@ class GLTexture3D(_Texture3DShared[GLTextureRegion], GLTexture, UniformTextureSe
 
         texture._allocate(data)
 
-        items = []
-        for i, image in enumerate(images):
-            item = cls.region_class(0, 0, i, item_width, item_height, texture)
-            items.append(item)
-            texture.upload(image, 0, 0, z=i)
-        ctx.glFlush()
-
-        texture.items = items
-        texture.item_width = item_width
-        texture.item_height = item_height
         return texture
-
-    def _set_readback_framebuffer_attachment(self, texture_id: int, z: int = 0, level: int = 0) -> None:
-        self._context.glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture_id, level, z)
-
-    def _update_subregion(self, image_data: ImageData, x: int, y: int, z: int,
-                          level: int = 0):
-        data_pitch = abs(image_data._current_pitch)
-
-        data = image_data.convert(image_data.format, data_pitch)
-
-        fmt, gl_type = _get_pixel_format(image_data)
-
-        self._context.glTexSubImage3D(self.target, level,
-                                      x, y, z,
-                                      image_data.width, image_data.height, 1,
-                                      fmt, gl_type,
-                                      data)
-
-    def _bind_sequence_texture(self) -> None:
-        self._context.glBindTexture(self.target, self._handle)
-
-    @classmethod
-    def create_from_image(cls, image_data: ImageData | ImageDataRegion,
-                          tex_type: TextureType = TextureType.TYPE_3D,
-                          internal_format_size: int = 8,
-                          filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
-                          address_mode: AddressMode = AddressMode.REPEAT,
-                          anisotropic_level: int = 0,
-                          context: SurfaceContext | None = None) -> GLTexture3D:
-        """Create a one-layer texture from an image."""
-        if tex_type != TextureType.TYPE_3D:
-            raise ImageException("Texture3D requires tex_type=TextureType.TYPE_3D.")
-        return cls.create_for_images(
-            [image_data], internal_format_size=internal_format_size, internal_format_type=image_data.data_type,
-            filters=filters, address_mode=address_mode, anisotropic_level=anisotropic_level, context=context,
-        )
 
 
 class GLTextureArrayRegion(GLTextureRegion):
@@ -906,7 +877,7 @@ class GLTextureArrayRegion(GLTextureRegion):
         return f"{self.__class__.__name__}(handle={self._handle}, size={self.width}x{self.height}, layer={self.z})"
 
 
-class GLTextureArray(_TextureArrayShared[GLTextureArrayRegion], GLTexture, UniformTextureSequence[GLTextureArrayRegion]):
+class GLTextureArray(_GLLayeredTexture, _TextureArrayShared[GLTextureArrayRegion], GLTexture, UniformTextureSequence[GLTextureArrayRegion]):
     items: list[GLTextureArrayRegion]
 
     def __init__(self, context: OpenGLSurfaceContext, width, height, tex_id, max_depth,
@@ -963,23 +934,6 @@ class GLTextureArray(_TextureArrayShared[GLTextureArrayRegion], GLTexture, Unifo
             texture.init_mipmaps(levels=mipmap_levels, blank_data=blank_data)
         return texture
 
-    def _set_readback_framebuffer_attachment(self, texture_id: int, z: int = 0, level: int = 0) -> None:
-        self._context.glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture_id, level, z)
-
-    def _update_subregion(self, image_data: ImageData, x: int, y: int, z: int,
-                          level: int = 0):
-        data_pitch = abs(image_data._current_pitch)
-
-        data = image_data.convert(image_data.format, data_pitch)
-
-        fmt, gl_type = _get_pixel_format(image_data)
-
-        self._context.glTexSubImage3D(self.target, level,
-                                      x, y, z,
-                                      image_data.width, image_data.height, 1,
-                                      fmt, gl_type,
-                                      data)
-
     def _allocate(self, data: None | Array) -> None:
         self._context.glTexImage3D(self.target, 0,
                          self._gl_internal_format,
@@ -989,77 +943,8 @@ class GLTextureArray(_TextureArrayShared[GLTextureArrayRegion], GLTexture, Unifo
                          GL_UNSIGNED_BYTE,
                          data)
 
-    def upload(self, image: ImageData | ImageDataRegion, x: int, y: int, z: int, level: int = 0) -> None:
-        GLTexture.upload(self, image, x, y, z, level=level)
-
     def _get_mipmap_depth(self, level: int) -> int:
         return max(1, int(self.max_depth))
-
-    def _allocate_mipmap_level(self, level: int, width: int, height: int, depth: int,
-                               data_size: int | None) -> None:
-        data = (GLubyte * data_size)() if data_size is not None else None
-        self._context.glTexImage3D(self.target, level,
-                                   self._gl_internal_format,
-                                   width, height, self.max_depth,
-                                   0,
-                                   _get_base_format(self.internal_format),
-                                   GL_UNSIGNED_BYTE,
-                                   data)
-
-    def _generate_mipmaps(self) -> None:
-        self._context.glGenerateMipmap(self.target)
-        self._context.glFlush()
-
-    def _bind_sequence_texture(self) -> None:
-        self._context.glBindTexture(self.target, self._handle)
-
-    def _allocate_image(self, image: ImageData, layer: int) -> None:
-        self.upload(image, 0, 0, layer)
-
-    @classmethod
-    def create_for_images(cls, images: Sequence[ImageData],
-                          internal_format_size: int = 8,
-                          internal_format_type: str = "b",
-                          filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
-                          address_mode: AddressMode = AddressMode.REPEAT,
-                          anisotropic_level: int = 0,
-                          context: SurfaceContext | None = None,
-                          *, max_depth: int | None = None) -> GLTextureArray:
-        """Create an array from equally sized images, with optional layer capacity."""
-        if not images:
-            raise ImageException("At least one image is required.")
-        item_width, item_height = images[0].width, images[0].height
-        if not all(image.width == item_width and image.height == item_height for image in images):
-            raise ImageException("Images do not have same dimensions.")
-        if max_depth is not None and max_depth < len(images):
-            raise TextureArrayDepthExceeded("The images exceed the requested array capacity.")
-        texture = cls.create(
-            width=item_width, height=item_height,
-            internal_format=ComponentFormat(images[0].format), internal_format_size=internal_format_size,
-            internal_format_type=internal_format_type, filters=filters, address_mode=address_mode,
-            anisotropic_level=anisotropic_level, context=context,
-            max_depth=max_depth if max_depth is not None else len(images),
-        )
-        texture.images = len(images)
-        texture.allocate(*images)
-        texture.item_width, texture.item_height = item_width, item_height
-        return texture
-
-    @classmethod
-    def create_from_image(cls, image_data: ImageData | ImageDataRegion,
-                          tex_type: TextureType = TextureType.TYPE_2D_ARRAY,
-                          internal_format_size: int = 8,
-                          filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
-                          address_mode: AddressMode = AddressMode.REPEAT,
-                          anisotropic_level: int = 0,
-                          context: SurfaceContext | None = None) -> GLTextureArray:
-        """Create a one-layer texture from an image."""
-        if tex_type != TextureType.TYPE_2D_ARRAY:
-            raise ImageException("TextureArray requires tex_type=TextureType.TYPE_2D_ARRAY.")
-        return cls.create_for_images(
-            [image_data], internal_format_size=internal_format_size, internal_format_type=image_data.data_type,
-            filters=filters, address_mode=address_mode, anisotropic_level=anisotropic_level, context=context,
-        )
 
 GLTextureArray.region_class = GLTextureArrayRegion
 GLTextureArrayRegion.region_class = GLTextureArrayRegion
