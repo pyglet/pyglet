@@ -165,7 +165,7 @@ class AudioData:
             self.pointer = ctypes.addressof(data)
         else:
             try:
-                self.pointer = ctypes.addressof(ctypes.c_int.from_buffer(data))
+                self.pointer = ctypes.addressof(ctypes.c_char.from_buffer(data))
             except TypeError:
                 raise TypeError("Unsupported AudioData type.")
 

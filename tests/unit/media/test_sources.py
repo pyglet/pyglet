@@ -92,6 +92,17 @@ class AudioDataTestCase(unittest.TestCase):
         self.assertEqual(_bytes_from_audiodata(d2), b"\x00" * 64)
 
 
+    def test_short_buffer_protocol_packets(self):
+        for length in (1, 2, 3):
+            expected = bytes(range(length))
+            buffers = (bytearray(expected), memoryview(bytearray(b"\xff" + expected))[1:])
+            for buffer in buffers:
+                with self.subTest(length=length, buffer_type=type(buffer)):
+                    audio_data = AudioData(buffer, length)
+                    self.assertEqual(ctypes.string_at(audio_data.pointer, length), expected)
+                    self.assertEqual(_bytes_from_audiodata(audio_data), expected)
+
+
 class SourceTestCase(unittest.TestCase):
     @mock.patch('pyglet.media.player.Player')
     def test_play(self, player_mock):
