@@ -4,7 +4,7 @@ import re
 import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, BinaryIO, Callable, Generic, Iterator, Sequence, TypeVar, Union, cast, overload
+from typing import TYPE_CHECKING, Any, BinaryIO, Callable, ClassVar, Generic, Iterator, Sequence, TypeVar, Union, cast, overload
 
 from pyglet.image.animation import Animation
 from pyglet.image.codecs import ImageEncoder
@@ -12,6 +12,8 @@ from pyglet.image.codecs import registry as _codec_registry
 from pyglet.util import asbytes
 
 if TYPE_CHECKING:
+    from ctypes import Array
+
     from pyglet.customtypes import RGBAColor
     from pyglet.customtypes import DataTypes
     from pyglet.graphics.texture import CompressedTexture, Texture, TextureGrid, TextureSequence
@@ -154,16 +156,22 @@ class _AbstractImageSequence(ABC, Generic[T]):
 
 
 class ImageData(_AbstractImage):
-    """An image represented as a string of unsigned bytes."""
+    """An image represented as bytes or a ctypes array of pixel data."""
 
-    _swap1_pattern = re.compile(asbytes('(.)'), re.DOTALL)
-    _swap2_pattern = re.compile(asbytes('(.)(.)'), re.DOTALL)
-    _swap3_pattern = re.compile(asbytes('(.)(.)(.)'), re.DOTALL)
-    _swap4_pattern = re.compile(asbytes('(.)(.)(.)(.)'), re.DOTALL)
+    _swap1_pattern: ClassVar[re.Pattern[bytes]] = re.compile(asbytes('(.)'), re.DOTALL)
+    _swap2_pattern: ClassVar[re.Pattern[bytes]] = re.compile(asbytes('(.)(.)'), re.DOTALL)
+    _swap3_pattern: ClassVar[re.Pattern[bytes]] = re.compile(asbytes('(.)(.)(.)'), re.DOTALL)
+    _swap4_pattern: ClassVar[re.Pattern[bytes]] = re.compile(asbytes('(.)(.)(.)(.)'), re.DOTALL)
 
-    _current_texture = None
+    _current_texture: Texture | None = None
+    _current_format: str
+    _desired_format: str
+    _data_type: DataTypes
+    _current_pitch: int
+    _current_data: bytes | Array[Any]
+    pitch: int
 
-    def __init__(self, width: int, height: int, fmt: str, data: bytes, pitch: int | None = None,
+    def __init__(self, width: int, height: int, fmt: str, data: bytes | Array[Any], pitch: int | None = None,
                  data_type: DataTypes = "B") -> None:
         """Initialize image data.
 
@@ -175,7 +183,8 @@ class ImageData(_AbstractImage):
             fmt:
                 A valid format string, such as 'RGB', 'RGBA', 'ARGB', etc.
             data:
-                A sequence of bytes containing the raw image data.
+                Bytes or a ctypes array containing the raw image data. The
+                supplied object is retained until a conversion requires bytes.
             pitch:
                 If specified, the number of bytes per row.  Negative values
                 indicate a top-to-bottom arrangement.  Defaults to ``width * len(format)``.
@@ -190,11 +199,11 @@ class ImageData(_AbstractImage):
         self.pitch = pitch or width * len(fmt)
         self._current_pitch = self.pitch
 
-    def __getstate__(self) -> dict:
+    def __getstate__(self) -> dict[str, int | str | bytes]:
         return {
             'width': self.width,
             'height': self.height,
-            '_current_data': self.get_bytes(self._current_format, self._current_pitch),
+            '_current_data': bytes(self.get_bytes(self._current_format, self._current_pitch)),
             '_current_format': self._current_format,
             '_desired_format': self._desired_format,
             '_current_pitch': self._current_pitch,
@@ -203,7 +212,7 @@ class ImageData(_AbstractImage):
         }
 
     @property
-    def data_type(self) -> str:
+    def data_type(self) -> DataTypes:
         return self._data_type
 
     def get_image_data(self) -> ImageData:
@@ -219,10 +228,11 @@ class ImageData(_AbstractImage):
         self._desired_format = fmt.upper()
         self._current_texture = None
 
-    def get_bytes(self, fmt: str | None = None, pitch: int | None = None) -> bytes:
+    def get_bytes(self, fmt: str | None = None, pitch: int | None = None) -> bytes | Array[Any]:
         """Get the byte data of the image.
 
         This method returns the raw byte data of the image, with optional conversion.
+        If no conversion is needed, the original bytes or ctypes array is returned.
         To convert the data into another format, you can provide ``fmt`` and ``pitch``
         arguments. For example, if the image format is ``RGBA``, and you wish to get
         the byte data in ``RGB`` format::
@@ -258,7 +268,7 @@ class ImageData(_AbstractImage):
             return self._current_data
         return self.convert(fmt, pitch)
 
-    def set_bytes(self, fmt: str, pitch: int, data: bytes) -> None:
+    def set_bytes(self, fmt: str, pitch: int, data: bytes | Array[Any]) -> None:
         """Set the byte data of the image.
 
         Args:
@@ -270,7 +280,7 @@ class ImageData(_AbstractImage):
                 of the format string * the number of pixels per row.
                 Negative values indicate a top-to-bottom arrangement.
             data:
-                Image data as bytes.
+                Image data as bytes or a ctypes array.
         """
         self._current_format = fmt
         self._current_pitch = pitch
@@ -295,18 +305,19 @@ class ImageData(_AbstractImage):
     def blit(self, x: int, y: int, z: int = 0, width: int | None = None, height: int | None = None) -> None:
         raise NotImplementedError("This is no longer supported. Check documentation for 3.0 migration.")
 
-    def convert(self, fmt: str, pitch: int) -> bytes:
+    def convert(self, fmt: str, pitch: int) -> bytes | Array[Any]:
         """Convert data to the desired format.
 
         This method does not alter this instance's current format or pitch.
 
         Can be expensive depending on the size of the image and kind of re-ordering.
+        If no conversion is needed, the original bytes or ctypes array is returned.
         """
         if fmt == self._current_format and pitch == self._current_pitch:
             return self._current_data
 
         self._ensure_bytes()
-        data = self._current_data
+        data = cast(bytes, self._current_data)
         current_pitch = self._current_pitch
         current_format = self._current_format
         sign_pitch = -1 if current_pitch < 0 else 1
@@ -321,7 +332,7 @@ class ImageData(_AbstractImage):
                         repl += b'\xff'
                         continue
                     idx = 1
-                repl += asbytes(r'\%d' % idx)
+                repl += asbytes(fr'\{idx:d}')
 
             if len(current_format) == 1:
                 swap_pattern = self._swap1_pattern
@@ -378,22 +389,35 @@ class ImageData(_AbstractImage):
 class ImageDataRegion(ImageData):
     """A region of image data taken from an existing ImageData or region."""
 
+    x: int
+    y: int
+    _source_height: int
+
     def __init__(self, x: int, y: int, width: int, height: int, image_data: ImageData) -> None:  # noqa: D107
-        super().__init__(width, height, image_data._current_format, image_data._current_data, image_data._current_pitch)  # noqa: SLF001
+        super().__init__(width, height,
+                         image_data._current_format, image_data._current_data, image_data._current_pitch,  # noqa: SLF001
+                         image_data._data_type)  # noqa: SLF001
         self.x = x
         self.y = y
+        if isinstance(image_data, ImageDataRegion):
+            self._source_height = image_data._source_height  # noqa: SLF001
+        else:
+            self._source_height = image_data.height
 
-    def __getstate__(self) -> dict:
+    def __getstate__(self) -> dict[str, int | str | bytes]:
+        data = bytes(self.get_bytes(self._current_format))
         return {
             'width': self.width,
             'height': self.height,
-            '_current_data': self.get_bytes(self._current_format, self._current_pitch),
+            '_current_data': data,
             '_current_format': self._current_format,
             '_desired_format': self._desired_format,
             '_current_pitch': self._current_pitch,
+            '_data_type': self._data_type,
             'pitch': self.pitch,
             'x': self.x,
             'y': self.y,
+            '_source_height': self._source_height,
         }
 
     def get_bytes(self, fmt: str | None = None, pitch: int | None = None) -> bytes:
@@ -401,11 +425,15 @@ class ImageDataRegion(ImageData):
         x2 = len(self._current_format) * (self.x + self.width)
 
         self._ensure_bytes()
-        data = self.convert(self._current_format, abs(self._current_pitch))
+        data = cast(bytes, self._current_data)
         new_pitch = abs(self._current_pitch)
-        rows = [data[i : i + new_pitch] for i in range(0, len(data), new_pitch)]
+        # Reverse the complete source before applying logical region coordinates.
+        rows = [data[i * new_pitch : (i + 1) * new_pitch] for i in range(self._source_height)]
+        if self._current_pitch < 0:
+            rows.reverse()
         rows = [row[x1:x2] for row in rows[self.y : self.y + self.height]]
         self._current_data = b''.join(rows)
+        self._source_height = self.height
         self._current_pitch = self.width * len(self._current_format)
         self._current_texture = None
         self.x = 0
@@ -413,9 +441,10 @@ class ImageDataRegion(ImageData):
 
         fmt = fmt or self._desired_format
         pitch = pitch or self._current_pitch
-        return super().get_bytes(fmt, pitch)
+        return cast(bytes, super().get_bytes(fmt, pitch))
 
-    def set_bytes(self, fmt: str, pitch: int, data: bytes) -> None:
+    def set_bytes(self, fmt: str, pitch: int, data: bytes | Array[Any]) -> None:
+        self._source_height = self.height
         self.x = 0
         self.y = 0
         super().set_bytes(fmt, pitch, data)
