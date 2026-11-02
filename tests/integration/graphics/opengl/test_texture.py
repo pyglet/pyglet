@@ -91,7 +91,7 @@ def test_gles_fetch_restores_framebuffer_and_pack_state(test_window):
         framebuffer.delete()
 
 
-@require_graphics_api(GraphicsAPIGroups.DESKTOP_GL)
+@require_graphics_api(GraphicsAPIGroups.MODERN_DESKTOP_GL)
 def test_float_texture_read_pixels(test_window):
     test_window.switch_to()
     values = tuple(i / 16 for i in range(16))

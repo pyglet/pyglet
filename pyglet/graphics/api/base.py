@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, NoReturn, TypeVar, get_type_hints
 
-from pyglet.enums import PixelFormat
+from pyglet.enums import GraphicsAPI, PixelFormat
 from pyglet.graphics import GraphicsBackendError, GraphicsIntegrationError
 from pyglet.util import debug_print
 
@@ -32,8 +32,10 @@ class BackendGlobalObject(ABC):  # Temp name for now.
     windows: weakref.WeakKeyDictionary[Window, SurfaceContext]
     _have_context: bool = False
     current_context: Any
+    graphics_api: GraphicsAPI | None
 
-    def __init__(self) -> None:
+    def __init__(self, graphics_api: GraphicsAPI | None = None) -> None:
+        self.graphics_api = graphics_api
         self.windows = weakref.WeakKeyDictionary()
         self._current_window = None
 

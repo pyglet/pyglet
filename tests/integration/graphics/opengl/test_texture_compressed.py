@@ -27,7 +27,7 @@ def _level_dimensions(context, texture, level: int) -> tuple[int, int]:
     return width.value, height.value
 
 
-@require_graphics_api(GraphicsAPIGroups.DESKTOP_GL)
+@require_graphics_api(GraphicsAPIGroups.MODERN_DESKTOP_GL)
 def test_compressed_texture_uploads_dds_mip_chain(test_window):
     test_window.switch_to()
     context = test_window.context
@@ -45,7 +45,7 @@ def test_compressed_texture_uploads_dds_mip_chain(test_window):
         )
 
 
-@require_graphics_api(GraphicsAPIGroups.DESKTOP_GL)
+@require_graphics_api(GraphicsAPIGroups.MODERN_DESKTOP_GL)
 def test_compressed_texture_generates_mip_chain(test_window):
     test_window.switch_to()
     context = test_window.context
