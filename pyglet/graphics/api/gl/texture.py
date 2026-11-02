@@ -7,7 +7,9 @@ from typing import TYPE_CHECKING
 
 import pyglet
 from pyglet.enums import TextureType, TextureFilter, ComponentFormat, AddressMode, GraphicsAPI
-from pyglet.graphics import GraphicsAPIError, UnsupportedBackendError
+from pyglet.graphics import (
+    GraphicsAPIError, TextureError, TextureFormatError, UnsupportedBackendError, UnsupportedCompressedTextureError,
+)
 from pyglet.graphics.api.gl import OpenGLSurfaceContext, GL_COMPRESSED_RGB8_ETC2
 from pyglet.graphics.api.gl.gl import (
     GL_RED,
@@ -107,14 +109,13 @@ from pyglet.graphics.api.gl import gl
 from pyglet.graphics.api.gl.enums import texture_map
 from pyglet.image.base import ImageData, ImageDataRegion, CompressionFormat, \
     CompressedImageData
-from pyglet.image.base import ImageException, UnsupportedCompressedTextureError
 from pyglet.graphics.texture import PixelData, PixelReadback, Texture, UniformTextureSequence, CompressedTexture, \
     _TextureRegionShared, _Texture3DShared, _TextureArrayShared, TextureGrid
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 
-    from pyglet.customtypes import Buffer
+    from pyglet.customtypes import CType, DataTypes
     from pyglet.graphics.api.gl.framebuffer import GLFramebuffer
     from pyglet.graphics.resource import TextureKey
 
@@ -130,7 +131,7 @@ class GLPixelReadback(PixelReadback[OpenGLSurfaceContext]):
     def get_framebuffer(self) -> GLFramebuffer:
         """Return the lazily created framebuffer used for texture readback."""
         if self._framebuffer is None:
-            if self._context.core.gl_api in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
+            if self._context.info.get_opengl_api() in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
                 from pyglet.graphics.api.gl2.framebuffer import GL2Framebuffer  # noqa: PLC0415
 
                 self._framebuffer = GL2Framebuffer(context=self._context)
@@ -158,13 +159,18 @@ class GLPixelReadback(PixelReadback[OpenGLSurfaceContext]):
                 self._context.glPixelStorei(field, value)
 
     def read_texture(self, texture: GLTexture, z: int, level: int,
-                     gl_format: int, gl_type: int, component_type: type,
-                     components: int) -> tuple[int, int, Buffer]:
+                     gl_format: int, gl_type: int, component_type: CType,
+                     components: int) -> tuple[int, int, Array]:
         """Read one texture image or layer into tightly packed CPU memory."""
         width, height, depth = texture._get_mipmap_dimensions(level)
         if not 0 <= z < depth:
             msg = f"Texture layer {z} is outside the valid range 0..{depth - 1}."
-            raise ValueError(msg)
+            raise TextureError(msg)
+
+        handle = texture.handle
+        if handle is None:
+            msg = "Cannot read a deleted texture."
+            raise TextureError(msg)
 
         layer_elements = width * height * components
         direct_readback = self._context.info.pixel_transfer.direct_texture_readback
@@ -172,7 +178,7 @@ class GLPixelReadback(PixelReadback[OpenGLSurfaceContext]):
         with self._pack_state():
             if direct_readback:
                 buffer = (component_type * (layer_elements * depth))()
-                self._context.glBindTexture(texture.target, texture.handle)
+                self._context.glBindTexture(texture.target, handle)
                 self._context.glGetTexImage(texture.target, level, gl_format, gl_type, buffer)
 
                 if depth == 1:
@@ -186,7 +192,7 @@ class GLPixelReadback(PixelReadback[OpenGLSurfaceContext]):
                 buffer = (component_type * layer_elements)()
                 framebuffer = self.get_framebuffer()
                 with framebuffer:
-                    texture._set_readback_framebuffer_attachment(texture.handle, z, level)
+                    texture._set_readback_framebuffer_attachment(handle, z, level)  # noqa: SLF001
                     try:
                         if not framebuffer.is_complete:
                             msg = f"Texture cannot be read through a framebuffer: {framebuffer.get_status()}"
@@ -225,8 +231,11 @@ _api_base_pixel_formats = {
 }
 
 
-def _get_base_format(component_format: ComponentFormat) -> int:
-    return globals()[_api_base_pixel_formats[component_format]]
+def _get_base_format(component_format: ComponentFormat, data_type: str = "B") -> int:
+    format_name = _api_base_pixel_formats[component_format]
+    if data_type in ("i", "I") and component_format not in (ComponentFormat.D, ComponentFormat.DS):
+        format_name += "_INTEGER"
+    return globals()[format_name]
 
 
 def _get_internal_format(component_format: ComponentFormat, bit_size: int = 8, data_type: str = "B") -> int:
@@ -235,7 +244,8 @@ def _get_internal_format(component_format: ComponentFormat, bit_size: int = 8, d
     base_format = _api_base_internal_formats.get(component_format.upper())
 
     if base_format is None:
-        raise ValueError(f"Unknown format: {component_format}")
+        msg = f"Unknown format: {component_format}"
+        raise TextureFormatError(msg)
 
     # Type suffix based on data type (integer, float, or default)
     if data_type == "I" and component_format != ComponentFormat.D:
@@ -254,7 +264,8 @@ def _get_internal_format(component_format: ComponentFormat, bit_size: int = 8, d
     # Get the integer value of the GL constant using globals()
     if gl_format in globals():
         return globals()[gl_format]
-    raise ValueError(f"GL constant '{gl_format}' not defined.")
+    msg = f"GL constant '{gl_format}' not defined."
+    raise TextureFormatError(msg)
 
 
 _api_pixel_formats = {
@@ -289,7 +300,7 @@ _data_types = {
     "d": gl.GL_DOUBLE,
 }
 
-_component_types = {
+_component_types: dict[str, CType] = {
     "b": gl.GLbyte,
     "B": gl.GLubyte,
     "h": gl.GLshort,
@@ -301,24 +312,29 @@ _component_types = {
 }
 
 
-def _get_gl_format_and_type(fmt: str, data_type: str) -> tuple[int | None, int | None]:
-    fmt = _api_pixel_formats.get(fmt)
-    if fmt:
-        return fmt, _data_types.get(data_type)  # Eventually support others through ImageData.
-
-    return None, None
+def _get_gl_format_and_type(fmt: str, data_type: str) -> tuple[int, int]:
+    gl_format = _api_pixel_formats.get(fmt)
+    gl_type = _data_types.get(data_type)
+    if gl_format is None or gl_type is None:
+        msg = f"Unsupported pixel format {fmt!r} or component data type {data_type!r}."
+        raise TextureFormatError(msg)
+    return gl_format, gl_type
 
 
 def _normalize_upload_format(data_format: str) -> str:
     """Normalize an image format string into a supported upload format."""
     fmt = data_format
     if fmt not in _api_pixel_formats:
-        fmt = {
+        normalized_format = {
             1: 'R',
             2: 'RG',
             3: 'RGB',
             4: 'RGBA',
         }.get(len(data_format))
+        if normalized_format is None:
+            msg = f"Unsupported pixel format {data_format!r}."
+            raise TextureFormatError(msg)
+        fmt = normalized_format
     return fmt
 
 
@@ -346,6 +362,8 @@ class GLTexture(Texture[OpenGLSurfaceContext]):
     the ``get_texture()`` method of any AbstractImage class (such as ImageData).
     """
 
+    _handle: int | None
+
     region_class: type[GLTextureRegion]  # Set to GLTextureRegion after it's defined
     """The class to use when constructing regions of this texture.
      The class should be a subclass of TextureRegion.
@@ -360,7 +378,7 @@ class GLTexture(Texture[OpenGLSurfaceContext]):
                  address_mode: AddressMode = AddressMode.REPEAT,
                  anisotropic_level: int = 0,
                  *,
-                 key: TextureKey | None = None):
+                 key: TextureKey | None = None) -> None:
         super().__init__(width, height, handle, tex_type, internal_format, internal_format_size, internal_format_type,
                          filters, address_mode, anisotropic_level, key=key)
         self._context = context
@@ -382,8 +400,9 @@ class GLTexture(Texture[OpenGLSurfaceContext]):
 
         Textures are invalid after deletion, and may no longer be used.
         """
-        self._context.glDeleteTextures(1, GLuint(self._handle))
-        self._handle = None
+        if self._handle is not None:
+            self._context.glDeleteTextures(1, GLuint(self._handle))
+            self._handle = None
 
     def bind(self, texture_unit: int = 0) -> None:
         """Bind to a specific Texture Unit by number."""
@@ -391,7 +410,7 @@ class GLTexture(Texture[OpenGLSurfaceContext]):
         self._context.glBindTexture(self.target, self._handle)
 
     def bind_image_texture(self, unit: int, level: int = 0, layered: bool = False,
-                           layer: int = 0, access: int = GL_READ_WRITE, fmt: int = GL_RGBA32F):
+                           layer: int = 0, access: int = GL_READ_WRITE, fmt: int = GL_RGBA32F) -> None:
         """Bind as an ImageTexture for use with a :py:class:`~pyglet.shader.ComputeShaderProgram`.
 
         OpenGL ES requires the texture to have immutable-format storage. Create
@@ -403,8 +422,9 @@ class GLTexture(Texture[OpenGLSurfaceContext]):
         self._context.glFlush()
 
     def _delete_resource(self) -> None:
-        self._context.delete_texture(self._handle)
-        self._handle = None
+        if self._handle is not None:
+            self._context.delete_texture(self._handle)
+            self._handle = None
 
     def _begin_upload(self, image_data: ImageData | ImageDataRegion) -> None:
         align, row_length = self._get_image_alignment(image_data)
@@ -444,14 +464,14 @@ class GLTexture(Texture[OpenGLSurfaceContext]):
             if data is not None:
                 self._context.glTexSubImage2D(
                     self.target, level, 0, 0, width, height,
-                    _get_base_format(self.internal_format), GL_UNSIGNED_BYTE, data,
+                    _get_base_format(self.internal_format, self.internal_format_type), GL_UNSIGNED_BYTE, data,
                 )
             return
         self._context.glTexImage2D(self.target, level,
                                    self._gl_internal_format,
                                    width, height,
                                    0,
-                                   _get_base_format(self.internal_format),
+                                   _get_base_format(self.internal_format, self.internal_format_type),
                                    GL_UNSIGNED_BYTE,
                                    data)
 
@@ -592,9 +612,9 @@ class GLTexture(Texture[OpenGLSurfaceContext]):
         max_mipmap_levels = max(width, height).bit_length()
         if not 1 <= mipmap_levels <= max_mipmap_levels:
             msg = f"Mipmap levels must be between 1 and {max_mipmap_levels} for this texture size."
-            raise ImageException(msg)
+            raise TextureError(msg)
         if immutable and not ctx.info.features.texture_storage:
-            raise ImageException("Immutable texture storage is not supported by the current context.")
+            raise TextureError("Immutable texture storage is not supported by the current context.")
 
         tex_id = GLuint()
         target = texture_map[tex_type]
@@ -639,7 +659,7 @@ class GLTexture(Texture[OpenGLSurfaceContext]):
             if data is not None:
                 self._context.glTexSubImage2D(
                     self.target, 0, 0, 0, self.width, self.height,
-                    _get_base_format(self.internal_format), GL_UNSIGNED_BYTE, data,
+                    _get_base_format(self.internal_format, self.internal_format_type), GL_UNSIGNED_BYTE, data,
                 )
             self._context.glFlush()
             return
@@ -648,7 +668,7 @@ class GLTexture(Texture[OpenGLSurfaceContext]):
                              self._gl_internal_format,
                              self.width, self.height,
                              0,
-                             _get_base_format(self.internal_format),
+                             _get_base_format(self.internal_format, self.internal_format_type),
                              GL_UNSIGNED_BYTE,
                              data)
         self._context.glFlush()
@@ -697,16 +717,17 @@ class GLTexture(Texture[OpenGLSurfaceContext]):
         if self.internal_format in (ComponentFormat.D, ComponentFormat.DS):
             raise NotImplementedError("Typed depth and depth-stencil texture readback is not yet supported.")
 
-        if self.internal_format_type in ("i", "I"):
-            gl_format = GL_RGBA_INTEGER
-            data_type = self.internal_format_type
+        data_type: DataTypes
+        if self.internal_format_type == "i":
+            data_type = "i"
+        elif self.internal_format_type == "I":
+            data_type = "I"
         elif self.internal_format_type == "f":
-            gl_format = GL_RGBA
             data_type = "f"
         else:
-            gl_format = GL_RGBA
             data_type = "B"
 
+        gl_format = GL_RGBA_INTEGER if data_type in ("i", "I") else GL_RGBA
         gl_type = _data_types[data_type]
         component_type = _component_types[data_type]
         width, height, data = self._context.pixel_readback.read_texture(
@@ -752,8 +773,13 @@ class GLTextureRegion(_TextureRegionShared, GLTexture):
 
     region_class: type[GLTextureRegion]
 
-    def __init__(self, x: int, y: int, z: int, width: int, height: int, owner: Texture):
-        super().__init__(owner._context, width, height, owner.handle, owner.tex_type, owner.internal_format,
+    def __init__(self, x: int, y: int, z: int, width: int, height: int, owner: Texture) -> None:
+        handle = owner.handle
+        if handle is None:
+            msg = "Cannot create a region of a deleted texture."
+            raise TextureError(msg)
+        context = owner._context  # noqa: SLF001
+        super().__init__(context, width, height, handle, owner.tex_type, owner.internal_format,
                          owner.internal_format_size, owner.internal_format_type, owner.filters, owner.address_mode,
                          owner.anisotropic_level, key=owner.key)
         self._init_region(x, y, z, width, height, owner)
@@ -770,6 +796,7 @@ class _GLLayeredTexture:
     target: int
     _gl_internal_format: int
     internal_format: ComponentFormat
+    internal_format_type: str
 
     def _set_readback_framebuffer_attachment(self, texture_id: int, z: int = 0, level: int = 0) -> None:
         self._context.glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture_id, level, z)
@@ -784,7 +811,7 @@ class _GLLayeredTexture:
                                    self._gl_internal_format,
                                    width, height, depth,
                                    0,
-                                   _get_base_format(self.internal_format),
+                                   _get_base_format(self.internal_format, self.internal_format_type),
                                    GL_UNSIGNED_BYTE,
                                    data)
 
@@ -815,12 +842,12 @@ class GLTexture3D(_GLLayeredTexture, _Texture3DShared[GLTextureRegion, OpenGLSur
     items: list[GLTextureRegion] | tuple[GLTextureRegion, ...]
     region_class: type[GLTextureRegion] = GLTextureRegion
 
-    def _allocate(self, data: None | Array):
+    def _allocate(self, data: None | Array) -> None:
         self._context.glTexImage3D(self.target, 0,
                              self._gl_internal_format,
                              self.width, self.height, self.images,
                              0,
-                             _get_base_format(self.internal_format),
+                             _get_base_format(self.internal_format, self.internal_format_type),
                              GL_UNSIGNED_BYTE,
                              data)
         self._context.glFlush()
@@ -880,7 +907,7 @@ class GLTextureArrayRegion(GLTextureRegion):
 
     region_class: type[GLTextureArrayRegion]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}(handle={self._handle}, size={self.width}x{self.height}, layer={self.z})"
 
 
@@ -890,13 +917,13 @@ class GLTextureArray(_GLLayeredTexture, _TextureArrayShared[GLTextureArrayRegion
     region_class: type[GLTextureArrayRegion] = GLTextureArrayRegion
     items: list[GLTextureArrayRegion]
 
-    def __init__(self, context: OpenGLSurfaceContext, width, height, tex_id, max_depth,
+    def __init__(self, context: OpenGLSurfaceContext, width: int, height: int, tex_id: int, max_depth: int,
                  internal_format: ComponentFormat = ComponentFormat.RGBA,
                  internal_format_size: int = 8,
                  internal_format_type: str = "b",
                  filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT,
-                 anisotropic_level: int = 0):
+                 anisotropic_level: int = 0) -> None:
         super().__init__(context, width, height, tex_id, TextureType.TYPE_2D_ARRAY, internal_format, internal_format_size,
                   internal_format_type, filters, address_mode, anisotropic_level)
         self.max_depth = max_depth
@@ -918,15 +945,16 @@ class GLTextureArray(_GLLayeredTexture, _TextureArrayShared[GLTextureArrayRegion
                *, max_depth: int = 256) -> GLTextureArray:
         """Create an empty texture array with capacity for ``max_depth`` layers."""
         if tex_type != TextureType.TYPE_2D_ARRAY:
-            raise ImageException("TextureArray requires tex_type=TextureType.TYPE_2D_ARRAY.")
+            raise TextureError("TextureArray requires tex_type=TextureType.TYPE_2D_ARRAY.")
         ctx = context or pyglet.graphics.api.core.current_context
         if not 1 <= max_depth <= ctx.info.MAX_ARRAY_TEXTURE_LAYERS:
-            raise ImageException(f"Array depth must be between 1 and {ctx.info.MAX_ARRAY_TEXTURE_LAYERS}.")
+            msg = f"Array depth must be between 1 and {ctx.info.MAX_ARRAY_TEXTURE_LAYERS}."
+            raise TextureError(msg)
         if immutable:
             raise NotImplementedError("Immutable texture array creation is not implemented.")
         max_levels = max(width, height).bit_length()
         if width <= 0 or height <= 0 or not 1 <= mipmap_levels <= max_levels:
-            raise ImageException("Invalid texture dimensions or mipmap level count.")
+            raise TextureError("Invalid texture dimensions or mipmap level count.")
         tex_id = GLuint()
         ctx.glGenTextures(1, byref(tex_id))
         texture = cls(
@@ -949,7 +977,7 @@ class GLTextureArray(_GLLayeredTexture, _TextureArrayShared[GLTextureArrayRegion
                          self._gl_internal_format,
                          self.width, self.height, self.max_depth,
                          0,
-                         _get_base_format(self.internal_format),
+                         _get_base_format(self.internal_format, self.internal_format_type),
                          GL_UNSIGNED_BYTE,
                          data)
 
@@ -1258,7 +1286,7 @@ class GLCompressedTexture(CompressedTexture[OpenGLSurfaceContext]):
         are supplied, call :meth:`generate_mipmaps` to create them from level 0.
         """
         if level < 1:
-            raise ImageException("Compressed texture mipmap levels must be greater than zero.")
+            raise TextureError("Compressed texture mipmap levels must be greater than zero.")
 
         # Extend mipmap_data list to required level
         self.mipmap_data += [None] * (level - len(self.mipmap_data))
@@ -1320,7 +1348,7 @@ class GLCompressedTexture(CompressedTexture[OpenGLSurfaceContext]):
         for level, data in enumerate(self.mipmap_data, start=1):
             if data is None:
                 msg = f"Compressed texture mipmap level {level} has no data."
-                raise ImageException(msg)
+                raise TextureError(msg)
 
             width = max(1, self.width >> level)
             height = max(1, self.height >> level)

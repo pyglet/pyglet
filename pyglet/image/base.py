@@ -42,10 +42,6 @@ class ImageException(Exception):
     pass
 
 
-class UnsupportedCompressedTextureError(ImageException):
-    """Raised when a compressed texture format is unsupported."""
-
-
 class _AbstractImage(ABC):
     """Abstract class representing an image."""
 
@@ -526,7 +522,7 @@ class CompressedImageData(_AbstractImage):
 
     Native compressed uploads take priority, so the callback only runs when
     the backend does not support the format. Without a callback, an unsupported
-    format raises :class:`UnsupportedCompressedTextureError`.
+    format raises :class:`~pyglet.graphics.UnsupportedCompressedTextureError`.
 
     .. note::
         ``pyglet.resource.texture()`` loads the source internally and currently
@@ -601,6 +597,8 @@ class CompressedImageData(_AbstractImage):
         if cls.supports_format(self.fmt, context=context):
             return cls.create_from_image(self, context=context)
         if self.decoder is None:
+            from pyglet.graphics import UnsupportedCompressedTextureError  # noqa: PLC0415
+
             msg = f"Unsupported compressed texture format {self.fmt!r}; no software decoder supplied."
             raise UnsupportedCompressedTextureError(msg)
 

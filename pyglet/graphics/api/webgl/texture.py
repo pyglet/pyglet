@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 import js  # noqa: F821
 
 import pyglet
+from pyglet.graphics import TextureError, TextureFormatError, UnsupportedCompressedTextureError
 from pyglet.libs.emscripten import zero_copy
 from pyglet.enums import TextureFilter, TextureType, ComponentFormat, \
     AddressMode
@@ -87,8 +88,6 @@ from pyglet.image.base import (
     CompressionFormat,
     ImageData,
     ImageDataRegion,
-    UnsupportedCompressedTextureError,
-    ImageException,
     _AbstractImage,
 )
 
@@ -132,7 +131,8 @@ def _get_internal_format(component_format: ComponentFormat, bit_size: int = 8, d
     base_format = _api_base_internal_formats.get(component_format.upper())
 
     if base_format is None:
-        raise ValueError(f"Unknown format: {component_format}")
+        msg = f"Unknown format: {component_format}"
+        raise TextureFormatError(msg)
 
     # Type suffix based on data type (integer, float, or default)
     if data_type == "I":
@@ -151,7 +151,8 @@ def _get_internal_format(component_format: ComponentFormat, bit_size: int = 8, d
     # Get the integer value of the GL constant using globals()
     if gl_format in globals():
         return globals()[gl_format]
-    raise ValueError(f"GL constant '{gl_format}' not defined.")
+    msg = f"GL constant '{gl_format}' not defined."
+    raise TextureFormatError(msg)
 
 
 _api_pixel_formats = {
@@ -167,23 +168,27 @@ _api_pixel_formats = {
     'DS': GL_DEPTH_STENCIL,
 }
 
-def _get_gl_format_and_type(fmt: str):
-    fmt = _api_pixel_formats.get(fmt)
-    if fmt:
-        return fmt, GL_UNSIGNED_BYTE  # Eventually support others through ImageData.
-
-    return None, None
+def _get_gl_format_and_type(fmt: str) -> tuple[int, int]:
+    gl_format = _api_pixel_formats.get(fmt)
+    if gl_format is None:
+        msg = f"Unsupported WebGL pixel format {fmt!r}."
+        raise TextureFormatError(msg)
+    return gl_format, GL_UNSIGNED_BYTE  # Eventually support others through ImageData.
 
 
 def _normalize_upload_format(data_format: str) -> str:
     """Normalize an image format string into a WebGL-supported upload format."""
     if data_format not in _api_pixel_formats:
-        return {
+        normalized_format = {
             1: 'R',
             2: 'RG',
             3: 'RGB',
             4: 'RGBA',
         }.get(len(data_format))
+        if normalized_format is None:
+            msg = f"Unsupported WebGL pixel format {data_format!r}."
+            raise TextureFormatError(msg)
+        return normalized_format
     return data_format
 
 
@@ -314,27 +319,16 @@ class WebGLCompressedTexture(CompressedTexture["WebGL2SurfaceContext"]):
             return
         for level, data in enumerate(self.mipmap_data, start=1):
             if data is None:
-                raise ImageException(f"Compressed texture mipmap level {level} has no data.")
+                msg = f"Compressed texture mipmap level {level} has no data."
+                raise TextureError(msg)
             self._upload_level(level, max(1, self.width >> level), max(1, self.height >> level), data)
         self._mipmap_levels = len(self.mipmap_data) + 1
         self._valid_mipmaps = set(range(self._mipmap_levels))
 
 def _get_pixel_format(image_data: ImageData) -> tuple[int, int]:
     """Determine the pixel format from format string for the Graphics API."""
-    data_format = image_data.format
-    fmt, gl_type = _get_gl_format_and_type(data_format)
-
-    if fmt is None:
-        # Need to convert data to a standard form
-        data_format = {
-            1: 'R',
-            2: 'RG',
-            3: 'RGB',
-            4: 'RGBA',
-        }.get(len(data_format))
-        fmt, gl_type = _get_gl_format_and_type(data_format)
-
-    return fmt, gl_type
+    data_format = _normalize_upload_format(image_data.format)
+    return _get_gl_format_and_type(data_format)
 
 
 class WebGLTexture(Texture["WebGL2SurfaceContext"]):
@@ -376,8 +370,9 @@ class WebGLTexture(Texture["WebGL2SurfaceContext"]):
 
         Textures are invalid after deletion, and may no longer be used.
         """
-        self._gl.deleteTexture(self._handle)
-        self._handle = None
+        if self._handle is not None:
+            self._gl.deleteTexture(self._handle)
+            self._handle = None
 
     def bind(self, texture_unit: int = 0) -> None:
         """Bind to a specific Texture Unit by number."""
@@ -403,8 +398,7 @@ class WebGLTexture(Texture["WebGL2SurfaceContext"]):
         self._gl.flush()
 
     def _delete_resource(self) -> None:
-        self._context.delete_texture(self._handle)
-        self._handle = None
+        self.delete()
 
     def _begin_upload(self, image_data: ImageData | ImageDataRegion) -> None:
         align, row_length = self._get_image_alignment(image_data)
@@ -842,14 +836,15 @@ class WebGLTextureArray(_WebGLLayeredTexture, _TextureArrayShared[WebGLTextureAr
                *, max_depth: int = 256) -> WebGLTextureArray:
         """Create an empty texture array with capacity for ``max_depth`` layers."""
         if tex_type != TextureType.TYPE_2D_ARRAY:
-            raise ImageException("TextureArray requires tex_type=TextureType.TYPE_2D_ARRAY.")
+            raise TextureError("TextureArray requires tex_type=TextureType.TYPE_2D_ARRAY.")
         ctx = context or pyglet.graphics.api.core.current_context
         if not 1 <= max_depth <= ctx.info.MAX_ARRAY_TEXTURE_LAYERS:
-            raise ImageException(f"Array depth must be between 1 and {ctx.info.MAX_ARRAY_TEXTURE_LAYERS}.")
+            msg = f"Array depth must be between 1 and {ctx.info.MAX_ARRAY_TEXTURE_LAYERS}."
+            raise TextureError(msg)
         if immutable:
             raise NotImplementedError("Immutable texture array creation is not implemented.")
         if width <= 0 or height <= 0:
-            raise ImageException("Texture dimensions must be positive.")
+            raise TextureError("Texture dimensions must be positive.")
         if mipmap_levels != 1:
             raise NotImplementedError("Explicit mipmap allocation is not implemented by the WebGL backend.")
         texture = cls(

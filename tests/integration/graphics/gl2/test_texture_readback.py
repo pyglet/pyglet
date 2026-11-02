@@ -8,6 +8,13 @@ from tests.annotations import GraphicsAPIGroups, require_graphics_api
 pytestmark = require_graphics_api(GraphicsAPIGroups.GL2)
 
 
+def test_readback_framebuffer_uses_gl2_implementation(test_window):
+    """Select the legacy framebuffer implementation from the active context's API."""
+    test_window.switch_to()
+    framebuffer = test_window.context.pixel_readback.get_framebuffer()
+    assert isinstance(framebuffer, GL2Framebuffer)
+
+
 def test_gles2_fetch_uses_gl2_framebuffer_and_restores_state(test_window):
     test_window.switch_to()
     context = test_window.context

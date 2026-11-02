@@ -3,7 +3,7 @@ import unittest
 import pytest
 
 from pyglet.enums import AddressMode, TextureFilter, TextureType
-from pyglet.image import ImageException
+from pyglet.graphics import TextureError
 
 from pyglet.graphics import Texture3D
 from pyglet.image import ImageData, ImageGrid
@@ -160,5 +160,5 @@ def test_texture3d_create_from_image_forwards_positional_options(test_window, us
 
 
 def test_texture3d_create_for_images_rejects_empty_images():
-    with pytest.raises(ImageException, match='At least one image'):
+    with pytest.raises(TextureError, match='At least one image'):
         Texture3D.create_for_images([])

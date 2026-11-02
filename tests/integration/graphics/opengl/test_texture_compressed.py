@@ -9,7 +9,7 @@ from pyglet.graphics.api.gl import gl
 from pyglet.graphics import Texture
 from pyglet.graphics.api.gl.texture import GLCompressedTexture
 from pyglet.image import CompressedImageData, CompressedImageDecoder, ImageData, ImageException
-from pyglet.image import UnsupportedCompressedTextureError
+from pyglet.graphics import TextureError, TextureFormatError, UnsupportedCompressedTextureError
 from pyglet.image.base import CompressionFormat
 from tests.annotations import GraphicsAPIGroups, require_graphics_api
 
@@ -131,8 +131,11 @@ def test_fallback_preserves_authored_mipmap_pixels(test_window, unsupported):
 def test_no_decoder_reports_unsupported_format(unsupported):
     """Raise the specific unsupported-format error when no fallback is supplied."""
     image = CompressedImageData(4, 4, FORMAT, bytes(8))
-    with pytest.raises(UnsupportedCompressedTextureError, match="no software decoder supplied"):
+    with pytest.raises(UnsupportedCompressedTextureError, match="no software decoder supplied") as error:
         image.get_texture()
+    assert isinstance(error.value, TextureError)
+    assert isinstance(error.value, TextureFormatError)
+    assert not isinstance(error.value, ImageException)
     unsupported.assert_not_called()
 
 
@@ -157,8 +160,9 @@ def test_invalid_decoded_image_fails_before_allocation(unsupported, result, monk
     create = Mock(side_effect=AssertionError("GPU allocation must not run"))
     monkeypatch.setattr(Texture, "create_from_image", create)
     image = CompressedImageData(4, 4, FORMAT, bytes(8), decoder=Mock(return_value=result))
-    with pytest.raises(ImageException, match="must return ImageData of size 4x4"):
+    with pytest.raises(ImageException, match="must return ImageData of size 4x4") as error:
         image.get_texture()
+    assert not isinstance(error.value, TextureError)
     create.assert_not_called()
 
 

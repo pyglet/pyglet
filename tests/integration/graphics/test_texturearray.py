@@ -3,7 +3,7 @@ import unittest
 import pytest
 
 from pyglet.enums import AddressMode, ComponentFormat, TextureFilter, TextureType
-from pyglet.image import ImageException
+from pyglet.graphics import TextureError
 
 from pyglet.graphics.texture import TextureArray, TextureArrayDepthExceeded
 from pyglet.image import ImageData, ImageGrid
@@ -165,9 +165,9 @@ def test_texture_array_create_for_images_options_and_capacity(test_window):
 @skip_graphics_api(GraphicsAPIGroups.GL2)
 def test_texture_array_rejects_incompatible_type_and_capacity(test_window):
     cls = TextureArray
-    with pytest.raises(ImageException, match='TYPE_2D_ARRAY'):
+    with pytest.raises(TextureError, match='TYPE_2D_ARRAY'):
         cls.create(2, 2, TextureType.TYPE_2D, context=test_window.context)
-    with pytest.raises(ImageException, match='Array depth'):
+    with pytest.raises(TextureError, match='Array depth'):
         cls.create(2, 2, max_depth=0, context=test_window.context)
     images = [ImageData(1, 1, 'RGBA', bytes(4)) for _ in range(2)]
     with pytest.raises(TextureArrayDepthExceeded):
@@ -203,5 +203,5 @@ def test_texturearray_create_from_image_forwards_positional_options(test_window,
 
 
 def test_texturearray_create_for_images_rejects_empty_images():
-    with pytest.raises(ImageException, match='At least one image'):
+    with pytest.raises(TextureError, match='At least one image'):
         TextureArray.create_for_images([])

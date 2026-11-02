@@ -6,6 +6,48 @@ import pyglet
 import pytest
 
 
+def test_texture_resource_cleanup_deletes_javascript_handle(webgl_window):
+    """Release the real WebGL texture through the cleanup hook used by garbage collection."""
+    gl = webgl_window.context.gl
+    texture = pyglet.graphics.Texture.create(1, 1, context=webgl_window.context)
+    handle = texture.handle
+    try:
+        texture.bind()
+        assert gl.isTexture(handle)
+        texture._delete_resource()
+        assert texture.handle is None
+        assert not gl.isTexture(handle)
+        texture.delete()
+        assert gl.getError() == gl.NO_ERROR
+    finally:
+        texture.delete()
+
+
+@pytest.mark.parametrize("fmt, expected_name", [("RGBA", "RGBA"), ("BGRA", "RGBA"), ("BGR", "RGB")])
+def test_pixel_format_normalizes_component_order(webgl_window, fmt, expected_name):
+    """Resolve supported WebGL enums for native and convertible image component orders."""
+    from pyglet.graphics.api.webgl.texture import _get_pixel_format
+
+    image = pyglet.image.ImageData(1, 1, fmt, bytes(len(fmt)))
+    pixel_format, data_type = _get_pixel_format(image)
+    assert pixel_format == getattr(webgl_window.context.gl, expected_name)
+    assert data_type == webgl_window.context.gl.UNSIGNED_BYTE
+
+
+def test_upload_rejects_unsupported_pixel_format(webgl_window):
+    """Reject an unsupported component layout without submitting invalid WebGL enums."""
+    from pyglet.graphics import TextureFormatError
+
+    texture = pyglet.graphics.Texture.create(1, 1, context=webgl_window.context)
+    try:
+        image = pyglet.image.ImageData(1, 1, "ABCDE", bytes(5))
+        with pytest.raises(TextureFormatError, match="Unsupported WebGL pixel format"):
+            texture.upload(image, 0, 0, 0)
+        assert webgl_window.context.gl.getError() == webgl_window.context.gl.NO_ERROR
+    finally:
+        texture.delete()
+
+
 def test_texture_array_creation_sets_distinct_sampler_filters(webgl_window):
     from pyglet.enums import TextureFilter
 

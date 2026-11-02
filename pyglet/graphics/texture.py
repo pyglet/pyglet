@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Generic, Literal, Protocol, TYPE_CHECKING, TypeVar, cast, overload
 
 import pyglet
+from pyglet.graphics import TextureError
 from pyglet.enums import AddressMode, ComponentFormat, TextureFilter, TextureType, GraphicsAPI
 from pyglet.graphics.resource import GraphicsResource, TextureKey
 from pyglet.graphics.api.base import SurfaceContextT
@@ -14,7 +15,6 @@ from pyglet.image.base import (
     _AbstractImageSequence,
     ImageData,
     ImageDataRegion,
-    ImageException,
     ImageGrid,
     _AbstractGrid,
     CompressionFormat,
@@ -27,11 +27,11 @@ if TYPE_CHECKING:
     from pyglet.customtypes import Buffer, DataTypes
 
 
-class TextureArraySizeExceeded(ImageException):
+class TextureArraySizeExceeded(TextureError):  # noqa: N818 - preserve the existing public exception name
     """Exception occurs ImageData dimensions are larger than the array supports."""
 
 
-class TextureArrayDepthExceeded(ImageException):
+class TextureArrayDepthExceeded(TextureError):  # noqa: N818 - preserve the existing public exception name
     """Exception occurs when depth has hit the maximum supported of the array."""
 
 
@@ -473,7 +473,7 @@ class Texture(_AbstractImage, GraphicsResource[Any, TextureKey], Generic[Surface
                 levels without initializing their contents.
         """
         if self.immutable:
-            raise ImageException(
+            raise TextureError(
                 "Immutable texture mipmap levels are fixed at creation. "
                 "Pass mipmap_levels to Texture.create()."
             )
@@ -481,10 +481,10 @@ class Texture(_AbstractImage, GraphicsResource[Any, TextureKey], Generic[Surface
         max_levels = self._compute_mipmap_count()
         target_levels = levels if levels is not None else max_levels
         if target_levels < 1:
-            raise ImageException("Mipmap levels must be at least 1.")
+            raise TextureError("Mipmap levels must be at least 1.")
         if target_levels > max_levels:
             msg = f"Mipmap levels cannot exceed {max_levels} for this texture size."
-            raise ImageException(msg)
+            raise TextureError(msg)
 
         if target_levels <= self._mipmap_levels and (not blank_data or 0 in self._valid_mipmaps):
             return self._mipmap_levels
@@ -530,10 +530,10 @@ class Texture(_AbstractImage, GraphicsResource[Any, TextureKey], Generic[Surface
         The ``level`` parameter specifies the mipmap level to upload to.
         """
         if level < 0:
-            raise ImageException("Mipmap level must be non-negative.")
+            raise TextureError("Mipmap level must be non-negative.")
         if level >= self._mipmap_levels:
             msg = f"Mipmap level {level} is not initialized. Call init_mipmaps or generate_mipmaps first."
-            raise ImageException(msg)
+            raise TextureError(msg)
         self._begin_upload(image)
 
         self._update_subregion(image, x, y, z, level=level)
@@ -582,7 +582,7 @@ class Texture(_AbstractImage, GraphicsResource[Any, TextureKey], Generic[Surface
         elif rotation == 270:
             bl, br, tr, tl = tl, bl, br, tr
         else:
-            raise ImageException("Only 90 degree rotations are supported.")
+            raise TextureError("Only 90 degree rotations are supported.")
         if rotation in (90, 270):
             transform.width, transform.height = transform.height, transform.width
         transform._set_tex_coords_order(bl, br, tr, tl)
@@ -818,7 +818,7 @@ class _Texture3DShared(_TextureSequenceItems[TRegion], Generic[TRegion, SurfaceC
                           context: SurfaceContextT | None = None) -> TTexture3D:
         """Create a one-layer texture from an image."""
         if tex_type != TextureType.TYPE_3D:
-            raise ImageException("Texture3D requires tex_type=TextureType.TYPE_3D.")
+            raise TextureError("Texture3D requires tex_type=TextureType.TYPE_3D.")
         return cls.create_for_images(
             [image_data], internal_format_size=internal_format_size, internal_format_type=image_data.data_type,
             filters=filters, address_mode=address_mode, anisotropic_level=anisotropic_level, context=context,
@@ -834,10 +834,10 @@ class _Texture3DShared(_TextureSequenceItems[TRegion], Generic[TRegion, SurfaceC
                  anisotropic_level: int = 0,
                  context: SurfaceContextT | None = None) -> TTexture3D:
         if not images:
-            raise ImageException("At least one image is required.")
+            raise TextureError("At least one image is required.")
         item_width, item_height = images[0].width, images[0].height
         if not all(image.width == item_width and image.height == item_height for image in images):
-            raise ImageException("Images do not have same dimensions.")
+            raise TextureError("Images do not have same dimensions.")
         texture = cast("TTexture3D", cls._create_for_images(
             images, internal_format_size, internal_format_type, filters,
             address_mode, anisotropic_level, context,
@@ -970,7 +970,7 @@ class _TextureArrayShared(_TextureSequenceItems[TArrayRegion], Generic[TArrayReg
                           context: SurfaceContextT | None = None) -> TTextureArray:
         """Create a one-layer texture from an image."""
         if tex_type != TextureType.TYPE_2D_ARRAY:
-            raise ImageException("TextureArray requires tex_type=TextureType.TYPE_2D_ARRAY.")
+            raise TextureError("TextureArray requires tex_type=TextureType.TYPE_2D_ARRAY.")
         return cls.create_for_images(
             [image_data], internal_format_size=internal_format_size, internal_format_type=image_data.data_type,
             filters=filters, address_mode=address_mode, anisotropic_level=anisotropic_level, context=context,
@@ -988,10 +988,10 @@ class _TextureArrayShared(_TextureSequenceItems[TArrayRegion], Generic[TArrayReg
                           *, max_depth: int | None = None) -> TTextureArray:
         """Create an array from equally sized images, with optional layer capacity."""
         if not images:
-            raise ImageException("At least one image is required.")
+            raise TextureError("At least one image is required.")
         item_width, item_height = images[0].width, images[0].height
         if not all(image.width == item_width and image.height == item_height for image in images):
-            raise ImageException("Images do not have same dimensions.")
+            raise TextureError("Images do not have same dimensions.")
         if max_depth is not None and max_depth < len(images):
             raise TextureArrayDepthExceeded("The images exceed the requested array capacity.")
         texture = cast("TTextureArray", cls.create(
