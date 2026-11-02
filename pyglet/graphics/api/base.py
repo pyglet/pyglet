@@ -5,13 +5,15 @@ import os
 import weakref
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Callable, NoReturn, Protocol, Sequence, get_type_hints
+from typing import TYPE_CHECKING, Any, NoReturn, TypeVar, get_type_hints
 
 from pyglet.enums import PixelFormat
 from pyglet.graphics import GraphicsBackendError, GraphicsIntegrationError
 from pyglet.util import debug_print
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from pyglet.config import SurfaceConfig
     from pyglet.graphics import Batch
     from pyglet.graphics.buffer import BufferRange
@@ -20,6 +22,7 @@ if TYPE_CHECKING:
     from pyglet.window import Window
 
 _debug_print = debug_print("debug_api")
+
 
 class BackendGlobalObject(ABC):  # Temp name for now.
     """A container for backend resources and information that are required throughout the code.
@@ -549,6 +552,9 @@ class SurfaceContext(ABC):  # Temp name for now.
     @abstractmethod
     def clear(self) -> None:
         """Clears the framebuffer."""
+
+
+SurfaceContextT = TypeVar("SurfaceContextT", bound=SurfaceContext)
 
 
 class UnavailableContextError(GraphicsBackendError):

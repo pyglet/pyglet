@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
     from pyglet.customtypes import RGBAColor
     from pyglet.customtypes import DataTypes
-    from pyglet.graphics.api.base import SurfaceContext
+    from pyglet.graphics.api.base import SurfaceContextT
     from pyglet.graphics.texture import CompressedTexture, Texture, TextureGrid, TextureSequence
 
 
@@ -585,8 +585,9 @@ class CompressedImageData(_AbstractImage):
         self.mipmap_data += [None] * (level - len(self.mipmap_data))
         self.mipmap_data[level - 1] = data
 
-    def create_texture(self, cls: type[CompressedTexture], *,
-                       context: SurfaceContext | None = None) -> Texture | CompressedTexture:
+    def create_texture(
+        self, cls: type[CompressedTexture[SurfaceContextT]], *, context: SurfaceContextT | None = None,
+    ) -> Texture[SurfaceContextT] | CompressedTexture[SurfaceContextT]:
         """Upload compressed data, or use the supplied software decoder.
 
         Capability is checked before allocating a GPU texture.

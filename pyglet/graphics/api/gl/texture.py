@@ -3,13 +3,12 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from ctypes import byref, Array, sizeof
-from typing import cast, Iterator, Sequence, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 import pyglet
 from pyglet.enums import TextureType, TextureFilter, ComponentFormat, AddressMode, GraphicsAPI
 from pyglet.graphics import GraphicsAPIError, UnsupportedBackendError
 from pyglet.graphics.api.gl import OpenGLSurfaceContext, GL_COMPRESSED_RGB8_ETC2
-from pyglet.graphics.api.base import SurfaceContext
 from pyglet.graphics.api.gl.gl import (
     GL_RED,
     GL_RG,
@@ -113,12 +112,14 @@ from pyglet.graphics.texture import PixelData, PixelReadback, Texture, UniformTe
     _TextureRegionShared, _Texture3DShared, _TextureArrayShared, TextureGrid
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator, Sequence
+
     from pyglet.customtypes import Buffer
     from pyglet.graphics.api.gl.framebuffer import GLFramebuffer
     from pyglet.graphics.resource import TextureKey
 
 
-class GLPixelReadback(PixelReadback):
+class GLPixelReadback(PixelReadback[OpenGLSurfaceContext]):
     """Context-owned resources and state handling for texture readback."""
 
     def __init__(self, context: OpenGLSurfaceContext) -> None:
@@ -338,7 +339,7 @@ def _get_pixel_format(image_data: ImageData) -> tuple[int, int]:
     return fmt, gl_type
 
 
-class GLTexture(Texture):
+class GLTexture(Texture[OpenGLSurfaceContext]):
     """An image loaded into GPU memory.
 
     Typically, you will get an instance of Texture by accessing calling
@@ -466,7 +467,7 @@ class GLTexture(Texture):
                           filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                           address_mode: AddressMode = AddressMode.REPEAT,
                           anisotropic_level: int = 0,
-                          context: SurfaceContext | None = None,
+                          context: OpenGLSurfaceContext | None = None,
                           ) -> GLTexture:
         """Create a Texture from image data.
 
@@ -489,7 +490,7 @@ class GLTexture(Texture):
         Returns:
             A currently bound texture.
         """
-        ctx = cast(OpenGLSurfaceContext, context or pyglet.graphics.api.core.current_context)
+        ctx = context or pyglet.graphics.api.core.current_context
 
         tex_id = GLuint()
         ctx.glGenTextures(1, byref(tex_id))
@@ -550,7 +551,7 @@ class GLTexture(Texture):
                blank_data: bool = True,
                immutable: bool = False,
                mipmap_levels: int = 1,
-               context: SurfaceContext | None = None) -> GLTexture:
+               context: OpenGLSurfaceContext | None = None) -> GLTexture:
         """Create a Texture.
 
         Create a Texture with the specified dimensions, and attributes.
@@ -586,7 +587,7 @@ class GLTexture(Texture):
         Returns:
             A currently bound texture.
         """
-        ctx = cast(OpenGLSurfaceContext, context or pyglet.graphics.api.core.current_context)
+        ctx = context or pyglet.graphics.api.core.current_context
 
         max_mipmap_levels = max(width, height).bit_length()
         if not 1 <= mipmap_levels <= max_mipmap_levels:
@@ -749,6 +750,8 @@ class GLTexture(Texture):
 class GLTextureRegion(_TextureRegionShared, GLTexture):
     """A rectangular region of a texture, presented as if it were a separate texture."""
 
+    region_class: type[GLTextureRegion]
+
     def __init__(self, x: int, y: int, z: int, width: int, height: int, owner: Texture):
         super().__init__(owner._context, width, height, owner.handle, owner.tex_type, owner.internal_format,
                          owner.internal_format_size, owner.internal_format_type, owner.filters, owner.address_mode,
@@ -763,7 +766,7 @@ class _GLLayeredTexture:
     """Backend operations shared by 3D and array textures."""
 
     _context: OpenGLSurfaceContext
-    _handle: int
+    _handle: int | None
     target: int
     _gl_internal_format: int
     internal_format: ComponentFormat
@@ -800,7 +803,8 @@ class _GLLayeredTexture:
                                       data)
 
 
-class GLTexture3D(_GLLayeredTexture, _Texture3DShared[GLTextureRegion], GLTexture, UniformTextureSequence[GLTextureRegion]):
+class GLTexture3D(_GLLayeredTexture, _Texture3DShared[GLTextureRegion, OpenGLSurfaceContext],
+                  GLTexture, UniformTextureSequence[GLTextureRegion]):
     """A texture with more than one image slice.
 
     Use the :py:meth:`create_for_images` or :py:meth:`create_for_image_grid`
@@ -808,7 +812,8 @@ class GLTexture3D(_GLLayeredTexture, _Texture3DShared[GLTextureRegion], GLTextur
     """
     item_width: int = 0
     item_height: int = 0
-    items: tuple
+    items: list[GLTextureRegion] | tuple[GLTextureRegion, ...]
+    region_class: type[GLTextureRegion] = GLTextureRegion
 
     def _allocate(self, data: None | Array):
         self._context.glTexImage3D(self.target, 0,
@@ -825,14 +830,14 @@ class GLTexture3D(_GLLayeredTexture, _Texture3DShared[GLTextureRegion], GLTextur
         return max(1, depth >> level)
 
     @classmethod
-    def _create_for_images(cls, images: Sequence[ImageData],
+    def _create_for_images(cls: type[GLTexture3D], images: Sequence[ImageData],
                  internal_format_size: int = 8,
                  internal_format_type: str = "b",
                  filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT,
                  anisotropic_level: int = 0,
-                 context: SurfaceContext | None = None) -> GLTexture3D:
-        ctx = cast("OpenGLSurfaceContext", context or pyglet.graphics.api.core.current_context)
+                 context: OpenGLSurfaceContext | None = None) -> GLTexture3D:
+        ctx = context or pyglet.graphics.api.core.current_context
         item_width = images[0].width
         item_height = images[0].height
         pixel_fmt = images[0].format
@@ -873,11 +878,16 @@ class GLTexture3D(_GLLayeredTexture, _Texture3DShared[GLTextureRegion], GLTextur
 class GLTextureArrayRegion(GLTextureRegion):
     """A region of a TextureArray, presented as if it were a separate texture."""
 
+    region_class: type[GLTextureArrayRegion]
+
     def __repr__(self):
         return f"{self.__class__.__name__}(handle={self._handle}, size={self.width}x{self.height}, layer={self.z})"
 
 
-class GLTextureArray(_GLLayeredTexture, _TextureArrayShared[GLTextureArrayRegion], GLTexture, UniformTextureSequence[GLTextureArrayRegion]):
+class GLTextureArray(_GLLayeredTexture, _TextureArrayShared[GLTextureArrayRegion, OpenGLSurfaceContext],
+                     GLTexture, UniformTextureSequence[GLTextureArrayRegion]):
+    """An OpenGL texture array with independently addressable image layers."""
+    region_class: type[GLTextureArrayRegion] = GLTextureArrayRegion
     items: list[GLTextureArrayRegion]
 
     def __init__(self, context: OpenGLSurfaceContext, width, height, tex_id, max_depth,
@@ -893,7 +903,7 @@ class GLTextureArray(_GLLayeredTexture, _TextureArrayShared[GLTextureArrayRegion
         self.items = []
 
     @classmethod
-    def create(cls, width: int, height: int,
+    def create(cls: type[GLTextureArray], width: int, height: int,
                tex_type: TextureType = TextureType.TYPE_2D_ARRAY,
                internal_format: ComponentFormat = ComponentFormat.RGBA,
                internal_format_size: int = 8,
@@ -904,12 +914,12 @@ class GLTextureArray(_GLLayeredTexture, _TextureArrayShared[GLTextureArrayRegion
                blank_data: bool = False,
                immutable: bool = False,
                mipmap_levels: int = 1,
-               context: SurfaceContext | None = None,
+               context: OpenGLSurfaceContext | None = None,
                *, max_depth: int = 256) -> GLTextureArray:
         """Create an empty texture array with capacity for ``max_depth`` layers."""
         if tex_type != TextureType.TYPE_2D_ARRAY:
             raise ImageException("TextureArray requires tex_type=TextureType.TYPE_2D_ARRAY.")
-        ctx = cast("OpenGLSurfaceContext", context or pyglet.graphics.api.core.current_context)
+        ctx = context or pyglet.graphics.api.core.current_context
         if not 1 <= max_depth <= ctx.info.MAX_ARRAY_TEXTURE_LAYERS:
             raise ImageException(f"Array depth must be between 1 and {ctx.info.MAX_ARRAY_TEXTURE_LAYERS}.")
         if immutable:
@@ -946,7 +956,6 @@ class GLTextureArray(_GLLayeredTexture, _TextureArrayShared[GLTextureArrayRegion
     def _get_mipmap_depth(self, level: int) -> int:
         return max(1, int(self.max_depth))
 
-GLTextureArray.region_class = GLTextureArrayRegion
 GLTextureArrayRegion.region_class = GLTextureArrayRegion
 
 
@@ -1114,7 +1123,7 @@ def _get_gl_compression_format(cf: CompressionFormat) -> int:
     msg = f"Unsupported compression format: {cf!r}"
     raise UnsupportedCompressedTextureError(msg)
 
-class GLCompressedTexture(CompressedTexture):
+class GLCompressedTexture(CompressedTexture[OpenGLSurfaceContext]):
     """A compressed texture created from CompressedImageData."""
 
     def __init__(self, context: OpenGLSurfaceContext, width: int, height: int,
@@ -1137,9 +1146,9 @@ class GLCompressedTexture(CompressedTexture):
         return self.supports_format(self._compression_fmt, self._context)
 
     @classmethod
-    def supports_format(cls, fmt: CompressionFormat, context: SurfaceContext | None = None) -> bool:
+    def supports_format(cls, fmt: CompressionFormat, context: OpenGLSurfaceContext | None = None) -> bool:
         """Check compressed format support without allocating a texture."""
-        ctx = cast("OpenGLSurfaceContext", context or pyglet.graphics.api.core.current_context)
+        ctx = context or pyglet.graphics.api.core.current_context
         try:
             internal_format = _get_gl_compression_format(fmt)
         except UnsupportedCompressedTextureError:
@@ -1197,7 +1206,7 @@ class GLCompressedTexture(CompressedTexture):
                           filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                           address_mode: AddressMode = AddressMode.REPEAT,
                           anisotropic_level: int = 0,
-                          context: SurfaceContext | None = None,
+                          context: OpenGLSurfaceContext | None = None,
                           ) -> GLCompressedTexture:
         """Create a Texture from image data.
 
@@ -1218,7 +1227,7 @@ class GLCompressedTexture(CompressedTexture):
         Returns:
             A currently bound texture.
         """
-        ctx = cast("OpenGLSurfaceContext", context or pyglet.graphics.api.core.current_context)
+        ctx = context or pyglet.graphics.api.core.current_context
         if not cls.supports_format(image_data.fmt, ctx):
             msg = f"Unsupported compressed texture format {image_data.fmt!r}."
             raise UnsupportedCompressedTextureError(msg)
