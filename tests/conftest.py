@@ -1,3 +1,4 @@
+pytest_plugins = ('tests.base.fixtures',)
 
 
 def pytest_addoption(parser):
