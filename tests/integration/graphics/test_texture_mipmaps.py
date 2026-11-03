@@ -51,6 +51,21 @@ class TestTextureMipmaps2D(unittest.TestCase):
         self.assertEqual(texture.mipmap_count, 4)
         self.assertEqual(texture.valid_mipmaps, (0, 1, 2, 3))
 
+    def test_region_mipmaps_follow_owner(self):
+        texture = Texture.create(8, 4, blank_data=False)
+        region = texture.get_region(0, 0, 4, 2)
+        nested = region.get_region(0, 0, 2, 1)
+
+        self.assertEqual(region.init_mipmaps(levels=3), 3)
+        self.assertEqual(texture.mipmap_count, 3)
+        self.assertEqual(nested.mipmap_count, 3)
+        self.assertEqual(region.valid_mipmaps, texture.valid_mipmaps)
+
+        nested.generate_mipmaps()
+        self.assertEqual(texture.mipmap_count, 4)
+        self.assertEqual(region.mipmap_count, 4)
+        self.assertEqual(nested.valid_mipmaps, (0, 1, 2, 3))
+
     def test_texture2d_init_errors(self):
         texture = Texture.create(4, 4, blank_data=False)
         with self.assertRaisesRegex(Exception, "at least 1"):

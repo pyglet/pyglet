@@ -1,8 +1,9 @@
 import unittest
 
 import pyglet
+import pytest
 
-from pyglet.enums import ComponentFormat
+from pyglet.enums import AddressMode, ComponentFormat, TextureFilter, TextureType
 from pyglet.graphics import Texture, PixelData, TextureAtlas
 from pyglet.image import ImageData
 from pyglet.window import Window
@@ -129,3 +130,29 @@ def test_texture_regions_have_their_root_texture_as_owner(test_window):
     assert nested_region.owner is texture
     assert atlas.texture.owner is atlas.texture
     assert atlas_region.owner is atlas.texture
+
+
+@pytest.mark.parametrize('use_region', [False, True])
+def test_texture2d_create_from_image_forwards_positional_options(test_window, use_region):
+    test_window.switch_to()
+    if use_region:
+        source = ImageData(4, 4, 'RGBA', bytes(range(64))).get_region(1, 1, 2, 3)
+        expected = b''.join((bytes(range(start, start + 8)) for start in (20, 36, 52)))
+    else:
+        expected = bytes((17, 53, 89, 255)) * 6
+        source = ImageData(2, 3, 'RGBA', expected)
+    filters = (TextureFilter.NEAREST, TextureFilter.LINEAR)
+    cls = Texture
+    texture = cls.create_from_image(
+        source, TextureType.TYPE_2D, 8, filters, AddressMode.CLAMP_TO_EDGE, 0, test_window.context,
+    )
+    try:
+        assert isinstance(texture, cls)
+        assert texture.tex_type == TextureType.TYPE_2D
+        assert texture.filters == filters
+        assert texture.address_mode == AddressMode.CLAMP_TO_EDGE
+        assert texture._context is test_window.context
+        assert (texture.width, texture.height) == (2, 3)
+        assert bytes(texture.fetch().get_bytes('RGBA', 8)) == expected
+    finally:
+        texture.delete()

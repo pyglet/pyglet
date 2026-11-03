@@ -40,7 +40,7 @@ from pyglet.graphics.state import (
     _expand_states_in_order,
 )
 from pyglet.graphics.vertexstorage import VertexStorage, VertexStorageShared
-from pyglet.graphics.api.base import SurfaceContext, BackendRenderer
+from pyglet.graphics.api.base import SurfaceContext, SurfaceContextT, BackendRenderer
 from pyglet.graphics import MissingAttributeError
 
 if TYPE_CHECKING:
@@ -105,7 +105,6 @@ class DrawPass:
         return self
 
 
-SurfaceContextT = TypeVar("SurfaceContextT", bound=SurfaceContext)
 BackendContextT = TypeVar("BackendContextT")
 
 

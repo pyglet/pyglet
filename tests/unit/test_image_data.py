@@ -1,4 +1,35 @@
+import pytest
+
 from pyglet.image import ImageData
+
+
+@pytest.mark.parametrize("source_format", ["RGB", "BGR"])
+@pytest.mark.parametrize("target_format", ["RGBA", "BGRA", "ARGB"])
+@pytest.mark.parametrize("source_pitch", [6, 8, -8])
+def test_rgb_expansion_adds_opaque_alpha(source_format, target_format, source_pitch):
+    pixels = [(0, 20, 30), (10, 40, 50), (20, 60, 70), (40, 80, 90)]
+    rows = []
+    for row in (pixels[:2], pixels[2:]):
+        data = bytes(value for pixel in row for value in (pixel if source_format == "RGB" else pixel[::-1]))
+        rows.append(data + bytes(abs(source_pitch) - 6))
+    if source_pitch < 0:
+        rows.reverse()
+    image = ImageData(2, 2, source_format, b"".join(rows), source_pitch)
+
+    expected = bytes(dict(zip("RGBA", (*pixel, 255)))[channel]
+                     for pixel in pixels for channel in target_format)
+    assert image.get_bytes(target_format, 8) == expected
+
+
+def test_rgba_conversion_preserves_existing_alpha():
+    image = ImageData(2, 1, "RGBA", bytes((10, 20, 30, 0, 40, 50, 60, 127)))
+    assert image.get_bytes("BGRA", 8) == bytes((30, 20, 10, 0, 60, 50, 40, 127))
+
+
+@pytest.mark.parametrize("source_format", ["R", "L", "I"])
+def test_single_channel_expansion_preserves_replication(source_format):
+    image = ImageData(2, 1, source_format, bytes((0, 127)))
+    assert image.get_bytes("RGBA", 8) == bytes((0, 0, 0, 0, 127, 127, 127, 127))
 
 
 def test_rgb_packed_from_rgba():
