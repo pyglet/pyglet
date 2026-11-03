@@ -672,7 +672,7 @@ class GLTFModelDecoder(ModelDecoder):
 
     def decode(self, filename, file):
         gltf = load_gltf(filename, file)
-        return gltf.scenes[0]
+        return gltf.default_scene
 
 
 def get_decoders():

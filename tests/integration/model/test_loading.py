@@ -8,6 +8,8 @@ import pytest
 import pyglet
 
 from pyglet.util import DecodeException
+from pyglet.math import Vec4
+from pyglet.model.codecs.gltf import GLTFModelDecoder
 
 test_data_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'data'))
 
@@ -81,3 +83,28 @@ def test_resource_module():
 
     scene = pyglet.resource.scene('logo3d.obj')
     assert isinstance(scene, pyglet.model.Scene)
+
+
+@pytest.mark.parametrize('selected', [None, 0, 1, 2])
+@pytest.mark.parametrize('explicit_decoder', [False, True])
+def test_loads_declared_scene(selected, explicit_decoder):
+    binary = struct.pack('<9f', 0, 0, 0, 1, 0, 0, 0, 1, 0)
+    data = {
+        'asset': {'version': '2.0'},
+        'buffers': [{'byteLength': len(binary), 'uri': 'data:application/octet-stream;base64,' + base64.b64encode(binary).decode()}],
+        'bufferViews': [{'buffer': 0, 'byteLength': len(binary)}],
+        'accessors': [{'bufferView': 0, 'componentType': 5126, 'count': 3, 'type': 'VEC3', 'min': [0, 0, 0], 'max': [1, 1, 0]}],
+        'meshes': [{'primitives': [{'attributes': {'POSITION': 0}}]}],
+        'nodes': [{'name': f'node{i}', 'mesh': 0, 'translation': [10 * i, 0, 0]} for i in range(3)],
+        'scenes': [{'name': f'scene{i}', 'nodes': [i]} for i in range(3)],
+    }
+    if selected is not None:
+        data['scene'] = selected
+    expected = selected or 0
+    decoder = GLTFModelDecoder() if explicit_decoder else None
+    scene = pyglet.model.load('scenes.gltf', io.StringIO(json.dumps(data)), decoder=decoder)
+    assert scene.name == f'scene{expected}'
+    assert len(scene.nodes) == 1 and scene.nodes[0].name == f'node{expected}'
+    vertex = scene.nodes[0].mesh.primitives[0].attributes[0].array[3:6]
+    transformed = scene.nodes[0].global_transform @ Vec4(*vertex, 1)
+    assert tuple(transformed) == (10 * expected + 1, 0, 0, 1)
