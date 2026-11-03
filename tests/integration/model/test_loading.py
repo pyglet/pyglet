@@ -3,6 +3,7 @@ import io
 import json
 import struct
 import os
+from types import SimpleNamespace
 
 import pytest
 import pyglet
@@ -12,6 +13,7 @@ from pyglet.math import Vec4
 from pyglet.enums import AddressMode
 from pyglet.image import ImageData
 from pyglet.image.codecs.png import PNGImageEncoder
+from pyglet.model.codecs import ModelDecodeException
 from pyglet.model.codecs.gltf import GLTFModelDecoder, Image, load_gltf
 
 test_data_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'data'))
@@ -107,7 +109,8 @@ def test_loads_declared_scene(selected, explicit_decoder):
     decoder = GLTFModelDecoder() if explicit_decoder else None
     scene = pyglet.model.load('scenes.gltf', io.StringIO(json.dumps(data)), decoder=decoder)
     assert scene.name == f'scene{expected}'
-    assert len(scene.nodes) == 1 and scene.nodes[0].name == f'node{expected}'
+    assert len(scene.nodes) == 1
+    assert scene.nodes[0].name == f'node{expected}'
     vertex = scene.nodes[0].mesh.primitives[0].attributes[0].array[3:6]
     transformed = scene.nodes[0].global_transform @ Vec4(*vertex, 1)
     assert tuple(transformed) == (10 * expected + 1, 0, 0, 1)
@@ -178,8 +181,6 @@ def test_texture_selects_declared_sampler_or_default(tmp_path, monkeypatch, samp
 
 
 def test_uri_image_has_no_buffer_view():
-    from types import SimpleNamespace
-
     image = Image({'uri': 'texture.png'}, SimpleNamespace(buffer_views=[]))
     assert image.buffer_view is None
     assert image.uri == 'texture.png'
@@ -209,8 +210,10 @@ def test_optional_metallic_roughness_defaults(properties):
     model = load_triangle(properties)
     material = model.materials[0]
     assert tuple(material.base_color_factor) == (1, 1, 1, 1)
-    assert material.metalic_factor == 1 and material.roughness_factor == 1
-    assert material.base_color_texture is None and material.metallic_roughness_texture is None
+    assert material.metalic_factor == 1
+    assert material.roughness_factor == 1
+    assert material.base_color_texture is None
+    assert material.metallic_roughness_texture is None
     assert model.meshes[0].primitives[0].material is material
     assert list(model.meshes[0].primitives[0].attributes[0].array) == [0, 0, 0, 1, 0, 0, 0, 1, 0]
     assert material.double_sided is properties.get('doubleSided', False)
@@ -223,7 +226,8 @@ def test_explicit_metallic_roughness_values_are_preserved():
         'baseColorFactor': [0.1, 0.2, 0.3, 0.4], 'metallicFactor': 0.25, 'roughnessFactor': 0.75,
     }}).materials[0]
     assert material.base_color_factor == [0.1, 0.2, 0.3, 0.4]
-    assert material.metalic_factor == 0.25 and material.roughness_factor == 0.75
+    assert material.metalic_factor == 0.25
+    assert material.roughness_factor == 0.75
 
 
 def triangle_data(binary_buffer):
@@ -246,7 +250,7 @@ def triangle_data(binary_buffer):
     return struct.pack('<4sII', b'glTF', 2, 12 + len(chunks)) + chunks
 
 
-@pytest.mark.parametrize('extension,text_stream', [('glb', False), ('GLB', False), ('gltf', False), ('gltf', True)])
+@pytest.mark.parametrize(('extension', 'text_stream'), [('glb', False), ('GLB', False), ('gltf', False), ('gltf', True)])
 def test_public_model_load_uses_borrowed_stream(extension, text_stream):
     payload = triangle_data(extension.lower() == 'glb')
     stream = io.StringIO(payload.decode()) if text_stream else io.BytesIO(payload)
@@ -269,7 +273,6 @@ def test_owned_resource_is_opened_once_and_closed(monkeypatch, extension, invali
 
     monkeypatch.setattr(pyglet.resource, 'file', open_resource)
     if invalid:
-        from pyglet.model.codecs import ModelDecodeException
         with pytest.raises(ModelDecodeException):
             load_gltf('triangle.' + extension)
     else:
@@ -280,8 +283,6 @@ def test_owned_resource_is_opened_once_and_closed(monkeypatch, extension, invali
 
 
 def test_invalid_borrowed_json_is_left_open():
-    from pyglet.model.codecs import ModelDecodeException
-
     stream = io.StringIO('{')
     with pytest.raises(ModelDecodeException):
         load_gltf('bad.gltf', stream)
@@ -308,8 +309,10 @@ def test_loads_scenes_without_geometry(tmp_path, monkeypatch, with_nodes, from_s
     if with_nodes:
         root, = scene.nodes
         child, = root.children
-        assert root.name == 'root' and child.name == 'child'
-        assert root.mesh is None and child.mesh is None
+        assert root.name == 'root'
+        assert child.name == 'child'
+        assert root.mesh is None
+        assert child.mesh is None
         assert tuple(child.global_transform @ Vec4(0, 0, 0, 1)) == (5, 7, 9, 1)
     else:
         assert scene.nodes == []
