@@ -9,19 +9,18 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any, NoReturn, Protocol, Sequence
+from typing import TYPE_CHECKING, Any, Generic, NoReturn, Protocol, Sequence, TypeVar, cast
 
 from pyglet.graphics import allocation
+from pyglet.graphics.api.base import SurfaceContextT
 from pyglet.graphics.attributes import AttributeFormat, AttributeView, DataTypeTuple, GraphicsAttribute, VertexLayout
 
 if TYPE_CHECKING:
     from ctypes import Array
 
     from pyglet.customtypes import DataTypes
-    from pyglet.graphics.api.base import SurfaceContext
-    from pyglet.graphics.buffer import AttributeBufferObject, IndexedBufferObject
     from pyglet.graphics.draw import Batch
-    from pyglet.graphics.vertexdomain import VertexDomain
+    from pyglet.graphics.vertexdomain import IndexedVertexDomain, VertexDomain
 
 
 def _nearest_pow2(v: int) -> int:
@@ -37,7 +36,7 @@ def _nearest_pow2(v: int) -> int:
 
 
 def _make_attribute_property(name: str) -> property:
-    def _attribute_getter(self: Any) -> Array[float | int]:
+    def _attribute_getter(self: Any) -> Array[Any]:
         stream = self.domain.attrib_name_buffers[name]
         region = stream.get_attribute_region(name, self.start, self.count)
         stream.invalidate_attribute_region(name, self.start, self.count)
@@ -50,8 +49,41 @@ def _make_attribute_property(name: str) -> property:
     return property(_attribute_getter, _attribute_setter)
 
 
+class StreamBuffer(Protocol):
+    """Buffer operations shared by host-backed and persistently mapped streams."""
+
+    size: int
+    stride: int
+    element_count: int
+
+    @property
+    def element_size(self) -> int: ...
+
+    def bind(self) -> None: ...
+    def unbind(self) -> None: ...
+    def commit(self) -> None: ...
+    def resize(self, size: int) -> None: ...
+    def get_region(self, start: int, count: int) -> Any: ...
+    def set_region(self, start: int, count: int, data: Sequence[float | int]) -> None: ...
+    def invalidate_region(self, start: int, count: int) -> None: ...
+
+
+class IndexBuffer(StreamBuffer, Protocol):
+    """A stream buffer that can copy index ranges in place."""
+
+    def copy_region(self, dst: int, src: int, count: int) -> None: ...
+
+
+GraphicsAttributeT = TypeVar('GraphicsAttributeT', bound=GraphicsAttribute)
+IndexBufferT = TypeVar('IndexBufferT', bound=IndexBuffer)
+
+
 class Stream(ABC):
     """A container that handles a set of buffers used by domains."""
+
+    _capacity: int
+    allocator: allocation.Allocator
+    buffers: list[StreamBuffer]
 
     def __init__(self, size: int) -> None:
         """Initialize the stream and create an allocator.
@@ -125,13 +157,15 @@ class Stream(ABC):
     def set_region(self, start: int, count: int, data: Any) -> None: ...
 
 
-class VertexStream(Stream):
+class VertexStream(Stream, Generic[SurfaceContextT, GraphicsAttributeT]):
     """A stream of buffers used with per-vertex attributes."""
-    attribute_layouts: dict[str, GraphicsAttribute]
-    attrib_name_buffers: dict[str, AttributeBufferObject]
+    attribute_layouts: dict[str, GraphicsAttributeT]
+    attrib_name_buffers: dict[str, StreamBuffer]
     attribute_formats: dict[str, AttributeFormat]
+    _ctx: SurfaceContextT
+    _property_dict: dict[str, property]
 
-    def __init__(self, ctx: SurfaceContext, initial_size: int, attrs: Sequence[AttributeFormat], *, divisor: int = 0):
+    def __init__(self, ctx: SurfaceContextT, initial_size: int, attrs: Sequence[AttributeFormat], *, divisor: int = 0) -> None:
         super().__init__(initial_size)
         self._ctx = ctx
         self.attribute_formats = {attribute.name: attribute for attribute in attrs}
@@ -141,10 +175,10 @@ class VertexStream(Stream):
         self._property_dict = {}
         self._allocate_buffers()
 
-    def get_buffer(self, size: int, attribute: GraphicsAttribute) -> AttributeBufferObject:
+    def get_buffer(self, size: int, attribute: GraphicsAttributeT) -> StreamBuffer:
         raise NotImplementedError
 
-    def get_attribute_layout(self, attribute: AttributeFormat, view: AttributeView) -> GraphicsAttribute:
+    def get_attribute_layout(self, attribute: AttributeFormat, view: AttributeView) -> GraphicsAttributeT:
         raise NotImplementedError
 
     def _create_separate_buffers(self, attributes: Sequence[AttributeFormat]) -> None:
@@ -197,6 +231,7 @@ class VertexStream(Stream):
         *,
         strict: bool = False,
     ) -> None:
+        names: Iterable[str]
         if attrs is None:
             dst_names = set(dst_stream.attrib_name_buffers)
             src_names = set(self.attrib_name_buffers)
@@ -219,21 +254,25 @@ class VertexStream(Stream):
         return f'{self.__class__.__name__}(attributes={list(self.attribute_formats.values())}, alloc={self.allocator})'
 
 
-class InstanceStream(VertexStream):
+class InstanceStream(VertexStream[SurfaceContextT, GraphicsAttributeT]):
     """A stream of buffers used with per-instance attributes."""
 
 
-class IndexStream(Stream):
+class IndexStream(Stream, Generic[SurfaceContextT, IndexBufferT]):
     """A stream that manages an index buffer for a domain."""
 
-    def __init__(self, ctx: SurfaceContext, data_type: DataTypes, initial_elems: int):
+    ctx: SurfaceContextT
+    data_type: DataTypes
+    buffer: IndexBufferT
+
+    def __init__(self, ctx: SurfaceContextT, data_type: DataTypes, initial_elems: int) -> None:
         super().__init__(initial_elems)
         self.ctx = ctx
         self.data_type = data_type
         self.buffer = self._create_buffer()
         self.buffers = [self.buffer]
 
-    def _create_buffer(self) -> IndexedBufferObject:
+    def _create_buffer(self) -> IndexBufferT:
         raise NotImplementedError
 
     def commit(self) -> None:
@@ -242,8 +281,9 @@ class IndexStream(Stream):
     def get_region(self, start: int, count: int) -> Any:
         return self.buffer.get_region(start, count)
 
+    @abstractmethod
     def bind_into(self, vao: Any) -> None:
-        self.buffer.bind_to_index_buffer()
+        """Bind this stream's index buffer using the backend's vertex-input API."""
 
     def set_region(self, start: int, count: int, data: Any) -> None:
         self.buffer.set_region(start, count, data)
@@ -267,12 +307,18 @@ class VertexInputBinding(Protocol):
         """Commit pending data for streams used by this input state."""
 
 
-class VertexArrayBinding:
+StreamT = TypeVar('StreamT', bound=Stream)
+VertexArrayT = TypeVar('VertexArrayT', bound=VertexArrayProtocol | None)
+
+
+class VertexArrayBinding(Generic[SurfaceContextT, StreamT, VertexArrayT]):
     """A wrapper for vertex-input state that binds streams."""
 
-    streams: list[VertexStream | InstanceStream | IndexStream]
+    streams: Sequence[StreamT]
+    _ctx: SurfaceContextT
+    vao: VertexArrayT
 
-    def __init__(self, ctx: SurfaceContext, streams: list[VertexStream | InstanceStream | IndexStream]):
+    def __init__(self, ctx: SurfaceContextT, streams: Sequence[StreamT]) -> None:
         self._ctx = ctx
         self.streams = streams
         self.vao = self._create_vao()
@@ -286,7 +332,8 @@ class VertexArrayBinding:
         for stream in self.streams:
             stream.commit()
 
-    def _create_vao(self) -> VertexArrayProtocol: ...
+    def _create_vao(self) -> VertexArrayT:
+        raise NotImplementedError
 
     def _link(self) -> None:
         """Link all streams to the vertex-input object."""
@@ -334,11 +381,16 @@ class VertexStorageBinding:
 class VertexStreamPool:
     """Own compatible attribute buffers shared by multiple vertex streams."""
 
+    chunk_size: int
+    _attribute_buffers: dict[tuple[str, int, str, bool, int], StreamBuffer]
+    _streams: list[VertexStream]
+    _allocator: allocation.Allocator | None
+
     def __init__(self, chunk_size: int) -> None:
         self.chunk_size = chunk_size
-        self._attribute_buffers: dict[tuple[str, int, str, bool, int], Any] = {}
-        self._streams: list[VertexStream] = []
-        self._allocator: allocation.Allocator | None = None
+        self._attribute_buffers = {}
+        self._streams = []
+        self._allocator = None
 
     def attach_domain(self, domain: VertexDomain) -> allocation.ChunkAllocator:
         """Share compatible buffers with a domain's existing vertex stream."""
@@ -349,7 +401,8 @@ class VertexStreamPool:
         return attribute.key
 
     def _attach_stream(self, domain: VertexDomain) -> allocation.ChunkAllocator:
-        stream = domain.vertex_buffers
+        # Backends initialize vertex_buffers when creating the domain's streams.
+        stream = cast('VertexStream', domain.vertex_buffers)
         if self._allocator is None:
             self._allocator = stream.allocator
         else:
@@ -465,7 +518,7 @@ class VertexStorage:
         self._bind_domain(domain, vertex_stream, index_stream, vertex_stream, index_stream)
 
     def _attach_vertex_stream(self, domain: VertexDomain) -> VertexStream:
-        vertex_stream = domain.vertex_buffers
+        vertex_stream = cast('VertexStream', domain.vertex_buffers)
         self._vertex_streams.append(vertex_stream)
         return vertex_stream
 
@@ -534,21 +587,25 @@ class VertexStorageShared(VertexStorage):
     def attach_domain(self, domain: VertexDomain) -> None:
         """Attach a domain to this storage's compatible buffer pools."""
         vertex_allocator = self._vertex_stream_pool.attach_domain(domain)
-        index_stream, index_allocator = self._attach_index_stream(domain)
-        self._bind_domain(domain, domain.vertex_buffers, index_stream, vertex_allocator, index_allocator)
+        index_stream, index_allocator = self._attach_shared_index_stream(domain)
+        vertex_stream = cast('VertexStream', domain.vertex_buffers)
+        self._bind_domain(domain, vertex_stream, index_stream, vertex_allocator, index_allocator)
 
-    def _attach_index_stream(self, domain: VertexDomain) -> tuple[IndexStream | None, allocation.ChunkAllocator | None]:
+    def _attach_shared_index_stream(self, domain: VertexDomain) -> tuple[IndexStream | None, allocation.ChunkAllocator | None]:
         previous_index_stream = getattr(domain, 'index_stream', None)
         if previous_index_stream is None:
             return None, None
-        assert domain.index_type is not None
+        indexed_domain = cast('IndexedVertexDomain', domain)
+        assert indexed_domain.index_type is not None
 
-        index_stream = self._shared_index_streams.setdefault(domain.index_type, previous_index_stream)
+        index_stream = self._shared_index_streams.setdefault(indexed_domain.index_type, previous_index_stream)
         if index_stream is previous_index_stream:
             self._index_streams.append(index_stream)
         if index_stream is not previous_index_stream:
-            domain.index_stream = index_stream
-            domain._streams = [index_stream if stream is previous_index_stream else stream for stream in domain._streams]
+            indexed_domain.index_stream = index_stream
+            indexed_domain._streams = [
+                index_stream if stream is previous_index_stream else stream for stream in indexed_domain._streams
+            ]
         allocator = allocation.ChunkAllocator(
             self.chunk_size, index_stream.alloc, index_stream.allocator.dealloc,
         )

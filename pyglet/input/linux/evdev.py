@@ -6,6 +6,8 @@ import ctypes
 import select
 import warnings
 import threading
+from collections.abc import Iterable
+from typing import TYPE_CHECKING, Protocol, TextIO, cast
 
 from ctypes import c_uint16 as _u16
 from ctypes import c_int16 as _s16
@@ -19,17 +21,21 @@ import pyglet
 from .evdev_constants import *
 from pyglet.app.linux import LinuxSelectDevice
 from pyglet.libs.linux.ioctl import _IOR, _IOR_str, _IOR_len, _IOW
-from pyglet.input.base import Device, RelativeAxis, AbsoluteAxis, Button, Joystick, Controller
+from pyglet.input.base import Control, Device, RelativeAxis, AbsoluteAxis, Button, Joystick, Controller
 from pyglet.input.base import DeviceOpenException, ControllerManager
 from pyglet.input.controller import get_mapping, Relation, create_guid
 
+if TYPE_CHECKING:
+    from pyglet.display.base import Display
+    from pyglet.window import Window
+
 try:
-    from os import readv as _readv
+    from os import readv as _readv  # type: ignore[attr-defined]  # Linux-only API.
 except ImportError:
     # Workaround for missing os.readv in PyPy
     c = pyglet.lib.load_library('c')
 
-    def _readv(fd, buffers):
+    def _readv(fd: int, buffers: ctypes.Array[InputEvent]) -> int:  # type: ignore[misc]  # ctypes-specific fallback signature.
         return c.read(fd, buffers, 3072)
 
 
@@ -51,6 +57,9 @@ class EvdevAbsoluteAxis(AbsoluteAxis, _EvdevInfo):
 
 class EvdevRelativeAxis(RelativeAxis, _EvdevInfo):
     pass
+
+
+EvdevControl = EvdevButton | EvdevAbsoluteAxis | EvdevRelativeAxis
 
 
 # Structures from /linux/blob/master/include/uapi/linux/input.h
@@ -190,21 +199,21 @@ EVIOCGKEY = _IOR_len('E', 0x18)
 EVIOCSFF = _IOW('E', 0x80, FFEvent)
 
 
-def EVIOCGBIT(fileno, ev, buffer):
+def EVIOCGBIT(fileno: int, ev: int, buffer: ctypes.Array[_c_byte]) -> ctypes.Array[_c_byte]:
     return _IOR_len('E', 0x20 + ev)(fileno, buffer)
 
 
-def EVIOCGABS(fileno, ev, buffer=InputABSInfo()):
+def EVIOCGABS(fileno: int, ev: int, buffer: InputABSInfo = InputABSInfo()) -> InputABSInfo:
     return _IOR_len('E', 0x40 + ev)(fileno, buffer)
 
 
-def get_key_state(fileno, event_code, buffer=KeyMaxArray()):
+def get_key_state(fileno: int, event_code: int, buffer: ctypes.Array[_c_byte] = KeyMaxArray()) -> bool:
     buffer = EVIOCGKEY(fileno, buffer)
     return bool(buffer[event_code // 8] & (1 << (event_code % 8)))
 
 
-def get_set_bits(bytestring):
-    bits = set()
+def get_set_bits(bytestring: Iterable[int]) -> set[int]:
+    bits: set[int] = set()
     j = 0
     for byte in bytestring:
         for i in range(8):
@@ -237,7 +246,8 @@ _rel_names = {
 }
 
 
-def _create_control(fileno, event_type, event_code):
+def _create_control(fileno: int, event_type: int, event_code: int) -> EvdevControl | None:
+    control: EvdevControl
     if event_type == EV_ABS:
         raw_name = abs_raw_names.get(event_code, f'EV_ABS({event_code:x})')
         name = _abs_names.get(event_code)
@@ -245,7 +255,8 @@ def _create_control(fileno, event_type, event_code):
         value = absinfo.value
         minimum = absinfo.minimum
         maximum = absinfo.maximum
-        control = EvdevAbsoluteAxis(name, minimum, maximum, raw_name, inverted=name == 'hat_y')
+        # Unrecognized axes have no standardized name; Control accepts None.
+        control = EvdevAbsoluteAxis(name, minimum, maximum, raw_name, inverted=name == 'hat_y')  # type: ignore[arg-type]
         control.value = value
     elif event_type == EV_REL:
         raw_name = rel_raw_names.get(event_code, f'EV_REL({event_code:x})')
@@ -273,11 +284,36 @@ event_types = {
 }
 
 
+class _Poller(Protocol):
+    def register(self, fd: int, eventmask: int) -> None: ...
+    def unregister(self, fd: int) -> None: ...
+    def poll(self, timeout: int) -> list[tuple[int, int]]: ...
+
+
+class _SelectEventLoop(Protocol):
+    select_devices: set[LinuxSelectDevice]
+
+
 class EvdevDevice(LinuxSelectDevice, Device):
     _fileno: int | None
-    _poll: "select.poll | None"
+    _poll: _Poller
+    _filename: str
+    _id: InputID
+    id_bustype: int
+    id_vendor: str
+    id_product: str
+    id_version: int
+    phys: bytes | str
+    uniq: bytes | str
+    controls: list[EvdevControl]
+    control_map: dict[tuple[int, int], EvdevControl]
+    ff_types: list[int]
+    _event_size: int
+    _event_buffer: ctypes.Array[InputEvent]
+    _syn_dropped: bool
+    _event_queue: list[InputEvent]
 
-    def __init__(self, display, filename):
+    def __init__(self, display: Display | None, filename: str) -> None:
         self._filename = filename
 
         fileno = os.open(filename, os.O_RDONLY)
@@ -288,7 +324,7 @@ class EvdevDevice(LinuxSelectDevice, Device):
         self.id_product = hex(self._id.product)
         self.id_version = self._id.version
 
-        name = EVIOCGNAME(fileno)
+        name: str | bytes = EVIOCGNAME(fileno)
         try:
             name = name.decode('utf-8')
         except UnicodeDecodeError:
@@ -331,34 +367,34 @@ class EvdevDevice(LinuxSelectDevice, Device):
         self.controls.sort(key=lambda ctrl: ctrl.event_code)
         os.close(fileno)
 
-        self._poll = select.poll()
+        self._poll = select.poll()  # type: ignore[attr-defined]  # Linux-only API.
         self._event_size = ctypes.sizeof(InputEvent)
         self._event_buffer = (InputEvent * 64)()
         self._syn_dropped = False
         self._event_queue = []
 
-        super().__init__(display, name)
+        super().__init__(display, cast(str, name))
 
     @property
-    def connected(self):
+    def connected(self) -> bool:  # type: ignore[override]  # Connection status is read from the device path.
         return os.path.exists(self._filename)
 
-    def get_guid(self):
+    def get_guid(self) -> str:
         """Get the device's SDL2 style GUID string"""
         _id = self._id
         return create_guid(_id.bustype, _id.vendor, _id.product, _id.version, self.name, 0, 0)
 
-    def open(self, window=None, exclusive=False):
+    def open(self, window: Window | None = None, exclusive: bool = False) -> None:
         try:
-            self._fileno = os.open(self._filename, os.O_RDWR | os.O_NONBLOCK)
-            self._poll.register(self._fileno, select.POLLIN | select.POLLPRI)
+            self._fileno = os.open(self._filename, os.O_RDWR | os.O_NONBLOCK)  # type: ignore[attr-defined]  # Linux-only API.
+            self._poll.register(self._fileno, select.POLLIN | select.POLLPRI)  # type: ignore[attr-defined]  # Linux-only API.
         except OSError as e:
             raise DeviceOpenException(e)
 
-        pyglet.app.platform_event_loop.select_devices.add(self)
+        cast('_SelectEventLoop', pyglet.app.platform_event_loop).select_devices.add(self)
         super().open(window, exclusive)
 
-    def close(self):
+    def close(self) -> None:
         super().close()
 
         if not self._fileno:
@@ -367,14 +403,14 @@ class EvdevDevice(LinuxSelectDevice, Device):
         if self._poll:
             self._poll.unregister(self._fileno)
 
-        pyglet.app.platform_event_loop.select_devices.remove(self)
+        cast('_SelectEventLoop', pyglet.app.platform_event_loop).select_devices.remove(self)
         os.close(self._fileno)
         self._fileno = None
 
-    def get_controls(self):
-        return self.controls
+    def get_controls(self) -> list[Control]:
+        return cast('list[Control]', self.controls)
 
-    def _resync_control_state(self):
+    def _resync_control_state(self) -> None:
         """Manually resync all Control state.
 
         This method queries and resets the state of each Control using the appropriate
@@ -384,24 +420,24 @@ class EvdevDevice(LinuxSelectDevice, Device):
         """
         for control in self.control_map.values():
             if isinstance(control, EvdevButton):
-                control.value = get_key_state(self._fileno, control.event_code)
+                control.value = get_key_state(cast(int, self._fileno), control.event_code)
             if isinstance(control, EvdevAbsoluteAxis):
-                control.value = EVIOCGABS(self._fileno, control.event_code).value
+                control.value = EVIOCGABS(cast(int, self._fileno), control.event_code).value
 
     # Force Feedback methods
 
-    def ff_upload_effect(self, structure):
-        os.write(self._fileno, structure)
+    def ff_upload_effect(self, structure: InputEvent) -> None:
+        os.write(cast(int, self._fileno), structure)
 
     # LinuxSelectDevice interface
 
-    def fileno(self):
+    def fileno(self) -> int | None:
         return self._fileno
 
-    def poll(self):
+    def poll(self) -> bool:
         return True if self._poll.poll(0) else False
 
-    def select(self):
+    def select(self) -> None:
         """When the file descriptor is ready, read and process InputEvents.
 
         This method has the following behavior:
@@ -412,7 +448,7 @@ class EvdevDevice(LinuxSelectDevice, Device):
           all Control state.
         """
         try:
-            bytes_read = _readv(self._fileno, self._event_buffer)
+            bytes_read = _readv(cast(int, self._fileno), self._event_buffer)
             n_events = bytes_read // self._event_size
         except OSError:
             self.close()
@@ -448,17 +484,17 @@ class EvdevDevice(LinuxSelectDevice, Device):
 
 class FFController(Controller):
     """Controller that supports force-feedback"""
-    _fileno = None
-    _weak_effect = None
-    _play_weak_event = None
-    _stop_weak_event = None
-    _strong_effect = None
-    _play_strong_event = None
-    _stop_strong_event = None
+    _fileno: int | None = None
+    _weak_effect: FFEvent | None = None
+    _play_weak_event: InputEvent | None = None
+    _stop_weak_event: InputEvent | None = None
+    _strong_effect: FFEvent | None = None
+    _play_strong_event: InputEvent | None = None
+    _stop_strong_event: InputEvent | None = None
 
     device: EvdevDevice
 
-    def open(self, window=None, exclusive=False):
+    def open(self, window: Window | None = None, exclusive: bool = False) -> None:
         super().open(window, exclusive)
         self._fileno = self.device.fileno()
         # Create Force Feedback effects & events when opened:
@@ -473,34 +509,46 @@ class FFController(Controller):
         self._play_strong_event = InputEvent(Timeval(), EV_FF, self._strong_effect.id, 1)
         self._stop_strong_event = InputEvent(Timeval(), EV_FF, self._strong_effect.id, 0)
 
-    def rumble_play_weak(self, strength=1.0, duration=0.5):
+    def rumble_play_weak(self, strength: float = 1.0, duration: float = 0.5) -> None:
         assert self._fileno, "Controller must be opened first."
         effect = self._weak_effect
+        if effect is None or self._play_weak_event is None:
+            raise RuntimeError("Weak rumble effect is not initialized.")
         effect.u.ff_rumble_effect.weak_magnitude = int(max(min(1.0, strength), 0) * 0xFFFF)
         effect.ff_replay.length = int(duration * 1000)
         EVIOCSFF(self._fileno, effect)
         self.device.ff_upload_effect(self._play_weak_event)
 
-    def rumble_play_strong(self, strength=1.0, duration=0.5):
+    def rumble_play_strong(self, strength: float = 1.0, duration: float = 0.5) -> None:
         assert self._fileno, "Controller must be opened first."
         effect = self._strong_effect
+        if effect is None or self._play_strong_event is None:
+            raise RuntimeError("Strong rumble effect is not initialized.")
         effect.u.ff_rumble_effect.strong_magnitude = int(max(min(1.0, strength), 0) * 0xFFFF)
         effect.ff_replay.length = int(duration * 1000)
         EVIOCSFF(self._fileno, effect)
         self.device.ff_upload_effect(self._play_strong_event)
 
-    def rumble_stop_weak(self):
+    def rumble_stop_weak(self) -> None:
         assert self._fileno, "Controller must be opened first."
+        if self._stop_weak_event is None:
+            raise RuntimeError("Weak rumble stop event is not initialized.")
         self.device.ff_upload_effect(self._stop_weak_event)
 
-    def rumble_stop_strong(self):
+    def rumble_stop_strong(self) -> None:
         assert self._fileno, "Controller must be opened first."
+        if self._stop_strong_event is None:
+            raise RuntimeError("Strong rumble stop event is not initialized.")
         self.device.ff_upload_effect(self._stop_strong_event)
 
 
 class EvdevControllerManager(ControllerManager, LinuxSelectDevice):
+    _display: Display | None
+    _devices_file: TextIO
+    _device_names: set[str]
+    _controllers: dict[str, Controller]
 
-    def __init__(self, display=None):
+    def __init__(self, display: Display | None = None) -> None:
         super().__init__()
         self._display = display
         self._devices_file = open('/proc/bus/input/devices')
@@ -516,17 +564,17 @@ class EvdevControllerManager(ControllerManager, LinuxSelectDevice):
             if controller := _create_controller(device):
                 self._controllers[name] = controller
 
-        pyglet.app.platform_event_loop.select_devices.add(self)
+        cast('_SelectEventLoop', pyglet.app.platform_event_loop).select_devices.add(self)
 
-    def __del__(self):
+    def __del__(self) -> None:
         self._devices_file.close()
 
-    def fileno(self):
+    def fileno(self) -> int:
         """Allow this class to be Selectable"""
         return self._devices_file.fileno()
 
     @staticmethod
-    def _get_device_names():
+    def _get_device_names() -> set[str]:
         return {name for name in os.listdir('/dev/input') if name.startswith('event')}
 
     def _make_controller_thread(self, name: str, retries: int) -> None:
@@ -546,7 +594,7 @@ class EvdevControllerManager(ControllerManager, LinuxSelectDevice):
             # Post the event in the main thread:
             self.post_event('on_connect', controller)
 
-    def select(self):
+    def select(self) -> None:
         """Triggered whenever the devices_file changes."""
         new_device_files = self._get_device_names()
         appeared = new_device_files - self._device_names
@@ -566,8 +614,8 @@ class EvdevControllerManager(ControllerManager, LinuxSelectDevice):
         return [_c for _c in self._controllers.values() if _c.device.connected is True]
 
 
-def get_devices(display=None):
-    _devices = {}
+def get_devices(display: Display | None = None) -> list[EvdevDevice]:
+    _devices: dict[str, EvdevDevice] = {}
     base = '/dev/input'
     for filename in os.listdir(base):
         if filename.startswith('event'):
@@ -583,7 +631,7 @@ def get_devices(display=None):
     return list(_devices.values())
 
 
-def _create_joystick(device):
+def _create_joystick(device: EvdevDevice) -> Joystick | None:
     # Look for something with an ABS X and ABS Y axis, and a joystick 0 button
     have_x = False
     have_y = False
@@ -596,21 +644,21 @@ def _create_joystick(device):
         elif control.event_type == EV_KEY and control.event_code in (BTN_JOYSTICK, BTN_GAMEPAD):
             have_button = True
     if not (have_x and have_y and have_button):
-        return
+        return None
 
     return Joystick(device)
 
 
-def get_joysticks(display=None):
+def get_joysticks(display: Display | None = None) -> list[Joystick]:
     return [joystick for joystick in [_create_joystick(device) for device in get_devices(display)] if joystick]
 
 
-def _detect_controller_mapping(device):
+def _detect_controller_mapping(device: EvdevDevice) -> dict[str, str | Relation]:
     # If no explicit mapping is available, we can
     # detect it from the Linux gamepad specification:
     # https://www.kernel.org/doc/html/latest/input/gamepad.html
     # Note: legacy device drivers don't always adhere to this.
-    mapping = dict(guid=device.get_guid(), name=device.name)
+    mapping: dict[str, str | Relation] = dict(guid=device.get_guid(), name=device.name)
 
     _aliases = {BTN_MODE: 'guide', BTN_SELECT: 'back', BTN_START: 'start',
                 BTN_SOUTH: 'a', BTN_EAST: 'b', BTN_WEST: 'x', BTN_NORTH: 'y',
@@ -629,6 +677,7 @@ def _detect_controller_mapping(device):
     axis_controls = [control for control in device.controls if isinstance(control, EvdevAbsoluteAxis)]
     hat_controls = [control for control in device.controls if control.name in ('hat_x', 'hat_y')]
 
+    control: EvdevControl
     for i, control in enumerate(button_controls):
         if name := _aliases.get(control.event_code):
             mapping[name] = Relation('button', index=i)
@@ -645,7 +694,7 @@ def _detect_controller_mapping(device):
     return mapping
 
 
-def _create_controller(device) -> Controller | None:
+def _create_controller(device: EvdevDevice) -> Controller | None:
     for control in device.controls:
         if control.event_type == EV_KEY and control.event_code == BTN_GAMEPAD:
             break
@@ -664,5 +713,5 @@ def _create_controller(device) -> Controller | None:
         return Controller(device, mapping)
 
 
-def get_controllers(display=None):
+def get_controllers(display: Display | None = None) -> list[Controller]:
     return [controller for controller in [_create_controller(device) for device in get_devices(display)] if controller]

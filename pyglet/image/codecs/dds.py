@@ -2,6 +2,8 @@
 
 Reference: http://msdn2.microsoft.com/en-us/library/bb172993.aspx
 """
+# mypy: disable-error-code="attr-defined"
+# File-structure attributes are populated dynamically from _fields.
 from __future__ import annotations
 
 import struct
@@ -44,7 +46,7 @@ DDSCAPS2_VOLUME 	        = 0x00200000
 
 
 class _FileStruct:
-    _fields = []
+    _fields: list[tuple[str, str]] = []
 
     def __init__(self, data):
         if len(data) < self.get_size():

@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import wave
-from typing import TYPE_CHECKING, BinaryIO
+from typing import TYPE_CHECKING, Any, BinaryIO
 
 from pyglet.util import DecodeException
 from .base import StreamingSource, AudioData, AudioFormat, StaticSource
@@ -78,7 +78,7 @@ class WaveDecoder(MediaDecoder):
     def get_file_extensions(self) -> tuple[str, str, str]:
         return '.wav', '.wave', '.riff'
 
-    def decode(self, filename: str, file: BinaryIO | None, streaming: bool = True, **kwargs):
+    def decode(self, filename: str, file: BinaryIO | None, streaming: bool = True, *args: Any, **kwargs: Any) -> Source:
         if streaming:
             return WaveSource(filename, file)
         else:

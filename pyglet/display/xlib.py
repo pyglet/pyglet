@@ -81,13 +81,13 @@ _error_handler_ptr = xlib.XErrorHandler(_error_handler)
 xlib.XSetErrorHandler(_error_handler_ptr)
 
 
-class XlibDisplay(LinuxSelectDevice, Display):
+class XlibDisplay(LinuxSelectDevice, Display['XlibScreen']):
     _display = None  # POINTER(xlib.Display)
 
     _x_im = None  # X input method
     # TODO close _x_im when display connection closed.
     _enable_xsync = False
-    _screens: list[Screen]
+    _screens: list[XlibScreen]
 
     def __init__(self, name=None, x_screen=None):
         self._screens = []
@@ -126,7 +126,7 @@ class XlibDisplay(LinuxSelectDevice, Display):
         # Add to event loop select list.  Assume we never go away.
         app.platform_event_loop.select_devices.add(self)
 
-    def get_default_screen(self) -> Screen:
+    def get_default_screen(self) -> XlibScreen:
         screens = self.get_screens()
         if _have_xrandr:
             for screen in screens:
@@ -136,7 +136,7 @@ class XlibDisplay(LinuxSelectDevice, Display):
         # Couldn't find a default screen, use the first in the list.
         return self._screens[0]
 
-    def get_screens(self) -> list[Screen]:
+    def get_screens(self) -> list[XlibScreen]:
         self._screens = []
 
         # Use XRandr if available, as it appears more maintained and widely supported.
@@ -226,7 +226,7 @@ class XlibDisplay(LinuxSelectDevice, Display):
         return xlib.XPending(self._display)
 
 
-class XlibScreen(Screen):
+class XlibScreen(Screen[XlibDisplay]):
     _initial_mode = None
     display: XlibDisplay
 

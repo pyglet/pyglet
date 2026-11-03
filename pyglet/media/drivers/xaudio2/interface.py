@@ -7,9 +7,9 @@ import weakref
 from collections import defaultdict, deque
 from collections.abc import Callable
 from contextlib import suppress
-from ctypes import POINTER, byref, c_char, c_float, cast, pointer
+from ctypes import POINTER, Array, byref, c_char, c_float, c_ubyte, cast, pointer
 from ctypes.wintypes import DWORD, FLOAT
-from typing import TYPE_CHECKING, NamedTuple, TypeAlias, ClassVar
+from typing import TYPE_CHECKING, ClassVar, NamedTuple, TypeAlias
 
 import pyglet
 from pyglet.libs.win32 import com
@@ -58,7 +58,7 @@ def create_xa2_buffer(audio_data: AudioData) -> lib.XAUDIO2_BUFFER:
     """
     buff = lib.XAUDIO2_BUFFER()
     buff.AudioBytes = audio_data.length
-    buff.pAudioData = cast(audio_data.pointer, POINTER(c_char))
+    buff.pAudioData = cast(audio_data.pointer or 0, POINTER(c_char))
     return buff
 
 
@@ -82,6 +82,11 @@ def create_xa2_waveformat(audio_format: AudioFormat) -> lib.WAVEFORMATEX:
 
 class _VoiceResetter:
     """Manage a voice during its reset period."""
+
+    driver: XAudio2Driver | None
+    voice: XA2SourceVoice | None
+    voice_key: VoiceKey
+    remaining_data: deque[AudioData]
 
     def __init__(
         self,
@@ -110,6 +115,8 @@ class _VoiceResetter:
     # Always schedule finish to make sure we're not returning the voice in an
     # XAudio callback. Should give the correct result for samples played.
     def _finish(self, *_: float) -> None:
+        assert self.voice is not None
+        assert self.driver is not None
         self.voice._callback.on_buffer_end = None
         self.voice.samples_played_at_last_recycle = self.voice.samples_played
         self.driver._return_reset_voice(self.voice, self.voice_key)
@@ -124,17 +131,19 @@ class _VoiceResetter:
 class XA2EngineCallback(com.COMObject):
     _interfaces_ = [lib.IXAudio2EngineCallback]  # noqa: RUF012
 
-    def __init__(self, restart_requested: threading.Event):  # noqa: ANN204
+    _restart_requested: threading.Event
+
+    def __init__(self, restart_requested: threading.Event) -> None:
         super().__init__()
         self._restart_requested = restart_requested
 
-    def OnProcessingPassStart(self):  # noqa: ANN201, N802
+    def OnProcessingPassStart(self) -> None:  # noqa: N802
         pass
 
-    def OnProcessingPassEnd(self):  # noqa: ANN201, N802
+    def OnProcessingPassEnd(self) -> None:  # noqa: N802
         pass
 
-    def OnCriticalError(self, hresult):  # noqa: ANN001, ANN201, N802
+    def OnCriticalError(self, hresult: int) -> None:  # noqa: N802
         # XAudio2 callbacks must not block or perform engine operations. The pyglet
         # clock observes this flag and recreates the engine on the application thread.
         assert _debug(f"XAudio2EngineCallback.OnCriticalError: {hresult}")
@@ -156,16 +165,18 @@ class XAudio2VoiceCallback(com.COMObject):
 
     _interfaces_ = [lib.IXAudio2VoiceCallback]  # noqa: RUF012
 
-    def __init__(self):  # noqa: ANN204
-        super().__init__()
-        self.on_buffer_end: BufferEndCallback | None = None
+    on_buffer_end: BufferEndCallback | None
 
-    def OnBufferEnd(self, pBufferContext):  # noqa: ANN001, ANN201, N802, N803
+    def __init__(self) -> None:
+        super().__init__()
+        self.on_buffer_end = None
+
+    def OnBufferEnd(self, pBufferContext: int) -> None:  # noqa: N802, N803
         callback = self.on_buffer_end
         if callback is not None:
             callback(pBufferContext)
 
-    def OnVoiceError(self, _pBufferContext, hresult):  # noqa: ANN001, ANN201, N802, N803
+    def OnVoiceError(self, _pBufferContext: int | None, hresult: int) -> None:  # noqa: N802, N803
         assert _debug(f"Error occurred during audio playback: {hresult}")
 
 
@@ -176,10 +187,21 @@ class XAudio2Driver:
     _players: set[XAudio2AudioPlayer]
     _resetting_voices: dict[XA2SourceVoice, _VoiceResetter]
     _in_use: dict[XA2SourceVoice, XAudio2AudioPlayer]
-    _voice_pool: defaultdict[tuple[int, int], list[XA2SourceVoice]]
+    _voice_pool: defaultdict[VoiceKey, list[XA2SourceVoice]]
     _engine_callback: XA2EngineCallback
     lock: threading.RLock
     _emitting_voices: list[XA2SourceVoice]
+    _deleted: bool
+    _restart_lock: threading.Lock
+    _restart_requested: threading.Event
+    _device_id: str | None
+    _volume: float
+    _waiting_for_output_device: bool
+    _device_manager: AbstractAudioDeviceManager | None
+    _mvoice_details: lib.XAUDIO2_VOICE_DETAILS
+    _master_voice: lib.IXAudio2MasteringVoice
+    _x3d_handle: Array[c_ubyte] | None
+    _dsp_settings: lib.X3DAUDIO_DSP_SETTINGS | None
 
     # Specifies if positional audio should be used. Can be enabled later, but not disabled.
     allow_3d: ClassVar[bool] = True
@@ -215,18 +237,18 @@ class XAudio2Driver:
         self._restart_lock = threading.Lock()
         self._restart_requested = threading.Event()
         self._engine_callback = XA2EngineCallback(self._restart_requested)
-        self._device_id: str | None = None
+        self._device_id = None
         self._volume = 1.0
         self._waiting_for_output_device = False
-        self._device_manager: AbstractAudioDeviceManager | None = None
+        self._device_manager = None
 
-        self._emitting_voices: list[XA2SourceVoice] = []
-        self._voice_pool: defaultdict[VoiceKey, list[XA2SourceVoice]] = defaultdict(list)
-        self._in_use: dict[XA2SourceVoice, XAudio2AudioPlayer] = {}
+        self._emitting_voices = []
+        self._voice_pool = defaultdict(list)
+        self._in_use = {}
 
-        self._resetting_voices: dict[XA2SourceVoice, _VoiceResetter] = {}
+        self._resetting_voices = {}
 
-        self._players: set[XAudio2AudioPlayer] = set()
+        self._players = set()
 
         try:
             self._create_xa2()
@@ -331,7 +353,7 @@ class XAudio2Driver:
             raise ImportError("XAudio2 driver could not be initialized.") from err
 
         try:
-            if _debug:
+            if pyglet.options.debug_media:
                 # Debug messages are found in Windows Event Viewer, you must enable event logging:
                 # Applications and Services -> Microsoft -> Windows -> Xaudio2 -> Debug Logging.
                 # Right click -> Enable Logs
@@ -619,6 +641,14 @@ class XAudio2Driver:
 
 
 class XA2SourceVoice:
+    _voice_state: lib.XAUDIO2_VOICE_STATE
+    _voice: lib.IXAudio2SourceVoice | None
+    _callback: XAudio2VoiceCallback | None
+    _emitter: lib.X3DAUDIO_EMITTER | None
+    channel_count: int
+    sample_size: int
+    samples_played_at_last_recycle: int
+
     def __init__(
         self,
         voice: lib.IXAudio2SourceVoice,
@@ -808,6 +838,9 @@ class XA2SourceVoice:
 
 
 class XAudio2Listener:
+    xa2_driver: XAudio2Driver
+    listener: lib.X3DAUDIO_LISTENER | None
+
     def __init__(self, driver: XAudio2Driver) -> None:
         self.xa2_driver = weakref.proxy(driver)
         self.listener = lib.X3DAUDIO_LISTENER()

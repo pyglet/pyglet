@@ -30,7 +30,7 @@ kEAGLRenderingAPIOpenGLES2 = 2
 kEAGLRenderingAPIOpenGLES3 = 3
 
 
-class IOSContext(OpenGLSurfaceContext):
+class IOSContext(OpenGLSurfaceContext['IOSWindow']):
     config: IOSGLSurfaceConfig
 
     def __init__(self, opengl_backend: OpenGLBackend, window: IOSWindow,

@@ -22,7 +22,7 @@ def match(config: OpenGLUserConfig, window: IOSWindow) -> IOSGLSurfaceConfig | N
     return IOSGLSurfaceConfig(window, config)
 
 
-class IOSGLSurfaceConfig(GLSurfaceConfig):
+class IOSGLSurfaceConfig(GLSurfaceConfig['IOSWindow']):
 
     def __init__(self, window: IOSWindow, config: OpenGLUserConfig) -> None:
         super().__init__(window, config, handle=None)

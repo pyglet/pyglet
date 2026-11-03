@@ -717,7 +717,7 @@ class WMFSource(Source):
 
         return None
 
-    def get_next_video_frame(self, skip_empty_frame=True):
+    def get_next_video_frame(self, skip_empty_frame: bool = True) -> image.ImageData | None:
         video_data_length = DWORD()
         flags = DWORD()
         timestamp = c_longlong()
@@ -776,7 +776,7 @@ class WMFSource(Source):
 
             # This is made with the assumption that the video frame will be blitted into the player texture immediately
             # after, and then cleared next frame attempt.
-            return image.ImageData(width, height, 'BGRA', video_data, self._stride)
+            return image.ImageData(width, height, 'BGRA', cast(video_data, POINTER(BYTE * video_data_length.value)).contents, self._stride)
 
         return None
 
@@ -798,7 +798,7 @@ class WMFSource(Source):
             frame = min(frame, int(self._duration * self.audio_format.sample_rate))
         self._seek(frame / self.audio_format.sample_rate, frame)
 
-    def _seek(self, timestamp: float, frame: int) -> None:
+    def _seek(self, timestamp: float, frame: int | None) -> None:
         self._audio_seek_frame = frame
 
         prop = PROPVARIANT()

@@ -3,7 +3,7 @@ from __future__ import annotations
 import ctypes
 import warnings
 
-from typing import Optional
+from typing import TYPE_CHECKING, cast
 
 from pyglet.libs.win32.constants import WM_DEVICECHANGE, DBT_DEVICEARRIVAL, DBT_DEVICEREMOVECOMPLETE, \
     DBT_DEVTYP_DEVICEINTERFACE, DEVICE_NOTIFY_WINDOW_HANDLE
@@ -17,6 +17,13 @@ from pyglet.libs.win32 import dinput, _user32, DEV_BROADCAST_DEVICEINTERFACE, co
 from pyglet.libs.win32 import _kernel32
 from pyglet.input.controller import get_mapping
 from pyglet.input.base import ControllerManager
+
+if TYPE_CHECKING:
+    from ctypes import _Pointer
+
+    from pyglet.app.win32 import Win32EventLoop
+    from pyglet.display.base import Display
+    from pyglet.window.win32 import Win32Window
 
 # These instance names are not defined anywhere, obtained by experiment.  The
 # GUID names (which seem to be ideally what are needed) are wrong/missing for
@@ -37,17 +44,19 @@ _rel_instance_names = {
     2: 'wheel',
 }
 
-_btn_instance_names = {}
+_btn_instance_names: dict[int, str] = {}
 
 
-def _create_control(object_instance):
+def _create_control(object_instance: dinput.DIDEVICEOBJECTINSTANCE) -> base.Control | None:
     raw_name = object_instance.tszName
     ctrl_type = object_instance.dwType
     instance = dinput.DIDFT_GETINSTANCE(ctrl_type)
 
+    control: base.Control
     if ctrl_type & dinput.DIDFT_ABSAXIS:
         name = _abs_instance_names.get(instance)
-        control = base.AbsoluteAxis(name, 0, 0xffff, raw_name)
+        # Unknown DirectInput axes have no standardized name; Control accepts None.
+        control = base.AbsoluteAxis(name, 0, 0xffff, raw_name)  # type: ignore[arg-type]
     elif ctrl_type & dinput.DIDFT_RELAXIS:
         name = _rel_instance_names.get(instance)
         control = base.RelativeAxis(name, raw_name)
@@ -64,7 +73,17 @@ def _create_control(object_instance):
 
 
 class DirectInputDevice(base.Device):
-    def __init__(self, display, device, device_instance):
+    _type: int
+    _subtype: int
+    _device: dinput.IDirectInputDevice8
+    _wait_object: int | None
+    controls: list[base.Control]
+    id_name: str
+    id_product_guid: str
+    device_instance: dinput.DIDEVICEINSTANCE
+
+    def __init__(self, display: Display | None, device: dinput.IDirectInputDevice8,
+                 device_instance: dinput.DIDEVICEINSTANCE) -> None:
         name = device_instance.tszInstanceName
         super().__init__(display, name)
 
@@ -78,27 +97,27 @@ class DirectInputDevice(base.Device):
         self.id_product_guid = format(device_instance.guidProduct.Data1, "08x")
         self.device_instance = device_instance
 
-    def __del__(self):
+    def __del__(self) -> None:
         self._device.Release()
 
-    def get_guid(self):
+    def get_guid(self) -> str:
         """Generate an SDL2 style GUID from the product guid."""
         first = self.id_product_guid[6:8] + self.id_product_guid[4:6]
         second = self.id_product_guid[2:4] + self.id_product_guid[0:2]
         return f"03000000{first}0000{second}000000000000"
 
-    def _init_controls(self):
+    def _init_controls(self) -> None:
         self.controls = []
         self._device.EnumObjects(dinput.LPDIENUMDEVICEOBJECTSCALLBACK(self._object_enum), None, dinput.DIDFT_ALL)
-        self.controls.sort(key=lambda c: c._type)
+        self.controls.sort(key=lambda c: c._type)  # type: ignore[attr-defined]  # DirectInput object metadata.
 
-    def _object_enum(self, object_instance, arg):
+    def _object_enum(self, object_instance: _Pointer[dinput.DIDEVICEOBJECTINSTANCE], arg: int | None) -> int:
         control = _create_control(object_instance.contents)
         if control:
             self.controls.append(control)
         return dinput.DIENUM_CONTINUE
 
-    def _set_format(self):
+    def _set_format(self) -> None:
         if not self.controls:
             return
 
@@ -106,7 +125,7 @@ class DirectInputDevice(base.Device):
         offset = 0
         for object_format, control in zip(object_formats, self.controls):
             object_format.dwOfs = offset
-            object_format.dwType = control._type
+            object_format.dwType = control._type  # type: ignore[attr-defined]  # DirectInput object metadata.
             offset += 4
 
         fmt = dinput.DIDATAFORMAT()
@@ -126,7 +145,7 @@ class DirectInputDevice(base.Device):
         prop.dwData = 64 * ctypes.sizeof(dinput.DIDATAFORMAT)
         self._device.SetProperty(dinput.DIPROP_BUFFERSIZE, ctypes.byref(prop.diph))
 
-    def open(self, window: pyglet.window.Window | None=None, exclusive: bool=False) -> None:
+    def open(self, window: pyglet.window.BaseWindow | None=None, exclusive: bool=False) -> None:
         if not self.controls:
             return
 
@@ -146,26 +165,26 @@ class DirectInputDevice(base.Device):
 
         self._wait_object = _kernel32.CreateEventW(None, False, False, None)
         self._device.SetEventNotification(self._wait_object)
-        pyglet.app.platform_event_loop.add_wait_object(self._wait_object, self._dispatch_events)
+        cast('Win32EventLoop', pyglet.app.platform_event_loop).add_wait_object(self._wait_object, self._dispatch_events)
 
-        self._device.SetCooperativeLevel(window._hwnd, flags)
+        self._device.SetCooperativeLevel(cast('Win32Window', window)._hwnd, flags)
         self._device.Acquire()
 
-    def close(self):
+    def close(self) -> None:
         if not self.controls:
             return
 
-        pyglet.app.platform_event_loop.remove_wait_object(self._wait_object)
+        cast('Win32EventLoop', pyglet.app.platform_event_loop).remove_wait_object(self._wait_object)
 
         self._device.Unacquire()
         self._device.SetEventNotification(None)
 
         _kernel32.CloseHandle(self._wait_object)
 
-    def get_controls(self):
+    def get_controls(self) -> list[base.Control]:
         return self.controls
 
-    def _dispatch_events(self):
+    def _dispatch_events(self) -> None:
         if not self.controls:
             return
 
@@ -184,7 +203,7 @@ class DirectInputDevice(base.Device):
             index = event.dwOfs // 4
             self.controls[index].value = event.dwData
 
-    def matches(self, guid_id, device_instance):
+    def matches(self, guid_id: str, device_instance: _Pointer[dinput.DIDEVICEINSTANCE]) -> bool:
         guid_id = format(device_instance.contents.guidProduct.Data1, "08x")
 
         if (self.id_product_guid == guid_id and
@@ -196,7 +215,7 @@ class DirectInputDevice(base.Device):
         return False
 
 
-def _init_directinput():
+def _init_directinput() -> dinput.IDirectInput8:
     _i_dinput = dinput.IDirectInput8()
     module_handle = _kernel32.GetModuleHandleW(None)
     dinput.DirectInput8Create(module_handle,
@@ -214,11 +233,16 @@ GUID_DEVINTERFACE_HID = com.GUID(0x4D1E55B2, 0xF16F, 0x11CF, 0x88, 0xCB, 0x00, 0
 
 
 class DIDeviceManager(EventDispatcher):
-    def __init__(self):
+    window: Win32Window | None
+    registered: bool
+    _devnotify: int | None
+    devices: list[DirectInputDevice]
+
+    def __init__(self) -> None:
         self.registered = False
         self.window = None
         self._devnotify = None
-        self.devices: list[DirectInputDevice] = []
+        self.devices = []
 
         if self.register_device_events(skip_warning=True):
             self.set_current_devices()
@@ -232,7 +256,7 @@ class DIDeviceManager(EventDispatcher):
         new_devices, _ = self._get_devices()
         self.devices = new_devices
 
-    def register_device_events(self, skip_warning: bool=False, window: pyglet.window.Window | None=None) -> bool:
+    def register_device_events(self, skip_warning: bool=False, window: pyglet.window.BaseWindow | None=None) -> bool:
         """Register the first OS Window to receive events of disconnect and connection of devices.
 
         Returns:
@@ -247,7 +271,7 @@ class DIDeviceManager(EventDispatcher):
                 if not window:
                     window = pyglet.window._shadow_window  # noqa: SLF001
 
-            self.window = window
+            self.window = cast('Win32Window | None', window)
             if self.window is not None:
                 dbi = DEV_BROADCAST_DEVICEINTERFACE()
                 dbi.dbcc_size = ctypes.sizeof(dbi)
@@ -278,7 +302,7 @@ class DIDeviceManager(EventDispatcher):
 
         self._devnotify = None
 
-    def on_close(self):
+    def on_close(self) -> None:
         self._unregister_device_events()
 
         import pyglet.app  # noqa: PLC0415
@@ -299,14 +323,14 @@ class DIDeviceManager(EventDispatcher):
         except Exception:
             pass
 
-    def _get_devices(self, display=None):
+    def _get_devices(self, display: Display | None = None) -> tuple[list[DirectInputDevice], list[DirectInputDevice]]:
         """Enumerate all the devices on the system.
 
         Returns two values: new devices, missing devices
         """
         _missing_devices = list(self.devices)
-        _new_devices = []
-        _xinput_devices = []
+        _new_devices: list[DirectInputDevice] = []
+        _xinput_devices: list[str] = []
 
         if not pyglet.options.win32_disable_xinput:
             try:
@@ -315,7 +339,7 @@ class DIDeviceManager(EventDispatcher):
             except ImportError:
                 pass
 
-        def _device_enum(device_instance, arg):  # DIDEVICEINSTANCE
+        def _device_enum(device_instance: _Pointer[dinput.DIDEVICEINSTANCE], arg: int | None) -> int:
             guid_id = format(device_instance.contents.guidProduct.Data1, "08x")
             # Only XInput should handle XInput compatible devices if enabled. Filter them out.
             if guid_id in _xinput_devices:
@@ -340,7 +364,7 @@ class DIDeviceManager(EventDispatcher):
                               dinput.DIEDFL_ATTACHEDONLY)
         return _new_devices, _missing_devices
 
-    def _recheck_devices(self):
+    def _recheck_devices(self) -> None:
         new_devices, missing_devices = self._get_devices()
         if new_devices:
             self.devices.extend(new_devices)
@@ -352,7 +376,7 @@ class DIDeviceManager(EventDispatcher):
                 self.devices.remove(device)
                 self.dispatch_event('on_disconnect', device)
 
-    def _event_devicechange(self, msg, wParam, lParam):
+    def _event_devicechange(self, msg: int, wParam: int, lParam: int) -> None:
         if lParam == 0:
             return
 
@@ -371,28 +395,30 @@ _di_manager = DIDeviceManager()
 
 
 class DIControllerManager(ControllerManager):
+    _display: Display | None
+    _controllers: dict[DirectInputDevice, base.Controller]
 
-    def __init__(self, display=None):
+    def __init__(self, display: Display | None = None) -> None:
         self._display = display
-        self._controllers: dict[DirectInputDevice, base.Controller] = {}
+        self._controllers = {}
 
         for device in _di_manager.devices:
             self._add_controller(device)
 
         @_di_manager.event
-        def on_connect(di_device):
+        def on_connect(di_device: DirectInputDevice) -> None:
             if di_device not in self._controllers:
                 if self._add_controller(di_device):
                     pyglet.app.platform_event_loop.post_event(self, 'on_connect', self._controllers[di_device])
 
         @_di_manager.event
-        def on_disconnect(di_device):
+        def on_disconnect(di_device: DirectInputDevice) -> None:
             if di_device in self._controllers:
                 _controller = self._controllers[di_device]
                 del self._controllers[di_device]
                 pyglet.app.platform_event_loop.post_event(self, 'on_disconnect', _controller)
 
-    def _add_controller(self, device: DirectInputDevice) -> Optional[base.Controller]:
+    def _add_controller(self, device: DirectInputDevice) -> base.Controller | None:
         controller = _create_controller(device)
         if controller:
             self._controllers[device] = controller
@@ -400,7 +426,7 @@ class DIControllerManager(ControllerManager):
 
         return None
 
-    def get_controllers(self):
+    def get_controllers(self) -> list[base.Controller]:
         if not _di_manager.registered:
             _di_manager.register_device_events()
             _di_manager.set_current_devices()
@@ -408,10 +434,10 @@ class DIControllerManager(ControllerManager):
         return list(self._controllers.values())
 
 
-def get_devices(display=None):
+def get_devices(display: Display | None = None) -> list[DirectInputDevice]:
     _init_directinput()
-    _devices = []
-    _xinput_devices = []
+    _devices: list[DirectInputDevice] = []
+    _xinput_devices: list[str] = []
 
     if not pyglet.options.win32_disable_xinput:
         try:
@@ -420,7 +446,7 @@ def get_devices(display=None):
         except ImportError:
             pass
 
-    def _device_enum(device_instance, arg):
+    def _device_enum(device_instance: _Pointer[dinput.DIDEVICEINSTANCE], arg: int | None) -> int:
         guid_id = format(device_instance.contents.guidProduct.Data1, "08x")
         # Only XInput should handle DirectInput devices if enabled. Filter them out.
         if guid_id in _xinput_devices:
@@ -439,24 +465,26 @@ def get_devices(display=None):
     return _devices
 
 
-def _create_controller(device):
+def _create_controller(device: DirectInputDevice) -> base.Controller | None:
     mapping = get_mapping(device.get_guid())
     if device._type in (dinput.DI8DEVTYPE_JOYSTICK, dinput.DI8DEVTYPE_1STPERSON, dinput.DI8DEVTYPE_GAMEPAD):
         if mapping is not None:
             return base.Controller(device, mapping)
         warnings.warn(f"Warning: {device} (GUID: {device.get_guid()}) "
                       f"has no controller mappings. Update the mappings in the Controller DB.")
+    return None
 
 
-def _create_joystick(device):
+def _create_joystick(device: DirectInputDevice) -> base.Joystick | None:
     if device._type in (dinput.DI8DEVTYPE_JOYSTICK,
                         dinput.DI8DEVTYPE_1STPERSON,
                         dinput.DI8DEVTYPE_GAMEPAD,
                         dinput.DI8DEVTYPE_SUPPLEMENTAL):
         return base.Joystick(device)
+    return None
 
 
-def get_joysticks(display=None):
+def get_joysticks(display: Display | None = None) -> list[base.Joystick]:
     if not _di_manager.registered:
         _di_manager.register_device_events()
         _di_manager.set_current_devices()
@@ -466,7 +494,7 @@ def get_joysticks(display=None):
             if joystick is not None]
 
 
-def get_controllers(display=None):
+def get_controllers(display: Display | None = None) -> list[base.Controller]:
     if not _di_manager.registered:
         _di_manager.register_device_events()
         _di_manager.set_current_devices()

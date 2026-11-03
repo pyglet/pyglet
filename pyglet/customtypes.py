@@ -3,9 +3,17 @@ from __future__ import annotations
 import ctypes
 import sys
 
-from typing import Union, Literal, Type, Protocol, Tuple, runtime_checkable
+from typing import TYPE_CHECKING, Union, Literal, Type, TypeVar, Protocol, Tuple, runtime_checkable
 
 from ctypes import _SimpleCData, _Pointer  # type: ignore  # noqa: PGH003
+
+if TYPE_CHECKING:
+    from pyglet.window import BaseWindow
+    from pyglet.display.base import Display, Screen
+
+WindowT = TypeVar('WindowT', bound='BaseWindow')
+DisplayT = TypeVar('DisplayT', bound='Display')
+ScreenT = TypeVar('ScreenT', bound='Screen')
 
 if sys.version_info >= (3, 12):
     from collections.abc import Buffer
@@ -65,9 +73,12 @@ __all__ = [
     "CTypesPointer",
     "ContentVAlign",
     "DataTypes",
+    "DisplayT",
     "HorizontalAlign",
     "MediaTypes",
     "RGBAColor",
     "RGBColor",
     "ScissorProtocol",
+    "ScreenT",
+    "WindowT",
 ]

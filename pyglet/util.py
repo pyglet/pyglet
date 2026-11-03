@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import math
 import os
-from typing import Any, BinaryIO, Callable, ClassVar, Protocol, Sequence, TYPE_CHECKING
+from typing import Any, BinaryIO, TextIO, Callable, ClassVar, Protocol, Sequence, TYPE_CHECKING
 
 import pyglet
 
@@ -20,13 +20,13 @@ def asbytes(s: str | Buffer) -> bytes:
     return bytes(s)
 
 
-def asstr(s: str | Buffer | None) -> str:
+def asstr(s: str | bytes | bytearray | None) -> str:
     """Return ``s`` as a UTF-8 string, or an empty string for ``None``."""
     if s is None:
         return ''
     if isinstance(s, str):
         return s
-    return s.decode("utf-8")  # type: ignore
+    return s.decode("utf-8")
 
 
 # Keep these outside of the function since we don't need to re-define
@@ -206,7 +206,7 @@ class CodecRegistry:
 
     def decode(self,
                filename: str,
-               file: BinaryIO | None,
+               file: BinaryIO | TextIO | None,
                media_capabilities: str | Sequence[str] | None = None,
                **kwargs: Any) -> Any:
         """Attempt to decode a file using the available registered decoders.

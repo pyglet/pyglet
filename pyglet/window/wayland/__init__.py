@@ -11,12 +11,14 @@ import pyglet
 from pyglet.event import EventDispatcher
 from pyglet.libs.egl import egl
 from pyglet.libs.linux.wayland import xkbcommon
-from pyglet.window import BaseWindow, _PlatformEventHandler, _ViewEventHandler, key, mouse
+from pyglet.window import BaseWindow, DefaultMouseCursor, _PlatformEventHandler, _ViewEventHandler, key, mouse
 from pyglet.libs.linux.wayland.client import Client, Interface
 from pyglet.libs.linux.wayland.wayland_egl import *
 
 if TYPE_CHECKING:
-    from pyglet.display.base import Screen
+    from pyglet.display.wayland import WaylandScreen
+    from pyglet.display.wayland import WaylandDisplay
+    from pyglet.graphics.api.gl.egl.context import EGLContext
 
 # Platform event data is single item, so use platform event handler directly.
 WaylandEventHandler = _PlatformEventHandler
@@ -55,13 +57,16 @@ _modifier_map: dict[int, int] = {
 }
 
 
-class WaylandWindow(BaseWindow):
+class WaylandWindow(BaseWindow['WaylandScreen']):
 
     egl_display_connection = None
     egl_surface = None
 
     _protocols = ['/usr/share/wayland/wayland.xml', '/usr/share/wayland-protocols/stable/xdg-shell/xdg-shell.xml']
-    client: Client = None
+    client: Client | None = None
+    display: WaylandDisplay
+    context: EGLContext
+    _entered_outputs: dict[int | None, None]
     wl_compositor: Interface
     wl_surface: Interface
     xdg_wm_base: Interface
@@ -104,7 +109,7 @@ class WaylandWindow(BaseWindow):
     def get_size(self) -> tuple[int, int]:
         return self._width, self._height
 
-    def get_current_screen(self) -> Screen:
+    def get_current_screen(self) -> WaylandScreen:
         """Return the most recently entered output still occupied by the surface.
 
         Wayland reports output membership without overlap areas. Before any
@@ -120,8 +125,8 @@ class WaylandWindow(BaseWindow):
     def set_location(self, x: int, y: int) -> None:
         pass
 
-    def get_location(self) -> None:
-        pass
+    def get_location(self) -> tuple[int, int]:
+        return 0, 0
 
     def activate(self) -> None:
         pass
@@ -147,12 +152,12 @@ class WaylandWindow(BaseWindow):
     def set_exclusive_keyboard(self, exclusive: bool = True) -> None:
         pass
 
-    def get_system_mouse_cursor(self, name: str) -> None:
-        pass
+    def get_system_mouse_cursor(self, name: str) -> DefaultMouseCursor:
+        return DefaultMouseCursor()
 
     def dispatch_events(self) -> None:
         while self._event_queue:
-            EventDispatcher.dispatch_event(self, *self._event_queue.pop(0))
+            EventDispatcher.dispatch_event(self, *self._event_queue.popleft())
 
     def dispatch_pending_events(self) -> None:
         pass

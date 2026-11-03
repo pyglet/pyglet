@@ -8,10 +8,10 @@ class AbstractListener(metaclass=ABCMeta):
     :meth:`AbstractAudioDriver.get_listener`.
     """
 
-    _volume = 1.0
-    _position = (0, 0, 0)
-    _forward_orientation = (0, 0, -1)
-    _up_orientation = (0, 1, 0)
+    _volume: float = 1.0
+    _position: tuple[float, float, float] = (0, 0, 0)
+    _forward_orientation: tuple[float, float, float] = (0, 0, -1)
+    _up_orientation: tuple[float, float, float] = (0, 1, 0)
 
     @abstractmethod
     def _set_volume(self, volume):

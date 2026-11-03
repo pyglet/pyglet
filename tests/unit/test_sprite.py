@@ -221,11 +221,12 @@ def test_init_uses_array_shader_for_texture_array_region(monkeypatch):
     monkeypatch.setattr("pyglet.sprite.get_default_array_shader", get_array_shader)
     monkeypatch.setattr("pyglet.sprite.get_default_shader", get_default_shader)
 
-    texture = MagicMock()
+    texture = MagicMock(spec=TextureArrayRegion)
     texture.width = 1
     texture.height = 1
     texture.tex_coords = (0.0,) * 12
     texture.id = 1
+    texture.target = 35866  # GL_TEXTURE_2D_ARRAY
 
     image = MagicMock(spec=TextureArrayRegion)
     image.get_texture.return_value = texture

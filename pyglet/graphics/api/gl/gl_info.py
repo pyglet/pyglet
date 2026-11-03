@@ -96,8 +96,8 @@ class GLInfo(SurfaceInfo):
         #       so using this to rely on detecting the API is not too unreasonable
         is_gles2 = "opengl es 2" in self.version.lower()
         is_gles3 = "opengl es 3" in self.version.lower()
-        desktop_api = "gl2" if context.core.graphics_api == GraphicsAPI.OPENGL_2 else "opengl"
-        self.api = "gles2" if is_gles2 else "gles3" if is_gles3 else desktop_api
+        desktop_api = GraphicsAPI.OPENGL_2 if context.core.graphics_api == GraphicsAPI.OPENGL_2 else GraphicsAPI.OPENGL
+        self.api = GraphicsAPI.OPENGL_ES_2 if is_gles2 else GraphicsAPI.OPENGL_ES_3 if is_gles3 else desktop_api
 
         self.major_version = self.get_int(gl.GL_MAJOR_VERSION)
         """Major version number of the OpenGL API supported by the current context."""
@@ -135,8 +135,8 @@ class GLInfo(SurfaceInfo):
 
     def update_features(self) -> None:
         """Populate OpenGL and OpenGL ES feature support."""
-        is_desktop_gl = self.api in ("opengl", "gl2")
-        is_gles = self.api in ("gles2", "gles3")
+        is_desktop_gl = self.api in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_2)
+        is_gles = self.api in (GraphicsAPI.OPENGL_ES_2, GraphicsAPI.OPENGL_ES_3)
 
         def desktop_at_least(major: int, minor: int = 0) -> bool:
             return is_desktop_gl and self.have_version(major, minor)

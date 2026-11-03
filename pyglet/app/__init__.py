@@ -35,13 +35,17 @@ import sys
 import signal
 import platform
 import weakref
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pyglet.window import BaseWindow
 
 import pyglet
 from pyglet import compat_platform
 from pyglet.app.base import EventLoop
 
 
-if pyglet.IS_DOC_BUILD:
+if TYPE_CHECKING or pyglet.IS_DOC_BUILD:
     from pyglet.app.base import PlatformEventLoop
 else:
     if compat_platform == 'darwin':
@@ -67,7 +71,7 @@ class AppException(Exception):
     pass
 
 
-windows = weakref.WeakSet()
+windows: weakref.WeakSet[BaseWindow] = weakref.WeakSet()
 """Set of all open windows (including invisible windows).  Instances of
 :class:`pyglet.window.Window` are automatically added to this set upon 
 construction. The set uses weak references, so windows are removed from 
@@ -112,4 +116,4 @@ event_loop = EventLoop()
 
 #: The platform-dependent event loop. Applications are strongly discouraged
 #: from subclassing or replacing this :class:`PlatformEventLoop` object.
-platform_event_loop = PlatformEventLoop()
+platform_event_loop: PlatformEventLoop = PlatformEventLoop()

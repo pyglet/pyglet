@@ -26,7 +26,7 @@ except:
     pass
 
 _restore_mode_child_installed = False
-_restorable_screens = set()
+_restorable_screens: set[tuple[bytes, int]] = set()
 _mode_write_pipe = None
 
 

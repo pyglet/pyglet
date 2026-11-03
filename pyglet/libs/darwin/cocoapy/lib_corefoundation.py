@@ -86,7 +86,7 @@ def get_NSString(string: str) -> ObjCInstance:
     return ObjCInstance(c_void_p(CFSTR(string))).autorelease()
 
 
-def cfstring_to_string(cfstring: ObjCInstance) -> str | None:
+def cfstring_to_string(cfstring: ObjCInstance | c_void_p) -> str | None:
     length = cf.CFStringGetLength(cfstring)
     size = cf.CFStringGetMaximumSizeForEncoding(length, kCFStringEncodingUTF8)
     buffer = c_buffer(size + 1)
@@ -156,7 +156,7 @@ kCFNumberCGFloatType = 16
 kCFNumberMaxType = 16
 
 
-def cfnumber_to_number(cfnumber: ObjCInstance) -> float | None:
+def cfnumber_to_number(cfnumber: ObjCInstance | c_void_p) -> float | None:
     """Convert CFNumber to python int or float."""
     numeric_type = cf.CFNumberGetType(cfnumber)
     cfnum_to_ctype = {
@@ -232,7 +232,7 @@ cf.CFArrayGetValueAtIndex.restype = c_void_p
 cf.CFArrayGetValueAtIndex.argtypes = [c_void_p, CFIndex]
 
 
-def cfarray_to_list(cfarray: ObjCInstance) -> list[ObjCInstance]:
+def cfarray_to_list(cfarray: ObjCInstance | c_void_p) -> list[ObjCInstance]:
     """Convert CFArray to python list."""
     count = cf.CFArrayGetCount(cfarray)
     return [cftype_to_value(c_void_p(cf.CFArrayGetValueAtIndex(cfarray, i))) for i in range(count)]

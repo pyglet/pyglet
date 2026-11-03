@@ -27,7 +27,7 @@ def harfbuzz_available() -> bool:
     return _available
 
 
-_hb_cache: dict[tuple[str, str, bool, str | bool], _HarfbuzzResources] = {}
+_hb_cache: dict[tuple[str, str, str, str], _HarfbuzzResources] = {}
 
 
 def _add_utf16_buffer(text: str, buffer: c_void_p) -> None:
@@ -99,11 +99,13 @@ def get_resource_from_path(font_path: str):
     resource.load_from_memory(data)
     return resource
 
-def _get_fallback_glyph_shape(font: Font, text: str) -> tuple[list[Glyph], list[GlyphPosition]]:
+def _get_fallback_glyph_shape(font: FreeTypeFont | Win32DirectWriteFont | QuartzFont, text: str) -> tuple[list[Glyph], list[GlyphPosition]]:
     glyphs = []
     offsets = []
     pystr_len = len(text)
-    for fallback in font.fallbacks:
+    assert font._zero_glyph is not None
+    fallbacks: list[FreeTypeFont | Win32DirectWriteFont | QuartzFont] = getattr(font, 'fallbacks', [])
+    for fallback in fallbacks:
         glyph_info = fallback.hb_resource.shape_text(text, fallback.pixel_size)
 
         indices = [glyph_data["codepoint"] for glyph_data in glyph_info]
@@ -124,10 +126,12 @@ def _get_fallback_glyph_shape(font: Font, text: str) -> tuple[list[Glyph], list[
 
     return glyphs, offsets
 
-def get_harfbuzz_shaped_glyphs(font: Font, text: str) -> tuple[list[Glyph], list[GlyphPosition]]:
+def get_harfbuzz_shaped_glyphs(font: FreeTypeFont | Win32DirectWriteFont | QuartzFont, text: str) -> tuple[list[Glyph], list[GlyphPosition]]:
+    assert font._zero_glyph is not None
+    assert font.hb_resource is not None
     glyph_info = font.hb_resource.shape_text(text, font.pixel_size)
     clusters = [glyph_data["cluster"] for glyph_data in glyph_info]
-    cluster_map = defaultdict(list)
+    cluster_map: defaultdict[int, list[dict]] = defaultdict(list)
 
     # Find any clusters that have empty indices.
     empty_clusters = {}
@@ -151,14 +155,14 @@ def get_harfbuzz_shaped_glyphs(font: Font, text: str) -> tuple[list[Glyph], list
     missing_glyphs = {}
     for cluster_id, cluster_ct in empty_clusters.items():
         missing_text = text[cluster_id:cluster_id + cluster_ct]
-        if missing_text not in font.glyphs:
+        if missing_text not in font._fallback_glyphs:
             if missing_text == '\n':
                 fb_glyph_info = ([font._zero_glyph], [GlyphPosition(0, 0, 0, 0)])
             else:
                 # Get glyphs from fallback, since we need the fallback to actually render it.
                 fb_glyph_info = _get_fallback_glyph_shape(font, missing_text)
-            font.glyphs[missing_text] = fb_glyph_info  # Cache by string to prevent future fallback paths.
-        missing_glyphs[cluster_id] = font.glyphs[missing_text]
+            font._fallback_glyphs[missing_text] = fb_glyph_info  # Cache by string to prevent future fallback paths.
+        missing_glyphs[cluster_id] = font._fallback_glyphs[missing_text]
 
     glyphs = []
     offsets = []
@@ -177,19 +181,20 @@ def get_harfbuzz_shaped_glyphs(font: Font, text: str) -> tuple[list[Glyph], list
                 glyphs.append(font._zero_glyph)
                 offsets.append(GlyphPosition(0, 0, 0, 0))
         else:
-            for glyph_info in cluster_glyph_info:
-                glyph = font.glyphs[glyph_info["codepoint"]]
+            for cluster_entry in cluster_glyph_info:
+                glyph = font.glyphs[cluster_entry["codepoint"]]
                 glyphs.append(glyph)
 
                 offsets.append(
-                    GlyphPosition(glyph_info["x_advance"] - glyph.advance, glyph_info["y_advance"],
-                                  glyph_info["x_offset"], glyph_info["y_offset"]),
+                    GlyphPosition(cluster_entry["x_advance"] - glyph.advance, cluster_entry["y_advance"],
+                                  cluster_entry["x_offset"], cluster_entry["y_offset"]),
                 )
 
     return glyphs, offsets
 
 
 class _HarfbuzzResources:
+    face: c_void_p | None
     def __init__(self) -> None:
         self.blob = None
         self.face = None
@@ -207,7 +212,7 @@ class _HarfbuzzResources:
         self.face = hb_lib.hb_face_create(self.blob, 0)
         self.font = hb_lib.hb_font_create(self.face)
 
-    def shape_text(self, text: str, pixel_size: int, direction: int=HB_DIRECTION_LTR) -> list[dict]:
+    def shape_text(self, text: str, pixel_size: float, direction: int=HB_DIRECTION_LTR) -> list[dict]:
         """Shapes the given string using the provided hb_font.
 
         Returns a list of dictionaries for each glyph containing:

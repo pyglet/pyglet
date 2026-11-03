@@ -82,19 +82,20 @@ import sys
 from abc import abstractmethod
 from collections.abc import Iterable
 from collections import deque
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Generic, cast
 from collections.abc import Callable, Sequence
 
 import pyglet
 import pyglet.window.key
 import pyglet.window.mouse
 from pyglet.event import EVENT_HANDLE_STATE, EventDispatcher
+from pyglet.customtypes import ScreenT
 
 from pyglet.window import event, key, dialog
-from pyglet.window.camera import Camera2D
-from pyglet.window.camera.base import BaseCamera
 
 if TYPE_CHECKING:
+    from pyglet.window.camera import Camera2D
+    from pyglet.window.camera.base import BaseCamera
     from pyglet.math import Mat4
     from pyglet.config import Config, UserConfig
     from pyglet.graphics.api.base import VerifiedGraphicsConfig, SurfaceContext, GraphicsConfig
@@ -246,7 +247,7 @@ class _WindowMetaclass(type):
         super().__init__(name, bases, dct)
 
 
-class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
+class BaseWindow(EventDispatcher, Generic[ScreenT], metaclass=_WindowMetaclass):
     """Platform-independent application window.
 
     A window is a "heavyweight" object occupying operating system resources.
@@ -271,7 +272,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
 
     # Filled in by metaclass with the names of all methods on this (sub)class
     # that are platform event handlers.
-    _platform_event_names: set[Callable] = set()  # noqa: RUF012
+    _platform_event_names: set[str] = set()  # noqa: RUF012
 
     #: The default window style.
     WINDOW_STYLE_DEFAULT: None = None
@@ -366,7 +367,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     _visible: bool = False
     _vsync: bool = False
     _file_drops: bool = False
-    _screen: Screen
+    _display: Display[ScreenT]
+    _screen: ScreenT
     _config: VerifiedGraphicsConfig | None = None
     _context: SurfaceContext | None = None
     _context_share: SurfaceContext | None = None
@@ -378,8 +380,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     _windowed_size: tuple[int, int] | None = None
     _windowed_location: tuple[int, int] | None = None
 
-    _minimum_size: tuple[int, int] | None = None
-    _maximum_size: tuple[int, int] | None = None
+    _minimum_size: tuple[int | str, int | str] | None = None
+    _maximum_size: tuple[int | str, int | str] | None = None
 
     _keyboard_exclusive: bool = False
 
@@ -414,8 +416,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                  visible: bool = True,
                  vsync: bool = True,
                  file_drops: bool = False,
-                 display: Display | None = None,
-                 screen: Screen | None = None,
+                 display: Display[ScreenT] | None = None,
+                 screen: ScreenT | None = None,
                  config: Config | Iterable[Config] | None = None,
                  context: SurfaceContext | None = None,
                  mode: ScreenMode | None = None) -> None:
@@ -583,6 +585,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         self._camera = self._create_default_camera()
 
     def _create_default_camera(self) -> Camera2D:
+        from pyglet.window.camera import Camera2D  # noqa: PLC0415
+
         return Camera2D(cast('Window', self))
 
     def __del__(self) -> None:
@@ -659,6 +663,9 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             super().dispatch_event(*args)
         else:
             self._event_queue.append(args)
+
+    if TYPE_CHECKING:
+        def dispatch_pending_events(self) -> None: ...
 
     @abstractmethod
     def dispatch_events(self) -> None:
@@ -740,7 +747,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         """
         return self.get_size()
 
-    def get_current_screen(self) -> Screen:
+    def get_current_screen(self) -> ScreenT:
         """Return the screen currently occupied by this window.
 
         Unlike :py:attr:`screen`, which is the fullscreen target, this follows
@@ -895,7 +902,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         and in the taskbar on Windows and many X11 window managers.
         """
 
-    def set_fullscreen(self, fullscreen: bool = True, screen: Screen | None = None, mode: ScreenMode | None = None,
+    def set_fullscreen(self, fullscreen: bool = True, screen: ScreenT | None = None, mode: ScreenMode | None = None,
                        width: int | None = None, height: int | None = None) -> None:
         """Toggle to or from fullscreen.
 
@@ -1219,12 +1226,12 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         return self._vsync
 
     @property
-    def display(self) -> Display:
+    def display(self) -> Display[ScreenT]:
         """The display this window belongs to.  Read-only."""
         return self._display
 
     @property
-    def screen(self) -> Screen:
+    def screen(self) -> ScreenT:
         """The screen this window is fullscreen in.  Read-only."""
         return self._screen
 
@@ -1947,7 +1954,7 @@ class FPSDisplay:
 
 if TYPE_CHECKING or IS_DOC_BUILD:
     # Expose the platform-neutral public API without importing a platform implementation.
-    class Window(BaseWindow):
+    class Window(BaseWindow['Screen']):
         """Platform-independent application window.
 
         A window is a "heavyweight" object occupying operating system resources.

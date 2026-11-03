@@ -69,9 +69,9 @@ The following table shows common codecs available in pyglet.
         * - ``pyglet.image.codecs.gdkpixbuf2``
           - ``GdkPixbuf2ImageDecoder``
           - Uses GTK GDK-Pixbuf to decode images.
-        * - ``pyglet.image.codecs.quartz``
-          - ``QuartzImageDecoder``
-          - Uses macOS Quartz services to decode images.
+        * - ``pyglet.image.codecs.imageio``
+          - ``ImageIODecoder``
+          - Uses macOS Image I/O services to decode images.
         * - ``pyglet.image.codecs.pil``
           - ``PILImageDecoder``
           - Wrapper interface around PIL Image.

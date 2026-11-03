@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 import warnings
 
@@ -203,7 +205,7 @@ HIDDeviceValueCallback = CFUNCTYPE(None, c_void_p, c_int, c_void_p, c_void_p)
 
 # Lookup tables cache python objects for the devices and elements so that
 # we can avoid creating multiple wrapper objects for the same device.
-_device_lookup = {}   # IOHIDDeviceRef to python HIDDevice object
+_device_lookup: dict[int, HIDDevice] = {}   # IOHIDDeviceRef to python HIDDevice object
 
 
 class HIDValue:

@@ -39,7 +39,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pyglet.image import ImageData, ImageDataRegion
-    from pyglet.graphics.texture import TextureRegion, TextureArrayRegion
+    from pyglet.graphics.texture import TextureRegion, TextureArrayRegion, TextureArray
 
 
 class AllocatorException(Exception):  # noqa: N818
@@ -187,6 +187,8 @@ class TextureBin:
     a new one is automatically created to fit the next ImageData.
     """
 
+    atlases: list[TextureAtlas]
+
     def __init__(self, texture_width: int = 2048, texture_height: int = 2048) -> None:
         """Create a texture bin for holding atlases of the given size."""
         max_texture_size = pyglet.graphics.api.core.current_context.info.MAX_TEXTURE_SIZE
@@ -225,6 +227,8 @@ class TextureArrayBin:
     This works similarly to TextureBin, but it manages TextureArrays instead of
     TextureAtlases.
     """
+
+    arrays: list[TextureArray]
 
     def __init__(self, texture_width: int = 2048, texture_height: int = 2048, max_depth: int | None = None) -> None:
         max_texture_size = pyglet.graphics.api.core.current_context.info.MAX_TEXTURE_SIZE

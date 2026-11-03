@@ -1,24 +1,26 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Sequence, cast
 
 import pyglet
 from pyglet.event import EventDispatcher
 from pyglet.window import (
     BaseWindow,
+    DefaultMouseCursor,
     _PlatformEventHandler,
     _ViewEventHandler,
 )
 
 if TYPE_CHECKING:
-    from pyglet.display.base import Screen
+    from pyglet.display.headless import HeadlessScreen
+    from pyglet.display.headless import EGLHeadlessDisplay
 
 # Platform event data is single item, so use platform event handler directly.
 HeadlessEventHandler = _PlatformEventHandler
 ViewEventHandler = _ViewEventHandler
 
 
-class HeadlessWindow(BaseWindow):
+class HeadlessWindow(BaseWindow['HeadlessScreen']):
     """Backend-neutral headless window.
 
     This class provides a no-OS-window shell around a graphics context.
@@ -32,7 +34,7 @@ class HeadlessWindow(BaseWindow):
             self.dispatch_event('on_expose')
 
     def switch_to(self) -> None:
-        if self.context:
+        if self.context and hasattr(self.context, 'set_current'):
             self.context.set_current()
 
     def set_caption(self, caption: str) -> None:
@@ -53,15 +55,15 @@ class HeadlessWindow(BaseWindow):
     def get_size(self) -> tuple[int, int]:
         return self._width, self._height
 
-    def get_current_screen(self) -> Screen:
+    def get_current_screen(self) -> HeadlessScreen:
         """Return the virtual screen used by this headless window."""
         return self._screen
 
     def set_location(self, x: int, y: int) -> None:
         pass
 
-    def get_location(self) -> None:
-        pass
+    def get_location(self) -> tuple[int, int]:
+        return 0, 0
 
     def activate(self) -> None:
         pass
@@ -93,8 +95,8 @@ class HeadlessWindow(BaseWindow):
     def set_exclusive_keyboard(self, exclusive: bool = True) -> None:
         pass
 
-    def get_system_mouse_cursor(self, name: str) -> None:
-        pass
+    def get_system_mouse_cursor(self, name: str) -> DefaultMouseCursor:
+        return DefaultMouseCursor()
 
     def dispatch_events(self) -> None:
         while self._event_queue:
@@ -111,6 +113,8 @@ class HeadlessWindow(BaseWindow):
 
 class EGLHeadlessWindow(HeadlessWindow):
     """EGL-backed headless window for OpenGL/EGL rendering backends."""
+
+    display: EGLHeadlessDisplay
 
     egl_display_connection = None
     egl_surface = None

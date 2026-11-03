@@ -196,18 +196,30 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
             vertex_lists = [vertex_list for line in self.lines for vertex_list in line.vertex_lists]
             self._batch.draw_subset(vertex_lists)  # type: ignore[arg-type]
 
-    @TextLayout.dpi.setter
+    @property
+    def dpi(self) -> int:
+        return super().dpi
+
+    @dpi.setter
     def dpi(self, value: int) -> None:
         self._dpi = int(value)
         self._invalid_glyphs.invalidate(0, len(self.document.text))
         self._update()
 
-    @TextLayout.content_valign.setter
+    @property
+    def content_valign(self) -> ContentVAlign:
+        return super().content_valign
+
+    @content_valign.setter
     def content_valign(self, content_valign: ContentVAlign) -> None:
         self._content_valign = content_valign
         self._recreate_vertex_lists()
 
-    @TextLayout.content_halign.setter
+    @property
+    def content_halign(self) -> HorizontalAlign:
+        return super().content_halign
+
+    @content_halign.setter
     def content_halign(self, content_halign: HorizontalAlign) -> None:
         self._content_halign = content_halign
         self._recreate_vertex_lists()

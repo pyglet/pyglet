@@ -460,6 +460,10 @@ class Request:
 class Interface:
     """Interface base class"""
 
+    if TYPE_CHECKING:
+        # Protocol XML supplies request methods dynamically.
+        def __getattr__(self, name: str) -> Any: ...
+
     _element: Element
     protocol: Protocol
     opcode: int

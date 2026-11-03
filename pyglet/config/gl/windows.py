@@ -4,8 +4,8 @@ import warnings
 from ctypes import c_int, c_uint, sizeof, byref
 from dataclasses import asdict
 
-from typing import TYPE_CHECKING
-from pyglet.config.gl import GLSurfaceConfig
+from typing import TYPE_CHECKING, cast
+from pyglet.config.gl import GLSurfaceConfig as BaseGLSurfaceConfig
 from pyglet.libs.win32 import PIXELFORMATDESCRIPTOR, _gdi32, wgl
 from pyglet.libs.win32.constants import PFD_DRAW_TO_WINDOW, PFD_SUPPORT_OPENGL, PFD_DOUBLEBUFFER, \
     PFD_DOUBLEBUFFER_DONTCARE, PFD_STEREO, PFD_STEREO_DONTCARE, PFD_DEPTH_DONTCARE, PFD_TYPE_RGBA
@@ -44,7 +44,9 @@ class _WGL:
 
     def create(self) -> bool:
         from pyglet.window import _shadow_window  # noqa: PLC0415
-        funcs = self._initialize_wgl_funcs(_shadow_window)
+        if _shadow_window is None:
+            return False
+        funcs = self._initialize_wgl_funcs(cast('Win32Window', _shadow_window))
         if funcs:
             self._loaded = True
             self._funcs = funcs
@@ -85,7 +87,7 @@ class _WGL:
         current_ctx = wgl.wglGetCurrentContext()
 
         if not wgl.wglMakeCurrent(shadow_dc, dummy_ctx):
-            print("Unable to make dummy context current.")
+            warnings.warn("Unable to make dummy context current.")
             # Set back to old context and dc and delete dummy context.
             wgl.wglMakeCurrent(current_dc, current_ctx)
             wgl.wglDeleteContext(dummy_ctx)
@@ -99,16 +101,13 @@ class _WGL:
 # A global WGL instance object that has retrieved all the proc addresses for WGL functions.
 _global_wgl = _WGL()
 
-def match(config: OpenGLUserConfig, window: Win32Window) -> GLSurfaceConfig | None:
+def match(config: OpenGLUserConfig, window: Win32Window) -> GLSurfaceConfig | GLLegacyConfig | None:
     if not _global_wgl.loaded:
         _global_wgl.create()
 
     if _global_wgl.have_extension('WGL_ARB_pixel_format'):
-         finalized_config = _get_arb_pixel_format_matching_configs(config, window)
-    else:
-        finalized_config = _get_pixel_format_descriptor_matching_configs(config, window)
-
-    return finalized_config
+        return _get_arb_pixel_format_matching_configs(config, window)
+    return _get_pixel_format_descriptor_matching_configs(config, window)
 
 def _get_pixel_format_descriptor_matching_configs(config: OpenGLUserConfig, window: Win32Window) -> GLLegacyConfig | None:
     """Get matching configs using standard PIXELFORMATDESCRIPTOR technique."""
@@ -168,12 +167,12 @@ def _get_arb_pixel_format_matching_configs(config: OpenGLUserConfig, window: Win
         if attr and value is not None:
             attrs.extend([attr, int(value)])
     attrs.append(0)
-    attrs = (c_int * len(attrs))(*attrs)
+    attr_array = (c_int * len(attrs))(*attrs)
 
     pformats = (c_int * 16)()
     nformats = c_uint(16)
 
-    _global_wgl.funcs.wglChoosePixelFormatARB(window.dc, attrs, None, nformats, pformats, nformats)
+    _global_wgl.funcs.wglChoosePixelFormatARB(window.dc, attr_array, None, nformats, pformats, nformats)
 
     # Only choose the first format, because these are in order of best matching from driver.
     # (Maybe not always the case?)
@@ -186,7 +185,7 @@ def _get_arb_pixel_format_matching_configs(config: OpenGLUserConfig, window: Win
 
 
 
-class GLLegacyConfig(GLSurfaceConfig):
+class GLLegacyConfig(BaseGLSurfaceConfig['Win32Window']):
     def __init__(self, window: Win32Window, pf: int, user_config: OpenGLUserConfig) -> None:
         super().__init__(window, user_config, pf)
         self._pf = pf
@@ -219,7 +218,7 @@ class GLLegacyConfig(GLSurfaceConfig):
         return Win32Context(opengl_backend, self._window, self, share)
 
 
-class GLSurfaceConfig(GLSurfaceConfig):
+class GLSurfaceConfig(BaseGLSurfaceConfig['Win32Window']):
     attribute_ids = {  # noqa: RUF012
         'double_buffer': wgl.WGL_DOUBLE_BUFFER_ARB,
         'stereo': wgl.WGL_STEREO_ARB,
@@ -245,9 +244,9 @@ class GLSurfaceConfig(GLSurfaceConfig):
 
         names = list(self.attribute_ids.keys())
         attrs = list(self.attribute_ids.values())
-        attrs = (c_int * len(attrs))(*attrs)
-        values = (c_int * len(attrs))()
-        _global_wgl.funcs.wglGetPixelFormatAttribivARB(window.dc, pf, 0, len(attrs), attrs, values)
+        attr_array = (c_int * len(attrs))(*attrs)
+        values = (c_int * len(attr_array))()
+        _global_wgl.funcs.wglGetPixelFormatAttribivARB(window.dc, pf, 0, len(attr_array), attr_array, values)
 
         for name, value in zip(names, values):
             setattr(self, name, value)

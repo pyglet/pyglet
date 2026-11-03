@@ -221,7 +221,7 @@ class GLMappedBufferObject(GLBufferObject, BaseMappedBufferObject):
             return GL_MAP_READ_BIT | GL_MAP_WRITE_BIT
         return bits
 
-    def map(self, bits: int = GL_WRITE_ONLY) -> CTypesPointer[ctypes.c_byte]:
+    def map(self, bits: int = GL_WRITE_ONLY) -> ctypes.Array[ctypes.c_byte]:
         self._ensure_allocated()
         self.bind()
         if self._supports_range_only:
@@ -667,7 +667,7 @@ class PersistentBufferObject(BaseMappedBufferObject):
         self._validate_byte_range(offset, len(raw))
         self._require_store().set_bytes(offset, raw)
 
-    def map(self, bits: int = GL_WRITE_ONLY) -> CTypesPointer[ctypes.c_byte]:  # noqa: ARG002
+    def map(self, bits: int = GL_WRITE_ONLY) -> ctypes.Array[ctypes.c_byte]:  # noqa: ARG002
         ptr_type = ctypes.POINTER(ctypes.c_byte * self.size)
         return ctypes.cast(self._require_mapped_ptr(), ptr_type).contents
 

@@ -12,6 +12,10 @@ from __future__ import annotations
 
 from concurrent.futures import ProcessPoolExecutor as _ProcessPoolExecutor
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from tkinter.filedialog import _Dialog
 
 import pyglet
 from pyglet.window.dialog.base import FileOpenDialogBase, FileSaveDialogBase, _split_filetype_patterns
@@ -20,7 +24,7 @@ from pyglet.window.dialog.base import FileOpenDialogBase, FileSaveDialogBase, _s
 class _TkFileDialogBackend:
 
     executor = _ProcessPoolExecutor(max_workers=1)
-    _dialog = None
+    _dialog: _Dialog | None = None
 
     @staticmethod
     def _open_dialog(dialog):

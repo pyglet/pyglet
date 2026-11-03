@@ -15,7 +15,7 @@ from pyglet.media.player_worker_thread import PlayerWorkerThread
 from pyglet.util import debug_print
 
 from . import lib_pulseaudio as pa
-from .interface import PulseAudioMainloop, SAMPLE_FORMATS
+from .interface import PulseAudioMainloop, PulseAudioContext, SAMPLE_FORMATS
 
 if TYPE_CHECKING:
     from pyglet.media.codecs import AudioData, Source
@@ -26,6 +26,9 @@ _debug = debug_print('debug_media')
 
 
 class PulseAudioDriver(AbstractAudioDriver):
+    mainloop: PulseAudioMainloop | None
+    context: PulseAudioContext | None
+    _players: weakref.WeakSet[PulseAudioPlayer]
     def __init__(self) -> None:
         self.mainloop = PulseAudioMainloop()
         self.mainloop.start()
@@ -42,9 +45,9 @@ class PulseAudioDriver(AbstractAudioDriver):
 
     def create_audio_player(self, source: Source, player: AudioPlayer) -> PulseAudioPlayer:
         assert self.context is not None
-        player = PulseAudioPlayer(source, player, self)
-        self._players.add(player)
-        return player
+        audio_player = PulseAudioPlayer(source, player, self)
+        self._players.add(audio_player)
+        return audio_player
 
     def create_gapless_audio_player(self, source: Source, player: AudioPlayer) -> PulseAudioGaplessAudioPlayer:
         assert self.context is not None
@@ -163,6 +166,7 @@ class _AudioDataBuffer:
 
 
 class PulseAudioPlayer(AbstractAudioPlayer):
+    _latest_timing_info: pa.pa_timing_info | None
     def __init__(self, source: Source, player: AudioPlayer, driver: PulseAudioDriver) -> None:
         super().__init__(source, player)
         self.driver = driver
@@ -262,6 +266,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
     def _write_to_stream(self, nbytes: int) -> int:
         data_ptr, bytes_accepted = self.stream.begin_write(nbytes)
 
+        assert data_ptr.value is not None
         bytes_written = self._audio_data_buffer.memmove(data_ptr.value, bytes_accepted)
 
         if bytes_written == 0:
@@ -387,6 +392,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
 
 
 class PulseAudioGaplessAudioPlayer(PulseAudioPlayer, GaplessAudioPlayerBase):
+    _source_end_cursors: deque[int]
     """Keep PulseAudio's playback stream filled across source boundaries."""
 
     def __init__(self, source: Source, player: AudioPlayer, driver: PulseAudioDriver) -> None:

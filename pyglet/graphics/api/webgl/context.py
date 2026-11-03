@@ -12,23 +12,27 @@ from pyglet.graphics.api.webgl.gl_info import WebGLInfo
 from pyglet.graphics.api.webgl.renderer import WebGLRenderer
 
 if TYPE_CHECKING:
-    from pyglet.graphics.api.webgl.shader import GLDataType
+    from pyglet.graphics.shader import ShaderProgram
+    from pyglet.graphics.api.webgl.shader import GLDataType, _UBOBindingManager
     from pyglet.config import SurfaceConfig
     from pyglet.graphics.api import WebGLBackend
     from pyglet.graphics.api.webgl.webgl_js import WebGL2RenderingContext
-    from pyglet.window import Window
     from pyglet.window.emscripten import EmscriptenWindow
 
 
-class WebGL2SurfaceContext(SurfaceContext):
+class WebGL2SurfaceContext(SurfaceContext['EmscriptenWindow']):
     """A base OpenGL context for drawing.
 
     Use ``DisplayConfig.create_context`` to create a context.
     """
 
+    ubo_manager: _UBOBindingManager
     gl: WebGL2RenderingContext
     config: SurfaceConfig
     context_share: WebGL2SurfaceContext | None
+    doomed_vaos: list[int]
+    doomed_framebuffers: list[int]
+    cached_programs: weakref.WeakValueDictionary[str, ShaderProgram]
 
     def __init__(
         self,
@@ -55,7 +59,10 @@ class WebGL2SurfaceContext(SurfaceContext):
         self.is_current = False
 
         # The GL Context.  Pass through the WebGLConfig settings:
-        self.gl = self.window.canvas.getContext("webgl2", **self.config.attributes)
+        assert self.window.canvas is not None
+        context = self.window.canvas.getContext("webgl2", **self.config.attributes)
+        assert context is not None, "A WebGL2 context could not be created."
+        self.gl = context
 
         self._info = WebGLInfo()
         self._info.query(self.gl)
@@ -115,7 +122,7 @@ class WebGL2SurfaceContext(SurfaceContext):
             self.core.current_context = NullContext()
         #     #gl_info.remove_active_context()
 
-    def attach(self, window: Window) -> None:
+    def attach(self, window: EmscriptenWindow) -> None:
         # if not self.config.compatible(canvas):
         #     msg = f'Cannot attach {canvas} to {self}'
         #     raise RuntimeError(msg)

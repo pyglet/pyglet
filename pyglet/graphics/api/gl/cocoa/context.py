@@ -16,13 +16,14 @@ NSOpenGLPixelFormat = cocoapy.ObjCClass('NSOpenGLPixelFormat')
 NSOpenGLContext = cocoapy.ObjCClass('NSOpenGLContext')
 
 
-class CocoaContext(OpenGLSurfaceContext):
+class CocoaContext(OpenGLSurfaceContext['CocoaWindow']):
+    _nscontext: cocoapy.ObjCInstance | None
 
     def __init__(self,
                  opengl_backend: OpenGLBackend,
                  window: CocoaWindow,
                  config: CocoaGLSurfaceConfig,
-                 nscontext: NSOpenGLContext,
+                 nscontext: cocoapy.ObjCInstance,
                  share: CocoaContext | None) -> None:
         super().__init__(opengl_backend, window, config, platform_info=None, context_share=share)
         self.config = config

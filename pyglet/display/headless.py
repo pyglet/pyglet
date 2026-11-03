@@ -13,7 +13,7 @@ from pyglet.util import debug_print
 _debug = debug_print('debug_api')
 
 
-class HeadlessDisplay(Display):
+class HeadlessDisplay(Display['HeadlessScreen']):
     """Backend-neutral headless display stub.
 
     This display does not require a windowing system or EGL connection.
@@ -26,7 +26,9 @@ class HeadlessDisplay(Display):
         self._display_connection = None
         self._screens = [HeadlessScreen(self, 0, 0, 1920, 1080)]
 
-    def get_screens(self):
+    _screens: list[HeadlessScreen]
+
+    def get_screens(self) -> list[HeadlessScreen]:
         return self._screens
 
 
@@ -68,7 +70,7 @@ class EGLHeadlessDisplay(HeadlessDisplay):
         egl.eglTerminate(self._display_connection)
 
 
-class HeadlessScreen(Screen):
+class HeadlessScreen(Screen[HeadlessDisplay]):
     def __init__(self, display, x, y, width, height):
         super().__init__(display, x, y, width, height)
 

@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 from pyglet.window import key, mouse
 
 if TYPE_CHECKING:
-    from io import StringIO
+    from typing import TextIO
 
 
 class WindowEventLogger:
@@ -28,7 +28,7 @@ class WindowEventLogger:
 
     """
 
-    def __init__(self, logfile: StringIO | None = None) -> None:
+    def __init__(self, logfile: TextIO | None = None) -> None:
         """Create an event logger which writes to ``logfile``.
 
         Args:

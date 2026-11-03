@@ -21,10 +21,10 @@ if TYPE_CHECKING:
 
 def get_default_batch() -> GLBatch:
     """Batch used globally for objects that have no Batch specified."""
-    return pyglet.graphics.api.core.get_default_batch()
+    return pyglet.graphics.api.core.get_default_batch()  # type: ignore[return-value]
 
 
-_domain_class_map: dict[tuple[bool, bool], type[vertexdomain.GLVertexDomain]] = {
+_domain_class_map: dict[tuple[bool, bool], type[VertexDomain]] = {
     # Indexed, Instanced : Domain
     (False, False): vertexdomain.GLVertexDomain,
     (True, False): vertexdomain.GLIndexedVertexDomain,
@@ -44,8 +44,9 @@ def _cached_multidraw(context: OpenGLSurfaceContext, buckets: list[RangeAllocato
                       *, index_type: int | None = None, element_size: int = 1) -> Callable[[DrawContext], None]:
     """Keep native draw arrays alive for one compiled GL or GL2 command."""
     start_type = ctypes.c_void_p if index_type is not None else GLint
-    versions = None
-    starts = sizes = None
+    versions: tuple[int, ...] | None = None
+    starts: ctypes.Array[ctypes.c_void_p] | ctypes.Array[GLint] | None = None
+    sizes: ctypes.Array[GLsizei] | None = None
     primcount = 0
 
     def _draw(_ctx: DrawContext) -> None:
@@ -89,4 +90,4 @@ class GLBatch(_BucketBatch):
         if isinstance(domain, vertexdomain.GLIndexedVertexDomain):
             return _cached_multidraw(domain._context, buckets, mode_func, index_type=domain.index_stream.gl_type,
                                      element_size=domain.index_stream.index_element_size)
-        return _cached_multidraw(domain._context, buckets, mode_func)
+        return _cached_multidraw(domain._context, buckets, mode_func)  # type: ignore[arg-type]

@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     from pyglet.customtypes import HorizontalAlign
     from pyglet.font.base import Font, Glyph
     from pyglet.graphics import Texture
-    from pyglet.graphics.vertexdomain import VertexList
+    from pyglet.graphics.vertexdomain import IndexedVertexList, VertexList
     from pyglet.text.document import AbstractDocument, InlineElement
     from pyglet.text.runlist import AbstractRunIterator, RunIterator
     from .base import TextLayout
@@ -269,7 +269,7 @@ class _GlyphBox(_AbstractBox):
     owner: Texture
     font: Font
     glyphs: list[tuple[float, Glyph, GlyphPosition]]
-    advance: int
+    advance: float
     vertex_lists: list[_LayoutVertexList]
     _glyph_vertex_list: _LayoutVertexList | None
 
@@ -834,6 +834,8 @@ class _GlyphBox(_AbstractBox):
                 GeometryMode.LINES,
                 layout.batch,
                 layout.foreground_decoration_group,
+                storage=None,
+                vertex_layout=None,
                 position=geometry.underline.vertices,
                 translation=(*translation, fg_layer) * ul_count,
                 colors=geometry.underline.colors,
@@ -852,6 +854,8 @@ class _GlyphBox(_AbstractBox):
                 GeometryMode.LINES,
                 layout.batch,
                 layout.foreground_decoration_group,
+                storage=None,
+                vertex_layout=None,
                 position=geometry.strikethrough.vertices,
                 translation=(*translation, fg_layer) * st_count,
                 colors=geometry.strikethrough.colors,
@@ -954,7 +958,7 @@ class _GlyphBox(_AbstractBox):
             self._add_vertex_list(shadow_list, context)
 
         if reuse_vertex_list is None:
-            vertex_list = layout.program.vertex_list_indexed(
+            vertex_list: IndexedVertexList | _LayoutVertexList = layout.program.vertex_list_indexed(
                 self.length * 4,
                 GeometryMode.TRIANGLES,
                 indices,

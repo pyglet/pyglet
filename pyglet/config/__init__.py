@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING, NamedTuple, cast
 
 import pyglet
 
@@ -12,7 +12,8 @@ from .base import SurfaceConfig, UserConfig  # noqa: TC001
 from .gl import OpenGLUserConfig, WebGLUserConfig
 
 if TYPE_CHECKING:
-    from pyglet.window import Window
+    from pyglet.window import BaseWindow
+    from pyglet.window.emscripten import EmscriptenWindow
 
 
 class Config:
@@ -42,7 +43,7 @@ class Config:
         # self.vulkan: TBD
 
 
-def match_surface_config(config: UserConfig, surface: Window) -> SurfaceConfig | None:
+def match_surface_config(config: UserConfig, surface: BaseWindow) -> SurfaceConfig | None:
     if isinstance(config, OpenGLUserConfig):
         from pyglet.config.gl import get_surface_config  # noqa: PLC0415
         return get_surface_config(config, surface)
@@ -50,7 +51,7 @@ def match_surface_config(config: UserConfig, surface: Window) -> SurfaceConfig |
     if isinstance(config, WebGLUserConfig):
         if pyglet.compat_platform == 'emscripten':
             from pyglet.config.gl.webgl import match  # noqa: PLC0415
-            return match(config, surface)
+            return match(config, cast('EmscriptenWindow', surface))
         return None
 
     msg = f"Matching for '{config.__class__}' is not yet implemented."

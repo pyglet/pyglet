@@ -1,6 +1,9 @@
 
 from dataclasses import dataclass
 from typing import Any, ItemsView, Literal, Sequence
+from .enums import GraphicsAPI
+
+def _install_trace() -> None: ...
 
 from . import app as app
 from . import clock as clock
@@ -74,7 +77,7 @@ class Options:
     dpi_scaling: Literal["platform", "stretch"]
     shader_bind_management: bool
     wayland: bool
-    backend: str | None
+    backend: Literal['opengl', 'gl2', 'gles3', 'gles2', 'webgl'] | GraphicsAPI
     optimize_states: bool
     opengl_persistent_buffers: bool
     pyodide: PyodideOptions

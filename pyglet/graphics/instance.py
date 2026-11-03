@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import weakref
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Sequence
+from typing import TYPE_CHECKING, Any, Generic, Sequence, TypeVar
 
 if TYPE_CHECKING:
+    from pyglet.enums import GeometryMode
     from pyglet.graphics.vertexdomain import InstanceVertexList, InstanceIndexedVertexList
     from pyglet.graphics.vertexstorage import InstanceStream, VertexArrayBinding
     from _weakref import ReferenceType
@@ -14,7 +15,7 @@ if TYPE_CHECKING:
 class InstanceAllocator:
     """Allocator for instances within a bucket."""
     count: int
-    slot_to_handle: dict[int, VertexInstance]
+    slot_to_inst: dict[int, VertexInstance]
     inst_to_slot: dict[VertexInstance, int]
 
     def __init__(self) -> None:  # noqa: D107
@@ -565,7 +566,10 @@ class InstanceBucket:
     def instance_count(self) -> int:
         return self._collection.count if self._collection is not None else self.allocator.count
 
-class InstanceDomain(ABC):
+InstanceListT = TypeVar('InstanceListT', bound='InstanceVertexList | InstanceIndexedVertexList')
+
+
+class InstanceDomain(ABC, Generic[InstanceListT]):
     """Base class for managing instance domains and the buckets associated with each."""
     _geom: dict[InstanceBucket, tuple[Any, ...]]
     _buckets: dict[tuple, InstanceBucket]
@@ -643,4 +647,4 @@ class InstanceDomain(ABC):
     @abstractmethod
     def draw(self, mode: Any) -> None: ...
     @abstractmethod
-    def draw_subset(self, mode: Any, vertex_list: InstanceVertexList | InstanceIndexedVertexList) -> None: ...
+    def draw_subset(self, mode: GeometryMode, vertex_list: InstanceListT) -> None: ...

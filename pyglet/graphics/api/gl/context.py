@@ -4,6 +4,7 @@ import threading
 import weakref
 from typing import Callable, TYPE_CHECKING
 
+from pyglet.customtypes import WindowT
 from pyglet.graphics import GraphicsAPIError, GraphicsIntegrationError
 from pyglet.graphics.api.gl import gl, gl_info
 from pyglet.graphics.api.gl.base import GLSharedObjectSpace
@@ -25,17 +26,17 @@ from pyglet.graphics.api.gl.gl import (
 from pyglet.graphics.api.gl.renderer import GLRenderer
 
 if TYPE_CHECKING:
+    from pyglet.graphics.shader import ShaderProgram
     from pyglet.config import SurfaceConfig
     from pyglet.graphics.texture import PixelReadback
     from pyglet.graphics.api.gl.shader import GLDataType, GLFunc
     from ctypes import Array
-    from pyglet.window import Window
     from pyglet.graphics.api.gl.xlib.glx_info import GLXInfo
     from pyglet.graphics.api.gl.win32.wgl_info import WGLInfo
     from pyglet.graphics.api.gl.global_opengl import OpenGLBackend
 
 
-class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
+class OpenGLSurfaceContext(SurfaceContext[WindowT], GLFunctions):
     """A base OpenGL context for drawing.
 
     Use ``DisplayConfig.create_context`` to create a context.
@@ -46,12 +47,15 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
 
     #: A container which is shared between all contexts that share GL objects.
     object_space: GLSharedObjectSpace
-    config: SurfaceConfig
+    config: SurfaceConfig | None
     context_share: OpenGLSurfaceContext | None
+    doomed_vaos: list[int]
+    doomed_framebuffers: list[int]
+    cached_programs: weakref.WeakValueDictionary[str, ShaderProgram]
 
     def __init__(self, core: OpenGLBackend,
-                 window: Window,
-                 config: SurfaceConfig,
+                 window: WindowT,
+                 config: SurfaceConfig | None,
                  platform_info: GLXInfo | WGLInfo | None = None,
                  context_share: OpenGLSurfaceContext | None = None,
                  platform_func_class: type | None = None) -> None:
@@ -115,7 +119,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
     def clear(self) -> None:
         self.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-    def attach(self, window: Window) -> None:
+    def attach(self, window: WindowT) -> None:
         """Attaches a Window and context to the current window.
 
         The OS specific child classes create contexts or GL related OS resources.
@@ -360,7 +364,10 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
         """Get the :py:class:`~GLInfo` instance for this context."""
         return self.info
 
-    def _get_uniform_func_tables(self):
+    def _get_uniform_func_tables(self) -> tuple[
+        dict[GLDataType, Callable],
+        dict[int, tuple[GLDataType, GLFunc, GLFunc, int]],
+    ]:
         _uniform_getters: dict[GLDataType, Callable] = {
             gl.GLint: self.glGetUniformiv,
             gl.GLuint: self.glGetUniformuiv,

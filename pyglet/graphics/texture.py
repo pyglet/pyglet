@@ -3,7 +3,7 @@ from __future__ import annotations
 import struct
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
-from typing import Any, Generic, Literal, Protocol, TYPE_CHECKING, TypeVar, cast, overload
+from typing import Any, Generic, Literal, Protocol, Self, TYPE_CHECKING, TypeVar, cast, overload
 
 import pyglet
 from pyglet.graphics import TextureError
@@ -22,9 +22,10 @@ from pyglet.image.base import (
 )
 
 if TYPE_CHECKING:
+    from ctypes import Array
     from collections.abc import Iterator, Sequence
 
-    from pyglet.customtypes import Buffer, DataTypes
+    from pyglet.customtypes import DataTypes
 
 
 class TextureArraySizeExceeded(TextureError):  # noqa: N818 - preserve the existing public exception name
@@ -36,7 +37,7 @@ class TextureArrayDepthExceeded(TextureError):  # noqa: N818 - preserve the exis
 
 
 TTexture = TypeVar("TTexture", bound="Texture")
-TRegion_co = TypeVar("TRegion_co", bound="_TextureRegionShared", covariant=True)
+TRegion_co = TypeVar("TRegion_co", bound="TextureRegion", covariant=True)
 
 
 class _TextureRegionFactory(Protocol[TRegion_co]):
@@ -44,6 +45,7 @@ class _TextureRegionFactory(Protocol[TRegion_co]):
 
     def __call__(self, x: int, y: int, z: int, width: int, height: int, owner: Texture, /) -> TRegion_co:
         ...
+
 
 class PixelReadback(ABC, Generic[SurfaceContextT]):
     """Base interface for backend-owned texture pixel readback resources."""
@@ -70,7 +72,7 @@ class PixelData:
     height: int
     format: ComponentFormat
     data_type: DataTypes
-    data: Buffer
+    data: bytes | Array[Any]
 
     @property
     def pitch(self) -> int:
@@ -137,7 +139,7 @@ class Texture(_AbstractImage, GraphicsResource[Any, TextureKey], Generic[Surface
 
     _context: SurfaceContextT
 
-    region_class: _TextureRegionFactory[_TextureRegionShared]  # Set after TextureRegion is defined
+    region_class: _TextureRegionFactory[TextureRegion]  # Set after TextureRegion is defined
     """The class to use when constructing regions of this texture.
      The class should be a subclass of TextureRegion.
     """
@@ -185,9 +187,12 @@ class Texture(_AbstractImage, GraphicsResource[Any, TextureKey], Generic[Surface
                  anisotropic_level: int = 0,
                  *,
                  key: TextureKey | None = None,
+                 context: SurfaceContextT | None = None,
                  ) -> None:
         super().__init__(width, height)
         GraphicsResource.__init__(self, key=key)
+        if context is not None:
+            self._context = context
         self.owner = self
         self._handle = handle
         self.tex_type = tex_type
@@ -544,14 +549,16 @@ class Texture(_AbstractImage, GraphicsResource[Any, TextureKey], Generic[Surface
         self._flush()
         self._mark_mipmap_valid(level)
 
-    def get_region(self, x: int, y: int, width: int, height: int) -> _TextureRegionShared:
+    def get_region(self, x: int, y: int, width: int, height: int) -> TextureRegion[Any]:
+        """Create a region sharing this texture's storage."""
         return self.region_class(x, y, 0, width, height, self)
 
     def get_transform(self, flip_x: bool = False, flip_y: bool = False,
-                      rotate: Literal[0, 90, 180, 270, 360] = 0) -> _TextureRegionShared:
-        """Create a copy of this image applying a simple transformation.
+                      rotate: Literal[0, 90, 180, 270, 360] = 0) -> TextureRegion[Any]:
+        """Create a texture region applying a simple transformation.
 
-        The transformation is applied to the texture coordinates only;
+        The returned region implements the Texture interface and shares this
+        texture's storage. The transformation is applied to the texture coordinates only;
         :py:meth:`~pyglet.graphics.texture.Texture.get_image_data` will fetch the
         untransformed data from the GPU.
 
@@ -564,7 +571,11 @@ class Texture(_AbstractImage, GraphicsResource[Any, TextureKey], Generic[Surface
                 Degrees of clockwise rotation of the returned image.  Only
                 90-degree increments are supported.
         """
-        transform = self.get_region(0, 0, self.width, self.height)
+        return self._transform_region(self.get_region(0, 0, self.width, self.height), flip_x, flip_y, rotate)
+
+    @staticmethod
+    def _transform_region(transform: TRegion, flip_x: bool, flip_y: bool,
+                          rotate: Literal[0, 90, 180, 270, 360]) -> TRegion:
         bl, br, tr, tl = 0, 1, 2, 3
         if flip_x:
             bl, br, tl, tr = br, bl, tr, tl
@@ -627,8 +638,8 @@ class Texture(_AbstractImage, GraphicsResource[Any, TextureKey], Generic[Surface
         return f"{self.__class__.__name__}(id={self.id}, size={self.width}x{self.height})"
 
 
-TRegion = TypeVar("TRegion", bound="_TextureRegionShared")
-TArrayRegion = TypeVar("TArrayRegion", bound="_TextureRegionShared")
+TRegion = TypeVar("TRegion", bound="TextureRegion")
+TArrayRegion = TypeVar("TArrayRegion", bound="TextureArrayRegion")
 # Generic self types preserve the concrete texture type in return annotations.
 TTexture3D = TypeVar("TTexture3D", bound="_Texture3DShared[Any, Any]")
 TTextureArray = TypeVar("TTextureArray", bound="_TextureArrayShared[Any, Any]")
@@ -660,106 +671,6 @@ class _TextureSequenceItems(Generic[TRegion]):
 
     def __iter__(self) -> Iterator[TRegion]:
         return iter(self.items)
-
-
-class _TextureRegionShared(_AbstractImage):
-    x: int
-    y: int
-    z: int
-    _width: int
-    _height: int
-    handle: Any | None
-    key: TextureKey
-    id: Any
-    width: int
-    height: int
-    owner: Texture
-    region_class: _TextureRegionFactory[_TextureRegionShared]
-    tex_coords: tuple[float, float, float, float, float, float, float, float, float, float, float, float]  # noqa: E501
-    tex_coords_order: tuple[int, int, int, int]
-
-    if TYPE_CHECKING:
-        # Supplied by each concrete region's texture base.
-        def _set_tex_coords_order(self, bl: int, br: int, tr: int, tl: int) -> None:
-            ...
-
-    def _init_region(self, x: int, y: int, z: int, width: int, height: int, owner: Texture) -> None:
-        self.x = x
-        self.y = y
-        self.z = z
-        self._width = width
-        self._height = height
-        self.owner = owner
-        owner_u1 = owner.tex_coords[0]
-        owner_v1 = owner.tex_coords[1]
-        owner_u2 = owner.tex_coords[3]
-        owner_v2 = owner.tex_coords[7]
-        scale_u = owner_u2 - owner_u1
-        scale_v = owner_v2 - owner_v1
-        u1 = x / owner.width * scale_u + owner_u1
-        v1 = y / owner.height * scale_v + owner_v1
-        u2 = (x + width) / owner.width * scale_u + owner_u1
-        v2 = (y + height) / owner.height * scale_v + owner_v1
-        r = z / owner.images + owner.tex_coords[2]
-        self.tex_coords = (u1, v1, r, u2, v1, r, u2, v2, r, u1, v2, r)
-
-    def fetch(self, _z: int = 0, level: int = 0) -> ImageDataRegion:
-        image_data = self.owner.fetch(self.z, level)
-        return image_data.get_region(self.x, self.y, self.width, self.height)
-
-    def read_pixels(self, _z: int = 0, level: int = 0) -> PixelData:
-        """Read typed pixel values for this region from its owning texture."""
-        pixels = self.owner.read_pixels(self.z, level)
-        component_size = struct.calcsize(pixels.data_type)
-        pixel_size = len(pixels.format.value) * component_size
-        width = max(1, self.width >> level)
-        height = max(1, self.height >> level)
-        x = self.x >> level
-        y = self.y >> level
-        rows = []
-        data = memoryview(pixels.data).cast("B")
-        for row in range(y, y + height):
-            start = row * pixels.pitch + x * pixel_size
-            rows.append(bytes(data[start:start + width * pixel_size]))
-        return PixelData(width, height, pixels.format, pixels.data_type, b"".join(rows))
-
-    def get_image_data(self, z: int = 0) -> ImageDataRegion:  # noqa: ARG002
-        return self.fetch()
-
-    def get_region(self, x: int, y: int, width: int, height: int) -> _TextureRegionShared:
-        x += self.x
-        y += self.y
-        region = self.region_class(x, y, self.z, width, height, self.owner)
-        region._set_tex_coords_order(*self.tex_coords_order)  # noqa: SLF001
-        return region
-
-    def upload(self, source: ImageData, x: int, y: int, z: int, level: int = 0) -> None:
-        assert source.width <= self._width and source.height <= self._height, f"{source} is larger than {self}"  # noqa: PT018
-        self.owner.upload(source, x + self.x, y + self.y, z + self.z, level=level)
-
-    def __repr__(self) -> str:
-        return (f"{self.__class__.__name__}(id={self.id},"
-                f" size={self.width}x{self.height}, owner={self.owner.width}x{self.owner.height})")
-
-    def delete(self) -> None:
-        """Deleting a TextureRegion has no effect. Operate on the owning texture instead."""
-
-    def __del__(self) -> None:
-        pass
-
-    @property
-    def mipmap_count(self) -> int:
-        return self.owner.mipmap_count
-
-    @property
-    def valid_mipmaps(self) -> tuple[int, ...]:
-        return self.owner.valid_mipmaps
-
-    def init_mipmaps(self, levels: int | None = None, blank_data: bool = True) -> int:
-        return self.owner.init_mipmaps(levels=levels, blank_data=blank_data)
-
-    def generate_mipmaps(self) -> None:
-        self.owner.generate_mipmaps()
 
 
 class _Texture3DShared(_TextureSequenceItems[TRegion], Generic[TRegion, SurfaceContextT]):
@@ -1007,14 +918,107 @@ class _TextureArrayShared(_TextureSequenceItems[TArrayRegion], Generic[TArrayReg
         return texture
 
 
-class TextureRegion(_TextureRegionShared, Texture[SurfaceContextT]):
-    """A rectangular region of a texture, presented as if it were a separate texture."""
+class TextureRegion(Texture[SurfaceContextT]):
+    """Common base for backend texture views sharing their owner's storage.
 
-    def __init__(self, x: int, y: int, z: int, width: int, height: int, owner: Texture):
-        super().__init__(width, height, owner.handle, owner.tex_type, owner.internal_format,
-                         owner.internal_format_size, owner.internal_format_type, owner.filters, owner.address_mode,
-                         owner.anisotropic_level, key=owner.key)
+    Cropping and transforming a region preserve its concrete class, including
+    the array-layer distinction represented by :class:`TextureArrayRegion`.
+    """
+
+    _width: int
+    _height: int
+
+    def __init__(self, x: int, y: int, z: int, width: int, height: int, owner: Texture) -> None:
+        if owner.handle is None:
+            raise TextureError("Cannot create a region of a deleted texture.")
+        super().__init__(
+            width=width, height=height, handle=owner.handle, tex_type=owner.tex_type,
+            internal_format=owner.internal_format, internal_format_size=owner.internal_format_size,
+            internal_format_type=owner.internal_format_type, filters=owner.filters, address_mode=owner.address_mode,
+            anisotropic_level=owner.anisotropic_level, key=owner.key, context=owner._context)
         self._init_region(x, y, z, width, height, owner)
+
+    def _init_region(self, x: int, y: int, z: int, width: int, height: int, owner: Texture) -> None:
+        self.x = x
+        self.y = y
+        self.z = z
+        self._width = width
+        self._height = height
+        self.owner = owner
+        owner_u1 = owner.tex_coords[0]
+        owner_v1 = owner.tex_coords[1]
+        owner_u2 = owner.tex_coords[3]
+        owner_v2 = owner.tex_coords[7]
+        scale_u = owner_u2 - owner_u1
+        scale_v = owner_v2 - owner_v1
+        u1 = x / owner.width * scale_u + owner_u1
+        v1 = y / owner.height * scale_v + owner_v1
+        u2 = (x + width) / owner.width * scale_u + owner_u1
+        v2 = (y + height) / owner.height * scale_v + owner_v1
+        # Array samplers use layer indices; volume samplers use normalized depth.
+        r = (z if owner.tex_type == TextureType.TYPE_2D_ARRAY else z / owner.images) + owner.tex_coords[2]
+        self.tex_coords = (u1, v1, r, u2, v1, r, u2, v2, r, u1, v2, r)
+
+    def fetch(self, z: int = 0, level: int = 0) -> ImageDataRegion:  # noqa: ARG002
+        """Fetch the region. Its layer is fixed; ``z`` is ignored."""
+        image_data = self.owner.fetch(self.z, level)
+        return image_data.get_region(self.x, self.y, self.width, self.height)
+
+    def read_pixels(self, z: int = 0, level: int = 0) -> PixelData:  # noqa: ARG002
+        """Read typed pixels. The region's layer is fixed; ``z`` is ignored."""
+        pixels = self.owner.read_pixels(self.z, level)
+        component_size = struct.calcsize(pixels.data_type)
+        pixel_size = len(pixels.format.value) * component_size
+        width = max(1, self.width >> level)
+        height = max(1, self.height >> level)
+        x = self.x >> level
+        y = self.y >> level
+        rows = []
+        data = memoryview(pixels.data).cast("B")
+        for row in range(y, y + height):
+            start = row * pixels.pitch + x * pixel_size
+            rows.append(bytes(data[start:start + width * pixel_size]))
+        return PixelData(width, height, pixels.format, pixels.data_type, b"".join(rows))
+
+    def get_image_data(self, z: int = 0) -> ImageDataRegion:  # noqa: ARG002
+        return self.fetch()
+
+    def upload(self, image: ImageData | ImageDataRegion, x: int, y: int, z: int, level: int = 0) -> None:
+        assert image.width <= self._width and image.height <= self._height, f"{image} is larger than {self}"  # noqa: PT018
+        self.owner.upload(image, x + self.x, y + self.y, z + self.z, level=level)
+
+    def __repr__(self) -> str:
+        return (f"{self.__class__.__name__}(id={self.id},"
+                f" size={self.width}x{self.height}, owner={self.owner.width}x{self.owner.height})")
+
+    def delete(self) -> None:
+        """Deleting a TextureRegion has no effect. Operate on the owning texture instead."""
+
+    def __del__(self) -> None:
+        pass
+
+    @property
+    def mipmap_count(self) -> int:
+        return self.owner.mipmap_count
+
+    @property
+    def valid_mipmaps(self) -> tuple[int, ...]:
+        return self.owner.valid_mipmaps
+
+    def init_mipmaps(self, levels: int | None = None, blank_data: bool = True) -> int:
+        return self.owner.init_mipmaps(levels=levels, blank_data=blank_data)
+
+    def generate_mipmaps(self) -> None:
+        self.owner.generate_mipmaps()
+
+    def get_region(self, x: int, y: int, width: int, height: int) -> Self:
+        region = self.__class__(x + self.x, y + self.y, self.z, width, height, self.owner)
+        region._set_tex_coords_order(*self.tex_coords_order)
+        return region
+
+    def get_transform(self, flip_x: bool = False, flip_y: bool = False,
+                      rotate: Literal[0, 90, 180, 270, 360] = 0) -> Self:
+        return self._transform_region(self.get_region(0, 0, self.width, self.height), flip_x, flip_y, rotate)
 
 
 class UniformTextureSequence(TextureSequence[TTexture], Generic[TTexture]):
@@ -1022,7 +1026,7 @@ class UniformTextureSequence(TextureSequence[TTexture], Generic[TTexture]):
 
 
 class TextureArrayRegion(TextureRegion[SurfaceContextT]):
-    """A region of a TextureArray, presented as if it were a separate texture."""
+    """A view of one array layer, sampled with an array sampler and its Z coordinate."""
 
     def __repr__(self):
         return f"{self.__class__.__name__}(id={self.id}, size={self.width}x{self.height}, layer={self.z})"
@@ -1030,7 +1034,11 @@ class TextureArrayRegion(TextureRegion[SurfaceContextT]):
 
 class TextureArray(_TextureArrayShared[TextureArrayRegion[SurfaceContextT], SurfaceContextT], Texture[SurfaceContextT],
                    UniformTextureSequence[TextureArrayRegion[SurfaceContextT]]):
-    """A texture containing independently addressable image layers."""
+    """A container of image layers, sampled with an array sampler.
+
+    Indexing selects a :class:`TextureArrayRegion` suitable for a sprite.
+    Regions of this texture remain array regions after cropping or transforming.
+    """
     region_class: type[TextureArrayRegion[SurfaceContextT]] = TextureArrayRegion
     item_width: int
     item_height: int
@@ -1042,11 +1050,22 @@ class TextureArray(_TextureArrayShared[TextureArrayRegion[SurfaceContextT], Surf
                  filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT,
                  anisotropic_level: int = 0,
-                 ):
-        super().__init__(width, height, tex_id, TextureType.TYPE_2D_ARRAY, internal_format, internal_format_size,
-                  internal_format_type, filters, address_mode, anisotropic_level)
+                 *, context: SurfaceContextT | None = None,
+                 ) -> None:
+        super().__init__(
+            width=width, height=height, handle=tex_id, tex_type=TextureType.TYPE_2D_ARRAY,
+            internal_format=internal_format, internal_format_size=internal_format_size,
+            internal_format_type=internal_format_type, filters=filters, address_mode=address_mode,
+            anisotropic_level=anisotropic_level, context=context)
         self.max_depth = max_depth
         self.items = []
+
+    def get_region(self, x: int, y: int, width: int, height: int) -> TextureArrayRegion[SurfaceContextT]:
+        return self.region_class(x, y, 0, width, height, self)
+
+    def get_transform(self, flip_x: bool = False, flip_y: bool = False,
+                      rotate: Literal[0, 90, 180, 270, 360] = 0) -> TextureArrayRegion[SurfaceContextT]:
+        return self._transform_region(self.get_region(0, 0, self.width, self.height), flip_x, flip_y, rotate)
 
     @classmethod
     def create(cls: type[TextureArray[SurfaceContextT]], width: int, height: int,
@@ -1065,6 +1084,7 @@ class TextureArray(_TextureArrayShared[TextureArrayRegion[SurfaceContextT], Surf
         """Create an empty texture array with capacity for ``max_depth`` layers."""
         raise NotImplementedError
 
+
 class Texture3D(_Texture3DShared[TextureRegion, SurfaceContextT], Texture[SurfaceContextT],
                 UniformTextureSequence[TextureRegion]):
     """A texture with more than one image slice.
@@ -1080,7 +1100,7 @@ class Texture3D(_Texture3DShared[TextureRegion, SurfaceContextT], Texture[Surfac
     def _bind_sequence_texture(self) -> None:
         raise NotImplementedError
 
-class TextureGrid(_AbstractGrid[_TextureRegionShared]):
+class TextureGrid(_AbstractGrid[Texture]):
     """A texture containing a regular grid of texture regions.
 
     To construct, create an :py:class:`~pyglet.image.ImageGrid` first::
@@ -1153,10 +1173,10 @@ class TextureGrid(_AbstractGrid[_TextureRegionShared]):
         self.texture = texture
         super().__init__(rows, columns, item_width, item_height, row_padding, column_padding)
 
-    def _create_item(self, x: int, y: int, width: int, height: int) -> _TextureRegionShared:
+    def _create_item(self, x: int, y: int, width: int, height: int) -> Texture:
         return self.texture.get_region(x, y, width, height)
 
-    def _update_item(self, existing_item: _TextureRegionShared, new_item: _AbstractImage) -> None:
+    def _update_item(self, existing_item: Texture, new_item: _AbstractImage) -> None:
         if isinstance(new_item, (ImageData, ImageDataRegion)):
             image_data = new_item
         else:
@@ -1179,7 +1199,6 @@ class TextureGrid(_AbstractGrid[_TextureRegionShared]):
 
 Texture.region_class = TextureRegion
 
-TextureArrayRegion.region_class = TextureArrayRegion
 
 
 class CompressedTexture(_AbstractImage, GraphicsResource[Any, TextureKey], Generic[SurfaceContextT]):

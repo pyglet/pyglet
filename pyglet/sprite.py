@@ -239,7 +239,7 @@ class Sprite(event.EventDispatcher):
         self._resolve_anchor()
 
         if not program:
-            if isinstance(img, TextureArrayRegion):
+            if isinstance(self._texture, TextureArrayRegion):
                 program = get_default_array_shader()
             else:
                 program = get_default_shader()

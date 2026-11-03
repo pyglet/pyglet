@@ -95,6 +95,8 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
     It relies on a thread to regularly call a `work` method in order to operate.
     """
 
+    audio_sync_measurements: deque[int]
+
     audio_sync_required_measurements = 8
     audio_desync_time_critical = 0.280
     audio_desync_time_minor = 0.030

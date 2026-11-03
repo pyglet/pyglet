@@ -228,9 +228,9 @@ def test_wic_loading(image_test, image_name):
 @pytest.mark.parametrize('image_name', png_images)
 @require_platform(Platform.OSX)
 def test_quartz_loading(image_test, image_name):
-    """Test loading PNG images using OSX specific Quartz."""
-    from pyglet.image.codecs.quartz import QuartzImageDecoder
-    image_test.test_image_loading(QuartzImageDecoder(), image_name)
+    """Test loading PNG images using macOS Image I/O."""
+    from pyglet.image.codecs.imageio import ImageIODecoder
+    image_test.test_image_loading(ImageIODecoder(), image_name)
 
 
 @pytest.mark.parametrize('image_name', pypng_images)

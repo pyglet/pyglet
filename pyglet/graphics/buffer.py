@@ -61,7 +61,7 @@ def _data_type_size(data_type: DataTypes) -> int:
 def _to_bytes(data: ByteSource | Sequence[int] | CTypesPointer) -> bytes:
     """Convert supported host-side inputs into raw bytes."""
     if hasattr(data, "contents"):
-        return ctypes.string_at(data, ctypes.sizeof(data.contents))
+        return ctypes.string_at(data, ctypes.sizeof(data.contents))  # type: ignore[arg-type]
 
     try:
         return bytes(data)
@@ -122,7 +122,7 @@ class AbstractBuffer(GraphicsResource[Any, BufferKey], abc.ABC):
     def delete(self) -> None:
         """Free backend resources used by this buffer."""
 
-    def get_data(self) -> bytes:
+    def get_data(self) -> bytes | Array[Any]:
         """Compatibility helper for callers that expect `get_data`."""
         return self.get_bytes()
 
@@ -130,12 +130,20 @@ class AbstractBuffer(GraphicsResource[Any, BufferKey], abc.ABC):
         """Compatibility helper for callers that expect `get_data_region`."""
         return self.get_bytes_region(start, length)
 
-    def set_data(self, data: Sequence[int] | CTypesPointer | ByteSource) -> None:
-        """Compatibility helper for callers that expect `set_data`."""
+    def set_data(self, data: Any) -> None:
+        """Compatibility upload with buffer-specific input types.
+
+        The default implementation converts raw inputs to bytes. Backed buffers
+        override this method to assign typed scalar data directly to their store.
+        Use ``set_bytes`` for a common, strictly typed upload interface.
+        """
         self.set_bytes(_to_bytes(data))
 
-    def set_data_region(self, data: Sequence[int] | CTypesPointer | ByteSource, start: int, length: int) -> None:
-        """Compatibility helper for callers that expect `set_data_region`."""
+    def set_data_region(self, data: Any, start: int, length: int) -> None:
+        """Compatibility region upload with the input types of ``set_data``.
+
+        Use ``set_bytes_region`` for a common, strictly typed upload interface.
+        """
         if hasattr(data, "contents"):
             self.set_bytes_region(start, ctypes.string_at(data, length))
             return
@@ -370,7 +378,7 @@ class UniformBufferObject(RingBuffer):
         return self.range_stride
 
     def read(self) -> bytes:
-        return self.buffer.get_data()
+        return self.buffer.get_bytes()
 
     def __enter__(self) -> ctypes.Structure:
         return self.view

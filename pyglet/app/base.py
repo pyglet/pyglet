@@ -5,17 +5,20 @@ import sys
 import threading
 from abc import ABC, abstractmethod
 from queue import Queue
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar
 
 from pyglet import app, clock, event, IS_DOC_BUILD
+from pyglet.customtypes import WindowT
 
 if TYPE_CHECKING:
+    from types import TracebackType
+
     from pyglet.event import EventDispatcher
     from pyglet.window import BaseWindow
 
 
 
-class WindowDrawSource(ABC):
+class WindowDrawSource(ABC, Generic[WindowT]):
     """Control the source of automatic window draw opportunities.
 
     Application-driven backends (Win32 and X11) use
@@ -40,16 +43,19 @@ class WindowDrawSource(ABC):
     def stop(self) -> None:
         """Stop automatic drawing and release native resources."""
 
-    def add_window(self, window: BaseWindow) -> bool:
+    def add_window(self, window: WindowT) -> bool:
         """Add a window created while this source is running."""
         return True
 
-    def remove_window(self, window: BaseWindow) -> None:
+    def remove_window(self, window: WindowT) -> None:
         """Remove a window before its platform resources are destroyed."""
 
 
-class ClockWindowDrawSource(WindowDrawSource):
+class ClockWindowDrawSource(WindowDrawSource['BaseWindow']):
     """Application-driven drawing scheduled by the pyglet Clock."""
+
+    _clock: clock.Clock
+    _draw_windows: Callable[[float], None]
 
     def __init__(self, app_clock: clock.Clock, draw_windows: Callable[[float], None]) -> None:
         self._clock = app_clock
@@ -66,12 +72,19 @@ class ClockWindowDrawSource(WindowDrawSource):
         self._clock.unschedule(self._draw_windows)
 
 
-class PlatformEventLoop:
+_EventLoopT = TypeVar('_EventLoopT', bound=event.EventDispatcher)
+
+
+class PlatformEventLoop(Generic[_EventLoopT]):
     """Abstract class, implementation depends on platform.
+
+    The type parameter identifies the application loop accepted by the
+    platform's window draw source.
 
     .. versionadded:: 1.2
     """
-    _event_queue: Queue[tuple[EventDispatcher, str, Any]]
+    _event_queue: Queue[tuple[EventDispatcher, str, tuple[Any, ...]]]
+    _is_running: threading.Event
 
     def __init__(self) -> None:  # noqa: D107
         self._event_queue = queue.Queue()
@@ -126,13 +139,13 @@ class PlatformEventLoop:
     def start(self) -> None:
         pass
 
-    def step(self, timeout: None | float = None) -> None:
+    def step(self, timeout: float | None = None) -> bool | None:
         raise NotImplementedError('abstract')
 
-    def set_timer(self, func: Callable, interval: float) -> None:
+    def set_timer(self, func: Callable[[], None] | None, interval: float | None) -> None:
         pass
 
-    def create_window_draw_source(self, event_loop: EventLoop) -> WindowDrawSource | None:
+    def create_window_draw_source(self, event_loop: _EventLoopT) -> WindowDrawSource[BaseWindow] | None:
         """Create a display-driven draw source, or return ``None``.
 
         Returning ``None`` selects application-driven Clock drawing.
@@ -158,7 +171,11 @@ class EventLoop(event.EventDispatcher):
     """
     _interval: float | None
     _has_exit_condition: threading.Condition
-    _has_exit = False
+    _has_exit: bool = False
+    _window_draw_source: WindowDrawSource[BaseWindow] | None
+    _window_draw_exception: tuple[type[BaseException] | None, BaseException | None, TracebackType | None] | None
+    clock: clock.Clock
+    is_running: bool
 
     def __init__(self) -> None:  # noqa: D107
         self._has_exit_condition = threading.Condition()
@@ -318,7 +335,7 @@ class EventLoop(event.EventDispatcher):
         timeout = self.clock.get_sleep_time(True)
         app.platform_event_loop.set_timer(self._blocking_timer, timeout)
 
-    def idle(self) -> None | float:
+    def idle(self) -> float | None:
         """Called during each iteration of the event loop.
 
         The method is called immediately after any window events (i.e., after

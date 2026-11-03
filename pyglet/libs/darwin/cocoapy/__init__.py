@@ -30,6 +30,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import sys
+from typing import TYPE_CHECKING
 
 from .runtime import objc, send_message, send_super, AutoReleasePool, ObjCBlock  # noqa: F401
 from .runtime import get_selector  # noqa: F401
@@ -43,7 +44,7 @@ from .lib_corefoundation import *  # noqa: F403
 from .lib_coregraphics import *  # noqa: F403
 from .lib_coretext import *  # noqa: F403
 
-if sys.platform == 'darwin':
+if TYPE_CHECKING or sys.platform == 'darwin':
     from .lib_appkit import *  # noqa: F403
     from .lib_cocoa import *  # noqa: F403
     from .lib_quartz import *  # noqa: F403

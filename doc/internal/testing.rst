@@ -60,7 +60,8 @@ Ideally, you should also test against the minimum supported Python
 version (currently |min_python_version|) to make sure your changes
 are compatible with all supported Python versions.
 
-To run all tests, execute pytest in the root of the pyglet repository::
+To run the automated unit and integration tests, execute pytest in the root of
+the pyglet repository::
 
     pytest
 
@@ -69,6 +70,9 @@ You can also run just a single suite::
     pytest tests/unit
     pytest tests/integration
     pytest tests/interactive
+
+Interactive tests are excluded from the default run. To run all three suites
+explicitly, use ``pytest tests``.
 
 For the interactive test suites, there are some extra command line switches
 for pytest:

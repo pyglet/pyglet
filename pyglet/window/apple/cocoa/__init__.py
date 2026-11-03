@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from ctypes import c_void_p
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Sequence, cast
 
 import pyglet
 from pyglet.event import EventDispatcher
 from pyglet.libs.darwin import AutoReleasePool, CGPoint, cocoapy, get_display_link_dt
+from pyglet.libs.darwin.cocoapy import lib_appkit as appkit
+from pyglet.libs.darwin.cocoapy.lib_quartz import quartz
 from pyglet.window import BaseWindow, DefaultMouseCursor, MouseCursor
 
 from pyglet.libs import darwin
@@ -16,7 +18,7 @@ from .pyglet_window import PygletToolWindow, PygletWindow
 from .systemcursor import SystemCursor
 
 if TYPE_CHECKING:
-    from pyglet.display.base import Screen
+    from pyglet.display.cocoa import CocoaScreen
     from pyglet.graphics.api.gl.cocoa.context import CocoaContext
 
 NSApplication = cocoapy.ObjCClass('NSApplication')
@@ -29,7 +31,6 @@ NSImage = cocoapy.ObjCClass('NSImage')
 NSPasteboard = cocoapy.ObjCClass('NSPasteboard')
 
 cg = cocoapy.cg
-quartz = cocoapy.quartz
 cf = cocoapy.cf
 
 CAMetalLayer = cocoapy.ObjCClass('CAMetalLayer')
@@ -48,7 +49,7 @@ class CocoaMouseCursor(MouseCursor):
         cursor.set()
 
 
-class CocoaWindow(BaseWindow):
+class CocoaWindow(BaseWindow['CocoaScreen']):
     context: CocoaContext
     # NSWindow instance.
     _nswindow: darwin.ObjCInstance | None = None
@@ -65,20 +66,20 @@ class CocoaWindow(BaseWindow):
     _was_closed: bool = False
 
     # NSWindow style masks.
-    _style_masks: dict[str, int] = {
-        BaseWindow.WINDOW_STYLE_DEFAULT: cocoapy.NSTitledWindowMask |
-                                         cocoapy.NSClosableWindowMask |
-                                         cocoapy.NSMiniaturizableWindowMask,
-        BaseWindow.WINDOW_STYLE_DIALOG: cocoapy.NSTitledWindowMask |
-                                        cocoapy.NSClosableWindowMask,
-        BaseWindow.WINDOW_STYLE_TOOL: cocoapy.NSTitledWindowMask |
-                                      cocoapy.NSClosableWindowMask |
-                                      cocoapy.NSUtilityWindowMask,
-        BaseWindow.WINDOW_STYLE_BORDERLESS: cocoapy.NSBorderlessWindowMask,
-        BaseWindow.WINDOW_STYLE_TRANSPARENT: cocoapy.NSTitledWindowMask |
-                                         cocoapy.NSClosableWindowMask |
-                                         cocoapy.NSMiniaturizableWindowMask,
-        BaseWindow.WINDOW_STYLE_OVERLAY: cocoapy.NSBorderlessWindowMask,
+    _style_masks: dict[str | None, int] = {
+        BaseWindow.WINDOW_STYLE_DEFAULT: appkit.NSTitledWindowMask |
+                                         appkit.NSClosableWindowMask |
+                                         appkit.NSMiniaturizableWindowMask,
+        BaseWindow.WINDOW_STYLE_DIALOG: appkit.NSTitledWindowMask |
+                                        appkit.NSClosableWindowMask,
+        BaseWindow.WINDOW_STYLE_TOOL: appkit.NSTitledWindowMask |
+                                      appkit.NSClosableWindowMask |
+                                      appkit.NSUtilityWindowMask,
+        BaseWindow.WINDOW_STYLE_BORDERLESS: appkit.NSBorderlessWindowMask,
+        BaseWindow.WINDOW_STYLE_TRANSPARENT: appkit.NSTitledWindowMask |
+                                         appkit.NSClosableWindowMask |
+                                         appkit.NSMiniaturizableWindowMask,
+        BaseWindow.WINDOW_STYLE_OVERLAY: appkit.NSBorderlessWindowMask,
 
     }
 
@@ -128,13 +129,13 @@ class CocoaWindow(BaseWindow):
             content_rect = cocoapy.NSMakeRect(0, 0, width, height)
             WindowClass = PygletWindow
             if self._fullscreen:
-                style_mask = cocoapy.NSBorderlessWindowMask
+                style_mask = appkit.NSBorderlessWindowMask
             else:
                 if self._style not in self._style_masks:
                     self._style = self.WINDOW_STYLE_DEFAULT
                 style_mask = self._style_masks[self._style]
                 if self._resizable:
-                    style_mask |= cocoapy.NSResizableWindowMask
+                    style_mask |= appkit.NSResizableWindowMask
                 if self._style == BaseWindow.WINDOW_STYLE_TOOL:
                     WindowClass = PygletToolWindow
 
@@ -142,7 +143,7 @@ class CocoaWindow(BaseWindow):
             self._nswindow = WindowClass.alloc().initWithContentRect_styleMask_backing_defer_(
                 content_rect,  # contentRect
                 style_mask,  # styleMask
-                cocoapy.NSBackingStoreBuffered,  # backing
+                appkit.NSBackingStoreBuffered,  # backing
                 False)  # defer
 
             if self._fullscreen:
@@ -150,7 +151,7 @@ class CocoaWindow(BaseWindow):
                 self._nswindow.setBackgroundColor_(blackColor)
                 self._nswindow.setOpaque_(True)
                 self._nswindow.setHasShadow_(False)
-                self._nswindow.setLevel_(cocoapy.NSMainMenuWindowLevel + 1)
+                self._nswindow.setLevel_(appkit.NSMainMenuWindowLevel + 1)
                 self._center_window()
                 self._mouse_in_window = True
             else:
@@ -161,7 +162,7 @@ class CocoaWindow(BaseWindow):
             self._nsview = PygletView.alloc().initWithFrame_cocoaWindow_(content_rect, self)
             self._metal_layer = None
             if not self._shadow:
-                if "gl" in pyglet.options.backend:
+                if "gl" in (pyglet.options.backend or ""):
                     self._nsview.setWantsBestResolutionOpenGLSurface_(True)
                 elif pyglet.options.backend == "vulkan":
                     self._metal_layer = CAMetalLayer.alloc().init()
@@ -202,14 +203,14 @@ class CocoaWindow(BaseWindow):
             # Configure CocoaWindow.
             self.set_caption(self._caption)
             if self._minimum_size is not None:
-                self.set_minimum_size(*self._minimum_size)
+                self.set_minimum_size(*cast('tuple[int, int]', self._minimum_size))
             if self._maximum_size is not None:
-                self.set_maximum_size(*self._maximum_size)
+                self.set_maximum_size(*cast('tuple[int, int]', self._maximum_size))
 
             self._dpi = self._get_dpi_desc()
 
             if self._file_drops:
-                array = NSArray.arrayWithObject_(cocoapy.NSPasteboardTypeURL)
+                array = NSArray.arrayWithObject_(appkit.NSPasteboardTypeURL)
                 self._nsview.registerForDraggedTypes_(array)
 
             self._update_geometry()
@@ -225,7 +226,7 @@ class CocoaWindow(BaseWindow):
 
                 if self._style == "overlay":
                     self.set_mouse_passthrough(True)
-                    self._nswindow.setLevel_(cocoapy.NSStatusWindowLevel)
+                    self._nswindow.setLevel_(appkit.NSStatusWindowLevel)
 
         pyglet.app.event_loop._add_window_to_draw_source(self)
 
@@ -292,8 +293,8 @@ class CocoaWindow(BaseWindow):
             # requested transition size until the new frame is installed.
             width, height = self._width, self._height
             if self._fullscreen:
-                self._nswindow.setStyleMask_(cocoapy.NSBorderlessWindowMask)
-                self._nswindow.setLevel_(cocoapy.NSMainMenuWindowLevel + 1)
+                self._nswindow.setStyleMask_(appkit.NSBorderlessWindowMask)
+                self._nswindow.setLevel_(appkit.NSMainMenuWindowLevel + 1)
                 self._nswindow.setBackgroundColor_(NSColor.blackColor())
                 self._nswindow.setOpaque_(True)
                 self._nswindow.setHasShadow_(False)
@@ -302,9 +303,9 @@ class CocoaWindow(BaseWindow):
             else:
                 style_mask = self._style_masks.get(self._style, self._style_masks[self.WINDOW_STYLE_DEFAULT])
                 if self._resizable:
-                    style_mask |= cocoapy.NSResizableWindowMask
+                    style_mask |= appkit.NSResizableWindowMask
                 self._nswindow.setStyleMask_(style_mask)
-                self._nswindow.setLevel_(cocoapy.NSNormalWindowLevel)
+                self._nswindow.setLevel_(appkit.NSNormalWindowLevel)
                 self._nswindow.setOpaque_(True)
                 self._nswindow.setBackgroundColor_(NSColor.windowBackgroundColor())
                 self._nswindow.setHasShadow_(True)
@@ -315,7 +316,7 @@ class CocoaWindow(BaseWindow):
                     self._nswindow.setBackgroundColor_(NSColor.clearColor())
                     self._nswindow.setHasShadow_(False)
                     if self._style == "overlay":
-                        self._nswindow.setLevel_(cocoapy.NSStatusWindowLevel)
+                        self._nswindow.setLevel_(appkit.NSStatusWindowLevel)
 
                 self._mouse_in_window = self._mouse_in_content_rect()
 
@@ -371,7 +372,7 @@ class CocoaWindow(BaseWindow):
 
     def _set_nice_window_location(self) -> None:
         # Construct a list of all visible windows that aren't us.
-        visible_windows = [win for win in pyglet.app.windows if
+        visible_windows = [win for win in (cast('CocoaWindow', candidate) for candidate in pyglet.app.windows) if
                            win is not self and
                            win._nswindow and  # noqa: SLF001
                            win._nswindow.isVisible()]  # noqa: SLF001
@@ -446,7 +447,7 @@ class CocoaWindow(BaseWindow):
             NSApp = NSApplication.sharedApplication()
             while True:
                 event = NSApp.nextEventMatchingMask_untilDate_inMode_dequeue_(
-                    cocoapy.NSAnyEventMask, None, cocoapy.NSDefaultRunLoopMode, True)
+                    appkit.NSAnyEventMask, None, appkit.NSDefaultRunLoopMode, True)
 
                 if event is None:
                     break
@@ -465,7 +466,7 @@ class CocoaWindow(BaseWindow):
             dispatched_event = False
             while event and self._nswindow and self._context:
                 event = NSApp.nextEventMatchingMask_untilDate_inMode_dequeue_(
-                    cocoapy.NSAnyEventMask, None, cocoapy.NSEventTrackingRunLoopMode, True)
+                    appkit.NSAnyEventMask, None, appkit.NSEventTrackingRunLoopMode, True)
 
                 if event:
                     dispatched_event = True
@@ -473,11 +474,11 @@ class CocoaWindow(BaseWindow):
                     # Pass on all events.
                     NSApp.sendEvent_(event)
                     # And resend key events to special handlers.
-                    if event_type == cocoapy.NSKeyDown and not event.isARepeat():
+                    if event_type == appkit.NSKeyDown and not event.isARepeat():
                         NSApp.sendAction_to_from_(cocoapy.get_selector('pygletKeyDown:'), None, event)
-                    elif event_type == cocoapy.NSKeyUp:
+                    elif event_type == appkit.NSKeyUp:
                         NSApp.sendAction_to_from_(cocoapy.get_selector('pygletKeyUp:'), None, event)
-                    elif event_type == cocoapy.NSFlagsChanged:
+                    elif event_type == appkit.NSFlagsChanged:
                         NSApp.sendAction_to_from_(cocoapy.get_selector('pygletFlagsChanged:'), None, event)
 
             if dispatched_event:
@@ -510,7 +511,7 @@ class CocoaWindow(BaseWindow):
 
         # Wrap the Python-owned bytes in CFData so the data provider has an
         # explicit Core Foundation lifetime.
-        cfdata = c_void_p(cf.CFDataCreate(None, data, len(data)))
+        cfdata = c_void_p(cf.CFDataCreate(None, data, len(data)))  # type: ignore[arg-type]
 
         provider = c_void_p(cg.CGDataProviderCreateWithCFData(cfdata))
 
@@ -545,7 +546,7 @@ class CocoaWindow(BaseWindow):
         NSApp.setApplicationIconImage_(nsimage)
         nsimage.release()
 
-    def get_current_screen(self) -> Screen:
+    def get_current_screen(self) -> CocoaScreen:
         """Return the screen containing most of this window.
 
         If the window is offscreen or its display is no longer available,
@@ -616,14 +617,14 @@ class CocoaWindow(BaseWindow):
         super().set_minimum_size(width, height)
 
         if self._nswindow is not None:
-            ns_minimum_size = cocoapy.NSSize(*self._minimum_size)
+            ns_minimum_size = cocoapy.NSSize(width, height)
             self._nswindow.setContentMinSize_(ns_minimum_size)
 
     def set_maximum_size(self, width: int, height: int) -> None:
         super().set_maximum_size(width, height)
 
         if self._nswindow is not None:
-            ns_maximum_size = cocoapy.NSSize(*self._maximum_size)
+            ns_maximum_size = cocoapy.NSSize(width, height)
             self._nswindow.setContentMaxSize_(ns_maximum_size)
 
     def activate(self) -> None:
@@ -794,12 +795,12 @@ class CocoaWindow(BaseWindow):
         if exclusive:
             # "Be nice! Don't disable force-quit!"
             #          -- Patrick Swayze, Road House (1989)
-            options = cocoapy.NSApplicationPresentationHideDock | \
-                      cocoapy.NSApplicationPresentationHideMenuBar | \
-                      cocoapy.NSApplicationPresentationDisableProcessSwitching | \
-                      cocoapy.NSApplicationPresentationDisableHideApplication
+            options = appkit.NSApplicationPresentationHideDock | \
+                      appkit.NSApplicationPresentationHideMenuBar | \
+                      appkit.NSApplicationPresentationDisableProcessSwitching | \
+                      appkit.NSApplicationPresentationDisableHideApplication
         else:
-            options = cocoapy.NSApplicationPresentationDefault
+            options = appkit.NSApplicationPresentationDefault
 
         NSApp = NSApplication.sharedApplication()
         NSApp.setPresentationOptions_(options)
@@ -810,20 +811,20 @@ class CocoaWindow(BaseWindow):
 
             pasteboard.clearContents()
 
-            array = NSArray.arrayWithObject_(cocoapy.NSPasteboardTypeString)
+            array = NSArray.arrayWithObject_(appkit.NSPasteboardTypeString)
             pasteboard.declareTypes_owner_(array, None)
 
             text_nsstring = cocoapy.get_NSString(text)
 
-            pasteboard.setString_forType_(text_nsstring, cocoapy.NSPasteboardTypeString)
+            pasteboard.setString_forType_(text_nsstring, appkit.NSPasteboardTypeString)
 
     def get_clipboard_text(self) -> str:
         text = ''
         with AutoReleasePool():
             pasteboard = NSPasteboard.generalPasteboard()
 
-            if pasteboard.types().containsObject_(cocoapy.NSPasteboardTypeString):
-                text_obj = pasteboard.stringForType_(cocoapy.NSPasteboardTypeString)
+            if pasteboard.types().containsObject_(appkit.NSPasteboardTypeString):
+                text_obj = pasteboard.stringForType_(appkit.NSPasteboardTypeString)
                 if text_obj:
                     text = text_obj.UTF8String().decode('utf-8')
 

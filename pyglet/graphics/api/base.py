@@ -5,14 +5,15 @@ import os
 import weakref
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, NoReturn, TypeVar, get_type_hints
+from typing import TYPE_CHECKING, Any, Generic, NoReturn, TypeVar, get_type_hints
 
+from pyglet.customtypes import WindowT
 from pyglet.enums import GraphicsAPI, PixelFormat
 from pyglet.graphics import GraphicsBackendError, GraphicsIntegrationError
 from pyglet.util import debug_print
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
 
     from pyglet.config import SurfaceConfig
     from pyglet.graphics import Batch
@@ -23,8 +24,10 @@ if TYPE_CHECKING:
 
 _debug_print = debug_print("debug_api")
 
+ConfigT_co = TypeVar('ConfigT_co', covariant=True)
 
-class BackendGlobalObject(ABC):  # Temp name for now.
+
+class BackendGlobalObject(ABC, Generic[ConfigT_co]):  # Temp name for now.
     """A container for backend resources and information that are required throughout the code.
 
     Meant to be accessed from a global level.
@@ -58,7 +61,7 @@ class BackendGlobalObject(ABC):  # Temp name for now.
     def get_default_configs(self) -> Sequence:
         """Configs to use if none specified."""
 
-    def get_config(self, **_kwargs: float | str | None) -> GraphicsConfig:
+    def get_config(self, **_kwargs: float | str | None) -> ConfigT_co:
         """Create a backend-specific graphics configuration."""
         raise NotImplementedError
 
@@ -115,7 +118,7 @@ class BackendRenderer(ABC):
         """Reads a binary resource from the given package or subpackage without external dependencies.
 
         Args:
-            package: The full package path (e.g., 'pyglet.graphics.api.vulkan.shaders').
+            package: The full package path containing the shader resources.
             resource_name: The resource filename (e.g., 'primitives.vert.spv').
 
         Returns:
@@ -139,7 +142,7 @@ class UnavailableBackendError(GraphicsBackendError):
         )
 
 
-class NullBackend(BackendGlobalObject):  # noqa: D101
+class NullBackend(BackendGlobalObject[NoReturn]):  # noqa: D101
     current_context: NullContext
 
     def __init__(self) -> None:
@@ -184,25 +187,6 @@ class NullBackend(BackendGlobalObject):  # noqa: D101
         self._raise_no_backend()
 
     def get_default_configs(self) -> Sequence:
-        self._raise_no_backend()
-
-    @property
-    def info(self) -> NoReturn:
-        self._raise_no_backend()
-
-    def get_info(self) -> NoReturn:
-        self._raise_no_backend()
-
-    def have_extension(self, _extension_name: str) -> NoReturn:
-        self._raise_no_backend()
-
-    def have_version(self, _major: int, _minor: int = 0) -> NoReturn:
-        self._raise_no_backend()
-
-    def get_cached_shader(self, _name: str, *_sources: tuple[str, ShaderType]) -> NoReturn:
-        self._raise_no_backend()
-
-    def get_default_batch(self) -> NoReturn:
         self._raise_no_backend()
 
     def set_viewport(self, window, x: int, y: int, width: int, height: int) -> None:
@@ -456,15 +440,17 @@ class FrameResourceManager:
             self._release_slot(slot)
 
 
-class SurfaceContext(ABC):  # Temp name for now.
+class SurfaceContext(ABC, Generic[WindowT]):  # Temp name for now.
     """A container for backend resources and information that are tied to a specific Window.
 
     In OpenGL this would be something like an OpenGL Context, or in Vulkan, a Surface.
     """
     clear_color = (0.0, 0.0, 0.0, 1.0)
     renderer: BackendRenderer
+    window: WindowT
+    default_batch: Batch
 
-    def __init__(self, global_ctx: BackendGlobalObject, window: Window, config: Any) -> None:
+    def __init__(self, global_ctx: BackendGlobalObject, window: WindowT, config: Any) -> None:
         self.core = global_ctx
         self.window = window
         self.config = config
@@ -496,7 +482,7 @@ class SurfaceContext(ABC):  # Temp name for now.
 
 
     @abstractmethod
-    def attach(self, window: Window) -> None:
+    def attach(self, window: WindowT) -> None:
         """Attaches the specified Window into the backend context.
 
         This function is called automatically when the operating system Window has been created.
@@ -585,10 +571,12 @@ class NullContext:
         raise UnavailableContextError
 
     def __getattribute__(self, item: str) -> NoReturn:
-        object.__getattribute__(self, "_raise_no_context")()
+        raise_no_context: Callable[[], NoReturn] = object.__getattribute__(self, "_raise_no_context")
+        raise_no_context()
 
     def __enter__(self) -> NoReturn:
-        object.__getattribute__(self, "_raise_no_context")()
+        raise_no_context: Callable[[], NoReturn] = object.__getattribute__(self, "_raise_no_context")
+        raise_no_context()
 
     def __exit__(self, *_args: Any) -> None:
         return None

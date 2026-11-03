@@ -51,6 +51,8 @@ class KeyStateHandler:
         False
 
     """
+    data: dict[int, bool]
+
     def __init__(self) -> None:  # noqa: D107
         self.data = {}
 

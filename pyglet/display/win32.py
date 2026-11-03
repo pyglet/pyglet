@@ -65,8 +65,8 @@ def set_dpi_awareness() -> None:
 set_dpi_awareness()
 
 
-class Win32Display(Display):  # noqa: D101
-    def get_default_screen(self) -> Screen:
+class Win32Display(Display['Win32Screen']):  # noqa: D101
+    def get_default_screen(self) -> Win32Screen:
         screens = self.get_screens()
         for screen in screens:
             if isinstance(screen, Win32Screen) and screen.is_primary:
@@ -74,8 +74,8 @@ class Win32Display(Display):  # noqa: D101
 
         return screens[0]
 
-    def get_screens(self) -> list[Screen]:
-        screens: list[Screen] = []
+    def get_screens(self) -> list[Win32Screen]:
+        screens: list[Win32Screen] = []
 
         def enum_proc(hMonitor: HMONITOR, hdcMonitor: HDC, lprcMonitor: LPRECT, dwData: LPARAM) -> bool:  # noqa: N803, ARG001
             r = lprcMonitor.contents
@@ -90,7 +90,7 @@ class Win32Display(Display):  # noqa: D101
         return screens
 
 
-class Win32Screen(Screen):  # noqa: D101
+class Win32Screen(Screen[Win32Display]):  # noqa: D101
     _handle: HMONITOR
     _initial_mode: Win32ScreenMode | None = None
 

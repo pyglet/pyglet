@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Generator, Any, TYPE_CHECKING, Protocol, runtime_checkable
+from collections.abc import Iterable
 from abc import ABC, abstractmethod
 
 import pyglet
@@ -195,6 +196,8 @@ class _BaseViewportState(State, ABC):
 class _BaseScissorState(State, ABC):
     """State wrapper that applies scissor state at draw scope entry."""
 
+    scissor: ScissorProtocol
+
     sets_state: bool = True
     unsets_state: bool = True
 
@@ -212,7 +215,7 @@ class _BaseScissorState(State, ABC):
         self.apply_to_backend(ctx)
 
 
-def _expand_states_in_order(states: tuple[State]) -> list[State]:
+def _expand_states_in_order(states: Iterable[State]) -> list[State]:
     """Return all states expanded in dependency order (parents first)."""
     visited = set()
     ordered = []
@@ -234,36 +237,59 @@ def _expand_states_in_order(states: tuple[State]) -> list[State]:
     return ordered
 
 
-if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
-    from pyglet.graphics.api.gl import state as _backend_state
-elif pyglet.options.backend in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
-    from pyglet.graphics.api.gl2 import state as _backend_state
-elif pyglet.options.backend == GraphicsAPI.WEBGL:
-    from pyglet.graphics.api.webgl import state as _backend_state
-elif pyglet.options.backend == GraphicsAPI.VULKAN:
-    from pyglet.graphics.api.vulkan import state as _backend_state
+if TYPE_CHECKING:
+    from pyglet.graphics.api.gl.state import (
+        TextureState as TextureState,
+        MultiTextureSamplerState as MultiTextureSamplerState,
+        ShaderProgramState as ShaderProgramState,
+        BlendState as BlendState,
+        ShaderUniformState as ShaderUniformState,
+        UniformBufferState as UniformBufferState,
+        DepthBufferComparison as DepthBufferComparison,
+        DepthWriteState as DepthWriteState,
+        DepthRangeState as DepthRangeState,
+        PolygonOffsetState as PolygonOffsetState,
+        SampleCoverageState as SampleCoverageState,
+        CullFaceState as CullFaceState,
+        FrontFaceState as FrontFaceState,
+        StencilTestState as StencilTestState,
+        StencilMaskState as StencilMaskState,
+        StencilFuncState as StencilFuncState,
+        StencilOpState as StencilOpState,
+        ColorMaskState as ColorMaskState,
+        StencilClearState as StencilClearState,
+        ScissorState as ScissorState,
+        ViewportState as ViewportState,
+    )
 else:
-    msg = f"Unsupported backend: {pyglet.options.backend}"
-    raise RuntimeError(msg)
+    if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
+        from pyglet.graphics.api.gl import state as _backend_state
+    elif pyglet.options.backend in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
+        from pyglet.graphics.api.gl2 import state as _backend_state
+    elif pyglet.options.backend == GraphicsAPI.WEBGL:
+        from pyglet.graphics.api.webgl import state as _backend_state
+    else:
+        msg = f"Unsupported backend: {pyglet.options.backend}"
+        raise RuntimeError(msg)
 
-TextureState: type[State] = _backend_state.TextureState
-MultiTextureSamplerState: type[State] = _backend_state.MultiTextureSamplerState
-ShaderProgramState: type[State] = _backend_state.ShaderProgramState
-BlendState: type[State] = _backend_state.BlendState
-ShaderUniformState: type[State] = _backend_state.ShaderUniformState
-UniformBufferState: type[State] = _backend_state.UniformBufferState
-DepthBufferComparison: type[State] = _backend_state.DepthBufferComparison
-DepthWriteState: type[State] = _backend_state.DepthWriteState
-DepthRangeState: type[State] = _backend_state.DepthRangeState
-PolygonOffsetState: type[State] = _backend_state.PolygonOffsetState
-SampleCoverageState: type[State] = _backend_state.SampleCoverageState
-CullFaceState: type[State] = _backend_state.CullFaceState
-FrontFaceState: type[State] = _backend_state.FrontFaceState
-StencilTestState: type[State] = _backend_state.StencilTestState
-StencilMaskState: type[State] = _backend_state.StencilMaskState
-StencilFuncState: type[State] = _backend_state.StencilFuncState
-StencilOpState: type[State] = _backend_state.StencilOpState
-ColorMaskState: type[State] = _backend_state.ColorMaskState
-StencilClearState: type[State] = _backend_state.StencilClearState
-ScissorState: type[State] = _backend_state.ScissorState
-ViewportState: type[State] = _backend_state.ViewportState
+    TextureState: type[State] = _backend_state.TextureState
+    MultiTextureSamplerState: type[State] = _backend_state.MultiTextureSamplerState
+    ShaderProgramState: type[State] = _backend_state.ShaderProgramState
+    BlendState: type[State] = _backend_state.BlendState
+    ShaderUniformState: type[State] = _backend_state.ShaderUniformState
+    UniformBufferState: type[State] = _backend_state.UniformBufferState
+    DepthBufferComparison: type[State] = _backend_state.DepthBufferComparison
+    DepthWriteState: type[State] = _backend_state.DepthWriteState
+    DepthRangeState: type[State] = _backend_state.DepthRangeState
+    PolygonOffsetState: type[State] = _backend_state.PolygonOffsetState
+    SampleCoverageState: type[State] = _backend_state.SampleCoverageState
+    CullFaceState: type[State] = _backend_state.CullFaceState
+    FrontFaceState: type[State] = _backend_state.FrontFaceState
+    StencilTestState: type[State] = _backend_state.StencilTestState
+    StencilMaskState: type[State] = _backend_state.StencilMaskState
+    StencilFuncState: type[State] = _backend_state.StencilFuncState
+    StencilOpState: type[State] = _backend_state.StencilOpState
+    ColorMaskState: type[State] = _backend_state.ColorMaskState
+    StencilClearState: type[State] = _backend_state.StencilClearState
+    ScissorState: type[State] = _backend_state.ScissorState
+    ViewportState: type[State] = _backend_state.ViewportState

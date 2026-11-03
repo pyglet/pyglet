@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import ctypes
 import sys
-from typing import Any, Callable, Dict, Optional, Tuple, TYPE_CHECKING, TypeVar, Union
+from typing import Any, Callable, Dict, Optional, Tuple, TYPE_CHECKING, TypeAlias, TypeVar, Union
 import weakref
 
 from pyglet.media.drivers.pulse import lib_pulseaudio as pa
@@ -8,13 +10,15 @@ from pyglet.media.exceptions import MediaException
 from pyglet.util import debug_print
 
 if TYPE_CHECKING:
+    from ctypes import _Pointer
     from pyglet.media.codecs import AudioData, AudioFormat
 
+    PulseAudioStreamSuccessCallback: TypeAlias = Callable[[_Pointer[pa.pa_stream], int, Any], Any]
+    PulseAudioStreamRequestCallback: TypeAlias = Callable[[_Pointer[pa.pa_stream], int, Any], Any]
+    PulseAudioStreamNotifyCallback: TypeAlias = Callable[[_Pointer[pa.pa_stream], Any], Any]
+    PulseAudioContextSuccessCallback: TypeAlias = Callable[[_Pointer[pa.pa_context], int, Any], Any]
+
 T = TypeVar('T')
-PulseAudioStreamSuccessCallback = Callable[[ctypes.POINTER(pa.pa_stream), int, Any], Any]
-PulseAudioStreamRequestCallback = Callable[[ctypes.POINTER(pa.pa_stream), int, Any], Any]
-PulseAudioStreamNotifyCallback = Callable[[ctypes.POINTER(pa.pa_stream), Any], Any]
-PulseAudioContextSuccessCallback = Callable[[ctypes.POINTER(pa.pa_context), int, Any], Any]
 
 
 _debug = debug_print('debug_media')
@@ -63,7 +67,7 @@ class Proplist:
         if not self._pl:
             raise PulseAudioException(0, 'Failed creating proplist.')
         if ini_data is not None:
-            for k, v in ini_data:
+            for k, v in ini_data.items():
                 self[k] = v
 
     def __setitem__(self, k, v):
@@ -96,7 +100,7 @@ class PulseAudioException(MediaException):
 
 
 class _MainloopLock:
-    def __init__(self, mainloop: 'PulseAudioMainloop') -> None:
+    def __init__(self, mainloop: PulseAudioMainloop) -> None:
         self.mainloop = mainloop
 
     def __enter__(self):
@@ -153,7 +157,7 @@ class PulseAudioMainloop:
         assert self._pa_threaded_mainloop is not None
         pa.pa_threaded_mainloop_wait(self._pa_threaded_mainloop)
 
-    def create_context(self) -> 'PulseAudioContext':
+    def create_context(self) -> PulseAudioContext:
         """Construct and return a new context in this mainloop.
         Will grab the lock.
         """
@@ -176,6 +180,8 @@ class PulseAudioMainloopChild:
 
 class PulseAudioContext(PulseAudioMainloopChild):
     """Basic object for a connection to a PulseAudio server."""
+
+    state: int | None
     _state_name = {pa.PA_CONTEXT_UNCONNECTED: 'Unconnected',
                    pa.PA_CONTEXT_CONNECTING: 'Connecting',
                    pa.PA_CONTEXT_AUTHORIZING: 'Authorizing',
@@ -209,7 +215,7 @@ class PulseAudioContext(PulseAudioMainloopChild):
                     while self.state is not None and not self.is_terminated:
                         self.mainloop.wait()
 
-                self._set_state_callback(0)
+                self._set_state_callback(None)
                 pa.pa_context_unref(self._pa_context)
 
             self._pa_context = None
@@ -233,13 +239,13 @@ class PulseAudioContext(PulseAudioMainloopChild):
         return None
 
     @property
-    def protocol_version(self) -> Optional[str]:
+    def protocol_version(self) -> Optional[int]:
         if self._pa_context is not None:
             return get_uint32_or_none(pa.pa_context_get_protocol_version(self._pa_context))
         return None
 
     @property
-    def server_protocol_version(self) -> Optional[str]:
+    def server_protocol_version(self) -> Optional[int]:
         if self._pa_context is not None:
             return get_uint32_or_none(pa.pa_context_get_server_protocol_version(self._pa_context))
         return None
@@ -274,7 +280,7 @@ class PulseAudioContext(PulseAudioMainloopChild):
             if self.is_failed:
                 self.raise_error()
 
-    def create_stream(self, audio_format: 'AudioFormat') -> 'PulseAudioStream':
+    def create_stream(self, audio_format: AudioFormat) -> PulseAudioStream:
         """
         Create a new audio stream.
         """
@@ -282,7 +288,7 @@ class PulseAudioContext(PulseAudioMainloopChild):
 
         return PulseAudioStream(self, audio_format)
 
-    def set_input_volume(self, stream: 'PulseAudioStream', volume: float) -> 'PulseAudioOperation':
+    def set_input_volume(self, stream: PulseAudioStream, volume: float) -> PulseAudioOperation:
         """
         Set the volume for a stream.
         """
@@ -300,7 +306,7 @@ class PulseAudioContext(PulseAudioMainloopChild):
             ),
         )
 
-    def _get_cvolume_from_linear(self, stream: 'PulseAudioStream', volume: float) -> pa.pa_cvolume:
+    def _get_cvolume_from_linear(self, stream: PulseAudioStream, volume: float) -> pa.pa_cvolume:
         cvolume = pa.pa_cvolume()
         volume = pa.pa_sw_volume_from_linear(volume)
         pa.pa_cvolume_set(cvolume, stream.get_sample_spec().channels, volume)
@@ -308,20 +314,20 @@ class PulseAudioContext(PulseAudioMainloopChild):
 
     def _set_state_callback(
         self,
-        py_callback: Optional[Callable[['PulseAudioContext', Any], Any]]
+        py_callback: Optional[Callable[[PulseAudioContext, Any], Any]]
     ) -> None:
         if py_callback is None:
-            self._pa_state_change_callback = None
+            self._pa_state_change_callback = pa.pa_context_notify_cb_t()
         else:
             self._pa_state_change_callback = pa.pa_context_notify_cb_t(py_callback)
         pa.pa_context_set_state_callback(self._pa_context, self._pa_state_change_callback, None)
 
-    def _state_callback(self, context: 'PulseAudioContext', _userdata) -> None:
+    def _state_callback(self, context: PulseAudioContext, _userdata) -> None:
         self.state = pa.pa_context_get_state(self._pa_context)
-        assert _debug(f'PulseAudioContext: state changed to {self._state_name[self.state]}')
+        assert _debug(f'PulseAudioContext: state changed to {self._state_name.get(self.state, "Unknown")}')
         self.mainloop.signal()
 
-    def check(self, result: T) -> T:
+    def check(self, result: int) -> int:
         if result < 0:
             self.raise_error()
         return result
@@ -338,11 +344,13 @@ class PulseAudioContext(PulseAudioMainloopChild):
 
     def raise_error(self) -> None:
         error = pa.pa_context_errno(self._pa_context)
-        raise PulseAudioException(error, get_ascii_str_or_none(pa.pa_strerror(error)))
+        raise PulseAudioException(error, get_ascii_str_or_none(pa.pa_strerror(error)) or 'Unknown PulseAudio error')
 
 
 class PulseAudioStream(PulseAudioMainloopChild):
     """PulseAudio audio stream."""
+
+    state: int | None
 
     _state_name = {pa.PA_STREAM_UNCONNECTED: 'Unconnected',
                    pa.PA_STREAM_CREATING: 'Creating',
@@ -350,7 +358,7 @@ class PulseAudioStream(PulseAudioMainloopChild):
                    pa.PA_STREAM_FAILED: 'Failed',
                    pa.PA_STREAM_TERMINATED: 'Terminated'}
 
-    def __init__(self, context: PulseAudioContext, audio_format: 'AudioFormat') -> None:
+    def __init__(self, context: PulseAudioContext, audio_format: AudioFormat) -> None:
         super().__init__(context.mainloop)
 
         self.state = None
@@ -379,7 +387,7 @@ class PulseAudioStream(PulseAudioMainloopChild):
         pa.pa_stream_set_moved_callback(self._pa_stream, self._cb_moved, None)
         self._refresh_state()
 
-    def create_sample_spec(self, audio_format: 'AudioFormat') -> pa.pa_sample_spec:
+    def create_sample_spec(self, audio_format: AudioFormat) -> pa.pa_sample_spec:
         """
         Create a PulseAudio sample spec from pyglet audio format.
         """
@@ -540,7 +548,7 @@ class PulseAudioStream(PulseAudioMainloopChild):
     def update_timing_info(
         self,
         callback: Optional[PulseAudioContextSuccessCallback] = None,
-    ) -> 'PulseAudioOperation':
+    ) -> PulseAudioOperation:
         context = self.context()
         assert context is not None
         assert self._pa_stream is not None
@@ -567,7 +575,7 @@ class PulseAudioStream(PulseAudioMainloopChild):
     def trigger(
         self,
         callback: Optional[PulseAudioContextSuccessCallback] = None,
-    ) -> 'PulseAudioOperation':
+    ) -> PulseAudioOperation:
         context = self.context()
         assert context is not None
         assert self._pa_stream is not None
@@ -581,7 +589,7 @@ class PulseAudioStream(PulseAudioMainloopChild):
     def prebuf(
         self,
         callback: Optional[PulseAudioContextSuccessCallback] = None,
-    ) -> 'PulseAudioOperation':
+    ) -> PulseAudioOperation:
         context = self.context()
         assert context is not None
         assert self._pa_stream is not None
@@ -595,7 +603,7 @@ class PulseAudioStream(PulseAudioMainloopChild):
     def flush(
         self,
         callback: Optional[PulseAudioContextSuccessCallback] = None,
-    ) -> 'PulseAudioOperation':
+    ) -> PulseAudioOperation:
         context = self.context()
         assert context is not None
         assert self._pa_stream is not None
@@ -609,20 +617,20 @@ class PulseAudioStream(PulseAudioMainloopChild):
     def resume(
         self,
         callback: Optional[PulseAudioContextSuccessCallback] = None,
-    ) -> 'PulseAudioOperation':
+    ) -> PulseAudioOperation:
         return self._cork(False, callback)
 
     def pause(
         self,
         callback: Optional[PulseAudioContextSuccessCallback] = None,
-    ) -> 'PulseAudioOperation':
+    ) -> PulseAudioOperation:
         return self._cork(True, callback)
 
     def _cork(
         self,
         pause: Union[int, bool],
-        callback: PulseAudioContextSuccessCallback,
-    ) -> 'PulseAudioOperation':
+        callback: PulseAudioContextSuccessCallback | None,
+    ) -> PulseAudioOperation:
         context = self.context()
         assert context is not None
         assert self._pa_stream is not None
@@ -637,7 +645,7 @@ class PulseAudioStream(PulseAudioMainloopChild):
         self,
         sample_rate: int,
         callback: Optional[PulseAudioContextSuccessCallback] = None,
-    ) -> 'PulseAudioOperation':
+    ) -> PulseAudioOperation:
         context = self.context()
         assert context is not None
         assert self._pa_stream is not None
@@ -674,7 +682,7 @@ class PulseAudioStream(PulseAudioMainloopChild):
 
     def _state_callback(self, _stream, _userdata) -> None:
         self._refresh_state()
-        assert _debug(f"PulseAudioStream: state changed to {self._state_name[self.state]}")
+        assert _debug(f"PulseAudioStream: state changed to {self._state_name.get(self.state if self.state is not None else -1, 'Unknown')}")
         self.mainloop.signal()
 
     def _moved_callback(self, _stream, _userdata) -> None:
@@ -697,6 +705,8 @@ class PulseAudioOperation(PulseAudioMainloopChild):
     it will be leaked.
     """
 
+    _pa_operation: pa.pa_operation | None
+
     _state_name = {pa.PA_OPERATION_RUNNING: 'Running',
                    pa.PA_OPERATION_DONE: 'Done',
                    pa.PA_OPERATION_CANCELLED: 'Cancelled'}
@@ -713,7 +723,7 @@ class PulseAudioOperation(PulseAudioMainloopChild):
         self.callback_lump = callback_lump
         self._pa_operation = pa_operation
 
-    def _get_state(self) -> None:
+    def _get_state(self) -> int:
         assert self._pa_operation is not None
         return pa.pa_operation_get_state(self._pa_operation)
 

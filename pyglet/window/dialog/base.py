@@ -40,7 +40,6 @@ class _Dialog(_EventDispatcher):
     application Process. This also limits to a single open Dialog
     at a time.
     """
-    _dialog = None
 
     @abstractmethod
     def open(self):

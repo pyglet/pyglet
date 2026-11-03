@@ -4,7 +4,7 @@ import sys
 import unicodedata
 from ctypes.wintypes import DWORD, HICON, HWND, MSG, POINT, RECT, SIZE, UINT, BOOL, HKEY, LPBYTE
 from functools import lru_cache
-from typing import Callable, Sequence, TYPE_CHECKING
+from typing import Callable, Sequence, TYPE_CHECKING, Any
 
 from pyglet import compat_platform
 from pyglet.libs.win32 import constants, IDropTarget
@@ -76,8 +76,8 @@ from pyglet.window import (
 )
 
 if TYPE_CHECKING:
+    from pyglet.display.win32 import Win32Screen
     from _ctypes import _Pointer
-    from pyglet.display.base import Screen
 
 # symbol,ctrl -> motion mapping
 _motion_map: dict[tuple[int, bool], int] = {
@@ -113,7 +113,7 @@ class Win32MouseCursor(MouseCursor):
 # which will throw off the ShowCursor counter.
 _win32_cursor_visible: bool = True
 
-Win32EventHandler = _PlatformEventHandler
+Win32EventHandler: Callable[[Any], Callable] = _PlatformEventHandler
 ViewEventHandler = _ViewEventHandler
 
 
@@ -240,8 +240,9 @@ class _FileDropTargetManager(com.COMObject):
         return com.S_OK
 
 
-class Win32Window(BaseWindow):
-    _window_class = None
+class Win32Window(BaseWindow['Win32Screen']):
+    _window_class: WNDCLASS | None = None
+    _view_window_class: WNDCLASS | None = None
     _hwnd = None
     _dc = None
     _wgl_context = None
@@ -565,7 +566,7 @@ class Win32Window(BaseWindow):
 
         # Disable interval if composition is enabled to avoid conflict with DWM.
         if not self._fullscreen and (self._always_dwm or self._dwm_composition_enabled()):
-            vsync = 0
+            vsync = False
 
         self.context.set_vsync(vsync)
 
@@ -589,29 +590,6 @@ class Win32Window(BaseWindow):
             _dwmapi.DwmFlush()
 
         super().present()
-
-    def set_mouse_passthrough(self, state: bool) -> None:
-        color_ref = COLORREF()
-        alpha = BYTE()
-        flags = DWORD()
-
-        if self._ex_ws_style & constants.WS_EX_LAYERED:
-            _user32.GetLayeredWindowAttributes(self._hwnd, byref(color_ref), byref(alpha), byref(flags))
-
-        if state:
-            self._ex_ws_style |= (constants.WS_EX_TRANSPARENT | constants.WS_EX_LAYERED)
-        else:
-            self._ex_ws_style &= ~constants.WS_EX_TRANSPARENT
-
-            if self._ex_ws_style & constants.WS_EX_LAYERED and not flags.value & constants.LWA_ALPHA:
-                self._ex_ws_style &= ~constants.WS_EX_LAYERED
-
-        _user32.SetWindowLongW(self._hwnd, constants.GWL_EXSTYLE, self._ex_ws_style)
-
-        if state:
-            _user32.SetLayeredWindowAttributes(self._hwnd, color_ref.value, alpha.value, flags.value)
-
-
 
     def set_mouse_passthrough(self, state: bool) -> None:
         color_ref = COLORREF()
@@ -686,7 +664,7 @@ class Win32Window(BaseWindow):
     def maximize(self) -> None:
         _user32.ShowWindow(self._hwnd, constants.SW_MAXIMIZE)
 
-    def get_current_screen(self) -> Screen:
+    def get_current_screen(self) -> Win32Screen:
         """Return the monitor containing most of this window.
 
         If the window is entirely offscreen, return the nearest monitor.
@@ -884,7 +862,7 @@ class Win32Window(BaseWindow):
 
             img = img.get_image_data()
             data = img.get_bytes(fmt, pitch)
-            memmove(dataptr, data, len(data))
+            memmove(dataptr, data, len(data))  # type: ignore[arg-type]
 
             mask = _gdi32.CreateBitmap(img.width, img.height, 1, 1, None)
 
@@ -933,7 +911,7 @@ class Win32Window(BaseWindow):
 
         image = image.get_image_data()
         data = image.get_bytes(fmt, pitch)
-        memmove(dataptr, data, len(data))
+        memmove(dataptr, data, len(data))  # type: ignore[arg-type]
 
         mask = _gdi32.CreateBitmap(image.width, image.height, 1, 1, None)
 
@@ -961,7 +939,8 @@ class Win32Window(BaseWindow):
 
         cb_data = _kernel32.GlobalAlloc(constants.GMEM_MOVEABLE, size)
         locked_data = _kernel32.GlobalLock(cb_data)
-        memmove(locked_data, text, size)  # Trying to encode in utf-16 causes garbled text. Accepts str fine?
+        # Trying to encode in utf-16 causes garbled text. Accepts str fine?
+        memmove(locked_data, text, size)  # type: ignore[arg-type]
         _kernel32.GlobalUnlock(cb_data)
 
         _user32.SetClipboardData(constants.CF_UNICODETEXT, cb_data)
@@ -1638,6 +1617,8 @@ class Win32Window(BaseWindow):
             ptr = cast(lParam, c_wchar_p)
             if ptr.value == 'ImmersiveColorSet':
                 self._update_light_mode(_ShouldSystemUseLightMode())
+
+        return 0
 
     def _update_light_mode(self, is_light_mode: bool) -> None:
         value = BOOL(not is_light_mode)

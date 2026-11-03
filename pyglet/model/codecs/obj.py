@@ -10,6 +10,7 @@ from . import ModelDecodeException, ModelDecoder
 from .base import SimpleMaterial, Mesh, Primitive, Attribute, Node, Scene
 from pyglet.model import Model, MaterialGroup, TexturedMaterialGroup
 from pyglet.graphics import VertexLayout, Batch, Group
+from pyglet.graphics.vertexdomain import InstanceVertexList, InstanceIndexedVertexList
 from pyglet.enums import GeometryMode
 from pyglet.math import Vec3, Quaternion
 
@@ -228,13 +229,14 @@ def parse_obj_file(filename, file=None) -> list[Mesh]:
 class OBJScene(Scene):
 
     def create_models(self, batch: Batch, group: Group | None = None) -> list[Model]:
-        vertex_lists = []
-        groups = []
+        vertex_lists: list[InstanceVertexList | InstanceIndexedVertexList] = []
+        groups: list[Group] = []
         for node in self.nodes:
             mesh = node.mesh
 
             for primitive in mesh.primitives:
                 material = primitive.material
+                assert isinstance(material, SimpleMaterial)
                 count = primitive.attributes[0].count
 
                 if material.texture_name:
@@ -247,7 +249,7 @@ class OBJScene(Scene):
                 formats |= {'TRANSLATION': '3f/1', 'ROTATION': '4f/1', 'SCALE': '3f/1'}
                 layout = program.get_vertex_view(VertexLayout(**formats))
                 if material.texture_name:
-                    matgroup = TexturedMaterialGroup(material, layout, _texture, parent=group)
+                    matgroup: MaterialGroup | TexturedMaterialGroup = TexturedMaterialGroup(material, layout, _texture, parent=group)
                 else:
                     matgroup = MaterialGroup(material, layout, parent=group)
 

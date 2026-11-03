@@ -101,6 +101,11 @@ _text_quality = {
 }
 
 class GDIPlusGlyphRenderer(base.GlyphRenderer):
+    font: GDIPlusFont
+    _bitmap: ctypes.c_void_p | None
+    _graphics: ctypes.c_void_p | None
+    _brush: ctypes.c_void_p | None
+    _matrix: ctypes.c_void_p | None
 
     def __init__(self, font: GDIPlusFont) -> None:
         self._bitmap = None
@@ -329,7 +334,7 @@ class GDIPlusGlyphRenderer(base.GlyphRenderer):
         return glyph
 
 class Win32Font(base.Font):
-    glyph_renderer_class = GDIPlusGlyphRenderer
+    glyph_renderer_class: ClassVar[type[base.GlyphRenderer]] = GDIPlusGlyphRenderer
 
     def __init__(
             self,
@@ -421,7 +426,7 @@ class Win32Font(base.Font):
         return result != 0xffffffff and glyph_index.value != 0xffff
 
 
-def _get_font_families(font_collection: ctypes.c_void_p) -> Sequence[ctypes.c_void_p]:
+def _get_font_families(font_collection: ctypes.c_void_p) -> ctypes.Array[ctypes.c_void_p]:
     num_count = ctypes.c_int()
     gdiplus.GdipGetFontCollectionFamilyCount(
         font_collection, ctypes.byref(num_count))
@@ -483,18 +488,18 @@ class GDIPlusFont(Win32Font):
             name = name[1:]
             self._name = name
 
-        name = ctypes.c_wchar_p(name)
+        native_name = ctypes.c_wchar_p(name)
 
         # Look in private collection first:
         if self._private_collection:
-            gdiplus.GdipCreateFontFamilyFromName(name, self._private_collection, ctypes.byref(family))
+            gdiplus.GdipCreateFontFamilyFromName(native_name, self._private_collection, ctypes.byref(family))
 
         # Then in system collection:
         if not family:
             if _debug_font:
                 print(f"Warning: Font '{name}' was not found. Defaulting to: {self._default_name}") 
 
-            gdiplus.GdipCreateFontFamilyFromName(name, None, ctypes.byref(family))
+            gdiplus.GdipCreateFontFamilyFromName(native_name, None, ctypes.byref(family))
 
         # Nothing found, use default font.
         if not family:

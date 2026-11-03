@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, cast
+from typing import Any, TYPE_CHECKING, cast
 
 import pyglet
 
 from pyglet.enums import GraphicsAPI
 from pyglet.config.base import UserConfig, SurfaceConfig
+from pyglet.customtypes import WindowT
 
 if TYPE_CHECKING:
+    from pyglet.graphics.api.gl.context import OpenGLSurfaceContext
+    from pyglet.graphics.api.gl.global_opengl import OpenGLBackend
+    from pyglet.window import BaseWindow
     from pyglet.window.apple.cocoa import CocoaWindow
     from pyglet.window.apple.ios import IOSWindow
     from pyglet.window.headless import HeadlessWindow
@@ -17,8 +21,14 @@ if TYPE_CHECKING:
     from pyglet.window.xlib import XlibWindow
 
 
-class GLSurfaceConfig(SurfaceConfig):
+class GLSurfaceConfig(SurfaceConfig[WindowT]):
     config: OpenGLUserConfig
+
+    def __init__(self, window: WindowT, config: OpenGLUserConfig, handle: Any) -> None:
+        super().__init__(window, config, handle)
+
+    def create_context(self, opengl_backend: OpenGLBackend, share: Any) -> OpenGLSurfaceContext:
+        raise NotImplementedError
 
 
 # Platform Specific Configurations
@@ -107,7 +117,7 @@ class WebGLUserConfig(UserConfig):
         return False
 
 
-def get_surface_config(user_config: OpenGLUserConfig, surface: pyglet.window.Window) -> SurfaceConfig | None:
+def get_surface_config(user_config: OpenGLUserConfig, surface: BaseWindow) -> SurfaceConfig | None:
 
     if pyglet.options.headless or pyglet.options.wayland:
         from pyglet.config.gl.egl import match as match_egl  # noqa: PLC0415

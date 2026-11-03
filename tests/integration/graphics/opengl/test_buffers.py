@@ -111,6 +111,31 @@ def test_ctype_data_store_assertions():
         store.set_bytes(7, b"\x00\x01")
 
 
+@pytest.mark.parametrize("source_type", [list, tuple, "ctypes"])
+def test_backed_buffer_uploads_typed_data(test_window, source_type) -> None:
+    test_window.switch_to()
+    buffer = GLBackedBufferObject(test_window.context, 8, "f", 4, 1)
+    data = (ctypes.c_float * 2)(1.5, 2.5)
+    raw = bytes(data)
+    source = data if source_type == "ctypes" else source_type(data)
+    try:
+        buffer.set_data(source)
+        assert buffer.get_bytes() == raw
+        buffer.commit()
+        assert GLBufferObject.get_bytes(buffer) == raw
+
+        region = (ctypes.c_float * 1)(3.5)
+        region_raw = bytes(region)
+        source = region if source_type == "ctypes" else source_type(region)
+        buffer.set_data_region(source, 4, 4)
+        expected = raw[:4] + region_raw
+        assert buffer.get_bytes() == expected
+        buffer.commit()
+        assert GLBufferObject.get_bytes(buffer) == expected
+    finally:
+        buffer.delete()
+
+
 def test_buffer_object_create_resize_and_delete(test_window):
     test_window.switch_to()
     ctx = test_window.context

@@ -30,6 +30,9 @@ def _convert_coordinates(coordinates: tuple[float, float, float]) -> tuple[float
 
 
 class XAudio2Driver(AbstractAudioDriver):
+    worker: PlayerWorkerThread | None
+    _xa2_driver: interface.XAudio2Driver | None
+    _xa2_listener: interface.XAudio2Listener | None
     def __init__(self) -> None:
         self._xa2_driver = interface.XAudio2Driver()
         self._xa2_listener = self._xa2_driver.create_listener()
@@ -94,6 +97,7 @@ class XAudio2Listener(AbstractListener):
 
 
 class XAudio2AudioPlayer(AbstractAudioPlayer):
+    driver: XAudio2Driver | None
     # The voice is absent after a critical error and after player deletion.
     # It is recreated by on_driver_reset once an output endpoint returns.
     _xa2_source_voice: interface.XA2SourceVoice | None

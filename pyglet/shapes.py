@@ -68,7 +68,7 @@ from __future__ import annotations
 
 import math
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Sequence, Tuple, Union, cast
 
 import pyglet
 from pyglet.extlibs import earcut
@@ -80,6 +80,7 @@ from pyglet.graphics.draw import BatchDrawOptions, DrawContext
 if TYPE_CHECKING:
     from pyglet.graphics.shader import ShaderProgram
     from pyglet.graphics.draw import Batch
+    from pyglet.graphics.vertexdomain import VertexList
 
 
 if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
@@ -88,8 +89,6 @@ elif pyglet.options.backend in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
     from pyglet.graphics.api.gl2.shapes import get_default_shader
 elif pyglet.options.backend == GraphicsAPI.WEBGL:
     from pyglet.graphics.api.webgl.shapes import get_default_shader
-# elif pyglet.options.backend == GraphicsAPI.VULKAN:
-#     from pyglet.graphics.api.vulkan.shapes import get_default_shader
 
 
 def _rotate_point(center: tuple[float, float], point: tuple[float, float], angle: float) -> tuple[float, float]:
@@ -158,10 +157,10 @@ def _normalise_coordinates(coordinates: Sequence[Sequence[float]]) -> list[tuple
     return [tuple(point) for point in coordinates]  # type: ignore[misc]
 
 
-def _get_segment(p0: tuple[float, float] | list[float], p1: tuple[float, float] | list[float],
-                 p2: tuple[float, float] | list[float], p3: tuple[float, float] | list[float],
-                 thickness: float = 1.0, prev_miter: Vec2 | None = None, prev_scale: Vec2 | None = None) -> tuple[
-    Vec2, Vec2, float, float, float, float, float, float, float, float, float, float, float, float]:
+def _get_segment(p0: tuple[float, float] | list[float] | None, p1: tuple[float, float] | list[float],
+                 p2: tuple[float, float] | list[float], p3: tuple[float, float] | list[float] | None,
+                 thickness: float = 1.0, prev_miter: Vec2 | None = None, prev_scale: float | None = None) -> tuple[
+    Vec2, float, float, float, float, float, float, float, float, float, float, float, float, float]:
     """Computes a line segment between the points p1 and p2.
 
     If points p0 or p3 are supplied then the segment p1->p2 will have the correct "miter" angle
@@ -253,9 +252,6 @@ class _ShapeGroup(Group):
     The group is automatically coalesced with other shape groups
     sharing the same parent group and blend parameters.
     """
-    blend_src: int
-    blend_dest: int
-
     def __init__(self, blend_src: BlendFactor, blend_dest: BlendFactor, program: ShaderProgram,
                  parent: Group | None = None) -> None:
         """Create a Shape group.
@@ -289,9 +285,7 @@ class ShapeBase(ABC):
     the provided shapes as reference.
     """
 
-    # _rgba and any class attribute set to None is untyped because
-    # doing so doesn't require None-handling from some type checkers.
-    _rgba = (255, 255, 255, 255)
+    _rgba: tuple[int, int, int, int] = (255, 255, 255, 255)
     _rotation: float = 0.0
     _visible: bool = True
     _x: float = 0.0
@@ -300,12 +294,15 @@ class ShapeBase(ABC):
     _anchor_x: float = 0.0
     _anchor_y: float = 0.0
     _batch: Batch | None = None
-    _group: _ShapeGroup | Group | None = None
+    _group: Group
     _num_verts: int = 0
     _user_group: Group | None = None
-    _vertex_list = None
+    _vertex_list: VertexList | None = None
     _draw_mode: GeometryMode = GeometryMode.TRIANGLES
-    group_class: Group = _ShapeGroup
+    _blend_src: BlendFactor
+    _blend_dest: BlendFactor
+    _program: ShaderProgram
+    group_class: type[_ShapeGroup] = _ShapeGroup
 
     def __init__(self,
                  vertex_count: int,
@@ -408,7 +405,7 @@ class ShapeBase(ABC):
         return self._blend_src, self._blend_dest
 
     @blend_mode.setter
-    def blend_mode(self, modes: tuple[int, int]) -> None:
+    def blend_mode(self, modes: tuple[BlendFactor, BlendFactor]) -> None:
         src, dst = modes
         if src == self._blend_src and dst == self._blend_dest:
             return
@@ -418,6 +415,7 @@ class ShapeBase(ABC):
 
         self._group = self.get_shape_group()
         if self._batch is not None:
+            assert self._vertex_list is not None
             self._batch.migrate(self._vertex_list, self._draw_mode, self._group, self._batch)
         else:
             self._vertex_list.delete()
@@ -438,6 +436,7 @@ class ShapeBase(ABC):
         self._program = program
         self._group = self.get_shape_group()
 
+        assert self._vertex_list is not None
         if (self._batch and
                 self._batch.update_shader(self._vertex_list, self._draw_mode, self._group, program)):
             # Exit early if changing domain is not needed.
@@ -744,6 +743,7 @@ class ShapeBase(ABC):
         self._user_group = group
         self._group = self.get_shape_group()
         if self._batch:
+            assert self._vertex_list is not None
             self._batch.migrate(self._vertex_list, self._draw_mode, self._group, self._batch)
 
     @property
@@ -765,6 +765,7 @@ class ShapeBase(ABC):
             return
 
         if batch is not None and self._batch is not None:
+            assert self._vertex_list is not None
             self._batch.migrate(self._vertex_list, self._draw_mode, self._group, batch)
             self._batch = batch
         else:
@@ -774,6 +775,13 @@ class ShapeBase(ABC):
 
 
 class Arc(ShapeBase):
+
+    _radius: float
+    _segments: int
+    _thickness: float
+    _angle: float
+    _start_angle: float
+    _closed: bool
 
     def __init__(
             self,
@@ -885,7 +893,7 @@ class Arc(ShapeBase):
                    y + (r * math.sin((i * segment_radians) + start_radians))) for i in range(self._segments + 1)]
 
         # Create a list of quads from the points
-        vertices = []
+        vertices: list[float] = []
         prev_miter = None
         prev_scale = None
         for i in range(len(points) - 1):
@@ -967,12 +975,17 @@ class Arc(ShapeBase):
 
 class BezierCurve(ShapeBase):
 
+    _points: list[tuple[float, float]]
+    _t: float
+    _segments: int
+    _thickness: float
+
     def __init__(
             self,
             *points: tuple[float, float],
             t: float = 1.0,
             segments: int = 100,
-            thickness: int = 1.0,
+            thickness: float = 1.0,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
             blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
             blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
@@ -1027,7 +1040,7 @@ class BezierCurve(ShapeBase):
 
     def _make_curve(self, t: float) -> list[float]:
         n = len(self._points) - 1
-        p = [0, 0]
+        p: list[float] = [0, 0]
         for i in range(n + 1):
             m = math.comb(n, i) * (1 - t) ** (n - i) * t ** i
             p[0] += m * self._points[i][0]
@@ -1059,7 +1072,7 @@ class BezierCurve(ShapeBase):
         coords = [[x - trans_x, y - trans_y] for x, y in points]
 
         # Create a list of doubled-up points from the points:
-        vertices = []
+        vertices: list[float] = []
         prev_miter = None
         prev_scale = None
         for i in range(len(coords) - 1):
@@ -1112,6 +1125,9 @@ class BezierCurve(ShapeBase):
 
 
 class Circle(ShapeBase):
+
+    _radius: float
+    _segments: int
 
     def __init__(
             self,
@@ -1197,7 +1213,7 @@ class Circle(ShapeBase):
                    y + (r * math.sin(i * tau_segs))) for i in range(self._segments)]
 
         # Create a list of triangles from the points:
-        vertices = []
+        vertices: list[float] = []
         for i, point in enumerate(points):
             triangle = x, y, *points[i - 1], *point
             vertices.extend(triangle)
@@ -1219,6 +1235,10 @@ class Circle(ShapeBase):
 
 
 class Ellipse(ShapeBase):
+
+    _a: float
+    _b: float
+    _segments: int
 
     def __init__(
             self,
@@ -1316,7 +1336,7 @@ class Ellipse(ShapeBase):
                    y + self._b * math.sin(i * tau_segs)) for i in range(self._segments)]
 
         # Create a list of triangles from the points:
-        vertices = []
+        vertices: list[float] = []
         for i, point in enumerate(points):
             triangle = x, y, *points[i - 1], *point
             vertices.extend(triangle)
@@ -1348,6 +1368,11 @@ class Ellipse(ShapeBase):
 
 
 class Sector(ShapeBase):
+
+    _radius: float
+    _segments: int
+    _angle: float
+    _start_angle: float
 
     def __init__(
             self,
@@ -1452,7 +1477,7 @@ class Sector(ShapeBase):
                    y + (r * math.sin((i * segment_radians) + start_radians))) for i in range(self._segments + 1)]
 
         # Create a list of triangles from the points
-        vertices = []
+        vertices: list[float] = []
         for i, point in enumerate(points[1:], start=1):
             triangle = x, y, *points[i - 1], *point
             vertices.extend(triangle)
@@ -1498,6 +1523,10 @@ class Sector(ShapeBase):
 
 
 class Line(ShapeBase):
+
+    _x2: float
+    _y2: float
+    _thickness: float
 
     def __init__(
             self,
@@ -1624,7 +1653,7 @@ class Line(ShapeBase):
 
     def __setitem__(self, idx: int, point: Sequence[float]) -> None:
         points = self.points
-        points[idx] = tuple(point)
+        points[idx] = cast("tuple[float, float]", tuple(point))
         self.points = points
 
     @property
@@ -1691,6 +1720,9 @@ class Line(ShapeBase):
 
 
 class Rectangle(ShapeBase):
+
+    _width: float
+    _height: float
 
     def __init__(
             self,
@@ -1802,6 +1834,11 @@ class Rectangle(ShapeBase):
 
 
 class BorderedRectangle(ShapeBase):
+
+    _width: float
+    _height: float
+    _border: float
+    _border_rgba: tuple[int, int, int, int]
 
     def __init__(
             self,
@@ -1982,7 +2019,7 @@ class BorderedRectangle(ShapeBase):
         self._update_color()
 
     @property
-    def color(self) -> tuple[int, int, int, int] | tuple[int, int, int]:
+    def color(self) -> tuple[int, int, int, int]:
         """Get/set the bordered rectangle's interior fill color.
 
         To set the color of the border outline, see
@@ -2018,6 +2055,10 @@ class BorderedRectangle(ShapeBase):
 
 
 class Box(ShapeBase):
+
+    _width: float
+    _height: float
+    _thickness: float
 
     def __init__(
             self,
@@ -2096,7 +2137,7 @@ class Box(ShapeBase):
             rotation=(self._rotation,) * self._num_verts,
         )
 
-    def _update_color(self):
+    def _update_color(self) -> None:
         self._vertex_list.colors[:] = self._rgba * self._num_verts
 
     def _get_vertices(self) -> Sequence[float]:
@@ -2166,6 +2207,11 @@ _RadiusT = Union[float, Tuple[float, float]]
 
 
 class RoundedRectangle(pyglet.shapes.ShapeBase):
+
+    _width: float
+    _height: float
+    _radius: Sequence[tuple[float, float]]
+    _segments: tuple[int, ...]
 
     def __init__(
             self,
@@ -2245,13 +2291,14 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
             self._radius = (radius,) * 4
         else:
             assert len(radius) == 4
-            self._radius = []
+            radii: list[tuple[float, float]] = []
+            self._radius = radii
             for value in radius:
                 if isinstance(value, (int, float)):
-                    self._radius.append((value, value))
+                    radii.append((value, value))
                 else:
                     assert len(value) == 2
-                    self._radius.append(value)
+                    radii.append(value)
 
     def _set_segments(self, segments: int | tuple[int, int, int, int] | None) -> None:
         if segments is None:
@@ -2308,7 +2355,7 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
 
         center_x = self._width / 2
         center_y = self._height / 2
-        vertices = []
+        vertices: list[float] = []
         for i, point in enumerate(points):
             triangle = center_x, center_y, *points[i - 1], *point
             vertices.extend(triangle)
@@ -2347,7 +2394,7 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
         self._update_vertices()
 
     @property
-    def radius(self) -> tuple[tuple[float, float], tuple[float, float], tuple[float, float], tuple[float, float]]:
+    def radius(self) -> Sequence[tuple[float, float]]:
         return self._radius
 
     @radius.setter
@@ -2357,6 +2404,12 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
 
 
 class Triangle(ShapeBase):
+
+    _x2: float
+    _y2: float
+    _x3: float
+    _y3: float
+
     def __init__(
             self,
             x: float, y: float,
@@ -2468,7 +2521,7 @@ class Triangle(ShapeBase):
 
     def __setitem__(self, index: int, point: Sequence[float]) -> None:
         points = self.points
-        points[index] = tuple(point)
+        points[index] = cast("tuple[float, float]", tuple(point))
         self.points = points
 
     @property
@@ -2552,6 +2605,11 @@ class Triangle(ShapeBase):
 
 
 class Star(ShapeBase):
+
+    _outer_radius: float
+    _inner_radius: float
+    _num_spikes: int
+
     def __init__(
             self,
             x: float, y: float,
@@ -2654,7 +2712,7 @@ class Star(ShapeBase):
                            y + (r_i * math.sin((2 * i + 1) * d_theta))))
 
         # create a list of doubled-up points from the points
-        vertices = []
+        vertices: list[float] = []
         for i, point in enumerate(points):
             triangle = x, y, *points[i - 1], *point
             vertices.extend(triangle)
@@ -2696,6 +2754,9 @@ class Star(ShapeBase):
 
 
 class Polygon(ShapeBase):
+
+    _coordinates: list[tuple[float, float]]
+
     def __init__(
             self,
             *coordinates: tuple[float, float] | Sequence[float],
@@ -2777,6 +2838,10 @@ class Polygon(ShapeBase):
 
 
 class MultiLine(ShapeBase):
+
+    _thickness: float
+    _closed: bool
+    _coordinates: list[Sequence[float]]
 
     def __init__(
             self,
@@ -2878,7 +2943,7 @@ class MultiLine(ShapeBase):
         self._vertex_list.position[:] = self._get_vertices()
 
     @property
-    def points(self) -> list[tuple[float, float]]:
+    def points(self) -> list[Sequence[float]]:
         """Get/set the points that make up the multi-line.
 
         .. versionadded:: 3.0
@@ -2888,7 +2953,7 @@ class MultiLine(ShapeBase):
 
     @points.setter
     def points(self, value: Sequence[Sequence[float]]) -> None:
-        coordinates = [tuple(point) for point in value]
+        coordinates: list[Sequence[float]] = [tuple(point) for point in value]
         if not coordinates:
             raise ValueError("MultiLine requires at least one point")
         if self._closed:
@@ -2898,7 +2963,7 @@ class MultiLine(ShapeBase):
         self._update_vertices()
         self._update_translation()
 
-    def __getitem__(self, index: int) -> tuple[float, float]:
+    def __getitem__(self, index: int) -> Sequence[float]:
         return self.points[index]
 
     def __setitem__(self, index: int, point: Sequence[float]) -> None:

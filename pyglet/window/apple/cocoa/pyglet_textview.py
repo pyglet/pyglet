@@ -1,18 +1,11 @@
 from __future__ import annotations
 
 import unicodedata
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from pyglet.libs.darwin.cocoapy import (
-    CFSTR,
-    ObjCClass,
-    ObjCInstance,
-    PyObjectEncoding,
-    cf,
-    cfstring_to_string,
-    send_super,
-    objc_method,
-)
+from pyglet.libs.darwin.cocoapy.cocoatypes import PyObjectEncoding
+from pyglet.libs.darwin.cocoapy.lib_corefoundation import CFSTR, cf, cfstring_to_string
+from pyglet.libs.darwin.cocoapy.runtime import ObjCClass, ObjCInstance, objc_method, send_super
 from pyglet.window import key
 
 if TYPE_CHECKING:
@@ -25,10 +18,11 @@ NSTextView = ObjCClass('NSTextView')
 
 # This custom NSTextView subclass is used for capturing all of the
 # on_text, on_text_motion, and on_text_motion_select events.
-class PygletTextView(NSTextView):
+class PygletTextView(NSTextView):  # type: ignore[valid-type, misc]
+    _window: CocoaWindow | None
 
     @objc_method(b'@' + PyObjectEncoding)
-    def initWithCocoaWindow_(self, window: CocoaWindow) -> ObjCInstance | None:
+    def initWithCocoaWindow_(self: Any, window: CocoaWindow) -> ObjCInstance | None:
         self = ObjCInstance(send_super(self, 'init'))
         if not self:
             return None
@@ -71,12 +65,12 @@ class PygletTextView(NSTextView):
         self.nextResponder().keyUp_(nsevent)
 
     @objc_method('v@')
-    def insertText_(self, text: CFSTR) -> None:
-        text = cfstring_to_string(text)
+    def insertText_(self, text: ObjCInstance) -> None:
+        str_text = cfstring_to_string(text)
         self.setString_(self.empty_string)
         # Don't send control characters (tab, newline) as on_text events.
-        if text and unicodedata.category(text[0]) != 'Cc':
-            self._window.dispatch_event('on_text', text)
+        if str_text and unicodedata.category(str_text[0]) != 'Cc':
+            self._window.dispatch_event('on_text', str_text)
 
     @objc_method('v@')
     def insertNewline_(self, sender: ObjCInstance) -> None:

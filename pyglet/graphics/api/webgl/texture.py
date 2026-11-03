@@ -82,8 +82,8 @@ from pyglet.graphics.api.webgl.gl import (
     GL_UNPACK_SKIP_ROWS,
     GL_UNSIGNED_BYTE,
 )
-from pyglet.graphics.texture import CompressedTexture, Texture, UniformTextureSequence, _TextureRegionShared, _Texture3DShared, \
-    _TextureArrayShared, TextureGrid
+from pyglet.graphics.texture import CompressedTexture, Texture, UniformTextureSequence, TextureRegion, _Texture3DShared, \
+    TextureArrayRegion, TextureArray, TextureGrid
 from pyglet.image.base import (
     CompressedImageData,
     CompressionFormat,
@@ -704,17 +704,10 @@ class WebGLTexture(Texture["WebGL2SurfaceContext"]):
         data = ImageData(self.width, self.height, fmt, pixel_buf)
         return data
 
-class WebGLTextureRegion(_TextureRegionShared, WebGLTexture):
+class WebGLTextureRegion(TextureRegion["WebGL2SurfaceContext"], WebGLTexture):
     """A rectangular region of a texture, presented as if it were a separate texture."""
 
     region_class: type[WebGLTextureRegion]
-
-    def __init__(self, x: int, y: int, z: int, width: int, height: int, owner: Texture):
-        super().__init__(owner._context, width, height, owner.handle, owner.tex_type, owner.internal_format,
-                         owner.internal_format_size, owner.internal_format_type, owner.filters, owner.address_mode,
-                         owner.anisotropic_level, key=owner.key)
-        self._init_region(x, y, z, width, height, owner)
-
 
 WebGLTexture.region_class = WebGLTextureRegion
 
@@ -818,7 +811,7 @@ class WebGLTexture3D(_WebGLLayeredTexture, _Texture3DShared[WebGLTextureRegion, 
         return max(1, depth >> level)
 
 
-class WebGLTextureArrayRegion(WebGLTextureRegion):
+class WebGLTextureArrayRegion(TextureArrayRegion["WebGL2SurfaceContext"], WebGLTextureRegion):
     """A region of a TextureArray, presented as if it were a separate texture."""
 
     region_class: type[WebGLTextureArrayRegion]
@@ -827,11 +820,9 @@ class WebGLTextureArrayRegion(WebGLTextureRegion):
         return f"{self.__class__.__name__}(handle={self._handle}, size={self.width}x{self.height}, layer={self.z})"
 
 
-class WebGLTextureArray(_WebGLLayeredTexture, _TextureArrayShared[WebGLTextureArrayRegion, "WebGL2SurfaceContext"],
-                        WebGLTexture, UniformTextureSequence[WebGLTextureArrayRegion]):
+class WebGLTextureArray(_WebGLLayeredTexture, TextureArray["WebGL2SurfaceContext"], WebGLTexture):
     """A WebGL texture array with independently addressable image layers."""
     region_class: type[WebGLTextureArrayRegion] = WebGLTextureArrayRegion
-    items: list[WebGLTextureArrayRegion]
 
     def __init__(self, context: WebGL2SurfaceContext, width, height, tex_id, max_depth,
                  internal_format: ComponentFormat = ComponentFormat.RGBA,
@@ -840,10 +831,9 @@ class WebGLTextureArray(_WebGLLayeredTexture, _TextureArrayShared[WebGLTextureAr
                  filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT,
                  anisotropic_level: int = 0):
-        super().__init__(context, width, height, tex_id, TextureType.TYPE_2D_ARRAY, internal_format, internal_format_size,
-                  internal_format_type, filters, address_mode, anisotropic_level)
-        self.max_depth = max_depth
-        self.items = []
+        super().__init__(
+            width, height, tex_id, max_depth, internal_format, internal_format_size,
+            internal_format_type, filters, address_mode, anisotropic_level, context=context)
 
     @classmethod
     def create(cls: type[WebGLTextureArray], width: int, height: int,
@@ -904,6 +894,7 @@ class WebGLTextureArray(_WebGLLayeredTexture, _TextureArrayShared[WebGLTextureAr
 
     def _get_mipmap_depth(self, level: int) -> int:
         return max(1, int(self.max_depth))
+
 
 WebGLTextureArrayRegion.region_class = WebGLTextureArrayRegion
 

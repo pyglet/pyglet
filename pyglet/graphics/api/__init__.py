@@ -25,21 +25,17 @@ if pyglet.compat_platform == "emscripten":
 if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
     from pyglet.graphics.api.gl.global_opengl import OpenGLBackend
 
-    core = OpenGLBackend(graphics_api=pyglet.options.backend)
+    core = OpenGLBackend(graphics_api=GraphicsAPI(pyglet.options.backend))
 
 elif pyglet.options.backend in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
     from pyglet.graphics.api.gl2.global_opengl import OpenGL2Backend
 
-    core = OpenGL2Backend(graphics_api=pyglet.options.backend)
+    core = OpenGL2Backend(graphics_api=GraphicsAPI(pyglet.options.backend))
 
 elif pyglet.options.backend == GraphicsAPI.WEBGL:
     from pyglet.graphics.api.webgl import WebGLBackend
 
     core = WebGLBackend()
-
-elif pyglet.options.backend == GraphicsAPI.VULKAN:
-    from pyglet.graphics.api.vulkan.instance import VulkanGlobal
-    core = VulkanGlobal()
 
 else:
     raise Exception(f"Invalid rendering backend. Choose one of {[str(a) for a in GraphicsAPI]}.")

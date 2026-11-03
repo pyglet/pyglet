@@ -34,8 +34,8 @@ class Scene:
 
     """
 
-    def __init__(self, nodes: list[Node] | None = None) -> None:
-        self.nodes = nodes or []
+    def __init__(self, nodes: Sequence[Node] | None = None) -> None:
+        self.nodes = nodes if isinstance(nodes, list) else list(nodes) if nodes is not None else []
 
     def __iter__(self):
         """Recursively iterate over all Nodes and their children."""
@@ -50,10 +50,10 @@ class Scene:
         Once base classes are fully defined, the decoders should not create GPU resources
         themselves. Instead, the final VertexLists, etc. can be created here.
         """
-        vertex_lists = []
-        groups = []
-        for node in self.nodes:
-            material = node.mesh.primitives[0].material
+        # vertex_lists = []
+        # groups = []
+        # for node in self.nodes:
+        #     material = node.mesh.primitives[0].material
 
         raise NotImplementedError(f"{self.__class__.__name__} does not implement this method.")
 
@@ -118,7 +118,7 @@ class Material(ABC):
 
 @dataclasses.dataclass(frozen=True)
 class SimpleMaterial(Material):
-    name: str = "default",
+    name: str = "default"
     diffuse: tuple[float, float, float, float] = (0.8, 0.8, 0.8, 1.0)
     ambient: tuple[float, float, float, float] = (0.2, 0.2, 0.2, 1.0)
     specular: tuple[float, float, float, float] = (0.0, 0.0, 0.0, 1.0)

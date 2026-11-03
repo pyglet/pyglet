@@ -15,7 +15,7 @@ import mmap
 import os
 import struct
 from io import BytesIO
-from typing import Any
+from typing import Any, Sequence
 
 from pyglet.font.base import FontException
 
@@ -76,6 +76,16 @@ class TruetypeInfo:
     }
 
     _character_advances: dict[str, float] | None
+    _data: mmap.mmap | bytes
+    _names: dict[tuple[int, int], list[tuple[int, int, bytes]]] | None
+    _horizontal_metrics: list[Any] | None
+    _character_kernings: dict[tuple[str, str], float] | None
+    _glyph_kernings: dict[tuple[int, int], float] | None
+    _character_map: dict[str, int] | None
+    _glyph_map: dict[int, str] | None
+    _font_selection_flags: int | None
+    _weight_class: int | None
+    _width_class: int | None
 
     def __init__(self, filename: str) -> None:
         """Read the given TrueType file.
@@ -91,10 +101,7 @@ class TruetypeInfo:
         assert filename, "must provide a font file name"
         length = os.stat(filename).st_size
         self._fileno = os.open(filename, os.O_RDONLY)
-        if hasattr(mmap, "MAP_SHARED"):
-            self._data = mmap.mmap(self._fileno, length, mmap.MAP_SHARED, mmap.PROT_READ)
-        else:
-            self._data = mmap.mmap(self._fileno, length, None, mmap.ACCESS_READ)
+        self._data = mmap.mmap(self._fileno, length, access=mmap.ACCESS_READ)
 
         self._closed = False
 
@@ -147,14 +154,15 @@ class TruetypeInfo:
         """Returns True iff the font describes itself as italic."""
         return bool(self.get_font_selection_flags() & 0x1)
 
-    def get_names(self) -> dict[tuple[int, int], tuple[int, int, bytes]]:
+    def get_names(self) -> dict[tuple[int, int], list[tuple[int, int, bytes]]]:
         """Returns a dictionary of names defined in the file.
 
         The key of each item is a tuple of ``platform_id``, ``name_id``,
         where each ID is the number as described in the Truetype format.
 
         The value of each item is a tuple of
-        ``encoding_id``, ``language_id``, ``value``, where ``value`` is an encoded string.
+            ``encoding_id``, ``language_id``, ``value``, where ``value`` is an encoded string.
+        Each key maps to a list of these tuples, one per name record.
         """
         if self._names:
             return self._names
@@ -166,14 +174,14 @@ class TruetypeInfo:
         for record in name_records:
             value = self._data[record.offset + storage: record.offset + storage + record.length]
             key = record.platform_id, record.name_id
-            value = (record.encoding_id, record.language_id, value)
+            name_record = (record.encoding_id, record.language_id, value)
             if key not in self._names:
                 self._names[key] = []
-            self._names[key].append(value)
+            self._names[key].append(name_record)
         return self._names
 
     def get_name(self, name: int | str, platform: int | str | None = None,
-                 languages: int | str | None = None) -> str | None:
+                 languages: Sequence[int] | None = None) -> str | None:
         """Returns the value of the given name in this font.
 
         Args:
@@ -230,10 +238,11 @@ class TruetypeInfo:
         if isinstance(name, str):
             name = self._name_id_lookup[name]
         if not platform:
-            for platform in ("microsoft", "macintosh"):
-                value = self.get_name(name, platform, languages)
+            for candidate_platform in ("microsoft", "macintosh"):
+                value = self.get_name(name, candidate_platform, languages)
                 if value:
                     return value
+            return None
         if isinstance(platform, str):
             platform = self._platform_id_lookup[platform]
         if (platform, name) not in names:
@@ -249,6 +258,8 @@ class TruetypeInfo:
             if not languages:
                 # Default to english for macintosh
                 languages = (0,)
+        else:
+            return None
 
         for record in names[(platform, name)]:
             if record[1] in languages and record[0] in encodings:
@@ -301,7 +312,7 @@ class TruetypeInfo:
         hm = self.get_horizontal_metrics()
         return [float(m.advance_width) / self.header.units_per_em for m in hm]
 
-    def get_character_kernings(self) -> dict[tuple[str, str], int]:
+    def get_character_kernings(self) -> dict[tuple[str, str], float]:
         """Return a dictionary of (left,right)->kerning
 
         The key of the dictionary is a tuple of ``(left, right)``
@@ -321,7 +332,7 @@ class TruetypeInfo:
                     self._character_kernings[(lchar, rchar)] = value
         return self._character_kernings
 
-    def get_glyph_kernings(self) -> dict[tuple[str, str], int]:
+    def get_glyph_kernings(self) -> dict[tuple[int, int], float]:
         """Return a dictionary of (left,right)->kerning
 
         The key of the dictionary is a tuple of ``(left, right)``
@@ -333,7 +344,7 @@ class TruetypeInfo:
         header = \
             _read_kern_header_table(self._data, self._tables["kern"].offset)
         offset = self._tables["kern"].offset + header.size
-        kernings = {}
+        kernings: dict[tuple[int, int], float] = {}
         for i in range(header.n_tables):
             header = _read_kern_subtable_header(self._data, offset)
             if header.coverage & header.horizontal_mask \
@@ -442,7 +453,8 @@ class TruetypeInfo:
         ``get_*`` methods.
         """
 
-        self._data.close()
+        if isinstance(self._data, mmap.mmap):
+            self._data.close()
         os.close(self._fileno)
         self._closed = True
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import warnings
 from ctypes import POINTER, byref, c_ubyte, cast, memmove, string_at, Array
+from math import ceil
 from typing import NamedTuple, Sequence, TYPE_CHECKING
 
 import pyglet
@@ -498,17 +499,18 @@ class FreeTypeFont(base.Font):
 
             if i == length-1:
                 # Last glyph, use just the width.
-                width += slot.metrics.width >> 6
+                width += slot.metrics.width
             else:
-                width += slot.advance.x >> 6
+                width += slot.advance.x
 
-            glyph_top = slot.metrics.horiBearingY >> 6
-            glyph_bottom = (slot.metrics.horiBearingY - slot.metrics.height) >> 6
+            glyph_top = slot.metrics.horiBearingY
+            glyph_bottom = slot.metrics.horiBearingY - slot.metrics.height
 
             max_top = max(max_top, glyph_top)
             min_bottom = min(min_bottom, glyph_bottom)
 
-        return width, max_top - min_bottom
+        # Keep the 26.6 precision until the complete text has been measured.
+        return ceil(width / 64), ceil((max_top - min_bottom) / 64)
 
 class FreeTypeFace:
     """FreeType typographic face object.

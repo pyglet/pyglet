@@ -8,14 +8,14 @@ from .base import Display, Screen, ScreenMode
 UIScreen = ObjCClass('UIScreen')
 
 
-class IOSDisplay(Display):
+class IOSDisplay(Display['IOSScreen']):
     """The single display from UIKit."""
 
     def get_screens(self) -> list[IOSScreen]:
         return [IOSScreen(self, UIScreen.mainScreen())]
 
 
-class IOSScreen(Screen):
+class IOSScreen(Screen[IOSDisplay]):
     def __init__(self, display: IOSDisplay, ui_screen) -> None:
         self._ui_screen = ui_screen
         bounds = ui_screen.bounds()

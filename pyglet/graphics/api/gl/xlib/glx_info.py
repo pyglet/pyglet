@@ -17,7 +17,7 @@ Or, if using more than one Window::
 
 from __future__ import annotations
 
-from ctypes import byref, c_int
+from ctypes import byref, c_int, _Pointer
 from typing import TYPE_CHECKING
 
 from pyglet.libs.linux.glx.glx import (
@@ -42,7 +42,7 @@ class GLXInfoException(Exception):  # noqa: N818
 
 
 class GLXInfo:
-    def __init__(self, display: xlib.Display | None = None) -> None:
+    def __init__(self, display: _Pointer[xlib.Display] | None = None) -> None:
         # Set default display if not set
         # if display and not _glx_info.display:
         #     _glx_info.set_display(display)

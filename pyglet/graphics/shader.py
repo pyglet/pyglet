@@ -8,7 +8,7 @@ import weakref
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, Literal, Protocol, Sequence, overload
+from typing import TYPE_CHECKING, Any, Callable, Generic, Literal, Mapping, Protocol, Sequence, TypeVar, cast, overload
 
 import pyglet
 from pyglet.enums import GeometryMode, GraphicsAPI
@@ -90,27 +90,31 @@ class Sampler:
     stages: Sequence[ShaderType] = ("fragment",)
 
 
-class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
+UniformBlockT = TypeVar("UniformBlockT", bound="UniformBlock | type[UniformBlock]")
+UniformLocationT = TypeVar("UniformLocationT")
+
+
+class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC, Generic[UniformBlockT]):
     key_type = ShaderProgramKey
     _attributes: dict[str, Attribute]
     _attribute_formats: dict[str, AttributeFormat]
     _uniforms: dict[str, Any]
-    _uniform_blocks: dict[str, UniformBlock]
+    _uniform_blocks: dict[str, UniformBlockT]
     _samplers: dict[str, Sampler]
-    _attribute_key: str
+    _attribute_key: tuple[Any, ...]
     _attribute_keys: tuple[tuple[Any, ...], ...]
     _domain_layout: VertexLayout
     _legacy_instance_layout: VertexLayout | None
     _vertex_layouts: dict[tuple[Any, ...], ShaderProgramView]
-    _format_layouts: dict[str, ShaderProgramView]
+    _format_layouts: dict[tuple[Any, ...], ShaderProgramView]
 
-    def __init__(self, *shaders: Shader, vertex_layout: VertexLayout | None = None) -> None:
+    def __init__(self, *shaders: _AbstractShader, vertex_layout: VertexLayout | None = None) -> None:
         GraphicsResource.__init__(self)
 
         # Attribute description
         self._attributes = {}
         self._attribute_formats = {}
-        self._attribute_key = str(())
+        self._attribute_key = ()
         self._attribute_keys = ()
         self._legacy_instance_layout = None
         self._vertex_layouts = {}
@@ -162,7 +166,7 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
         self._format_layouts.clear()
 
     @property
-    def attribute_key(self) -> str:
+    def attribute_key(self) -> tuple[Any, ...]:
         """Stable, cached key describing the geometry formats by name."""
         return self._attribute_key
 
@@ -242,7 +246,7 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
     @staticmethod
     def _copy_attribute_formats(
             attribute_formats: dict[str, AttributeFormat], shader_attributes: dict[str, Attribute],
-            formats: dict[str, AttributeFormat],
+            formats: Mapping[str, AttributeFormat],
     ) -> dict[str, AttributeFormat]:
         adjusted = attribute_formats
         for name, requested in formats.items():
@@ -261,7 +265,10 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
             adjusted[name] = requested
         return adjusted
 
-    def set_uniform_blocks(self, *uniform_blocks: UniformBlockDesc) -> None:
+    def set_uniform_blocks(
+        self: _AbstractShaderProgram[UniformBlock | type[UniformBlock]],
+        *uniform_blocks: UniformBlockDesc,
+    ) -> None:
         for ub in uniform_blocks:
             self._uniform_blocks[ub.__class__.__name__] = self.get_uniform_block_cls()
 
@@ -293,11 +300,12 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
         return self._attribute_keys
 
     @property
-    def uniform_blocks(self) -> dict[str, UniformBlock]:
-        """A dictionary of introspected UniformBlocks.
+    def uniform_blocks(self) -> dict[str, UniformBlockT]:
+        """A dictionary of introspected UniformBlocks or registered block classes.
 
         This property returns a dictionary of
-        :py:class:`~pyglet.graphics.shader.UniformBlock` instances.
+        :py:class:`~pyglet.graphics.shader.UniformBlock` instances, or classes
+        registered by :meth:`set_uniform_blocks`.
         They can be accessed by name. For example::
 
             block = my_shader_program.uniform_blocks['WindowBlock']
@@ -398,24 +406,32 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
     @overload
     def _vertex_list_create(self, count: int, mode: GeometryMode, indices: None = None,
                             instanced: Literal[False] = False, batch: Batch | None = None, group: Group | None = None,
+                            layout: _AbstractShaderProgram | ShaderProgramView | None = None,
+                            storage: VertexStorage | None = None, vertex_layout: VertexLayout | None = None,
                             *, data: dict[str, Any]) -> VertexList:
         ...
 
     @overload
     def _vertex_list_create(self, count: int, mode: GeometryMode, indices: Sequence[int] = ...,
                             instanced: Literal[False] = False, batch: Batch | None = None, group: Group | None = None,
+                            layout: _AbstractShaderProgram | ShaderProgramView | None = None,
+                            storage: VertexStorage | None = None, vertex_layout: VertexLayout | None = None,
                             *, data: dict[str, Any]) -> IndexedVertexList:
         ...
 
     @overload
     def _vertex_list_create(self, count: int, mode: GeometryMode, indices: None = None,
                             instanced: Literal[True] = True, batch: Batch | None = None, group: Group | None = None,
+                            layout: _AbstractShaderProgram | ShaderProgramView | None = None,
+                            storage: VertexStorage | None = None, vertex_layout: VertexLayout | None = None,
                             *, data: dict[str, Any]) -> InstanceVertexList:
         ...
 
     @overload
     def _vertex_list_create(self, count: int, mode: GeometryMode, indices: Sequence[int] = ...,
                             instanced: Literal[True] = True, batch: Batch | None = None, group: Group | None = None,
+                            layout: _AbstractShaderProgram | ShaderProgramView | None = None,
+                            storage: VertexStorage | None = None, vertex_layout: VertexLayout | None = None,
                             *, data: dict[str, Any]) -> InstanceIndexedVertexList:
         ...
 
@@ -435,7 +451,7 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
             shader_layout = storage.get_vertex_layout(layout, vertex_layout)
             geometry_layout = shader_layout.geometry_layout
         return batch._create_vertex_list(  # noqa: SLF001
-            geometry_layout, count, mode, group or pyglet.graphics.ShaderGroup(program=layout),
+            geometry_layout, count, mode, group or pyglet.graphics.ShaderGroup(program=cast(ShaderProgram, layout)),
             indices=indices,
             instanced=instanced,
             data_error_type=MissingAttributeException,
@@ -462,6 +478,13 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
             group:
                 Group to add the VertexList to, or ``None`` to create a default
                 :class:`~pyglet.graphics.ShaderGroup` for this program.
+            storage:
+                Storage created by the selected batch to use for the geometry,
+                or ``None`` to use that batch's default storage. If ``batch``
+                is ``None``, the default batch is selected.
+            vertex_layout:
+                Optional override for the vertex attribute formats. ``None``
+                uses this program's geometry layout.
             data:
                 Initial data for each vertex attribute.
 
@@ -512,7 +535,7 @@ class _AbstractShaderProgram(GraphicsResource[Any, ShaderProgramKey], ABC):
         return f"{self.__class__.__name__}(handle={self._handle})"
 
 
-class ShaderProgram(_AbstractShaderProgram):
+class ShaderProgram(_AbstractShaderProgram[UniformBlockT]):
     """Backend-agnostic shader program container.
 
     Concrete backends are responsible for compiling/linking shaders,
@@ -564,9 +587,6 @@ class ShaderProgramView(ShaderProgram):
         """Backend handle of the program this view represents."""
         return self._program.handle
 
-    def delete(self) -> None:
-        """Release this view without affecting its owning shader program."""
-
     @property
     def attributes(self) -> dict[str, Attribute]:
         return self._attributes.copy()
@@ -580,7 +600,7 @@ class ShaderProgramView(ShaderProgram):
         return self._attribute_keys
 
     @property
-    def attribute_key(self) -> str:
+    def attribute_key(self) -> tuple[Any, ...]:
         return self._attribute_key
 
     @property
@@ -602,9 +622,32 @@ class ShaderProgramView(ShaderProgram):
         return self._program.get_vertex_view(self.geometry_layout.with_divisors(**attributes))
 
     def vertex_list(self, count: int, mode: GeometryMode, batch: Batch | None = None,
-                    group: Group | None = None, **data: Any) -> VertexList:
+                    group: Group | None = None, storage: VertexStorage | None = None,
+                    vertex_layout: VertexLayout | None = None, **data: Any) -> VertexList:
+        """Create a VertexList using this view's attribute layout.
+
+        Args:
+            count:
+                The number of vertices in the list.
+            mode:
+                A :class:`~pyglet.enums.GeometryMode` value determining how
+                the vertices are drawn.
+            batch:
+                Batch to add the VertexList to, or ``None`` to use the default batch.
+            group:
+                Group to add the VertexList to, or ``None`` to create a default
+                :class:`~pyglet.graphics.ShaderGroup` for this view.
+            storage:
+                Storage created by the selected batch to use for the geometry,
+                or ``None`` to use that batch's default storage.
+            vertex_layout:
+                Optional override for the vertex attribute formats. ``None``
+                uses this view's geometry layout.
+            data:
+                Initial data for each vertex attribute.
+        """
         return self._program._vertex_list_create(
-            count, mode, batch=batch, group=group, layout=self, data=data
+            count, mode, batch=batch, group=group, layout=self, storage=storage, vertex_layout=vertex_layout, data=data
         )
 
     def vertex_list_indexed(self, count: int, mode: GeometryMode, indices: Sequence[int],
@@ -700,6 +743,9 @@ class TransformFeedbackShaderProgram(ShaderProgram):
 class ShaderSource(abc.ABC):
     """String source of shader used during load of a Shader instance."""
 
+    def __init__(self, source: str, source_type: Any) -> None:
+        """Initialize source text for a backend shader type."""
+
     @abstractmethod
     def validate(self) -> str:
         """Return the validated shader source."""
@@ -712,14 +758,14 @@ class _AbstractShader(GraphicsResource[Any, ShaderKey], abc.ABC):
     You can reuse a Shader object in multiple ShaderPrograms.
     """
     _src_str: str
-    type: ShaderType
+    shader_type: ShaderType
     key_type = ShaderKey
 
     def __init__(self, source_string: str, shader_type: ShaderType) -> None:
         """Initialize a shader type."""
         GraphicsResource.__init__(self)
         self._src_str = source_string
-        self.type = shader_type
+        self.shader_type = shader_type
 
         available_shaders = self.supported_shaders()
         if shader_type not in available_shaders:
@@ -731,7 +777,7 @@ class _AbstractShader(GraphicsResource[Any, ShaderKey], abc.ABC):
 
     @classmethod
     @abstractmethod
-    def supported_shaders(cls: type[Shader]) -> tuple[ShaderType, ...]:
+    def supported_shaders(cls: type[_AbstractShader]) -> tuple[ShaderType, ...]:
         """Return the supported shader types for this shader class."""
 
     @staticmethod
@@ -746,7 +792,7 @@ class Shader(_AbstractShader):
     You can reuse a Shader object in multiple ShaderPrograms.
     """
     _src_str: str
-    type: ShaderType
+    shader_type: ShaderType
 
     def __init__(self, source_string: str, shader_type: ShaderType) -> None:
         """Initialize a shader type."""
@@ -766,7 +812,7 @@ class Shader(_AbstractShader):
         """Delete the shader program's backend resource."""
 
 def _ubo_view_repr(view: ctypes.Structure) -> str:
-    names_fields = ", ".join((f"{k}={v.__name__}" for k, v in dict(view._fields_).items()))
+    names_fields = ", ".join(f"{field[0]}={field[1].__name__}" for field in view._fields_)
     return f"UBOView({names_fields})"
 
 
@@ -850,8 +896,10 @@ def _build_uniform_struct_from_uniforms(
     return _build_ctypes_struct(name, dynamic_structs, array_sizes)
 
 
-class UniformArrayBase:
+class UniformArrayBase(Generic[UniformLocationT]):
     """Backend-agnostic base for uniform array wrappers."""
+
+    _idx_to_loc: dict[int, UniformLocationT]
 
     __slots__ = (
         "_c_array",
@@ -879,13 +927,13 @@ class UniformArrayBase:
 
         self._ptr = ctypes.cast(self._c_array, ctypes.POINTER(gl_type))
 
-    def _get_location_for_index(self, index: int) -> int:
+    def _get_location_for_index(self, index: int) -> UniformLocationT:
         raise NotImplementedError
 
-    def _apply_uniform_update(self, location: int, size: int, data: Sequence) -> None:
+    def _apply_uniform_update(self, location: UniformLocationT, size: int, data: Sequence) -> None:
         raise NotImplementedError
 
-    def _get_array_loc(self, index: int) -> int:
+    def _get_array_loc(self, index: int) -> UniformLocationT:
         try:
             return self._idx_to_loc[index]
         except KeyError:
@@ -1057,7 +1105,7 @@ class UBOBindingManager:
         """Check if a binding index value is in use."""
         return binding in self._in_use
 
-    def add_explicit_binding(self, shader_program: ShaderProgram, ub_name: str, binding: int) -> None:
+    def add_explicit_binding(self, shader_program: _AbstractShaderProgram, ub_name: str, binding: int) -> None:
         """Used when a uniform block has set its own binding point."""
         self._ubo_programs[ub_name].add(shader_program)
         self._ubo_names[ub_name] = binding
@@ -1065,7 +1113,7 @@ class UBOBindingManager:
             self._pool.remove(binding)
         self._in_use.add(binding)
 
-    def get_binding(self, shader_program: ShaderProgram, ub_name: str) -> int:
+    def get_binding(self, shader_program: _AbstractShaderProgram, ub_name: str) -> int:
         """Retrieve a global Uniform Block binding ID."""
         self._ubo_programs[ub_name].add(shader_program)
 
@@ -1115,7 +1163,7 @@ class UniformBlock:
     view_cls: type[ctypes.Structure]
     __slots__ = 'binding', 'index', 'name', 'program', 'size', 'uniform_count', 'uniforms', 'view_cls'
 
-    def __init__(self, program: ShaderProgram, name: str, index: int, size: int, binding: int,
+    def __init__(self, program: _AbstractShaderProgram, name: str, index: int, size: int, binding: int,
                  uniforms: dict, uniform_count: int) -> None:
         """Initialize a uniform block for a ShaderProgram."""
         self.program = weakref.proxy(program)
@@ -1129,7 +1177,9 @@ class UniformBlock:
 
     def bind(self, ubo: UniformBufferObject) -> None:
         """Bind a UBO to the binding point of this uniform block."""
-        self._bind_buffer_base(self.binding, ubo.buffer.handle)
+        handle = ubo.buffer.handle
+        assert handle is not None, "Uniform buffer has no backend handle."
+        self._bind_buffer_base(self.binding, handle)
 
     def create_ubo(
         self,
@@ -1201,7 +1251,7 @@ class UniformBlock:
         return self._introspect_uniforms()
 
     @abstractmethod
-    def _bind_buffer_base(self, binding: int, buffer_id: int) -> None:
+    def _bind_buffer_base(self, binding: int, buffer_id: Any) -> None:
         raise NotImplementedError
 
     @abstractmethod
@@ -1258,8 +1308,6 @@ if not pyglet.IS_DOC_BUILD and not TYPE_CHECKING:
             WebGLTransformFeedbackShaderProgram as TransformFeedbackShaderProgram,
         )
         from pyglet.graphics.api.webgl.shader import get_default_shader
-    elif pyglet.options.backend == GraphicsAPI.VULKAN:
-        from pyglet.graphics.api.vulkan.shader import ComputeShaderProgram, Shader, ShaderProgram
     else:
         msg = f"Unsupported backend: {pyglet.options.backend}"
         raise RuntimeError(msg)

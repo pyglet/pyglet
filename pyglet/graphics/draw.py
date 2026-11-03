@@ -4,7 +4,7 @@ import contextlib
 import warnings
 import weakref
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Sequence, TypeVar, Generator, Literal
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Sequence, TypeVar, Generator, Literal, overload
 
 import pyglet
 from pyglet.enums import BlendFactor, BlendOp, CompareOp, CullFace, FrontFace, GeometryMode, GraphicsAPI, StencilOp
@@ -38,6 +38,8 @@ from pyglet.graphics.state import (
     ViewportProtocol,
     ViewportState,
     _expand_states_in_order,
+    _BaseViewportState,
+    _BaseScissorState,
 )
 from pyglet.graphics.vertexstorage import VertexStorage, VertexStorageShared
 from pyglet.graphics.api.base import SurfaceContext, SurfaceContextT, BackendRenderer
@@ -53,7 +55,8 @@ if TYPE_CHECKING:
     from pyglet.graphics.shader import ShaderProgram
     from pyglet.graphics.texture import Texture
     from pyglet.graphics.vertexdomain import (
-        IndexedVertexGroupBucket, IndexedVertexList, VertexDomain, VertexGroupBucket, VertexList,
+        IndexedVertexGroupBucket, IndexedVertexList, InstanceIndexedVertexList, InstanceVertexList,
+        VertexDomain, VertexGroupBucket, VertexList,
     )
 
 
@@ -116,26 +119,26 @@ class DrawContext(Generic[SurfaceContextT, BackendContextT]):
     draw_pass: DrawPass
     renderer: BackendRenderer
     camera_stack: list[CameraScopeProtocol] = field(default_factory=list)
-    viewport_stack: list = field(default_factory=list)
-    scissor_stack: list = field(default_factory=list)
+    viewport_stack: list[_BaseViewportState] = field(default_factory=list)
+    scissor_stack: list[_BaseScissorState] = field(default_factory=list)
     active_shader_program: ShaderProgram | None = None
     _applied_camera: CameraScopeProtocol | None = None
     _applied_viewport: tuple[int, int, int, int] | None = None
 
     def __post_init__(self) -> None:
         if not self.camera_stack and self.draw_pass.camera is not None:
-            self.camera_stack.append(self.draw_pass.camera)
+            self.camera_stack.append(self.draw_pass.camera)  # type: ignore[arg-type]
 
     @property
     def active_camera(self) -> CameraScopeProtocol:
         return self.camera_stack[-1]
 
     @property
-    def active_viewport(self) -> tuple | None:
+    def active_viewport(self) -> _BaseViewportState | None:
         return self.viewport_stack[-1] if self.viewport_stack else None
 
     @property
-    def active_scissor(self) -> tuple | None:
+    def active_scissor(self) -> _BaseScissorState | None:
         return self.scissor_stack[-1] if self.scissor_stack else None
 
     def apply_camera_scope(self, *, commit: bool = True, apply_scissor: bool = True) -> None:
@@ -151,6 +154,7 @@ class DrawContext(Generic[SurfaceContextT, BackendContextT]):
             self.apply_scissor()
 
     def apply_viewport(self) -> None:
+        viewport: tuple | None
         viewport_state = self.active_viewport
         if viewport_state is not None:
             viewport = (viewport_state.x, viewport_state.y, viewport_state.width, viewport_state.height)
@@ -158,13 +162,15 @@ class DrawContext(Generic[SurfaceContextT, BackendContextT]):
             viewport = self.active_camera.viewport if self.camera_stack else self.draw_pass.viewport
         if viewport is None:
             return
-        resolved_viewport = tuple(map(int, viewport))
+        x, y, width, height = viewport
+        resolved_viewport = int(x), int(y), int(width), int(height)
         if resolved_viewport == self._applied_viewport:
             return
         self.renderer.set_viewport(*resolved_viewport)
         self._applied_viewport = resolved_viewport
 
     def apply_scissor(self) -> None:
+        scissor: ScissorProtocol | CameraScissor | tuple | None
         scissor_state = self.active_scissor
         if scissor_state is not None:
             scissor = scissor_state.scissor
@@ -178,7 +184,7 @@ class DrawContext(Generic[SurfaceContextT, BackendContextT]):
         self.renderer.set_clear_color(r, g, b, a)
 
     def begin(self) -> None:
-        self.apply_clear_color(*self.draw_pass.clear_color)
+        self.apply_clear_color(*self.draw_pass.clear_color)  # type: ignore[misc]
         self.apply_camera_scope()
 
 
@@ -206,7 +212,7 @@ class _GroupMeta(type):
         if group is None:
             group = super().__call__(*args, **kwargs)
             # The base constructor creates builders configured after construction.
-            if cls.__init__ is Group.__init__:
+            if cls.__init__ is Group.__init__:  # type: ignore[misc]
                 return group
             # Keep identity keyed inputs alive so their IDs cannot be reused
             # while this instance remains in the cache.
@@ -247,8 +253,11 @@ class Group(metaclass=_GroupMeta):
     _hash: int
     _hashable_states: tuple[State, ...]
     _state_cache_dirty: bool
+    _assigned_batches: weakref.WeakSet[Batch]
+    _enforced_states: list[State]
+    _comparisons: list[Any]
 
-    def __init__(self, order: int = 0, parent: Group | None = None) -> None:
+    def __init__(self, order: float = 0, parent: Group | None = None) -> None:
         """Initialize a rendering group.
 
         Args:
@@ -599,7 +608,7 @@ class Group(metaclass=_GroupMeta):
         self.set_state(MultiTextureSamplerState.from_textures(program, textures, first_texture_unit, set_id))
 
     @property
-    def order(self) -> int:
+    def order(self) -> float:
         """Rendering order of this group compared to others.
 
         Lower numbers are drawn first.
@@ -636,7 +645,7 @@ class Group(metaclass=_GroupMeta):
     def __lt__(self, other: Group) -> bool:
         return self._order < other.order
 
-    def __eq__(self, other: Group) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Comparison function used to determine if another Group is providing the same state.
 
         When the same state is determined, those groups will be consolidated into one draw call.
@@ -649,7 +658,7 @@ class Group(metaclass=_GroupMeta):
             return False
 
         self._ensure_state_cache()
-        other._ensure_state_cache()
+        other._ensure_state_cache()  # type: ignore[attr-defined]
         return (self._order == other.order and
                 self.parent == other.parent and
                 self._hashable_states == other._hashable_states and
@@ -799,6 +808,8 @@ class Batch:
     _domain_registry: dict[tuple[bool, bool, GeometryMode, VertexLayout, VertexStorage], Any]
     _draw_list: list[Callable]
     _pass_draw_lists: dict[DrawPass, list[Callable]]
+    _passes: list[DrawPass]
+    _pass_registrations: dict[DrawPass, list[_PassRegistration]]
     top_groups: list[Group]
     group_children: dict[Group, list[Group]]
     group_map: dict[Group, dict[tuple[bool, bool, GeometryMode, VertexLayout, VertexStorage], VertexDomain]]
@@ -842,8 +853,8 @@ class Batch:
         # The implicit/default pass continues to use the historical draw list.
         # Additional passes have their own registrations so their groups never
         # leak into the default pass.
-        self._passes: list[DrawPass] = []
-        self._pass_registrations: dict[DrawPass, list[_PassRegistration]] = {}
+        self._passes = []
+        self._pass_registrations = {}
 
         self.initial_count = initial_count
 
@@ -897,9 +908,45 @@ class Batch:
     def _get_group_program(group: Group) -> ShaderProgram:
         """Return the shader program supplied by ``group``'s state."""
         try:
-            return group._state_names[ShaderProgramState.__name__].program  # noqa: SLF001
+            state = group._state_names[ShaderProgramState.__name__]  # noqa: SLF001
+            return state.program  # type: ignore[attr-defined]
         except KeyError:
             raise ValueError("A vertex-list group must contain a ShaderProgramState.") from None
+
+    @overload
+    def _create_vertex_list(
+            self, vertex_layout: VertexLayout, count: int, mode: GeometryMode, group: Group | None = None,
+            *, indices: Sequence[int], instanced: Literal[True], storage: VertexStorage,
+            data_error_type: type[BaseException] = MissingAttributeError, data: dict[str, Any],
+    ) -> InstanceIndexedVertexList: ...
+
+    @overload
+    def _create_vertex_list(
+            self, vertex_layout: VertexLayout, count: int, mode: GeometryMode, group: Group | None = None,
+            *, indices: None = None, instanced: Literal[True], storage: VertexStorage,
+            data_error_type: type[BaseException] = MissingAttributeError, data: dict[str, Any],
+    ) -> InstanceVertexList: ...
+
+    @overload
+    def _create_vertex_list(
+            self, vertex_layout: VertexLayout, count: int, mode: GeometryMode, group: Group | None = None,
+            *, indices: Sequence[int], instanced: Literal[False] = False, storage: VertexStorage,
+            data_error_type: type[BaseException] = MissingAttributeError, data: dict[str, Any],
+    ) -> IndexedVertexList: ...
+
+    @overload
+    def _create_vertex_list(
+            self, vertex_layout: VertexLayout, count: int, mode: GeometryMode, group: Group | None = None,
+            *, indices: None = None, instanced: Literal[False] = False, storage: VertexStorage,
+            data_error_type: type[BaseException] = MissingAttributeError, data: dict[str, Any],
+    ) -> VertexList: ...
+
+    @overload
+    def _create_vertex_list(
+            self, vertex_layout: VertexLayout, count: int, mode: GeometryMode, group: Group | None = None,
+            *, indices: Sequence[int] | None = None, instanced: bool = False, storage: VertexStorage,
+            data_error_type: type[BaseException] = MissingAttributeError, data: dict[str, Any],
+    ) -> VertexList | IndexedVertexList | InstanceVertexList | InstanceIndexedVertexList: ...
 
     def _create_vertex_list(
             self,
@@ -913,7 +960,7 @@ class Batch:
             storage: VertexStorage,
             data_error_type: type[BaseException] = MissingAttributeError,
             data: dict[str, Any],
-    ) -> VertexList | IndexedVertexList:
+    ) -> VertexList | IndexedVertexList | InstanceVertexList | InstanceIndexedVertexList:
         """Create geometry from resolved storage and layout inputs."""
         assert isinstance(mode, GeometryMode), f"Mode {mode} is not geometry mode."
         formats = vertex_layout.attribute_formats
@@ -932,7 +979,7 @@ class Batch:
             for name, array in data.items():
                 vertex_list.set_attribute_data(name, array)
         else:
-            domain.vertex_buffers.set_region(vertex_list.start, count, data)
+            domain.vertex_buffers.set_region(vertex_list.start, count, data)  # type: ignore[attr-defined]
         return vertex_list
 
     def vertex_list(
@@ -1028,7 +1075,7 @@ class Batch:
             *,
             storage: VertexStorage | None = None,
             **data: Any,
-    ) -> VertexList:
+    ) -> InstanceVertexList:
         """Create an instanced vertex list from authoritative geometry formats.
 
         Args:
@@ -1068,7 +1115,7 @@ class Batch:
             *,
             storage: VertexStorage | None = None,
             **data: Any,
-    ) -> IndexedVertexList:
+    ) -> InstanceIndexedVertexList:
         """Create an indexed instanced vertex list from authoritative geometry formats.
 
         Args:
@@ -1154,7 +1201,7 @@ class Batch:
                 vertex_list.domain, vertex_list.mode, group, binding, self._new_pass_bucket(vertex_list),
             )
             registrations.append(registration)
-        registration.bucket.add_vertex_list(vertex_list)
+        registration.bucket.add_vertex_list(vertex_list)  # type: ignore[arg-type]
         self._draw_list_dirty = True
         return registration
 
@@ -1163,7 +1210,7 @@ class Batch:
         for registrations in self._pass_registrations.values():
             for registration in registrations[:]:
                 try:
-                    registration.bucket.remove_vertex_list(vertex_list)
+                    registration.bucket.remove_vertex_list(vertex_list)  # type: ignore[arg-type]
                 except (KeyError, ValueError):
                     continue
                 changed = True
@@ -1357,9 +1404,9 @@ class Batch:
         mode is the render mode such as GL_LINES or GL_TRIANGLES
         """
         storage = self._resolve_storage(storage)
-        vertex_layout = storage.resolve_layout(vertex_layout)
-        assert vertex_layout is not None
-        return self._get_domain(indexed, instanced, mode, group, vertex_layout, storage)
+        resolved_layout = storage.resolve_layout(vertex_layout)
+        assert resolved_layout is not None
+        return self._get_domain(indexed, instanced, mode, group, resolved_layout, storage)
 
     def _get_domain(self, indexed: bool, instanced: bool, mode: GeometryMode, group: Group | None,
                     vertex_layout: VertexLayout, storage: VertexStorage) -> VertexDomain:
@@ -1377,7 +1424,7 @@ class Batch:
         except KeyError:
             # Create domain
             domain = self._domain_class_map[(indexed, instanced)](
-                self._context, self.initial_count, vertex_layout.attribute_formats
+                self._context, self.initial_count, dict(vertex_layout.attribute_formats)
             )
             domain.vertex_layout = vertex_layout
             domain.batch = self
@@ -1407,21 +1454,30 @@ class Batch:
         group._assigned_batches.add(self)  # noqa: SLF001
         self._draw_list_dirty = True
 
-    def _create_draw_list(self, draw_pass: DrawPass | None = None) -> list:
-        """Create a backend-specific draw list for the default or one additional pass."""
+    def _create_draw_list(self) -> list[Any]:
+        """Create a backend specific draw list for the default pass."""
         msg = f"{self.__class__.__name__} must implement _create_draw_list."
         raise NotImplementedError(msg)
 
-    def _compile_draw_list(self, draw_list: list, draw_pass: DrawPass | None = None) -> list[Callable]:
+    def _create_pass_draw_list(self, draw_pass: DrawPass) -> list[_PassRegistration]:
+        """Create a backend specific draw list for an additional pass."""
+        msg = f"{self.__class__.__name__} must implement _create_pass_draw_list."
+        raise NotImplementedError(msg)
+
+    def _compile_draw_list(self, draw_list: list[Any]) -> list[Callable]:
         """Compile the backend draw list representation into draw callables."""
         return draw_list
+
+    def _compile_pass_draw_list(self, registrations: list[_PassRegistration]) -> list[Callable]:
+        """Compile an additional pass's registrations into draw callables."""
+        raise NotImplementedError
 
     def _update_draw_list(self) -> None:
         if self._draw_list_dirty:
             draw_list = self._create_draw_list()
             self._draw_list = self._compile_draw_list(draw_list)
             self._pass_draw_lists = {
-                draw_pass: self._compile_draw_list(self._create_draw_list(draw_pass), draw_pass)
+                draw_pass: self._compile_pass_draw_list(self._create_pass_draw_list(draw_pass))
                 for draw_pass in self._passes
             }
             self._draw_list_dirty = False
@@ -1607,20 +1663,17 @@ class _BucketBatch(Batch):
             if domain.has_bucket(group):
                 del domain._vertex_buckets[group]  # noqa: SLF001
 
-    def _create_draw_list(
-            self, draw_pass: DrawPass | None = None,
-    ) -> list[tuple[Any, Any, Group]] | list[_PassRegistration]:
+    def _create_pass_draw_list(self, draw_pass: DrawPass) -> list[_PassRegistration]:
+        return sorted(self._pass_registrations[draw_pass], key=lambda registration: registration.group)
+
+    def _create_draw_list(self) -> list[tuple[Any, Any, Group]]:
         """Rebuild draw list by walking the group tree.
 
         Backends with different draw submission models should override this
         instead of adapting themselves to the bucket representation.
         """
-        if draw_pass is not None:
-            return sorted(self._pass_registrations[draw_pass], key=lambda registration: registration.group)
-
-
         def visit(group: Group) -> list[tuple[Any, Any, Group]]:
-            draw_list = []
+            draw_list: list[tuple[Any, Any, Group]] = []
             if not group.visible:
                 return draw_list
 
@@ -1706,7 +1759,7 @@ class _BucketBatch(Batch):
             ))
         return calls
 
-    def _optimize_draw_list(self, draw_list: list[tuple]) -> list[Callable]:
+    def _optimize_draw_list(self, draw_list: list[tuple[Any, Any, Group]]) -> list[Callable]:
         """Turn a flattened ``(domain, mode, group)`` list into optimized callables."""
         calls: list[Callable] = []
         active_states: dict[type, State] = {}
@@ -1721,7 +1774,6 @@ class _BucketBatch(Batch):
             return None
 
         def flush_buckets() -> None:
-            nonlocal current_buckets
             if not current_buckets:
                 return
 
@@ -1828,7 +1880,7 @@ class _BucketBatch(Batch):
             print(f"{i:03d} ({fn_label(fn)}): {fn_name(fn)}")
         print("==================")
 
-    def _set_draw_functions(self, draw_list: list[tuple]) -> list[Callable]:
+    def _set_draw_functions(self, draw_list: list[tuple[Any, Any, Group]]) -> list[Callable]:
         """Compile a draw list without optimizing state transitions."""
         calls: list[Callable] = []
         last_binding = None
@@ -1857,11 +1909,7 @@ class _BucketBatch(Batch):
 
         return calls
 
-    def _compile_draw_list(
-            self, draw_list: list[tuple] | list[_PassRegistration], draw_pass: DrawPass | None = None,
-    ) -> list[Callable]:
-        if draw_pass is not None:
-            return self._compile_pass_draw_list(draw_list)
+    def _compile_draw_list(self, draw_list: list[tuple[Any, Any, Group]]) -> list[Callable]:
         if pyglet.options.optimize_states:
             return self._optimize_draw_list(draw_list)
         return self._set_draw_functions(draw_list)

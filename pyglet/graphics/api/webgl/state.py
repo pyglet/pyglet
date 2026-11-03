@@ -412,7 +412,7 @@ class ShaderUniformState(State):
     def __hash__(self) -> int:
         return hash((id(self.program), id(self.data)))
 
-    def __eq__(self, other: State) -> bool:
+    def __eq__(self, other: object) -> bool:
         return (type(self) is type(other)
                 and self.program is other.program
                 and self.data is other.data)

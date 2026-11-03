@@ -9,13 +9,15 @@ import pyglet.libs.egl as egl
 
 if TYPE_CHECKING:
     from pyglet.config.gl.egl import EGLSurfaceConfig
-    from pyglet.graphics.api.gl.base import OpenGLBackend
+    from pyglet.graphics.api.gl.global_opengl import OpenGLBackend
     from pyglet.window.wayland import WaylandWindow
     from pyglet.window.headless import HeadlessWindow
 
 
-class EGLContext(OpenGLSurfaceContext):
-    display_connection: egl.EGLDisplay
+class EGLContext(OpenGLSurfaceContext['HeadlessWindow | WaylandWindow']):
+    display_connection: egl.EGLDisplay | None
+    egl_context: egl.EGLContext | None
+    _extensions: list[str]
     config: EGLSurfaceConfig
 
     def __init__(self,

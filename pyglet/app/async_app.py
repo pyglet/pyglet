@@ -103,7 +103,7 @@ class AsyncEventLoop(event.EventDispatcher):
         try:
             window.draw(dt)
         except BaseException:  # noqa: BLE001 - JS callbacks cannot unwind Python exceptions.
-            self._window_draw_exception = sys.exc_info()
+            self._window_draw_exception = sys.exc_info()  # type: ignore[assignment]
             self.exit()
 
     def _raise_window_draw_exception(self) -> None:
@@ -156,6 +156,7 @@ class AsyncEventLoop(event.EventDispatcher):
         self._interval = interval
         self._has_exit_event.clear()
         platform_event_loop = app.platform_event_loop
+        assert isinstance(platform_event_loop, AsyncPlatformEventLoop)
 
         try:
             platform_event_loop.start()

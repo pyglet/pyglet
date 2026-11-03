@@ -90,6 +90,7 @@ def get_factory() -> IWICImagingFactory2 | IWICImagingFactory:
 
     WIC interfaces with many other libraries such as DirectWrite and Direct2D.
     """
+    assert _factory is not None
     return _factory
 
 def _get_bitmap_frame(bitmap_decoder: IWICBitmapDecoder, frame_index: int) -> IWICBitmapFrameDecode:
@@ -130,13 +131,13 @@ def extract_image_data(bitmap: IWICBitmap, target_fmt: com.GUID | None = None) -
     else:
         fmt = "BGRA"
 
-    width = UINT()
-    height = UINT()
+    native_width = UINT()
+    native_height = UINT()
 
-    bitmap.GetSize(byref(width), byref(height))
+    bitmap.GetSize(byref(native_width), byref(native_height))
 
-    width = int(width.value)
-    height = int(height.value)
+    width = native_width.value
+    height = native_height.value
 
     # Get image pixel format
     pf = com.GUID()
@@ -190,7 +191,7 @@ class WICDecoder(ImageDecoder):
         super(ImageDecoder, self).__init__()
         self._factory = get_factory()
 
-    def get_file_extensions(self) -> Sequence[str]:
+    def get_file_extensions(self) -> list[str]:
         return ['.bmp', '.jpg', '.jpeg', '.png', '.tif', '.tiff', '.ico', '.jxr', '.hdp', '.wdp']
 
     def _load_bitmap_decoder(self, filename: str, file: BinaryIO | None = None) -> tuple[IWICBitmapDecoder, IStream]:

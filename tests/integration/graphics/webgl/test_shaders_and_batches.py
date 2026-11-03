@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+from unittest.mock import Mock
 
 import pyglet
 
@@ -22,6 +23,40 @@ void main() {
     final_color = tint;
 }
 """
+
+
+@pytest.mark.parametrize('resource_type, delete_method', [
+    ('WebGLShader', 'deleteShader'),
+    ('WebGLShaderProgram', 'deleteProgram'),
+])
+def test_shader_resource_cleanup(webgl_window, resource_type: str, delete_method: str) -> None:
+    from pyglet.graphics.api.webgl import shader
+
+    resource = object.__new__(getattr(shader, resource_type))
+    handle = object()
+    resource._id = resource._handle = handle
+    resource._context = webgl_window.context
+    resource._gl = Mock()
+    resource.shader_type = 'vertex'
+
+    resource.__del__()
+
+    getattr(resource._gl, delete_method).assert_called_once_with(handle)
+    assert resource._id is None
+    assert resource.handle is None
+
+
+def test_missing_uniform_array_location(webgl_window) -> None:
+    from pyglet.graphics.api.webgl.shader import _UniformArray
+    from pyglet.graphics.shader import ShaderException
+
+    array = object.__new__(_UniformArray)
+    array._gl = Mock()
+    array._gl.getUniformLocation.return_value = None
+    array._uniform = Mock(name='uniform')
+
+    with pytest.raises(ShaderException, match='not found'):
+        array._get_location_for_index(0)
 
 
 def test_custom_shaders_uniforms_and_indexed_batch(webgl_window):

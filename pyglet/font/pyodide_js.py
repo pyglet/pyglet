@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import math
 from asyncio import Task
-from typing import ClassVar
+from typing import ClassVar, Sequence, overload
 
 import pyglet
 from pyglet.enums import Stretch, Style, Weight
@@ -30,10 +30,10 @@ _font_context = _font_canvas.getContext("2d", willReadFrequently=True, desynchro
 
 class PyodideGlyphRenderer(base.GlyphRenderer):
     font: JavascriptPyodideFont
+
     def __init__(self, font: JavascriptPyodideFont) -> None:  # noqa: D107
         self.font = font
         super().__init__(font)
-        self.temp_save = []
 
     def render(self, text: str) -> Glyph:
         return self._render(text)
@@ -41,6 +41,12 @@ class PyodideGlyphRenderer(base.GlyphRenderer):
     def render_stroke(self, text: str, size: float, join: str) -> Glyph | None:
         """Rasterize a text outline with CanvasRenderingContext2D.strokeText."""
         return self._render(text, size, join)
+
+    @overload
+    def _render(self, text: str) -> Glyph: ...
+
+    @overload
+    def _render(self, text: str, stroke_size: float, stroke_join: str = "round") -> Glyph | None: ...
 
     def _render(self, text: str, stroke_size: float = 0, stroke_join: str = "round") -> Glyph | None:
         _font_context.font = self.font.js_name
@@ -103,7 +109,7 @@ class PyodideGlyphRenderer(base.GlyphRenderer):
         return glyph
 
     @staticmethod
-    def _get_alpha_bounds(pixel_data, width: int, height: int) -> tuple[int, int, int, int]:
+    def _get_alpha_bounds(pixel_data: Sequence[int], width: int, height: int) -> tuple[int, int, int, int]:
         """Return the bounds of non-transparent Canvas pixels."""
         left, top, right, bottom = width, height, -1, -1
         for y in range(height):
@@ -131,7 +137,13 @@ js.document.body.appendChild(_hidden_div)
 
 class JavascriptPyodideFont(base.Font):
     glyph_renderer_class = PyodideGlyphRenderer
-    _glyph_renderer: PyodideGlyphRenderer
+    _glyph_renderer: PyodideGlyphRenderer | None
+    _glyph_sources: dict[int, str]
+    _stroke_glyphs: dict[tuple[int, float, str], Glyph]
+    _weight: int | str
+    _italic: str
+    _stretch: str
+    js_name: str
 
     _default_serif_width = _measure_font_width("serif")
     _default_sans_serif_width = _measure_font_width("sans-serif")
@@ -193,7 +205,7 @@ class JavascriptPyodideFont(base.Font):
         return w, h
 
     @classmethod
-    def add_font_data(cls, data: bytes, manager: FontManager) -> Task:
+    def add_font_data(cls, data: bytes, manager: FontManager) -> Task[bool]:
         ttf_info = TruetypeInfoBytes(data)
         family = ttf_info.get_font_family_name()
         if family is None:
@@ -262,9 +274,10 @@ class JavascriptPyodideFont(base.Font):
 
     def get_glyphs(self, text: str, shaping: bool = False) -> tuple[list[Glyph], list[GlyphPosition]]:
         self._initialize_renderer()
+        assert self._glyph_renderer is not None
 
-        glyphs = []  # glyphs that are committed.
-        offsets = []
+        glyphs: list[Glyph] = []  # glyphs that are committed.
+        offsets: list[GlyphPosition] = []
         for c in base.get_grapheme_clusters(str(text)):
             # Get the glyph for 'c'.  Hide tabs (Windows and Linux render boxes)
             if c == "\t":
@@ -282,6 +295,7 @@ class JavascriptPyodideFont(base.Font):
         cache_key = id(glyph), size, join
         if stroked := self._stroke_glyphs.get(cache_key):
             return stroked
+        assert self._glyph_renderer is not None
         stroked = self._glyph_renderer.render_stroke(text, size, join)
         if stroked is not None:
             self._stroke_glyphs[cache_key] = stroked
@@ -354,7 +368,7 @@ _width_class_to_pyglet_stretch = {
     9: "ultraexpanded",
 }
 
-name_to_weight = {
+name_to_weight: dict[str, int] = {
     'thin': 100,
     'extralight': 200,
     'light': 300,

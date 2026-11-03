@@ -48,6 +48,7 @@ if TYPE_CHECKING:
     from typing import Literal, Sequence
     from pyglet.graphics.atlas import TextureBin
     from pyglet.graphics.texture import Texture, TextureGrid, TextureSequence
+    from pyglet.image.base import ImageData
 
 
 class Animation:
@@ -60,6 +61,7 @@ class Animation:
     loops continuously; otherwise the animation stops at the first frame with
     duration of ``None``.
     """
+    frames: list[AnimationFrame]
 
     def __init__(self, frames: list[AnimationFrame]) -> None:
         """Create an animation directly from a list of frames."""
@@ -74,7 +76,7 @@ class Animation:
         the images that are added to the texture bin.
         """
         for frame in self.frames:
-            frame.image = texture_bin.add(frame.image, border)
+            frame.image = texture_bin.add(frame.image.get_image_data(), border)
 
     def get_transform(self, flip_x: bool = False, flip_y: bool = False,
                       rotate: Literal[0, 90, 180, 270, 360] = 0) -> Animation:
@@ -130,7 +132,10 @@ class AnimationFrame:
 
     __slots__ = 'image', 'duration'
 
-    def __init__(self, image: Texture, duration: float | None) -> None:
+    image: ImageData | Texture
+    duration: float | None
+
+    def __init__(self, image: ImageData | Texture, duration: float | None) -> None:
         """Create an animation frame from an image."""
         self.image = image
         self.duration = duration

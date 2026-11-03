@@ -46,7 +46,7 @@ class ActiveTextureState(State):
 @dataclass(frozen=True)
 class TextureState(State):  # noqa: D101
     texture: tuple[int, TextureKey]
-    handle: int = field(hash=False, compare=False)
+    handle: int | None = field(hash=False, compare=False)
     binding: int = 0
     set_id: int = 0
 
@@ -70,7 +70,7 @@ class MultiTextureSamplerState(State):
     program: ShaderProgram
     textures: tuple[tuple[tuple[int, TextureKey], int, int], ...]
     uniforms: tuple[tuple[str, int], ...]
-    handles: tuple[int, ...] = field(hash=False, compare=False)
+    handles: tuple[int | None, ...] = field(hash=False, compare=False)
 
     sets_state: bool = True
     unsets_state: bool = True
@@ -426,7 +426,7 @@ class ShaderUniformState(State):
     def __hash__(self) -> int:
         return hash((id(self.program), id(self.data)))
 
-    def __eq__(self, other: State) -> bool:
+    def __eq__(self, other: object) -> bool:
         return (type(self) is type(other)
                 and self.program is other.program
                 and self.data is other.data)
