@@ -155,12 +155,9 @@ Without ``pyproject.toml``
 """"""""""""""""""""""""""""""""
 
 Reading ``pyproject.toml`` uses the standard-library ``tomllib`` module on
-Python 3.11 and newer. On Python 3.10, install the optional `tomli
-<https://pypi.org/project/tomli/>`_ reader::
+Python 3.11 and newer.
 
-    python -m pip install tomli
-
-Or pass the configuration on the command line::
+You can also pass the configuration on the command line::
 
     python tools/web.py --entrypoint game.py --output dist/web \
         --source game.py --source "game/**/*.py" \

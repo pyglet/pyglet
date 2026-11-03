@@ -629,7 +629,7 @@ class Texture(_AbstractImage, GraphicsResource[Any, TextureKey], Generic[Surface
 
 TRegion = TypeVar("TRegion", bound="_TextureRegionShared")
 TArrayRegion = TypeVar("TArrayRegion", bound="_TextureRegionShared")
-# Generic self types keep Python 3.10 support without a typing_extensions dependency.
+# Generic self types preserve the concrete texture type in return annotations.
 TTexture3D = TypeVar("TTexture3D", bound="_Texture3DShared[Any, Any]")
 TTextureArray = TypeVar("TTextureArray", bound="_TextureArrayShared[Any, Any]")
 

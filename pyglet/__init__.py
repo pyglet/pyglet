@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 version = '3.0.dev11'
 __version__ = version
 
-MIN_PYTHON_VERSION = 3, 10
+MIN_PYTHON_VERSION = 3, 11
 MIN_PYTHON_VERSION_STR = ".".join([str(v) for v in MIN_PYTHON_VERSION])
 
 #: The Pyodide release used to develop and test pyglet's browser support.

@@ -1,13 +1,6 @@
 # Pyglet Pyodide example
 
 This is a minimal browser project built with pyglet's web-packaging tool.
-The `pyproject.toml` configuration requires Python 3.11 or newer, which
-includes the standard-library TOML reader. With Python 3.10, install the
-optional reader first:
-
-```console
-python -m pip install tomli
-```
 
 From the pyglet source checkout, build it with:
 
