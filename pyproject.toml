@@ -96,6 +96,11 @@ exclude = [
 disable_error_code = ["union-attr"]
 
 [[tool.mypy.overrides]]
+# Pyodide provides this module in the browser runtime.
+module = "js"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 # mypy incorrectly reports issues everywhere in pyglet.math because:
 # 1. pyglet.math is almost entirely typing.NamedTuple subclasses
 # 2. The mypy project has the following long-standing stance on

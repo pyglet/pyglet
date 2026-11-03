@@ -368,7 +368,7 @@ def test_backed_index_buffer_set_data_ptr_with_ctypes_pointer(test_window):
 
     buffer.delete()
 
-@require_graphics_api(GraphicsAPIGroups.DESKTOP_GL)
+@require_graphics_api(GraphicsAPIGroups.MODERN_DESKTOP_GL)
 def test_gl_vertex_stream_persistent_resize_rebinds_vao(test_window):
     from pyglet.graphics.api.gl import GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING, GLint
     from pyglet.graphics.api.gl.buffer import PersistentBufferObject
