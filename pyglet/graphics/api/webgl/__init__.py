@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Sequence, cast
 import js  # noqa: F821
 
 import pyglet
+from pyglet.enums import GraphicsAPI
 from pyglet.graphics.api.webgl.context import WebGL2SurfaceContext
 from pyglet.graphics.api.base import (
     BackendGlobalObject,
@@ -36,7 +37,7 @@ class WebGLBackend(BackendGlobalObject):
         # of sharing basic information between contexts. However, in usage, the user or internals should use the
         # "real" context's information to prevent any discrepencies.
         # self.gl_info = GLInfo()  # GL Info is a shared info space.
-        super().__init__()
+        super().__init__(GraphicsAPI.WEBGL)
 
     def create_context(self, config: SurfaceConfig, shared: WebGL2SurfaceContext | None) -> WebGL2SurfaceContext:
         return WebGL2SurfaceContext(self, config._window, config, shared)

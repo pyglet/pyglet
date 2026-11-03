@@ -15,7 +15,6 @@ if TYPE_CHECKING:
 
 
 class OpenGL2Backend(OpenGLBackend):
-    gl_api: GraphicsAPI
 
     def get_default_configs(self) -> Sequence[pyglet.config.OpenGLUserConfig]:
         """A sequence of configs to use if the user does not specify any.
@@ -24,9 +23,9 @@ class OpenGL2Backend(OpenGLBackend):
         """
         return [
             pyglet.config.OpenGLUserConfig(double_buffer=True, depth_size=24, major_version=2, minor_version=0,
-                                           api=self.gl_api),
+                                           api=self.graphics_api),
             pyglet.config.OpenGLUserConfig(double_buffer=True, depth_size=16, major_version=2, minor_version=0,
-                                           api=self.gl_api),
+                                           api=self.graphics_api),
         ]
 
     def get_cached_shader(self, name: str, *sources: tuple[str, ShaderType],

@@ -21,6 +21,19 @@ class GraphicsAPIError(GraphicsBackendError):
 class GraphicsIntegrationError(GraphicsBackendError):
     """An exception that occurs from pyglets internal graphics integration of the APIs."""
 
+
+class TextureError(GraphicsBackendError):
+    """Raised when texture configuration, upload data, or resource state is invalid."""
+
+
+class TextureFormatError(TextureError):
+    """Raised when a texture's pixel format, component type, or storage format is unsupported."""
+
+
+class UnsupportedCompressedTextureError(TextureFormatError):
+    """Raised when a compressed texture format is unsupported by the backend."""
+
+
 class UnsupportedBackendError(Exception):
     """Raised when a graphics feature is unavailable on the active backend."""
 
