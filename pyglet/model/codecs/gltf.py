@@ -561,9 +561,9 @@ class GLTF:
             data = gltf_data['buffers'][0]
             self.buffers = [Buffer(data=data, binary_buffer=binary_buffer)]
         else:
-            self.buffers = [Buffer(data=data) for data in gltf_data['buffers']]
-        self.buffer_views = [BufferView(data=data, owner=self) for data in gltf_data['bufferViews']]
-        self.accessors = [Accessor(data=data, owner=self) for data in gltf_data['accessors']]
+            self.buffers = [Buffer(data=data) for data in gltf_data.get('buffers', [])]
+        self.buffer_views = [BufferView(data=data, owner=self) for data in gltf_data.get('bufferViews', [])]
+        self.accessors = [Accessor(data=data, owner=self) for data in gltf_data.get('accessors', [])]
 
 
         self.images = [Image(data=data, owner=self) for data in gltf_data.get('images', [])]
@@ -574,11 +574,11 @@ class GLTF:
         self.cameras = [Camera(cam['type'], cam[cam['type']]) for cam in gltf_data.get('cameras', [])]
 
         self.meshes: list[Mesh] = [
-            Mesh(data=data, owner=self) for data in gltf_data['meshes']
+            Mesh(data=data, owner=self) for data in gltf_data.get('meshes', [])
         ]
         self.nodes: list[Node] = [
             Node(data=data, owner=self, index=idx) for idx, data in
-            enumerate(gltf_data['nodes'])
+            enumerate(gltf_data.get('nodes', []))
         ]
 
         self.skins: list[Skin] = [
@@ -592,7 +592,7 @@ class GLTF:
         self.scenes: list[Scene] = [
             Scene(
                 name=scene_data.get('name', "undefined"),
-                nodes=[self.nodes[i] for i in scene_data['nodes']]
+                nodes=[self.nodes[i] for i in scene_data.get('nodes', [])]
             )  for scene_data in gltf_data['scenes']
         ]
         self.default_scene: Scene = self.scenes[gltf_data.get('scene', 0)]

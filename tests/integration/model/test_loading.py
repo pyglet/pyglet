@@ -286,3 +286,32 @@ def test_invalid_borrowed_json_is_left_open():
     with pytest.raises(ModelDecodeException):
         load_gltf('bad.gltf', stream)
     assert not stream.closed
+
+
+@pytest.mark.parametrize('with_nodes', [False, True])
+@pytest.mark.parametrize('from_stream', [False, True])
+def test_loads_scenes_without_geometry(tmp_path, monkeypatch, with_nodes, from_stream):
+    data = {'asset': {'version': '2.0'}, 'scenes': [{'name': 'layout'}]}
+    if with_nodes:
+        data['nodes'] = [
+            {'name': 'root', 'translation': [1, 2, 3], 'children': [1]},
+            {'name': 'child', 'translation': [4, 5, 6]},
+        ]
+        data['scenes'][0]['nodes'] = [0]
+    text = json.dumps(data)
+    (tmp_path / 'layout.gltf').write_text(text)
+    loader = pyglet.resource.Loader([str(tmp_path)])
+    monkeypatch.setattr(pyglet.resource, 'file', loader.file)
+    stream = io.StringIO(text) if from_stream else None
+    scene = pyglet.model.load('layout.gltf', stream)
+    assert scene.name == 'layout'
+    if with_nodes:
+        root, = scene.nodes
+        child, = root.children
+        assert root.name == 'root' and child.name == 'child'
+        assert root.mesh is None and child.mesh is None
+        assert tuple(child.global_transform @ Vec4(0, 0, 0, 1)) == (5, 7, 9, 1)
+    else:
+        assert scene.nodes == []
+    if stream is not None:
+        assert not stream.closed
