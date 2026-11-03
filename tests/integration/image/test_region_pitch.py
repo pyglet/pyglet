@@ -71,3 +71,15 @@ def test_region_png_round_trip(tmp_path):
     reloaded = image_module.load(str(path))
     assert (reloaded.width, reloaded.height) == (2, 3)
     assert bytes(reloaded.get_image_data().get_bytes('RGBA', 8)) == b''.join(row[4:12] for row in rows[1:4])
+
+
+
+def test_legacy_region_pickle_initializes_source_height():
+    from pyglet.image import ImageDataRegion
+
+    image, rows = source_image(-1, 4)
+    state = image.get_region(1, 1, 2, 3).__getstate__()
+    state.pop('_source_height')
+    restored = ImageDataRegion.__new__(ImageDataRegion)
+    restored.__setstate__(state)
+    assert bytes(restored.get_bytes('RGBA', 8)) == b''.join(row[4:12] for row in rows[1:4])
