@@ -87,7 +87,7 @@ class Buffer:
         else:
             self._uri = data['uri']
 
-            if self._uri.startswith('data'):
+            if self._uri[:5].lower() == 'data:':
                 self._response = urlopen(self._uri)
                 self._file = self._response.file
             else:
