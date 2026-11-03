@@ -107,7 +107,7 @@ class ResourcePathTest(unittest.TestCase):
     @mock.patch.object(pyglet, 'compat_platform', 'linux')
     @mock.patch.object(os, 'environ', {})
     @mock.patch.object(os.path, 'expanduser', _mock_expand_user)
-    def test_settings_path_linux_xdg_config_home(self):
+    def test_settings_path_linux_no_xdg_config_home(self):
         """Settings path on Linux without XDG_CONFIG_HOME."""
         self.assertEqual(get_settings_path('myapp'),
                          os.path.join('pyglet', '.config', 'myapp'))
