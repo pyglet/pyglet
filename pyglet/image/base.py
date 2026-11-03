@@ -3,8 +3,11 @@ from __future__ import annotations
 import re
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, BinaryIO, Callable, Generic, Iterator, Sequence, TypeVar, Union, cast, overload
+from typing import (
+    TYPE_CHECKING, Any, BinaryIO, ClassVar, Generic, Protocol, TypeVar, Union, cast, overload,
+)
 
 from pyglet.image.animation import Animation
 from pyglet.image.codecs import ImageEncoder
@@ -12,8 +15,11 @@ from pyglet.image.codecs import registry as _codec_registry
 from pyglet.util import asbytes
 
 if TYPE_CHECKING:
+    from ctypes import Array
+
     from pyglet.customtypes import RGBAColor
     from pyglet.customtypes import DataTypes
+    from pyglet.graphics.api.base import SurfaceContextT
     from pyglet.graphics.texture import CompressedTexture, Texture, TextureGrid, TextureSequence
 
 
@@ -154,16 +160,22 @@ class _AbstractImageSequence(ABC, Generic[T]):
 
 
 class ImageData(_AbstractImage):
-    """An image represented as a string of unsigned bytes."""
+    """An image represented as bytes or a ctypes array of pixel data."""
 
-    _swap1_pattern = re.compile(asbytes('(.)'), re.DOTALL)
-    _swap2_pattern = re.compile(asbytes('(.)(.)'), re.DOTALL)
-    _swap3_pattern = re.compile(asbytes('(.)(.)(.)'), re.DOTALL)
-    _swap4_pattern = re.compile(asbytes('(.)(.)(.)(.)'), re.DOTALL)
+    _swap1_pattern: ClassVar[re.Pattern[bytes]] = re.compile(asbytes('(.)'), re.DOTALL)
+    _swap2_pattern: ClassVar[re.Pattern[bytes]] = re.compile(asbytes('(.)(.)'), re.DOTALL)
+    _swap3_pattern: ClassVar[re.Pattern[bytes]] = re.compile(asbytes('(.)(.)(.)'), re.DOTALL)
+    _swap4_pattern: ClassVar[re.Pattern[bytes]] = re.compile(asbytes('(.)(.)(.)(.)'), re.DOTALL)
 
-    _current_texture = None
+    _current_texture: Texture | None = None
+    _current_format: str
+    _desired_format: str
+    _data_type: DataTypes
+    _current_pitch: int
+    _current_data: bytes | Array[Any]
+    pitch: int
 
-    def __init__(self, width: int, height: int, fmt: str, data: bytes, pitch: int | None = None,
+    def __init__(self, width: int, height: int, fmt: str, data: bytes | Array[Any], pitch: int | None = None,
                  data_type: DataTypes = "B") -> None:
         """Initialize image data.
 
@@ -175,7 +187,8 @@ class ImageData(_AbstractImage):
             fmt:
                 A valid format string, such as 'RGB', 'RGBA', 'ARGB', etc.
             data:
-                A sequence of bytes containing the raw image data.
+                Bytes or a ctypes array containing the raw image data. The
+                supplied object is retained until a conversion requires bytes.
             pitch:
                 If specified, the number of bytes per row.  Negative values
                 indicate a top-to-bottom arrangement.  Defaults to ``width * len(format)``.
@@ -190,11 +203,11 @@ class ImageData(_AbstractImage):
         self.pitch = pitch or width * len(fmt)
         self._current_pitch = self.pitch
 
-    def __getstate__(self) -> dict:
+    def __getstate__(self) -> dict[str, int | str | bytes]:
         return {
             'width': self.width,
             'height': self.height,
-            '_current_data': self.get_bytes(self._current_format, self._current_pitch),
+            '_current_data': bytes(self.get_bytes(self._current_format, self._current_pitch)),
             '_current_format': self._current_format,
             '_desired_format': self._desired_format,
             '_current_pitch': self._current_pitch,
@@ -203,7 +216,7 @@ class ImageData(_AbstractImage):
         }
 
     @property
-    def data_type(self) -> str:
+    def data_type(self) -> DataTypes:
         return self._data_type
 
     def get_image_data(self) -> ImageData:
@@ -219,10 +232,11 @@ class ImageData(_AbstractImage):
         self._desired_format = fmt.upper()
         self._current_texture = None
 
-    def get_bytes(self, fmt: str | None = None, pitch: int | None = None) -> bytes:
+    def get_bytes(self, fmt: str | None = None, pitch: int | None = None) -> bytes | Array[Any]:
         """Get the byte data of the image.
 
         This method returns the raw byte data of the image, with optional conversion.
+        If no conversion is needed, the original bytes or ctypes array is returned.
         To convert the data into another format, you can provide ``fmt`` and ``pitch``
         arguments. For example, if the image format is ``RGBA``, and you wish to get
         the byte data in ``RGB`` format::
@@ -233,6 +247,10 @@ class ImageData(_AbstractImage):
         The image ``pitch`` may be negative, so be sure to check that when converting
         to another format. Switching the sign of the ``pitch`` will cause the image
         to appear "upside-down".
+
+        When converting RGB or BGR data to a format with alpha, the added
+        alpha is 255 (opaque). Other missing components copy the first source
+        component, including alpha when expanding single-channel data.
 
         Args:
             fmt:
@@ -254,7 +272,7 @@ class ImageData(_AbstractImage):
             return self._current_data
         return self.convert(fmt, pitch)
 
-    def set_bytes(self, fmt: str, pitch: int, data: bytes) -> None:
+    def set_bytes(self, fmt: str, pitch: int, data: bytes | Array[Any]) -> None:
         """Set the byte data of the image.
 
         Args:
@@ -266,7 +284,7 @@ class ImageData(_AbstractImage):
                 of the format string * the number of pixels per row.
                 Negative values indicate a top-to-bottom arrangement.
             data:
-                Image data as bytes.
+                Image data as bytes or a ctypes array.
         """
         self._current_format = fmt
         self._current_pitch = pitch
@@ -291,18 +309,19 @@ class ImageData(_AbstractImage):
     def blit(self, x: int, y: int, z: int = 0, width: int | None = None, height: int | None = None) -> None:
         raise NotImplementedError("This is no longer supported. Check documentation for 3.0 migration.")
 
-    def convert(self, fmt: str, pitch: int) -> bytes:
+    def convert(self, fmt: str, pitch: int) -> bytes | Array[Any]:
         """Convert data to the desired format.
 
         This method does not alter this instance's current format or pitch.
 
         Can be expensive depending on the size of the image and kind of re-ordering.
+        If no conversion is needed, the original bytes or ctypes array is returned.
         """
         if fmt == self._current_format and pitch == self._current_pitch:
             return self._current_data
 
         self._ensure_bytes()
-        data = self._current_data
+        data = cast(bytes, self._current_data)
         current_pitch = self._current_pitch
         current_format = self._current_format
         sign_pitch = -1 if current_pitch < 0 else 1
@@ -313,8 +332,11 @@ class ImageData(_AbstractImage):
                 try:
                     idx = current_format.index(c) + 1
                 except ValueError:
+                    if c == 'A' and current_format in ('RGB', 'BGR'):
+                        repl += b'\xff'
+                        continue
                     idx = 1
-                repl += asbytes(r'\%d' % idx)
+                repl += asbytes(fr'\{idx:d}')
 
             if len(current_format) == 1:
                 swap_pattern = self._swap1_pattern
@@ -371,22 +393,35 @@ class ImageData(_AbstractImage):
 class ImageDataRegion(ImageData):
     """A region of image data taken from an existing ImageData or region."""
 
+    x: int
+    y: int
+    _source_height: int
+
     def __init__(self, x: int, y: int, width: int, height: int, image_data: ImageData) -> None:  # noqa: D107
-        super().__init__(width, height, image_data._current_format, image_data._current_data, image_data._current_pitch)  # noqa: SLF001
+        super().__init__(width, height,
+                         image_data._current_format, image_data._current_data, image_data._current_pitch,  # noqa: SLF001
+                         image_data._data_type)  # noqa: SLF001
         self.x = x
         self.y = y
+        if isinstance(image_data, ImageDataRegion):
+            self._source_height = image_data._source_height  # noqa: SLF001
+        else:
+            self._source_height = image_data.height
 
-    def __getstate__(self) -> dict:
+    def __getstate__(self) -> dict[str, int | str | bytes]:
+        data = bytes(self.get_bytes(self._current_format))
         return {
             'width': self.width,
             'height': self.height,
-            '_current_data': self.get_bytes(self._current_format, self._current_pitch),
+            '_current_data': data,
             '_current_format': self._current_format,
             '_desired_format': self._desired_format,
             '_current_pitch': self._current_pitch,
+            '_data_type': self._data_type,
             'pitch': self.pitch,
             'x': self.x,
             'y': self.y,
+            '_source_height': self._source_height,
         }
 
     def get_bytes(self, fmt: str | None = None, pitch: int | None = None) -> bytes:
@@ -394,11 +429,15 @@ class ImageDataRegion(ImageData):
         x2 = len(self._current_format) * (self.x + self.width)
 
         self._ensure_bytes()
-        data = self.convert(self._current_format, abs(self._current_pitch))
+        data = cast(bytes, self._current_data)
         new_pitch = abs(self._current_pitch)
-        rows = [data[i : i + new_pitch] for i in range(0, len(data), new_pitch)]
+        # Reverse the complete source before applying logical region coordinates.
+        rows = [data[i * new_pitch : (i + 1) * new_pitch] for i in range(self._source_height)]
+        if self._current_pitch < 0:
+            rows.reverse()
         rows = [row[x1:x2] for row in rows[self.y : self.y + self.height]]
         self._current_data = b''.join(rows)
+        self._source_height = self.height
         self._current_pitch = self.width * len(self._current_format)
         self._current_texture = None
         self.x = 0
@@ -406,9 +445,10 @@ class ImageDataRegion(ImageData):
 
         fmt = fmt or self._desired_format
         pitch = pitch or self._current_pitch
-        return super().get_bytes(fmt, pitch)
+        return cast(bytes, super().get_bytes(fmt, pitch))
 
-    def set_bytes(self, fmt: str, pitch: int, data: bytes) -> None:
+    def set_bytes(self, fmt: str, pitch: int, data: bytes | Array[Any]) -> None:
+        self._source_height = self.height
         self.x = 0
         self.y = 0
         super().set_bytes(fmt, pitch, data)
@@ -421,15 +461,79 @@ class ImageDataRegion(ImageData):
 
 @dataclass(frozen=True)
 class CompressionFormat:
+    """Immutable description of a compressed image's pixel format.
+
+    Legacy DDS formats use a FourCC directly. DX10 DDS and KTX2 images use
+    a container tag together with a DXGI or Vulkan format identifier, which
+    the graphics backend maps to its native compressed texture format.
+    """
+
     fmt: bytes
+    """FourCC or container tag, such as b'DXT1', b'DX10', or b'KTX2'."""
+
     alpha: bool
+    """Whether the image declares an alpha channel."""
+
     dxgi_format: int = 0
+    """DXGI format identifier for DX10 DDS images, or zero when unused."""
+
     vk_format: int = 0
+    """Vulkan format identifier for KTX2 images, or zero when unused."""
+
+    def __str__(self) -> str:
+        """Return the format tag, active identifiers, and alpha flag."""
+        parts = [self.fmt.decode("ascii", errors="backslashreplace").strip()]
+        if self.dxgi_format:
+            parts.append(f"DXGI={self.dxgi_format}")
+        if self.vk_format:
+            parts.append(f"Vulkan={self.vk_format}")
+        return f"{', '.join(parts)} (alpha={self.alpha})"
+
+
+class CompressedImageDecoder(Protocol):
+    """Decode one compressed mipmap level into uncompressed pixel data.
+
+    The callback must understand the image's compression format and return an
+    ImageData with the requested dimensions. Functions and callable objects
+    can implement this protocol; no inheritance is required.
+    """
+
+    def __call__(self, data: bytes, width: int, height: int, /) -> ImageData:
+        """Decode compressed bytes for a level of the given size."""
+        ...
+
 
 class CompressedImageData(_AbstractImage):
-    """Compressed image data suitable for direct uploading to GPU."""
+    """Compressed image data suitable for direct uploading to GPU.
 
-    _current_texture = None
+    If the active backend cannot upload the compression format, an optional
+    :class:`CompressedImageDecoder` can decode each supplied mipmap level into
+    ordinary :class:`ImageData`. The resulting texture is cached as usual.
+    Pyglet does not supply a software decoder; the application must provide one
+    that understands this image's compression format.
+
+    Attach the decoder before requesting a texture. For example, given an
+    application-provided ``decode_bc7(data, width, height)`` function::
+
+        image = pyglet.resource.image("terrain.dds")
+        if isinstance(image, pyglet.image.CompressedImageData):
+            image.decoder = decode_bc7
+        texture = image.get_texture()
+
+    Native compressed uploads take priority, so the callback only runs when
+    the backend does not support the format. Without a callback, an unsupported
+    format raises :class:`~pyglet.graphics.UnsupportedCompressedTextureError`.
+
+    .. note::
+        ``pyglet.resource.texture()`` loads the source internally and currently
+        has no argument for supplying this fallback decoder. It also loads
+        independently of the ``pyglet.resource.image()`` cache. Configuring the
+        cached image's decoder therefore does not configure subsequent
+        ``resource.texture()`` calls. Use the image's ``get_texture()`` method
+        as shown above to select the native upload or software fallback path.
+    """
+
+    _current_texture: Texture | CompressedTexture | None = None
 
     def __init__(
         self,
@@ -437,8 +541,7 @@ class CompressedImageData(_AbstractImage):
         height: int,
         fmt: CompressionFormat,
         data: bytes,
-        extension: str | None = None,
-        decoder: Callable[[bytes, int, int], _AbstractImage] | None = None,
+        decoder: CompressedImageDecoder | None = None,
     ) -> None:
         """Construct a CompressedImageData with the given compressed data.
 
@@ -447,25 +550,22 @@ class CompressedImageData(_AbstractImage):
                 The width of the image.
             height:
                 The height of the image.
+            fmt:
+                Compression format understood by the backend and any supplied decoder.
             data:
                 An array of bytes containing the compressed image data.
-            extension:
-                If specified, gives the name of the extension to check for
-                before creating a texture.
             decoder:
-                An optional fallback function used to decode the compressed data.
-                This function is called if the required extension is not present.
+                Optional software decoder for this compression format, called
+                as ``decoder(data, width, height)`` when the backend cannot
+                upload it directly. Must return ImageData of the given size.
+                Supplied mipmap levels are decoded separately.
         """
         super().__init__(width, height)
         self.data = data
         self.fmt = fmt
-        self.extension = extension
         self.decoder = decoder
         self.data_type = "B"
         self.mipmap_data: list[bytes | None] = []
-
-    def _have_extension(self) -> bool:
-        raise NotImplementedError
 
     def set_mipmap_data(self, level: int, data: bytes) -> None:
         """Set compressed image data for a mipmap level.
@@ -481,15 +581,58 @@ class CompressedImageData(_AbstractImage):
         self.mipmap_data += [None] * (level - len(self.mipmap_data))
         self.mipmap_data[level - 1] = data
 
-    def create_texture(self, cls: CompressedTexture) -> CompressedTexture:
-        """Given a texture class, create a texture containing this image."""
-        return cls.create_from_image(self)
+    def create_texture(
+        self, cls: type[CompressedTexture[SurfaceContextT]], *, context: SurfaceContextT | None = None,
+    ) -> Texture[SurfaceContextT] | CompressedTexture[SurfaceContextT]:
+        """Upload compressed data, or use the supplied software decoder.
 
-    def get_texture(self) -> CompressedTexture:
-        if not self._current_texture:
+        Capability is checked before allocating a GPU texture.
+
+        Args:
+            cls:
+                Backend compressed texture class used for direct uploads.
+            context:
+                Context to use for either upload path, or None for the current context.
+        """
+        if cls.supports_format(self.fmt, context=context):
+            return cls.create_from_image(self, context=context)
+        if self.decoder is None:
+            from pyglet.graphics import UnsupportedCompressedTextureError  # noqa: PLC0415
+
+            msg = f"Unsupported compressed texture format {self.fmt!r}; no software decoder supplied."
+            raise UnsupportedCompressedTextureError(msg)
+
+        from pyglet.graphics.texture import Texture  # noqa: PLC0415
+
+        images: list[ImageData] = []
+        for level, data in enumerate([self.data, *self.mipmap_data]):
+            if data is None:
+                msg = f"Compressed texture mipmap level {level} has no data."
+                raise ImageException(msg)
+            width, height = max(1, self.width >> level), max(1, self.height >> level)
+            image = self.decoder(data, width, height)
+            if not isinstance(image, ImageData) or (image.width, image.height) != (width, height):
+                msg = f"Software decoder must return ImageData of size {width}x{height}."
+                raise ImageException(msg)
+            images.append(image)
+
+        texture = Texture.create_from_image(images[0], context=context)
+        try:
+            if len(images) > 1:
+                texture.init_mipmaps(levels=len(images), blank_data=False)
+                texture.bind()
+                for level, image in enumerate(images[1:], start=1):
+                    texture.upload(image, 0, 0, 0, level=level)
+        except Exception:
+            texture.delete()
+            raise
+        return texture
+
+    def get_texture(self) -> Texture | CompressedTexture:
+        if self._current_texture is None:
             from pyglet.graphics.texture import CompressedTexture  # noqa: PLC0415
 
-            self._current_texture = self.create_texture(CompressedTexture)
+            self._current_texture = self.create_texture(cast("type[CompressedTexture]", CompressedTexture))
         return self._current_texture
 
     def get_image_data(self) -> CompressedImageData:
