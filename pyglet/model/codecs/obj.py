@@ -17,7 +17,7 @@ def _new_mesh(name, material):
     # The three primitive types used in .obj files:
     attributes = [Attribute('POSITION', 'f', 'VEC3', 0, []),
                   Attribute('NORMAL', 'f', 'VEC3', 0, []),
-                  Attribute('TEXCOORD_0', 'f', 'VEC3', 0, [])]
+                  Attribute('TEXCOORD_0', 'f', 'VEC2', 0, [])]
     primitive = Primitive(attributes=attributes, indices=None, material=material, mode=GL_TRIANGLES)
     mesh = Mesh(primitives=[primitive], name=name)
     return mesh
@@ -128,7 +128,7 @@ def parse_obj_file(filename, file=None) -> list[Mesh]:
         elif values[0] == 'vn':
             normals.append(list(map(float, values[1:4])))
         elif values[0] == 'vt':
-            tex_coords.append(list(map(float, values[1:3])))
+            tex_coords.append([float(values[1]), float(values[2]) if len(values) > 2 else 0.0])
 
         elif values[0] == 'mtllib':
             material_abspath = os.path.join(location, values[1])
@@ -187,7 +187,7 @@ def parse_obj_file(filename, file=None) -> list[Mesh]:
         for mesh in meshes:
             for primitive in mesh.primitives:
                 for attribute in primitive.attributes:
-                    attribute.count = len(attribute.array) // 3
+                    attribute.count = len(attribute.array) // int(attribute.type[3:])
 
     return meshes
 
