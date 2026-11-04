@@ -26,15 +26,8 @@ def _new_mesh(name, material):
 def load_material_library(filename):
     file = open(filename, 'r')
 
-    name = None
-    diffuse = [1.0, 1.0, 1.0]
-    ambient = [1.0, 1.0, 1.0]
-    specular = [1.0, 1.0, 1.0]
-    emission = [0.0, 0.0, 0.0]
-    shininess = 100.0
+    material = None
     opacity = 1.0
-    texture_name = None
-
     matlib = {}
 
     for line in file:
@@ -45,42 +38,47 @@ def load_material_library(filename):
             continue
 
         if values[0] == 'newmtl':
-            if name is not None:
+            if material is not None:
                 # save previous material
-                for item in (diffuse, ambient, specular, emission):
+                for item in (material.diffuse, material.ambient, material.specular, material.emission):
                     item.append(opacity)
-                matlib[name] = SimpleMaterial(name, diffuse, ambient, specular, emission, shininess, texture_name)
-            name = values[1]
+            material = SimpleMaterial(values[1],
+                                      diffuse=[1.0, 1.0, 1.0],
+                                      ambient=[1.0, 1.0, 1.0],
+                                      specular=[1.0, 1.0, 1.0],
+                                      emission=[0.0, 0.0, 0.0],
+                                      shininess=100.0)
+            matlib[material.name] = material
+            opacity = 1.0
 
-        elif name is None:
+        elif material is None:
             raise ModelDecodeException(f'Expected "newmtl" in {filename}')
 
         try:
             if values[0] == 'Kd':
-                diffuse = list(map(float, values[1:]))
+                material.diffuse = list(map(float, values[1:]))
             elif values[0] == 'Ka':
-                ambient = list(map(float, values[1:]))
+                material.ambient = list(map(float, values[1:]))
             elif values[0] == 'Ks':
-                specular = list(map(float, values[1:]))
+                material.specular = list(map(float, values[1:]))
             elif values[0] == 'Ke':
-                emission = list(map(float, values[1:]))
+                material.emission = list(map(float, values[1:]))
             elif values[0] == 'Ns':
                 shininess = float(values[1])            # Blender exports 1~1000
-                shininess = (shininess * 128) / 1000    # Normalize to 1~128 for OpenGL
+                material.shininess = (shininess * 128) / 1000    # Normalize to 1~128 for OpenGL
             elif values[0] == 'd':
                 opacity = float(values[1])
             elif values[0] == 'map_Kd':
-                texture_name = values[1]
+                material.texture_name = values[1]
 
         except BaseException as ex:
             raise ModelDecodeException('Parsing error in {0}.'.format((filename, ex)))
 
     file.close()
 
-    for item in (diffuse, ambient, specular, emission):
-        item.append(opacity)
-
-    matlib[name] = SimpleMaterial(name, diffuse, ambient, specular, emission, shininess, texture_name)
+    if material is not None:
+        for item in (material.diffuse, material.ambient, material.specular, material.emission):
+            item.append(opacity)
 
     return matlib
 
