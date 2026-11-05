@@ -22,7 +22,11 @@ from pyglet.libs.win32.types import (
     RAWINPUTHEADER,
     STGMEDIUM,
     TRACKMOUSEEVENT,
-    WCHAR, IID_IDROPTARGET, IID_IUNKNOWN,
+    WCHAR,
+    IID_IDROPTARGET,
+    IID_IUNKNOWN,
+    UINT32,
+    POINTER_TOUCH_INFO,
 )
 from pyglet.libs.win32.winkey import chmap, keymap
 from pyglet.libs.win32.context_managers import hresult_context
@@ -1622,8 +1626,61 @@ class Win32Window(BaseWindow['Win32Screen']):
 
     def _update_light_mode(self, is_light_mode: bool) -> None:
         value = BOOL(not is_light_mode)
-
         _dwmapi.DwmSetWindowAttribute(self._hwnd, constants.DWMWA_USE_IMMERSIVE_DARK_MODE, byref(value), sizeof(value))
+
+    @ViewEventHandler
+    @Win32EventHandler(constants.WM_POINTERDOWN)
+    def _event_pointerdown(self, msg: int, wParam: int, lParam: int) -> int:
+        return self._handle_pointer_event('on_touch_start', msg, wParam, lParam)
+
+    @ViewEventHandler
+    @Win32EventHandler(constants.WM_POINTERUPDATE)
+    def _event_pointerupdate(self, msg: int, wParam: int, lParam: int) -> int:
+        return self._handle_pointer_event('on_touch_move', msg, wParam, lParam)
+
+    @ViewEventHandler
+    @Win32EventHandler(constants.WM_POINTERUP)
+    def _event_pointerup(self, msg: int, wParam: int, lParam: int) -> int:
+        return self._handle_pointer_event('on_touch_end', msg, wParam, lParam)
+
+    def _handle_pointer_event(self, dispatch_name: str, msg: int, wParam: int, lParam: int) -> int:
+        pointer_id = wParam & 0xFFFF  # GET_POINTERID_WPARAM macro
+
+        pointer_type = UINT32()
+        if _user32.GetPointerType(pointer_id, byref(pointer_type)):
+            if pointer_type.value != constants.PT_TOUCH:
+                return 0
+
+            touch_info = POINTER_TOUCH_INFO()
+            if not _user32.GetPointerTouchInfo(pointer_id, byref(touch_info)):
+                return 0
+
+            if not touch_info:
+                return 0
+
+            pointer_info = touch_info.pointerInfo
+
+            x = pointer_info.ptPixelLocation.x
+            y = pointer_info.ptPixelLocation.y
+
+            point = POINT(x, y)
+            _user32.ScreenToClient(self._view_hwnd, byref(point))
+            x = point.x
+            y = self._height - point.y
+
+            pressure = 0.5
+            width = height = 0
+            if touch_info.touchMask & constants.TOUCH_MASK_PRESSURE:
+                pressure = touch_info.pressure / 1024.0
+            if touch_info.touchMask & constants.TOUCH_MASK_CONTACTAREA:
+                rc = touch_info.rcContact
+                width = rc.right - rc.left
+                height = rc.bottom - rc.top
+
+            self._dispatch_touch_event(dispatch_name, pointer_id, x, y, width, height, pressure)
+
+        return 0
+
 
 def _ShouldSystemUseLightMode() -> bool:
     """With Windows 11 there is no stable API to get the current light mode.

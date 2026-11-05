@@ -261,6 +261,18 @@ if constants.WINDOWS_10_ANNIVERSARY_UPDATE_OR_GREATER:
     _user32.GetDpiForWindow.restype = UINT
     _user32.GetDpiForWindow.argtypes = [HWND]
 
+if constants.WINDOWS_8_OR_GREATER:
+    _user32.EnableMouseInPointer.restype = BOOL
+    _user32.EnableMouseInPointer.argtypes = [BOOL]
+    _user32.GetPointerInfo.restype = BOOL
+    _user32.GetPointerInfo.argtypes = [UINT32, POINTER(POINTER_INFO)]
+    _user32.GetPointerType.restype = BOOL
+    _user32.GetPointerType.argtypes = [UINT32, POINTER(UINT32)]
+    _user32.GetPointerTouchInfo.restype = BOOL
+    _user32.GetPointerTouchInfo.argtypes = [UINT32, POINTER(POINTER_TOUCH_INFO)]
+    _user32.GetPointerPenInfo.restype = BOOL
+    _user32.GetPointerPenInfo.argtypes = [UINT32, POINTER(POINTER_PEN_INFO)]
+
 # dwmapi
 _dwmapi.DwmIsCompositionEnabled.restype = c_int
 _dwmapi.DwmIsCompositionEnabled.argtypes = [POINTER(INT)]

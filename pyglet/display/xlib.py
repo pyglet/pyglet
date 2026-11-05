@@ -3,6 +3,7 @@ from __future__ import annotations
 import ctypes
 import warnings
 from ctypes import POINTER, byref, c_buffer, c_char_p, c_int, cast
+from typing import TYPE_CHECKING
 
 import pyglet
 
@@ -12,6 +13,9 @@ from pyglet.util import asbytes
 
 from . import xlib_vidmoderestore
 from .base import Display, Screen, ScreenMode
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 # XXX
@@ -82,6 +86,7 @@ xlib.XSetErrorHandler(_error_handler_ptr)
 
 
 class XlibDisplay(LinuxSelectDevice, Display['XlibScreen']):
+    _generic_event_window_handlers: dict[int, Callable[[xlib.XGenericEventCookie], int]]
     _display = None  # POINTER(xlib.Display)
 
     _x_im = None  # X input method
@@ -112,6 +117,7 @@ class XlibDisplay(LinuxSelectDevice, Display['XlibScreen']):
 
         self._fileno = xlib.XConnectionNumber(self._display)
         self._window_map = {}
+        self._generic_event_window_handlers = {}
 
         # Initialise XSync
         if _have_xsync:
@@ -209,6 +215,21 @@ class XlibDisplay(LinuxSelectDevice, Display['XlibScreen']):
         e = xlib.XEvent()
         while xlib.XPending(self._display):
             xlib.XNextEvent(self._display, e)
+
+            if e.type == xlib.GenericEvent:
+                if not xlib.XGetEventData(self._display, byref(e.xcookie)):
+                    continue
+                try:
+                    event_window_handler = self._generic_event_window_handlers.get(e.xcookie.extension)
+                    if event_window_handler is None:
+                        continue
+                    event_window = event_window_handler(e.xcookie)
+                    dispatch = self._window_map.get(event_window)
+                    if dispatch:
+                        dispatch(e)
+                finally:
+                    xlib.XFreeEventData(self._display, byref(e.xcookie))
+                continue
 
             # Key events are filtered by the xlib window event
             # handler so they get a shot at the prefiltered event.

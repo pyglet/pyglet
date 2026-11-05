@@ -80,6 +80,21 @@ class WindowEventLogger:
     def on_mouse_scroll(self, x: int, y: int, scroll_x: float, scroll_y: float) -> None:
         print(f'on_mouse_scroll(x={x}, y={y}, scroll_x={scroll_x}, scroll_y={scroll_y})', file=self.file)
 
+    def on_touch_start(self, pointer_id: int, x: float, y: float, dx: float, dy: float, width: float, height: float,
+                       pressure: float, scale: float) -> None:
+        print(f'on_touch_start(pointer_id={pointer_id}, x={x}, y={y}, dx={dx}, dy={dy}, width={width}, '
+              f'height={height}, pressure={pressure}, scale={scale})', file=self.file)
+
+    def on_touch_move(self, pointer_id: int, x: float, y: float, dx: float, dy: float, width: float, height: float,
+                      pressure: float, scale: float) -> None:
+        print(f'on_touch_move(pointer_id={pointer_id}, x={x}, y={y}, dx={dx}, dy={dy}, width={width}, '
+              f'height={height}, pressure={pressure}, scale={scale})', file=self.file)
+
+    def on_touch_end(self, pointer_id: int, x: float, y: float, dx: float, dy: float, width: float, height: float,
+                     pressure: float, scale: float) -> None:
+        print(f'on_touch_end(pointer_id={pointer_id}, x={x}, y={y}, dx={dx}, dy={dy}, width={width}, '
+              f'height={height}, pressure={pressure}, scale={scale})', file=self.file)
+
     def on_close(self) -> None:
         print('on_close()', file=self.file)
 

@@ -88,6 +88,18 @@ def getMousePosition(self: ObjCInstance, nsevent: ObjCInstance) \
     return x, y
 
 
+def getTouchPosition(self: ObjCInstance, touch: ObjCInstance) -> tuple[int, int]:
+    """Convert an NSTouch normalized position to pyglet window coordinates."""
+    position = touch.normalizedPosition()
+    bounds = self.bounds()
+    _mouseViewRect.origin.x = position.x * bounds.size.width
+    _mouseViewRect.origin.y = position.y * bounds.size.height
+    if pyglet.options.dpi_scaling != "stretch":
+        converted = self.convertRectToBacking_(_mouseViewRect)
+        return int(converted.origin.x), int(converted.origin.y)
+    return int(_mouseViewRect.origin.x), int(_mouseViewRect.origin.y)
+
+
 def getModifiers(nsevent: ObjCInstance) -> int:
     modifiers = 0
     modifierFlags = nsevent.modifierFlags()
@@ -225,6 +237,10 @@ class PygletView(NSView):  # type: ignore[valid-type, misc]
     def isOpaque(self) -> bool:
         return True
 
+    @objc_method('B')
+    def acceptsTouchEvents(self) -> bool:
+        return True
+
     @objc_method('v@')
     def displayLinkFired_(self, display_link: ObjCInstance) -> None:
         if self._window is not None:
@@ -312,6 +328,33 @@ class PygletView(NSView):  # type: ignore[valid-type, misc]
         dx, dy = getMouseDelta(nsevent)
         factor = self._window._nswindow.backingScaleFactor()
         self._window.dispatch_event('on_mouse_motion', x, y, dx * factor, dy * factor)
+
+    def _dispatch_touches(self, event: ObjCInstance, phase: int, dispatch_name: str) -> None:
+        touches = event.touchesMatchingPhase_inView_(phase, self)
+        if not touches:
+            return
+
+        touch_array = touches.allObjects()
+        for index in range(touch_array.count()):
+            touch = touch_array.objectAtIndex_(index)
+            x, y = getTouchPosition(self, touch)
+            self._window._dispatch_touch_event(dispatch_name, int(touch.hash()), x, y, 0, 0, 0.0)
+
+    @objc_method('v@')
+    def touchesBeganWithEvent_(self, event: ObjCInstance) -> None:
+        self._dispatch_touches(event, 1, 'on_touch_start')
+
+    @objc_method('v@')
+    def touchesMovedWithEvent_(self, event: ObjCInstance) -> None:
+        self._dispatch_touches(event, 2, 'on_touch_move')
+
+    @objc_method('v@')
+    def touchesEndedWithEvent_(self, event: ObjCInstance) -> None:
+        self._dispatch_touches(event, 4, 'on_touch_end')
+
+    @objc_method('v@')
+    def touchesCancelledWithEvent_(self, event: ObjCInstance) -> None:
+        self._dispatch_touches(event, 8, 'on_touch_end')
 
     @objc_method('v@')
     def scrollWheel_(self, nsevent: ObjCInstance) -> None:
