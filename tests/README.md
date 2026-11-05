@@ -1,5 +1,11 @@
 # Test organization
 
+Use `pytest tests --non-interactive` for automated suite runs. This excludes
+`tests/interactive/` before collection and deselects tests marked `interactive`,
+`only_interactive`, `requires_user_action`, or `requires_user_validation`, even
+when explicitly selected. Use `--sanity` to run eligible interactive tests without
+prompts instead.
+
 Follow these rules when adding or changing tests, including tests written by AI
 agents. Check the existing tests and fixtures before creating a new file.
 
