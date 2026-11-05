@@ -5,12 +5,12 @@ import struct as _struct
 
 from typing import TYPE_CHECKING
 from random import uniform as _uniform
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from pyglet.media.codecs.base import AudioData, AudioFormat, Source
 
 if TYPE_CHECKING:
-    from typing import Generator, Sequence
+    from typing import Generator
 
 
 # Envelope classes:
@@ -312,129 +312,122 @@ class Sawtooth(SynthesisSource):
 
 
 #############################################
-#   Experimental multi-operator FM synthesis:
+#   Multi-operator FM synthesis:
 #############################################
 
-@dataclass(frozen=True, slots=True)
-class Modulation:
-    source: int
-    target: int
-
-
-@dataclass(frozen=True, slots=True)
+@dataclass
 class Algorithm:
-    """4-operator FM routing. Indices are 0-based (0=Op1 … 3=Op4)."""
-    name: str
-    carriers: tuple[int, ...]
-    modulations: tuple[Modulation, ...]
-    feedback: int | None = 0
+    """Describes how the FM operators are routed.
 
-    def __post_init__(self) -> None:
-        ops = set(self.carriers)
-        for m in self.modulations:
-            ops.add(m.source)
-            ops.add(m.target)
+    An algorithm can be built incrementally by assigning its attributes::
+
+        algorithm = Algorithm("My patch")
+        algorithm.carriers = [3]
+        algorithm.modulations = [(0, 1), (1, 2)]
+        algorithm.feedback = 0
+
+    Attributes:
+        name:
+            A descriptive name for the algorithm.
+        carriers:
+            Operator indices whose output is mixed into the voice.
+        modulations:
+            ``(source, target)`` pairs. ``source`` phase-modulates ``target``.
+        feedback:
+            Operator index that feeds back into itself, or ``None``.
+    """
+
+    name: str = ""
+    carriers: list[int] = field(default_factory=list)
+    modulations: list[tuple[int, int]] = field(default_factory=list)
+    feedback: int | None = None
+
+    def validate(self) -> None:
+        """Raise :class:`ValueError` if the algorithm cannot be rendered."""
+        if not self.carriers:
+            raise ValueError("Algorithm must define at least one carrier")
+        for operator in self.carriers:
+            self._check_operator(operator, "carrier")
+        if len(set(self.carriers)) != len(self.carriers):
+            raise ValueError("Carrier operators must be unique")
+
+        seen = set()
+        for modulation in self.modulations:
+            source, target = self._unpack_modulation(modulation)
+            self._check_operator(source, "modulator")
+            self._check_operator(target, "target")
+            if source == target:
+                raise ValueError("An operator cannot modulate itself; use feedback instead")
+            if (source, target) in seen:
+                raise ValueError(f"Duplicate modulation: {source} -> {target}")
+            seen.add((source, target))
+
         if self.feedback is not None:
-            ops.add(self.feedback)
-        if any(not 0 <= i <= 3 for i in ops):
-            raise ValueError("Operator indices must be in 0..3")
+            self._check_operator(self.feedback, "feedback")
 
+        # Raises ValueError if the modulation graph contains a cycle.
+        self.evaluation_order()
 
-ALGO_0 = Algorithm(   # 1 → 2 → 3 → 4
-    name="Algorithm 0",
-    carriers=(3,),
-    modulations=(
-        Modulation(0, 1),
-        Modulation(1, 2),
-        Modulation(2, 3),
-    ),
-    feedback=0,
-)
+    def evaluation_order(self) -> tuple[int, ...]:
+        """Return operator indices in dependency order.
 
-ALGO_1 = Algorithm(   # (1 + 2) → 3 → 4
-    name="Algorithm 1",
-    carriers=(3,),
-    modulations=(
-        Modulation(0, 2),
-        Modulation(1, 2),
-        Modulation(2, 3),
-    ),
-    feedback=0,
-)
+        Modulators are returned before the operators they feed, so each
+        operator can be evaluated exactly once per audio sample.
 
-ALGO_2 = Algorithm(   # 1 → 3 → 4,  2 → 4
-    name="Algorithm 2",
-    carriers=(3,),
-    modulations=(
-        Modulation(0, 2),
-        Modulation(2, 3),
-        Modulation(1, 3),
-    ),
-    feedback=0,
-)
+        Raises:
+            ValueError: If the modulation graph contains a cycle.
+        """
+        adjacency: list[list[int]] = [[] for _ in range(4)]
+        nodes = set(self.carriers)
+        for modulation in self.modulations:
+            source, target = self._unpack_modulation(modulation)
+            self._check_operator(source, "modulator")
+            self._check_operator(target, "target")
+            adjacency[source].append(target)
+            nodes.add(source)
+            nodes.add(target)
+        if self.feedback is not None:
+            self._check_operator(self.feedback, "feedback")
+            nodes.add(self.feedback)
 
-ALGO_3 = Algorithm(   # 1 → 2 → 4,  3 → 4
-    name="Algorithm 3",
-    carriers=(3,),
-    modulations=(
-        Modulation(0, 1),
-        Modulation(1, 3),
-        Modulation(2, 3),
-    ),
-    feedback=0,
-)
+        post_order: list[int] = []
+        state: dict[int, int] = {}
+        path: list[int] = []
 
-ALGO_4 = Algorithm(   # 1 → 2  and  3 → 4
-    name="Algorithm 4",
-    carriers=(1, 3),
-    modulations=(
-        Modulation(0, 1),
-        Modulation(2, 3),
-    ),
-    feedback=0,
-)
+        def visit(operator: int) -> None:
+            state[operator] = 1
+            path.append(operator)
+            for target in adjacency[operator]:
+                if state.get(target) == 1:
+                    cycle = path[path.index(target):] + [target]
+                    cycle_text = " -> ".join(str(item) for item in cycle)
+                    raise ValueError(f"Modulation cycle detected: {cycle_text}")
+                if state.get(target, 0) == 0:
+                    visit(target)
+            path.pop()
+            state[operator] = 2
+            post_order.append(operator)
 
-ALGO_5 = Algorithm(   # 1 modulates 2, 3 and 4
-    name="Algorithm 5",
-    carriers=(1, 2, 3),
-    modulations=(
-        Modulation(0, 1),
-        Modulation(0, 2),
-        Modulation(0, 3),
-    ),
-    feedback=0,
-)
+        for operator in sorted(nodes):
+            if state.get(operator, 0) == 0:
+                visit(operator)
 
-ALGO_6 = Algorithm(   # 1 → 2,  3 and 4 are carriers
-    name="Algorithm 6",
-    carriers=(1, 2, 3),
-    modulations=(
-        Modulation(0, 1),
-    ),
-    feedback=0,
-)
+        return tuple(reversed(post_order))
 
-ALGO_7 = Algorithm(   # four parallel carriers
-    name="Algorithm 7",
-    carriers=(0, 1, 2, 3),
-    modulations=(),
-    feedback=0,
-)
+    def _check_operator(self, operator: int, role: str) -> None:
+        if not isinstance(operator, int) or not 0 <= operator <= 3:
+            raise ValueError(f"{role.capitalize()} operator must be an index in 0..3, got {operator!r}")
 
-ALGORITHMS = {
-    0: ALGO_0,
-    1: ALGO_1,
-    2: ALGO_2,
-    3: ALGO_3,
-    4: ALGO_4,
-    5: ALGO_5,
-    6: ALGO_6,
-    7: ALGO_7,
-}
+    def _unpack_modulation(self, modulation: tuple[int, int]) -> tuple[int, int]:
+        try:
+            source, target = modulation
+        except (TypeError, ValueError):
+            raise ValueError(f"Invalid modulation {modulation!r}; expected a (source, target) pair") from None
+        return source, target
 
 
 class Operator:
-    """Single FM operator with phase modulation and optional feedback."""
+    """A single FM operator with optional feedback."""
 
     def __init__(self, frequency: float = 440.0, sample_rate: int = 44800, index: float = 1.0, feedback: float = 0.0):
         self.sample_rate = sample_rate
@@ -446,8 +439,6 @@ class Operator:
         self._phase = 0.0
         self._last = 0.0
 
-        self.modulators: list[Operator] = []
-
     @property
     def frequency(self) -> float:
         return self._frequency
@@ -457,92 +448,85 @@ class Operator:
         self._frequency = value
         self._step = 2.0 * _math.pi * value / self.sample_rate
 
-    def add_modulator(self, op: Operator) -> None:
-        self.modulators.append(op)
-
-    def __next__(self) -> float:
-        mod = sum(next(m) for m in self.modulators)
-        mod += self.feedback * self._last
-
-        value = _math.sin(self._phase + self.index * mod)
-
+    def process(self, modulation: float = 0.0) -> float:
+        """Return the next sample, given the summed modulator input."""
+        modulation += self.feedback * self._last
+        value = _math.sin(self._phase + self.index * modulation)
         self._last = value
-        self._phase += self._step
+        self._phase = (self._phase + self._step) % _math.tau
         return value
 
     def reset(self) -> None:
         self._phase = 0.0
         self._last = 0.0
 
-    def __iter__(self):
-        return self
-
-
-# ----------------------------------------------------------------------
-# Mixing helper
-# ----------------------------------------------------------------------
-
-def mix_operators(operators: Sequence[Operator]) -> Generator[float, None, None]:
-    """Average the output of multiple carriers."""
-    n = len(operators)
-    if n == 0:
-        while True:
-            yield 0.0
-    while True:
-        yield sum(next(op) for op in operators) / n
-
-
-# ----------------------------------------------------------------------
-# FMVoice (SynthesisSource subclass)
-# ----------------------------------------------------------------------
 
 class FMVoice(SynthesisSource):
-    """
-    4-operator FM voice (YM2612-style).
+    """4-operator FM voice.
 
-    Operators are pre-allocated and can be adjusted after creation.
+    Args:
+        duration:
+            The length, in seconds, of audio to generate.
+        algorithm:
+            The operator routing. Defaults to ``ALGORITHM_0``.
+        sample_rate:
+            Audio samples per second.
+        feedback_level:
+            The amount of self-feedback applied to the algorithm's feedback
+            operator.
+        envelope:
+            An optional master amplitude envelope.
     """
 
-    def __init__(self, duration: float, algorithm: Algorithm | int = 0, sample_rate: int = 44800, feedback_level: float = 0.0, envelope: Envelope | None = None):
-        if isinstance(algorithm, int):
-            algorithm = ALGORITHMS[algorithm]
+    def __init__(self, duration: float, algorithm: Algorithm, sample_rate: int = 44800, feedback_level: float = 0.0, envelope: Envelope | None = None):
 
         self.sample_rate = sample_rate
-        self.algorithm = algorithm
-
-        # Pre-allocate 4 operators
         self.ops: list[Operator] = [Operator(frequency=440.0, sample_rate=sample_rate) for _ in range(4)]
+        self._values = [0.0] * 4
+        self._feedback_level = feedback_level
 
-        self._wire_algorithm(algorithm)
-        self.set_feedback(feedback_level)
+        self._compile_algorithm(algorithm)
 
-        # Create the generator from the carriers
-        carriers = [self.ops[i] for i in algorithm.carriers]
-        generator = mix_operators(carriers)
-
-        super().__init__(generator, duration, sample_rate, envelope)
+        super().__init__(self._generate(), duration, sample_rate, envelope)
 
     # ----- internal -----
 
-    def _wire_algorithm(self, algorithm: Algorithm) -> None:
-        for op in self.ops:
-            op.modulators.clear()
-
-        for mod in algorithm.modulations:
-            self.ops[mod.target].add_modulator(self.ops[mod.source])
+    def _compile_algorithm(self, algorithm: Algorithm) -> None:
+        algorithm.validate()
 
         self.algorithm = algorithm
+        self._carriers = tuple(algorithm.carriers)
+        self._order = algorithm.evaluation_order()
+        self._modulator_sources: list[list[int]] = [[] for _ in range(4)]
+        for source, target in algorithm.modulations:
+            self._modulator_sources[target].append(source)
+
+        self.set_feedback(self._feedback_level)
+
+    def _generate(self) -> Generator[float]:
+        while True:
+            yield self._render_sample()
+
+    def _render_sample(self) -> float:
+        values = self._values
+        for operator in self._order:
+            modulation = 0.0
+            for source in self._modulator_sources[operator]:
+                modulation += values[source]
+            values[operator] = self.ops[operator].process(modulation)
+        return sum(values[operator] for operator in self._carriers) / len(self._carriers)
 
     # ----- public API -----
 
-    def set_algorithm(self, algorithm: Algorithm | int) -> None:
-        if isinstance(algorithm, int):
-            algorithm = ALGORITHMS[algorithm]
-        self._wire_algorithm(algorithm)
-        # Note: changing algorithm after start does not rebuild the generator.
-        # For full support you would also need to replace self._generator.
+    def set_algorithm(self, algorithm: Algorithm) -> None:
+        """Change the routing and recompile it for this voice."""
+        if not isinstance(algorithm, Algorithm):
+            raise TypeError("algorithm must be an Algorithm instance")
+        self._compile_algorithm(algorithm)
 
     def set_feedback(self, level: float) -> None:
+        """Set the amount of self-feedback for the algorithm's feedback operator."""
+        self._feedback_level = level
         for op in self.ops:
             op.feedback = 0.0
         if self.algorithm.feedback is not None:
@@ -559,3 +543,62 @@ class FMVoice(SynthesisSource):
         for op in self.ops:
             op.reset()
         super().seek(timestamp)
+
+
+# ----------------------------------------------------------------------
+#               example of popular default algorithms
+# ----------------------------------------------------------------------
+
+#: Four operators in series: OP1 -> OP2 -> OP3 -> OP4.
+ALGORITHM_0 = Algorithm("Algorithm 0")
+ALGORITHM_0.carriers = [3]
+ALGORITHM_0.modulations = [(0, 1), (1, 2), (2, 3)]
+ALGORITHM_0.feedback = 0
+
+#: OP1 and OP2 combine to modulate OP3, which modulates OP4.
+ALGORITHM_1 = Algorithm("Algorithm 1")
+ALGORITHM_1.carriers = [3]
+ALGORITHM_1.modulations = [(0, 2), (1, 2), (2, 3)]
+ALGORITHM_1.feedback = 0
+
+#: OP2 modulates OP3; OP1 and OP3 modulate OP4.
+ALGORITHM_2 = Algorithm("Algorithm 2")
+ALGORITHM_2.carriers = [3]
+ALGORITHM_2.modulations = [(1, 2), (2, 3), (0, 3)]
+ALGORITHM_2.feedback = 0
+
+#: OP1 modulates OP2; OP2 and OP3 modulate OP4.
+ALGORITHM_3 = Algorithm("Algorithm 3")
+ALGORITHM_3.carriers = [3]
+ALGORITHM_3.modulations = [(0, 1), (1, 3), (2, 3)]
+ALGORITHM_3.feedback = 0
+
+#: Two independent two-operator pairs: OP1 -> OP2 and OP3 -> OP4.
+ALGORITHM_4 = Algorithm("Algorithm 4")
+ALGORITHM_4.carriers = [1, 3]
+ALGORITHM_4.modulations = [(0, 1), (2, 3)]
+ALGORITHM_4.feedback = 0
+
+#: OP1 modulates the three carriers OP2, OP3, and OP4.
+ALGORITHM_5 = Algorithm("Algorithm 5")
+ALGORITHM_5.carriers = [1, 2, 3]
+ALGORITHM_5.modulations = [(0, 1), (0, 2), (0, 3)]
+ALGORITHM_5.feedback = 0
+
+#: OP1 modulates OP2; OP3 and OP4 are unmodulated carriers.
+ALGORITHM_6 = Algorithm("Algorithm 6")
+ALGORITHM_6.carriers = [1, 2, 3]
+ALGORITHM_6.modulations = [(0, 1)]
+ALGORITHM_6.feedback = 0
+
+#: Four parallel unmodulated carriers.
+ALGORITHM_7 = Algorithm("Algorithm 7")
+ALGORITHM_7.carriers = [0, 1, 2, 3]
+ALGORITHM_7.modulations = []
+ALGORITHM_7.feedback = 0
+
+#: A single modulator/carrier pair, as used by OPLL/VRC7-style patches.
+ALGORITHM_2OP = Algorithm("2-operator FM")
+ALGORITHM_2OP.carriers = [1]
+ALGORITHM_2OP.modulations = [(0, 1)]
+ALGORITHM_2OP.feedback = 0
