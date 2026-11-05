@@ -110,8 +110,10 @@ class ADSREnvelope(Envelope):
         decay_bytes = int(sample_rate * self.decay)
         release_bytes = int(sample_rate * self.release)
         sustain_bytes = total_bytes - attack_bytes - decay_bytes - release_bytes
-        decay_step = (1 - sustain_amplitude) / decay_bytes
-        release_step = sustain_amplitude / release_bytes
+        # Guard against zero-length phases to avoid division by zero. A missing
+        # phase produces no samples, so its step value is never used:
+        decay_step = 0.0 if not decay_bytes else (1 - sustain_amplitude) / decay_bytes
+        release_step = 0.0 if not release_bytes else sustain_amplitude / release_bytes
         for i in range(1, attack_bytes + 1):
             yield i / attack_bytes
         for i in range(1, decay_bytes + 1):
@@ -319,12 +321,16 @@ class Sawtooth(SynthesisSource):
 class Algorithm:
     """Describes how the FM operators are routed.
 
-    An algorithm can be built incrementally by assigning its attributes::
+    An algorithm is a plain description of operator routing built by assigning
+    its attributes::
 
         algorithm = Algorithm("My patch")
         algorithm.carriers = [3]
         algorithm.modulations = [(0, 1), (1, 2)]
         algorithm.feedback = 0
+
+    Validation and evaluation ordering are performed by :class:`FMVoice` when
+    the algorithm is compiled.
 
     Attributes:
         name:
@@ -341,89 +347,6 @@ class Algorithm:
     carriers: list[int] = field(default_factory=list)
     modulations: list[tuple[int, int]] = field(default_factory=list)
     feedback: int | None = None
-
-    def validate(self) -> None:
-        """Raise :class:`ValueError` if the algorithm cannot be rendered."""
-        if not self.carriers:
-            raise ValueError("Algorithm must define at least one carrier")
-        for operator in self.carriers:
-            self._check_operator(operator, "carrier")
-        if len(set(self.carriers)) != len(self.carriers):
-            raise ValueError("Carrier operators must be unique")
-
-        seen = set()
-        for modulation in self.modulations:
-            source, target = self._unpack_modulation(modulation)
-            self._check_operator(source, "modulator")
-            self._check_operator(target, "target")
-            if source == target:
-                raise ValueError("An operator cannot modulate itself; use feedback instead")
-            if (source, target) in seen:
-                raise ValueError(f"Duplicate modulation: {source} -> {target}")
-            seen.add((source, target))
-
-        if self.feedback is not None:
-            self._check_operator(self.feedback, "feedback")
-
-        # Raises ValueError if the modulation graph contains a cycle.
-        self.evaluation_order()
-
-    def evaluation_order(self) -> tuple[int, ...]:
-        """Return operator indices in dependency order.
-
-        Modulators are returned before the operators they feed, so each
-        operator can be evaluated exactly once per audio sample.
-
-        Raises:
-            ValueError: If the modulation graph contains a cycle.
-        """
-        adjacency: list[list[int]] = [[] for _ in range(4)]
-        nodes = set(self.carriers)
-        for modulation in self.modulations:
-            source, target = self._unpack_modulation(modulation)
-            self._check_operator(source, "modulator")
-            self._check_operator(target, "target")
-            adjacency[source].append(target)
-            nodes.add(source)
-            nodes.add(target)
-        if self.feedback is not None:
-            self._check_operator(self.feedback, "feedback")
-            nodes.add(self.feedback)
-
-        post_order: list[int] = []
-        state: dict[int, int] = {}
-        path: list[int] = []
-
-        def visit(operator: int) -> None:
-            state[operator] = 1
-            path.append(operator)
-            for target in adjacency[operator]:
-                if state.get(target) == 1:
-                    cycle = path[path.index(target):] + [target]
-                    cycle_text = " -> ".join(str(item) for item in cycle)
-                    raise ValueError(f"Modulation cycle detected: {cycle_text}")
-                if state.get(target, 0) == 0:
-                    visit(target)
-            path.pop()
-            state[operator] = 2
-            post_order.append(operator)
-
-        for operator in sorted(nodes):
-            if state.get(operator, 0) == 0:
-                visit(operator)
-
-        return tuple(reversed(post_order))
-
-    def _check_operator(self, operator: int, role: str) -> None:
-        if not isinstance(operator, int) or not 0 <= operator <= 3:
-            raise ValueError(f"{role.capitalize()} operator must be an index in 0..3, got {operator!r}")
-
-    def _unpack_modulation(self, modulation: tuple[int, int]) -> tuple[int, int]:
-        try:
-            source, target = modulation
-        except (TypeError, ValueError):
-            raise ValueError(f"Invalid modulation {modulation!r}; expected a (source, target) pair") from None
-        return source, target
 
 
 class Operator:
@@ -461,6 +384,10 @@ class Operator:
         self._last = 0.0
 
 
+# Sentinel used as ``FMVoice``'s default algorithm so it works without one:
+_DEFAULT_ALGORITHM = object()
+
+
 class FMVoice(SynthesisSource):
     """4-operator FM voice.
 
@@ -478,7 +405,17 @@ class FMVoice(SynthesisSource):
             An optional master amplitude envelope.
     """
 
-    def __init__(self, duration: float, algorithm: Algorithm, sample_rate: int = 44800, feedback_level: float = 0.0, envelope: Envelope | None = None):
+    def __init__(
+        self,
+        duration: float,
+        algorithm: Algorithm = _DEFAULT_ALGORITHM,
+        sample_rate: int = 44800,
+        feedback_level: float = 0.0,
+        envelope: Envelope | None = None,
+    ):
+
+        if algorithm is _DEFAULT_ALGORITHM:
+            algorithm = ALGORITHM_0
 
         self.sample_rate = sample_rate
         self.ops: list[Operator] = [Operator(frequency=440.0, sample_rate=sample_rate) for _ in range(4)]
@@ -492,16 +429,89 @@ class FMVoice(SynthesisSource):
     # ----- internal -----
 
     def _compile_algorithm(self, algorithm: Algorithm) -> None:
-        algorithm.validate()
+        self._order = self._build_evaluation_order(algorithm)
 
         self.algorithm = algorithm
         self._carriers = tuple(algorithm.carriers)
-        self._order = algorithm.evaluation_order()
         self._modulator_sources: list[list[int]] = [[] for _ in range(4)]
         for source, target in algorithm.modulations:
             self._modulator_sources[target].append(source)
 
         self.set_feedback(self._feedback_level)
+
+    def _build_evaluation_order(self, algorithm: Algorithm) -> tuple[int, ...]:
+        """Validate ``algorithm`` and return operator indices in render order.
+
+        Modulators are returned before the operators they feed so each operator
+        advances exactly once per audio sample. Raises ``ValueError`` if the
+        routing is invalid or its modulation graph contains a cycle.
+        """
+        # Every referenced operator must be an integer index in 0..3:
+        def check(operator, role):
+            if not isinstance(operator, int) or not 0 <= operator <= 3:
+                raise ValueError(f"{role.capitalize()} operator must be an index in 0..3, got {operator!r}")
+
+        seen = set()
+
+        # A voice needs at least one carrier to render...
+        if not algorithm.carriers:
+            raise ValueError("Algorithm must define at least one carrier")
+        if len(set(algorithm.carriers)) != len(algorithm.carriers):
+            raise ValueError("Carrier operators must be unique")
+        for carrier in algorithm.carriers:
+            check(carrier, "carrier")
+            seen.add(carrier)
+
+        modulations = list(algorithm.modulations)
+        # Modulations must be valid, non-self and unique pairs...
+        if len(set(modulations)) != len(modulations):
+            raise ValueError("Duplicate modulation")
+        for modulation in modulations:
+            try:
+                source, target = modulation
+            except (TypeError, ValueError):
+                raise ValueError(f"Invalid modulation {modulation!r}; expected a (source, target) pair") from None
+            check(source, "modulator")
+            check(target, "target")
+            seen.add(source)
+            seen.add(target)
+            if source == target:
+                raise ValueError("An operator cannot modulate itself; use feedback instead")
+
+        # Feedback must be a valid index...
+        if algorithm.feedback is not None:
+            check(algorithm.feedback, "feedback")
+
+        # Topologically sort so each operator renders exactly once per sample.
+        adjacency = [[] for _ in range(4)]
+        nodes = set(algorithm.carriers) | seen
+        for source, target in modulations:
+            adjacency[source].append(target)
+        if algorithm.feedback is not None:
+            nodes.add(algorithm.feedback)
+
+        post_order: list[int] = []
+        state: dict[int, int] = {}
+        path: list[int] = []
+
+        def visit(operator: int) -> None:
+            state[operator] = 1
+            path.append(operator)
+            for target in adjacency[operator]:
+                if state.get(target) == 1:
+                    cycle = path[path.index(target):] + [target]
+                    raise ValueError("Modulation cycle detected: " + " -> ".join(str(item) for item in cycle))
+                if state.get(target, 0) == 0:
+                    visit(target)
+            path.pop()
+            state[operator] = 2
+            post_order.append(operator)
+
+        for operator in sorted(nodes):
+            if state.get(operator, 0) == 0:
+                visit(operator)
+
+        return tuple(reversed(post_order))
 
     def _generate(self) -> Generator[float]:
         while True:
