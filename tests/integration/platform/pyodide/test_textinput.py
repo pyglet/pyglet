@@ -162,6 +162,25 @@ def test_multiline_input_uses_textarea_and_preserves_newlines(editor: Editor) ->
     assert control.enterKeyHint == 'enter'
 
 
+def test_native_control_follows_caret_without_geometry_callback(editor: Editor) -> None:
+    window, layout, caret = editor
+    layout.begin_text_input(window, caret)
+    control = window._browser_text_input.control
+    caret.position = len(layout.document.text)
+    layout.x += 20
+    x, y, _, height = caret.rect
+    canvas = window.canvas
+    bounds = canvas.getBoundingClientRect()
+    # CSS serializes fractional pixel values with less precision than Python floats.
+    assert float(control.style.left.removesuffix('px')) == pytest.approx(
+        bounds.left + x * bounds.width / canvas.width, abs=0.001,
+    )
+    assert float(control.style.top.removesuffix('px')) == pytest.approx(
+        bounds.top + bounds.height - (y + height) * bounds.height / canvas.height,
+        abs=0.001,
+    )
+
+
 def test_viewport_changes_refresh_native_control_position(editor: Editor) -> None:
     window, layout, caret = editor
     bounds = [10.0, 20.0, 1.0, 16.0]

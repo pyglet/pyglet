@@ -15,10 +15,10 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True)
 class TextInputOptions:
-    """Hints for a platform keyboard; these do not validate or mask text.
+    """Hints for a platform keyboard. These do not validate or mask text.
 
     ``screen_keyboard`` defaults to ``'auto'``, leaving activation to platform
-    policy. ``'show'`` requests a software keyboard when available; ``'hide'``
+    policy. ``'show'`` requests a software keyboard when available. ``'hide'``
     suppresses that request. These are preferences, not visibility guarantees.
     """
 
@@ -33,7 +33,7 @@ class TextInputSession(EventDispatcher):
 
     Backends use ``caret.layout.document`` for text and the caret's ``position``
     and ``mark`` for selection. The layout also supplies its multiline setting.
-    Edits go through those existing APIs; the session
+    Edits go through those existing APIs. The session
     stores no duplicate text, selection, or composition model.
 
     The session listens for changes to the caret and updates the platform's
@@ -45,7 +45,8 @@ class TextInputSession(EventDispatcher):
     window callbacks run. Handling an event does not cancel window cleanup.
     ``get_caret_rect`` can supply window-space bounds as ``(x, y, width, height)``,
     with an origin at the bottom left. A callback allows the application to
-    account for its camera and layout transforms. Without it, bounds are unknown.
+    account for its camera and layout transforms. Otherwise, bounds come from
+    ``caret.rect``.
 
     This class does not open a keyboard or implement composition. Those require
     platform input integration with the existing text editor.
@@ -87,8 +88,13 @@ class TextInputSession(EventDispatcher):
         return self._active
 
     @property
-    def caret_rect(self) -> tuple[float, float, float, float] | None:
-        return self._get_caret_rect() if self._get_caret_rect is not None else None
+    def caret_rect(self) -> tuple[float, float, float, float]:
+        """The caret's bounds, optionally overridden for application transforms."""
+        if self._get_caret_rect is not None:
+            bounds = self._get_caret_rect()
+            if bounds is not None:
+                return bounds
+        return self._caret.rect
 
     def _require_active(self) -> None:
         if not self._active:
@@ -150,6 +156,12 @@ class AbstractTextInput(ABC, Generic[WindowT]):
 
     Call :meth:`read` when the user changes text or selection in the system's
     text field. Use the session's caret to pass those changes back to the editor.
+
+    Native selection offsets may use UTF-16 code units. Convert them to and
+    from the caret's Python string positions at the platform boundary. Guard
+    synchronization against callbacks triggered by your own updates, and avoid
+    also applying native edits through legacy keyboard events. Confirming an
+    IME composition must not submit the field via ``session.perform_action()``.
     """
 
     window: WindowT

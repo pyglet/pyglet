@@ -220,6 +220,23 @@ class Caret(EventDispatcher):
         self._list.colors[:] = r, g, b, a, r, g, b, a
 
     @property
+    def rect(self) -> tuple[float, float, float, float]:
+        """Bounds as ``(x, y, width, height)``, from the bottom left.
+
+        Includes layout placement, anchors, and scrolling, independently of
+        blinking.
+
+        Application camera and custom drawing transforms are excluded.
+        """
+        layout = self._layout
+        # Preserve which side of a wrapped line boundary the caret is drawn on.
+        x, y = layout.get_point_from_position(self._position, self.line)
+        font = layout.document.get_font(max(0, self._position - 1))
+        x += layout.left - layout.view_x
+        y += layout.bottom + layout._get_content_height() - layout.view_y + font.descent  # noqa: SLF001
+        return x, y, 1, font.ascent - font.descent
+
+    @property
     def position(self) -> int:
         """Position of caret within document."""
         return self._position

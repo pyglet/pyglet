@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 class BrowserTextInput(AbstractTextInput['EmscriptenWindow']):
     """Own a focusable browser control while the layout owns editing state.
 
-    Native composition stays in the control until committed; inline preedit
+    Native composition stays in the control until committed. Inline preedit
     rendering in the GL layout is not implemented here. An external edit during
     composition ends the session rather than overwriting the editor's changes.
     """
@@ -48,7 +48,7 @@ class BrowserTextInput(AbstractTextInput['EmscriptenWindow']):
             self.control.setAttribute('autocapitalize', 'off')
             self.control.spellcheck = False
         # A rendered, focusable control is needed by mobile keyboards. Position it
-        # at the caret for native candidate UI; the GL layout displays committed text.
+        # at the caret for native candidate UI. The GL layout displays committed text.
         self.control.style.cssText = (
             'position:fixed;width:1px;padding:0;margin:0;border:0;'
             'font-size:16px;background:transparent;color:transparent;'
@@ -81,16 +81,7 @@ class BrowserTextInput(AbstractTextInput['EmscriptenWindow']):
     def _position_control(self) -> None:
         canvas = self.window.canvas
         rect = canvas.getBoundingClientRect()
-        bounds = self.session.caret_rect
-        if bounds is None:
-            caret = self.session.caret
-            layout = caret.layout
-            x, y = layout.get_point_from_position(caret.position)
-            font = layout.document.get_font(max(0, caret.position - 1))
-            x += layout.left - layout.view_x
-            y += layout.bottom + layout._get_content_height() - layout.view_y + font.descent  # noqa: SLF001
-            bounds = x, y, 1, font.ascent - font.descent
-        x, y, _, height = bounds
+        x, y, _, height = self.session.caret_rect
         scale_x = rect.width / canvas.width if canvas.width else 1.0
         scale_y = rect.height / canvas.height if canvas.height else 1.0
         self.control.style.setProperty('left', f'{rect.left + x * scale_x}px')
@@ -114,6 +105,8 @@ class BrowserTextInput(AbstractTextInput['EmscriptenWindow']):
             start, end = sorted((anchor, caret.position))
             start, end = to_utf16(text, start), to_utf16(text, end)
             direction = 'backward' if anchor > caret.position else 'forward'
+            # Browsers normalize collapsed selection direction differently. Rewriting
+            # it can trigger selectionchange repeatedly even though the cursor agrees.
             if ((self.control.selectionStart, self.control.selectionEnd) != (start, end)
                     or (start != end and self.control.selectionDirection != direction)):
                 self.control.setSelectionRange(start, end, direction)
@@ -177,6 +170,7 @@ class BrowserTextInput(AbstractTextInput['EmscriptenWindow']):
         self.read()
 
     def _on_blur(self, event: Event) -> None:
+        # Leave focus with the page element the user chose. Do not refocus the canvas.
         self.session.close()
 
     def _on_key_down(self, event: KeyboardEvent) -> None:

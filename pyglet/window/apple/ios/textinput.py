@@ -37,7 +37,7 @@ class _PygletIOSTextView(UITextView):  # type: ignore[valid-type, misc]
 
     @objc_method(b'@' + NSPointEncoding + b'@')
     def hitTest_withEvent_(self, point: CGPoint, event: ObjCInstance) -> None:
-        # GL handles taps and selection; the transparent native editor only receives keyboard input.
+        # GL handles taps and selection. The transparent native editor only receives keyboard input.
         return None
 
     @objc_method('v')
@@ -75,6 +75,7 @@ class _PygletIOSTextInputDelegate(NSObject):  # type: ignore[valid-type, misc]
         if text_input is None or not text_input.session.active:
             return False
         if text_view.markedTextRange():
+            # Return may confirm an IME candidate instead of submitting the field.
             return True
         session = text_input.session
         if cfstring_to_string(text) in ('\n', '\r') and not session.caret.layout.multiline:
@@ -138,14 +139,18 @@ class IOSTextInput(AbstractTextInput['IOSWindow']):
         self.view.setDelegate_(self._delegate)
         self.window._uiview.addSubview_(self.view)  # noqa: SLF001
         self.sync()
+        # Both auto and show use UIKit's normal keyboard policy, including its
+        # choice to keep the software keyboard hidden with hardware attached.
         if not self.view.becomeFirstResponder():
-            raise RuntimeError('UIKit rejected text-input focus; the window must be visible and active.')
+            raise RuntimeError('UIKit rejected text-input focus. The window must be visible and active.')
 
     def close(self) -> None:
         view, delegate = self.view, self._delegate
         self.view = None
         self._delegate = None
         if view is not None:
+            # Resigning focus can call the delegate synchronously. Detach callbacks
+            # before releasing either object so cleanup cannot re-enter the session.
             view.setDelegate_(None)
             setattr(view, '_text_input', None)
             view.resignFirstResponder()
@@ -156,17 +161,7 @@ class IOSTextInput(AbstractTextInput['IOSWindow']):
             delegate.release()
 
     def _update_geometry(self) -> None:
-        x: float
-        y: float
-        width: float
-        height: float
-        layout = self.session.caret.layout
-        bounds = self.session.caret_rect
-        if bounds is None:
-            x, y, width, height = layout.left, layout.bottom, layout.width or 1, layout.height or 1
-        else:
-            x, y, _, height = bounds
-            width = layout.width or 1
+        x, y, width, height = self.session.caret_rect
         scale = self.window.screen.get_scale()
         self.view.setFrame_(NSMakeRect(x / scale, (self.window.height - y - height) / scale,
                                        max(1, width / scale), max(1, height / scale)))
@@ -177,6 +172,8 @@ class IOSTextInput(AbstractTextInput['IOSWindow']):
         caret = self.session.caret
         text = caret.layout.document.text
         if self.view.markedTextRange():
+            # Do not replace UIKit's uncommitted text. If the document changes
+            # independently, end the session rather than later overwrite that edit.
             if self._composition_text is None:
                 self._composition_text = text
             elif text != self._composition_text:
@@ -213,6 +210,7 @@ class IOSTextInput(AbstractTextInput['IOSWindow']):
         self._syncing = True
         try:
             if text != previous:
+                # Replace only the changed range so surrounding document styles survive.
                 prefix = 0
                 while prefix < min(len(previous), len(text)) and previous[prefix] == text[prefix]:
                     prefix += 1
@@ -226,6 +224,7 @@ class IOSTextInput(AbstractTextInput['IOSWindow']):
                     caret.position = old_end
                 caret.on_text(text[prefix:new_end])
             anchor = caret.position if caret.mark is None else caret.mark
+            # NSRange has no selection direction. Retain the existing anchor when possible.
             selection_anchor, position = (end, start) if start != end and anchor == end else (start, end)
             mark = None if start == end else selection_anchor
             if caret.mark != mark:
