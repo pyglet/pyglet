@@ -958,3 +958,58 @@ def test_sprite_metaclass_tuple_inputs_keep_identity_and_value_types(test_window
     assert CustomGroup(*args, payload=(data, True)) is group
     assert CustomGroup(*args, payload=(data, 1)) is not group
     assert CustomGroup(*args, payload=({"time": 0}, True)) is not group
+
+
+@pytest.mark.parametrize("difference", [None, "mapping", "program"])
+def test_group_shader_uniforms_consolidation(test_window, difference):
+    program = object()
+    uniforms = {"time": 0.0}
+    first, second = pyglet.graphics.Group(), pyglet.graphics.Group()
+    first.set_shader_uniforms(program, uniforms)
+    second.set_shader_uniforms(
+        object() if difference == "program" else program,
+        dict(uniforms) if difference == "mapping" else uniforms,
+    )
+
+    assert first is not second
+    assert (first == second) is (difference is None)
+    original_hashes = hash(first), hash(second)
+    batch, domain = _build_test_batch(first, second)
+    expected_groups = 1 if difference is None else 2
+    assert len(batch.group_map) == expected_groups
+    assert sum(entry[0] is domain for entry in batch._create_draw_list()) == expected_groups
+
+    uniforms["time"] = 1.0
+    assert (hash(first), hash(second)) == original_hashes
+    assert first in batch.group_map
+    assert second in batch.group_map
+    assert (first == second) is (difference is None)
+
+
+@pytest.mark.parametrize("difference", [None, "mapping", "program"])
+def test_group_shader_uniforms_optimization(test_window, difference):
+    # Ordered groups stay distinct, so the optimizer must compare their states.
+    program = {}
+    uniforms = {"time": 0.0}
+    middle_uniforms = {"time": 2.0} if difference == "mapping" else uniforms
+    middle_program = {} if difference == "program" else program
+    groups = [pyglet.graphics.Group(order=order) for order in range(3)]
+    for group, target, data in zip(groups, (program, middle_program, program),
+                                   (uniforms, middle_uniforms, uniforms)):
+        group.set_shader_uniforms(target, data)
+    state_type = type(groups[0].states[0])
+    batch, _domain = _build_test_batch(*groups)
+    calls = batch._optimize_draw_list(batch._create_draw_list())
+    uniform_calls = [call for call in calls if isinstance(getattr(call, "__self__", None), state_type)]
+
+    assert len(uniform_calls) == (1 if difference is None else 3)
+    for value in (0.0, 4.0):
+        # Reusing the compiled calls must read the current mapping each frame.
+        uniforms["time"] = value
+        applied_values = []
+        for call in uniform_calls:
+            call(None)
+            applied_values.append(call.__self__.program["time"])
+        expected = [value] if difference is None else [value, 2.0 if difference == "mapping" else value, value]
+        assert applied_values == expected
+
