@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import math
 from ctypes import byref, c_char_p, c_float, c_int32, c_void_p, cast, string_at
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeVar, ClassVar
 
 import pyglet
 import pyglet.image
@@ -13,8 +13,6 @@ from pyglet.font.harfbuzz import get_harfbuzz_shaped_glyphs, get_resource_from_c
 from pyglet.libs.darwin import CFRange, CGFloat, CGPoint, cfnumber_to_number, cocoapy, kCTFontURLAttribute
 
 if TYPE_CHECKING:
-    from enum import Enum
-
     from pyglet.font import FontManager
 
 
@@ -44,7 +42,10 @@ _UIFontWeightMap: tuple[tuple[float, Weight], ...] = (
     (0.62, Weight.BLACK),
 )
 
-def _quartz_font_mapping_to_enum(mapping_tuple: tuple, value: float) -> Enum:
+_EnumT = TypeVar('_EnumT')
+
+
+def _quartz_font_mapping_to_enum(mapping_tuple: tuple[tuple[float, _EnumT], ...], value: float) -> _EnumT:
     """Gets the closest matching value for value."""
     closest = min(mapping_tuple, key=lambda w: abs(w[0] - value))
     return closest[1]
@@ -196,7 +197,7 @@ if harfbuzz_available():
         return blob
 
     # Null callback, so harfbuzz cannot destroy our CGFont.
-    _destroy_callback_null = cast(None, hb_destroy_func_t)
+    _destroy_callback_null = cast(c_void_p(), hb_destroy_func_t)
 
 
 class QuartzGlyphRenderer(GlyphRenderer):
@@ -430,7 +431,8 @@ class QuartzGlyphRenderer(GlyphRenderer):
 
 
 class QuartzFont(Font):
-    glyph_renderer_class: type[GlyphRenderer] = QuartzGlyphRenderer
+    ctFont: c_void_p | None
+    glyph_renderer_class: ClassVar[type[GlyphRenderer]] = QuartzGlyphRenderer
     _loaded_CGFont_table: dict[str, dict[int, tuple[c_void_p, bytes]]] = {}
 
     def __init__(
@@ -512,7 +514,7 @@ class QuartzFont(Font):
         ct_font = c_void_p(final_ft)
         return ct_font
 
-    def _get_hb_face(self) -> None:
+    def _get_hb_face(self) -> c_void_p:
         assert self._cg_font is None
 
         # Create a CGFont from the CTFont for the face.
@@ -532,7 +534,7 @@ class QuartzFont(Font):
         """
         filename = self.filename
         if filename == "Unknown":
-            result = self._lookup_font_with_family_and_traits(self.name, self._traits)
+            result = self._lookup_font_with_family_and_traits(self.name, self._italic)
             if result:
                 _, data = result
             else:
@@ -547,8 +549,8 @@ class QuartzFont(Font):
     def filename(self) -> str:
         descriptor = self._create_font_descriptor(self.name, self._italic, self._weight, self._stretch)
         ref = c_void_p(ct.CTFontDescriptorCopyAttribute(descriptor, kCTFontURLAttribute))
-        if ref:
-            url = cocoapy.ObjCInstance(ref)  # NSURL
+        if ref.value is not None:
+            url = cocoapy.ObjCInstance(ref.value)  # NSURL
             filepath = url.fileSystemRepresentation().decode()
             cf.CFRelease(ref)
             cf.CFRelease(descriptor)
@@ -766,7 +768,7 @@ class QuartzFont(Font):
         cf.CFRelease(attributes)
         cf.CFRelease(line)
         cf.CFRelease(cf_str)
-        return round(width), round(height)
+        return math.ceil(width), math.ceil(height)
 
     @staticmethod
     def _get_font_style_traits(ctFont: c_void_p) -> tuple[Weight, Style, Stretch]:
@@ -775,14 +777,15 @@ class QuartzFont(Font):
         font_style = cfnumber_to_number(c_void_p(cf.CFDictionaryGetValue(traits, cocoapy.kCTFontSlantTrait)))
         font_width = cfnumber_to_number(c_void_p(cf.CFDictionaryGetValue(traits, cocoapy.kCTFontWidthTrait)))
         cf.CFRelease(traits)
-        return (_quartz_font_weight_to_enum(font_weight),
+        return (_quartz_font_weight_to_enum(font_weight or 0.0),
                 Style.ITALIC if font_style != 0 else Style.NORMAL,
-                _quartz_font_stretch_to_enum(font_width))
+                _quartz_font_stretch_to_enum(font_width or 0.0))
 
     def render_glyph_indices(self, indices: list[int]) -> None:
         """Render glyph indices from this font for the HarfBuzz shaping path."""
         self._initialize_renderer()
 
+        assert self.ctFont is not None
         for glyph_index in set(indices):
             if glyph_index not in self.glyphs:
                 glyph = self._glyph_renderer.render_index(self.ctFont, glyph_index)
@@ -800,6 +803,7 @@ class QuartzFont(Font):
         self._initialize_renderer()
 
         missing = set()
+        assert self.ctFont is not None
         for glyph_index in set(indices):
             dict_key = (font_name, glyph_index)
             if dict_key not in self.glyphs:
@@ -813,10 +817,12 @@ class QuartzFont(Font):
 
     def _stroke_font_reference(self, ct_font: c_void_p) -> c_void_p:
         """Return a retained CTFont suitable for deferred stroke rendering."""
+        assert self.ctFont is not None
         if ct_font.value == self.ctFont.value:
             return self.ctFont
 
         font_key = ct_font.value
+        assert font_key is not None
         if font_key not in self._stroke_fallback_fonts:
             self._stroke_fallback_fonts[font_key] = c_void_p(
                 ct.CTFontCreateCopyWithAttributes(ct_font, self.pixel_size, None, None),
@@ -929,6 +935,7 @@ class QuartzFont(Font):
 
         glyphs = []  # glyphs that are committed.
         offsets = []
+        assert self.ctFont is not None
         for c in get_grapheme_clusters(str(text)):
             if c == "\t":
                 c = " "  # noqa: PLW2901
@@ -946,6 +953,7 @@ class QuartzFont(Font):
             # If the character is over 1 in length, add zero length glyphs in its place.
             if len(c) > 1:
                 for _ in range(len(c) - 1):
+                    assert self._zero_glyph is not None
                     glyphs.append(self._zero_glyph)
                     offsets.append(GlyphPosition(0, 0, 0, 0))
 

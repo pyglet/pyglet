@@ -198,7 +198,7 @@ def test_loads_shader_from_test_data(data_loader, opened_files, test_window):
     shader = data_loader.shader('resource_loader_test.vert')
 
     assert_file_closed(opened_files, 'resource_loader_test.vert')
-    assert shader.type == 'vertex'
+    assert shader.shader_type == 'vertex'
     shader.delete()
 
 

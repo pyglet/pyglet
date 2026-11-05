@@ -30,11 +30,10 @@ def _build_filter_string(filetypes: list[tuple[str, str]]) -> str:
 
     for label, exts in filetypes:
         # Normalize to a list
-        if isinstance(exts, str):
-            exts = _split_filetype_patterns(exts)
+        extensions = _split_filetype_patterns(exts)
 
         norm_patterns: list[str] = []
-        for ext in exts:
+        for ext in extensions:
             ext = ext.strip()
             if not ext:
                 continue

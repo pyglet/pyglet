@@ -100,6 +100,28 @@ class VertexListTest(unittest.TestCase):
 
         assert all(not buffer._dirty for buffer in vertex_list.domain.vertex_buffers.buffers)
 
+    def test_vertex_view_uses_requested_storage_and_layout(self):
+        program = pyglet.graphics.api.get_default_shader()
+        view = program.get_vertex_view(pyglet.graphics.VertexLayout(colors="4f"))
+        batch = pyglet.graphics.Batch()
+        layout = pyglet.graphics.VertexLayout(position="3f", colors="4Bn")
+        storage = batch.create_vertex_storage(layouts=[layout])
+        colors = (255, 128, 0, 255) * 3
+
+        vertex_list = view.vertex_list(
+            3,
+            GeometryMode.TRIANGLES,
+            batch=batch,
+            storage=storage,
+            vertex_layout=layout,
+            position=(0, 0, 0) * 3,
+            colors=colors,
+        )
+
+        assert vertex_list.domain.storage is storage
+        assert vertex_list.domain.attribute_meta["colors"].data_type == "B"
+        assert tuple(vertex_list.colors[:]) == colors
+
     def test_separate_storage_expansion_remains_contiguous(self):
         # Make sure expanded storage will be contiguous for separate
         program = pyglet.graphics.api.get_default_shader()

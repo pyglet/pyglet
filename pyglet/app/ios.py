@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+from typing import Any
 
 from pyglet import app
 from pyglet.app.base import EventLoop, PlatformEventLoop, WindowDrawSource
@@ -31,10 +32,10 @@ NSRunLoop = ObjCClass('NSRunLoop')
 CADisplayLink = ObjCClass('CADisplayLink')
 
 
-class _PygletIOSDisplayLinkTarget(NSObject):
+class _PygletIOSDisplayLinkTarget(NSObject):  # type: ignore[valid-type, misc]
 
     @objc_method(b'@' + PyObjectEncoding)
-    def initWithDrawSource_(self, draw_source: IOSDisplayLinkDrawSource) -> ObjCInstance | None:
+    def initWithDrawSource_(self: Any, draw_source: IOSDisplayLinkDrawSource) -> ObjCInstance | None:
         self = ObjCInstance(send_super(self, 'init'))
         if not self:
             return None
@@ -48,6 +49,10 @@ class _PygletIOSDisplayLinkTarget(NSObject):
 
 class IOSDisplayLinkDrawSource(WindowDrawSource):
     """One UIKit display link that paces all pyglet window drawing."""
+
+    _target: ObjCInstance | None
+    _display_link: ObjCInstance | None
+    _event_loop: IOSEventLoop
 
     def __init__(self, event_loop: IOSEventLoop) -> None:
         self._event_loop = event_loop
@@ -98,7 +103,7 @@ class IOSDisplayLinkDrawSource(WindowDrawSource):
         self._last_timestamp, dt = get_display_link_dt(display_link, self._last_timestamp)
         self._event_loop._tick_app(dt)  # noqa: SLF001
 
-class IOSPlatformEventLoop(PlatformEventLoop):
+class IOSPlatformEventLoop(PlatformEventLoop['IOSEventLoop']):
     """Schedules pyglet work from UIKit's already-running main run loop."""
 
     def __init__(self) -> None:
@@ -116,7 +121,7 @@ class IOSPlatformEventLoop(PlatformEventLoop):
     def stop(self) -> None:
         self._is_running.clear()
 
-    def create_window_draw_source(self, event_loop: EventLoop) -> WindowDrawSource:
+    def create_window_draw_source(self, event_loop: IOSEventLoop) -> IOSDisplayLinkDrawSource:
         return IOSDisplayLinkDrawSource(event_loop)
 
 

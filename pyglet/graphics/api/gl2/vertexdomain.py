@@ -57,6 +57,7 @@ from pyglet.graphics.vertexdomain import (
 )
 
 if TYPE_CHECKING:
+    from pyglet.graphics.resource import ShaderProgramKey
     from pyglet.graphics.attributes import Attribute, AttributeFormat, AttributeView
     from pyglet.graphics.shader import ShaderProgram
     from pyglet.customtypes import DataTypes
@@ -73,16 +74,15 @@ _gl_types = {
     'd': GL_DOUBLE,
 }
 
-class GLVertexArrayBinding(VertexArrayBinding):
-    streams: list[GLVertexStream | GLIndexStream]
+class GLVertexArrayBinding(VertexArrayBinding[OpenGLSurfaceContext, 'GLVertexStream | GLIndexStream', None]):
 
-    def __init__(self, ctx: OpenGLSurfaceContext, streams: list[VertexStream | IndexStream],
+    def __init__(self, ctx: OpenGLSurfaceContext, streams: Sequence[GLVertexStream | GLIndexStream],
                  attributes: Mapping[str, Attribute] | None = None) -> None:
         self.shader_attributes = attributes or {}
         super().__init__(ctx, streams)
 
     """GL2 doesn't have a real VAO. This just acts as a container."""
-    def _create_vao(self) -> VertexArrayProtocol | None:
+    def _create_vao(self) -> None:
         return None
 
     def _link(self) -> None:
@@ -120,7 +120,7 @@ class IndexedVertexList(BaseIndexedVertexList):
     ...
 
 
-class GLVertexStream(VertexStream):
+class GLVertexStream(VertexStream[OpenGLSurfaceContext, GLAttribute]):
     _ctx: OpenGLSurfaceContext
 
     def __init__(self, ctx: OpenGLSurfaceContext, initial_size: int, attrs: Sequence[AttributeFormat],
@@ -175,7 +175,7 @@ class GLVertexStream(VertexStream):
             self._disable_attribute(shader_attribute.location)
 
 
-class GLIndexStream(IndexStream):
+class GLIndexStream(IndexStream[OpenGLSurfaceContext, GL2IndexedBufferObject]):
     index_element_size: int
     gl_type: int
 
@@ -203,12 +203,16 @@ class GLIndexStream(IndexStream):
         self.buffer.unbind()
 
 
-class VertexDomain(BaseVertexDomain):
+class VertexDomain(BaseVertexDomain[OpenGLSurfaceContext, VertexList]):
     """Management of a set of vertex lists.
 
     Construction of a vertex domain is usually done with the
     :py:func:`create_domain` function.
     """
+    vao: GLVertexArrayBinding
+    _streams: Sequence[GLVertexStream | GLIndexStream]
+    _vertex_input_bindings: dict[ShaderProgramKey, GLVertexArrayBinding]
+
     def _has_multi_draw_extension(self, ctx: OpenGLSurfaceContext) -> bool:
         return ctx.info.have_extension("GL_EXT_multi_draw_arrays")
 
@@ -232,7 +236,7 @@ class VertexDomain(BaseVertexDomain):
         self._vertex_input_bindings[program.key] = binding
         return binding
 
-    def _create_streams(self, size: int) -> list[VertexStream | IndexStream]:
+    def _create_streams(self, size: int) -> list[GLVertexStream | GLIndexStream]:
         self.vertex_buffers = GLVertexStream(self._context, size, self.per_vertex)
         return [self.vertex_buffers]
 
@@ -246,9 +250,9 @@ class VertexDomain(BaseVertexDomain):
 
         if self._supports_multi_draw:
             primcount = len(regions)
-            starts = (GLint * primcount)(*start_list)
-            sizes = (GLsizei * primcount)(*size_list)
-            self._context.glMultiDrawArrays(mode, starts, sizes, primcount)
+            gl_starts = (GLint * primcount)(*start_list)
+            gl_sizes = (GLsizei * primcount)(*size_list)
+            self._context.glMultiDrawArrays(mode, gl_starts, gl_sizes, primcount)
         else:
             for start, size in zip(start_list, size_list):
                 self._context.glDrawArrays(mode, start, size)
@@ -277,9 +281,9 @@ class VertexDomain(BaseVertexDomain):
             # Common case
             self._context.glDrawArrays(mode, starts[0], sizes[0])
         else:
-            starts = (GLint * primcount)(*starts)
-            sizes = (GLsizei * primcount)(*sizes)
-            self._context.glMultiDrawArrays(mode, starts, sizes, primcount)
+            gl_starts = (GLint * primcount)(*starts)
+            gl_sizes = (GLsizei * primcount)(*sizes)
+            self._context.glMultiDrawArrays(mode, gl_starts, gl_sizes, primcount)
 
         self.vao.unbind()
 
@@ -310,7 +314,7 @@ class VertexDomain(BaseVertexDomain):
 
 
 
-class IndexedVertexDomain(BaseIndexedVertexDomain):
+class IndexedVertexDomain(BaseIndexedVertexDomain[OpenGLSurfaceContext, IndexedVertexList]):
     """Management of a set of indexed vertex lists.
 
     Construction of an indexed vertex domain is usually done with the
@@ -319,6 +323,9 @@ class IndexedVertexDomain(BaseIndexedVertexDomain):
 
     _vertex_class = IndexedVertexList
     index_stream: GLIndexStream
+    vao: GLVertexArrayBinding
+    _streams: Sequence[GLVertexStream | GLIndexStream]
+    _vertex_input_bindings: dict[ShaderProgramKey, GLVertexArrayBinding]
 
     def _create_vertex_class(self) -> type:
         # Make a custom VertexList class w/ properties for each attribute in the ShaderProgram:
@@ -345,7 +352,7 @@ class IndexedVertexDomain(BaseIndexedVertexDomain):
         self._vertex_input_bindings[program.key] = binding
         return binding
 
-    def _create_streams(self, size: int) -> list[VertexStream | IndexStream]:
+    def _create_streams(self, size: int) -> list[GLVertexStream | GLIndexStream]:
         self.vertex_buffers = GLVertexStream(self._context, size, self.per_vertex)
         self.index_stream = GLIndexStream(self._context, self.index_type, size)
         return [self.vertex_buffers, self.index_stream]
@@ -361,9 +368,9 @@ class IndexedVertexDomain(BaseIndexedVertexDomain):
 
         if self._supports_multi_draw:
             starts = [s * self.index_stream.index_element_size for s in start_list]
-            starts = (ctypes.POINTER(GLvoid) * primcount)(*(GLintptr * primcount)(*starts))
-            sizes = (GLsizei * primcount)(*size_list)
-            self._context.glMultiDrawElements(mode, sizes, self.index_stream.gl_type, starts, primcount)
+            gl_starts = (ctypes.POINTER(GLvoid) * primcount)(*(GLintptr * primcount)(*starts))
+            gl_sizes = (GLsizei * primcount)(*size_list)
+            self._context.glMultiDrawElements(mode, gl_sizes, self.index_stream.gl_type, gl_starts, primcount)
         else:
             for start, size in zip(start_list, size_list):
                 self._context.glDrawElements(

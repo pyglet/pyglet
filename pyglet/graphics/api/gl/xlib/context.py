@@ -13,14 +13,15 @@ from pyglet.libs.linux.glx import glx
 
 if TYPE_CHECKING:
     from pyglet.config.gl.x11 import XlibGLSurfaceConfig
-    from pyglet.graphics.api.gl import OpenGLBackend
+    from pyglet.graphics.api.gl.global_opengl import OpenGLBackend
     from pyglet.window.xlib import XlibWindow
     from pyglet.libs.linux.x11.xlib import Display
+    from ctypes import _Pointer
 
 
-class XlibContext(OpenGLSurfaceContext):
-    x_display: Display
-    glx_context: glx.GLXContext
+class XlibContext(OpenGLSurfaceContext['XlibWindow']):
+    x_display: _Pointer[Display] | None
+    glx_context: glx.GLXContext | None
     glx_window: glx.GLXWindow | None
     _use_video_sync: bool
     _vsync: bool
@@ -102,10 +103,10 @@ class XlibContext(OpenGLSurfaceContext):
         if flags:
             attribs.extend([glx.GLX_CONTEXT_FLAGS_ARB, flags])
         attribs.append(0)
-        attribs = (c_int * len(attribs))(*attribs)
+        attrib_array = (c_int * len(attribs))(*attribs)
 
         return glx.glXCreateContextAttribsARB(self.window._x_display, self.config.fbconfig,  # noqa: SLF001
-                                               share_context, True, attribs)
+                                               share_context, True, attrib_array)
 
     def attach(self, window: XlibWindow) -> None:
         if self.attached:

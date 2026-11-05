@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Sequence, cast
+from typing import TYPE_CHECKING, Any, Sequence, cast
 
 import js  # noqa: F821
 
@@ -19,12 +19,14 @@ from pyglet.graphics.shader import Shader, ShaderProgram
 if TYPE_CHECKING:
 
     from pyglet.config import SurfaceConfig
+    from pyglet.graphics.api.webgl.gl_info import WebGLInfo
     from pyglet.graphics.shader import ShaderType
     from pyglet.window import Window
 
 
 
-class WebGLBackend(BackendGlobalObject):
+class WebGLBackend(BackendGlobalObject['pyglet.config.WebGLUserConfig']):
+    initialized: bool
     current_context: WebGL2SurfaceContext | NullContext
     _have_context: bool = False
 
@@ -43,8 +45,8 @@ class WebGLBackend(BackendGlobalObject):
         return WebGL2SurfaceContext(self, config._window, config, shared)
 
     def get_surface_context(self, window: Window, config: SurfaceConfig,
-                            shared: WebGL2SurfaceContext | None = None) -> SurfaceContext:
-        context = self.windows[window] = self.create_context(config, shared)
+                            shared: SurfaceContext | None = None) -> WebGL2SurfaceContext:
+        context = self.windows[window] = self.create_context(config, cast('WebGL2SurfaceContext | None', shared))
         self.current_context = context
         self._have_context = True
         return context
@@ -64,14 +66,14 @@ class WebGLBackend(BackendGlobalObject):
         """
         return [pyglet.config.WebGLUserConfig()]
 
-    def get_config(self, **kwargs: float | str | None) -> pyglet.config.WebGLUserConfig:
+    def get_config(self, **kwargs: Any) -> pyglet.config.WebGLUserConfig:
         return pyglet.config.WebGLUserConfig(**kwargs)
 
     @property
-    def info(self):
+    def info(self) -> WebGLInfo:
         return self.current_context.info
 
-    def get_info(self):
+    def get_info(self) -> WebGLInfo:
         return self.info
 
     def have_extension(self, extension_name: str) -> bool:
@@ -138,5 +140,5 @@ class WebGLBackend(BackendGlobalObject):
 
         return self.current_context.default_batch
 
-    def set_viewport(self, window, x: int, y: int, width: int, height: int) -> None:
+    def set_viewport(self, window: Window, x: int, y: int, width: int, height: int) -> None:
         self.current_context.gl.viewport(x, y, width, height)

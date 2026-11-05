@@ -12,7 +12,7 @@ except ImportError:
     raise ImportError('Pyodide not available.')
 
 if TYPE_CHECKING:
-    from pyglet.media import Player
+    from pyglet.media import AudioPlayer as Player
     from pyglet.media.codecs.webaudio_pyodide import JavascriptWebAudioSource
 
 
@@ -148,7 +148,7 @@ class PyodideJSAudioPlayer(AbstractAudioPlayer):
         self._pseudo_play_cursor = 0
         self._pseudo_write_cursor = 0
         self._playing = False
-        self._start_position = 0
+        self._start_position = 0.0
 
         self._exhausted = False
         self._dispatched_on_eos = False
@@ -211,7 +211,7 @@ class PyodideJSAudioPlayer(AbstractAudioPlayer):
         if self._playing:
             self._source_player.start(position)
 
-    def get_play_cursor(self) -> float:
+    def get_play_cursor(self) -> int:
         return self._pseudo_play_cursor
 
     def set_volume(self, volume: float) -> None:

@@ -18,12 +18,12 @@ if TYPE_CHECKING:
     from pyglet.window.win32 import Win32Window
 
 
-class _Win32Context(OpenGLSurfaceContext):
+class _Win32Context(OpenGLSurfaceContext['Win32Window']):
     def __init__(self,
                  opengl_backend: OpenGLBackend,
                  window: Win32Window,
-                 config: GLSurfaceConfig,
-                 share: Win32Context | Win32ARBContext) -> None:
+                 config: GLSurfaceConfig | GLLegacyConfig,
+                 share: Win32Context | Win32ARBContext | None) -> None:
         super().__init__(opengl_backend, window, config,
                          platform_info=WGLInfo(), context_share=share, platform_func_class=WGLFunctions)
 
@@ -42,18 +42,18 @@ class _Win32Context(OpenGLSurfaceContext):
         _gdi32.SwapBuffers(self.window._dc)  # noqa: SLF001
 
     def get_vsync(self) -> bool:
-        if self._info.have_extension('WGL_EXT_swap_control'):
+        if self.platform_func is not None and self._info.have_extension('WGL_EXT_swap_control'):
             return bool(self.platform_func.wglGetSwapIntervalEXT())
         return False
 
     def set_vsync(self, vsync: bool) -> None:
-        if self._info.have_extension('WGL_EXT_swap_control'):
+        if self.platform_func is not None and self._info.have_extension('WGL_EXT_swap_control'):
             self.platform_func.wglSwapIntervalEXT(int(vsync))
 
 
 class Win32Context(_Win32Context):
     config: GLLegacyConfig
-    context_share: Win32Context | NullContext
+    context_share: Win32Context | None
 
     def attach(self, window: Win32Window) -> None:
         if not self._context:
@@ -74,15 +74,16 @@ class Win32Context(_Win32Context):
 
 class Win32ARBContext(_Win32Context):
     config: GLSurfaceConfig
-    context_share: Win32ARBContext | NullContext
+    context_share: Win32ARBContext | None
 
     def attach(self, window: Win32Window) -> None:
         share = self.context_share
+        share_handle = None
         if share:
             if not share.window:
                 msg = 'Share context has no window.'
                 raise RuntimeError(msg)
-            share = share._context  # noqa: SLF001
+            share_handle = share._context  # noqa: SLF001
 
         attribs = []
         user_config = self.config.config
@@ -100,12 +101,10 @@ class Win32ARBContext(_Win32Context):
         if flags:
             attribs.extend([wgl.WGL_CONTEXT_FLAGS_ARB, flags])
         attribs.append(0)
-        attribs = (c_int * len(attribs))(*attribs)
+        attrib_array = (c_int * len(attribs))(*attribs)
 
         self.config.apply_format()
 
         from pyglet.config.gl.windows import _global_wgl
-        # If this is a NullContext, explicity conver to None for the ctypes call:
-        share = None if isinstance(share, NullContext) else share
-        self._context = _global_wgl.funcs.wglCreateContextAttribsARB(window.dc, share, attribs)
+        self._context = _global_wgl.funcs.wglCreateContextAttribsARB(window.dc, share_handle, attrib_array)
         super().attach(window)

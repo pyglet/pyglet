@@ -123,6 +123,9 @@ class LayoutCell(Generic[StyleT]):
 
     @content.setter
     def content(self, value: LayoutContent | None) -> None:
+        self._set_content(value)
+
+    def _set_content(self, value: LayoutContent | None) -> None:
         if value is self._content:
             raise ValueError("Layout cell already contains this object.")
         if value is not None:

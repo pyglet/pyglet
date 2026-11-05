@@ -2,16 +2,22 @@ from __future__ import annotations
 
 import re
 import warnings
-from typing import Literal
+from collections.abc import Awaitable
+from typing import TYPE_CHECKING, Literal, Protocol, cast
 
 import js  # noqa: F821
 from js import console, navigator  # noqa: F821
 from pyodide.ffi import create_proxy  # noqa: F821
 
 import pyglet
-from pyglet.input import Button, Device
-from pyglet.input.base import AbsoluteAxis, Button, Controller, ControllerManager, Control
+from pyglet.input.base import AbsoluteAxis, Button, Controller, ControllerManager, Control, Device, Relation
 from pyglet.math import Vec2
+
+if TYPE_CHECKING:
+    from pyodide.ffi import JsProxy
+
+    from pyglet.display.base import Display
+
 
 class TriggerButton(Control):
     """A combination of a Button and an Axis.
@@ -21,13 +27,16 @@ class TriggerButton(Control):
 
     When it reaches the maximum value, it will dispatch ``on_press``, and ``on_release`` on the minimum value.
     """
+    min: float
+    max: float
+
     def __init__(self, name: str, minimum: float, maximum: float, raw_name: None | str = None, inverted: bool = False) -> None:
         super().__init__(name, raw_name, inverted)
         self.min = minimum
         self.max = maximum
 
     @property
-    def value(self) -> float:
+    def value(self) -> float | None:
         return self._value
 
     @value.setter
@@ -69,10 +78,7 @@ _standard_axis_map = {
     3: "righty",
 }
 
-# It's something, but not sure how to type it.
-JSPromise = None
-
-class _GamepadActuator:
+class _GamepadActuator(Protocol):
     """Typing for Javascript Gamepad Actuator object."""
     effects: list[str]
 
@@ -83,23 +89,26 @@ class _GamepadActuator:
                    strongMagnitude: float = 0,
                    weakMagnitude: float = 0,
                    leftTrigger: float = 0,
-                   rightTrigger: float = 0) -> JSPromise:
+                   rightTrigger: float = 0) -> Awaitable[str]:
         """Play a specific vibration effect."""
+        ...
 
-    def pulse(self, value: float, duration: int) -> JSPromise:
+    def pulse(self, value: float, duration: int) -> Awaitable[bool]:
         """Pulse at a certain intensity for a specified duration."""
+        ...
 
-    def reset(self) -> None:
+    def reset(self) -> Awaitable[str]:
         """Stop all effects."""
+        ...
 
 
-class _GamepadButton:
+class _GamepadButton(Protocol):
     """Typing for Javascript GamepadButton object."""
     pressed: bool
     touched: bool  # Some browsers support this, otherwise it may always be False
     value: float
 
-class _Gamepad:
+class _Gamepad(Protocol):
     """Typing for Javascript Gamepad object."""
     id: str
     index: int
@@ -111,12 +120,30 @@ class _Gamepad:
     vibrationActuator: _GamepadActuator | None
 
 
+class _GamepadEvent(Protocol):
+    gamepad: _Gamepad
+
+
+class _GamepadList(Protocol):
+    length: int
+
+    def __getitem__(self, index: int) -> _Gamepad | None: ...
+
+
 class JavascriptGamepad(Device):
     """Small wrapper over the Gamepad device.
 
     Do not rely on the gamepad object, as it gets replaced every frame in an update.
     """
-    controls: dict[str, Button | AbsoluteAxis]
+    controls: dict[str, Button | AbsoluteAxis | TriggerButton]
+    index: int
+    gamepad: _Gamepad
+    vendor_id: int
+    product_id: int
+    device_name: str
+    mapping_name: str
+    vibration: bool
+    guid: str
 
     def __init__(self, gamepad: _Gamepad) -> None:
         super().__init__(None, f"{gamepad.id}")
@@ -200,7 +227,9 @@ class JavascriptGamepad(Device):
 class GamepadController(Controller):
     """Javascript Gamepad Controller object that handles buttons and controls."""
     device: JavascriptGamepad
-    def __init__(self, device: JavascriptGamepad, mapping: dict) -> None:
+    _last_updated: float
+
+    def __init__(self, device: JavascriptGamepad, mapping: dict[str, str | Relation]) -> None:
         super().__init__(device, mapping)
         self._last_updated = 0.0
 
@@ -211,12 +240,10 @@ class GamepadController(Controller):
     def _initialize_controls(self) -> None:
         for button_name in _standard_button_map.values():
             control = self.device.controls[button_name]
-            self._button_controls.append(control)
             self._add_button(control, button_name)
 
         for axis_name in _standard_axis_map.values():
             control = self.device.controls[axis_name]
-            self._axis_controls.append(control)
             self._add_axis(control, axis_name)
 
     def update(self, gamepad: _Gamepad) -> None:
@@ -243,74 +270,74 @@ class GamepadController(Controller):
     def _add_axis(self, control: Control, name: str) -> None:
         if name == "lefttrigger":
             @control.event
-            def on_change(value):
+            def on_change(value: float) -> None:
                 setattr(self, name, value)
                 self.dispatch_event('on_lefttrigger_motion', self, value)
 
             @control.event
-            def on_press():
+            def on_press() -> None:
                 self.dispatch_event('on_button_press', self, name)
 
             @control.event
-            def on_release():
+            def on_release() -> None:
                 self.dispatch_event('on_button_release', self, name)
 
         if name == "righttrigger":
             @control.event
-            def on_change(value):
+            def on_change(value: float) -> None:
                 setattr(self, name, value)
                 self.dispatch_event('on_righttrigger_motion', self, value)
 
             @control.event
-            def on_press():
+            def on_press() -> None:
                 self.dispatch_event('on_button_press', self, name)
 
             @control.event
-            def on_release():
+            def on_release() -> None:
                 self.dispatch_event('on_button_release', self, name)
 
         elif name in ("leftx", "lefty"):
             @control.event
-            def on_change(value):
+            def on_change(value: float) -> None:
                 normalized_value = value
-                setattr(self, name, normalized_value)
-                self.dispatch_event('on_leftstick_motion', self, Vec2(self.leftx, -self.lefty))
+                setattr(self, f"_{name}", normalized_value)
+                self.dispatch_event('on_leftstick_motion', self, Vec2(self._leftx, -self._lefty))
 
         elif name in ("rightx", "righty"):
             @control.event
-            def on_change(value):
+            def on_change(value: float) -> None:
                 normalized_value = value
-                setattr(self, name, normalized_value)
-                self.dispatch_event('on_rightstick_motion', self, Vec2(self.rightx, -self.righty))
+                setattr(self, f"_{name}", normalized_value)
+                self.dispatch_event('on_rightstick_motion', self, Vec2(self._rightx, -self._righty))
 
     def _add_button(self, control: Control, name: str) -> None:
 
         if name in ("dpleft", "dpright", "dpup", "dpdown"):
             @control.event
-            def on_change(value):
+            def on_change(value: float) -> None:
                 target, bias = {
-                    'dpleft': ('dpadx', -1.0), 'dpright': ('dpadx', 1.0),
-                    'dpdown': ('dpady', -1.0), 'dpup': ('dpady', 1.0)
+                    'dpleft': ('_dpadx', -1.0), 'dpright': ('_dpadx', 1.0),
+                    'dpdown': ('_dpady', -1.0), 'dpup': ('_dpady', 1.0)
                 }[name]
                 setattr(self, target, bias * value)
-                self.dispatch_event('on_dpad_motion', self, Vec2(self.dpadx, self.dpady))
+                self.dispatch_event('on_dpad_motion', self, Vec2(self._dpadx, self._dpady))
         else:
             @control.event
-            def on_change(value):
+            def on_change(value: float) -> None:
                 setattr(self, name, value)
 
             @control.event
-            def on_press():
+            def on_press() -> None:
                 self.dispatch_event('on_button_press', self, name)
 
             @control.event
-            def on_release():
+            def on_release() -> None:
                 self.dispatch_event('on_button_release', self, name)
 
     def rumble_play_weak(self, strength: float=1.0, duration: float=0.5) -> None:
-        if self.device.vibration is True:
+        if self.device.vibration and (actuator := self.gamepad_device.vibrationActuator) is not None:
             strength_clamp = int(max(min(1.0, strength), 0))
-            self.gamepad_device.vibrationActuator.playEffect(
+            actuator.playEffect(
                 "dual-rumble",
                 startDelay=0,
                 duration=int(duration*1000),
@@ -318,9 +345,9 @@ class GamepadController(Controller):
             )
 
     def rumble_play_strong(self, strength: float=1.0, duration: float=0.5) -> None:
-        if self.device.vibration is True:
+        if self.device.vibration and (actuator := self.gamepad_device.vibrationActuator) is not None:
             strength_clamp = int(max(min(1.0, strength), 0))
-            self.gamepad_device.vibrationActuator.playEffect(
+            actuator.playEffect(
                 "dual-rumble",
                 startDelay=0,
                 duration=int(duration*1000),
@@ -328,20 +355,23 @@ class GamepadController(Controller):
             )
 
     def rumble_stop_weak(self) -> None:
-        if self.device.vibration is True:
-            self.gamepad_device.vibrationActuator.reset()
+        if self.device.vibration and (actuator := self.gamepad_device.vibrationActuator) is not None:
+            actuator.reset()
 
     def rumble_stop_strong(self) -> None:
-        if self.device.vibration is True:
-            self.gamepad_device.vibrationActuator.reset()
+        if self.device.vibration and (actuator := self.gamepad_device.vibrationActuator) is not None:
+            actuator.reset()
 
 
 class JavascriptGamepadManager(ControllerManager):
     """Interface between Javascript/Pyodide and Pyglet to manage controllers."""
 
     _controllers: dict[int, GamepadController]
+    _connected: set[int]
+    _proxy_connect: JsProxy
+    _proxy_disconnect: JsProxy
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._controllers = {}
         if hasattr(navigator, "getGamepads"):
             console.log("Gamepad API supported")
@@ -362,20 +392,20 @@ class JavascriptGamepadManager(ControllerManager):
 
         pyglet.clock.schedule_interval_soft(self._query_pads, 1/60.0)
 
-    def on_gamepad_connected(self, event) -> None:
+    def on_gamepad_connected(self, event: _GamepadEvent) -> None:
         console.log(f"Gamepad {event.gamepad.index} connected: {event.gamepad.id}. | Buttons: {len(event.gamepad.buttons)}, | Axis: {len(event.gamepad.axes)}")
         wrapper = JavascriptGamepad(event.gamepad)
         controller = GamepadController(wrapper, {"name": wrapper.device_name, "guid": wrapper.get_guid() })
         self._controllers[event.gamepad.index] = controller
         self.dispatch_event('on_connect', controller)
 
-    def on_gamepad_disconnected(self, event) -> None:
+    def on_gamepad_disconnected(self, event: _GamepadEvent) -> None:
         console.log(f"Gamepad disconnected: {event.gamepad.id}")
         if event.gamepad.index in self._controllers:
             del self._controllers[event.gamepad.index]
 
     def _query_pads(self, _dt: float) -> None:
-        gamepads = navigator.getGamepads()
+        gamepads = cast(_GamepadList, navigator.getGamepads())
 
         for i in range(gamepads.length):
             gamepad = gamepads[i]
@@ -384,14 +414,14 @@ class JavascriptGamepadManager(ControllerManager):
 
     @property
     def maximum_controllers(self) -> int:
-        gamepads = navigator.getGamepads()
+        gamepads = cast(_GamepadList, navigator.getGamepads())
         return gamepads.length
 
-    def get_devices(self):
+    def get_devices(self) -> list[Device]:
         return []
 
-    def get_controllers(self):
+    def get_controllers(self) -> list[Controller]:
         return list(self._controllers.values())
 
-def get_controllers(display=None):
+def get_controllers(display: Display | None = None) -> list[GamepadController]:
     return []

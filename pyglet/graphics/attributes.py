@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 DataTypeTuple = ('?', 'f', 'd', 'i', 'I', 'h', 'H', 'b', 'B', 'q', 'Q')
 _vertex_format_pattern = re.compile(r"(?P<components>[1-4])(?P<data_type>[?fihHbBIqdQ])"
                                    r"(?P<normalized>n?)(?:/(?P<divisor>[0-9]+))?")
-_data_type_to_ctype = {
+_data_type_to_ctype: dict[str, CType] = {
     '?': ctypes.c_bool, 'b': ctypes.c_byte, 'B': ctypes.c_ubyte,
     'h': ctypes.c_short, 'H': ctypes.c_ushort, 'i': ctypes.c_int,
     'I': ctypes.c_uint, 'f': ctypes.c_float, 'd': ctypes.c_double,

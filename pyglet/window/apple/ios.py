@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Sequence, Any
 
 import pyglet
 from pyglet.enums import GraphicsAPI
@@ -18,8 +18,8 @@ from pyglet.libs.darwin.cocoapy import (
 from pyglet.window import BaseWindow
 
 if TYPE_CHECKING:
-    from pyglet.display.base import Screen
-    from pyglet.graphics.api.base import SurfaceContext
+    from pyglet.display.ios import IOSScreen
+    from pyglet.graphics.api.gl.ios.context import IOSContext
 
 
 UIWindow = ObjCClass('UIWindow')
@@ -30,7 +30,7 @@ CAMetalLayer = ObjCClass('CAMetalLayer')
 CAEAGLLayer = ObjCClass('CAEAGLLayer')
 
 
-class PygletIOSView(UIView):
+class PygletIOSView(UIView):  # type: ignore[valid-type, misc]
 
     @objc_classmethod(b'@')
     def layerClass(cls) -> ObjCClass:
@@ -41,7 +41,7 @@ class PygletIOSView(UIView):
                 ) else CAMetalLayer
 
     @objc_method(b'@' + NSRectEncoding + PyObjectEncoding)
-    def initWithFrame_iosWindow_(self, frame: CGRect, window: IOSWindow) -> ObjCInstance | None:
+    def initWithFrame_iosWindow_(self: Any, frame: CGRect, window: IOSWindow) -> ObjCInstance | None:
         self = ObjCInstance(send_super(self, 'initWithFrame:', frame, argtypes=[CGRect]))
         if not self:
             return None
@@ -54,7 +54,7 @@ class PygletIOSView(UIView):
         send_super(self, 'layoutSubviews')
         self._window._view_did_resize()
 
-class IOSWindow(BaseWindow):
+class IOSWindow(BaseWindow['IOSScreen']):
     """A UIKit-backed window.
 
     A UIKit window is always full screen. UIKit determines the visible size
@@ -68,7 +68,7 @@ class IOSWindow(BaseWindow):
        * Exclusive behavior, such as exclusive mouse and keyboard.
     """
 
-    context: SurfaceContext
+    context: IOSContext
     _uiwindow: ObjCInstance | None = None
     _uiview: ObjCInstance | None = None
     _view_controller: ObjCInstance | None = None
@@ -134,7 +134,7 @@ class IOSWindow(BaseWindow):
     def get_size(self) -> tuple[int, int]:
         return self._width, self._height
 
-    def get_current_screen(self) -> Screen:
+    def get_current_screen(self) -> IOSScreen:
         """Return the main screen used by this UIKit window."""
         return self._screen
 

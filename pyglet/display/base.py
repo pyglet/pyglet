@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 import abc
-from typing import TYPE_CHECKING, Literal, Sequence
+from typing import TYPE_CHECKING, Generic, Literal, Sequence
 
 from pyglet import app, display
+from pyglet.customtypes import DisplayT, ScreenT
 
 if TYPE_CHECKING:
     from pyglet.window import BaseWindow
 
 
-class Display:
+class Display(Generic[ScreenT]):
     """A display device supporting one or more screens."""
 
     name: str | None = None
@@ -37,7 +38,7 @@ class Display:
         """
         display._displays.add(self)  # type: ignore[attr-defined]  # noqa: SLF001
 
-    def get_screens(self) -> list[Screen]:
+    def get_screens(self) -> list[ScreenT]:
         """Get the available screens.
 
         A typical multi-monitor workstation comprises one :class:`Display`
@@ -51,7 +52,7 @@ class Display:
         """
         raise NotImplementedError('abstract')
 
-    def get_default_screen(self) -> Screen:
+    def get_default_screen(self) -> ScreenT:
         """Get the default (primary) screen as specified by the user's operating system preferences."""
         screens = self.get_screens()
         for screen in screens:
@@ -66,7 +67,7 @@ class Display:
         return [win for win in app.windows if win.display is self]
 
 
-class Screen(abc.ABC):
+class Screen(abc.ABC, Generic[DisplayT]):
     """A virtual monitor that supports fullscreen windows.
 
     Screens typically map onto a physical display such as a
@@ -84,9 +85,11 @@ class Screen(abc.ABC):
     to obtain an instance of this class.
     """
 
-    def __init__(self, display: Display, x: int, y: int, width: int, height: int) -> None:
+    display: DisplayT
+    """Display this screen belongs to."""
+
+    def __init__(self, display: DisplayT, x: int, y: int, width: int, height: int) -> None:
         self.display = display
-        """Display this screen belongs to."""
         self.x = x
         """Left edge of the screen on the virtual desktop."""
         self.y = y

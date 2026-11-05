@@ -83,6 +83,52 @@ class PlayerTestCase(unittest.TestCase):
         self._clock_patcher.stop()
         self._texture_patcher.stop()
 
+    def test_video_position_defaults_to_origin(self):
+        self.assertEqual(self.video_player.position, (0, 0, 0))
+
+    def test_video_position_updates_sprite_including_depth(self):
+        sprite = self.video_player._sprite = MagicMock()
+        position = (10.5, 20.5, -3.5)
+
+        self.video_player.position = position
+
+        self.assertEqual(self.video_player.position, position)
+        self.assertEqual(sprite.position, position)
+
+    def test_video_sprite_created_at_stored_position(self):
+        self.video_player.position = (10.5, 20.5, -3.5)
+        self.video_player._texture = self.mock_texture
+
+        with mock.patch('pyglet.sprite.Sprite') as sprite_class:
+            VideoPlayer._create_sprite(self.video_player)
+
+        sprite_class.assert_called_once_with(
+            self.mock_texture, x=10.5, y=20.5, z=-3.5, batch=self.video_player.batch)
+        self.assertIs(self.video_player._sprite, sprite_class.return_value)
+
+    def test_video_xy_position_preserves_depth(self):
+        sprite = self.video_player._sprite = MagicMock()
+        self.video_player.position = (10.5, 20.5, -3.5)
+
+        self.video_player.position = (30.5, 40.5)
+
+        self.assertEqual(self.video_player.position, (30.5, 40.5, -3.5))
+        self.assertEqual(sprite.position, (30.5, 40.5, -3.5))
+
+    def test_video_xy_position_preserves_default_depth_before_sprite_creation(self):
+        self.video_player.position = (10.5, 20.5)
+
+        self.assertEqual(self.video_player.position, (10.5, 20.5, 0))
+
+    def test_video_position_can_reset_depth_to_zero(self):
+        sprite = self.video_player._sprite = MagicMock()
+        self.video_player.position = (10.5, 20.5, -3.5)
+
+        self.video_player.position = (30.5, 40.5, 0)
+
+        self.assertEqual(self.video_player.position, (30.5, 40.5, 0))
+        self.assertEqual(sprite.position, (30.5, 40.5, 0))
+
     def reset_mocks(self):
         # These mocks will recursively reset their children
         self.mock_get_audio_driver.reset_mock()

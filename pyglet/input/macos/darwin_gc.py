@@ -4,18 +4,21 @@ import warnings
 import weakref
 from ctypes import c_void_p, byref
 from enum import Enum, auto
-from typing import Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 import pyglet
 import pyglet.lib
 from pyglet.event import EventDispatcher
 from pyglet.libs.darwin import ObjCInstance, send_super, \
     AutoReleasePool, ns_to_py, objc_method, PyObjectEncoding
-from pyglet.libs.darwin.cocoapy.runtime import get_callback_block
+from pyglet.libs.darwin.cocoapy.runtime import ObjCBlock, get_callback_block
 
 from pyglet.input.base import Device, Control, Controller, Button, AbsoluteAxis, ControllerManager, Sign
 
 from pyglet.libs.darwin import ObjCClass, get_selector
+
+if TYPE_CHECKING:
+    from pyglet.display.base import Display
 
 NSNotification = ObjCClass('NSNotification')
 NSNotificationCenter = ObjCClass('NSNotificationCenter')
@@ -27,20 +30,82 @@ GCController = ObjCClass("GCController")
 NSArray = ObjCClass('NSArray')
 
 
+class _GCDeviceBattery(Protocol):
+    def batteryLevel(self) -> float: ...
+
+    def batteryState(self) -> int: ...
+
+
+class _GCColor(Protocol):
+    def red(self) -> float: ...
+
+    def green(self) -> float: ...
+
+    def blue(self) -> float: ...
+
+
+class _GCDeviceLight(Protocol):
+    def color(self) -> _GCColor: ...
+
+    def setColor_(self, color: _GCColor) -> None: ...
+
+
+class _CHHapticPatternPlayer(Protocol):
+    def retain(self) -> _CHHapticPatternPlayer: ...
+
+    def release(self) -> None: ...
+
+    def sendParameters_atTime_error_(self, parameters: ObjCInstance, time: float, error: Any) -> bool: ...
+
+    def startAtTime_error_(self, time: float, error: Any) -> bool: ...
+
+    def stopAtTime_error_(self, time: float, error: Any) -> bool: ...
+
+    def cancelAndReturnError_(self, error: Any) -> bool: ...
+
+
+class _CHHapticEngine(Protocol):
+    def retain(self) -> _CHHapticEngine: ...
+
+    def release(self) -> None: ...
+
+    def createPlayerWithPattern_error_(self, pattern: ObjCInstance, error: Any) -> _CHHapticPatternPlayer | None: ...
+
+    def startAndReturnError_(self, error: Any) -> bool: ...
+
+    def stopWithCompletionHandler_(self, handler: ObjCBlock | None) -> None: ...
+
+
+class _GCDeviceHaptics(Protocol):
+    def supportedLocalities(self) -> ObjCInstance: ...
+
+    def createEngineWithLocality_(self, locality: c_void_p) -> _CHHapticEngine | None: ...
+
+
+class _GCPhysicalInputProfile(Protocol):
+    def buttons(self) -> ObjCInstance: ...
+
+    def axes(self) -> ObjCInstance: ...
+
+    def dpads(self) -> ObjCInstance: ...
+
+
 class _GCController(Protocol):
     """Just a type hint to better understand the controller API's"""
 
     def playerIndex(self) -> int: ...
 
-    def vendorName(self) -> str: ...
+    def vendorName(self) -> ObjCInstance: ...
 
-    def battery(self): ...
+    def productCategory(self) -> ObjCInstance: ...
 
-    def haptics(self): ...
+    def battery(self) -> _GCDeviceBattery | None: ...
 
-    def light(self): ...
+    def haptics(self) -> _GCDeviceHaptics | None: ...
 
-    def physicalInputProfile(self): ...
+    def light(self) -> _GCDeviceLight | None: ...
+
+    def physicalInputProfile(self) -> _GCPhysicalInputProfile: ...
 
 
 GCControllerDidConnectNotification = c_void_p.in_dll(gc, 'GCControllerDidConnectNotification')
@@ -149,7 +214,14 @@ _dpads_mapping = {
 
 
 class HapticEngine:
-    def __init__(self, name: str, engine):
+    name: c_void_p
+    engine: _CHHapticEngine | None
+    _player: _CHHapticPatternPlayer | None
+    is_playing: bool
+    error: c_void_p
+    event: ObjCInstance
+
+    def __init__(self, name: c_void_p, engine: _CHHapticEngine) -> None:
         self.name = name
         self.engine = engine
 
@@ -163,7 +235,7 @@ class HapticEngine:
 
         self._create_player()
 
-    def _create_player(self):
+    def _create_player(self) -> None:
         with AutoReleasePool():
             event_param = CHHapticEventParameter.alloc().initWithParameterID_value_(
                 CHHapticEventParameterIDHapticIntensity, 1.0,
@@ -194,11 +266,13 @@ class HapticEngine:
 
             self._player.retain()
 
-    def as_nserror(self):
+    def as_nserror(self) -> None:
+        if self.error.value is None:
+            return
         ns_error = ObjCInstance(self.error.value)
         # print("macos GC error:", ns_error.localizedDescription())
 
-    def trigger_event(self, intensity, sharpness, duration):
+    def trigger_event(self, intensity: float, sharpness: float, duration: float) -> None:
         self.is_playing = True
 
         param = CHHapticDynamicParameter.alloc().initWithParameterID_value_relativeTime_(
@@ -217,15 +291,15 @@ class HapticEngine:
         pyglet.clock.unschedule(self._schedule_stop)
         pyglet.clock.schedule_once(self._schedule_stop, duration)
 
-    def _schedule_stop(self, dt):
+    def _schedule_stop(self, dt: float) -> None:
         self.stop_event()
 
-    def stop_event(self):
+    def stop_event(self) -> None:
         if self.is_playing and self._player:
             self._player.stopAtTime_error_(0, None)
         self.is_playing = False
 
-    def delete(self):
+    def delete(self) -> None:
         if self._player:
             pyglet.clock.unschedule(self._schedule_stop)
             self.stop_event()
@@ -238,7 +312,7 @@ class HapticEngine:
             self.engine.release()
             self.engine = None
 
-    def __del__(self):
+    def __del__(self) -> None:
         try:
             self.delete()
         except Exception:
@@ -247,10 +321,31 @@ class HapticEngine:
 
 class AppleGamepad(Device):
 
+    _deleted: bool
     weak_motor_engine: HapticEngine | None
     strong_motor_engine: HapticEngine | None
+    _button_cb_block: ObjCBlock | None
+    _axes_cb_block: ObjCBlock | None
+    _dpad_cb_block: ObjCBlock | None
+    _button_ptrs: dict[int, str]
+    _axes_ptrs: dict[int, str]
+    _dpad_ptrs: dict[int, str]
+    battery: _GCDeviceBattery | None
+    haptics: _GCDeviceHaptics | None
+    light: _GCDeviceLight | None
+    profile: _GCPhysicalInputProfile | None
+    buttons: dict[str, ObjCInstance]
+    axes: dict[str, ObjCInstance]
+    dpads: dict[str, ObjCInstance]
+    manager: ObjCInstance
+    device_name: str
+    product_category: str
+    controller: _GCController | None
+    index: int
+    cb_blocks: dict[str, ObjCBlock]
+    controls: dict[str, Control]
 
-    def __init__(self, manager, controller: _GCController) -> None:
+    def __init__(self, manager: ObjCInstance, controller: _GCController) -> None:
         # Tracking when the device is deleted. (Disconnected)
         self._deleted = False
 
@@ -432,21 +527,21 @@ class AppleGamepad(Device):
         self.axes.clear()
         self.dpads.clear()
 
-    def __del__(self):
+    def __del__(self) -> None:
         try:
             self.delete()
         except Exception:
             pass
 
-    def _axis_changed_callback(self, axes_obj, value):
+    def _axis_changed_callback(self, axes_obj: int, value: float) -> None:
         name = self._axes_ptrs[axes_obj]
         self.controls[name].value = value
 
-    def _button_changed_callback(self, button_obj, value):
+    def _button_changed_callback(self, button_obj: int, value: float) -> None:
         name = self._button_ptrs[button_obj]
         self.controls[name].value = value
 
-    def _dpads_changed_callback(self, dpads_obj, value, value2):
+    def _dpads_changed_callback(self, dpads_obj: int, value: float, value2: float) -> None:
         name = self._dpad_ptrs[dpads_obj]
         self.controls[name].value = value
 
@@ -467,11 +562,12 @@ class AppleGamepad(Device):
 
         return BatteryState.UNKNOWN
 
-    def _get_motor_engine(self, locality):
+    def _get_motor_engine(self, locality: c_void_p) -> HapticEngine | None:
         if self.haptics is None:
             return None
 
-        locality_str = ns_to_py(ObjCInstance(locality))
+        assert locality.value is not None
+        locality_str = ns_to_py(ObjCInstance(locality.value))
 
         if locality_str not in ns_to_py(self.haptics.supportedLocalities()):
             warnings.warn(f"Controller supports haptics, but not locality: {locality}.")
@@ -501,8 +597,9 @@ class AppleGamepad(Device):
 class AppleController(Controller):
     """Javascript Gamepad Controller object that handles buttons and controls."""
     device: AppleGamepad
+    _last_updated: float
 
-    def __init__(self, device: AppleGamepad, mapping: dict) -> None:
+    def __init__(self, device: AppleGamepad, mapping: dict[str, Any]) -> None:
         super().__init__(device, mapping)
         self._last_updated = 0.0
 
@@ -512,13 +609,17 @@ class AppleController(Controller):
             if button_name not in self.device.controls:
                 continue
             control = self.device.controls[button_name]
+            if not isinstance(control, Button):
+                continue
             self.button_controls.append(control)
             self._bind_button_control(control, button_name)
 
         for axis_name in _axis_mapping.values():
-            control = self.device.controls[axis_name]
-            self.relative_axis_controls.append(control)
-            self._bind_axis_control(control, axis_name, Sign.DEFAULT)
+            axis = self.device.controls[axis_name]
+            if not isinstance(axis, AbsoluteAxis):
+                continue
+            self.absolute_axis_controls.append(axis)
+            self._bind_axis_control(axis, axis_name, Sign.DEFAULT)
 
     def rumble_play_weak(self, strength: float = 1.0, duration: float = 0.5) -> None:
         if self.device and self.device.weak_motor_engine:
@@ -539,10 +640,13 @@ class AppleController(Controller):
             self.device.strong_motor_engine.stop_event()
 
 
-class _PygletAppleControllerManager(NSObject):
+class _PygletAppleControllerManager(NSObject):  # type: ignore[valid-type, misc]
+
+    controllers: dict[int, AppleController]
+    dispatcher: _SingletonAppleDispatcher
 
     @objc_method(b'@' + PyObjectEncoding)
-    def initWithDispatcher(self, dispatcher: _SingletonAppleDispatcher):
+    def initWithDispatcher(self: ObjCInstance, dispatcher: _SingletonAppleDispatcher) -> ObjCInstance | None:
         self = ObjCInstance(send_super(self, 'init'))
         if self is None:
             return None
@@ -561,17 +665,18 @@ class _PygletAppleControllerManager(NSObject):
             None,
         )
 
-        controllers = {}
+        controllers: dict[int, AppleController] = {}
         self.associate("controllers", controllers)
 
-        self.dispatcher = dispatcher
+        # mypy doesn't like assigning to the instance from self
+        self.dispatcher = dispatcher  # type: ignore[attr-defined]
 
         GCController.startWirelessControllerDiscoveryWithCompletionHandler_(None)
         return self
 
     @objc_method('v@')
-    def controllerConnected_(self, notification: NSNotification):
-        device: GCController = notification.object()
+    def controllerConnected_(self: ObjCInstance, notification: ObjCInstance) -> None:
+        device: ObjCInstance = notification.object()
         device_ptr = device.ptr.value
 
         wrapper = AppleGamepad(self, device)
@@ -586,8 +691,8 @@ class _PygletAppleControllerManager(NSObject):
         self.dispatcher.dispatch_event('on_connect', controller)
 
     @objc_method('v@')
-    def controllerDisconnected_(self, notification: NSNotification):
-        device: GCController = notification.object()
+    def controllerDisconnected_(self: ObjCInstance, notification: ObjCInstance) -> None:
+        device: ObjCInstance = notification.object()
         device_ptr = device.ptr.value
 
         if device_ptr in self.controllers:
@@ -597,13 +702,15 @@ class _PygletAppleControllerManager(NSObject):
             del self.controllers[device_ptr]
             controller.device.delete()
 
-    def get_controllers(self):
+    def get_controllers(self) -> list[AppleController]:
         return list(self.controllers.values())
 
 class _SingletonAppleDispatcher(EventDispatcher):
     """Only keep this as we only need one."""
 
-    def __init__(self):
+    _obj_mgr: ObjCInstance
+
+    def __init__(self) -> None:
         self._obj_mgr = _PygletAppleControllerManager.alloc().initWithDispatcher(self)
 
 
@@ -615,20 +722,22 @@ _apple_controller = _SingletonAppleDispatcher()
 
 class AppleControllerManager(ControllerManager):
 
-    def __init__(self):
+    _controllers: dict[int, AppleController]
+
+    def __init__(self) -> None:
         self._controllers = {}
 
         @_apple_controller.event
-        def on_connect(controller):
+        def on_connect(controller: AppleController) -> None:
             pyglet.app.platform_event_loop.post_event(self, 'on_connect', controller)
 
         @_apple_controller.event
-        def on_disconnect(controller):
+        def on_disconnect(controller: AppleController) -> None:
             pyglet.app.platform_event_loop.post_event(self, 'on_disconnect', controller)
 
-    def get_controllers(self):
+    def get_controllers(self) -> list[Controller]:
         return list(self._controllers.values())
 
 
-def get_controllers(display=None):
+def get_controllers(display: Display | None = None) -> list[AppleController]:
     return []

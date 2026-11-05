@@ -1,25 +1,32 @@
-from ctypes import c_void_p, c_ubyte
+from __future__ import annotations
+from ctypes import Array, c_void_p, c_ubyte
+from pathlib import Path
+from typing import TYPE_CHECKING, BinaryIO
 
 from pyglet.image import ImageData, Animation, AnimationFrame
-from pyglet.image.codecs import *
-
+from pyglet.image.codecs import ImageDecoder
 from pyglet.libs.darwin.cocoapy import NSMakeRect, cf, cg
 from pyglet.libs.darwin.cocoapy import cfnumber_to_number
 from pyglet.libs.darwin.cocoapy import kCGImageAlphaPremultipliedLast
-from pyglet.libs.darwin.cocoapy import kCGImagePropertyGIFDictionary
 from pyglet.libs.darwin.cocoapy import kCGImagePropertyGIFDelayTime
+from pyglet.libs.darwin.cocoapy import kCGImagePropertyGIFDictionary
+
+if TYPE_CHECKING:
+    from pyglet.image.codecs import ImageEncoder
 
 
-class QuartzImageDecoder(ImageDecoder):
-    def get_file_extensions(self):
-        # Quartz can actually decode many more formats, but these are the most common.
+class ImageIODecoder(ImageDecoder):
+    """Decode images with Image I/O and render pixels through Core Graphics."""
+
+    def get_file_extensions(self) -> list[str]:
+        # Image I/O can decode many more formats, but these are the most common.
         return [ '.bmp', '.cur', '.gif', '.ico', '.jp2', '.jpg', '.jpeg',
                  '.pcx', '.png', '.tga', '.tif', '.tiff', '.xbm', '.xpm' ]
 
-    def get_animation_file_extensions(self):
+    def get_animation_file_extensions(self) -> list[str]:
         return ['.gif']
 
-    def _get_pyglet_ImageData_from_source_at_index(self, sourceRef, index):
+    def _get_pyglet_ImageData_from_source_at_index(self, sourceRef: c_void_p, index: int) -> ImageData:
         imageRef = c_void_p(cg.CGImageSourceCreateImageAtIndex(sourceRef, index, None))
 
         # Regardless of the internal format of the image (L, LA, RGB, RGBA, etc)
@@ -27,13 +34,13 @@ class QuartzImageDecoder(ImageDecoder):
         format = 'RGBA'
         rgbColorSpace = c_void_p(cg.CGColorSpaceCreateDeviceRGB())
         bitsPerComponent = 8
-        width = cg.CGImageGetWidth(imageRef)
-        height = cg.CGImageGetHeight(imageRef)
+        width: int = cg.CGImageGetWidth(imageRef)
+        height: int = cg.CGImageGetHeight(imageRef)
         bytesPerRow = 4 * width
 
         # Create a buffer to store the RGBA formatted data.
         bufferSize = height * bytesPerRow
-        buffer = (c_ubyte * bufferSize)()
+        buffer: Array[c_ubyte] = (c_ubyte * bufferSize)()
 
         # Create a bitmap context for the RGBA formatted data.
         # Note that premultiplied alpha is required:
@@ -55,10 +62,8 @@ class QuartzImageDecoder(ImageDecoder):
         pitch = bytesPerRow
         return ImageData(width, height, format, buffer, -pitch)
 
-    def decode(self, filename, file):
-        if not file:
-            file = open(filename, 'rb')
-        file_bytes = file.read()
+    def decode(self, filename: str, file: BinaryIO | None) -> ImageData:
+        file_bytes = Path(filename).read_bytes() if file is None else file.read()
         data = c_void_p(cf.CFDataCreate(None, file_bytes, len(file_bytes)))
         # Second argument is an options dictionary.  It might be a good idea to provide
         # a value for kCGImageSourceTypeIdentifierHint here using filename extension.
@@ -70,22 +75,20 @@ class QuartzImageDecoder(ImageDecoder):
 
         return image
 
-    def decode_animation(self, filename, file):
-        if not file:
-            file = open(filename, 'rb')
+    def decode_animation(self, filename: str, file: BinaryIO | None) -> Animation:
         # If file is not an animated GIF, it will be loaded as a single-frame animation.
-        file_bytes = file.read()
+        file_bytes = Path(filename).read_bytes() if file is None else file.read()
         data = c_void_p(cf.CFDataCreate(None, file_bytes, len(file_bytes)))
         sourceRef = c_void_p(cg.CGImageSourceCreateWithData(data, None))
 
         # Get number of frames in the animation.
-        count = cg.CGImageSourceGetCount(sourceRef)
+        count: int = cg.CGImageSourceGetCount(sourceRef)
 
-        frames = []
+        frames: list[AnimationFrame] = []
 
         for index in range(count):
             # Try to determine frame duration from GIF properties dictionary.
-            duration = 0.1  # default duration if none found
+            duration: float | None = 0.1  # default duration if none found
             props = c_void_p(cg.CGImageSourceCopyPropertiesAtIndex(sourceRef, index, None))
             if cf.CFDictionaryContainsKey(props, kCGImagePropertyGIFDictionary):
                 gif_props = c_void_p(cf.CFDictionaryGetValue(props, kCGImagePropertyGIFDictionary))
@@ -102,8 +105,8 @@ class QuartzImageDecoder(ImageDecoder):
         return Animation(frames)
 
 
-def get_decoders():
-    return [ QuartzImageDecoder() ]
+def get_decoders() -> list[ImageIODecoder]:
+    return [ImageIODecoder()]
 
-def get_encoders():
+def get_encoders() -> list[ImageEncoder]:
     return []

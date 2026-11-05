@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, BinaryIO, ClassVar
 from pyglet.media.exceptions import MediaException, CannotSeekException
 
 if TYPE_CHECKING:
-    from pyglet.graphics import Texture
+    from pyglet.image import ImageData
     from pyglet.image.animation import Animation
     from pyglet.media.codecs import MediaEncoder
     from pyglet.media.player import AudioPlayer
@@ -144,9 +144,11 @@ class AudioData:
 
     __slots__ = 'data', 'length', 'pointer'
 
+    pointer: int
+
     def __init__(
         self,
-        data: bytes | ctypes.Array,
+        data: bytes | bytearray | ctypes.Array,
         length: int,
     ) -> None:
         """Create an audio packet.
@@ -160,7 +162,7 @@ class AudioData:
         if isinstance(data, bytes):
             # bytes are treated specially by ctypes and can be cast to a void pointer, get
             # their content's address like this
-            self.pointer = ctypes.cast(data, ctypes.c_void_p).value  # type: ignore[arg-type]
+            self.pointer = ctypes.cast(data, ctypes.c_void_p).value  # type: ignore[assignment, arg-type]
         elif isinstance(data, ctypes.Array):
             self.pointer = ctypes.addressof(data)
         else:
@@ -235,7 +237,7 @@ class Source:
     is_player_source: bool = False
 
     @property
-    def duration(self) -> float:
+    def duration(self) -> float | None:
         """The length of the source, in seconds.
 
         Not all source durations can be determined; in this case the value
@@ -302,7 +304,7 @@ class Source:
             frames.
         """
 
-    def get_next_video_frame(self) -> Texture | None:
+    def get_next_video_frame(self) -> ImageData | None:
         """Get the next video frame.
 
         Returns:
@@ -460,7 +462,10 @@ class StaticSource(Source):
 
     def __init__(self, source: Source) -> None:
         """Read a source into an in-memory buffer."""
-        source = source.get_queue_source()
+        queued_source = source.get_queue_source()
+        if queued_source is None:
+            raise MediaException('Source cannot be queued.')
+        source = queued_source
         if source.video_format:
             raise NotImplementedError('Static sources not supported for video.')
 
@@ -570,6 +575,8 @@ class LoopingSource(Source):
     Loop points are expressed in seconds. Use :meth:`from_frames` when loop
     metadata is expressed as PCM frame indexes.
     """
+
+    _source: Source | None
 
     def __init__(self, source: Source, loop_start: float, loop_end: float, loop_count: int = -1) -> None:
         """Initialize a loop source object.

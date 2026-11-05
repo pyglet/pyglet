@@ -1,20 +1,16 @@
 from __future__ import annotations
 
 from ctypes import c_void_p
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from pyglet.libs.darwin.cocoapy import (
+from pyglet.libs.darwin.cocoapy.cocoatypes import PyObjectEncoding
+from pyglet.libs.darwin.cocoapy.lib_appkit import (
     NSApplicationDidHideNotification,
     NSApplicationDidUnhideNotification,
-    ObjCClass,
-    ObjCInstance,
-    PyObjectEncoding,
     appkit,
-    get_selector,
-    quartz,
-    send_super,
-    objc_method,
 )
+from pyglet.libs.darwin.cocoapy.lib_quartz import quartz
+from pyglet.libs.darwin.cocoapy.runtime import ObjCClass, ObjCInstance, get_selector, objc_method, send_super
 
 from .systemcursor import SystemCursor
 
@@ -29,10 +25,11 @@ NSNotification = ObjCClass('NSNotification')
 NSBackingPropertyOldScaleFactorKey = c_void_p.in_dll(appkit, 'NSBackingPropertyOldScaleFactorKey')
 
 
-class PygletDelegate(NSObject):
+class PygletDelegate(NSObject):  # type: ignore[valid-type, misc]
+    _window: CocoaWindow | None
 
     @objc_method(b'@' + PyObjectEncoding)
-    def initWithWindow_(self, window: CocoaWindow) -> ObjCInstance | None:
+    def initWithWindow_(self: Any, window: CocoaWindow) -> ObjCInstance | None:
         self = ObjCInstance(send_super(self, 'init'))
 
         if not self:
@@ -68,11 +65,11 @@ class PygletDelegate(NSObject):
         send_super(self, 'dealloc')
 
     @objc_method('v@')
-    def applicationDidHide_(self, notification: NSNotification) -> None:
+    def applicationDidHide_(self, notification: ObjCInstance) -> None:
         self._window.dispatch_event('on_hide')
 
     @objc_method('v@')
-    def applicationDidUnhide_(self, notification: NSNotification) -> None:
+    def applicationDidUnhide_(self, notification: ObjCInstance) -> None:
         if self._window._mouse_exclusive and quartz.CGCursorIsVisible():
             # The cursor should be hidden, but for some reason it's not;
             # try to force the cursor to hide (without over-hiding).
@@ -87,12 +84,12 @@ class PygletDelegate(NSObject):
         return False
 
     @objc_method('v@')
-    def windowDidMove_(self, notification: NSNotification) -> None:
+    def windowDidMove_(self, notification: ObjCInstance) -> None:
         x, y = self._window.get_location()
         self._window.dispatch_event('on_move', x, y)
 
     @objc_method('v@')
-    def windowDidBecomeKey_(self, notification: NSNotification) -> None:
+    def windowDidBecomeKey_(self, notification: ObjCInstance) -> None:
         # Restore exclusive mouse mode if it was active before we lost key status.
         if self.did_pause_exclusive_mouse:
             self._window.set_exclusive_mouse(True)
@@ -103,7 +100,7 @@ class PygletDelegate(NSObject):
         self._window.dispatch_event('on_activate')
 
     @objc_method('v@')
-    def windowDidResignKey_(self, notification: NSNotification) -> None:
+    def windowDidResignKey_(self, notification: ObjCInstance) -> None:
         # Pause exclusive mouse mode if it is active.
         if self._window._mouse_exclusive:  # noqa: SLF001
             self._window.set_exclusive_mouse(False)
@@ -117,11 +114,11 @@ class PygletDelegate(NSObject):
         self._window.dispatch_event('on_deactivate')
 
     @objc_method('v@')
-    def windowDidMiniaturize_(self, notification: NSNotification) -> None:
+    def windowDidMiniaturize_(self, notification: ObjCInstance) -> None:
         self._window.dispatch_event('on_hide')
 
     @objc_method('v@')
-    def windowDidDeminiaturize_(self, notification: NSNotification) -> None:
+    def windowDidDeminiaturize_(self, notification: ObjCInstance) -> None:
         if self._window._mouse_exclusive and quartz.CGCursorIsVisible():  # noqa: SLF001
             # The cursor should be hidden, but for some reason it's not;
             # try to force the cursor to hide (without over-hiding).
@@ -130,7 +127,7 @@ class PygletDelegate(NSObject):
         self._window.dispatch_event('on_show')
 
     @objc_method('v@')
-    def windowDidExpose_(self, notification: NSNotification) -> None:
+    def windowDidExpose_(self, notification: ObjCInstance) -> None:
         self._window.dispatch_event('on_expose')
 
     @objc_method('v@')

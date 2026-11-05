@@ -2,13 +2,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import pyglet
 from pyglet.graphics.api.gl import GLuint
 from pyglet.graphics.resource import VertexArrayResource
 
 if TYPE_CHECKING:
     from ctypes import c_uint
-    from pyglet.graphics.api.base import NullContext
     from pyglet.graphics.api.gl.context import OpenGLSurfaceContext
 
 __all__ = ['VertexArray']
@@ -16,8 +14,9 @@ __all__ = ['VertexArray']
 
 class VertexArray(VertexArrayResource):
     """OpenGL Vertex Array Object."""
-    _context: OpenGLSurfaceContext | NullContext
-    _id: c_uint
+    _context: OpenGLSurfaceContext
+    _id: c_uint | None
+    _handle: int | None
 
     def __init__(self, context: OpenGLSurfaceContext) -> None:
         """Create an instance of a Vertex Array object."""
@@ -40,11 +39,11 @@ class VertexArray(VertexArrayResource):
 
     __enter__ = bind
 
-    def __exit__(self, *_) -> None:  # noqa: ANN002
-        self.glBindVertexArray(0)
+    def __exit__(self, *_args: object) -> None:
+        self.unbind()
 
     def __del__(self) -> None:
-        if self._id is not None:
+        if self._handle is not None:
             try:
                 self._context.delete_vao(self._handle)
                 self._id = None

@@ -12,7 +12,8 @@ from pyglet.lib import load_library
 from pyglet.util import asbytes, asstr
 
 if TYPE_CHECKING:
-    from pyglet.font.freetype_lib import FT_Face
+    from pyglet.font.freetype_lib import FT_FaceRec
+    from ctypes import _Pointer
 
 # fontconfig library definitions
 
@@ -75,7 +76,7 @@ name_to_weight = {
     "extrablack": FC_WEIGHT_EXTRABLACK,
 }
 
-weight_to_name = {
+weight_to_name: dict[float | None, str] = {
     None: 'normal',
     0: 'thin',
     40: 'extralight',
@@ -177,7 +178,7 @@ class FcValue(Structure):
 
 
 class FontConfig:
-    _search_cache: OrderedDict[tuple[str, float, str, bool, str], FontConfigSearchResult]
+    _search_cache: OrderedDict[tuple[str | None, float | None, str, str, str], FontConfigSearchResult]
     _fontconfig: CDLL | None
 
     def __init__(self) -> None:
@@ -195,16 +196,18 @@ class FontConfig:
         self._fontconfig = None
 
     def create_search_pattern(self) -> FontConfigSearchPattern:
+        assert self._fontconfig is not None
         return FontConfigSearchPattern(self._fontconfig)
 
-    def style_from_face(self, font_face: FT_Face):
+    def style_from_face(self, font_face: _Pointer[FT_FaceRec]):
         pattern = self._fontconfig.FcFreeTypeQueryFace(font_face, b'', 0, None)
+        assert self._fontconfig is not None
         result = FontConfigSearchResult(self._fontconfig, pattern)
         return result.weight, result.italic, result.stretch
 
     def find_font(self, name: str, size: float = 12, weight: Weight | str = Weight.NORMAL,
                   italic: Style | str = Style.NORMAL,
-                  stretch: Stretch | str = Stretch.NORMAL) -> FontConfigSearchResult:
+                  stretch: Stretch | str = Stretch.NORMAL) -> FontConfigSearchResult | None:
         assert isinstance(weight, str)
         assert isinstance(italic, str)
         if result := self._get_from_search_cache(name, size, weight, italic, stretch):
@@ -218,7 +221,8 @@ class FontConfig:
         search_pattern.stretch = stretch
 
         result = search_pattern.match()
-        self._add_to_search_cache(search_pattern, result)
+        if result is not None:
+            self._add_to_search_cache(search_pattern, result)
         search_pattern.dispose()
 
         # Fontconfig normally resolves a full name through FC_FAMILY, but not
@@ -252,7 +256,7 @@ class FontConfig:
 
         return False
 
-    def char_index(self, ft_face: FT_Face, character: str) -> int:
+    def char_index(self, ft_face: _Pointer[FT_FaceRec], character: str) -> int:
         return self._fontconfig.FcFreeTypeCharIndex(ft_face, ord(character))
 
     def _add_to_search_cache(self, search_pattern: FontConfigSearchPattern,
@@ -330,7 +334,7 @@ class FontConfigPattern:
 
         return FC_SLANT_ROMAN
 
-    def _set_string(self, name: bytes, value: str) -> None:
+    def _set_string(self, name: bytes, value: str | None) -> None:
         assert self._pattern
         assert name
         assert self._fontconfig
@@ -338,11 +342,9 @@ class FontConfigPattern:
         if not value:
             return
 
-        value = value.encode("utf8")
+        self._fontconfig.FcPatternAddString(self._pattern, name, value.encode("utf8"))
 
-        self._fontconfig.FcPatternAddString(self._pattern, name, asbytes(value))
-
-    def _set_double(self, name: bytes, value: float) -> None:
+    def _set_double(self, name: bytes, value: float | None) -> None:
         assert self._pattern
         assert name
         assert self._fontconfig
@@ -368,7 +370,7 @@ class FontConfigPattern:
         assert self._fontconfig
 
         value = FcValue()
-        result: FcResult = self._fontconfig.FcPatternGet(self._pattern, name, 0, byref(value))
+        result: int = self._fontconfig.FcPatternGet(self._pattern, name, 0, byref(value))
         if _handle_fcresult(result):
             return value
 
@@ -382,7 +384,7 @@ class FontConfigPattern:
 
         return None
 
-    def _get_face(self, name: bytes) -> FT_Face | None:
+    def _get_face(self, name: bytes) -> _Pointer[FT_FaceRec] | None:
         value = self._get_value(name)
 
         if value and value.type == FcTypeFTFace:
@@ -398,7 +400,7 @@ class FontConfigPattern:
 
         return None
 
-    def _get_double(self, name: bytes) -> int | None:
+    def _get_double(self, name: bytes) -> float | None:
         value = self._get_value(name)
 
         if value and value.type == FcTypeDouble:
@@ -474,7 +476,7 @@ class FontConfigSearchResult(FontConfigPattern):
         super().__init__(fontconfig, result_pattern)
 
     @property
-    def name(self) -> str:
+    def name(self) -> str | None:
         return self._get_string(FC_FAMILY)
 
     @property
@@ -488,7 +490,7 @@ class FontConfigSearchResult(FontConfigPattern):
         return any(candidate and candidate.casefold() == folded_name for candidate in candidates)
 
     @property
-    def size(self) -> int:
+    def size(self) -> float | None:
         return self._get_double(FC_SIZE)
 
     @property
@@ -500,7 +502,7 @@ class FontConfigSearchResult(FontConfigPattern):
         return self._get_integer(FC_SLANT) == FC_SLANT_ITALIC
 
     @property
-    def face(self) -> FT_Face:
+    def face(self) -> _Pointer[FT_FaceRec] | None:
         return self._get_face(FC_FT_FACE)
 
     @property
@@ -508,7 +510,7 @@ class FontConfigSearchResult(FontConfigPattern):
         return stretch_to_name[self._get_integer(FC_WIDTH)]
 
     @property
-    def file(self) -> str:
+    def file(self) -> str | None:
         return self._get_string(FC_FILE)
 
     def dispose(self) -> None:

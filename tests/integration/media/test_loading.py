@@ -1,7 +1,9 @@
 import os
+from pathlib import Path
 from unittest import mock
 
 import pyglet
+import pytest
 
 
 test_data_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "data"))
@@ -12,9 +14,11 @@ def get_test_data_file(path, file_name):
     return os.path.join(test_data_path, path, file_name)
 
 
-def test_load_audio_from_disk_path():
-    file_path = get_test_data_file("media", "alert.wav")
-    source = pyglet.media.load_audio(file_path, streaming=False)
+@pytest.mark.parametrize("path_type", [str, Path])
+@pytest.mark.parametrize("streaming", [False, True])
+def test_load_audio_from_disk_path(path_type, streaming: bool) -> None:
+    file_path = path_type(get_test_data_file("media", "alert.wav"))
+    source = pyglet.media.load_audio(file_path, streaming=streaming)
 
     assert source.audio_format is not None
     assert source.duration > 0

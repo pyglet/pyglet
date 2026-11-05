@@ -80,7 +80,7 @@ class TextLayoutGroup(Group):
         self,
         texture: Texture,
         program: ShaderProgram,
-        order: int = 1,  # noqa: D107
+        order: float = 1,  # noqa: D107
         parent: Group | None = None,
         *,
         depth_test: CompareOp | None = None,
@@ -109,7 +109,7 @@ class TextDecorationGroup(Group):
     def __init__(
         self,
         program: ShaderProgram,
-        order: int = 0,  # noqa: D107
+        order: float = 0,  # noqa: D107
         parent: Group | None = None,
         *,
         depth_test: CompareOp | None = None,
@@ -136,7 +136,7 @@ class ScrollableTextLayoutGroup(TextLayoutGroup):
         texture: Texture,
         program: ShaderProgram,
         uniforms: dict[str, Any],
-        order: int = 1,  # noqa: D107
+        order: float = 1,  # noqa: D107
         parent: Group | None = None,
         *,
         depth_test: CompareOp | None = None,
@@ -165,7 +165,7 @@ class ScrollableTextDecorationGroup(TextDecorationGroup):
 
     uniforms: dict[str, Any]
 
-    def __init__(self, program: ShaderProgram, uniforms: dict[str, Any], order: int = 0,
+    def __init__(self, program: ShaderProgram, uniforms: dict[str, Any], order: float = 0,
                  parent: Group | None = None, *, depth_test: CompareOp | None = None) -> None:  # noqa: D107
         super().__init__(program, order=order, parent=parent, depth_test=depth_test)
         self.program = program
@@ -208,11 +208,10 @@ class TextLayout(_FlowLayoutBase):
     _vertex_lists: list[VertexList | _LayoutVertexList]
     _boxes: list[_AbstractBox]
     _lines: list[_Line]
-    group_cache: dict[Texture | tuple[Texture, int], TextLayoutGroup | ScrollableTextLayoutGroup]
-    effect_group_cache: dict[tuple[Texture, int], TextLayoutGroup | ScrollableTextLayoutGroup]
+    group_cache: dict[Texture | tuple[Texture, float], TextLayoutGroup | ScrollableTextLayoutGroup]
+    effect_group_cache: dict[tuple[Texture, float], TextLayoutGroup | ScrollableTextLayoutGroup]
     _background_decoration_group: TextDecorationGroup | ScrollableTextDecorationGroup | None
     _foreground_decoration_group: TextDecorationGroup | ScrollableTextDecorationGroup | None
-    group_cache: dict[Texture | tuple[Texture, int], graphics.Group]
     has_view_translation: bool
 
     _document: AbstractDocument | None = None
@@ -393,7 +392,7 @@ class TextLayout(_FlowLayoutBase):
         self._foreground_decoration_group = None
         self.effect_group_cache = {}
 
-    def get_effect_group(self, texture: Texture, order: int = 0) -> TextLayoutGroup | ScrollableTextLayoutGroup:
+    def get_effect_group(self, texture: Texture, order: float = 0) -> TextLayoutGroup | ScrollableTextLayoutGroup:
         cache_key = texture, order
         try:
             return self.effect_group_cache[cache_key]
@@ -402,12 +401,12 @@ class TextLayout(_FlowLayoutBase):
             self.effect_group_cache[cache_key] = group
             return group
 
-    def _create_group(self, group_class: type[_GroupT], *args: Any, order: int) -> _GroupT:
+    def _create_group(self, group_class: type[_GroupT], *args: Any, order: float) -> _GroupT:
         if issubclass(group_class, (ScrollableTextLayoutGroup, ScrollableTextDecorationGroup)):
             if self._uniforms is None:
                 self._uniforms = {"scissor_area": (self.left, self.bottom, self._width, self._height)}
             args = (*args, self._uniforms)
-        return group_class(*args, order=order, parent=self._user_group,
+        return group_class(*args, order=order, parent=self._user_group,  # type: ignore[call-arg, misc]
                            depth_test=self.depth_test_compare_op if self._depth_sorting else None)
 
     def get_depth_offset(self, layer: int) -> float:
@@ -466,6 +465,16 @@ class TextLayout(_FlowLayoutBase):
         """
         return self._decoration_shader or self._get_default_decoration_shader()
 
+    @decoration_shader.setter
+    def decoration_shader(self, shader: ShaderProgram | None) -> None:
+        if self._decoration_shader is shader:
+            return
+        self._decoration_shader = shader
+        self.has_view_translation = "view_translation" in self.decoration_shader.attributes
+        self._background_decoration_group = None
+        self._foreground_decoration_group = None
+        self._recreate_vertex_lists()
+
     @staticmethod
     def _get_default_decoration_shader() -> ShaderProgram:
         return get_default_decoration_shader()
@@ -479,15 +488,6 @@ class TextLayout(_FlowLayoutBase):
     def _get_default_image_layout_shader() -> ShaderProgram:
         return get_default_image_layout_shader()
 
-    @decoration_shader.setter
-    def decoration_shader(self, shader: ShaderProgram | None) -> None:
-        if self._decoration_shader is shader:
-            return
-        self._decoration_shader = shader
-        self.has_view_translation = "view_translation" in self.decoration_shader.attributes
-        self._background_decoration_group = None
-        self._foreground_decoration_group = None
-        self._recreate_vertex_lists()
 
     @property
     def effect_shader(self) -> ShaderProgram:
@@ -1075,9 +1075,9 @@ class TextLayout(_FlowLayoutBase):
             # A retained plain run has uniform styles and needs no run iterators.
             if len(lines) == 1 and len(self._lines) == 1 and lines[0] is self._lines[0]:
                 line = lines[0]
-                box = cast(_GlyphBox, self._boxes[0])
+                retained_box = cast(_GlyphBox, self._boxes[0])
                 anchor_x = round(self._anchor_left) if self._rotation == 0 else self._anchor_left
-                box.update_placement(self, line.x, line.y, anchor_x, anchor_top,
+                retained_box.update_placement(self, line.x, line.y, anchor_x, anchor_top,
                                      self._document.get_style("baseline"), self._document.get_style("color"))
                 return
             context = _StaticLayoutContext(

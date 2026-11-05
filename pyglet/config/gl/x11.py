@@ -8,7 +8,7 @@ from ctypes import c_int, cast, byref, POINTER, _Pointer
 from pyglet.libs.linux.glx import glx
 from pyglet.libs.linux.x11 import xlib
 from pyglet.libs.linux.x11.xrender import XRenderFindVisualFormat
-from pyglet.config import SurfaceConfig
+from pyglet.config.gl import GLSurfaceConfig
 
 if TYPE_CHECKING:
     from pyglet.graphics.api.gl.xlib.context import XlibContext
@@ -57,7 +57,7 @@ def match(config: OpenGLUserConfig, window: XlibWindow) -> XlibGLSurfaceConfig |
     return result[0]
 
 
-class XlibGLSurfaceConfig(SurfaceConfig):
+class XlibGLSurfaceConfig(GLSurfaceConfig['XlibWindow']):
     _glx_info: glx_info.GLXInfo
 
     attribute_ids = {  # noqa: RUF012
@@ -95,7 +95,7 @@ class XlibGLSurfaceConfig(SurfaceConfig):
         'x_renderable': glx.GLX_X_RENDERABLE,
     }
 
-    def __init__(self, window: XlibWindow, fbconfig: glx.GLXFBConfig,
+    def __init__(self, window: XlibWindow, fbconfig: int | None,
                  config: OpenGLUserConfig) -> None:
         super().__init__(window, config, fbconfig)
 
@@ -122,7 +122,7 @@ class XlibGLSurfaceConfig(SurfaceConfig):
         if not XRenderFindVisualFormat:
             return False
 
-        xrender_format = XRenderFindVisualFormat(self.display._display, visual)
+        xrender_format = XRenderFindVisualFormat(self._window._x_display, visual)
         return xrender_format and xrender_format.contents.direct.alphaMask != 0
 
     def get_visual_info(self) -> glx.XVisualInfo:

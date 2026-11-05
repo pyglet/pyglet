@@ -168,7 +168,7 @@ class ModelInstance:
     @translation.setter
     def translation(self, vector: Vec3):
         for instance in self._instances:
-            instance.TRANSLATION = vector
+            instance.TRANSLATION = vector  # type: ignore[attr-defined]
 
     @property
     def rotation(self):
@@ -177,7 +177,7 @@ class ModelInstance:
     @rotation.setter
     def rotation(self, quaternion: Quaternion):
         for instance in self._instances:
-            instance.ROTATION = quaternion
+            instance.ROTATION = quaternion  # type: ignore[attr-defined]
 
     @property
     def scale(self):
@@ -186,7 +186,7 @@ class ModelInstance:
     @scale.setter
     def scale(self, vector: Vec3):
         for instance in self._instances:
-            instance.SCALE = vector
+            instance.SCALE = vector  # type: ignore[attr-defined]
 
 
 class BaseMaterialGroup(graphics.ShaderGroup):

@@ -42,6 +42,7 @@ release resources immediately.
 """
 from __future__ import annotations
 
+from os import fspath
 from typing import TYPE_CHECKING, BinaryIO, Sequence
 
 from .drivers import get_audio_driver
@@ -53,6 +54,8 @@ from .codecs import Source, StaticSource, StreamingSource, LoopingSource, have_f
 from . import synthesis
 
 if TYPE_CHECKING:
+    from os import PathLike
+
     from pyglet.customtypes import MediaTypes
     from .codecs import MediaDecoder
 
@@ -100,7 +103,7 @@ _VALID_AUDIO_CHANNELS = (
     AUDIO_CHANNELS_DUAL_MONO,
 )
 
-def _load(filename: str, file: BinaryIO | None = None,
+def _load(filename: str | PathLike[str], file: BinaryIO | None = None,
          streaming: bool = True, decoder: MediaDecoder | None = None,
          media_capabilities: MediaTypes | Sequence[MediaTypes] | None = None,
          audio_sample_format: str | None = None,
@@ -115,8 +118,8 @@ def _load(filename: str, file: BinaryIO | None = None,
 
     Args:
         filename:
-            Used to guess the media format, and to load the file if ``file``
-            is unspecified.
+            A string or path-like object used to guess the media format, and to
+            load the file if ``file`` is unspecified.
         file:
             An optional file-like object containing the source data.
         streaming:
@@ -148,6 +151,8 @@ def _load(filename: str, file: BinaryIO | None = None,
             increased CPU usage.
             Note: currently only supported by FFmpegDecoder!
     """
+    if not isinstance(filename, str):
+        filename = fspath(filename)
     audio_driver = get_audio_driver()
     if audio_sample_format is not None:
         if audio_sample_format not in _VALID_AUDIO_SAMPLE_FORMATS:
@@ -192,7 +197,7 @@ def _load(filename: str, file: BinaryIO | None = None,
                                   media_capabilities=media_capabilities)
 
 
-def load_audio(filename: str, file: BinaryIO | None = None,
+def load_audio(filename: str | PathLike[str], file: BinaryIO | None = None,
                streaming: bool = True, decoder: MediaDecoder | None = None,
                audio_sample_format: str | None = None,
                audio_sample_rate: int | None = None,
@@ -206,8 +211,8 @@ def load_audio(filename: str, file: BinaryIO | None = None,
 
     Args:
         filename:
-            Used to guess the media format, and to load the file if ``file``
-            is unspecified.
+            A string or path-like object used to guess the media format, and to
+            load the file if ``file`` is unspecified.
         file:
             An optional file-like object containing the source data.
         streaming:
@@ -245,7 +250,7 @@ def load_audio(filename: str, file: BinaryIO | None = None,
                  audio_resample_hq=audio_resample_hq)
 
 
-def load_video(filename: str, file: BinaryIO | None = None,
+def load_video(filename: str | PathLike[str], file: BinaryIO | None = None,
                streaming: bool = True, decoder: MediaDecoder | None = None,
                audio_sample_format: str | None = None,
                audio_sample_rate: int | None = None,
@@ -259,8 +264,8 @@ def load_video(filename: str, file: BinaryIO | None = None,
 
     Args:
         filename:
-            Used to guess the media format, and to load the file if ``file``
-            is unspecified.
+            A string or path-like object used to guess the media format, and to
+            load the file if ``file`` is unspecified.
         file:
             An optional file-like object containing the source data.
         streaming:

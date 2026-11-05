@@ -3,23 +3,17 @@ from __future__ import annotations
 from ctypes import c_bool, c_void_p
 from typing import TYPE_CHECKING
 
-from pyglet.libs.darwin.cocoapy import (
-    NSRectEncoding,
-    NSUInteger,
-    NSUIntegerEncoding,
-    ObjCClass,
-    objc_method,
-    send_super,
-)
+from pyglet.libs.darwin.cocoapy.cocoatypes import NSRectEncoding, NSUInteger, NSUIntegerEncoding
+from pyglet.libs.darwin.cocoapy.runtime import ObjCClass, objc_method, send_super
 
 if TYPE_CHECKING:
-    from pyglet.libs.darwin import ObjCInstance
+    from pyglet.libs.darwin.cocoapy.runtime import ObjCInstance
 
 
 NSWindow = ObjCClass('NSWindow')
 NSPanel = ObjCClass('NSPanel')
 
-class PygletWindow(NSWindow):
+class PygletWindow(NSWindow):  # type: ignore[valid-type, misc]
     @objc_method('B')
     def canBecomeKeyWindow(self) -> bool:
         return True
@@ -60,7 +54,7 @@ class PygletWindow(NSWindow):
     def animationResizeTime_(self, newFrame: ObjCInstance) -> float:
         return 0.0
 
-class PygletToolWindow(NSPanel):
+class PygletToolWindow(NSPanel):  # type: ignore[valid-type, misc]
 
     @objc_method(b'@' + NSUIntegerEncoding + b'@@B')
     def nextEventMatchingMask_untilDate_inMode_dequeue_(self, mask: ObjCInstance, date: ObjCInstance,

@@ -3,6 +3,18 @@ from __future__ import annotations
 from pyglet.graphics.api.webgl.buffer import WebGLBufferObject, WebGLIndexedBufferObject
 
 
+def test_buffer_finalizer_deletes_handle(webgl_window) -> None:
+    buffer = WebGLBufferObject(webgl_window.context, size=8)
+    handle = buffer.handle
+    buffer._ensure_allocated()
+    assert webgl_window.context.gl.isBuffer(handle)
+
+    buffer.__del__()
+
+    assert buffer.handle is None
+    assert not webgl_window.context.gl.isBuffer(handle)
+
+
 def test_ctypes_backed_buffer_uploads_direct_memoryview(webgl_window):
     buffer = WebGLIndexedBufferObject(webgl_window.context, size=8, data_type="I", stride=4, count=1)
     try:

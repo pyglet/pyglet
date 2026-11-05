@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Sequence
 import pyglet
 import pyglet.graphics.api.gl.gl as gl
 from pyglet.graphics.api.gl2.buffer import UniformBufferObject  # noqa: F401
-from pyglet.graphics.api.gl.shader import GLDataType
+from pyglet.graphics.api.gl.shader import GLUniformBlock, GLDataType
 from pyglet.graphics.api.gl.shader import GLShader
 from pyglet.graphics.api.gl.shader import GLShaderProgram
 from pyglet.graphics import UnsupportedBackendError
@@ -28,7 +28,6 @@ from pyglet.graphics.shader import (
 from pyglet.graphics.attributes import VertexLayout
 
 if TYPE_CHECKING:
-    from pyglet.graphics.api.base import NullContext
     from pyglet.graphics.api.gl import OpenGLSurfaceContext
     from pyglet.customtypes import CType, DataTypes
 
@@ -86,8 +85,9 @@ class GLShaderSource(ShaderSource):
               one line.
     """
 
-    _type: gl.GLenum
+    _type: gl.GLenum | int
     _lines: list[str]
+    _version: int | str
 
     def __init__(self, source: str, source_type: gl.GLenum | int) -> None:
         """Create a shader source wrapper."""
@@ -100,7 +100,7 @@ class GLShaderSource(ShaderSource):
 
         self._version = self._find_glsl_version()
 
-        if "es" in pyglet.options.backend:
+        if pyglet.options.backend is not None and "es" in pyglet.options.backend:
             self._patch_gles()
 
         self._patch_legacy()
@@ -162,9 +162,9 @@ class Shader(GLShader):
     You can reuse a Shader object in multiple ShaderPrograms.
     """
 
-    _context: OpenGLSurfaceContext | NullContext
+    _context: OpenGLSurfaceContext
     _id: int | None
-    type: ShaderType
+    shader_type: ShaderType
 
     @classmethod
     def supported_shaders(cls) -> tuple[ShaderType, ...]:
@@ -176,12 +176,11 @@ class Shader(GLShader):
 
 
 class ShaderProgram(GLShaderProgram):  # noqa: D101
-    _uniform_blocks: None
     __slots__ = '_attributes', '_context', '_id', '_uniform_blocks', '_uniforms'
 
-    def _get_uniform_blocks(self) -> None:
+    def _get_uniform_blocks(self) -> dict[str, GLUniformBlock]:
         """Return Uniform Block information."""
-        return
+        return {}
 
 
 class ComputeShaderProgram(_AbstractShaderProgram):
@@ -247,4 +246,4 @@ def get_default_shader() -> ShaderProgram:
         (_default_fragment_source, 'fragment'),
         vertex_layout=None,
     )
-    return program
+    return program  # type: ignore[return-value]

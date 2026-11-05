@@ -89,7 +89,7 @@ class _AbstractImage(ABC):
             if encoder is not None:
                 encoder.encode(self, filename, file)
             else:
-                _codec_registry.encode(self, filename, file)
+                _codec_registry.encode(self, filename or '', file)
         finally:
             if owns_file:
                 file.close()

@@ -37,7 +37,7 @@ import collections
 import os
 import weakref
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, BinaryIO, Iterable, Sequence, Any
+from typing import TYPE_CHECKING, BinaryIO, Iterable
 
 import pyglet
 from pyglet.enums import Weight, Style, Stretch
@@ -66,7 +66,7 @@ class _FontContext:
 
     # Hold onto refs of last three loaded fonts to prevent them being
     # collected if momentarily dropped.
-    hold: collections.deque
+    hold: collections.deque[Font]
 
     def add(self, descriptor: tuple, font: Font) -> None:
         """Add a font with the descriptor into the cache."""
@@ -90,6 +90,9 @@ class FontManager(pyglet.event.EventDispatcher):
     resolved_names: dict[tuple[str, ...], str]
 
     _font_groups: dict[str, FontGroupBase]
+    _hold: collections.deque[Font]
+    _added_families: set[str]
+    _added_faces: set[tuple[str, str, str, str]]
     _user_font_names: set[str]
     _font_contexts: weakref.WeakKeyDictionary[SurfaceContext, _FontContext]
 
@@ -117,21 +120,16 @@ class FontManager(pyglet.event.EventDispatcher):
         self.resolved_names.clear()
 
     @staticmethod
-    def _get_key_name(name: str | Sequence[str]) -> tuple[str, ...]:
-        if isinstance(name, list):
-            key_names = tuple(name)
-        elif isinstance(name, str):
-            key_names = (name,)
-        else:
-            key_names = name
-
-        return key_names
+    def _get_key_name(name: str | Iterable[str]) -> tuple[str, ...]:
+        if isinstance(name, str):
+            return (name,)
+        return tuple(name)
 
     def get_group(self, name: str) -> FontGroupBase | None:
         """Check if the specified name is a font group."""
         return self._font_groups.get(name)
 
-    def get_resolved_name(self, name: str | Sequence[str]) -> str | None:
+    def get_resolved_name(self, name: str | Iterable[str]) -> str:
         """Return the name of the first font found for a name or list of names.
 
         If a font is not found, a default font will be used depending on the platform.
@@ -223,6 +221,7 @@ def _get_system_font_class() -> type[Font]:
 
     Pyglet relies on OS dependent font systems for loading fonts and glyph creation.
     """
+    _font_class: type[Font]
     if pyglet.compat_platform in ("darwin", "ios"):
         from pyglet.font.quartz import QuartzFont
 
@@ -355,6 +354,7 @@ def load(
     assert weight is not None
     assert style is not None
     assert stretch is not None
+    font: Font
     if font_group := manager.get_group(name):
         font = font_group.get_font(size, weight=weight, style=style, stretch=stretch, dpi=dpi)
     else:

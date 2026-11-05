@@ -13,15 +13,22 @@ from pyglet.graphics.api.webgl.enums import geometry_map
 from pyglet.graphics.draw import _BucketBatch
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from pyodide.ffi import JsProxy
+
+    from pyglet.graphics.allocation import RangeAllocator
     from pyglet.graphics.api.webgl.context import WebGL2SurfaceContext
+    from pyglet.graphics.draw import DrawContext
+    from pyglet.graphics.vertexdomain import VertexDomain
 
 
 def get_default_batch() -> WebGLBatch:
     """Batch used globally for objects that have no Batch specified."""
-    return pyglet.graphics.api.core.get_default_batch()
+    return pyglet.graphics.api.core.get_default_batch()  # type: ignore[return-value]
 
 
-_domain_class_map: dict[tuple[bool, bool], type[vertexdomain.WebGLVertexDomain]] = {
+_domain_class_map: dict[tuple[bool, bool], type[VertexDomain]] = {
     # Indexed, Instanced : Domain
     (False, False): vertexdomain.WebGLVertexDomain,
     (True, False): vertexdomain.WebGLIndexedVertexDomain,
@@ -41,18 +48,20 @@ class WebGLBatch(_BucketBatch):
         super().__init__(context, initial_count)
 
     @staticmethod
-    def _draw_bucket_fn(domain, buckets, mode_func):
+    def _draw_bucket_fn(domain: VertexDomain, buckets: list[RangeAllocator],
+                        mode_func: int) -> Callable[[DrawContext], None]:
         if (type(domain) not in (vertexdomain.WebGLVertexDomain, vertexdomain.WebGLIndexedVertexDomain)
                 or not domain._supports_multi_draw):
             return _BucketBatch._draw_bucket_fn(domain, buckets, mode_func)
 
         index_stream = domain.index_stream if isinstance(domain, vertexdomain.WebGLIndexedVertexDomain) else None
         element_size = index_stream.index_element_size if index_stream is not None else 1
-        versions = None
-        starts = sizes = None
+        versions: tuple[int, ...] | None = None
+        starts: JsProxy | None = None
+        sizes: JsProxy | None = None
         primcount = 0
 
-        def _draw(_ctx):
+        def _draw(_ctx: DrawContext) -> None:
             nonlocal versions, starts, sizes, primcount
             if versions is None or any(bucket._version != version for bucket, version in zip(buckets, versions)):
                 regions = [region for bucket in buckets for region in bucket.merged_ranges]
@@ -62,8 +71,10 @@ class WebGLBatch(_BucketBatch):
                 versions = tuple(bucket._version for bucket in buckets)
 
             if index_stream is not None:
-                domain._multi_draw_elements(mode_func, sizes, 0, index_stream.gl_type, starts, 0, primcount)
+                domain._multi_draw_elements(  # type: ignore[attr-defined]
+                    mode_func, sizes, 0, index_stream.gl_type, starts, 0, primcount)
             else:
-                domain._multi_draw_array(mode_func, starts, 0, sizes, 0, primcount)
+                domain._multi_draw_array(  # type: ignore[attr-defined]
+                    mode_func, starts, 0, sizes, 0, primcount)
 
         return _draw

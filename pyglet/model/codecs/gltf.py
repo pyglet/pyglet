@@ -351,7 +351,7 @@ class Node(BaseNode):
         return [self._owner.nodes[i] for i in self._child_indices]
 
     @property
-    def parent(self) -> "Node | None":
+    def parent(self) -> Node | None:
         for node in self._owner.nodes:
             if self in node.children:
                 return node

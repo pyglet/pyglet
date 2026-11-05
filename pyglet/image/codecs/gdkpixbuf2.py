@@ -1,8 +1,7 @@
 from ctypes import *
 
-from pyglet.image import *
-from pyglet.image.codecs import *
-from pyglet.image.codecs import gif
+from pyglet.image import Animation, AnimationFrame, ImageData
+from pyglet.image.codecs import ImageDecodeException, ImageDecoder, gif
 
 import pyglet.window
 

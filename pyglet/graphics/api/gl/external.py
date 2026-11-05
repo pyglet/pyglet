@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import threading
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, cast
 
 import pyglet
 from pyglet.enums import GraphicsAPI
@@ -14,6 +14,7 @@ from pyglet.graphics.api.gl.gl import GLFunctions
 from pyglet.graphics.api.gl.lib import create_gl_linker
 
 if TYPE_CHECKING:
+    from pyglet.graphics.api.gl.global_opengl import OpenGLBackend
     from collections.abc import Iterator
     from pyglet.window.camera.base import BaseCamera
 
@@ -73,7 +74,7 @@ class ExternalOpenGLContext(OpenGLSurfaceContext):
             raise GraphicsIntegrationError('ExternalOpenGLContext requires the OpenGL or OpenGL ES 3 backend.')
         if context_share is not None and context_share.core is not core:
             raise GraphicsIntegrationError('Shared contexts must belong to the same graphics backend.')
-        super().__init__(core, self, None, context_share=context_share)
+        super().__init__(cast('OpenGLBackend', core), self, None, context_share=context_share)
         self._make_current = make_current
         self._is_current = is_current
         self._done_current = done_current

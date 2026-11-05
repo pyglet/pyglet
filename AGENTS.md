@@ -11,6 +11,8 @@ Rules for AI coding agents working in this repository.
 - Keep changes atomic -- one concern per commit
 - Ask for clarification when requirements are ambiguous
 - Do not generate PR descriptions or review comments on others' code
+- Use type hints for function and method parameters, return values, and variables where their types are not clear. Follow Python's standard typing conventions (PEP 484 and related typing PEPs), using the syntax supported by the project's Python versions.
+- Declare type hints for instance attributes initialized in `__init__` in the class namespace, rather than inside `__init__`
 
 ## Testing
 

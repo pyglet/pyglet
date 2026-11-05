@@ -1125,7 +1125,7 @@ def chain(
             raise TypeError(
                 msg,
             )
-        return Chain(generator, clock=clock)
+        return Chain(generator, clock=clock)  # type: ignore[arg-type]
 
     return wrapper
 

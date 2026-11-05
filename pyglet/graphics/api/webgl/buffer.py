@@ -197,7 +197,7 @@ class WebGLBufferObject(AbstractBuffer):
     def __del__(self) -> None:
         if self._handle is not None:
             try:
-                self._context.delete_buffer(self._handle)
+                self._gl.deleteBuffer(self._handle)
                 self._handle = None
             except (AttributeError, ImportError):
                 pass  # Interpreter is shutting down

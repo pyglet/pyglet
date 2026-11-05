@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from pyglet import options
 from pyglet.graphics.api.gl.egl.context import EGLContext
 import pyglet.libs.egl as egl
-from pyglet.config import SurfaceConfig
+from pyglet.config.gl import GLSurfaceConfig
 from pyglet.enums import GraphicsAPI
 
 if TYPE_CHECKING:
@@ -72,8 +72,7 @@ def match(config: OpenGLUserConfig, window: HeadlessWindow | WaylandWindow) -> E
     return result[0]
 
 
-class EGLSurfaceConfig(SurfaceConfig):
-    window: HeadlessWindow | WaylandWindow
+class EGLSurfaceConfig(GLSurfaceConfig['HeadlessWindow | WaylandWindow']):
 
     attribute_ids = {  # noqa: RUF012
         'buffer_size': egl.EGL_BUFFER_SIZE,
@@ -88,7 +87,7 @@ class EGLSurfaceConfig(SurfaceConfig):
         'samples': egl.EGL_SAMPLES,
     }
 
-    def __init__(self, window: HeadlessWindow | WaylandWindow, config: OpenGLUserConfig, egl_config: egl.EGLConfig) -> None:
+    def __init__(self, window: HeadlessWindow | WaylandWindow, config: OpenGLUserConfig, egl_config: int | None) -> None:
         super().__init__(window, config, egl_config)
         self._egl_config = egl_config
 
@@ -112,8 +111,8 @@ class EGLSurfaceConfig(SurfaceConfig):
                 setattr(self, name, value.value)
 
         # TODO: real attributes?
-        for name, value in _fake_gl_attributes.items():
-            setattr(self, name, value)
+        for name, fake_value in _fake_gl_attributes.items():
+            setattr(self, name, fake_value)
 
     def create_context(self, opengl_backend: OpenGLBackend, share: EGLContext | None) -> EGLContext:
         return EGLContext(opengl_backend, self._window, self, share)

@@ -110,7 +110,7 @@ from pyglet.graphics.api.gl.enums import texture_map
 from pyglet.image.base import ImageData, ImageDataRegion, CompressionFormat, \
     CompressedImageData
 from pyglet.graphics.texture import PixelData, PixelReadback, Texture, UniformTextureSequence, CompressedTexture, \
-    _TextureRegionShared, _Texture3DShared, _TextureArrayShared, TextureGrid
+    TextureRegion, TextureArrayRegion, TextureArray, _Texture3DShared, TextureGrid
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
@@ -772,22 +772,10 @@ class GLTexture(Texture[OpenGLSurfaceContext]):
                                       fmt, gl_type,
                                       data)
 
-class GLTextureRegion(_TextureRegionShared, GLTexture):
+class GLTextureRegion(TextureRegion[OpenGLSurfaceContext], GLTexture):
     """A rectangular region of a texture, presented as if it were a separate texture."""
 
     region_class: type[GLTextureRegion]
-
-    def __init__(self, x: int, y: int, z: int, width: int, height: int, owner: Texture) -> None:
-        handle = owner.handle
-        if handle is None:
-            msg = "Cannot create a region of a deleted texture."
-            raise TextureError(msg)
-        context = owner._context  # noqa: SLF001
-        super().__init__(context, width, height, handle, owner.tex_type, owner.internal_format,
-                         owner.internal_format_size, owner.internal_format_type, owner.filters, owner.address_mode,
-                         owner.anisotropic_level, key=owner.key)
-        self._init_region(x, y, z, width, height, owner)
-
 
 GLTexture.region_class = GLTextureRegion
 
@@ -906,7 +894,7 @@ class GLTexture3D(_GLLayeredTexture, _Texture3DShared[GLTextureRegion, OpenGLSur
         return texture
 
 
-class GLTextureArrayRegion(GLTextureRegion):
+class GLTextureArrayRegion(TextureArrayRegion[OpenGLSurfaceContext], GLTextureRegion):
     """A region of a TextureArray, presented as if it were a separate texture."""
 
     region_class: type[GLTextureArrayRegion]
@@ -915,11 +903,9 @@ class GLTextureArrayRegion(GLTextureRegion):
         return f"{self.__class__.__name__}(handle={self._handle}, size={self.width}x{self.height}, layer={self.z})"
 
 
-class GLTextureArray(_GLLayeredTexture, _TextureArrayShared[GLTextureArrayRegion, OpenGLSurfaceContext],
-                     GLTexture, UniformTextureSequence[GLTextureArrayRegion]):
+class GLTextureArray(_GLLayeredTexture, TextureArray[OpenGLSurfaceContext], GLTexture):
     """An OpenGL texture array with independently addressable image layers."""
     region_class: type[GLTextureArrayRegion] = GLTextureArrayRegion
-    items: list[GLTextureArrayRegion]
 
     def __init__(self, context: OpenGLSurfaceContext, width: int, height: int, tex_id: int, max_depth: int,
                  internal_format: ComponentFormat = ComponentFormat.RGBA,
@@ -928,10 +914,9 @@ class GLTextureArray(_GLLayeredTexture, _TextureArrayShared[GLTextureArrayRegion
                  filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT,
                  anisotropic_level: int = 0) -> None:
-        super().__init__(context, width, height, tex_id, TextureType.TYPE_2D_ARRAY, internal_format, internal_format_size,
-                  internal_format_type, filters, address_mode, anisotropic_level)
-        self.max_depth = max_depth
-        self.items = []
+        super().__init__(
+            width, height, tex_id, max_depth, internal_format, internal_format_size,
+            internal_format_type, filters, address_mode, anisotropic_level, context=context)
 
     @classmethod
     def create(cls: type[GLTextureArray], width: int, height: int,
@@ -987,6 +972,7 @@ class GLTextureArray(_GLLayeredTexture, _TextureArrayShared[GLTextureArrayRegion
 
     def _get_mipmap_depth(self, level: int) -> int:
         return max(1, int(self.max_depth))
+
 
 GLTextureArrayRegion.region_class = GLTextureArrayRegion
 

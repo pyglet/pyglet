@@ -7,7 +7,7 @@ from __future__ import annotations
 import enum
 import warnings
 
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, cast
 from dataclasses import dataclass
 
 from pyglet import IS_DOC_BUILD
@@ -50,6 +50,9 @@ class Device:
     """Low level input device."""
 
     connected: bool
+    #: The manufacturer name, if available
+    manufacturer: str | None
+    _is_open: bool
 
     def __init__(self, display: Display | None, name: str) -> None:
         """Create a Device to receive input from.
@@ -63,9 +66,8 @@ class Device:
         self.display = display
         self.name = name
 
-        #: The manufacturer name, if available
-        self.manufacturer: str | None = None
-        self._is_open: bool = False
+        self.manufacturer = None
+        self._is_open = False
 
     @property
     def is_open(self) -> bool:
@@ -127,6 +129,8 @@ class Control(EventDispatcher):
     device; in some cases the control's value will be outside this range.
     """
 
+    _value: float | None
+
     def __init__(self, name: None | str, raw_name: None | str = None, inverted: bool = False) -> None:
         """Create a Control to receive input.
 
@@ -147,12 +151,13 @@ class Control(EventDispatcher):
         self._value = None
 
     @property
-    def value(self) -> float:
+    def value(self) -> float | None:
         """Current value of the control.
 
         The range of the value is device-dependent; for absolute controls
         the range is given by ``min`` and ``max`` (however the value may exceed
         this range); for relative controls the range is undefined.
+        The value is ``None`` until the first input is received.
         """
         return self._value
 
@@ -169,7 +174,7 @@ class Control(EventDispatcher):
         return f"{self.__class__.__name__}(raw_name={self.raw_name})"
 
     # Events
-    def on_change(self, value: float) -> bool:
+    def on_change(self, value: float) -> None:
         """The value changed."""
 
 
@@ -192,7 +197,7 @@ class RelativeAxis(Control):
     WHEEL: str = 'wheel'
 
     @property
-    def value(self) -> float:
+    def value(self) -> float | None:
         return self._value
 
     @value.setter
@@ -231,7 +236,7 @@ class Button(Control):
         return bool(self._value)
 
     @value.setter
-    def value(self, newvalue: bool | int) -> None:
+    def value(self, newvalue: float) -> None:
         if newvalue == self._value:
             return
         self._value = newvalue
@@ -365,7 +370,7 @@ class Joystick(EventDispatcher):
             if not (control.min or control.max):
                 warnings.warn(f"Control('{control.name}') min & max values are both 0. Skipping.")
                 return
-            name = control.name
+            name = cast(str, control.name)
             scale = 2.0 / (control.max - control.min)
             bias = -1.0 - control.min * scale
             if control.inverted:
@@ -561,6 +566,13 @@ class Controller(EventDispatcher):
     #: :regardless of whether they are bound to the Controller layout.
     absolute_axis_controls: list[AbsoluteAxis]
 
+    _leftx: float
+    _lefty: float
+    _rightx: float
+    _righty: float
+    _dpadx: float
+    _dpady: float
+
     def __init__(self, device: Device, mapping: dict):
         """Create a Controller instance mapped to a Device.
 
@@ -568,37 +580,37 @@ class Controller(EventDispatcher):
         """
 
         #: The underlying Device:
-        self.device: Device = device
+        self.device = device
         self._mapping = mapping
-        self.name: str = mapping.get('name')
-        self.guid: str = mapping.get('guid')
+        self.name = cast(str, mapping.get('name'))
+        self.guid = cast(str, mapping.get('guid'))
 
         # Pollable attributes
-        self.a: bool = False
-        self.b: bool = False
-        self.x: bool = False
-        self.y: bool = False
-        self.back: bool = False
-        self.start: bool = False
-        self.guide: bool = False
-        self.leftshoulder: bool = False
-        self.rightshoulder: bool = False
-        self.leftthumb: bool = False
-        self.rightthumb: bool = False
-        self.lefttrigger: float = 0.0
-        self.righttrigger: float = 0.0
-        self.dpad: Vec2 = Vec2()
-        self.leftstick: Vec2 = Vec2()
-        self.rightstick: Vec2 = Vec2()
+        self.a = False
+        self.b = False
+        self.x = False
+        self.y = False
+        self.back = False
+        self.start = False
+        self.guide = False
+        self.leftshoulder = False
+        self.rightshoulder = False
+        self.leftthumb = False
+        self.rightthumb = False
+        self.lefttrigger = 0.0
+        self.righttrigger = 0.0
+        self.dpad = Vec2()
+        self.leftstick = Vec2()
+        self.rightstick = Vec2()
 
         # internal temp values that may be used when
         # consolidating to the above final attributes
-        self._leftx: float = 0.0
-        self._lefty: float = 0.0
-        self._rightx: float = 0.0
-        self._righty: float = 0.0
-        self._dpadx: float = 0.0
-        self._dpady: float = 0.0
+        self._leftx = 0.0
+        self._lefty = 0.0
+        self._rightx = 0.0
+        self._righty = 0.0
+        self._dpadx = 0.0
+        self._dpady = 0.0
 
         # ALL Controls this device exposes, whether they are mapped to the default layout or not:
         self.button_controls = [c for c in self.device.get_controls() if isinstance(c, Button)]
@@ -929,7 +941,9 @@ class AppleRemote(EventDispatcher):
         self.device = device
 
         def _add_button(button: Button):
-            setattr(self, button.name + '_control', button)
+            # Only buttons with recognized names are passed to this helper.
+            name = cast(str, button.name)
+            setattr(self, name + '_control', button)
 
             @button.event
             def on_press():
@@ -1162,14 +1176,14 @@ class ControllerManager(EventDispatcher):
 
     # Events
 
-    def on_connect(self, controller) -> Controller:
+    def on_connect(self, controller: Controller) -> None:
         """A Controller has been connected. If this is
         a previously disconnected Controller that is
         being re-connected, the same Controller instance
         will be returned.
         """
 
-    def on_disconnect(self, controller) -> Controller:
+    def on_disconnect(self, controller: Controller) -> None:
         """A Controller has been disconnected."""
 
 

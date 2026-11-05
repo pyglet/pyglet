@@ -110,7 +110,7 @@ class MacOSFileSaveDialog(FileSaveDialogBase):
                         if _result == 1:
                             self._dispatch_event(nsstr_to_py(panel.URL().path()))
                         else:  # cancelled
-                            self._dispatch_event([])
+                            self._dispatch_event("")
                     finally:
                         MacOSFileSaveDialog._cb_block = None
 

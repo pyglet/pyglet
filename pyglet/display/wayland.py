@@ -25,9 +25,11 @@ class WaylandScreenMode(ScreenMode):
         super().__init__(screen)
 
 
-class WaylandDisplay(Display):
+class WaylandDisplay(Display['WaylandScreen']):
     _protocols = ('/usr/share/wayland/wayland.xml', '/usr/share/wayland-protocols/stable/xdg-shell/xdg-shell.xml')
     _display_instance: WaylandDisplay | None = None
+    _screens: list[WaylandScreen]
+    _output_screens: dict[int | None, WaylandScreen]
 
     def __new__(cls):
         if cls._display_instance:
@@ -105,14 +107,14 @@ class WaylandDisplay(Display):
 
     # End Wayland Event handlers
 
-    def get_screens(self):
+    def get_screens(self) -> list[WaylandScreen]:
         return self._screens
 
     def __del__(self):
         egl.eglTerminate(self.display_connection)
 
 
-class WaylandScreen(Screen):
+class WaylandScreen(Screen[WaylandDisplay]):
 
     def __init__(self, display, geometry, modes, scale, name, description, is_primary):
         self._is_primary = is_primary

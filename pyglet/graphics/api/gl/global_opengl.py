@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Sequence, TYPE_CHECKING
+from typing import Any, Sequence, TYPE_CHECKING, cast
 
 import pyglet
 from pyglet.enums import GraphicsAPI
@@ -14,16 +14,20 @@ from pyglet.graphics.attributes import VertexLayout
 from pyglet.graphics.shader import Shader, ShaderProgram
 
 if TYPE_CHECKING:
+    from pyglet.config import SurfaceConfig
     from pyglet.config.gl import GLSurfaceConfig
     from pyglet.libs.win32.wgl import WGLFunctions
     from pyglet.graphics.shader import ShaderType
     from pyglet.graphics.api.gl import OpenGLSurfaceContext
+    from pyglet.graphics.api.base import SurfaceInfo
     from pyglet.window import Window
 
 
 
-class OpenGLBackend(BackendGlobalObject):
+class OpenGLBackend(BackendGlobalObject['pyglet.config.OpenGLUserConfig']):
+    initialized: bool
     platform_func: WGLFunctions | None
+    platform_exts: list[str]
     graphics_api: GraphicsAPI
     current_context: OpenGLSurfaceContext | NullContext
 
@@ -39,12 +43,12 @@ class OpenGLBackend(BackendGlobalObject):
         self.platform_exts = []
         super().__init__(graphics_api)
 
-    def create_context(self, config: GLSurfaceConfig, shared: OpenGLSurfaceContext | None) -> OpenGLSurfaceContext:
+    def create_context(self, config: GLSurfaceConfig, shared: SurfaceContext | None) -> OpenGLSurfaceContext:
         return config.create_context(self, shared)
 
-    def get_surface_context(self, window: Window, config: GLSurfaceConfig,
-                            shared: OpenGLSurfaceContext | None = None) -> SurfaceContext:
-        context = self.windows[window] = self.create_context(config, shared=shared)
+    def get_surface_context(self, window: Window, config: SurfaceConfig,
+                            shared: SurfaceContext | None = None) -> OpenGLSurfaceContext:
+        context = self.windows[window] = self.create_context(cast('GLSurfaceConfig', config), shared=shared)
         self._have_context = True
         return context
 
@@ -75,14 +79,14 @@ class OpenGLBackend(BackendGlobalObject):
 
         return configs
 
-    def get_config(self, **kwargs: float | str | None) -> pyglet.config.OpenGLUserConfig:
+    def get_config(self, **kwargs: Any) -> pyglet.config.OpenGLUserConfig:
         return pyglet.config.OpenGLUserConfig(**kwargs)
 
     @property
-    def info(self):
+    def info(self) -> SurfaceInfo:
         return self.current_context.info
 
-    def get_info(self):
+    def get_info(self) -> SurfaceInfo:
         return self.info
 
     def have_extension(self, extension_name: str) -> bool:
@@ -146,5 +150,5 @@ class OpenGLBackend(BackendGlobalObject):
 
         return self.current_context.default_batch
 
-    def set_viewport(self, window, x: int, y: int, width: int, height: int) -> None:
+    def set_viewport(self, window: Window, x: int, y: int, width: int, height: int) -> None:
         self.current_context.glViewport(x, y, width, height)

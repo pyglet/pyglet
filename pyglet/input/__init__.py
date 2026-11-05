@@ -61,7 +61,7 @@ from .base import Button, Joystick, AppleRemote, Tablet, Controller
 from .base import DeviceException, DeviceOpenException, DeviceExclusiveException
 
 if TYPE_CHECKING:
-    from pyglet.display import Display
+    from pyglet.display.base import Display
 
 
 
@@ -79,7 +79,7 @@ def get_apple_remote(display: Display | None = None) -> AppleRemote | None:
     return None
 
 
-if IS_DOC_BUILD:
+if TYPE_CHECKING or IS_DOC_BUILD:
     def get_devices(display: Display | None = None) -> list[Device]:
         """Get a list of all attached input devices.
 
@@ -88,6 +88,7 @@ if IS_DOC_BUILD:
                 The display device to query for input devices.  Ignored on Mac
                 OS X and Windows.  On Linux, defaults to the default display device.
         """
+        return []
 
 
     def get_joysticks(display: Display | None = None) -> list[Joystick]:
@@ -98,6 +99,7 @@ if IS_DOC_BUILD:
                 The display device to query for input devices.  Ignored on Mac
                 OS X and Windows.  On Linux, defaults to the default display device.
         """
+        return []
 
 
     def get_controllers(display: Display | None = None) -> list[Controller]:
@@ -108,6 +110,7 @@ if IS_DOC_BUILD:
                 The display device to query for input devices.  Ignored on Mac
                 OS X and Windows.  On Linux, defaults to the default display device.
         """
+        return []
 
     def get_tablets(display: Display | None = None) -> list[Tablet]:
         """Get a list of tablets.
@@ -123,6 +126,7 @@ if IS_DOC_BUILD:
                 The display device to query for input devices.  Ignored on Mac
                 OS X and Windows.  On Linux, defaults to the default display device.
         """
+        return []
 
 else:
 

@@ -599,7 +599,6 @@ avcodec.av_packet_clone.argtypes = [POINTER(AVPacket)]
 avcodec.av_packet_move_ref.argtypes = [POINTER(AVPacket), POINTER(AVPacket)]
 avcodec.avcodec_find_decoder.restype = POINTER(AVCodec)
 avcodec.avcodec_find_decoder.argtypes = [c_int]
-AVDictionary = libavutil.AVDictionary
 avcodec.avcodec_open2.restype = c_int
 avcodec.avcodec_open2.argtypes = [POINTER(AVCodecContext),
                                   POINTER(AVCodec),

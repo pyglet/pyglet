@@ -10,7 +10,7 @@ authors = [
 readme = "README.md"
 license = { file = "LICENSE" }
 dynamic = ["version", "description"]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = []
 
 classifiers = [
@@ -24,7 +24,6 @@ classifiers = [
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -63,7 +62,7 @@ dev = [
 
 [tool.pytest.ini_options]
 addopts = "-s --strict-markers"
-testpaths = ["tests"]
+testpaths = ["tests/unit", "tests/integration"]
 
 norecursedirs = [
     "contrib",
@@ -86,6 +85,7 @@ markers = [
 ]
 
 [tool.mypy]
+files = ["pyglet", "tests/typing"]
 exclude = [
     "^pyglet/experimental/",
     "^pyglet/libs/",
@@ -96,8 +96,32 @@ exclude = [
 disable_error_code = ["union-attr"]
 
 [[tool.mypy.overrides]]
+# Excluded implementation details can still be reached through imports.
+# Analyze their exported types without reporting diagnostics in those files.
+module = [
+    "pyglet.experimental.*",
+    "pyglet.libs.*",
+    "pyglet.extlibs.*",
+    "pyglet.font.freetype_lib",
+    "pyglet.font.dwrite.d2d1_lib",
+    "pyglet.font.dwrite.d2d1_types_lib",
+    "pyglet.font.dwrite.dwrite_lib",
+    "pyglet.media.drivers.directsound.lib_dsound",
+    "pyglet.media.drivers.openal.lib_alc",
+    "pyglet.media.drivers.openal.lib_openal",
+    "pyglet.media.drivers.pulse.lib_pulseaudio",
+    "pyglet.media.drivers.xaudio2.lib_xaudio2",
+]
+follow_imports = "silent"
+
+[[tool.mypy.overrides]]
 # Pyodide provides this module in the browser runtime.
 module = "js"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# Optional codecs load these packages only when installed by the application.
+module = ["PIL.*", "zstandard", "pyogg", "gi.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
@@ -114,11 +138,13 @@ disable_error_code = ["misc", "override"]
 [tool.ruff]
 line-length = 120
 indent-width = 4
-target-version = "py310"
+target-version = "py311"
 exclude = ["venv/*", ".venv/*", "build/*", "doc/*", ".github/*", "tests"]
 
 [tool.ruff.lint]
 select = ["ALL"]
+extend-select = ["TC008"]  # Remove unnecessary quotes in explicit type aliases.
+future-annotations = true
 extend-safe-fixes = ["UP007", "UP006"]
 
 ignore = [

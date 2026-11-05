@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections import deque
 from typing import TYPE_CHECKING, List, Optional, Tuple
 import weakref
@@ -36,11 +38,11 @@ class OpenALDriver(AbstractAudioDriver):
     def sample_formats(self):
        return self.context._supported_formats
 
-    def create_audio_player(self, source: 'Source', player: 'AudioPlayer') -> 'OpenALAudioPlayer':
+    def create_audio_player(self, source: Source, player: AudioPlayer) -> OpenALAudioPlayer:
         assert self.device is not None, 'Device was closed'
         return OpenALAudioPlayer(self, source, player)
 
-    def create_gapless_audio_player(self, source: 'Source', player: 'AudioPlayer') -> 'OpenALGaplessAudioPlayer':
+    def create_gapless_audio_player(self, source: Source, player: AudioPlayer) -> OpenALGaplessAudioPlayer:
         assert self.device is not None, 'Device was closed'
         return OpenALGaplessAudioPlayer(self, source, player)
 
@@ -76,12 +78,12 @@ class OpenALDriver(AbstractAudioDriver):
     def have_extension(self, extension: str) -> bool:
         return extension in self.get_extensions()
 
-    def get_listener(self) -> 'OpenALListener':
+    def get_listener(self) -> OpenALListener:
         return self._listener
 
 
 class OpenALListener(AbstractListener):
-    def __init__(self, driver: 'OpenALDriver') -> None:
+    def __init__(self, driver: OpenALDriver) -> None:
         self._driver = weakref.proxy(driver)
         self._al_listener = interface.OpenALListener()
 
@@ -103,7 +105,8 @@ class OpenALListener(AbstractListener):
 
 
 class OpenALAudioPlayer(AbstractAudioPlayer):
-    def __init__(self, driver: 'OpenALDriver', source: 'Source', player: 'AudioPlayer') -> None:
+    _queued_buffer_sizes: deque[int]
+    def __init__(self, driver: OpenALDriver, source: Source, player: AudioPlayer) -> None:
         super().__init__(source, player)
         self.driver = driver
         self.alsource = driver.context.create_source()
@@ -266,7 +269,9 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
 class OpenALGaplessAudioPlayer(OpenALAudioPlayer, GaplessAudioPlayerBase):
     """Keep a single OpenAL source fed across source boundaries."""
 
-    def __init__(self, driver: 'OpenALDriver', source: 'Source', player: 'AudioPlayer') -> None:
+    _queued_source_end_counts: deque[int]
+
+    def __init__(self, driver: OpenALDriver, source: Source, player: AudioPlayer) -> None:
         super().__init__(driver, source, player)
         self._queued_source_end_counts = deque()
 

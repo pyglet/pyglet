@@ -7,6 +7,7 @@ import time
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
 
@@ -50,6 +51,19 @@ def _return_voices(driver, voices) -> None:
 def test_driver_create_delete() -> None:
     driver = xaudio2.create_audio_driver()
     driver.delete()
+
+
+@pytest.mark.parametrize('debug_media', [False, True])
+def test_engine_debug_configuration_respects_option(monkeypatch: pytest.MonkeyPatch, debug_media: bool) -> None:
+    configure_debug = Mock()
+    monkeypatch.setattr(pyglet.options, 'debug_media', debug_media)
+    monkeypatch.setattr(interface.lib.IXAudio2, 'SetDebugConfiguration', configure_debug)
+
+    driver = interface.XAudio2Driver()
+    try:
+        assert configure_debug.call_count == int(debug_media)
+    finally:
+        driver.delete()
 
 
 def test_critical_error_only_requests_restart(interface_driver) -> None:

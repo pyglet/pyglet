@@ -95,6 +95,10 @@ class ImageEncodeException(EncodeException):
 
 
 class ImageDecoder(Decoder):
+    def get_file_extensions(self) -> list[str]:
+        """Return accepted image file extensions in lower case."""
+        raise NotImplementedError
+
     def get_media_capabilities(self) -> tuple[MediaTypes, ...]:
         """Return the media capabilities supported by this decoder."""
         return ('image',)
@@ -163,12 +167,12 @@ def add_default_codecs():
     except ImportError:
         pass
 
-    # Mac OS X default: Quartz
+    # macOS default: Image I/O
     if compat_platform == 'darwin':
         try:
-            from pyglet.image.codecs import quartz
-            registry.add_encoders(quartz)
-            registry.add_decoders(quartz)
+            from pyglet.image.codecs import imageio
+            registry.add_encoders(imageio)
+            registry.add_decoders(imageio)
         except ImportError:
             pass
 

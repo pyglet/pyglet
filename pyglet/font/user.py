@@ -58,6 +58,7 @@ if your base font is a size of 12, creating a scaled version at size 24 will be 
 """
 from __future__ import annotations
 
+from math import ceil
 from typing import TYPE_CHECKING, ClassVar, Protocol
 
 import pyglet
@@ -183,7 +184,7 @@ class UserDefinedFontBase(base.Font):
             self._glyph_renderer = self.glyph_renderer_class(self)
 
     def get_text_size(self, text: str) -> tuple[int, int]:
-        """Return the bounds of the rendered user-font glyphs."""
+        """Return user-font glyph dimensions rounded up to integer pixels."""
         if not text:
             return 0, 0
 
@@ -191,7 +192,7 @@ class UserDefinedFontBase(base.Font):
         width = sum(glyph.advance for glyph in glyphs)
         top = max(glyph.vertices[3] for glyph in glyphs)
         bottom = min(glyph.vertices[1] for glyph in glyphs)
-        return width, top - bottom
+        return ceil(width), ceil(top - bottom)
 
 class UserDefinedFontException(Exception):  # noqa: N818
     """An exception related to user font creation."""

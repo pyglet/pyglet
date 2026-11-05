@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Protocol, cast, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, cast, runtime_checkable, Generic, TypeVar
 
 import pyglet
 
@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from pyglet.gui.layout import Frame, Layout
     from pyglet.window import BaseWindow, MouseCursor
     from pyglet.window.camera.base import BaseCamera, _CameraViewBase
+    from pyglet.window.camera.camera2d import Camera2DView
 
 
 @runtime_checkable
@@ -32,8 +33,15 @@ class LayoutContainer(LayoutContent, Protocol):
     def input_parent(self) -> UIManager | Frame | ScrollableRegion:
         ...
 
+    @property
+    def parent(self) -> UIManager | Frame | Layout | ScrollableRegion | None:
+        ...
 
-class WidgetBase(EventDispatcher):
+
+_ValueT = TypeVar('_ValueT')
+
+
+class WidgetBase(EventDispatcher, Generic[_ValueT]):
     """The base of all widgets."""
 
     def __init__(
@@ -162,7 +170,7 @@ class WidgetBase(EventDispatcher):
         return self._x, self._y, self._x + self._width, self._y + self._height
 
     @property
-    def value(self) -> object:
+    def value(self) -> _ValueT:
         """Query or set the Widget's value.
 
         This property allows you to set the value of a Widget directly, without any
@@ -174,7 +182,7 @@ class WidgetBase(EventDispatcher):
         raise NotImplementedError('Value depends on control type!')
 
     @value.setter
-    def value(self, value: object) -> None:
+    def value(self, value: _ValueT) -> None:
         raise NotImplementedError('Value depends on control type!')
 
     def _check_hit(self, x: int, y: int) -> bool:
@@ -263,7 +271,7 @@ WidgetBase.register_event_type("on_focus_gain")
 WidgetBase.register_event_type("on_focus_lost")
 
 
-class PushButton(WidgetBase):
+class PushButton(WidgetBase[bool]):
     """Instance of a push button.
 
     Triggers the event 'on_press' when it is clicked by the mouse.
@@ -387,7 +395,7 @@ PushButton.register_event_type('on_press')
 PushButton.register_event_type('on_release')
 
 
-class TextButton(WidgetBase):
+class TextButton(WidgetBase[bool]):
     """Instance of a text push button.
 
     Triggers the event 'on_press' when it is clicked by the mouse.
@@ -597,7 +605,7 @@ class ToggleButton(PushButton):
 ToggleButton.register_event_type('on_toggle')
 
 
-class Slider(WidgetBase):
+class Slider(WidgetBase[float]):
     """Instance of a slider made of a base and a knob image.
 
     Triggers the event 'on_change' when the knob position is changed.
@@ -742,7 +750,7 @@ class Slider(WidgetBase):
 Slider.register_event_type('on_change')
 
 
-class TextEntry(WidgetBase):
+class TextEntry(WidgetBase[str]):
     """Instance of a text entry widget. Allows the user to enter and submit text.
 
     Triggers the event 'on_commit', when the user hits the Enter or Return key.
@@ -921,6 +929,8 @@ class ScrollableRegion(WidgetBase, LayoutCell[LayoutCellStyle]):
     attribute). ``content_group`` applies the child view and clip to content.
     """
 
+    view: Camera2DView
+
     def __init__(
         self,
         parent: UIManager | Frame | None,
@@ -953,7 +963,7 @@ class ScrollableRegion(WidgetBase, LayoutCell[LayoutCellStyle]):
         WidgetBase.__init__(self, parent, x, y, width, height)
         LayoutCell.__init__(self, LayoutCellStyle(content_alignment=("left", "top")), batch, group)
         self._rect: tuple[float, float, float, float] = (float(x), float(y), float(width), float(height))
-        self.view: _CameraViewBase = parent_view.create_view(inherit=True)
+        self.view = cast('Camera2DView', parent_view.create_view(inherit=True))
         self._window = window
         self.content_group = Group(order=1, parent=group)
         self.content_group.set_camera(self.view)
@@ -1031,7 +1041,7 @@ class ScrollableRegion(WidgetBase, LayoutCell[LayoutCellStyle]):
                 raise ValueError("A scrollable region layout must be constructed with the region as its parent.")
             if isinstance(value, WidgetBase) and value.parent is not self:
                 raise ValueError("A scrollable region widget must be constructed with the region as its parent.")
-        LayoutCell.content.fset(self, value)
+        LayoutCell._set_content(self, value)
         self.set_scroll(self._scroll_x, self._scroll_y)
 
     @property

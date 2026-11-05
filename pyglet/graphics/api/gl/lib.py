@@ -12,15 +12,8 @@ _debug_api_trace = pyglet.options.debug_api_trace
 _debug_api_trace_args = pyglet.options.debug_api_trace_args
 
 
-_int_types = (ctypes.c_int16, ctypes.c_int32)
-if hasattr(ctypes, 'c_int64'):
-    # Some builds of ctypes apparently do not have c_int64
-    # defined; it's a pretty good bet that these builds do not
-    # have 64-bit pointers.
-    _int_types += (ctypes.c_int64,)
-for t in _int_types:
-    if ctypes.sizeof(t) == ctypes.sizeof(ctypes.c_size_t):
-        c_ptrdiff_t = t
+# ctypes.c_ssize_t has provided a signed pointer-sized type since Python 3.2.
+c_ptrdiff_t = ctypes.c_ssize_t
 
 
 class c_void(ctypes.Structure):
@@ -104,7 +97,7 @@ def errcheck(result: Any, func: Callable, arguments: Sequence) -> Any:
 
 def decorate_function(func: Callable, name: str) -> None:
     if _debug_api and name not in ('glGetError',) and name[:3] not in ('glX', 'agl', 'wgl'):
-        func.errcheck = errcheck
+        func.errcheck = errcheck  # type: ignore[attr-defined]
         func.__name__ = name
 
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import signal
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 import pyglet
 from pyglet import app
@@ -60,7 +60,7 @@ def create_menu():
         appMenuItem.release()
 
 
-class _AppDelegate(NSObject):
+class _AppDelegate(NSObject):  # type: ignore[valid-type, misc]
 
     @objc_method(b'@' + PyObjectEncoding)
     def init(self, pyglet_loop):
@@ -163,16 +163,20 @@ class CocoaAlternateEventLoop(EventLoop):
             self.platform_event_loop.nsapp_stop()
 
 
-class CocoaWindowDrawSource(WindowDrawSource):
+class CocoaWindowDrawSource(WindowDrawSource['CocoaWindow']):
     """Display driven drawing backed by one CADisplayLink."""
+
+    _active: bool
+    _interval: float | None
 
     def __init__(self) -> None:
         self._active = False
         self._interval = None
 
     def start(self, interval: float) -> bool:
-        started_windows = []
-        for window in app.windows:
+        started_windows: list[CocoaWindow] = []
+        for candidate in app.windows:
+            window = cast('CocoaWindow', candidate)
             if not window._start_display_link(interval):  # noqa: SLF001
                 for started_window in started_windows:
                     started_window._stop_display_link()  # noqa: SLF001
@@ -190,10 +194,10 @@ class CocoaWindowDrawSource(WindowDrawSource):
         self._active = False
         self._interval = None
         for window in app.windows:
-            window._stop_display_link()  # noqa: SLF001
+            cast('CocoaWindow', window)._stop_display_link()  # noqa: SLF001
 
     def add_window(self, window: CocoaWindow) -> bool:
-        return not self._active or window._start_display_link(self._interval)  # noqa: SLF001
+        return not self._active or (self._interval is not None and window._start_display_link(self._interval))  # noqa: SLF001
 
     def remove_window(self, window: CocoaWindow) -> None:
         window._stop_display_link()  # noqa: SLF001
@@ -251,7 +255,7 @@ class CocoaPlatformEventLoop(PlatformEventLoop):
                 self.NSApp.activateIgnoringOtherApps_(True)
                 self._finished_launching = True
 
-    def create_window_draw_source(self, _event_loop: EventLoop) -> WindowDrawSource | None:
+    def create_window_draw_source(self, event_loop: EventLoop) -> WindowDrawSource | None:  # noqa: ARG002
         if pyglet.options.osx_displaylink and self._display_link_supported:
             return CocoaWindowDrawSource()
         return None

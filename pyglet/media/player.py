@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import time
 from collections import deque
-from typing import TYPE_CHECKING, Generator, Iterable
+from typing import TYPE_CHECKING, Generator, Iterable, Iterator
 
 import pyglet
 from pyglet.media.codecs.base import LoopingSource, Source, StreamingSource
@@ -16,7 +16,7 @@ _debug = debug_print('debug_media')
 if TYPE_CHECKING:
     from pyglet.graphics.draw import Batch
     from pyglet.graphics import Texture
-    from pyglet.media.drivers.base import AbstractAudioPlayer
+    from pyglet.media.drivers.base import AbstractAudioPlayer, GaplessAudioPlayerBase
 
 
 class PlaybackTimer:
@@ -25,6 +25,8 @@ class PlaybackTimer:
     This is a simple timer object which tracks the time elapsed. It can be
     paused and reset.
     """
+    _elapsed: float
+    _started_at: float | None
 
     def __init__(self) -> None:
         self._elapsed = 0.0
@@ -71,16 +73,17 @@ class AudioPlayer(pyglet.event.EventDispatcher):
     _min_distance = 1.0
     _max_distance = 100000000.0
 
-    _position = (0, 0, 0)
+    _position: tuple[float, float, float] = (0, 0, 0)
     _pitch = 1.0
 
-    _cone_orientation = (0, 0, 1)
+    _cone_orientation: tuple[float, float, float] = (0, 0, 1)
     _cone_inner_angle = 360.0
     _cone_outer_angle = 360.0
     _cone_outer_gain = 1.0
 
     _source: Source | None
     _audio_player: AbstractAudioPlayer | None
+    _playlists: deque[Iterator[Source]]
 
     def __init__(self) -> None:
         """Initialize the Player with a MasterClock."""
@@ -124,6 +127,7 @@ class AudioPlayer(pyglet.event.EventDispatcher):
         if self.source is None:
             self._set_source(next(self._playlists[0]))
             if self._audio_player is not None:
+                assert self._source is not None
                 self._audio_player.set_source(self._source)
 
         self._set_playing(self._playing)
@@ -134,9 +138,11 @@ class AudioPlayer(pyglet.event.EventDispatcher):
         else:
             self._source = new_source.get_queue_source()
 
-    def _check_resource_reuse(self, old_source: Source) -> None:
+    def _check_resource_reuse(self, old_source: Source | None) -> None:
         """Determine if a resource can be re-used based on the old source."""
         if self._audio_player is not None:
+            assert self._source is not None
+            assert old_source is not None
             # If current source format properties match the old source, then the resource can be re-used.
             if self._source.audio_format == old_source.audio_format:
                 self._audio_player.set_source(self._source)
@@ -182,7 +188,7 @@ class AudioPlayer(pyglet.event.EventDispatcher):
             self._timer.start()
 
             # If the driver is silent, it will not create any players, dispatch an end event.
-            if self._audio_player is None and source.video_format is None:
+            if self._audio_player is None and source.video_format is None and source.duration is not None:
                 pyglet.clock.schedule_once(lambda dt: self.dispatch_event("on_eos"), source.duration)
         else:
             self._stop_player_resources()
@@ -615,11 +621,15 @@ class GaplessAudioPlayer(AudioPlayer):
     All queued sources must have identical audio formats.
     """
 
+    _audio_player: GaplessAudioPlayerBase | None
+    _sources: deque[Source]
+
     def __init__(self) -> None:
         super().__init__()
         self._sources = deque()
 
     def queue(self, source: Source | Iterable[Source]) -> None:
+        sources: Iterable[Source]
         if isinstance(source, Source):
             sources = (source,)
         else:
@@ -630,6 +640,7 @@ class GaplessAudioPlayer(AudioPlayer):
 
         for item in sources:
             queued_source = item.get_queue_source()
+            assert queued_source is not None
             if queued_source.video_format is not None:
                 raise MediaException('GaplessAudioPlayer only supports audio sources.')
             if queued_source.audio_format is None:
@@ -745,13 +756,15 @@ class GaplessAudioPlayer(AudioPlayer):
 GaplessAudioPlayer.register_event_type('on_gapless_source_eos')
 
 
-def _one_item_playlist(source: Source) -> Generator:
+def _one_item_playlist(source: Source) -> Generator[Source, None, None]:
     yield source
 
 
 class VideoPlayer(AudioPlayer):
     """High-level sound and video player."""
     _sprite: pyglet.sprite.Sprite | None
+    _texture: Texture | None
+    _video_position: tuple[float, float, float]
 
     def __init__(self, batch: Batch | None = None) -> None:
         """Initialize the Video Player.
@@ -764,7 +777,7 @@ class VideoPlayer(AudioPlayer):
         super().__init__()
         self._texture = None
         self._sprite = None
-        self._position = (0, 0)
+        self._video_position = (0, 0, 0)
         self._width = 0
         self._height = 0
         self.batch = batch or pyglet.graphics.get_default_batch()
@@ -790,15 +803,19 @@ class VideoPlayer(AudioPlayer):
         self.seek(self.time)
 
     @property
-    def position(self) -> tuple[int, int]:
-        """Get the position of the video player."""
-        return self._position
+    def position(self) -> tuple[float, float, float]:
+        """The position as ``(x, y, z)``. Assigning ``(x, y)`` preserves Z."""
+        return self._video_position
 
     @position.setter
-    def position(self, value: tuple[int, int]) -> None:
-        self._position = value
+    def position(self, value: tuple[float, float] | tuple[float, float, float]) -> None:
+        x, y, *z = value
+        if z:
+            self._video_position = x, y, z[0]
+        else:
+            self._video_position = x, y, self._video_position[2]
         if self._sprite:
-            self._sprite.position = (*value, 0)
+            self._sprite.position = self._video_position
 
     @property
     def width(self) -> int:
@@ -828,8 +845,9 @@ class VideoPlayer(AudioPlayer):
             self.update_texture()
             pyglet.clock.unschedule(self.update_texture)
 
-    def _check_resource_reuse(self, old_source: Source) -> None:
+    def _check_resource_reuse(self, old_source: Source | None) -> None:
         super()._check_resource_reuse(old_source)
+        assert old_source is not None
         if self._source.video_format != old_source.video_format:
             pyglet.clock.unschedule(self.update_texture)
             self._texture = None
@@ -845,26 +863,30 @@ class VideoPlayer(AudioPlayer):
 
     def _create_texture(self) -> pyglet.graphics.Texture:
         video_format = self.source.video_format
-        self._texture = pyglet.graphics.Texture.create(video_format.width, video_format.height)
+        texture = pyglet.graphics.Texture.create(video_format.width, video_format.height)
 
         # Flip coordinates so output is correct orientation.
-        self._texture = self._texture.get_transform(flip_y=True)
-        return self._texture
+        texture = texture.get_transform(flip_y=True)
+        self._texture = texture
+        return texture
 
     def _create_sprite(self) -> None:
         if not self._sprite:
-            self._sprite = pyglet.sprite.Sprite(self._texture, x=self._position[0], y=self._position[1], batch=self.batch)
+            assert self._texture is not None
+            self._sprite = pyglet.sprite.Sprite(
+                self._texture, x=self._video_position[0], y=self._video_position[1],
+                z=self._video_position[2], batch=self.batch)
 
     def _start_player_resources(self) -> None:
         super()._start_player_resources()
         if self._source.video_format is not None:
             pyglet.clock.schedule_once(self.update_texture, 0)
 
-    def _stop_player_resources(self):
+    def _stop_player_resources(self) -> None:
         super()._stop_player_resources()
         pyglet.clock.unschedule(self.update_texture)
 
-    def draw(self):
+    def draw(self) -> None:
         assert pyglet.graphics.api.core.current_context == self._context, "Drawing in the wrong context."
         if self._source:
             self.batch.draw()
@@ -882,6 +904,7 @@ class VideoPlayer(AudioPlayer):
         _time = self.time
 
         frame_rate = source.video_format.frame_rate
+        assert frame_rate is not None
         frame_duration = 1 / frame_rate
         ts = source.get_next_video_timestamp()
         # Allow up to frame_duration difference
@@ -903,6 +926,7 @@ class VideoPlayer(AudioPlayer):
             with self._context:
                 if self._texture is None:
                     self._create_texture()
+                assert self._texture is not None
                 self._texture.bind()
                 self._texture.upload(image, 0, 0, 0)
 

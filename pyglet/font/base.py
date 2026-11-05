@@ -23,6 +23,7 @@ from pyglet.graphics.texture import Texture, TextureRegion
 from pyglet.image import ImageData
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable
     from pyglet.font import FontManager
     from pyglet.font.harfbuzz import _HarfbuzzResources
     from pyglet.image import ImageDataRegion
@@ -132,17 +133,17 @@ class Glyph(TextureRegion):
 
     Glyphs are drawn most efficiently using the higher level APIs.
     """
-    baseline: int = 0
+    baseline: float = 0
     lsb: int = 0
     advance: int = 0
 
     #: :The vertices of this glyph, with (0,0) originating at the left-side bearing at the baseline.
-    vertices: tuple[int, int, int, int] = (0, 0, 0, 0)
+    vertices: tuple[float, float, float, float] = (0, 0, 0, 0)
 
     #: :If a glyph is colored by the font renderer, such as an emoji, it may be treated differently by pyglet.
     colored = False
 
-    def set_bearings(self, baseline: int, left_side_bearing: int, advance: int) -> None:
+    def set_bearings(self, baseline: float, left_side_bearing: int, advance: int) -> None:
         """Set metrics for this glyph.
 
         Args:
@@ -193,7 +194,7 @@ class GlyphTextureBin(atlas.TextureBin):
     def add(self, img: ImageData | ImageDataRegion, border: int = 0) -> Glyph:
         for glyph_atlas in list(self.atlases):
             try:
-                return glyph_atlas.add(img, border)
+                return cast(Glyph, glyph_atlas.add(img, border))
             except atlas.AllocatorException:  # noqa: PERF203
                 # Remove atlases that are no longer useful (so that their textures
                 # can later be freed if the images inside them get collected).
@@ -270,6 +271,7 @@ class Font:
 
     #: :meta private:
     glyphs: dict[str | int | tuple[Any, int], Glyph]
+    _fallback_glyphs: dict[str, tuple[list[Glyph], list[GlyphPosition]]]
     # Glyphs can be cached in various ways:
     # str: if no text shaping
     # int: glyph index, if no fallback behavior.
@@ -349,6 +351,7 @@ class Font:
         # Represents a zero width glyph.
         self._zero_glyph = None
         self.glyphs = {}
+        self._fallback_glyphs = {}
 
     def _initialize_renderer(self) -> None:
         """Initialize the glyph renderer and cache it on the Font.
@@ -367,7 +370,7 @@ class Font:
 
     @classmethod
     @abc.abstractmethod
-    def add_font_data(cls: type[Font], data: bytes, manager: FontManager) -> None:
+    def add_font_data(cls: type[Font], data: bytes, manager: FontManager) -> Awaitable[bool] | None:
         """Add font data to the font loader.
 
         This is a class method and affects all fonts loaded.  Data must be
@@ -504,9 +507,9 @@ class Font:
 
     @abc.abstractmethod
     def get_text_size(self, text: str) -> tuple[int, int]:
-        """Return's an estimated width and height of text using glyph metrics without rendering..
+        """Return estimated text width and height in pixels, rounded up to integers.
 
-        This does not take into account any shaping.
+        Uses glyph metrics without rendering and does not take into account any shaping.
         """
 
     def get_glyphs_for_width(self, text: str, width: int) -> list[Glyph]:

@@ -143,6 +143,8 @@ class HorizontalRuleElement(pyglet.text.document.InlineElement):
             GeometryMode.LINES,
             layout.batch,
             layout.foreground_decoration_group,
+            storage=None,
+            vertex_layout=None,
             **vertex_data,
         )
         self.vertex_lists[layout] = vertex_list

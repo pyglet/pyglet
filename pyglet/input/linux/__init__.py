@@ -11,6 +11,6 @@ if not (pyglet.options.headless or pyglet.options.wayland):
     from .x11_xinput_tablet import get_tablets
 
 else:
-    def get_tablets():
+    def get_tablets(display=None):
         warnings.warn('Tablets are currently only supported under Xlib.')
         return []

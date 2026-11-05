@@ -21,13 +21,16 @@ import json
 import subprocess
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Iterable
+from typing import TYPE_CHECKING, Any, Callable, Iterable, cast
 
 from pyglet.enums import GraphicsAPI
 
 if TYPE_CHECKING:
-    from pyglet.graphics.api.base import SurfaceInfo
+    from pyglet.config import Config
+    from pyglet.graphics.api.base import SurfaceInfo, SurfaceContext
+    from pyglet.graphics.api.gl.xlib.context import XlibContext
     from pyglet.graphics.api.gl.context import OpenGLSurfaceContext
+    from pyglet.window import Window
 
 _first_heading: bool = True
 _printed_extensions_hint: bool = False
@@ -86,7 +89,7 @@ def _dump_extensions(name: str, extensions: Iterable[str]) -> None:
         _printed_extensions_hint = True
 
 
-def _is_opengl_backend(backend: GraphicsAPI) -> bool:
+def _is_opengl_backend(backend: GraphicsAPI | str) -> bool:
     return backend in (
         GraphicsAPI.OPENGL,
         GraphicsAPI.OPENGL_2,
@@ -140,6 +143,14 @@ def dump_pyglet() -> None:
         print(f"pyglet.options.{key} = {value!r}")
 
 
+def _create_diagnostic_window(config: Config | Iterable[Config] | None = None) -> Window:
+    """Create a hidden window using the platform implementation selected at runtime."""
+    import pyglet.window  # noqa: PLC0415
+
+    # noinspection PyAbstractClass
+    return pyglet.window.Window(visible=False, config=config)  # type: ignore[abstract]
+
+
 def _dump_window(window: Any) -> None:
     """Dump an already-created window without taking ownership of it."""
     display = window.display
@@ -157,10 +168,8 @@ def _dump_window(window: Any) -> None:
 
 def dump_window(window: Any | None = None) -> None:
     """Dump display, window, and screen info."""
-    import pyglet.window  # noqa: PLC0415
-
     owns_window = window is None
-    window = window or pyglet.window.Window(visible=False)
+    window = window or _create_diagnostic_window()
     try:
         _dump_window(window)
     finally:
@@ -206,10 +215,8 @@ def _dump_backend(window: Any) -> None:
 
 def dump_backend(window: Any | None = None) -> None:
     """Dump active backend details and selected surface config."""
-    import pyglet.window  # noqa: PLC0415
-
     owns_window = window is None
-    window = window or pyglet.window.Window(visible=False)
+    window = window or _create_diagnostic_window()
     try:
         _dump_backend(window)
     finally:
@@ -263,11 +270,9 @@ def _print_dump_failure(exc: Exception) -> None:
 
 def dump_window_and_backend(config: Any | None = None) -> None:
     """Create one diagnostic window and use it for all graphics output."""
-    import pyglet.window  # noqa: PLC0415
-
     _heading("pyglet.window")
     try:
-        window = pyglet.window.Window(visible=False, config=config)
+        window = _create_diagnostic_window(config)
     except Exception as exc:
         _print_graphics_failure(exc, config)
         _heading("pyglet.graphics.backend")
@@ -288,12 +293,10 @@ def dump_window_and_backend(config: Any | None = None) -> None:
         window.close()
 
 
-def dump_graphics_api(context: OpenGLSurfaceContext | None = None) -> None:
+def dump_graphics_api(context: SurfaceContext | None = None) -> None:
     """Dump active graphics API info for the given context."""
     if context is None:
-        import pyglet.window  # noqa: PLC0415
-
-        window = pyglet.window.Window(visible=False)
+        window = _create_diagnostic_window()
         try:
             dump_graphics_api(window.context)
         finally:
@@ -319,7 +322,7 @@ def dump_graphics_api(context: OpenGLSurfaceContext | None = None) -> None:
     _dump_extensions("info.extensions", info.get_extensions())
 
 
-def dump_backend_glx(context: OpenGLSurfaceContext | None = None) -> None:
+def dump_backend_glx(context: SurfaceContext | None = None) -> None:
     """Dump GLX info."""
     import pyglet  # noqa: PLC0415
 
@@ -328,21 +331,20 @@ def dump_backend_glx(context: OpenGLSurfaceContext | None = None) -> None:
         return
 
     if context is None:
-        import pyglet.window  # noqa: PLC0415
-
-        window = pyglet.window.Window(visible=False)
+        window = _create_diagnostic_window()
         try:
             dump_backend_glx(window.context)
         finally:
             window.close()
         return
 
-    platform_info = context.info.platform_info
+    gl_context = cast('OpenGLSurfaceContext', context)
+    platform_info = gl_context.info.platform_info
     if platform_info is None:
         print("GLX info unavailable for this context.")
         return
 
-    print("context.is_direct():", context.is_direct())
+    print("context.is_direct():", cast('XlibContext', context).is_direct())
     if not platform_info.have_version(1, 1):
         print("Version: < 1.1")
         return
@@ -353,10 +355,10 @@ def dump_backend_glx(context: OpenGLSurfaceContext | None = None) -> None:
     print("backend.platform.glx.client_vendor:", platform_info.get_client_vendor())
     print("backend.platform.glx.client_version:", platform_info.get_client_version())
     _dump_extensions("backend.platform.glx.client_extensions", platform_info.get_client_extensions())
-    _dump_extensions("backend.platform.glx.extensions", platform_info.get_extensions(context))
+    _dump_extensions("backend.platform.glx.extensions", platform_info.get_extensions(gl_context))
 
 
-def dump_backend_wgl(context: OpenGLSurfaceContext | None = None) -> None:
+def dump_backend_wgl(context: SurfaceContext | None = None) -> None:
     """Dump WGL info."""
     import pyglet  # noqa: PLC0415
 
@@ -365,21 +367,20 @@ def dump_backend_wgl(context: OpenGLSurfaceContext | None = None) -> None:
         return
 
     if context is None:
-        import pyglet.window  # noqa: PLC0415
-
-        window = pyglet.window.Window(visible=False)
+        window = _create_diagnostic_window()
         try:
             dump_backend_wgl(window.context)
         finally:
             window.close()
         return
 
-    platform_info = context.info.platform_info
+    gl_context = cast('OpenGLSurfaceContext', context)
+    platform_info = gl_context.info.platform_info
     if platform_info is None:
         print("WGL info unavailable for this context.")
         return
 
-    _dump_extensions("backend.platform.wgl.extensions", platform_info.get_extensions(context))
+    _dump_extensions("backend.platform.wgl.extensions", platform_info.get_extensions(gl_context))
 
 
 def dump_backend_platform_api(context: OpenGLSurfaceContext) -> None:
@@ -400,17 +401,17 @@ def dump_backend_platform_api(context: OpenGLSurfaceContext) -> None:
         print(f"No platform API handler for platform: {pyglet.compat_platform}")
 
 
-def dump_gl(context: OpenGLSurfaceContext | None = None) -> None:
+def dump_gl(context: SurfaceContext | None = None) -> None:
     """Backward-compatible wrapper for :func:`dump_graphics_api`."""
     dump_graphics_api(context)
 
 
-def dump_glx(context: OpenGLSurfaceContext | None = None) -> None:
+def dump_glx(context: SurfaceContext | None = None) -> None:
     """Backward-compatible wrapper for :func:`dump_backend_glx`."""
     dump_backend_glx(context)
 
 
-def dump_wgl(context: OpenGLSurfaceContext | None = None) -> None:
+def dump_wgl(context: SurfaceContext | None = None) -> None:
     """Backward-compatible wrapper for :func:`dump_backend_wgl`."""
     dump_backend_wgl(context)
 
@@ -534,9 +535,7 @@ def _graphics_probe_worker(backend_name: str, version_text: str) -> int:
         pyglet.options.backend = backend
         pyglet.options.debug_api = False
         config = _make_graphics_config(backend, version)
-        import pyglet.window  # noqa: PLC0415
-
-        window = pyglet.window.Window(visible=False, config=config)
+        window = _create_diagnostic_window(config)
         info = window.context.info
         actual_api = info.get_opengl_api()
         if _graphics_api_family(actual_api) != _graphics_api_family(backend):

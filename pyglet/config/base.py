@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, TYPE_CHECKING
+from typing import Any, Generic, TYPE_CHECKING
+
+from pyglet.customtypes import WindowT
 
 if TYPE_CHECKING:
-    from pyglet.window import Window
     from pyglet.enums import GraphicsAPI
 
 
@@ -16,12 +17,16 @@ class UserConfig:
         return False
 
 
-class SurfaceConfig:
+class SurfaceConfig(Generic[WindowT]):
     """Surface configuration information returned by a platform.
 
     This describes the information a desired surface or window can support.
     """
-    def __init__(self, window: Window, config: UserConfig, handle: Any) -> None:
+    _window: WindowT
+    config: UserConfig
+    handle: Any
+
+    def __init__(self, window: WindowT, config: UserConfig, handle: Any) -> None:
         """A config representing the capabilities of a specific surface.
 
         This is returned by the platform on a specific window and is not meant to be created by users.

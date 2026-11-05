@@ -18,6 +18,7 @@ class WGLInfo:
     def get_extensions(ctx: OpenGLSurfaceContext) -> list[str]:
         """Can only be called when a context is in scope."""
         try:
+            assert ctx.platform_func is not None
             return asstr(ctx.platform_func.wglGetExtensionsStringEXT()).split()
         except MissingFunctionException:
             warnings.warn("Missing WGL function: wglGetExtensionsStringEXT}.")

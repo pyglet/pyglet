@@ -5,16 +5,16 @@ from typing import Literal
 from pyglet.display.base import Display, Screen
 import js  # type: ignore[import-not-found]  # noqa: F821
 
-class EmscriptenDisplay(Display):
+class EmscriptenDisplay(Display['EmscriptenScreen']):
 
     def __init__(self):
         super().__init__()
 
-    def get_screens(self):
+    def get_screens(self) -> list[EmscriptenScreen]:
         return [EmscriptenScreen(self)]
 
 
-class EmscriptenScreen(Screen):
+class EmscriptenScreen(Screen[EmscriptenDisplay]):
     def __init__(self, display: EmscriptenDisplay):
         width = js.window.screen.width
         height = js.window.screen.height

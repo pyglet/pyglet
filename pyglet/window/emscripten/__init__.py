@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from functools import lru_cache
-from typing import Any, TYPE_CHECKING, Callable
+from typing import Any, TYPE_CHECKING, Callable, TypeVar, cast
 
 import js  # noqa: F821
 
@@ -12,9 +12,19 @@ from pyglet.libs.emscripten.proxies import ProxyRegistry
 from pyglet.window import BaseWindow, DefaultMouseCursor, ImageMouseCursor, MouseCursor, key, mouse
 
 if TYPE_CHECKING:
-    from pyglet.display.base import Display, Screen, ScreenMode
-    from pyglet.graphics.api import GraphicsConfig
-    from pyglet.graphics.api.base import WindowGraphicsContext
+    from pyglet.display.emscripten import EmscriptenScreen
+    from collections.abc import Iterable
+
+    from pyodide.ffi import JsProxy
+
+    from pyglet.config import Config
+    from pyglet.libs.emscripten.dom import (
+        ClipboardEvent, DragEvent, Event, File, HTMLCanvasElement, KeyboardEvent,
+        MouseEvent, ResizeObserver, ResizeObserverEntry, WheelEvent,
+    )
+    from pyglet.display.base import Display, ScreenMode
+    from pyglet.graphics.api.base import SurfaceContext
+    from pyglet.graphics.api.webgl.context import WebGL2SurfaceContext
 
 # Keymap using `event.code`
 _key_map = {
@@ -180,7 +190,7 @@ _key_map = {
 }
 
 # symbol,ctrl -> motion mapping
-_motion_map: dict[tuple[int, bool], int] = {
+_motion_map: dict[tuple[int | str, bool], int] = {
     (key.UP, False): key.MOTION_UP,
     (key.RIGHT, False): key.MOTION_RIGHT,
     (key.DOWN, False): key.MOTION_DOWN,
@@ -201,7 +211,7 @@ _motion_map: dict[tuple[int, bool], int] = {
 }
 
 
-def get_modifiers(event) -> int:
+def get_modifiers(event: KeyboardEvent | MouseEvent) -> int:
     """Extract modifier flags from a JavaScript event."""
     modifiers = 0
 
@@ -219,9 +229,10 @@ def get_modifiers(event) -> int:
 
 
 # Convert JavaScript key events to your format
-def js_key_to_pyglet(event):
+def js_key_to_pyglet(event: KeyboardEvent) -> tuple[int | str, int]:
     """Convert JS event code to the equivalent key mapping."""
     modifiers = 0
+    symbol: int | str
 
     # event.key of a numpad key is its character or its NumLock-off action ("1" or "End"), as for the main
     # keys: use event.code to report NUM_* keys, as on the other platforms.
@@ -287,35 +298,50 @@ def translate_mouse_bits(buttons: int) -> int:
     return result
 
 
-def CanvasEventHandler(name: str, passive: None| bool=None) -> Callable:
-    def _event_wrapper(f: Callable) -> Callable:
-        f._canvas = True
-        f._passive = passive
-        f._platform_event = True  # noqa: SLF001
+_EventHandler = TypeVar("_EventHandler", bound=Callable[..., Any])
+
+
+def CanvasEventHandler(
+    name: str, passive: bool | None = None,
+) -> Callable[[_EventHandler], _EventHandler]:
+    def _event_wrapper(f: _EventHandler) -> _EventHandler:
+        f._canvas = True  # type: ignore[attr-defined]
+        f._passive = passive  # type: ignore[attr-defined]
+        f._platform_event = True  # type: ignore[attr-defined]  # noqa: SLF001
         if not hasattr(f, '_platform_event_data'):
-            f._platform_event_data = []  # noqa: SLF001
-        f._platform_event_data.append(name)  # noqa: SLF001
+            f._platform_event_data = []  # type: ignore[attr-defined]  # noqa: SLF001
+        f._platform_event_data.append(name)  # type: ignore[attr-defined]  # noqa: SLF001
         return f
 
     return _event_wrapper
 
-# The Canvas JS object.
-class HTMLCanvasElement:
-    ...
 
 class JavascriptCursor(MouseCursor):
     api_drawable: bool = False
     hw_drawable: bool = True
 
-    def __init__(self, name: str):
+    name: str
+
+    def __init__(self, name: str) -> None:
         self.name = name
 
 
 # Temporary
-class EmscriptenWindow(BaseWindow):
+class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
     """The HTML5 Canvas."""
 
-    _mouse_cursor: JavascriptCursor
+    _mouse_cursor: MouseCursor
+    _canvas: HTMLCanvasElement | None
+    _context: WebGL2SurfaceContext | None
+    _event_handlers: dict[str, JsProxy]
+    _canvas_event_handlers: dict[str, JsProxy]
+    _observer: ResizeObserver | None
+    _proxy_resize: JsProxy | None
+    _proxies: ProxyRegistry
+    _keys_down: set[int | str]
+    _clipboard_text: str
+    _file_import_tasks: set[asyncio.Task[None]]
+    _scale: float
 
     def __init__(
         self,
@@ -328,21 +354,21 @@ class EmscriptenWindow(BaseWindow):
         visible: bool = True,
         vsync: bool = True,
         file_drops: bool = False,
-        display: Display | None = None,
-        screen: Screen | None = None,
-        config: GraphicsConfig | None = None,
-        context: WindowGraphicsContext | None = None,
+        display: Display[EmscriptenScreen] | None = None,
+        screen: EmscriptenScreen | None = None,
+        config: Config | Iterable[Config] | None = None,
+        context: SurfaceContext | None = None,
         mode: ScreenMode | None = None,
     ) -> None:
         self._canvas = None
-        self._event_handlers: dict[str, Any] = {}
-        self._canvas_event_handlers: dict[str, Any] = {}
+        self._event_handlers = {}
+        self._canvas_event_handlers = {}
         self._observer = None
         self._proxy_resize = None
         self._proxies = ProxyRegistry()
         self._keys_down = set()
         self._clipboard_text = ""
-        self._file_import_tasks: set[Any] = set()
+        self._file_import_tasks = set()
 
         self._scale = js.window.devicePixelRatio
         super().__init__(
@@ -380,7 +406,7 @@ class EmscriptenWindow(BaseWindow):
         return int(self._scale * 96)
 
     @property
-    def canvas(self) -> HTMLCanvasElement:
+    def canvas(self) -> HTMLCanvasElement | None:
         """The underlying Javascript Canvas element, if available.
 
         Read only.
@@ -390,9 +416,9 @@ class EmscriptenWindow(BaseWindow):
     def _set_event_handlers(self) -> None:
         assert self._canvas, "Canvas has not been created."
         for func_name in self._platform_event_names:
-            if not hasattr(self, func_name):
+            if not hasattr(self, func_name):  # type: ignore[attr-defined]
                 continue
-            func = getattr(self, func_name)
+            func = getattr(self, func_name)  # type: ignore[attr-defined]
             for message in func._platform_event_data:  # noqa: SLF001
                 assert message not in self._event_handlers, f"event: '{message}' already exists."
                 if hasattr(func, '_canvas'):
@@ -423,17 +449,19 @@ class EmscriptenWindow(BaseWindow):
 
         super().close()
 
+    # PyCharm incorrectly substitutes the optional ScreenT in BaseWindow[EmscriptenScreen].
+    # noinspection PyMethodOverriding
     def set_fullscreen(
         self,
         fullscreen: bool = True,
-        _screen: Screen | None = None,
+        screen: EmscriptenScreen | None = None,
         mode: ScreenMode | None = None,
         width: int | None = None,
         height: int | None = None,
     ) -> None:
         if (
             fullscreen == self._fullscreen
-            and (_screen is None or _screen is self._screen)
+            and (screen is None or screen is self._screen)
             and (width is None or width == self._width)
             and (height is None or height == self._height)
         ):
@@ -448,14 +476,15 @@ class EmscriptenWindow(BaseWindow):
         else:
             js.document.exitFullscreen()
 
-    def _enter_fullscreen(self, event):
+    def _enter_fullscreen(self, event: Event) -> None:
         self._fullscreen = True
         scale = js.window.devicePixelRatio
         self._canvas.width = js.window.innerWidth
         self._canvas.height = js.window.innerHeight
 
-    def _exited_fullscreen(self, event, width: int | None = None, height: int | None = None):
+    def _exited_fullscreen(self, event: Event, width: int | None = None, height: int | None = None) -> None:
         self._fullscreen = False
+        assert self._windowed_size is not None
         self._width, self._height = self._windowed_size
         self._canvas.width = self._width
         self._canvas.height = self._height
@@ -509,7 +538,7 @@ class EmscriptenWindow(BaseWindow):
 
     def get_location(self) -> tuple[int, int]:
         rect = self._canvas.getBoundingClientRect()
-        return rect.left, rect.top
+        return round(rect.left), round(rect.top)
 
     def activate(self) -> None:
         self._canvas.focus()
@@ -541,7 +570,7 @@ class EmscriptenWindow(BaseWindow):
         This does need to be in a PNG encoded format, so a temporary canvas is created to encode.
         """
         image = cursor.texture.get_image_data()
-        canvas = js.document.createElement("canvas")
+        canvas: HTMLCanvasElement = js.document.createElement("canvas")
 
         canvas.width = image.width
         canvas.height = image.height
@@ -587,7 +616,7 @@ class EmscriptenWindow(BaseWindow):
         if exclusive is True:
             self._canvas.requestPointerLock()
         else:
-            self._canvas.exitPointerLock()
+            js.document.exitPointerLock()
 
     def set_exclusive_keyboard(self, exclusive: bool = True) -> None:
         """Not relevant."""
@@ -605,25 +634,25 @@ class EmscriptenWindow(BaseWindow):
             # Browsers may deny programmatic clipboard access outside a user gesture.
             pass
 
-    def get_system_mouse_cursor(self, name: str) -> JavascriptCursor:
+    def get_system_mouse_cursor(self, name: str) -> DefaultMouseCursor | JavascriptCursor:
         if name == self.CURSOR_DEFAULT:
             return DefaultMouseCursor()
 
         return JavascriptCursor(name)
 
-    async def dispatch_events(self) -> None:
+    def dispatch_events(self) -> None:
         """Process input events asynchronously."""
         raise Exception("Not implemented.")
 
     @staticmethod
-    def _event_text_motion(symbol: int, modifiers: int) -> int | None:
+    def _event_text_motion(symbol: int | str, modifiers: int) -> int | None:
         if modifiers & key.MOD_ALT:
             return None
         ctrl = modifiers & (key.MOD_CTRL | key.MOD_COMMAND) != 0
         return _motion_map.get((symbol, ctrl), None)
 
     @CanvasEventHandler("keydown")
-    def _event_key_down(self, event):
+    def _event_key_down(self, event: KeyboardEvent) -> None:
         if not event.repeat:
             text = None
             if len(event.key) == 1:
@@ -647,7 +676,7 @@ class EmscriptenWindow(BaseWindow):
                 self.dispatch_event('on_text', text)
 
     @CanvasEventHandler("keyup")
-    def _event_key_up(self, event):
+    def _event_key_up(self, event: KeyboardEvent) -> None:
         symbol, modifiers = js_key_to_pyglet(event)
         if symbol in self._keys_down:
             self._keys_down.remove(symbol)
@@ -657,7 +686,7 @@ class EmscriptenWindow(BaseWindow):
         self.dispatch_event('on_key_release', symbol, modifiers)
 
     @CanvasEventHandler("mousedown")
-    def _event_mouse_down(self, event):
+    def _event_mouse_down(self, event: MouseEvent) -> None:
         rect = self._canvas.getBoundingClientRect()
         modifiers = get_modifiers(event)
         pos_x = (event.clientX - rect.left) * self._scale
@@ -667,7 +696,7 @@ class EmscriptenWindow(BaseWindow):
         )
 
     @CanvasEventHandler("mouseup")
-    def _event_mouse_up(self, event):
+    def _event_mouse_up(self, event: MouseEvent) -> None:
         rect = self._canvas.getBoundingClientRect()
         modifiers = get_modifiers(event)
         pos_x = (event.clientX - rect.left) * self._scale
@@ -677,7 +706,7 @@ class EmscriptenWindow(BaseWindow):
         )
 
     @CanvasEventHandler("mousemove")
-    async def _event_mouse_motion(self, event):
+    async def _event_mouse_motion(self, event: MouseEvent) -> None:
         rect = self._canvas.getBoundingClientRect()
         if event.buttons:
             modifiers = get_modifiers(event)
@@ -700,52 +729,52 @@ class EmscriptenWindow(BaseWindow):
             )
 
     @CanvasEventHandler("wheel", passive=False)
-    def _event_mouse_scroll(self, event):
+    def _event_mouse_scroll(self, event: WheelEvent) -> None:
         event.preventDefault()
         self.dispatch_event('on_mouse_scroll', event.clientX, event.clientY, event.deltaX, event.deltaY)
 
     @CanvasEventHandler("mouseenter")
-    async def _event_mouse_enter(self, event):
+    async def _event_mouse_enter(self, event: MouseEvent) -> None:
         self.dispatch_event('on_mouse_enter', event.clientX, self.height - event.clientY)
 
     @CanvasEventHandler("mouseleave")
-    async def _event_mouse_leave(self, event):
+    async def _event_mouse_leave(self, event: MouseEvent) -> None:
         self.dispatch_event('on_mouse_leave', event.clientX, self.height - event.clientY)
 
     @CanvasEventHandler("contextlost")
-    async def _event_context_lost(self, event):
+    async def _event_context_lost(self, event: Event) -> None:
         print("WebGL context lost!")
 
     @CanvasEventHandler("contextrestored")
-    async def _event_context_restored(self, event):
+    async def _event_context_restored(self, event: Event) -> None:
         print("WebGL context restored!")
 
     @CanvasEventHandler("focus")
-    def _event_gain_focus(self, event):
+    def _event_gain_focus(self, event: Event) -> None:
         pyglet.app.platform_event_loop.post_event(self, 'on_activate')
 
     @CanvasEventHandler("blur")
-    def _event_lose_focus(self, event):
+    def _event_lose_focus(self, event: Event) -> None:
         pyglet.app.platform_event_loop.post_event(self, 'on_deactivate')
 
     @CanvasEventHandler("contextmenu", passive=False)
-    def _event_contextmenu(self, event):
+    def _event_contextmenu(self, event: MouseEvent) -> None:
         # Some keys or mouse presses (right click) can open the browser context menu. Disable this.
         event.preventDefault()
 
     @CanvasEventHandler("copy", passive=False)
-    def _event_copy(self, event):
+    def _event_copy(self, event: ClipboardEvent) -> None:
         event.preventDefault()
         event.clipboardData.setData("text/plain", self._clipboard_text)
 
     @CanvasEventHandler("paste", passive=False)
-    def _event_paste(self, event):
+    def _event_paste(self, event: ClipboardEvent) -> None:
         event.preventDefault()
         text = event.clipboardData.getData("text/plain")
         self._clipboard_text = text
         self.dispatch_event("on_text", text)
 
-    def _drop_position(self, event: Any) -> tuple[float, float]:
+    def _drop_position(self, event: DragEvent) -> tuple[float, float]:
         rect = self._canvas.getBoundingClientRect()
         return (
             (event.clientX - rect.left) * self._scale,
@@ -753,7 +782,7 @@ class EmscriptenWindow(BaseWindow):
         )
 
     @staticmethod
-    def _contains_files(event: Any) -> bool:
+    def _contains_files(event: DragEvent) -> bool:
         if event.dataTransfer is None:
             return False
         file_types = event.dataTransfer.types
@@ -763,55 +792,59 @@ class EmscriptenWindow(BaseWindow):
             return bool(file_types.contains("Files"))
 
     @CanvasEventHandler("dragenter", passive=False)
-    def _event_file_drag_enter(self, event: Any) -> None:
+    def _event_file_drag_enter(self, event: DragEvent) -> None:
         if self._file_drops and self._contains_files(event):
             event.preventDefault()
             self.dispatch_event("on_file_drag_enter", *self._drop_position(event), [])
 
     @CanvasEventHandler("dragleave", passive=False)
-    def _event_file_drag_leave(self, event: Any) -> None:
+    def _event_file_drag_leave(self, event: DragEvent) -> None:
         if self._file_drops and self._contains_files(event):
             event.preventDefault()
             self.dispatch_event("on_file_drag_exit")
 
     @CanvasEventHandler("dragover", passive=False)
-    def _event_file_drag_over(self, event: Any) -> None:
+    def _event_file_drag_over(self, event: DragEvent) -> None:
         if self._file_drops and self._contains_files(event):
             event.preventDefault()
             event.dataTransfer.dropEffect = "copy"
             self.dispatch_event("on_file_drag", *self._drop_position(event), [])
 
     @CanvasEventHandler("drop", passive=False)
-    def _event_file_drop(self, event: Any) -> None:
+    def _event_file_drop(self, event: DragEvent) -> None:
         if not self._file_drops or not self._contains_files(event):
             return
         event.preventDefault()
-        files = [event.dataTransfer.files.item(index) for index in range(event.dataTransfer.files.length)]
+        files = [
+            cast("File", event.dataTransfer.files.item(index))
+            for index in range(event.dataTransfer.files.length)
+        ]
         task = asyncio.create_task(self._import_dropped_files(*self._drop_position(event), files))
         self._file_import_tasks.add(task)
         task.add_done_callback(self._file_import_tasks.discard)
         self.dispatch_event("on_file_drag_exit")
 
-    async def _import_dropped_files(self, x: float, y: float, files: Any) -> None:
+    async def _import_dropped_files(self, x: float, y: float, files: list[File]) -> None:
         self.dispatch_event("on_file_drop", x, y, await import_files(files))
 
     @CanvasEventHandler("fullscreenchange")
-    def _event_fullscreen_change(self, event):
+    def _event_fullscreen_change(self, event: Event) -> None:
         if js.document.fullscreenElement == self._canvas:
             self._enter_fullscreen(event)
         else:
-            self._exited_fullscreen(event, *self._windowed_size)
+            if self._windowed_size is not None:
+                self._exited_fullscreen(event, *self._windowed_size)
 
-    def get_framebuffer_size(self):
+    def get_framebuffer_size(self) -> tuple[int, int]:
         if self._context:
             return self._context.gl.drawingBufferWidth, self._context.gl.drawingBufferHeight
         return self.get_size()
 
-    def get_current_screen(self) -> Screen:
+    def get_current_screen(self) -> EmscriptenScreen:
         """Return the single screen exposed by the browser display."""
         return self._screen
 
-    def _event_resized(self, entries, observer):
+    def _event_resized(self, entries: Iterable[ResizeObserverEntry], observer: ResizeObserver) -> None:
         for entry in entries:
             rect = entry.contentRect
             self.dispatch_event('_on_internal_resize', 0, 0)
@@ -821,7 +854,7 @@ class EmscriptenWindow(BaseWindow):
 
     # touchmove, touchstart, touchend, touchcancel
 
-    def adjust_scale(self, width: int, height: int) -> None:
+    def adjust_scale(self, width: float, height: float) -> None:
         ratio = js.window.devicePixelRatio or 1.0
 
         # The framebuffer size.

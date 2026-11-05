@@ -6,7 +6,7 @@ import pathlib
 from ctypes import POINTER, Array, _Pointer, byref, c_void_p, cast, create_unicode_buffer, pointer, py_object, sizeof, string_at
 from ctypes.wintypes import BOOL, FLOAT, UINT
 from enum import Flag
-from typing import TYPE_CHECKING, BinaryIO, Sequence, Generator, ClassVar, Any
+from typing import TYPE_CHECKING, Any, ClassVar, Generator, Iterable, Literal, cast as typing_cast, overload
 
 import pyglet
 from pyglet.enums import Stretch, Style, Weight
@@ -255,7 +255,7 @@ class _DWriteTextRenderer(com.COMObject):
         self.dmatrix = DWRITE_MATRIX()
 
     @staticmethod
-    def _get_font_reference(font_face: IDWriteFontFace) -> tuple[int, int]:
+    def _get_font_reference(font_face: IDWriteFontFace) -> tuple[int | None, int]:
         """Unique identifier for each font face."""
         font_file = _get_font_file(font_face)
         ptr, size = _get_font_ref(font_file, release_file=True)
@@ -299,15 +299,16 @@ class _DWriteTextRenderer(com.COMObject):
 
         glyph_renderer: DirectWriteGlyphRenderer = cast(drawing_context, py_object).value
         glyph_run = glyph_run_ptr.contents
+        zero_glyph = glyph_renderer.font._zero_glyph
+        assert zero_glyph is not None
 
         # Font reference to cache glyphs otherwise cache misses may occur with other glyph indices.
         font_ref = self._get_font_reference(glyph_run.fontFace)
 
         if glyph_run.glyphCount == 0:
             # A run without glyphs, such as consecutive tabs: one empty glyph per character, as the layout expects
-            glyph = glyph_renderer.font._zero_glyph  # noqa: SLF001
             for _ in range(pystr_len):
-                glyph_renderer.current_glyphs.append(glyph)
+                glyph_renderer.current_glyphs.append(zero_glyph)
                 glyph_renderer.current_offsets.append(GlyphPosition(0, 0, 0, 0))
             return 0
 
@@ -354,8 +355,7 @@ class _DWriteTextRenderer(com.COMObject):
         diff = pystr_len - glyph_run.glyphCount
         if diff > 0:
             for i in range(diff):
-                glyph = glyph_renderer.font._zero_glyph
-                glyph_renderer.current_glyphs.append(glyph)
+                glyph_renderer.current_glyphs.append(zero_glyph)
                 glyph_renderer.current_offsets.append(GlyphPosition(0, 0, 0, 0))
 
         return 0
@@ -399,6 +399,8 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):  # noqa: D101
     current_glyphs: list[base.Glyph]
     current_run: list[DWRITE_GLYPH_RUN]
     font: Win32DirectWriteFont
+    _ctx_supported: bool
+    _bitmap_dimensions: tuple[int, int]
 
     antialias_mode = (
         D2D1_TEXT_ANTIALIAS_MODE_DEFAULT
@@ -409,17 +411,18 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):  # noqa: D101
     measuring_mode = DWRITE_MEASURING_MODE_NATURAL
 
     def __init__(self, font: Win32DirectWriteFont) -> None:  # noqa: D107
-        self._render_target: ID2D1RenderTarget | ID2D1DeviceContext4 | None = None
+        self._render_target = None
         self._ctx_supported = False
-        self._bitmap: IWICBitmap | None = None
-        self._brush: ID2D1SolidColorBrush | None = None
+        self._bitmap = None
+        self._brush = None
         self._bitmap_dimensions = (0, 0)
         self.current_glyphs = []
         self.current_offsets = []
         super().__init__(font)
 
     def render(self, text: str) -> Glyph:
-        pass
+        glyph = self.render_using_layout(text)
+        return glyph if glyph is not None else self.create_zero_glyph()
 
     def render_to_image(self, text: str, width: int, height: int) -> ImageData:
         """This process takes Pyglet out of the equation and uses only DirectWrite to shape and render text.
@@ -545,6 +548,18 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):  # noqa: D101
         style.Release()
         geometry.Release()
 
+    @overload
+    def render_single_glyph(
+        self, font_face: IDWriteFontFace, indice: int, metrics: tuple[float, float, float, float, float], mode: int,
+        stroke_size: Literal[0] = 0, stroke_join: str = "round",
+    ) -> Glyph: ...
+
+    @overload
+    def render_single_glyph(
+        self, font_face: IDWriteFontFace, indice: int, metrics: tuple[float, float, float, float, float], mode: int,
+        stroke_size: float, stroke_join: str = "round",
+    ) -> Glyph | None: ...
+
     def render_single_glyph(
         self, font_face: IDWriteFontFace, indice: int, metrics: tuple[float, float, float, float, float], mode: int,
         stroke_size: float = 0, stroke_join: str = "round",
@@ -575,8 +590,8 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):  # noqa: D101
 
         if stroke_size:
             geometry, stroke_style = self._create_stroke_geometry(font_face, run, stroke_join)
-            if metrics := self._get_stroke_bitmap_metrics(geometry, stroke_style, stroke_size):
-                render_width, render_height, render_offset_x, baseline_offset, glyph_baseline = metrics
+            if stroke_metrics := self._get_stroke_bitmap_metrics(geometry, stroke_style, stroke_size):
+                render_width, render_height, render_offset_x, baseline_offset, glyph_baseline = stroke_metrics
             else:
                 # A glyph such as a space has no outline to stroke.
                 stroke_style.Release()
@@ -673,11 +688,12 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):  # noqa: D101
 
         self._render_target.EndDraw(None, None)
 
+        assert self._bitmap is not None
         image = wic.extract_image_data(self._bitmap)
 
         glyph = self.font.create_glyph(image)
 
-        glyph.set_bearings(glyph_baseline, render_offset_x,
+        glyph.set_bearings(glyph_baseline, render_offset_x,  # type: ignore[arg-type]
                            glyph_advance * self.font.font_scale_ratio)
 
         return glyph
@@ -753,6 +769,7 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):  # noqa: D101
 
         self._render_target.EndDraw(None, None)
 
+        assert self._bitmap is not None
         image = wic.extract_image_data(self._bitmap)
 
         glyph = self.font.create_glyph(image)
@@ -799,7 +816,7 @@ def _get_font_file(font_face: IDWriteFontFace) -> IDWriteFontFile:
     file_ct = UINT32()
     font_face.GetFiles(byref(file_ct), None)
 
-    font_files = (IDWriteFontFile * file_ct.value)()
+    font_files = (IDWriteFontFile * file_ct.value)()  # type: ignore[operator]
     font_face.GetFiles(byref(file_ct), font_files)
 
     return font_files[0]
@@ -826,7 +843,7 @@ def _get_font_ref(font_file: IDWriteFontFile, release_file: bool = True) -> tupl
 
     return key_data, ff_key_size.value
 
-def _get_font_face_names(font_family: IDWriteFontFamily, locale: str) -> set[str]:
+def _get_font_face_names(font_family: IDWriteFontFamily, locale: str) -> set[tuple[str, str, str, str]]:
     face_names = set()
     ct = font_family.GetFontCount()
     for i in range(ct):
@@ -881,7 +898,7 @@ def _get_font_collection_family_names(collection: IDWriteFontCollection) -> set[
 
     return names
 
-def _get_font_collection_family_data(collection: IDWriteFontCollection) -> set[str]:
+def _get_font_collection_family_data(collection: IDWriteFontCollection) -> set[tuple[str, str, str, str]]:
     """Retrieve font data information associated with this collection.
 
     The function will iterate over every font family, and then the faces of that family.
@@ -985,7 +1002,7 @@ class Win32DirectWriteFont(base.Font):
 
     # Legacy loader values
     _font_collection_loader: LegacyCollectionLoader | None = None
-    _font_cache: ClassVar[list[BinaryIO]] = []
+    _font_cache: ClassVar[list[bytes]] = []
     _font_loader_key: c_void_p | None = None
 
     # A legacy (RBIZ/GDI or OpenType full) name must be found by enumerating
@@ -995,6 +1012,10 @@ class Win32DirectWriteFont(base.Font):
     _glyph_renderer: DirectWriteGlyphRenderer | None = None
     _empty_glyph: base.Glyph | None = None
     _zero_glyph: base.Glyph | None = None
+    _filename: str | None
+    _glyph_sources: dict[int, tuple[IDWriteFontFace, int, tuple[float, float, float, float, float]]]
+    _stroke_glyphs: dict[tuple[int, float, str], Glyph | None]
+    buffers: list[Any]
 
     glyph_renderer_class = DirectWriteGlyphRenderer
 
@@ -1008,12 +1029,12 @@ class Win32DirectWriteFont(base.Font):
         dpi: int | None = None,
         locale: str | None = None,
     ) -> None:
-        self._filename: str | None = None
+        self._filename = None
 
         super().__init__(name, size, weight, style, stretch, dpi)
 
-        self._glyph_sources: dict[int, tuple[IDWriteFontFace, int, tuple[float, float, float, float, float]]] = {}
-        self._stroke_glyphs: dict[tuple[int, float, str], Glyph] = {}
+        self._glyph_sources = {}
+        self._stroke_glyphs = {}
 
         self.buffers = []
         self.locale = locale
@@ -1119,22 +1140,22 @@ class Win32DirectWriteFont(base.Font):
         loader = IDWriteFontFileLoader()
         ff.GetLoader(byref(loader))
 
-        key, size = _get_font_ref(ff, False)
+        key, key_size = _get_font_ref(ff, False)
 
         font_filestream = POINTER(IDWriteFontFileStream)()
-        loader.CreateStreamFromKey(key, size, byref(font_filestream))
+        loader.CreateStreamFromKey(key, key_size, byref(font_filestream))
 
         if font_filestream:
             size = UINT64()
-            font_filestream.GetFileSize(byref(size))
+            font_filestream.GetFileSize(byref(size))  # type: ignore[attr-defined]
             void_data = c_void_p()
             context = c_void_p()
-            font_filestream.ReadFileFragment(byref(void_data), 0, size.value, byref(context))
+            font_filestream.ReadFileFragment(byref(void_data), 0, size.value, byref(context))  # type: ignore[attr-defined]
 
             font_data = string_at(void_data, size.value)
 
             if context:
-                font_filestream.ReleaseFileFragment(context)
+                font_filestream.ReleaseFileFragment(context)  # type: ignore[attr-defined]
 
             return font_data
 
@@ -1196,8 +1217,8 @@ class Win32DirectWriteFont(base.Font):
 
         return self._glyph_renderer.render_to_image(text, width, height)
 
-    def get_glyph_indices(self, text: str) -> tuple[Sequence[int], dict[int, int]]:
-        codepoints = []
+    def get_glyph_indices(self, text: str) -> tuple[Array[UINT16], dict[int, str]]:
+        codepoints: list[UINT32 | int] = []
         clusters = base.get_grapheme_clusters(text)
 
         text_length = len(clusters)
@@ -1225,14 +1246,13 @@ class Win32DirectWriteFont(base.Font):
         indices, missing = self.get_glyph_indices(character)
         return bool(indices) and not missing
 
-    def render_glyph_indices(self, indices: list[int]) -> None:
+    def render_glyph_indices(self, indices: Iterable[int]) -> None:
         """Given the indice list, ensure all glyphs are available."""
         # Process any glyphs we haven't rendered.
         self._initialize_renderer()
 
         missing = set()
-        for i in range(len(indices)):
-            glyph_indice = indices[i]
+        for glyph_indice in indices:
             if glyph_indice not in self.glyphs:
                 missing.add(glyph_indice)
 
@@ -1345,13 +1365,14 @@ class Win32DirectWriteFont(base.Font):
             # Therefore we need to pass to the actual pointer directly.
             cls._write_factory.RegisterFontFileLoader(cls._font_loader.as_interface(IDWriteFontFileLoader_LI))
 
-            cls._font_collection_loader = LegacyCollectionLoader(cls._write_factory, cls._font_loader)
+            assert cls._write_factory is not None
+            cls._font_collection_loader = LegacyCollectionLoader(cast(cls._write_factory, c_void_p), cls._font_loader)
             cls._write_factory.RegisterFontCollectionLoader(cls._font_collection_loader)
 
             cls._font_loader_key = cast(create_unicode_buffer("legacy_font_loader"), c_void_p)
 
     @classmethod
-    def get_added_fonts(cls: type[Win32DirectWriteFont]) -> set[str]:
+    def get_added_fonts(cls: type[Win32DirectWriteFont]) -> set[tuple[str, str, str, str]]:
         """Retrieves the added Font Family names from the custom font set.
 
         Note that this API functionality is only supported in Windows 10 1607 and higher.
@@ -1362,6 +1383,8 @@ class Win32DirectWriteFont(base.Font):
         if not cls._font_loader:
             cls._initialize_custom_loaders()
 
+        if cls._custom_collection is None:
+            return set()
         return _get_font_collection_family_data(cls._custom_collection)
 
     @classmethod
@@ -1408,7 +1431,8 @@ class Win32DirectWriteFont(base.Font):
                 cls._write_factory.UnregisterFontFileLoader(cls._font_loader)
 
                 cls._font_loader = LegacyFontFileLoader()
-                cls._font_collection_loader = LegacyCollectionLoader(cls._write_factory, cls._font_loader)
+                assert cls._write_factory is not None
+                cls._font_collection_loader = LegacyCollectionLoader(cast(cls._write_factory, c_void_p), cls._font_loader)
 
                 cls._write_factory.RegisterFontCollectionLoader(cls._font_collection_loader)
                 cls._write_factory.RegisterFontFileLoader(cls._font_loader.as_interface(IDWriteFontFileLoader_LI))
@@ -1417,6 +1441,7 @@ class Win32DirectWriteFont(base.Font):
 
             cls._custom_collection = IDWriteFontCollection()
 
+            assert cls._font_loader_key is not None
             cls._write_factory.CreateCustomFontCollection(
                 cls._font_collection_loader,
                 cls._font_loader_key,
@@ -1513,7 +1538,7 @@ class Win32DirectWriteFont(base.Font):
         metrics = DWRITE_TEXT_METRICS()
         layout.GetMetrics(byref(metrics))
         layout.Release()
-        return round(metrics.widthIncludingTrailingWhitespace), round(metrics.height)
+        return math.ceil(metrics.widthIncludingTrailingWhitespace), math.ceil(metrics.height)
 
     @classmethod
     def have_font(cls: type[Win32DirectWriteFont], name: str) -> bool:
@@ -1642,13 +1667,14 @@ class Win32DirectWriteFont(base.Font):
                     if match[3] != write_font:
                         match[3].Release()  # Release all other matches.
 
-                return family_name, write_font
+                if write_font is not None:
+                    return family_name, write_font
 
         return None
 
     @staticmethod
     def match_closest_font(
-        font_list: list[tuple[int, int, int, IDWriteFont]], weight: str, italic: int, stretch: int,
+        font_list: list[tuple[int, int, int, IDWriteFont]], weight: int, italic: int, stretch: int,
     ) -> IDWriteFont | None:
         """Match the closest font to the parameters specified.
 

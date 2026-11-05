@@ -22,10 +22,12 @@ primitives of the same OpenGL primitive mode.
 """
 from __future__ import annotations
 
-import ctypes
-from typing import TYPE_CHECKING, Any, Mapping, Sequence
+from typing import TYPE_CHECKING, Mapping, Sequence
 
-from pyglet.graphics.api.base import SurfaceContext
+from js import Int32Array  # noqa: F821
+from pyodide.ffi import to_js  # noqa: F821
+
+from pyglet.graphics.api.webgl.context import WebGL2SurfaceContext
 from pyglet.graphics.api.webgl import vertexarray
 from pyglet.graphics.api.webgl.gl import (
     GL_BYTE,
@@ -36,17 +38,15 @@ from pyglet.graphics.api.webgl.gl import (
     GL_UNSIGNED_BYTE,
     GL_UNSIGNED_INT,
     GL_UNSIGNED_SHORT,
-    GLint,
-    GLintptr,
-    GLsizei,
-    GLvoid,
 )
 from pyglet.graphics.api.webgl.enums import geometry_map
 from pyglet.graphics.api.webgl.shader import GLAttribute
 from pyglet.graphics.api.webgl.buffer import WebGLAttributeBufferObject, WebGLIndexedBufferObject
 from pyglet.graphics.buffer import _data_type_size
 from pyglet.graphics.instance import InstanceBucket, InstanceDomain, VertexInstance
-from pyglet.graphics.vertexstorage import VertexArrayBinding, VertexArrayProtocol, InstanceStream, VertexStream, IndexStream
+from pyglet.graphics.vertexstorage import (
+    VertexArrayBinding, VertexArrayProtocol, InstanceStream, VertexStream, IndexStream, Stream,
+)
 from pyglet.graphics.vertexdomain import (
     VertexList,
     IndexedVertexList,
@@ -62,11 +62,11 @@ from pyglet.graphics.vertexdomain import (
 )
 
 if TYPE_CHECKING:
+    from pyglet.graphics.resource import ShaderProgramKey
     from pyglet.graphics.attributes import Attribute, AttributeFormat, AttributeView
     from pyglet.graphics.shader import ShaderProgram
     from pyglet.customtypes import DataTypes
     from pyglet.enums import GeometryMode
-    from pyglet.graphics.api.webgl.context import WebGL2SurfaceContext
 
 _gl_types = {
     'b': GL_BYTE,
@@ -79,18 +79,17 @@ _gl_types = {
     'd': GL_DOUBLE,
 }
 
-class _GLVertexStreamMix(VertexStream):
+class _GLVertexStreamMix(VertexStream[WebGL2SurfaceContext, GLAttribute]):
     _ctx: WebGL2SurfaceContext
-    attrib_name_buffers: dict[str, WebGLAttributeBufferObject]
 
     def __init__(self, ctx: WebGL2SurfaceContext, initial_size: int, attrs: Sequence[AttributeFormat],
-                 *, divisor: int = 0):
+                 *, divisor: int = 0) -> None:
         super().__init__(ctx, initial_size, attrs, divisor=divisor)
 
     def get_attribute_layout(self, attribute: AttributeFormat, view: AttributeView) -> GLAttribute:
         return GLAttribute(attribute, view)
 
-    def get_buffer(self, size: int, attribute) -> WebGLAttributeBufferObject:
+    def get_buffer(self, size: int, attribute: GLAttribute) -> WebGLAttributeBufferObject:
         return WebGLAttributeBufferObject(self._ctx, size, attribute)
 
     def _enable_attribute(self, location: int) -> None:
@@ -116,7 +115,7 @@ class _GLVertexStreamMix(VertexStream):
         """Set the instance divisor for a shader input in the bound VAO."""
         self._ctx.gl.vertexAttribDivisor(location, graphics_attribute.fmt.divisor)
 
-    def bind_into(self, vao) -> None:
+    def bind_into(self, vao: GLVertexArrayBinding) -> None:
         for name, graphics_attribute in self.attribute_layouts.items():
             shader_attribute = vao.shader_attributes.get(name)
             if shader_attribute is None:
@@ -128,7 +127,7 @@ class _GLVertexStreamMix(VertexStream):
             self._set_attribute_pointer(shader_attribute, graphics_attribute)
             self._set_attribute_divisor(location, graphics_attribute)
 
-class GLVertexStream(_GLVertexStreamMix, VertexStream):  # noqa: D101
+class GLVertexStream(_GLVertexStreamMix):  # noqa: D101
     def __init__(self, ctx: WebGL2SurfaceContext, initial_size: int, attrs: Sequence[AttributeFormat]) -> None:
         """Contains data for vertex stream.
 
@@ -142,17 +141,18 @@ class GLVertexStream(_GLVertexStreamMix, VertexStream):  # noqa: D101
         """
         super().__init__(ctx, initial_size, attrs)
 
-class GLInstanceStream(_GLVertexStreamMix, InstanceStream):  # noqa: D101
+class GLInstanceStream(_GLVertexStreamMix, InstanceStream[WebGL2SurfaceContext, GLAttribute]):  # noqa: D101
     _ctx: WebGL2SurfaceContext
 
     def __init__(self, ctx: WebGL2SurfaceContext, initial_size: int, attrs: Sequence[AttributeFormat],  # noqa: D107
                  *, divisor: int = 0) -> None:
         super().__init__(ctx, initial_size, attrs, divisor=divisor)
 
-class GLVertexArrayBinding(VertexArrayBinding):  # noqa: D101
+class GLVertexArrayBinding(VertexArrayBinding[WebGL2SurfaceContext, Stream, VertexArrayProtocol]):  # noqa: D101
+    shader_attributes: Mapping[str, Attribute]
 
     def __init__(
-            self, ctx: OpenGLSurfaceContext, streams: list[VertexStream | InstanceStream | IndexStream],
+            self, ctx: WebGL2SurfaceContext, streams: Sequence[Stream],
             attributes: Mapping[str, Attribute] | None = None,
     ) -> None:
         self.shader_attributes = attributes or {}
@@ -186,7 +186,7 @@ class WebGLIndexedVertexList(IndexedVertexList):
 class WebGLInstanceIndexedVertexList(InstanceIndexedVertexList):
     ...
 
-class GLIndexStream(IndexStream):  # noqa: D101
+class GLIndexStream(IndexStream[WebGL2SurfaceContext, WebGLIndexedBufferObject]):  # noqa: D101
     index_element_size: int
     gl_type: int
 
@@ -209,14 +209,17 @@ class GLIndexStream(IndexStream):  # noqa: D101
         self.buffer.bind_to_index_buffer()
 
 
-class WebGLVertexDomain(VertexDomain):
+class WebGLVertexDomain(VertexDomain[WebGL2SurfaceContext, WebGLVertexList]):
     """Management of a set of vertex lists.
 
     Construction of a vertex domain is usually done with the
     :py:func:`create_domain` function.
     """
 
-    def __init__(self, context: SurfaceContext, initial_count: int,
+    vao: GLVertexArrayBinding
+    _vertex_input_bindings: dict[ShaderProgramKey, GLVertexArrayBinding]
+
+    def __init__(self, context: WebGL2SurfaceContext, initial_count: int,
                  attribute_meta: dict[str, AttributeFormat]) -> None:
         super().__init__(context, initial_count, attribute_meta)
         self._gl = context.gl
@@ -237,9 +240,9 @@ class WebGLVertexDomain(VertexDomain):
         size_list = [region[1] for region in regions]
         primcount = len(regions)
         if self._supports_multi_draw:
-            starts = (GLint * primcount)(*start_list)
-            sizes = (GLsizei * primcount)(*size_list)
-            self._multi_draw_array(mode, starts[:], 0, sizes[:], 0, primcount)
+            starts = Int32Array.new(to_js(start_list))
+            sizes = Int32Array.new(to_js(size_list))
+            self._multi_draw_array(mode, starts, 0, sizes, 0, primcount)
         else:
             for start, size in zip(start_list, size_list):
                 self._gl.drawArrays(mode, start, size)
@@ -296,9 +299,9 @@ class WebGLVertexDomain(VertexDomain):
             self._gl.drawArrays(mode, starts[0], sizes[0])
         else:
             if self._multi_draw_array:
-                starts = (GLint * primcount)(*starts)
-                sizes = (GLsizei * primcount)(*sizes)
-                self._multi_draw_array(mode, starts[:], 0, sizes[:], 0, primcount)
+                gl_starts = Int32Array.new(to_js(starts))
+                gl_sizes = Int32Array.new(to_js(sizes))
+                self._multi_draw_array(mode, gl_starts, 0, gl_sizes, 0, primcount)
             else:
                 # If not available, draw separately.
                 for start, size in zip(starts, sizes):
@@ -330,8 +333,10 @@ class WebGLVertexDomain(VertexDomain):
         return f'<{self.__class__.__name__}@{id(self):x} vertex_alloc={self.vertex_buffers.allocator}>'
 
 
-class GLInstanceDomainArrays(InstanceDomain):  # noqa: D101
-    def __init__(self, domain: Any, initial_instances: int) -> None:
+class GLInstanceDomainArrays(InstanceDomain[WebGLInstanceVertexList]):  # noqa: D101
+    _ctx: WebGL2SurfaceContext
+
+    def __init__(self, domain: WebGLInstancedVertexDomain, initial_instances: int) -> None:
         super().__init__(domain, initial_instances)
         self._ctx = domain._context  # noqa: SLF001
         self._gl = domain._context.gl  # noqa: SLF001
@@ -355,12 +360,12 @@ class GLInstanceDomainArrays(InstanceDomain):  # noqa: D101
             bucket.stream.commit()
             self._gl.drawArraysInstanced(mode, first_vertex, vertex_count, bucket.instance_count)
 
-    def draw_subset(self, mode: int, vertex_list: WebGLInstanceVertexList):
+    def draw_subset(self, mode: GeometryMode, vertex_list: WebGLInstanceVertexList) -> None:
         """Draw a specific VertexList in the domain."""
         bucket = vertex_list.instance_bucket
         bucket.vao.bind()
         bucket.stream.commit()
-        self._gl.drawArraysInstanced(mode, vertex_list.start, vertex_list.count, bucket.instance_count)
+        self._gl.drawArraysInstanced(geometry_map[mode], vertex_list.start, vertex_list.count, bucket.instance_count)
 
     def draw_bucket(self, mode: int, bucket: InstanceBucket) -> None:
         """Draw all instances belonging to one geometry bucket."""
@@ -371,10 +376,11 @@ class GLInstanceDomainArrays(InstanceDomain):  # noqa: D101
         bucket.stream.commit()
         self._gl.drawArraysInstanced(mode, first_vertex, vertex_count, bucket.instance_count)
 
-class GLInstanceDomainElements(InstanceDomain):  # noqa: D101
+class GLInstanceDomainElements(InstanceDomain[InstanceIndexedVertexList]):  # noqa: D101
     _ctx: WebGL2SurfaceContext
 
-    def __init__(self, domain: Any, initial_instances: int, index_stream: GLIndexStream) -> None:
+    def __init__(self, domain: WebGLInstancedIndexedVertexDomain, initial_instances: int,
+                 index_stream: GLIndexStream) -> None:
         super().__init__(domain, initial_instances)
         self._ctx = domain._context  # noqa: SLF001
         self._gl = domain._context.gl  # noqa: SLF001
@@ -405,14 +411,14 @@ class GLInstanceDomainElements(InstanceDomain):  # noqa: D101
             bucket.instance_count,
         )
 
-    def draw_subset(self, mode: GeometryMode, vertex_list: WebGLInstanceIndexedVertexList) -> None:
+    def draw_subset(self, mode: GeometryMode, vertex_list: InstanceIndexedVertexList) -> None:
         """Draw a specific VertexList in the domain."""
         bucket = vertex_list.instance_bucket
         bucket.vao.bind()
         bucket.stream.commit()
         byte_offset = vertex_list.index_start * self._elem_size
         self._gl.drawElementsInstanced(
-            mode, vertex_list.index_count, self._index_gl_type, byte_offset,
+            geometry_map[mode], vertex_list.index_count, self._index_gl_type, byte_offset,
             bucket.instance_count,
         )
 
@@ -430,24 +436,22 @@ class GLInstanceDomainElements(InstanceDomain):  # noqa: D101
             )
 
 
-class WebGLInstancedVertexDomain(InstancedVertexDomain):  # noqa: D101
+class WebGLInstancedVertexDomain(InstancedVertexDomain[WebGL2SurfaceContext, WebGLInstanceVertexList]):  # noqa: D101
     _vertexinstance_class: type
     _vertex_class = WebGLInstanceVertexList
+    instance_domain: GLInstanceDomainArrays
 
     def _create_vertex_class(self) -> type:
         return type(self._vertex_class.__name__, (self._vertex_class,), self.vertex_buffers._property_dict)
 
-    def _has_multi_draw_extension(self, ctx):
+    def _has_multi_draw_extension(self, ctx: WebGL2SurfaceContext) -> bool:
         return False
-
-    def _create_vao(self) -> GLVertexArrayBinding:
-        return GLVertexArrayBinding(self._context, self._streams, self.shader_attributes)
 
     def _create_streams(self, size: int) -> list[VertexStream | IndexStream | InstanceStream]:
         self.vertex_buffers = GLVertexStream(self._context, size, self.per_vertex)
         return [self.vertex_buffers]
 
-    def create_instance_domain(self, size: int) -> InstanceDomain:
+    def create_instance_domain(self, size: int) -> GLInstanceDomainArrays:
         return GLInstanceDomainArrays(self, size)
 
     def draw_buckets(self, mode: int, buckets: list[VertexGroupBucket]) -> None:
@@ -490,11 +494,11 @@ class WebGLInstancedVertexDomain(InstancedVertexDomain):  # noqa: D101
                 Vertex list to draw.
         """
         self.vertex_buffers.commit()
-        self.instance_domain.draw_subset(geometry_map[mode], vertex_list)
+        self.instance_domain.draw_subset(mode, vertex_list)
 
 
 
-class WebGLIndexedVertexDomain(IndexedVertexDomain):
+class WebGLIndexedVertexDomain(IndexedVertexDomain[WebGL2SurfaceContext, WebGLIndexedVertexList]):
     """Management of a set of indexed vertex lists.
 
     Construction of an indexed vertex domain is usually done with the
@@ -503,8 +507,11 @@ class WebGLIndexedVertexDomain(IndexedVertexDomain):
 
     _vertex_class = WebGLIndexedVertexList
     _supports_base_vertex: bool = False
+    vao: GLVertexArrayBinding
+    index_stream: GLIndexStream
+    _vertex_input_bindings: dict[ShaderProgramKey, GLVertexArrayBinding]
 
-    def __init__(self, context: SurfaceContext, initial_count: int, attribute_meta: dict[str, AttributeFormat],
+    def __init__(self, context: WebGL2SurfaceContext, initial_count: int, attribute_meta: dict[str, AttributeFormat],
                  index_type: DataTypes = "I") -> None:
         super().__init__(context, initial_count, attribute_meta, index_type)
         self._gl = context.gl
@@ -548,10 +555,9 @@ class WebGLIndexedVertexDomain(IndexedVertexDomain):
         size_list = [region[1] for region in regions]
         primcount = len(regions)
         if self._supports_multi_draw:
-            starts = [s * self.index_stream.index_element_size for s in start_list]
-            starts = (ctypes.POINTER(GLvoid) * primcount)(*(GLintptr * primcount)(*starts))
-            sizes = (GLsizei * primcount)(*size_list)
-            self._multi_draw_elements(mode, sizes[:], 0, self.index_stream.gl_type, starts[:], 0, primcount)
+            starts = Int32Array.new(to_js([s * self.index_stream.index_element_size for s in start_list]))
+            sizes = Int32Array.new(to_js(size_list))
+            self._multi_draw_elements(mode, sizes, 0, self.index_stream.gl_type, starts, 0, primcount)
         else:
             for start, size in zip(start_list, size_list):
                 self._gl.drawElements(mode, size, self.index_stream.gl_type,
@@ -586,10 +592,9 @@ class WebGLIndexedVertexDomain(IndexedVertexDomain):
             self._gl.drawElements(mode, sizes[0], self.index_stream.gl_type, starts[0] * self.index_stream.index_element_size)
         else:
             if self._multi_draw_elements:
-                starts = [s * self.index_stream.index_element_size for s in starts]
-                starts = (ctypes.POINTER(GLvoid) * primcount)(*(GLintptr * primcount)(*starts))
-                sizes = (GLsizei * primcount)(*sizes)
-                self._multi_draw_elements(mode, sizes[:], 0, self.index_stream.gl_type, starts[:], 0, primcount)
+                gl_starts = Int32Array.new(to_js([s * self.index_stream.index_element_size for s in starts]))
+                gl_sizes = Int32Array.new(to_js(sizes))
+                self._multi_draw_elements(mode, gl_sizes, 0, self.index_stream.gl_type, gl_starts, 0, primcount)
             else:
                 for start, size in zip(starts, sizes):
                     self._gl.drawElements(mode, size, self.index_stream.gl_type,
@@ -616,7 +621,7 @@ class WebGLIndexedVertexDomain(IndexedVertexDomain):
                        vertex_list.index_start * self.index_stream.index_element_size)
 
 
-class WebGLInstancedIndexedVertexDomain(InstancedIndexedVertexDomain):
+class WebGLInstancedIndexedVertexDomain(InstancedIndexedVertexDomain[WebGL2SurfaceContext, WebGLInstanceIndexedVertexList]):
     """Management of a set of indexed vertex lists.
 
     Construction of an indexed vertex domain is usually done with the
@@ -624,13 +629,12 @@ class WebGLInstancedIndexedVertexDomain(InstancedIndexedVertexDomain):
     """
     _initial_index_count: int = 16
     _vertex_class = WebGLInstanceIndexedVertexList
+    index_stream: GLIndexStream
+    instance_domain: GLInstanceDomainElements
 
     def _create_vertex_class(self) -> type:
         return type(self._vertex_class.__name__, (_InstancedRunningIndexSupport, self._vertex_class),
                                       self.vertex_buffers._property_dict)  # noqa: SLF001
-
-    def _create_vao(self) -> GLVertexArrayBinding:
-        return GLVertexArrayBinding(self._context, self._streams, self.shader_attributes)
 
     def _create_streams(self, size: int) -> list[VertexStream | IndexStream | InstanceStream]:
         self.vertex_buffers = GLVertexStream(self._context, size, self.per_vertex)
@@ -640,7 +644,7 @@ class WebGLInstancedIndexedVertexDomain(InstancedIndexedVertexDomain):
     def create_instance_domain(self, size: int) -> GLInstanceDomainElements:
         return GLInstanceDomainElements(self, size, index_stream=self.index_stream)
 
-    def _has_multi_draw_extension(self, ctx):
+    def _has_multi_draw_extension(self, ctx: WebGL2SurfaceContext) -> bool:
         return False
 
     def _create_vao(self) -> None:
@@ -685,4 +689,4 @@ class WebGLInstancedIndexedVertexDomain(InstancedIndexedVertexDomain):
         """
         self.vertex_buffers.commit()
         self.index_stream.commit()
-        self.instance_domain.draw_subset(geometry_map[mode], vertex_list)
+        self.instance_domain.draw_subset(mode, vertex_list)

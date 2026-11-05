@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import weakref
-from typing import BinaryIO, NoReturn, TYPE_CHECKING
+from typing import Any, BinaryIO, NoReturn, TYPE_CHECKING
 
 import pyglet
 
-from . import MediaDecoder
-from .base import AudioFormat, Source, StaticSource
+from . import MediaDecoder, MediaEncoder
+from .base import AudioFormat, Source
 
 _debug = pyglet.options.debug_media
 
@@ -20,10 +20,17 @@ except ImportError:
 from pyglet.media import get_audio_driver
 
 if TYPE_CHECKING:
+    from pyodide.ffi import JsProxy
+
     from pyglet.media.drivers.pyodide_js.adaptation import PyodideJSAudioPlayer
 
 
 class JavascriptWebAudioSource(Source):
+    _file: bytes | None
+    js_array: JsProxy | None
+    audio_buffer: Any
+    _waiting_players: weakref.WeakSet[PyodideJSAudioPlayer]
+
     def __init__(self, filename: str, file: BinaryIO | None = None) -> None:  # noqa: D107
         if file is None:
             with open(filename, 'rb') as f:
@@ -51,7 +58,7 @@ class JavascriptWebAudioSource(Source):
         self._waiting_players.add(player)
 
     # Decode the audio data
-    def on_decode(self, audio_buffer) -> None:
+    def on_decode(self, audio_buffer: Any) -> None:
         if _debug:
             print(f"Decoded {self.filename} successfully.")
         self.audio_buffer = audio_buffer
@@ -68,7 +75,7 @@ class JavascriptWebAudioSource(Source):
 
         self._waiting_players.clear()
 
-    def on_error(self, error) -> NoReturn:
+    def on_error(self, error: JsProxy) -> None:
         js.console.log(f"Failed decoding {self.filename}: {error}")
 
         self._waiting_players.clear()
@@ -83,7 +90,7 @@ class JavascriptWebAudioSource(Source):
     def get_audio_data(self, num_bytes: int) -> NoReturn:
         raise NotImplementedError("This is not supported and should not be called.")
 
-    def seek(self, timestamp: float) -> NoReturn:
+    def seek(self, timestamp: float) -> None:
         """This is not supported by Javascript."""
 
 
@@ -97,7 +104,11 @@ class PyodideDecoder(MediaDecoder):  # noqa: D101
         return '.mp3', '.aac', '.wav', '.ogg', '.webm'
         # possibly use audio.canPlayType?
 
-    def decode(self, filename: str, file: BinaryIO, streaming: bool = True, **kwargs) -> JavascriptWebAudioSource:
+    def decode(self, filename: str, file: BinaryIO | None, streaming: bool = True,
+               audio_sample_format: str | None = None,
+               audio_driver_sample_formats: list[str] | None = None,
+               audio_sample_rate: int | None = None, audio_channels: int | None = None,
+               audio_resample_hq: bool = False, **kwargs: Any) -> JavascriptWebAudioSource:
         # web audio doesn't really have streaming sources, so just always return this regardless
         return JavascriptWebAudioSource(filename, file)
 
@@ -106,5 +117,5 @@ def get_decoders() -> list[PyodideDecoder]:  # noqa: D103
     return [PyodideDecoder()]
 
 
-def get_encoders() -> list:  # noqa: D103
+def get_encoders() -> list[MediaEncoder]:  # noqa: D103
     return []

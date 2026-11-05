@@ -1,12 +1,17 @@
+from __future__ import annotations
+
 import threading
+from _ctypes import CFuncPtr
 import time
 import weakref
+from _thread import LockType
 from ctypes import POINTER, Structure, byref, c_void_p, windll
 from ctypes.wintypes import DWORD, LONG, LPCWSTR, SHORT, ULONG, WORD
+from typing import cast
 
 import pyglet
 from pyglet.event import EventDispatcher
-from pyglet.input.base import AbsoluteAxis, Button, Controller, ControllerManager, Device, Sign
+from pyglet.input.base import AbsoluteAxis, Button, Control, Controller, ControllerManager, Device, Sign
 from pyglet.libs.win32 import _ole32 as ole32
 from pyglet.libs.win32 import _oleaut32 as oleaut32
 from pyglet.libs.win32 import com
@@ -164,18 +169,20 @@ class XINPUT_CAPABILITIES_EX(Structure):
     ]
 
 
+XInputGetBatteryInformation: CFuncPtr | None
+
 if library_name == "xinput1_4":
     # Only available for 1.4+
     XInputGetBatteryInformation = lib.XInputGetBatteryInformation
     XInputGetBatteryInformation.argtypes = [DWORD, BYTE, POINTER(XINPUT_BATTERY_INFORMATION)]
     XInputGetBatteryInformation.restype = DWORD
 
-    XInputGetState = lib[100]
+    XInputGetState = lib[100]  # type: ignore[index]  # ctypes supports native export ordinals.
     XInputGetState.restype = DWORD
     XInputGetState.argtypes = [DWORD, POINTER(XINPUT_STATE)]
 
     # Hidden function
-    XInputGetCapabilities = lib[108]
+    XInputGetCapabilities = lib[108]  # type: ignore[index]  # ctypes supports native export ordinals.
     XInputGetCapabilities.restype = DWORD
     XInputGetCapabilities.argtypes = [DWORD, DWORD, DWORD, POINTER(XINPUT_CAPABILITIES_EX)]
 
@@ -284,17 +291,17 @@ class IWbemLocator(com.pIUnknown):
     ]
 
 
-def get_xinput_guids():
+def get_xinput_guids() -> list[str]:
     """We iterate over all devices in the system looking for IG_ in the device ID, which indicates it's an
     XInput device. Returns a list of strings containing pid/vid.
     Monstrosity found at: https://docs.microsoft.com/en-us/windows/win32/xinput/xinput-and-directinput
     """
-    guids_found = []
+    guids_found: list[str] = []
 
     locator = IWbemLocator()
     services = IWbemServices()
     enum_devices = IEnumWbemClassObject()
-    devices = (IWbemClassObject * 20)()
+    devices = (IWbemClassObject * 20)()  # type: ignore[operator]  # COM pointer metaclass creates a ctypes array.
 
     ole32.CoCreateInstance(CLSID_WbemLocator, None, CLSCTX_INPROC_SERVER, IID_IWbemLocator, byref(locator))
 
@@ -371,8 +378,16 @@ controller_api_to_pyglet = {
 
 
 class XInputDevice(Device):
+    index: int
+    _manager: XInputDeviceManager
+    xinput_state: XINPUT_STATE
+    packet_number: int
+    vibration: XINPUT_VIBRATION
+    weak_duration: float | None
+    strong_duration: float | None
+    controls: dict[str, Button | AbsoluteAxis]
 
-    def __init__(self, index, manager):
+    def __init__(self, index: int, manager: XInputDeviceManager) -> None:
         super().__init__(None, f"XInput{index}")
         self.index = index
         self._manager = weakref.proxy(manager)
@@ -410,19 +425,26 @@ class XInputDevice(Device):
             'righttrigger': AbsoluteAxis('righttrigger', 0, 255)
         }
 
-    def set_rumble_state(self):
+    def set_rumble_state(self) -> None:
         XInputSetState(self.index, byref(self.vibration))
 
-    def get_controls(self):
+    def get_controls(self) -> list[Control]:
         return list(self.controls.values())
 
-    def get_guid(self):
+    def get_guid(self) -> str:
         return "XINPUTCONTROLLER"
 
 
 class XInputDeviceManager(EventDispatcher):
+    all_devices: list[XInputDevice]
+    _connected_devices: set[int]
+    _polling_rate: float
+    _detection_rate: float
+    _exit: threading.Event
+    _dev_lock: LockType
+    _thread: threading.Thread
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.all_devices = [XInputDevice(i, self) for i in range(XUSER_MAX_COUNT)]
         self._connected_devices = set()
 
@@ -440,12 +462,12 @@ class XInputDeviceManager(EventDispatcher):
         self._thread = threading.Thread(target=self._get_state, daemon=True)
         self._thread.start()
 
-    def get_devices(self):
+    def get_devices(self) -> list[XInputDevice]:
         with self._dev_lock:
             return [dev for dev in self.all_devices if dev.connected]
 
     # Threaded method:
-    def _get_state(self):
+    def _get_state(self) -> None:
         xuser_max_count = set(range(XUSER_MAX_COUNT))     # {0, 1, 2, 3}
         polling_rate = self._polling_rate
         detect_rate = self._detection_rate
@@ -514,7 +536,7 @@ class XInputDeviceManager(EventDispatcher):
             time.sleep(polling_rate)
 
     @staticmethod
-    def _on_state_change(device):
+    def _on_state_change(device: XInputDevice) -> None:
         # Handler to ensure Controller events are dispatched in the main thread.
         # The _get_state method dispatches this by posting to the platform event loop.
         for button, name in controller_api_to_pyglet.items():
@@ -528,10 +550,10 @@ class XInputDeviceManager(EventDispatcher):
         device.controls['righty'].value = device.xinput_state.Gamepad.sThumbRY
         device.packet_number = device.xinput_state.dwPacketNumber
 
-    def on_connect(self, device):
+    def on_connect(self, device: XInputDevice) -> None:
         """A device was connected."""
 
-    def on_disconnect(self, device):
+    def on_disconnect(self, device: XInputDevice) -> None:
         """A device was disconnected"""
 
 
@@ -547,38 +569,39 @@ class XInputController(Controller):
 
     device: XInputDevice
 
-    def _initialize_controls(self):
+    def _initialize_controls(self) -> None:
 
         for button_name in controller_api_to_pyglet.values():
-            control = self.device.controls[button_name]
-            self._bind_button_control(control, button_name)
+            button = cast(Button, self.device.controls[button_name])
+            self._bind_button_control(button, button_name)
 
         for axis_name in "leftx", "lefty", "rightx", "righty", "lefttrigger", "righttrigger":
-            control = self.device.controls[axis_name]
-            self._bind_axis_control(control, axis_name, Sign.DEFAULT)
+            axis = cast(AbsoluteAxis, self.device.controls[axis_name])
+            self._bind_axis_control(axis, axis_name, Sign.DEFAULT)
 
-    def rumble_play_weak(self, strength=1.0, duration=0.5):
+    def rumble_play_weak(self, strength: float = 1.0, duration: float = 0.5) -> None:
         self.device.vibration.wRightMotorSpeed = int(max(min(1.0, strength), 0) * 0xFFFF)
         self.device.weak_duration = duration
         self.device.set_rumble_state()
 
-    def rumble_play_strong(self, strength=1.0, duration=0.5):
+    def rumble_play_strong(self, strength: float = 1.0, duration: float = 0.5) -> None:
         self.device.vibration.wLeftMotorSpeed = int(max(min(1.0, strength), 0) * 0xFFFF)
         self.device.strong_duration = duration
         self.device.set_rumble_state()
 
-    def rumble_stop_weak(self):
+    def rumble_stop_weak(self) -> None:
         self.device.vibration.wRightMotorSpeed = 0
         self.device.set_rumble_state()
 
-    def rumble_stop_strong(self):
+    def rumble_stop_strong(self) -> None:
         self.device.vibration.wLeftMotorSpeed = 0
         self.device.set_rumble_state()
 
 
 class XInputControllerManager(ControllerManager):
+    _controllers: dict[XInputDevice, XInputController]
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._controllers = {}
 
         for device in _device_manager.all_devices:
@@ -586,20 +609,20 @@ class XInputControllerManager(ControllerManager):
             self._controllers[device] = XInputController(device, meta)
 
         @_device_manager.event
-        def on_connect(xdevice):
+        def on_connect(xdevice: XInputDevice) -> None:
             self.dispatch_event('on_connect', self._controllers[xdevice])
 
         @_device_manager.event
-        def on_disconnect(xdevice):
+        def on_disconnect(xdevice: XInputDevice) -> None:
             self.dispatch_event('on_disconnect', self._controllers[xdevice])
 
-    def get_controllers(self):
+    def get_controllers(self) -> list[Controller]:
         return [ctlr for ctlr in self._controllers.values() if ctlr.device.connected]
 
 
-def get_devices():
+def get_devices() -> list[XInputDevice]:
     return _device_manager.get_devices()
 
 
-def get_controllers():
+def get_controllers() -> list[XInputController]:
     return [XInputController(device, {'name': device.name, 'guid': device.get_guid()}) for device in get_devices()]

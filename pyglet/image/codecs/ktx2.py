@@ -1,4 +1,6 @@
 # KTX2 decoder, based on the spec here: https://github.khronos.org/KTX-Specification/ktxspec.v2.html
+# mypy: disable-error-code="attr-defined"
+# File-structure attributes are populated dynamically from _fields.
 
 from __future__ import annotations
 
@@ -19,7 +21,7 @@ from pyglet.image.codecs import ImageDecodeException
 
 
 class _FileStruct:
-    _fields = []
+    _fields: list[tuple[str, str]] = []
 
     def __init__(self, data):
         if len(data) < self.get_size():

@@ -1,8 +1,16 @@
+from __future__ import annotations
+
+from collections.abc import Callable, Iterable
+from typing import TYPE_CHECKING
+
 import pyglet
 import pytest
 from pyglet.font.harfbuzz import harfbuzz_available
 from pyglet.enums import Style
 from tests.annotations import skip_platform, require_platform, Platform
+
+if TYPE_CHECKING:
+    from tests.base.data import TestDataFixture
 
 
 def test_font_create_default(test_window, test_data):
@@ -15,6 +23,8 @@ def test_default_font_get_text_size(test_window):
     width, height = font.get_text_size("Backend text")
     assert width > 0
     assert height > 0
+    assert type(width) is int
+    assert type(height) is int
 
 
 def test_font_preload_glyphs(test_window):
@@ -43,6 +53,18 @@ def test_missing_font_loads_a_usable_fallback(test_window):
     assert font.name
     glyphs, _ = font.get_glyphs("Fallback", shaping=False)
     assert len(glyphs) == len("Fallback")
+
+
+@pytest.mark.parametrize("name_type", [list, tuple, iter])
+def test_load_from_iterable(test_window: pyglet.window.Window,
+                            name_type: Callable[[tuple[str, ...]], Iterable[str]]) -> None:
+    family = pyglet.font.manager.get_platform_default_name()
+    names = ("definitely-doesnt-exist-font-638593", family)
+
+    font = pyglet.font.load(name_type(names), size=12, dpi=96)
+
+    assert font is pyglet.font.load(family, size=12, dpi=96)
+    assert pyglet.font.manager.get_resolved_name(name_type(names)) == family
 
 
 @skip_platform(Platform.LINUX)
@@ -124,6 +146,8 @@ def test_font_range_group_routes_ranges_and_measures_text(test_window, test_data
     assert glyphs[2] is action_font.get_glyphs("?", shaping=False)[0][0]
 
     width, height = font.get_text_size("AN?")
+    assert type(width) is int
+    assert type(height) is int
     action_a_width, action_a_height = action_font.get_text_size("A")
     action_fallback_width, action_fallback_height = action_font.get_text_size("?")
     default_width, default_height = default_font.get_text_size("N")

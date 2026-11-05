@@ -17,16 +17,16 @@ from .base import Display, Screen, ScreenMode
 NSScreen = ObjCClass('NSScreen')
 
 
-class CocoaDisplay(Display):
+class CocoaDisplay(Display['CocoaScreen']):
 
-    def get_screens(self):
+    def get_screens(self) -> list[CocoaScreen]:
         maxDisplays = 256
         activeDisplays = (CGDirectDisplayID * maxDisplays)()
         count = c_uint32()
         quartz.CGGetActiveDisplayList(maxDisplays, activeDisplays, byref(count))
         return [CocoaScreen(self, displayID) for displayID in list(activeDisplays)[: count.value]]
 
-    def get_default_screen(self) -> Screen:
+    def get_default_screen(self) -> CocoaScreen:
         main_id = quartz.CGMainDisplayID()
 
         screens = self.get_screens()
@@ -36,7 +36,7 @@ class CocoaDisplay(Display):
 
         return screens[0]
 
-class CocoaScreen(Screen):
+class CocoaScreen(Screen[CocoaDisplay]):
 
     def __init__(self, display, displayID):
         bounds = quartz.CGDisplayBounds(displayID)

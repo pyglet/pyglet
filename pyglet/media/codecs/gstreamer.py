@@ -1,11 +1,14 @@
 """Multi-format decoder using Gstreamer.
 """
+from __future__ import annotations
+
 import queue
 import atexit
 import weakref
 import tempfile
 
 from threading import Event, Thread
+from typing import BinaryIO, IO, cast
 
 from pyglet.util import DecodeException
 from .base import StreamingSource, AudioData, AudioFormat, StaticSource
@@ -25,12 +28,14 @@ class GStreamerDecodeException(DecodeException):
 
 class _GLibMainLoopThread(Thread):
     """A background Thread for a GLib MainLoop"""
-    def __init__(self):
+    mainloop: GLib.MainLoop
+
+    def __init__(self) -> None:
         super().__init__(daemon=True)
         self.mainloop = GLib.MainLoop.new(None, False)
         self.start()
 
-    def run(self):
+    def run(self) -> None:
         self.mainloop.run()
 
 
@@ -41,10 +46,12 @@ class _MessageHandler:
     Source, preventing garbage collection issues. 
     
     """
-    def __init__(self, source):
+    source: GStreamerSource
+
+    def __init__(self, source: GStreamerSource) -> None:
         self.source = weakref.proxy(source)
 
-    def message(self, bus, message):
+    def message(self, bus: Gst.Bus, message: Gst.Message) -> None:
         """The main message callback"""
         if message.type == Gst.MessageType.EOS:
 
@@ -55,7 +62,7 @@ class _MessageHandler:
         elif message.type == Gst.MessageType.ERROR:
             raise GStreamerDecodeException(message.parse_error())
 
-    def notify_caps(self, pad, *args):
+    def notify_caps(self, pad: Gst.Pad, *args: object) -> None:
         """notify::caps callback"""
         self.source.caps = True
         info = pad.get_current_caps().get_structure(0)
@@ -70,7 +77,7 @@ class _MessageHandler:
         # Allow GStreamerSource.__init__ to complete:
         self.source.is_ready.set()
 
-    def pad_added(self, element, pad):
+    def pad_added(self, element: Gst.Element, pad: Gst.Pad) -> None:
         """pad-added callback"""
         name = pad.query_caps(None).to_string()
         if name.startswith('audio/x-raw'):
@@ -79,12 +86,12 @@ class _MessageHandler:
                 self.source.pads = True
                 pad.link(nextpad)
 
-    def no_more_pads(self, element):
+    def no_more_pads(self, element: Gst.Element) -> None:
         """Finished Adding pads"""
         if not self.source.pads:
             raise GStreamerDecodeException('No Streams Found')
 
-    def new_sample(self, sink):
+    def new_sample(self, sink: Gst.Element) -> Gst.FlowReturn:
         """new-sample callback"""
         # Pull the sample, and get its buffer:
         buffer = sink.emit('pull-sample').get_buffer()
@@ -94,7 +101,7 @@ class _MessageHandler:
         return Gst.FlowReturn.OK
 
     @staticmethod
-    def unknown_type(uridecodebin, decodebin, caps):
+    def unknown_type(uridecodebin: Gst.Element, decodebin: Gst.Element, caps: Gst.Caps) -> None:
         """unknown-type callback for unreadable files"""
         streaminfo = caps.to_string()
         if not streaminfo.startswith('audio/'):
@@ -103,11 +110,23 @@ class _MessageHandler:
 
 
 class GStreamerSource(StreamingSource):
+    _pipeline: Gst.Pipeline
+    _file: IO[bytes]
+    filesrc: Gst.Element
+    decoder: Gst.Element
+    converter: Gst.Element
+    appsink: Gst.Element
+    caps_handler: int
+    pads: bool
+    caps: bool
+    queue: queue.Queue[bytes | object]
+    _finished: Event
+    is_ready: Event
 
-    source_instances = weakref.WeakSet()
+    source_instances: weakref.WeakSet[GStreamerSource] = weakref.WeakSet()
     sentinel = object()
 
-    def __init__(self, filename, file=None):
+    def __init__(self, filename: str, file: BinaryIO | None = None) -> None:
         self._pipeline = Gst.Pipeline()
 
         msg_handler = _MessageHandler(self)
@@ -173,10 +192,10 @@ class GStreamerSource(StreamingSource):
 
         GStreamerSource.source_instances.add(self)
 
-    def __del__(self):
+    def __del__(self) -> None:
         self.delete()
 
-    def delete(self):
+    def delete(self) -> None:
         if hasattr(self, '_file'):
             self._file.close()
 
@@ -192,7 +211,7 @@ class GStreamerSource(StreamingSource):
         except (ImportError, AttributeError):
             pass
 
-    def get_audio_data(self, num_bytes):
+    def get_audio_data(self, num_bytes: int) -> AudioData | None:
         if self._finished.is_set():
             return None
 
@@ -202,7 +221,7 @@ class GStreamerSource(StreamingSource):
             if packet == self.sentinel:
                 self._finished.set()
                 break
-            data += packet
+            data += cast(bytes, packet)
 
         if not data:
             return None
@@ -227,7 +246,7 @@ class GStreamerSource(StreamingSource):
         self._finished.clear()
 
 
-def _cleanup():
+def _cleanup() -> None:
     # At exist, ensure any remaining Source instances are cleaned up.
     # If this is not done, GStreamer may hang due to dangling callbacks.
     for src in GStreamerSource.source_instances:
@@ -242,15 +261,17 @@ atexit.register(_cleanup)
 #########################################
 
 class GStreamerDecoder(MediaDecoder):
+    _glib_loop: _GLibMainLoopThread
 
-    def __init__(self):
+    def __init__(self) -> None:
         Gst.init(None)
         self._glib_loop = _GLibMainLoopThread()
 
-    def get_file_extensions(self):
+    def get_file_extensions(self) -> tuple[str, ...]:
         return '.mp3', '.flac', '.ogg', '.m4a'
 
-    def decode(self, filename, file, streaming=True, **kwargs):
+    def decode(self, filename: str, file: BinaryIO | None, streaming: bool = True, *args: object,
+               **kwargs: object) -> GStreamerSource | StaticSource:
 
         if not any(filename.endswith(ext) for ext in self.get_file_extensions()):
             # Refuse to decode anything not specifically listed in the supported
@@ -266,9 +287,9 @@ class GStreamerDecoder(MediaDecoder):
             return StaticSource(GStreamerSource(filename, file))
 
 
-def get_decoders():
+def get_decoders() -> list[GStreamerDecoder]:
     return [GStreamerDecoder()]
 
 
-def get_encoders():
+def get_encoders() -> list[MediaEncoder]:
     return []

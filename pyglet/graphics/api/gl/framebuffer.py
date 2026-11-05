@@ -117,6 +117,8 @@ def get_screenshot() -> ImageData:
 class GLRenderbuffer(RenderbufferResource):
     """OpenGL Renderbuffer Object."""
 
+    _id: GLuint | None
+
     def __init__(self, width: int, height: int, component_format: ComponentFormat, bit_size: int,
                  data_type: DataTypes = "I", samples: int = 1,
                  context: OpenGLSurfaceContext | None = None) -> None:
@@ -205,6 +207,8 @@ class GLFramebuffer(FramebufferResource):
 
     .. versionadded:: 2.0
     """
+    _id: GLuint | None
+
     def __init__(self, target: FramebufferTarget = FramebufferTarget.FRAMEBUFFER, context: OpenGLSurfaceContext | None = None) -> None:
         FramebufferResource.__init__(self)
         self._context = context or pyglet.graphics.api.core.current_context
@@ -264,7 +268,7 @@ class GLFramebuffer(FramebufferResource):
             read_binding = gl.GLint()
             self._context.glGetIntegerv(gl.GL_DRAW_FRAMEBUFFER_BINDING, draw_binding)
             self._context.glGetIntegerv(gl.GL_READ_FRAMEBUFFER_BINDING, read_binding)
-            bindings = (draw_binding.value, read_binding.value)
+            bindings: tuple[int, ...] = (draw_binding.value, read_binding.value)
             self._binding_stack.append(bindings)
             if bindings != (self._handle, self._handle):
                 self.bind()

@@ -17,7 +17,7 @@ from ctypes import (
     cast,
     sizeof,
 )
-from typing import TYPE_CHECKING, Callable, Sequence, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Sequence
 
 import pyglet
 
@@ -34,7 +34,6 @@ from pyglet.graphics.api.webgl.gl import (
 from pyglet.graphics.shader import (
     _AbstractShader,
     _AbstractShaderProgram,
-    Shader,
     ShaderException,
     UnsupportedShaderType,
     UBOBindingManager,
@@ -62,12 +61,15 @@ if TYPE_CHECKING:
     from pyglet.customtypes import CTypesPointer, DataTypes, CType
     from pyglet.graphics import UnsupportedBackendError
     from pyglet.graphics.api.webgl.context import WebGL2SurfaceContext
-    from pyglet.graphics.api.webgl.webgl_js import WebGL2RenderingContext, WebGLProgram, WebGLRenderingContext
+    from pyglet.graphics.api.webgl.webgl_js import (
+        WebGL2RenderingContext, WebGLProgram, WebGLRenderingContext, WebGLUniformLocation, WebGLBuffer,
+        WebGLShader as WebGLShaderHandle,
+    )
 
 _debug_api_shaders = pyglet.options.debug_api_shaders
 
 
-GLDataType = Union[Type[gl.GLint], Type[gl.GLfloat], Type[gl.GLboolean], int]
+GLDataType = type[c_int] | type[c_float] | type[c_ubyte] | type[c_uint]
 GLFunc = Callable
 
 _c_types: dict[int, CType] = {
@@ -146,7 +148,7 @@ class GLAttribute(GraphicsAttribute):
 
 
 
-class _UniformArray(UniformArrayBase):
+class _UniformArray(UniformArrayBase["WebGLUniformLocation"]):
     """Wrapper of the GLSL array data inside a Uniform.
 
     Allows access to get and set items for a more Pythonic implementation.
@@ -163,7 +165,7 @@ class _UniformArray(UniformArrayBase):
         self._gl = pyglet.graphics.api.core.current_context.gl
         super().__init__(uniform, gl_getter, gl_setter, gl_type, is_matrix)
 
-    def _get_location_for_index(self, index: int) -> int:
+    def _get_location_for_index(self, index: int) -> WebGLUniformLocation:
         """Get the location for the array name.
 
         It is not guaranteed that the location ID's of the uniform in the shader program will be a contiguous offset.
@@ -172,9 +174,12 @@ class _UniformArray(UniformArrayBase):
         offset from 0 to index. Here, we store the location ID's of each index to ensure we are setting data on the
         right location.
         """
-        return self._gl.getUniformLocation(self._uniform.program, f"{self._uniform.name}[{index}]")
+        location = self._gl.getUniformLocation(self._uniform.program, f"{self._uniform.name}[{index}]")
+        if location is None:
+            raise ShaderException(f"Uniform {self._uniform.name}[{index}] not found.")
+        return location
 
-    def _apply_uniform_update(self, location: int, size: int, data: Sequence) -> None:
+    def _apply_uniform_update(self, location: WebGLUniformLocation, size: int, data: Sequence) -> None:
         self._gl.useProgram(self._uniform.program)
         if self._is_matrix:
             self._gl_setter(location, GL_FALSE, data)
@@ -196,10 +201,11 @@ _gl_matrices: tuple[int, ...] = (
 
 
 class _Uniform(UniformBase):
-    _ctx: WebGL2SurfaceContext | NullContext
+    _ctx: WebGL2SurfaceContext
     __slots__ = ("_ctx",)
 
-    def __init__(self, program: int | WebGLProgram, name: str, uniform_type: int, size: int, location: int) -> None:
+    def __init__(self, program: WebGLProgram, name: str, uniform_type: int, size: int,
+                 location: WebGLUniformLocation) -> None:
         self._ctx = pyglet.graphics.api.core.current_context
         super().__init__(
             name=name,
@@ -220,15 +226,15 @@ class _Uniform(UniformBase):
     def _create_scalar_get_set(
         self,
         *,
-        program: int | WebGLProgram,
-        location: int,
+        program: WebGLProgram,
+        location: WebGLUniformLocation,
         gl_getter: GLFunc,
         gl_setter: GLFunc,
         gl_type: GLDataType,
         length: int,
         is_matrix: bool,
     ) -> tuple[Callable, Callable]:
-        c_array: Array[GLDataType] = (gl_type * length)()
+        c_array: Array[Any] = (gl_type * length)()
         ptr = cast(c_array, POINTER(gl_type))
         getter = self._create_getter_func(program, location, gl_getter, length)
         setter = self._create_setter_func(
@@ -238,13 +244,13 @@ class _Uniform(UniformBase):
 
     @staticmethod
     def _create_getter_func(
-        program_id: int | WebGLRenderingContext,
-        location: int,
+        program_id: WebGLProgram,
+        location: WebGLUniformLocation,
         gl_getter: GLFunc,
         length: int,
-    ) -> Callable[[], Array[GLDataType] | GLDataType]:
+    ) -> Callable[[], Any]:
         """Factory function for creating simplified Uniform getters."""
-        def getter_func() -> GLDataType:
+        def getter_func() -> Any:
             return gl_getter(program_id, location)
 
         return getter_func
@@ -252,30 +258,30 @@ class _Uniform(UniformBase):
     @staticmethod
     def _create_setter_func(
         gl_ctx: WebGLRenderingContext,
-        program_id: int | WebGLProgram,
-        location: int,
+        program_id: WebGLProgram,
+        location: WebGLUniformLocation,
         gl_setter: GLFunc,
-        c_array: Array[GLDataType],
+        c_array: Array[Any],
         length: int,
-        ptr: CTypesPointer[GLDataType],
+        ptr: CTypesPointer[Any],
         is_matrix: bool,
-    ) -> Callable[[float], None]:
+    ) -> Callable[[Any], None]:
         """Factory function for creating simplified Uniform setters."""
         if is_matrix:
 
-            def setter_func(value: float) -> None:
+            def setter_func(value: Any) -> None:
                 gl_ctx.useProgram(program_id)
                 gl_setter(location, GL_FALSE, value)
         elif length == 1:
 
-            def setter_func(value: float) -> None:
+            def setter_func(value: Any) -> None:
                 gl_ctx.useProgram(program_id)
                 gl_setter(location, value)
         elif length > 1:
 
-            def setter_func(values: float) -> None:
+            def setter_func(value: Any) -> None:
                 gl_ctx.useProgram(program_id)
-                gl_setter(location, values)
+                gl_setter(location, value)
         else:
             msg = "Uniform type not yet supported."
             raise ShaderException(msg)
@@ -288,7 +294,7 @@ class _Uniform(UniformBase):
 
 def get_maximum_binding_count() -> int:
     """The maximum binding value that can be used for this hardware."""
-    return gl.glGetParameter(gl.GL_MAX_UNIFORM_BUFFER_BINDINGS)
+    return pyglet.graphics.api.core.current_context.gl.getParameter(gl.GL_MAX_UNIFORM_BUFFER_BINDINGS)
 
 
 class _UBOBindingManager(UBOBindingManager):
@@ -341,12 +347,12 @@ def compute_std140_offsets(uniforms):
 
 
 class WebGLUniformBlock(BaseUniformBlock):  # noqa: D101
-    ctx: WebGL2SurfaceContext | NullContext
+    ctx: WebGL2SurfaceContext
     __slots__ = ('ctx',)
 
     def __init__(
         self,
-        program: WebGLShaderProgram,
+        program: WebGLShaderProgram | WebGLComputeShaderProgram,
         name: str,
         index: int,
         size: int,
@@ -359,7 +365,7 @@ class WebGLUniformBlock(BaseUniformBlock):  # noqa: D101
         assert self.ctx
         super().__init__(program, name, index, size, binding, uniforms, uniform_count)
 
-    def _bind_buffer_base(self, binding: int, buffer_id: int) -> None:
+    def _bind_buffer_base(self, binding: int, buffer_id: WebGLBuffer) -> None:
         self.ctx.gl.bindBufferBase(GL_UNIFORM_BUFFER, binding, buffer_id)
 
     def _create_backend_ubo(
@@ -459,13 +465,15 @@ def _introspect_attributes(program_id: WebGLProgram) -> dict[str, ShaderAttribut
     return attributes
 
 
-def _create_program(gl: WebGLRenderingContext, *shaders: Shader) -> WebGLProgram:
+def _create_program(gl: WebGLRenderingContext, *shaders: WebGLShader) -> WebGLProgram:
     """Create a program and attach one or more Shader objects."""
     program_id = gl.createProgram()
     if not program_id:
         raise ShaderException("Shader program could not be created.")
     for shader in shaders:
-        gl.attachShader(program_id, shader.handle)
+        shader_handle = shader.handle
+        assert shader_handle is not None
+        gl.attachShader(program_id, shader_handle)
     return program_id
 
 
@@ -481,13 +489,15 @@ def _link_program(gl: WebGLRenderingContext, program_id: WebGLProgram) -> None:
         raise ShaderException(msg)
 
 
-def _detach_program_shaders(gl: WebGLRenderingContext, program_id: WebGLProgram, *shaders: Shader) -> None:
+def _detach_program_shaders(gl: WebGLRenderingContext, program_id: WebGLProgram, *shaders: WebGLShader) -> None:
     """Detach Shader objects from an already linked program."""
     for shader in shaders:
-        gl.detachShader(program_id, shader.handle)
+        shader_handle = shader.handle
+        assert shader_handle is not None
+        gl.detachShader(program_id, shader_handle)
 
 
-def _build_program(gl: WebGLRenderingContext, *shaders: Shader) -> WebGLProgram:
+def _build_program(gl: WebGLRenderingContext, *shaders: WebGLShader) -> WebGLProgram:
     """Create, link, and detach one or more Shaders into a ShaderProgram."""
     program_id = _create_program(gl, *shaders)
     _link_program(gl, program_id)
@@ -541,7 +551,8 @@ def _introspect_uniform_blocks(
 ) -> dict[str, WebGLUniformBlock]:
     uniform_blocks = {}
     gl_ctx: WebGL2RenderingContext = ctx.gl
-    program_id: WebGLProgram = program.handle
+    program_id = program.handle
+    assert program_id is not None
 
     for index in range(_get_number(gl_ctx, program_id, gl.GL_ACTIVE_UNIFORM_BLOCKS)):
         name = gl_ctx.getActiveUniformBlockName(program_id, index)
@@ -618,7 +629,7 @@ class GLShaderSource(ShaderSource):
               one line.
     """
 
-    _type: gl.GLenum
+    _type: gl.GLenum | int
     _lines: list[str]
 
     def __init__(self, source: str, source_type: gl.GLenum | int) -> None:
@@ -672,9 +683,11 @@ class WebGLShader(_AbstractShader):
     You can reuse a Shader object in multiple ShaderPrograms.
     """
 
-    _context: WebGL2SurfaceContext | NullContext
-    _id: WebGLShader | None
-    type: ShaderType
+    _context: WebGL2SurfaceContext
+    _id: WebGLShaderHandle | None
+    _handle: WebGLShaderHandle | None
+    _gl: WebGL2RenderingContext
+    shader_type: ShaderType
 
     def __init__(self, source_string: str, shader_type: ShaderType) -> None:
         """Initialize a shader type.
@@ -697,7 +710,7 @@ class WebGLShader(_AbstractShader):
         self._context = pyglet.graphics.api.core.current_context
         self._gl = self._context.gl
         self._id = None
-        self.type = shader_type
+        self.shader_type = shader_type
 
         shader_gl_type = _shader_types[shader_type]
         source_string = self.get_string_class()(source_string, shader_gl_type).validate()
@@ -742,12 +755,12 @@ class WebGLShader(_AbstractShader):
     def supported_shaders(cls) -> tuple[ShaderType, ...]:
         return 'vertex', 'fragment', 'compute', 'geometry', 'tesscontrol', 'tessevaluation'
 
-    def _get_shader_log(self, shader_id: WebGLShader) -> str:
+    def _get_shader_log(self, shader_id: WebGLShaderHandle) -> str:
         info_log = self._gl.getShaderInfoLog(shader_id)
         if info_log:
-            return f"OpenGL returned the following message when compiling the '{self.type}' shader: \n{info_log}"
+            return f"OpenGL returned the following message when compiling the '{self.shader_type}' shader: \n{info_log}"
 
-        return f"{self.type.capitalize()} Shader '{shader_id}' compiled successfully."
+        return f"{self.shader_type.capitalize()} Shader '{shader_id}' compiled successfully."
 
     def delete(self) -> None:
         """Deletes the shader.
@@ -762,23 +775,25 @@ class WebGLShader(_AbstractShader):
         if self._id is not None:
             try:
                 if not isinstance(self._context, NullContext):
-                    self._context.delete_shader(self._id)
+                    self._gl.deleteShader(self._id)
                 if _debug_api_shaders:
-                    print(f"Destroyed {self.type} Shader '{self._id}'")
+                    print(f"Destroyed {self.shader_type} Shader '{self._id}'")
                 self._id = None
                 self._handle = None
             except (AttributeError, ImportError):
                 pass  # Interpreter is shutting down
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(handle={self._handle}, type={self.type})"
+        return f"{self.__class__.__name__}(handle={self._handle}, shader_type={self.shader_type})"
 
 
-class WebGLShaderProgram(ShaderProgram):
+class WebGLShaderProgram(ShaderProgram[WebGLUniformBlock]):
     """OpenGL shader program."""
 
     _id: WebGLProgram | None
-    _context: WebGL2SurfaceContext | NullContext
+    _handle: WebGLProgram | None
+    _gl: WebGL2RenderingContext
+    _context: WebGL2SurfaceContext
     _uniforms: dict[str, _Uniform]
     _uniform_blocks: dict[str, WebGLUniformBlock]
 
@@ -833,7 +848,7 @@ class WebGLShaderProgram(ShaderProgram):
         if self._id is not None:
             try:
                 if not isinstance(self._context, NullContext):
-                    self._context.delete_shader_program(self._id)
+                    self._gl.deleteProgram(self._id)
                 self._id = None
                 self._handle = None
             except (AttributeError, ImportError):
@@ -869,6 +884,7 @@ class WebGLTransformFeedbackShaderProgram(WebGLShaderProgram):
 
     def _set_transform_feedback_varyings(self) -> None:
         mode = gl.GL_INTERLEAVED_ATTRIBS if self._varying_buffer_type == "interleaved" else gl.GL_SEPARATE_ATTRIBS
+        assert self._id is not None
         self._gl.transformFeedbackVaryings(self._id, list(self._varyings), mode)
 
 
@@ -920,4 +936,4 @@ def get_default_shader() -> WebGLShaderProgram:
         (_default_fragment_source, 'fragment'),
         vertex_layout=None,
     )
-    return program
+    return program  # type: ignore[return-value]

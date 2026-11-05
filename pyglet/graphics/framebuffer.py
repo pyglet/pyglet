@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from contextlib import AbstractContextManager, ExitStack, contextmanager
 from typing import TYPE_CHECKING
+from types import TracebackType
 
 import pyglet
 
@@ -18,6 +19,7 @@ from pyglet.enums import (
 from pyglet.graphics.resource import FramebufferResource, RenderbufferResource
 
 if TYPE_CHECKING:
+    from pyglet.graphics.api.gl.framebuffer import get_viewport
     from collections.abc import Iterator
 
     from pyglet.image import ImageData
@@ -214,6 +216,8 @@ elif not TYPE_CHECKING and pyglet.options.backend == GraphicsAPI.WEBGL:
 class _TextureRenderTargetBase:
     """Shared framebuffer and camera state for texture render targets."""
 
+    depth_buffer: Renderbuffer | None
+
     def __init__(
         self,
         *,
@@ -254,7 +258,7 @@ class _TextureRenderTargetBase:
         if texture.width <= 0 or texture.height <= 0:
             raise ValueError("Render target texture dimensions must be greater than zero.")
 
-        replacement_depth = None
+        replacement_depth: Renderbuffer | None = None
         depth_buffer = self.depth_buffer
         if self._use_depth and (
             depth_buffer is None
@@ -341,9 +345,10 @@ class _TextureRenderTargetBase:
         finally:
             self._scope = None
 
-    def __exit__(self, *args: object) -> None:
+    def __exit__(self, exc_type: type[BaseException] | None, exc_value: BaseException | None,
+                 traceback: TracebackType | None) -> None:
         if self._scope is not None:
-            self._scope.__exit__(*args)
+            self._scope.__exit__(exc_type, exc_value, traceback)
 
     def clear(self, color: tuple[float, float, float, float] | None = None) -> None:
         """Clear the render target using ``color`` or the configured ``clear_color``."""
