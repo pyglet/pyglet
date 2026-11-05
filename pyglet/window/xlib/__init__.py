@@ -26,7 +26,7 @@ from ctypes import (
     c_float,
 )
 from functools import lru_cache
-from typing import TYPE_CHECKING, Sequence, Callable, Any
+from typing import TYPE_CHECKING, Sequence, Callable, Any, ClassVar
 
 import pyglet
 from pyglet.display.xlib import XlibScreen, XlibScreenXinerama, XlibDisplay
@@ -59,6 +59,13 @@ try:
     _have_xsync = True
 except ImportError:
     _have_xsync = False
+
+try:
+    from pyglet.libs.linux.x11 import xcursor
+
+    _have_xcursor = True
+except (ImportError, AttributeError):
+    _have_xcursor = False
 
 _debug = pyglet.options.debug_x11
 
@@ -129,6 +136,28 @@ ViewEventHandler = _ViewEventHandler
 
 
 class XlibWindow(BaseWindow['XlibScreen']):
+    # Prefer the desktop's cursor theme, with core cursor font fallbacks.
+    _cursor_shapes: ClassVar[dict[str, tuple[bytes, int]]] = {
+        BaseWindow.CURSOR_CROSSHAIR: (b'crosshair', cursorfont.XC_crosshair),
+        BaseWindow.CURSOR_HAND: (b'pointer', cursorfont.XC_hand2),
+        BaseWindow.CURSOR_HELP: (b'help', cursorfont.XC_question_arrow),
+        BaseWindow.CURSOR_NO: (b'not-allowed', cursorfont.XC_pirate),
+        BaseWindow.CURSOR_SIZE: (b'all-scroll', cursorfont.XC_fleur),
+        BaseWindow.CURSOR_SIZE_UP: (b'n-resize', cursorfont.XC_top_side),
+        BaseWindow.CURSOR_SIZE_UP_RIGHT: (b'ne-resize', cursorfont.XC_top_right_corner),
+        BaseWindow.CURSOR_SIZE_RIGHT: (b'e-resize', cursorfont.XC_right_side),
+        BaseWindow.CURSOR_SIZE_DOWN_RIGHT: (b'se-resize', cursorfont.XC_bottom_right_corner),
+        BaseWindow.CURSOR_SIZE_DOWN: (b's-resize', cursorfont.XC_bottom_side),
+        BaseWindow.CURSOR_SIZE_DOWN_LEFT: (b'sw-resize', cursorfont.XC_bottom_left_corner),
+        BaseWindow.CURSOR_SIZE_LEFT: (b'w-resize', cursorfont.XC_left_side),
+        BaseWindow.CURSOR_SIZE_UP_LEFT: (b'nw-resize', cursorfont.XC_top_left_corner),
+        BaseWindow.CURSOR_SIZE_UP_DOWN: (b'ns-resize', cursorfont.XC_sb_v_double_arrow),
+        BaseWindow.CURSOR_SIZE_LEFT_RIGHT: (b'ew-resize', cursorfont.XC_sb_h_double_arrow),
+        BaseWindow.CURSOR_TEXT: (b'text', cursorfont.XC_xterm),
+        BaseWindow.CURSOR_WAIT: (b'wait', cursorfont.XC_watch),
+        BaseWindow.CURSOR_WAIT_ARROW: (b'progress', cursorfont.XC_watch),
+    }
+
     context: XlibContext | None
     display: XlibDisplay
     _x_display: _Pointer[xlib.Display] | None = None  # X display connection
@@ -729,11 +758,22 @@ class XlibWindow(BaseWindow['XlibScreen']):
         return bytes(byte_list)
 
     @lru_cache  # noqa: B019
-    def _create_cursor_from_image(self, cursor: ImageMouseCursor) -> xlib.Cursor:
+    def _create_cursor_from_image(self, cursor: ImageMouseCursor) -> int:
         """Creates platform cursor from an ImageCursor instance."""
         texture = cursor.texture
         width = texture.width
         height = texture.height
+
+        # X11 uses a top-left origin, and hotspots must lie inside the image.
+        hot_x = min(max(0, int(cursor.hot_x)), width - 1)
+        hot_y = min(max(0, int(height - 1 - cursor.hot_y)), height - 1)
+        if _have_xcursor and xcursor.XcursorSupportsARGB(self._x_display):
+            rgba = bytes(texture.get_image_data().get_bytes('RGBA', -width * 4))
+            native_cursor = xcursor.create_argb_cursor(
+                self._x_display, width, height, rgba, hot_x, hot_y,  # type: ignore[arg-type]  # The window has an open display.
+            )
+            if native_cursor:
+                return native_cursor
 
         alpha_luma_bytes = texture.get_image_data().get_bytes('AL', -width * 2)
         mask_data = self._downsample_1bit(alpha_luma_bytes[0::2])
@@ -744,9 +784,6 @@ class XlibWindow(BaseWindow['XlibScreen']):
         white = xlib.XColor(red=65535, green=65535, blue=65535)  # background color
         black = xlib.XColor()  # foreground color
 
-        # hot_x/y must be within the image dimension, or the cursor will not display:
-        hot_x = min(max(0, int(cursor.hot_x)), width)
-        hot_y = min(max(0, int(height - cursor.hot_y)), height)
         native_cursor = xlib.XCreatePixmapCursor(self._x_display, bitmap, mask, white, black, hot_x, hot_y)
         xlib.XFreePixmap(self._x_display, bitmap)
         xlib.XFreePixmap(self._x_display, mask)
@@ -864,32 +901,15 @@ class XlibWindow(BaseWindow['XlibScreen']):
         if name == self.CURSOR_DEFAULT:
             return DefaultMouseCursor()
 
-        # NQR means default shape is not pretty... surely there is another
-        # cursor font?
-        cursor_shapes = {
-            self.CURSOR_CROSSHAIR: cursorfont.XC_crosshair,
-            self.CURSOR_HAND: cursorfont.XC_hand2,
-            self.CURSOR_HELP: cursorfont.XC_question_arrow,  # NQR
-            self.CURSOR_NO: cursorfont.XC_pirate,  # NQR
-            self.CURSOR_SIZE: cursorfont.XC_fleur,
-            self.CURSOR_SIZE_UP: cursorfont.XC_top_side,
-            self.CURSOR_SIZE_UP_RIGHT: cursorfont.XC_top_right_corner,
-            self.CURSOR_SIZE_RIGHT: cursorfont.XC_right_side,
-            self.CURSOR_SIZE_DOWN_RIGHT: cursorfont.XC_bottom_right_corner,
-            self.CURSOR_SIZE_DOWN: cursorfont.XC_bottom_side,
-            self.CURSOR_SIZE_DOWN_LEFT: cursorfont.XC_bottom_left_corner,
-            self.CURSOR_SIZE_LEFT: cursorfont.XC_left_side,
-            self.CURSOR_SIZE_UP_LEFT: cursorfont.XC_top_left_corner,
-            self.CURSOR_SIZE_UP_DOWN: cursorfont.XC_sb_v_double_arrow,
-            self.CURSOR_SIZE_LEFT_RIGHT: cursorfont.XC_sb_h_double_arrow,
-            self.CURSOR_TEXT: cursorfont.XC_xterm,
-            self.CURSOR_WAIT: cursorfont.XC_watch,
-            self.CURSOR_WAIT_ARROW: cursorfont.XC_watch,  # NQR
-        }
-        if name not in cursor_shapes:
+        if name not in self._cursor_shapes:
             msg = f'Unknown cursor name "{name}"'
             raise MouseCursorException(msg)
-        cursor = xlib.XCreateFontCursor(self._x_display, cursor_shapes[name])
+        theme_name, shape = self._cursor_shapes[name]
+        if _have_xcursor:
+            cursor = xcursor.XcursorLibraryLoadCursor(self._x_display, theme_name)
+            if cursor:
+                return XlibMouseCursor(cursor)
+        cursor = xlib.XCreateFontCursor(self._x_display, shape)
         return XlibMouseCursor(cursor)
 
     def set_icon(self, *images: pyglet.image.ImageData) -> None:
