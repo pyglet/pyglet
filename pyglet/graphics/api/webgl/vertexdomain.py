@@ -239,6 +239,8 @@ class WebGLVertexDomain(VertexDomain[WebGL2SurfaceContext, WebGLVertexList]):
         start_list = [region[0] for region in regions]
         size_list = [region[1] for region in regions]
         primcount = len(regions)
+        if primcount == 0:
+            return
         if self._supports_multi_draw:
             starts = Int32Array.new(to_js(start_list))
             sizes = Int32Array.new(to_js(size_list))
@@ -554,6 +556,8 @@ class WebGLIndexedVertexDomain(IndexedVertexDomain[WebGL2SurfaceContext, WebGLIn
         start_list = [region[0] for region in regions]
         size_list = [region[1] for region in regions]
         primcount = len(regions)
+        if primcount == 0:
+            return
         if self._supports_multi_draw:
             starts = Int32Array.new(to_js([s * self.index_stream.index_element_size for s in start_list]))
             sizes = Int32Array.new(to_js(size_list))

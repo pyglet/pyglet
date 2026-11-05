@@ -70,6 +70,10 @@ class WebGLBatch(_BucketBatch):
                 sizes = Int32Array.new(to_js([size for _, size in regions]))
                 versions = tuple(bucket._version for bucket in buckets)
 
+            # WebGL validates array offsets even when the draw count is zero.
+            if primcount == 0:
+                return
+
             if index_stream is not None:
                 domain._multi_draw_elements(  # type: ignore[attr-defined]
                     mode_func, sizes, 0, index_stream.gl_type, starts, 0, primcount)

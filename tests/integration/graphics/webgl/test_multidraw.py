@@ -41,9 +41,17 @@ def test_webgl_multidraw_caches_native_arrays_and_invalidates_after_merging(inde
     assert list(calls[-1][1].to_py()) == [6, 3]
     first.clear()
     second.clear()
+    call_count = len(calls)
+    for _ in range(2):
+        draw(None)
+    assert len(calls) == call_count
+
+    second.add(9, 3)
     draw(None)
-    assert calls[-1][2] == 0
-    assert calls[-1][0].length == 0
+    assert len(calls) == call_count + 1
+    assert calls[-1][2] == 1
+    assert list(calls[-1][0].to_py()) == [18 if indexed else 9]
+    assert list(calls[-1][1].to_py()) == [3]
 
 
 @pytest.mark.parametrize("indexed", [False, True])
