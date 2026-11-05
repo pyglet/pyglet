@@ -6,7 +6,7 @@ from collections import deque
 from typing import TYPE_CHECKING, Generator, Iterable
 
 import pyglet
-from pyglet.media.codecs.base import Source, SourceGroup
+from pyglet.media.codecs.base import LoopingSource, Source, StreamingSource
 from pyglet.media.drivers import get_audio_driver
 from pyglet.media.exceptions import MediaException
 from pyglet.util import debug_print
@@ -112,7 +112,7 @@ class AudioPlayer(pyglet.event.EventDispatcher):
         If the player has no source, the player will start to play immediately
         or pause depending on its :attr:`.playing` attribute.
         """
-        if isinstance(source, (Source, SourceGroup)):
+        if isinstance(source, Source):
             source = _one_item_playlist(source)
         else:
             try:
@@ -123,6 +123,8 @@ class AudioPlayer(pyglet.event.EventDispatcher):
 
         if self.source is None:
             self._set_source(next(self._playlists[0]))
+            if self._audio_player is not None:
+                self._audio_player.set_source(self._source)
 
         self._set_playing(self._playing)
 
@@ -212,6 +214,18 @@ class AudioPlayer(pyglet.event.EventDispatcher):
         """
         self._set_playing(False)
 
+    def stop(self) -> None:
+        """Stop playback and discard the current source and queued sources."""
+        self._set_playing(False)
+        self._timer.reset()
+        self.last_seek_time = 0.0
+        self._playlists.clear()
+        if self._source:
+            self._source.is_player_source = False
+        if self._audio_player is not None:
+            self._audio_player.clear()
+        self._source = None
+
     def delete(self) -> None:
         """Release the resources acquired by this player.
 
@@ -300,6 +314,20 @@ class AudioPlayer(pyglet.event.EventDispatcher):
         self._seek_player_resources()
 
         self._set_playing(playing)
+
+    def set_loop_count(self, loop_count: int) -> None:
+        """Set the remaining repeats for the current :class:`LoopingSource`.
+
+        A loop count is the number of additional passes through its loop
+        region.  ``-1`` loops indefinitely and ``0`` continues into the
+        outro when the current pass reaches its end.
+
+        Raises:
+            ValueError: If the current source does not define loop points.
+        """
+        if not isinstance(self._source, LoopingSource):
+            raise ValueError("The current source is not a LoopingSource.")
+        self._source.set_loop_count(loop_count)
 
     def _create_audio_player(self) -> None:
         assert not self._audio_player
@@ -575,6 +603,146 @@ AudioPlayer.register_event_type('on_eos')
 AudioPlayer.register_event_type('on_player_eos')
 AudioPlayer.register_event_type('on_player_next_source')
 AudioPlayer.register_event_type('on_driver_reset')
+
+
+class GaplessAudioPlayer(AudioPlayer):
+    """An audio-only player for continuous playback between sources.
+
+    It prepares the next source before the current one ends, for example when
+    playing an album or a continuous mix. The current :attr:`source` remains
+    an individual source so the queue can still be inspected.
+
+    All queued sources must have identical audio formats.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._sources = deque()
+
+    def queue(self, source: Source | Iterable[Source]) -> None:
+        if isinstance(source, Source):
+            sources = (source,)
+        else:
+            try:
+                sources = iter(source)
+            except TypeError:
+                raise TypeError(f"source must be either a Source or an iterable. Received type {type(source)}")
+
+        for item in sources:
+            queued_source = item.get_queue_source()
+            if queued_source.video_format is not None:
+                raise MediaException('GaplessAudioPlayer only supports audio sources.')
+            if queued_source.audio_format is None:
+                raise MediaException('GaplessAudioPlayer requires a source with audio.')
+            if self._sources and queued_source.audio_format != self._sources[0].audio_format:
+                raise MediaException('GaplessAudioPlayer sources must share the same audio format.')
+
+            self._sources.append(queued_source)
+            if self._source is None:
+                self._source = queued_source
+                if self._audio_player is not None:
+                    self._audio_player.reset_queue(self._sources)
+            elif self._audio_player is not None:
+                self._audio_player.queue(queued_source)
+
+        if self._source is not None:
+            self._set_playing(self._playing)
+
+    def _create_audio_player(self) -> None:
+        assert self._source is not None
+        audio_driver = get_audio_driver()
+        if audio_driver is None:
+            return
+        self._audio_player = audio_driver.create_gapless_audio_player(self._source, self)
+        if self._audio_player is None:
+            raise MediaException(
+                f'{type(audio_driver).__name__} does not support native gapless playback.')
+        for queued_source in list(self._sources)[1:]:
+            self._audio_player.queue(queued_source)
+        for attr in (
+            'volume', 'min_distance', 'max_distance', 'position', 'pitch',
+            'cone_orientation', 'cone_inner_angle', 'cone_outer_angle', 'cone_outer_gain',
+        ):
+            setattr(self, attr, getattr(self, attr))
+
+    def next_source(self) -> None:
+        """Skip to the next queued source.
+
+        Explicit skips flush queued data; natural source transitions do not.
+        """
+        was_playing = self._playing
+        self.pause()
+        if self._sources:
+            old_source = self._sources.popleft()
+            old_source.seek(0.0)
+            old_source.is_player_source = False
+            if isinstance(old_source, StreamingSource):
+                old_source.delete()
+        self._timer.reset()
+        self.last_seek_time = 0.0
+        self._source = self._sources[0] if self._sources else None
+        if self._source is None:
+            self.delete()
+            self.dispatch_event('on_player_eos')
+            return
+        if self._audio_player is not None:
+            self._audio_player.reset_queue(self._sources)
+        self._set_playing(was_playing)
+        self.dispatch_event('on_player_next_source')
+
+    def seek(self, timestamp: float) -> None:
+        if self._source is None:
+            return
+        playing = self._playing
+        if playing:
+            self.pause()
+        timestamp = max(0.0, timestamp)
+        if self._source.duration is not None:
+            timestamp = min(timestamp, self._source.duration)
+        self._source.seek(timestamp)
+        self._timer.set_time(timestamp)
+        self.last_seek_time = timestamp
+        if self._audio_player is not None:
+            self._audio_player.reset_queue(self._sources)
+        self._set_playing(playing)
+
+    def on_gapless_source_eos(self) -> None:
+        """Internal notification from a native gapless backend."""
+        if not self._sources:
+            return
+        old_source = self._sources.popleft()
+        old_source.is_player_source = False
+        if isinstance(old_source, StreamingSource):
+            old_source.delete()
+        self._timer.reset()
+        self.last_seek_time = 0.0
+        self._source = self._sources[0] if self._sources else None
+        self.dispatch_event('on_eos')
+        if self._source is None:
+            if self._audio_player is not None:
+                self._audio_player.delete()
+                self._audio_player = None
+            self.dispatch_event('on_player_eos')
+        else:
+            self.dispatch_event('on_player_next_source')
+
+    def on_eos(self) -> None:
+        """A native backend has already advanced the queue for this EOS."""
+
+    def stop(self) -> None:
+        for source in self._sources:
+            source.is_player_source = False
+        super().stop()
+        self._sources.clear()
+
+    def delete(self) -> None:
+        for source in self._sources:
+            source.is_player_source = False
+        self._sources.clear()
+        super().delete()
+
+
+GaplessAudioPlayer.register_event_type('on_gapless_source_eos')
 
 
 def _one_item_playlist(source: Source) -> Generator:

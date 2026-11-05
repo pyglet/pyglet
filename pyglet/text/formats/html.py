@@ -25,13 +25,13 @@ import contextlib
 import re
 from html import entities
 from html.parser import HTMLParser
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, NoReturn
 
 import pyglet
 from pyglet.text.formats import structured
 
 if TYPE_CHECKING:
-    from pyglet.image import _AbstractImage
+    from pyglet.image import _AbstractImage  # type: ignore[attr-defined]
     from pyglet.resource import Location
 
 
@@ -235,10 +235,11 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
         7: 48,
     }
 
-    def decode_structured(self, text: str, location: Location) -> None:
+    def decode_structured(self, text: str, location: Location | None) -> None:
+        assert location is not None
         self.location = location
         self._font_size_stack = [3]
-        self.list_stack.append(structured.UnorderedListBuilder({})) # type: ignore reportArgumentType
+        self.list_stack.append(structured.UnorderedListBuilder(""))
         self.strip_leading_space = True
         self.block_begin = True
         self.need_block_begin = False
@@ -252,7 +253,7 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
         self.close()
 
     def get_image(self, filename: str) -> _AbstractImage:
-        return pyglet.image.load(filename, file=self.location.open(filename))
+        return pyglet.image.load(filename, file=self.location.open(filename))  # type: ignore[arg-type]
 
     def prepare_for_data(self) -> None:
         if self.need_block_begin:
@@ -276,12 +277,12 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
                 self.add_text(data)
             self.strip_leading_space = data.endswith(" ")
 
-    def handle_starttag(self, tag: str, case_attrs: dict[str, Any]) -> None:
+    def handle_starttag(self, tag: str, case_attrs: list[tuple[str, str | None]]) -> None:
         if self.in_metadata:
             return
 
         element = tag.lower()
-        attrs = {}
+        attrs: dict[str, Any] = {}
         for key, value in case_attrs:
             attrs[key.lower()] = value
 
@@ -297,7 +298,7 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
                 self.need_block_begin = False
         self.element_stack.append(element)
 
-        style = {}
+        style: dict[str, Any] = {}
         if element == "a":
             style["color"] = (0, 0, 238, 255)
             style["underline"] = style["color"]
@@ -310,7 +311,7 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
         elif element in ("tt", "code", "samp", "kbd"):
             style["font_name"] = "Courier New"
         elif element == "u":
-            color = self.current_style.get("color")
+            color: Any = self.current_style.get("color")
             if color is None:
                 color = [0, 0, 0, 255]
             style["underline"] = color
@@ -323,7 +324,7 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
             if "face" in attrs:
                 style["font_name"] = attrs["face"].split(",")
             if "size" in attrs:
-                size = attrs["size"]
+                size: Any = attrs["size"]
                 try:
                     if size.startswith("+"):
                         size = self._font_size_stack[-1] + int(size[1:])
@@ -397,7 +398,7 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
             except ValueError:
                 start = 1
             fmt = attrs.get("type", "1") + "."
-            builder = structured.OrderedListBuilder(start, fmt)
+            builder: structured.ListBuilder = structured.OrderedListBuilder(start, fmt)
             builder.begin(self, style)
             self.list_stack.append(builder)
         elif element in ("ul", "dir", "menu"):
@@ -420,12 +421,15 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
             left_margin = self.current_style.get("margin_left") or 0
             style["margin_left"] = left_margin + 30
         elif element == "img":
-            image = self.get_image(attrs.get("src")) # type: ignore reportArgumentType
+            src = attrs.get("src")
+            if src is None:
+                return
+            image = self.get_image(src)
             if image:
-                width = attrs.get("width")
+                width: Any = attrs.get("width")
                 if width:
                     width = int(width)
-                height = attrs.get("height")
+                height: Any = attrs.get("height")
                 if height:
                     height = int(height)
                 self.prepare_for_data()

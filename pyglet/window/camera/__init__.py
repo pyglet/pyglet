@@ -3,6 +3,7 @@
 from .base import (
     CameraScissor,
     CameraViewStorage,
+    CameraWindowProtocol,
     UniformBufferCameraRegion,
     UniformSetCameraRegion,
     ViewportType,
@@ -20,6 +21,7 @@ __all__ = (
     "Camera3DView",
     "CameraScissor",
     "CameraViewStorage",
+    "CameraWindowProtocol",
     "FPSCamera",
     "ThirdPersonCamera",
     "UniformBufferCameraRegion",

@@ -207,9 +207,8 @@ class _UniformArray(UniformArrayBase):
         offset from 0 to index. Here, we store the location ID's of each index to ensure we are setting data on the
         right location.
         """
-        loc = gl.glGetUniformLocation(self._uniform.program,
+        return self._context.glGetUniformLocation(self._uniform.program,
                                 create_string_buffer(f"{self._uniform.name}[{index}]".encode()))
-        return loc
 
     def _apply_uniform_update(self, location: int, size: int, data: Sequence) -> None:
         if self._dsa:
@@ -420,7 +419,7 @@ class GLUniformBlock(BaseUniformBlock):
     def _actual_binding_point(self) -> int:
         """Queries OpenGL to find what the bind point currently is."""
         binding = gl.GLint()
-        gl.glGetActiveUniformBlockiv(self.program.handle, self.index, gl.GL_UNIFORM_BLOCK_BINDING, binding)
+        self._context.glGetActiveUniformBlockiv(self.program.handle, self.index, gl.GL_UNIFORM_BLOCK_BINDING, binding)
         return binding.value
 
     def __repr__(self) -> str:
@@ -1015,7 +1014,8 @@ class GLShader(_AbstractShader):
         self._handle = None
 
     def __del__(self) -> None:
-        if self._id is not None:
+        # If program fails to link, _id will not be set.
+        if getattr(self, "_id", None) is not None:
             try:
                 self._context.delete_shader(self._id)
                 assert _debug_api_shader_print(f"Destroyed {self.type} Shader '{self._id}'")
@@ -1177,19 +1177,17 @@ class GLComputeShaderProgram(_AbstractShaderProgram):
         self.max_shared_memory_size = self._get_value(gl.GL_MAX_COMPUTE_SHARED_MEMORY_SIZE)
         self.max_work_group_invocations = self._get_value(gl.GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS)
 
-    @staticmethod
-    def _get_tuple(parameter: int) -> tuple[int, int, int]:
+    def _get_tuple(self, parameter: int) -> tuple[int, int, int]:
         val_x = gl.GLint()
         val_y = gl.GLint()
         val_z = gl.GLint()
         for i, value in enumerate((val_x, val_y, val_z)):
-            gl.glGetIntegeri_v(parameter, i, byref(value))
+            self._context.glGetIntegeri_v(parameter, i, byref(value))
         return val_x.value, val_y.value, val_z.value
 
-    @staticmethod
-    def _get_value(parameter: int) -> int:
+    def _get_value(self, parameter: int) -> int:
         val = gl.GLint()
-        gl.glGetIntegerv(parameter, byref(val))
+        self._context.glGetIntegerv(parameter, byref(val))
         return val.value
 
     def dispatch(self, x: int = 1, y: int = 1, z: int = 1, barrier: int = gl.GL_ALL_BARRIER_BITS) -> None:

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import ctypes
-import sys
 from typing import Sequence, TYPE_CHECKING, Literal
 
 import pyglet
@@ -14,11 +12,9 @@ if TYPE_CHECKING:
     from _ctypes import Array
     from pyglet.graphics.shader import ShaderType
 
-_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 
 class OpenGL2Backend(OpenGLBackend):
-    gl_api: GraphicsAPI
 
     def get_default_configs(self) -> Sequence[pyglet.config.OpenGLUserConfig]:
         """A sequence of configs to use if the user does not specify any.
@@ -27,9 +23,9 @@ class OpenGL2Backend(OpenGLBackend):
         """
         return [
             pyglet.config.OpenGLUserConfig(double_buffer=True, depth_size=24, major_version=2, minor_version=0,
-                                           api=self.gl_api),
+                                           api=self.graphics_api),
             pyglet.config.OpenGLUserConfig(double_buffer=True, depth_size=16, major_version=2, minor_version=0,
-                                           api=self.gl_api),
+                                           api=self.graphics_api),
         ]
 
     def get_cached_shader(self, name: str, *sources: tuple[str, ShaderType],

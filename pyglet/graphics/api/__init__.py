@@ -5,15 +5,16 @@ from typing import TYPE_CHECKING, Sequence
 import pyglet
 
 from pyglet.enums import GraphicsAPI
-from pyglet.graphics.api.base import NullBackend
+from pyglet.graphics.api.base import BackendGlobalObject, NullBackend
 
 if TYPE_CHECKING:
+    from pyglet.config import UserConfig
     from pyglet.graphics.api.base import GraphicsConfig
     from pyglet.graphics.draw import Batch
     from pyglet.graphics.attributes import VertexLayout
     from pyglet.graphics.shader import ShaderType, ShaderProgram
 
-core = NullBackend()
+core: BackendGlobalObject = NullBackend()
 
 
 # Enforce WebGL if emscripten is detected.
@@ -24,12 +25,12 @@ if pyglet.compat_platform == "emscripten":
 if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
     from pyglet.graphics.api.gl.global_opengl import OpenGLBackend
 
-    core = OpenGLBackend(gl_api=pyglet.options.backend)
+    core = OpenGLBackend(graphics_api=pyglet.options.backend)
 
 elif pyglet.options.backend in (GraphicsAPI.OPENGL_2, GraphicsAPI.OPENGL_ES_2):
     from pyglet.graphics.api.gl2.global_opengl import OpenGL2Backend
 
-    core = OpenGL2Backend(gl_api=pyglet.options.backend)
+    core = OpenGL2Backend(graphics_api=pyglet.options.backend)
 
 elif pyglet.options.backend == GraphicsAPI.WEBGL:
     from pyglet.graphics.api.webgl import WebGLBackend
@@ -48,11 +49,11 @@ def get_config(**kwargs: float | str | None) -> GraphicsConfig:
     return core.get_config(**kwargs)
 
 
-def get_default_configs() -> Sequence[GraphicsConfig]:
+def get_default_configs() -> Sequence[UserConfig]:
     return core.get_default_configs()
 
 
-def have_version(*args: float) -> bool:
+def have_version(*args: int) -> bool:
     return core.have_version(*args)
 
 

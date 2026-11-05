@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import ctypes
 from ctypes import byref, sizeof
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Sequence
 
 from pyglet.libs.win32 import _gdi32, _user32
 from pyglet.libs.win32.constants import (
@@ -39,11 +39,14 @@ from .base import Display, Screen, ScreenMode
 if TYPE_CHECKING:
     from ctypes.wintypes import HDC, HMONITOR, LPARAM, LPRECT
 
+_ERROR_SUCCESS = 0
+_ERROR_INSUFFICIENT_BUFFER = 122
+
+# sizeof(DISPLAYCONFIG_MODE_INFO). Mode data is not used, but the API requires a buffer for it.
+_DISPLAYCONFIG_MODE_INFO_SIZE = 64
+
 if WINDOWS_8_1_OR_GREATER:
     from pyglet.libs.win32 import _shcore
-
-if TYPE_CHECKING:
-    from ctypes.wintypes import HDC, HMONITOR, LPARAM, LPRECT
 
 
 def set_dpi_awareness() -> None:
@@ -66,13 +69,13 @@ class Win32Display(Display):  # noqa: D101
     def get_default_screen(self) -> Screen:
         screens = self.get_screens()
         for screen in screens:
-            if screen.is_primary:
+            if isinstance(screen, Win32Screen) and screen.is_primary:
                 return screen
 
         return screens[0]
 
-    def get_screens(self) -> list[Win32Screen]:
-        screens = []
+    def get_screens(self) -> list[Screen]:
+        screens: list[Screen] = []
 
         def enum_proc(hMonitor: HMONITOR, hdcMonitor: HDC, lprcMonitor: LPRECT, dwData: LPARAM) -> bool:  # noqa: N803, ARG001
             r = lprcMonitor.contents
@@ -89,7 +92,7 @@ class Win32Display(Display):  # noqa: D101
 
 class Win32Screen(Screen):  # noqa: D101
     _handle: HMONITOR
-    _initial_mode = None
+    _initial_mode: Win32ScreenMode | None = None
 
     def __init__(self, display: Win32Display, handle: HMONITOR, x: int, y: int, width: int, height: int) -> None:  # noqa: D107
         super().__init__(display, x, y, width, height)
@@ -101,7 +104,70 @@ class Win32Screen(Screen):  # noqa: D101
     def is_primary(self) -> bool:
         """If the screen is considered the primary according to the operating system."""
         info = self._get_monitor_info()
-        return info.dwFlags & MONITORINFOF_PRIMARY
+        return bool(info.dwFlags & MONITORINFOF_PRIMARY)
+
+    @staticmethod
+    def _query_active_display_paths() -> list[DISPLAYCONFIG_PATH_INFO]:
+        """Query the currently active Display Configuration paths.
+
+        ``GetDisplayConfigBufferSizes`` only reports the sizes required at the moment it is
+        called. If the display topology changes before ``QueryDisplayConfig`` runs, the buffers
+        may no longer be large enough and it fails with ``ERROR_INSUFFICIENT_BUFFER``. In that
+        case the sizes have to be queried again and larger buffers allocated, so each attempt
+        re-runs the size query and reallocates.
+        """
+        while True:
+            path_count = UINT32()
+            mode_count = UINT32()
+
+            result = _user32.GetDisplayConfigBufferSizes(
+                QDC_ONLY_ACTIVE_PATHS,
+                ctypes.byref(path_count),
+                ctypes.byref(mode_count),
+            )
+            if result != _ERROR_SUCCESS:
+                return []
+
+            paths = (DISPLAYCONFIG_PATH_INFO * path_count.value)()
+            modes = ctypes.create_string_buffer(_DISPLAYCONFIG_MODE_INFO_SIZE * mode_count.value)
+
+            result = _user32.QueryDisplayConfig(
+                QDC_ONLY_ACTIVE_PATHS,
+                ctypes.byref(path_count),
+                paths,
+                ctypes.byref(mode_count),
+                modes,
+                0,
+            )
+            if result == _ERROR_INSUFFICIENT_BUFFER:
+                continue
+
+            if result != _ERROR_SUCCESS:
+                return []
+
+            # QueryDisplayConfig may fill in fewer paths than were allocated.
+            return paths[:path_count.value]
+
+    def _get_display_config_path(self) -> DISPLAYCONFIG_PATH_INFO | None:
+        """Get the active Display Configuration path for this screen."""
+        for path in self._query_active_display_paths():
+            if not path.targetInfo.targetAvailable:
+                continue
+
+            source_name = DISPLAYCONFIG_SOURCE_DEVICE_NAME()
+            source_name.header.adapterId = path.sourceInfo.adapterId
+            source_name.header.id = path.sourceInfo.id
+            source_name.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME
+            source_name.header.size = ctypes.sizeof(source_name)
+
+            result = _user32.DisplayConfigGetDeviceInfo(ctypes.byref(source_name.header))
+            if result != _ERROR_SUCCESS:
+                continue
+
+            if source_name.viewGdiDeviceName.casefold() == self._device_name.casefold():
+                return path
+
+        return None
 
     def _get_friendly_name_display_config_api(self) -> str:
         """Get the friendly name of a monitor using the newer Display Configuration API.
@@ -159,6 +225,20 @@ class Win32Screen(Screen):  # noqa: D101
 
         return "Unknown"
 
+    def _get_refresh_rate_display_config_api(self) -> float | None:
+        """Get the precise refresh rate of the current display path."""
+        path = self._get_display_config_path()
+        if path is None:
+            return None
+
+        refresh_rate = path.targetInfo.refreshRate
+        numerator = int(refresh_rate.Numerator)
+        denominator = int(refresh_rate.Denominator)
+        if numerator <= 0 or denominator <= 0:
+            return None
+        rate = numerator / denominator
+        return rate if rate >= 1 else None
+
     def _get_friendly_name(self) -> str:
         if WINDOWS_VISTA_OR_GREATER:
             return self._get_friendly_name_display_config_api()
@@ -188,24 +268,25 @@ class Win32Screen(Screen):  # noqa: D101
 
     def get_dpi(self) -> int:
         if WINDOWS_8_1_OR_GREATER:
-            xdpi = UINT()
+            xdpi_value = UINT()
             ydpi = UINT()
-            _shcore.GetDpiForMonitor(self._handle, 0, byref(xdpi), byref(ydpi))
-            xdpi, ydpi = xdpi.value, ydpi.value
+            _shcore.GetDpiForMonitor(self._handle, 0, byref(xdpi_value), byref(ydpi))
+            xdpi = xdpi_value.value
         else:
             dc = _user32.GetDC(None)
             xdpi = _gdi32.GetDeviceCaps(dc, LOGPIXELSX)
             ydpi = _gdi32.GetDeviceCaps(dc, LOGPIXELSY)
             _user32.ReleaseDC(0, dc)
 
-        return xdpi
+        return int(xdpi)
 
     def get_scale(self) -> float:
         xdpi = self.get_dpi()
         return xdpi / USER_DEFAULT_SCREEN_DPI
 
-    def get_modes(self) -> list[Win32ScreenMode]:
+    def get_modes(self) -> Sequence[Win32ScreenMode]:
         device_name = self.get_device_name()
+        current_mode = self.get_mode()
         i = 0
         modes = []
         while True:
@@ -215,7 +296,8 @@ class Win32Screen(Screen):  # noqa: D101
             if not r:
                 break
 
-            modes.append(Win32ScreenMode(self, mode))
+            rate = current_mode.rate if self._same_mode(mode, current_mode._mode) else None
+            modes.append(Win32ScreenMode(self, mode, rate))
             i += 1
 
         return modes
@@ -226,9 +308,21 @@ class Win32Screen(Screen):  # noqa: D101
         _user32.EnumDisplaySettingsW(self.get_device_name(),
                                      ENUM_CURRENT_SETTINGS,
                                      byref(mode))
-        return Win32ScreenMode(self, mode)
+        rate = self._get_refresh_rate_display_config_api() if WINDOWS_VISTA_OR_GREATER else None
+        return Win32ScreenMode(self, mode, rate)
 
-    def set_mode(self, mode: Win32ScreenMode) -> None:
+    @staticmethod
+    def _same_mode(first: DEVMODE, second: DEVMODE) -> bool:
+        """Return whether two legacy mode records describe the same mode."""
+        return (
+            first.dmPelsWidth == second.dmPelsWidth
+            and first.dmPelsHeight == second.dmPelsHeight
+            and first.dmBitsPerPel == second.dmBitsPerPel
+            and first.dmDisplayFrequency == second.dmDisplayFrequency
+        )
+
+    def set_mode(self, mode: ScreenMode) -> None:
+        assert isinstance(mode, Win32ScreenMode)
         assert mode.screen is self
 
         if not self._initial_mode:
@@ -255,13 +349,13 @@ _win32_scale_name = {
 
 
 class Win32ScreenMode(ScreenMode):  # noqa: D101
-    def __init__(self, screen: Win32Screen, mode: DEVMODE) -> None:  # noqa: D107
+    def __init__(self, screen: Win32Screen, mode: DEVMODE, rate: float | None = None) -> None:  # noqa: D107
         super().__init__(screen)
         self._mode = mode
         self.width = mode.dmPelsWidth
         self.height = mode.dmPelsHeight
         self.depth = mode.dmBitsPerPel
-        self.rate = mode.dmDisplayFrequency
+        self.rate = rate if rate is not None else mode.dmDisplayFrequency
         self.scaling = mode.dmDisplayFixedOutput
 
     def __repr__(self) -> str:

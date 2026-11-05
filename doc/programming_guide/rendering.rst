@@ -186,6 +186,11 @@ access to update its uniforms::
 
 You can also create multiple :py:class:`~pyglet.graphics.buffer.UniformBufferObject` instances if you need to swap between different sets of data. Calling :py:meth:`~pyglet.graphics.buffer.UniformBufferObject.bind` will bind the buffers data to the associated binding point.
 
+.. note:: Regions allocated through :py:class:`~pyglet.graphics.buffer.UniformBufferRegion`
+          cannot be individually deleted or freed from their UBO. Applications are
+          responsible for retaining and reusing allocated regions by updating what owns
+          that buffer range.
+
 There may come a point where you don't want a specific :py:class:`~pyglet.graphics.shader.ShaderProgram`, or a group of them, to use the same uniform data set as the rest of your shaders. At this point, you will have to modify the binding point of those Uniform Blocks to one that is unused. This can be done through :py:meth:`~pyglet.graphics.shader.UniformBlock.set_binding`. Once the binding has been set, you will have to create a new :py:class:`~pyglet.graphics.buffer.UniformBufferObject` using the :py:meth:`~pyglet.graphics.shader.UniformBlock.create_ubo` method again and supply it with your new data set.
 
 .. warning:: When assigning custom binding points through py:meth:`~pyglet.graphics.shader.UniformBlock.set_binding`, it is recommended to use an unassigned binding point, as unexpected behavior may occur. A warning will be output if such a collision occurs.

@@ -53,7 +53,7 @@ if TYPE_CHECKING:
 class Animation:
     """Sequence of images with timing information.
 
-    Animations are a collection of :py:class:`~AnimationFrame`s, which are
+    Animations are a collection of :py:class:`~AnimationFrame` objects, which are
     simple containers for Image data and duration information.
 
     If no frames of the animation have a duration of ``None``, the animation

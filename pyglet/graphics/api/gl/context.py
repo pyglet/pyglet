@@ -172,13 +172,14 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
         self.core.current_context = self
 
         if not self._info.was_queried:
-            GLFunctions.__init__(self)
+            self._initialize_gl_functions()
             # Move this later to a better platform implementation.
             if not self.platform_func and self.platform_func_class:
                 self.platform_func = self.platform_func_class()
             self._info.query(self)
             apply_extension_function_fallbacks(self.info, self)
             self.uniform_getters, self.uniform_setters = self._get_uniform_func_tables()
+            self.framebuffer_getters, self.framebuffer_setters = self._get_framebuffer_func_tables()
 
         self.object_space.flush(self)
 
@@ -186,6 +187,18 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
             self._delete_objects(self.doomed_vaos, self.glDeleteVertexArrays)
         if self.doomed_framebuffers:
             self._delete_objects(self.doomed_framebuffers, self.glDeleteFramebuffers)
+
+    def _initialize_gl_functions(self) -> None:
+        GLFunctions.__init__(self)
+
+    @property
+    def default_framebuffer(self) -> int:
+        """Framebuffer to restore after rendering to an offscreen target."""
+        return 0
+
+    def bind_default_framebuffer(self) -> None:
+        """Bind the surface's current default drawing and reading target."""
+        self.glBindFramebuffer(gl.GL_FRAMEBUFFER, self.default_framebuffer)
 
     # For the static functions below:
     # The garbage collector introduces a race condition.
@@ -240,8 +253,8 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
         object space is the same as this context's object space and this
         method is called from the main thread.
         """
-        return (self.core.current_context and self.object_space is self.core.current_context.object_space and
-                threading.current_thread() is threading.main_thread())
+        current = self.core.current_context
+        return bool(current) and self.object_space is current.object_space and current._safe_to_operate_on()  # noqa: SLF001
 
     def _safe_to_operate_on(self) -> bool:
         """Check whether it is safe to interact with this context.
@@ -442,3 +455,27 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
             gl.GL_IMAGE_CUBE_MAP_ARRAY: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 3),
         }
         return _uniform_getters, _uniform_setters
+
+    def _get_framebuffer_func_tables(self) -> tuple[
+        dict[str, tuple[Callable, Callable]],
+        dict[str, tuple[Callable, Callable]]
+    ]:
+        """Return paired bind-based and direct-state-access framebuffer functions."""
+        _framebuffer_getters = {
+            "status": (self.glCheckFramebufferStatus, self.glCheckNamedFramebufferStatus),
+        }
+        _framebuffer_setters = {
+            "create": (self.glGenFramebuffers, self.glCreateFramebuffers),
+            "attach_texture": (self.glFramebufferTexture, self.glNamedFramebufferTexture),
+            "attach_texture_layer": (self.glFramebufferTextureLayer, self.glNamedFramebufferTextureLayer),
+            "attach_renderbuffer": (self.glFramebufferRenderbuffer, self.glNamedFramebufferRenderbuffer),
+            "draw_buffers": (self.glDrawBuffers, self.glNamedFramebufferDrawBuffers),
+            "clear_buffer": (self.glClearBufferfv, self.glClearNamedFramebufferfv),
+            "create_renderbuffer": (self.glGenRenderbuffers, self.glCreateRenderbuffers),
+            "renderbuffer_storage": (self.glRenderbufferStorage, self.glNamedRenderbufferStorage),
+            "renderbuffer_storage_multisample": (
+                self.glRenderbufferStorageMultisample,
+                self.glNamedRenderbufferStorageMultisample,
+            ),
+        }
+        return _framebuffer_getters, _framebuffer_setters

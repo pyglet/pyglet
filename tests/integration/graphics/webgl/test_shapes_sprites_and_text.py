@@ -38,3 +38,17 @@ def test_label_layout_and_draw(webgl_window):
         label.draw()
     finally:
         label.delete()
+
+
+def test_html_label_with_image_draws(webgl_window, test_data):
+    location = pyglet.resource.FileLocation(test_data.get_file("images"))
+    label = pyglet.text.HTMLLabel('Before <img src="icon1.png" width="16" height="8"> after', x=8, y=8,
+                                  location=location)
+
+    try:
+        element = label.document.get_element(len("Before "))
+        assert (element.ascent, element.descent, element.advance) == (8, 0, 16)
+        webgl_window.clear()
+        label.draw()
+    finally:
+        label.delete()

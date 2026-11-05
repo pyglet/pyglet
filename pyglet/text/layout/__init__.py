@@ -58,8 +58,8 @@ is 18 pixels.
     Font size, in points.
 ``weight``
     String.
-``italic``
-    Boolean.
+``style``
+    Font slant: ``"normal"``, ``"italic"``, or ``"oblique"``. See :py:class:`~pyglet.enums.Style`.
 ``underline``
     4-tuple of ints in range (0, 255) giving RGBA underline color, or None
     (default) for no underline.

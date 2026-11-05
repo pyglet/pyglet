@@ -152,7 +152,7 @@ Other string properties are passed as `FontFace descriptors
 build waits for every configured font before it runs the Python entry point.
 
 Without ``pyproject.toml``
-"""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""
 
 Reading ``pyproject.toml`` uses the standard-library ``tomllib`` module on
 Python 3.11 and newer. On Python 3.10, install the optional `tomli
@@ -170,7 +170,7 @@ Repeat ``--source`` and ``--resource`` as needed. ``serve`` accepts the same
 options, followed by server options such as ``--open``.
 
 Checking resource declarations
-""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""
 
 The optional discovery command reports literal resource calls missing from the
 declared resource patterns::

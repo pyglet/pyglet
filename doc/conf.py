@@ -77,7 +77,7 @@ def write_build(data, filename):
             f.write("   * - " + var + "\n     - " + val + "\n")
 
 
-sys.is_pyglet_doc_run = True
+os.environ["PYGLET_DOC_BUILD"] = "1"
 
 document_modules = ["pyglet"]
 
@@ -184,8 +184,10 @@ extensions = ["sphinx.ext.autodoc",
 # Autodoc settings.
 autodoc_member_order = "groupwise"
 
-# Separate init from the class header as RTD theme makes it all the same color, reducing readability.
-autodoc_class_signature = "separated"
+# Keep parameters with the class header.
+# Custom CSS adjusts color for better readability now.
+autodoc_class_signature = "mixed"
+autoclass_content = "both"
 
 # Add type hints to description and parameters in docs.
 autodoc_typehints = "signature"

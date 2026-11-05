@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import ctypes
 import warnings
-from typing import TYPE_CHECKING
 from ctypes import POINTER, byref, c_buffer, c_char_p, c_int, cast
 
 import pyglet
@@ -22,8 +21,6 @@ class NoSuchDisplayException(Exception):
 
 
 from pyglet.libs.linux.x11 import xlib
-if TYPE_CHECKING:
-    from pyglet.gl import Config
 
 try:
     from pyglet.libs.linux.x11 import xinerama
@@ -47,21 +44,17 @@ except:
     _have_xf86vmode = False
 
 try:
-    from pyglet.libs.x11 import xrandr
+    from pyglet.libs.linux.x11 import xrandr
 
     _have_xrandr = True
 except ImportError:
     _have_xrandr = False
 
 
-class NoSuchDisplayException(Exception):
-    pass
-
-
 # Set up error handler
 def _error_handler(display, event):
     # By default, all errors are silently ignored: this has a better chance
-    # of working than the default behaviour of quitting ;-)
+    # of working than the default behavior of quitting ;-)
     #
     # We've actually never seen an error that was our fault; they're always
     # driver bugs (and so the reports are useless).  Nevertheless, set
@@ -94,7 +87,7 @@ class XlibDisplay(LinuxSelectDevice, Display):
     _x_im = None  # X input method
     # TODO close _x_im when display connection closed.
     _enable_xsync = False
-    _screens: list[XlibScreen | XlibScreenXrandr | XlibScreenXinerama]
+    _screens: list[Screen]
 
     def __init__(self, name=None, x_screen=None):
         self._screens = []
@@ -143,7 +136,7 @@ class XlibDisplay(LinuxSelectDevice, Display):
         # Couldn't find a default screen, use the first in the list.
         return self._screens[0]
 
-    def get_screens(self) -> list[XlibScreen]:
+    def get_screens(self) -> list[Screen]:
         self._screens = []
 
         # Use XRandr if available, as it appears more maintained and widely supported.
@@ -240,6 +233,10 @@ class XlibScreen(Screen):
     def __init__(self, display: XlibDisplay, x: int, y: int, width: int, height: int):
         super().__init__(display, x, y, width, height)
 
+    @property
+    def is_primary(self) -> bool:
+        return True
+
     def get_dpi(self) -> int:
         resource = xlib.XResourceManagerString(self.display._display)
         dpi = 96
@@ -288,13 +285,14 @@ class XlibScreen(Screen):
 
         return modes
 
-    def get_mode(self) -> XlibScreenMode:
+    def get_mode(self) -> XlibScreenMode | None:
         modes = self.get_modes()
         if modes:
             return modes[0]
         return None
 
-    def set_mode(self, mode: XlibScreenModeXF86):
+    def set_mode(self, mode: ScreenMode) -> None:
+        assert isinstance(mode, XlibScreenModeXF86)
         assert mode.screen is self
 
         if not self._initial_mode:
@@ -334,6 +332,10 @@ class XlibScreenXinerama(XlibScreen):
         self._xinerama = using_xinerama
         self.idx = idx
 
+    @property
+    def is_primary(self) -> bool:
+        return self.idx == 0
+
     def get_display_id(self) -> int:
         # No real unique ID is available, just hash together the properties.
         return hash((self.idx, self.x, self.y, self.width, self.height))
@@ -369,7 +371,7 @@ class XlibScreenXrandr(XlibScreen):
         self._is_primary = is_primary
 
     @property
-    def is_primary(self):
+    def is_primary(self) -> bool:
         return self._is_primary
 
     @staticmethod
@@ -380,7 +382,8 @@ class XlibScreenXrandr(XlibScreen):
 
         return None
 
-    def set_mode(self, mode: XlibScreenModeXrandr) -> None:
+    def set_mode(self, mode: ScreenMode) -> None:
+        assert isinstance(mode, XlibScreenModeXrandr)
         assert mode.screen is self
 
         if not self._initial_mode:
@@ -462,7 +465,7 @@ class XlibScreenXrandr(XlibScreen):
 
 
 class XlibScreenMode(ScreenMode):
-    def __init__(self, screen: XlibScreen, width: int, height: int, rate: int, depth: int):
+    def __init__(self, screen: XlibScreen, width: int, height: int, rate: float, depth: int):
         super().__init__(screen)
         self.width = width
         self.height = height
@@ -475,8 +478,14 @@ class XlibScreenModeXF86(XlibScreenMode):
         self.info = info
         width = info.hdisplay
         height = info.vdisplay
-        rate = round((info.dotclock * 1000) / (info.htotal * info.vtotal))
+        rate = self._calculate_refresh_rate(info)
         super().__init__(screen, width, height, rate, depth)
+
+    @staticmethod
+    def _calculate_refresh_rate(info: xf86vmode.XF86VidModeModeInfo) -> float:
+        if info.htotal > 0 and info.vtotal > 0:
+            return (info.dotclock * 1000) / (info.htotal * info.vtotal)
+        return 0
 
     def __repr__(self) -> str:
         return f'XlibScreenMode(width={self.width!r}, height={self.height!r}, depth={self.depth!r}, rate={self.rate})'
@@ -485,12 +494,13 @@ class XlibScreenModeXF86(XlibScreenMode):
 class XlibScreenModeXrandr(XlibScreenMode):
     def __init__(self, screen: XlibScreen, mode_info: xrandr.XRRModeInfo, mode_id: int, depth: int) -> None:
         self.mode_id = mode_id
-        super().__init__(screen, mode_info.width, mode_info.height, self._calculate_refresh_rate(mode_info), depth)
+        rate = self._calculate_refresh_rate(mode_info)
+        super().__init__(screen, mode_info.width, mode_info.height, rate, depth)
 
     @staticmethod
-    def _calculate_refresh_rate(mode_info: xrandr.XRRModeInfo) -> int:
+    def _calculate_refresh_rate(mode_info: xrandr.XRRModeInfo) -> float:
         if mode_info.hTotal > 0 and mode_info.vTotal > 0:
-            return round(mode_info.dotClock / (mode_info.hTotal * mode_info.vTotal))
+            return mode_info.dotClock / (mode_info.hTotal * mode_info.vTotal)
         return 0
 
     def __repr__(self) -> str:

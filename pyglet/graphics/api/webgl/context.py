@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from pyglet.window.emscripten import EmscriptenWindow
 
 
-class OpenGLSurfaceContext(SurfaceContext):
+class WebGL2SurfaceContext(SurfaceContext):
     """A base OpenGL context for drawing.
 
     Use ``DisplayConfig.create_context`` to create a context.
@@ -28,14 +28,14 @@ class OpenGLSurfaceContext(SurfaceContext):
 
     gl: WebGL2RenderingContext
     config: SurfaceConfig
-    context_share: OpenGLSurfaceContext | None
+    context_share: WebGL2SurfaceContext | None
 
     def __init__(
         self,
         global_ctx: WebGLBackend,
         window: EmscriptenWindow,
         config: SurfaceConfig,
-        context_share: OpenGLSurfaceContext | None = None,
+        context_share: WebGL2SurfaceContext | None = None,
     ) -> None:
         """Initialize a context.
 

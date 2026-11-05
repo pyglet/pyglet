@@ -5,13 +5,15 @@ import os
 import weakref
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Callable, NoReturn, Protocol, Sequence, get_type_hints
+from typing import TYPE_CHECKING, Any, NoReturn, TypeVar, get_type_hints
 
-from pyglet.enums import PixelFormat
+from pyglet.enums import GraphicsAPI, PixelFormat
 from pyglet.graphics import GraphicsBackendError, GraphicsIntegrationError
 from pyglet.util import debug_print
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from pyglet.config import SurfaceConfig
     from pyglet.graphics import Batch
     from pyglet.graphics.buffer import BufferRange
@@ -21,6 +23,7 @@ if TYPE_CHECKING:
 
 _debug_print = debug_print("debug_api")
 
+
 class BackendGlobalObject(ABC):  # Temp name for now.
     """A container for backend resources and information that are required throughout the code.
 
@@ -28,8 +31,11 @@ class BackendGlobalObject(ABC):  # Temp name for now.
     """
     windows: weakref.WeakKeyDictionary[Window, SurfaceContext]
     _have_context: bool = False
+    current_context: Any
+    graphics_api: GraphicsAPI | None
 
-    def __init__(self) -> None:
+    def __init__(self, graphics_api: GraphicsAPI | None = None) -> None:
+        self.graphics_api = graphics_api
         self.windows = weakref.WeakKeyDictionary()
         self._current_window = None
 
@@ -51,6 +57,35 @@ class BackendGlobalObject(ABC):  # Temp name for now.
     @abstractmethod
     def get_default_configs(self) -> Sequence:
         """Configs to use if none specified."""
+
+    def get_config(self, **_kwargs: float | str | None) -> GraphicsConfig:
+        """Create a backend-specific graphics configuration."""
+        raise NotImplementedError
+
+    @property
+    def info(self) -> SurfaceInfo:
+        """Return information about the active backend context."""
+        raise NotImplementedError
+
+    def get_info(self) -> SurfaceInfo:
+        """Return information about the active backend context."""
+        return self.info
+
+    def have_extension(self, _extension_name: str) -> bool:
+        """Determine whether an extension is available."""
+        raise NotImplementedError
+
+    def have_version(self, _major: int, _minor: int = 0) -> bool:
+        """Determine whether a backend version is available."""
+        raise NotImplementedError
+
+    def get_cached_shader(self, _name: str, *_sources: tuple[str, ShaderType], vertex_layout: VertexLayout | None) -> ShaderProgram:
+        """Return a cached shader program for the active backend."""
+        raise NotImplementedError
+
+    def get_default_batch(self) -> Batch:
+        """Return the default batch for the active backend."""
+        raise NotImplementedError
 
     @abstractmethod
     def set_viewport(self, window, x: int, y: int, width: int, height: int) -> None:
@@ -105,6 +140,8 @@ class UnavailableBackendError(GraphicsBackendError):
 
 
 class NullBackend(BackendGlobalObject):  # noqa: D101
+    current_context: NullContext
+
     def __init__(self) -> None:
         super().__init__()
         self.current_context = NullContext()
@@ -149,6 +186,25 @@ class NullBackend(BackendGlobalObject):  # noqa: D101
     def get_default_configs(self) -> Sequence:
         self._raise_no_backend()
 
+    @property
+    def info(self) -> NoReturn:
+        self._raise_no_backend()
+
+    def get_info(self) -> NoReturn:
+        self._raise_no_backend()
+
+    def have_extension(self, _extension_name: str) -> NoReturn:
+        self._raise_no_backend()
+
+    def have_version(self, _major: int, _minor: int = 0) -> NoReturn:
+        self._raise_no_backend()
+
+    def get_cached_shader(self, _name: str, *_sources: tuple[str, ShaderType]) -> NoReturn:
+        self._raise_no_backend()
+
+    def get_default_batch(self) -> NoReturn:
+        self._raise_no_backend()
+
     def set_viewport(self, window, x: int, y: int, width: int, height: int) -> None:
         self._raise_no_backend()
 
@@ -178,6 +234,8 @@ class SurfaceFeatures:
     pixel_buffer_objects: bool = False
     #: Enables immutable-format texture allocation through glTexStorage.
     texture_storage: bool = False
+    #: Enables framebuffer and renderbuffer operations without binding objects.
+    direct_state_access: bool = False
 
 
 @dataclass(frozen=True)
@@ -498,6 +556,9 @@ class SurfaceContext(ABC):  # Temp name for now.
         """Clears the framebuffer."""
 
 
+SurfaceContextT = TypeVar("SurfaceContextT", bound=SurfaceContext)
+
+
 class UnavailableContextError(GraphicsBackendError):
     """An exception that occurs when a backend context is not yet available."""
     def __init__(self) -> None:  # noqa: D107
@@ -523,7 +584,7 @@ class NullContext:
     def _raise_no_context() -> NoReturn:
         raise UnavailableContextError
 
-    def __getattribute__(self, item):
+    def __getattribute__(self, item: str) -> NoReturn:
         object.__getattribute__(self, "_raise_no_context")()
 
     def __enter__(self) -> NoReturn:

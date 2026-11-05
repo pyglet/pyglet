@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-import sys
 import warnings
 from typing import TYPE_CHECKING, Sequence, cast
 
 import js  # noqa: F821
 
 import pyglet
-from pyglet.graphics.api.webgl.context import OpenGLSurfaceContext
+from pyglet.enums import GraphicsAPI
+from pyglet.graphics.api.webgl.context import WebGL2SurfaceContext
 from pyglet.graphics.api.base import (
     BackendGlobalObject,
     SurfaceContext,
@@ -22,11 +22,10 @@ if TYPE_CHECKING:
     from pyglet.graphics.shader import ShaderType
     from pyglet.window import Window
 
-_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 
 class WebGLBackend(BackendGlobalObject):
-    current_context: OpenGLSurfaceContext | NullContext
+    current_context: WebGL2SurfaceContext | NullContext
     _have_context: bool = False
 
     def __init__(self) -> None:
@@ -38,13 +37,13 @@ class WebGLBackend(BackendGlobalObject):
         # of sharing basic information between contexts. However, in usage, the user or internals should use the
         # "real" context's information to prevent any discrepencies.
         # self.gl_info = GLInfo()  # GL Info is a shared info space.
-        super().__init__()
+        super().__init__(GraphicsAPI.WEBGL)
 
-    def create_context(self, config: SurfaceConfig, shared: OpenGLSurfaceContext | None) -> OpenGLSurfaceContext:
-        return OpenGLSurfaceContext(self, config._window, config, shared)
+    def create_context(self, config: SurfaceConfig, shared: WebGL2SurfaceContext | None) -> WebGL2SurfaceContext:
+        return WebGL2SurfaceContext(self, config._window, config, shared)
 
     def get_surface_context(self, window: Window, config: SurfaceConfig,
-                            shared: OpenGLSurfaceContext | None = None) -> SurfaceContext:
+                            shared: WebGL2SurfaceContext | None = None) -> SurfaceContext:
         context = self.windows[window] = self.create_context(config, shared)
         self.current_context = context
         self._have_context = True

@@ -22,13 +22,12 @@ by the application; see the documentation for :class:`Screen`.
 .. versionadded:: 1.2
 """  # noqa: I002
 
-import sys
 import weakref
 
-_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
+from pyglet import IS_DOC_BUILD
 
 
-if _is_pyglet_doc_run:
+if IS_DOC_BUILD:
     from pyglet.display.base import Display, Screen, ScreenMode
 else:
     from pyglet import compat_platform, options

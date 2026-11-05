@@ -40,7 +40,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from os.path import dirname as _dirname
 from os.path import splitext as _splitext
-from typing import TYPE_CHECKING, Any, BinaryIO, Literal
+from typing import TYPE_CHECKING, Any, BinaryIO, Literal, cast
 
 import pyglet
 from pyglet.enums import Stretch, Style, Weight
@@ -105,6 +105,7 @@ def get_decoder(filename: str | None, mimetype: SupportedMimeTypes | None = None
         DocumentDecodeException: If MIME type is not from the supported types.
     """
     if mimetype is None:
+        assert filename is not None
         _, ext = _splitext(filename)
         if ext.lower() in (".htm", ".html", ".xhtml"):
             mimetype = "text/html"
@@ -142,6 +143,7 @@ def load(filename: str,
             supported MIME types.
     """
     decoder = get_decoder(filename, mimetype)
+    file_contents: str | bytes
     if not file:
         with open(filename) as f:
             file_contents = f.read()
@@ -166,7 +168,7 @@ def decode_html(text: str, location: str | None = None) -> FormattedDocument:
             Location giving the base path for additional resources referenced from the document (e.g., images).
     """
     decoder = get_decoder(None, "text/html")
-    return decoder.decode(text, location)
+    return cast(document.FormattedDocument, decoder.decode(text, location))  # type: ignore[arg-type]
 
 
 def decode_attributed(text: str) -> FormattedDocument:
@@ -175,13 +177,13 @@ def decode_attributed(text: str) -> FormattedDocument:
     See `pyglet.text.formats.attributed` for a description of attributed text.
     """
     decoder = get_decoder(None, "text/vnd.pyglet-attributed")
-    return decoder.decode(text)
+    return cast(document.FormattedDocument, decoder.decode(text))
 
 
 def decode_text(text: str) -> UnformattedDocument:
     """Create a document directly from some plain text."""
     decoder = get_decoder(None, "text/plain")
-    return decoder.decode(text)
+    return cast(document.UnformattedDocument, decoder.decode(text))
 
 
 class DocumentLabel(layout.TextLayout):
@@ -262,7 +264,16 @@ class DocumentLabel(layout.TextLayout):
 
     @text.setter
     def text(self, text: str) -> None:
-        self.document.text = text
+        if text == self.document.text or not self._update_enabled:
+            self.document.text = text
+            return
+        # Apply the deletion and insertion together so the old geometry is
+        # available when laying out the replacement text.
+        self.begin_update()
+        try:
+            self.document.text = text
+        finally:
+            self.end_update()
 
     @property
     def color(self) -> tuple[int, int, int, int] | LinearGradient:
@@ -302,7 +313,7 @@ class DocumentLabel(layout.TextLayout):
             if alpha != color.start[3] or alpha != color.end[3]:
                 self.color = LinearGradient((*color.start[:3], alpha), (*color.end[:3], alpha))
         elif alpha != color[3]:
-            self.color = list(map(int, (*color[:3], alpha)))
+            self.color = cast(tuple[int, int, int, int], tuple(map(int, (*color[:3], alpha))))
 
     @property
     def shadow(self) -> DropShadow | None:
@@ -357,7 +368,7 @@ class DocumentLabel(layout.TextLayout):
             "font_name": font.name,
             "font_size": font.size,
             "weight": font.weight,
-            "italic": font.style,
+            "style": font.style,
             "stretch": font.stretch,
         })
 
@@ -384,13 +395,16 @@ class DocumentLabel(layout.TextLayout):
         self.document.set_style(0, len(self.document.text), {"weight": str(weight)})
 
     @property
-    def italic(self) -> bool | str:
-        """Italic font style."""
-        return self.document.get_style("italic")
+    def style(self) -> Style | str:
+        """The font slant: ``"normal"``, ``"italic"``, or ``"oblique"``.
 
-    @italic.setter
-    def italic(self, italic: bool | str) -> None:
-        self.document.set_style(0, len(self.document.text), {"italic": italic})
+        See :py:class:`~pyglet.enums.Style` for valid cross-platform values.
+        """
+        return self.document.get_style("style")
+
+    @style.setter
+    def style(self, style: Style | str) -> None:
+        self.document.set_style(0, len(self.document.text), {"style": style})
 
     def get_style(self, name: str) -> Any:
         """Get a document style value by name.
@@ -520,7 +534,7 @@ class Label(DocumentLabel):
         """
         doc = decode_text(text)
         if isinstance(color, LinearGradient):
-            rgba = color
+            rgba: tuple[int, int, int, int] | LinearGradient = color
         else:
             r, g, b, *a = color
             rgba = r, g, b, a[0] if a else 255
@@ -572,7 +586,7 @@ class HTMLLabel(DocumentLabel):
     def __init__(self, text: str = "",
                  x: float = 0.0, y: float = 0.0, z: float = 0.0, width: int | None = None, height: int | None = None,
                  anchor_x: AnchorX = "left", anchor_y: AnchorY = "baseline", rotation: float = 0.0,
-                 multiline: bool = False, dpi: float | None = None,
+                 multiline: bool = False, dpi: int | None = None,
                  location: Location | None = None,
                  batch: Batch | None = None, group: Group | None = None,
                  program: ShaderProgram | None = None,
@@ -634,7 +648,7 @@ class HTMLLabel(DocumentLabel):
         """
         self._text = text
         self._location = location
-        doc = decode_html(text, location)
+        doc = decode_html(text, location)  # type: ignore[arg-type]
         super().__init__(doc, x, y, z, width, height, anchor_x, anchor_y, rotation,
                          multiline, dpi, batch, group, program, decoration_shader, effect_shader,
                          shaping=shaping, init_document=True, depth_sorting=depth_sorting)
@@ -647,7 +661,7 @@ class HTMLLabel(DocumentLabel):
     @text.setter
     def text(self, text: str) -> None:
         self._text = text
-        self.document = decode_html(text, self._location)
+        self.document = decode_html(text, self._location)  # type: ignore[arg-type]
 
 
 __all__ = [

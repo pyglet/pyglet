@@ -15,8 +15,8 @@ _debug = debug_print('debug_media')
 
 avcodec = pyglet.lib.load_library(
     'avcodec',
-    win32=('avcodec-62', 'avcodec-61', 'avcodec-60', 'avcodec-59', 'avcodec-58'),
-    darwin=('avcodec.62', 'avcodec.61', 'avcodec.60', 'avcodec.59', 'avcodec.58')
+    win32=('avcodec-63', 'avcodec-62', 'avcodec-61', 'avcodec-60', 'avcodec-59', 'avcodec-58'),
+    darwin=('avcodec.63', 'avcodec.62', 'avcodec.61', 'avcodec.60', 'avcodec.59', 'avcodec.58')
 )
 
 avcodec.avcodec_version.restype = c_int
@@ -67,7 +67,7 @@ AVPacket_Fields = [
 compat.add_version_changes('avcodec', 58, AVPacket, AVPacket_Fields,
                            removals=('opaque', 'opaque_ref', 'time_base'))
 
-for compat_ver in (59, 60, 61, 62):
+for compat_ver in (59, 60, 61, 62, 63):
     compat.add_version_changes('avcodec', compat_ver, AVPacket, AVPacket_Fields,
                                removals=('convergence_duration',))
 
@@ -118,7 +118,7 @@ for compat_ver in (58, 59, 60):
     compat.add_version_changes('avcodec', compat_ver, AVCodecParameters, AVCodecParameters_Fields,
                                removals=('coded_side_data', 'nb_coded_side_data', 'ch_layout', 'framerate'))
 
-for compat_ver in (61, 62):
+for compat_ver in (61, 62, 63):
     compat.add_version_changes('avcodec', compat_ver, AVCodecParameters, AVCodecParameters_Fields,
                                removals=('channel_layout', 'channels'))
 
@@ -368,8 +368,10 @@ if avcodec_version >= 61:
     compat.add_version_changes('avcodec', 61, AVCodecContext, AVCodecContext_Fields,
                                removals=None)
 
-    compat.add_version_changes('avcodec', 62, AVCodecContext, AVCodecContext_Fields,
-                               removals=("ticks_per_frame",))
+    for compat_ver in (62, 63):
+        compat.add_version_changes('avcodec', compat_ver, AVCodecContext, AVCodecContext_Fields,
+                                   removals=("ticks_per_frame",))
+
 else:
     AVCodecContext_Fields = [
         ('av_class', POINTER(AVClass)),

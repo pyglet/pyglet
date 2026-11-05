@@ -16,6 +16,7 @@ from .pyglet_window import PygletToolWindow, PygletWindow
 from .systemcursor import SystemCursor
 
 if TYPE_CHECKING:
+    from pyglet.display.base import Screen
     from pyglet.graphics.api.gl.cocoa.context import CocoaContext
 
 NSApplication = cocoapy.ObjCClass('NSApplication')
@@ -543,6 +544,27 @@ class CocoaWindow(BaseWindow):
         NSApp = NSApplication.sharedApplication()
         NSApp.setApplicationIconImage_(nsimage)
         nsimage.release()
+
+    def get_current_screen(self) -> Screen:
+        """Return the screen containing most of this window.
+
+        If the window is offscreen or its display is no longer available,
+        return the configured fullscreen target.
+        """
+        if self._nswindow is None:
+            return self._screen
+
+        with AutoReleasePool():
+            ns_screen = self._nswindow.screen()
+            if ns_screen is not None:
+                screen_info = ns_screen.deviceDescription()
+                screen_number = screen_info.objectForKey_(cocoapy.get_NSString('NSScreenNumber'))
+                display_id = screen_number.unsignedIntValue()
+                for screen in self.display.get_screens():
+                    if screen.get_display_id() == display_id:
+                        return screen
+
+        return self._screen
 
     def get_location(self) -> tuple[int, int]:
         window_frame = self._nswindow.frame()

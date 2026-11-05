@@ -79,6 +79,7 @@ class RunList:
 
         """
         i = 0
+        last_run_value = self.runs[-1].value
 
         for run in self.runs:
             if end - start == 0:
@@ -92,7 +93,7 @@ class RunList:
 
         # Don't leave an empty list
         if not self.runs:
-            self.runs = [_Run(run.value, 0)]
+            self.runs = [_Run(last_run_value, 0)]
 
     def set_run(self, start: int, end: int, value: Any) -> None:
         """Set the value of a range of characters.
@@ -368,9 +369,9 @@ class FilteredRunIterator(AbstractRunIterator):
 
 class ZipRunIterator(AbstractRunIterator):
     """Iterate over multiple run iterators concurrently."""
-    range_iterators: tuple[RunIterator, ...]
+    range_iterators: tuple[AbstractRunIterator, ...]
 
-    def __init__(self, range_iterators: tuple[RunIterator, ...]) -> None:
+    def __init__(self, range_iterators: tuple[AbstractRunIterator, ...]) -> None:
         """Create a zipped run iterator.
 
         Args:
@@ -383,10 +384,10 @@ class ZipRunIterator(AbstractRunIterator):
     def ranges(self, start: int, end: int) -> Generator[tuple[int, int, Any], None, None]:
         try:
             iterators = [i.ranges(start, end) for i in self.range_iterators]
-            starts, ends, values = zip(*[next(i) for i in iterators])
-            starts = list(starts)
-            ends = list(ends)
-            values = list(values)
+            starts_, ends_, values_ = zip(*[next(i) for i in iterators])
+            starts: list[int] = list(starts_)
+            ends: list[int] = list(ends_)
+            values: list[Any] = list(values_)
             while start < end:
                 min_end = min(ends)
                 yield start, min_end, values

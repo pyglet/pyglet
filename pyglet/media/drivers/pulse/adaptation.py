@@ -1,10 +1,15 @@
+from __future__ import annotations
 from collections import deque
 import ctypes
 import threading
-from typing import Deque, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 import weakref
 
-from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
+from pyglet.media.drivers.base import (
+    AbstractAudioDriver,
+    AbstractAudioPlayer,
+    GaplessAudioPlayerBase,
+)
 from pyglet.media.drivers.listener import AbstractListener
 from pyglet.media.player_worker_thread import PlayerWorkerThread
 from pyglet.util import debug_print
@@ -13,7 +18,7 @@ from . import lib_pulseaudio as pa
 from .interface import PulseAudioMainloop, SAMPLE_FORMATS
 
 if TYPE_CHECKING:
-    from pyglet.media.codecs import AudioData, AudioFormat, Source
+    from pyglet.media.codecs import AudioData, Source
     from pyglet.media.player import AudioPlayer
 
 
@@ -35,13 +40,19 @@ class PulseAudioDriver(AbstractAudioDriver):
     def sample_formats(self):
         return tuple(SAMPLE_FORMATS.keys())
 
-    def create_audio_player(self, source: 'Source', player: 'AudioPlayer') -> 'PulseAudioPlayer':
+    def create_audio_player(self, source: Source, player: AudioPlayer) -> PulseAudioPlayer:
         assert self.context is not None
         player = PulseAudioPlayer(source, player, self)
         self._players.add(player)
         return player
 
-    def connect(self, server: Optional[bytes] = None) -> None:
+    def create_gapless_audio_player(self, source: Source, player: AudioPlayer) -> PulseAudioGaplessAudioPlayer:
+        assert self.context is not None
+        gapless_player = PulseAudioGaplessAudioPlayer(source, player, self)
+        self._players.add(gapless_player)
+        return gapless_player
+
+    def connect(self, server: bytes | None = None) -> None:
         """Connect to pulseaudio server.
 
         Args:
@@ -61,7 +72,7 @@ class PulseAudioDriver(AbstractAudioDriver):
         print('Server:         ', self.context.server)
         print('Protocol:       ', self.context.protocol_version)
         print('Server protocol:', self.context.server_protocol_version)
-        print('Local context:  ', self.context.is_local and 'Yes' or 'No')
+        print('Local context:  ', (self.context.is_local and 'Yes') or 'No')
 
     def delete(self) -> None:
         """Completely shut down pulseaudio client."""
@@ -78,12 +89,12 @@ class PulseAudioDriver(AbstractAudioDriver):
         self.mainloop.delete()
         self.mainloop = None
 
-    def get_listener(self) -> 'PulseAudioListener':
+    def get_listener(self) -> PulseAudioListener:
         return self._listener
 
 
 class PulseAudioListener(AbstractListener):
-    def __init__(self, driver: 'PulseAudioDriver') -> None:
+    def __init__(self, driver: PulseAudioDriver) -> None:
         self.driver = weakref.proxy(driver)
 
     def _set_volume(self, volume: float) -> None:
@@ -107,7 +118,7 @@ class _AudioDataBuffer:
         self.virtual_write_index = 0
         self._ideal_size = ideal_size
         self._comfortable_limit = comfortable_limit
-        self._data: Deque['AudioData'] = deque()
+        self._data: deque[AudioData] = deque()
         self._first_read_offset = 0
 
     def clear(self) -> None:
@@ -122,7 +133,7 @@ class _AudioDataBuffer:
             return self._ideal_size - virtual_available
         return 0
 
-    def add_data(self, d: 'AudioData') -> None:
+    def add_data(self, d: AudioData) -> None:
         self._data.append(d)
         self.available += d.length
         self.virtual_write_index += d.length
@@ -152,7 +163,7 @@ class _AudioDataBuffer:
 
 
 class PulseAudioPlayer(AbstractAudioPlayer):
-    def __init__(self, source: 'Source', player: 'AudioPlayer', driver: 'PulseAudioDriver') -> None:
+    def __init__(self, source: Source, player: AudioPlayer, driver: PulseAudioDriver) -> None:
         super().__init__(source, player)
         self.driver = driver
 
@@ -261,7 +272,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         assert _debug(f'PulseAudioPlayer: Wrote {bytes_written}/{nbytes}')
         return bytes_written
 
-    def _update_and_get_timing_info(self) -> Optional[pa.pa_timing_info]:
+    def _update_and_get_timing_info(self) -> pa.pa_timing_info | None:
         self.stream.update_timing_info().wait().delete()
         return self.stream.get_timing_info()
 
@@ -373,3 +384,68 @@ class PulseAudioPlayer(AbstractAudioPlayer):
 
     def prefill_audio(self):
         self.work()
+
+
+class PulseAudioGaplessAudioPlayer(PulseAudioPlayer, GaplessAudioPlayerBase):
+    """Keep PulseAudio's playback stream filled across source boundaries."""
+
+    def __init__(self, source: Source, player: AudioPlayer, driver: PulseAudioDriver) -> None:
+        super().__init__(source, player, driver)
+        self._source_end_cursors = deque()
+
+    def clear(self) -> None:
+        super().clear()
+        self._source_end_cursors.clear()
+
+    def _finish_source(self) -> None:
+        self._source_end_cursors.append(self._audio_data_buffer.virtual_write_index)
+
+    def _dispatch_completed_sources(self) -> None:
+        read_cursor = self._get_read_index()
+        while self._source_end_cursors and read_cursor >= self._source_end_cursors[0]:
+            self._source_end_cursors.popleft()
+            self._dispatch_source_eos_events()
+
+    def _underflow_callback(self, _stream, _userdata) -> None:
+        # Source completion is detected from PulseAudio's read cursor in
+        # ``work``.  Dispatching the regular EOS event here would bypass the
+        # native source queue.
+        with self._audio_data_lock:
+            self._has_underrun = True
+        self.stream.mainloop.signal()
+
+    def _maybe_fill_audio_data_buffer(self) -> None:
+        if self._pyglet_source_exhausted:
+            return
+
+        refill_size = self._audio_data_buffer.get_ideal_refill_size(self._pending_bytes)
+        if refill_size == 0:
+            return
+
+        remaining = self.source.audio_format.align(refill_size)
+        while remaining and not self._pyglet_source_exhausted:
+            request_size = remaining
+            self._audio_data_lock.release()
+            try:
+                audio_data = self._get_audio_data(request_size)
+            finally:
+                self._audio_data_lock.acquire()
+
+            if audio_data is not None:
+                self._audio_data_buffer.add_data(audio_data)
+                remaining -= audio_data.length
+                if audio_data.length == request_size:
+                    continue
+
+            self._finish_source()
+            if not self._advance_source(self._audio_data_buffer.virtual_write_index):
+                self._pyglet_source_exhausted = True
+
+    def work(self) -> None:
+        super().work()
+        with self._audio_data_lock:
+            self._dispatch_completed_sources()
+
+    def get_play_cursor(self) -> int:
+        with self._audio_data_lock:
+            return self._get_source_play_cursor(self._get_read_index())

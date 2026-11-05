@@ -1,23 +1,60 @@
 """Glyph collection, line wrapping, and flow algorithms for text layouts."""
-
 from __future__ import annotations
 
-from typing import Callable, Iterator
+import re
+import unicodedata
+from typing import Callable, Iterator, TypeAlias
 
 from pyglet.text import runlist
 from pyglet.text.document import AbstractDocument, UnformattedDocument
 from pyglet.text.layout.boxes import _AbstractBox, _GlyphBox, _InlineElementBox, _Line
-from pyglet.font.base import Glyph, GlyphPosition
+from pyglet.font.base import Font, Glyph, GlyphPosition
 
 # Just have one object for empty positions in layout. It won't be modified.
 _empty_pos = GlyphPosition(0, 0, 0, 0)
+_FlowElement: TypeAlias = _InlineElementBox | Glyph
+_FlowGlyphEntry = tuple[float, _FlowElement, GlyphPosition]
+_GlyphEntry = tuple[float, Glyph, GlyphPosition]
+
+
+_CJK_TEXT_RE = re.compile(r"[\u1100-\u11ff\u2e80-\U0010ffff]")
+
+_CJK_NONSTARTERS = frozenset("、。，．！？：；・…‥,!?:;.")
+_CJK_NO_BREAK = frozenset("\u00a0\u202f\u2060\ufeff\u200c\u200d\"'")
+_FLOW_SEPARATORS = frozenset(" \u200b\t\n\u2028\u2029\0")
+
+def _cjk_break(text: str, index: int) -> bool:
+    """Allow wide character breaks with basic punctuation rules.
+
+    Based on Unicode UAX #14, LB13 (no breaks before closing
+    punctuation) and LB14 (no breaks after opening punctuation):
+    https://www.unicode.org/reports/tr14/#LB13
+    https://www.unicode.org/reports/tr14/#LB14
+
+    This is not the full algorithm but a simplified faster CJK policy.
+    """
+    if index == 0:
+        return False
+    left, right = text[index - 1], text[index]
+    if left in _FLOW_SEPARATORS or right in _FLOW_SEPARATORS:
+        return False
+    if left in _CJK_NO_BREAK or right in _CJK_NO_BREAK:
+        return False
+    right_category = unicodedata.category(right)
+    if right_category.startswith("M"):
+        return False
+    if right_category in ("Pe", "Pf") or right in _CJK_NONSTARTERS:
+        return False
+    if unicodedata.category(left) in ("Ps", "Pi"):
+        return False
+    return unicodedata.east_asian_width(left) in ("W", "F") or unicodedata.east_asian_width(right) in ("W", "F")
 
 
 class _FlowLayoutBase:
     """Shared glyph and line-flow implementation for text layouts."""
 
-    _document: AbstractDocument
-    _dpi: float
+    _document: AbstractDocument | None
+    _dpi: int
     _shaping: bool
     _width: int | None
     _multiline: bool
@@ -64,21 +101,28 @@ class _FlowLayoutBase:
         """Lay out a uniform, single-line document without generic run iterators."""
         document = self._document
         text = document.text
-        font = document.get_font(dpi=self._dpi)
+        font = document.get_font(0, dpi=self._dpi)
         glyphs, offsets = font.get_glyphs(text, self._shaping)
 
-        line = _Line(0)
+        kerning = document.get_style("kerning") or 0
+        line = self._get_unformatted_line(font, glyphs, offsets, kerning)
+        line.x = 0
+        line.align = "left"
         if self._width:
             align = document.get_style("align")
             if align in ("left", "right", "center"):
                 line.align = align
 
-        kerning = document.get_style("kerning")
-        if kerning is None:
-            kerning = 0
+        self._content_width = round(line.width)
+        self._line_count = 1
+        self._flow_unformatted_single_line(line)
+        return [line]
 
+    def _get_unformatted_line(self, font: Font, glyphs: list[Glyph], offsets: list[GlyphPosition],
+                              kerning: float) -> _Line:
+        line = _Line(0)
         owner = glyphs[0].owner
-        owner_glyphs = []
+        owner_glyphs: list[_GlyphEntry] = []
         for glyph, offset in zip(glyphs, offsets):
             if glyph.owner != owner:
                 line.add_box(_GlyphBox(owner, font, owner_glyphs))
@@ -90,10 +134,7 @@ class _FlowLayoutBase:
         line.add_box(_GlyphBox(owner, font, owner_glyphs))
         line.paragraph_begin = line.paragraph_end = True
 
-        self._content_width = line.width
-        self._line_count = 1
-        self._flow_unformatted_single_line(line)
-        return [line]
+        return line
 
     def _flow_unformatted_single_line(self, line: _Line) -> None:
         """Position a uniform single line without paragraph run processing."""
@@ -103,25 +144,28 @@ class _FlowLayoutBase:
         line_spacing = document.get_style("line_spacing")
 
         margin_top = self._parse_distance(margin_top) if margin_top is not None else 0
+        margin_top = margin_top or 0
         margin_bottom = self._parse_distance(margin_bottom) if margin_bottom is not None else 0
+        margin_bottom = margin_bottom or 0
         line_spacing = self._parse_distance(line_spacing) if line_spacing is not None else None
 
-        if line.align == "center" and line.width <= self.width:
-            line.x = (self.width - line.width) // 2
-        elif line.align == "right" and line.width <= self.width:
-            line.x = self.width - line.width
+        if self.width is not None:
+            if line.align == "center" and line.width <= self.width:
+                line.x = (self.width - line.width) // 2
+            elif line.align == "right" and line.width <= self.width:
+                line.x = self.width - line.width
 
-        y = -margin_top
+        y: float = -margin_top
         y -= line.ascent if line_spacing is None else line_spacing
         line.y = y
         if line_spacing is None:
             y += line.descent
         y -= margin_bottom
-        self._content_height = -y
+        self._content_height = round(-y)
 
-    def _get_glyphs(self) -> tuple[list[_InlineElementBox | Glyph], list[tuple[int, int]]]:
-        glyphs = []
-        offsets = []
+    def _get_glyphs(self) -> tuple[list[_InlineElementBox | Glyph], list[GlyphPosition]]:
+        glyphs: list[_InlineElementBox | Glyph] = []
+        offsets: list[GlyphPosition] = []
         runs = runlist.ZipRunIterator((self._document.get_font_runs(dpi=self._dpi), self._document.get_element_runs()))
         text = self._document.text
         for start, end, (font, element) in runs.ranges(0, len(text)):
@@ -166,6 +210,7 @@ class _FlowLayoutBase:
         align_iterator = runlist.FilteredRunIterator(
             self._document.get_style_runs("align"), lambda value: value in ("left", "right", "center"), "left"
         )
+        wrap_iterator: runlist.AbstractRunIterator
         if self._width is None:
             wrap_iterator = runlist.ConstRunIterator(len(self.document.text), False)
         else:
@@ -189,24 +234,29 @@ class _FlowLayoutBase:
         )
         line = _Line(start)
         line.align = align_iterator[start]
-        line.margin_left = self._parse_distance(margin_left_iterator[start])
-        line.margin_right = self._parse_distance(margin_right_iterator[start])
+        line.margin_left = self._parse_distance(margin_left_iterator[start]) or 0
+        line.margin_right = self._parse_distance(margin_right_iterator[start]) or 0
         if start == 0 or self.document.text[start - 1] in "\n\u2029":
             line.paragraph_begin = True
-            line.margin_left += self._parse_distance(indent_iterator[start])
+            line.margin_left += self._parse_distance(indent_iterator[start]) or 0
         wrap = wrap_iterator[start]
+        width: float = 0
         if self._wrap_lines:
+            assert self._width is not None
             width = self._width - line.margin_left - line.margin_right
 
         # Current right-most x position in line being laid out.
-        x = 0
+        x: float = 0
 
         # Boxes accumulated but not yet committed to a line.
-        run_accum = []
-        run_accum_width = 0
+        run_accum: list[_AbstractBox] = []
+        run_accum_width: float = 0
 
         # Amount of whitespace accumulated at end of line
-        eol_ws = 0
+        eol_ws: float = 0
+        next_start = start
+        # Check text for CJK to determine if a CJK wrap should even be applied.
+        cjk_wrap = self._wrap_lines and _CJK_TEXT_RE.search(self.document.text) is not None
 
         # Iterate over glyph owners (texture states); these form GlyphBoxes,
         # but broken into lines.
@@ -216,14 +266,14 @@ class _FlowLayoutBase:
 
             # Glyphs accumulated in this owner but not yet committed to a
             # line.
-            owner_accum = []
-            owner_accum_width = 0
+            owner_accum: list[_GlyphEntry] = []
+            owner_accum_width: float = 0
 
             # Glyphs accumulated in this owner AND also committed to the
             # current line (some whitespace has followed all of the committed
             # glyphs).
-            owner_accum_commit = []
-            owner_accum_commit_width = 0
+            owner_accum_commit: list[_GlyphEntry] = []
+            owner_accum_commit_width: float = 0
 
             # Ignore kerning of first glyph on each line
             nokern = True
@@ -235,13 +285,29 @@ class _FlowLayoutBase:
             # corresponding character data for the glyph, and is used to find
             # whitespace and newlines.
             for text, glyph, offset in zip(self.document.text[start:end], glyphs[start:end], offsets[start:end]):
+                if cjk_wrap and wrap in (True, "word") and _cjk_break(self.document.text, index):
+                    # A visible character boundary commits the preceding text,
+                    # without treating any of its advance as trailing whitespace.
+                    for run in run_accum:
+                        line.add_box(run)
+                    run_accum = []
+                    run_accum_width = 0
+                    owner_accum_commit.extend(owner_accum)
+                    owner_accum_commit_width += owner_accum_width
+                    owner_accum = []
+                    owner_accum_width = 0
+                    next_start = index
+
                 if nokern:
                     kern = 0
                     nokern = False
                 else:
-                    kern = self._parse_distance(kerning_iterator[index])
+                    kern = self._parse_distance(kerning_iterator[index]) or 0
 
                 if wrap != "char" and text in "\u0020\u200b\t":
+                    # Inline elements occupy a NUL character, so whitespace
+                    # runs always contain a font Glyph.
+                    assert isinstance(glyph, Glyph)
                     # Whitespace: commit pending runs to this line.
                     for run in run_accum:
                         line.add_box(run)
@@ -251,7 +317,7 @@ class _FlowLayoutBase:
                     if text == "\t":
                         # Fix up kern for this glyph to align to the next tab stop
                         for tab_stop in tab_stops_iterator[index]:
-                            tab_stop = self._parse_distance(tab_stop)
+                            tab_stop = self._parse_distance(tab_stop) or 0
                             if tab_stop > x + line.margin_left:
                                 break
                         else:
@@ -295,9 +361,10 @@ class _FlowLayoutBase:
                             owner_accum = []
                             owner_accum_width = 0
 
-                            line.length += 1
                             next_start = index
                             if new_line:
+                                # Explicit separators consume chars, wrapping does not.
+                                line.length += 1
                                 next_start += 1
 
                         # Create the _GlyphBox for the committed glyphs in the
@@ -327,8 +394,8 @@ class _FlowLayoutBase:
                             try:
                                 line = _Line(next_start)
                                 line.align = align_iterator[next_start]
-                                line.margin_left = self._parse_distance(margin_left_iterator[next_start])
-                                line.margin_right = self._parse_distance(margin_right_iterator[next_start])
+                                line.margin_left = self._parse_distance(margin_left_iterator[next_start]) or 0
+                                line.margin_right = self._parse_distance(margin_right_iterator[next_start]) or 0
                             except IndexError:
                                 # XXX This used to throw StopIteration in some cases, causing the
                                 # final part of this method not to be executed. Refactoring
@@ -338,19 +405,25 @@ class _FlowLayoutBase:
                                 line.paragraph_begin = True
 
                             # Remove kern from first glyph of line
-                            if run_accum and hasattr(run_accum, "glyphs") and run_accum.glyphs:
-                                k, g = run_accum[0].glyphs[0]
-                                run_accum[0].glyphs[0] = (0, g, _empty_pos)
-                                run_accum_width -= k
+                            if run_accum and isinstance(run_accum[0], _GlyphBox) and run_accum[0].glyphs:
+                                leading_kern, first_glyph, first_offset = run_accum[0].glyphs[0]
+                                run_accum[0].glyphs[0] = (0, first_glyph, first_offset)
+                                run_accum[0].advance -= leading_kern
+                                run_accum_width -= leading_kern
                             elif owner_accum:
-                                k, g, _ = owner_accum[0]
-                                owner_accum[0] = (0, g, _empty_pos)
-                                owner_accum_width -= k
+                                leading_kern, first_entry, first_offset = owner_accum[0]
+                                owner_accum[0] = (0, first_entry, first_offset)
+                                owner_accum_width -= leading_kern
                             else:
-                                nokern = True
+                                if wrap == "char":
+                                    nokern = True
+                                else:
+                                    kern = 0
+                                    nokern = new_line
 
                             x = run_accum_width + owner_accum_width
                             if self._wrap_lines:
+                                assert self._width is not None
                                 width = self._width - line.margin_left - line.margin_right
 
                     if isinstance(glyph, _AbstractBox):
@@ -361,8 +434,9 @@ class _FlowLayoutBase:
                     elif new_paragraph:
                         # New paragraph started, update wrap style
                         wrap = wrap_iterator[next_start]
-                        line.margin_left += self._parse_distance(indent_iterator[next_start])
+                        line.margin_left += self._parse_distance(indent_iterator[next_start]) or 0
                         if self._wrap_lines:
+                            assert self._width is not None
                             width = self._width - line.margin_left - line.margin_right
                     elif not new_line:
                         # If the glyph was any non-whitespace, non-newline
@@ -420,20 +494,23 @@ class _FlowLayoutBase:
 
         for start, end, owner in owner_iterator:
             font = font_iterator[start]
-            width = 0
-            owner_glyphs = []
-            for kern_start, kern_end, kern in kern_iterator.ranges(start, end):
-                gs = glyphs[kern_start:kern_end]
-                os = offsets[kern_start:kern_end]
-                width += sum([g.advance for g in gs])
-                width += kern * (kern_end - kern_start)
-                width += sum([o.x_advance for o in os])
-                owner_glyphs.extend(zip([kern] * (kern_end - kern_start), gs, os))
+            width: float = 0
             if owner is None:
-                # Assume glyphs are already boxes.
-                for _, glyph, _ in owner_glyphs:
+                # A None owner is reserved for inline element boxes.
+                for glyph in glyphs[start:end]:
+                    assert isinstance(glyph, _InlineElementBox)
                     line.add_box(glyph)
             else:
+                owner_glyphs: list[_GlyphEntry] = []
+                for kern_start, kern_end, kern in kern_iterator.ranges(start, end):
+                    gs = glyphs[kern_start:kern_end]
+                    os = offsets[kern_start:kern_end]
+                    width += sum(g.advance for g in gs)
+                    width += kern * (kern_end - kern_start)
+                    width += sum(o.x_advance for o in os)
+                    for glyph, offset in zip(gs, os, strict=True):
+                        assert isinstance(glyph, Glyph)
+                        owner_glyphs.append((kern, glyph, offset))
                 line.add_box(_GlyphBox(owner, font, owner_glyphs))
 
         if not line.boxes:
@@ -455,26 +532,28 @@ class _FlowLayoutBase:
         leading_iterator = runlist.FilteredRunIterator(
             self._document.get_style_runs("leading"), lambda value: value is not None, 0
         )
+        line_spacing: int | None = None
+        leading = 0
 
         if start == 0:
-            y = 0
+            y: float = 0
         else:
             line = lines[start - 1]
             line_spacing = self._parse_distance(line_spacing_iterator[line.start])
-            leading = self._parse_distance(leading_iterator[line.start])
+            leading = self._parse_distance(leading_iterator[line.start]) or 0
 
             y = line.y
             if line_spacing is None:
                 y += line.descent
             if line.paragraph_end:
-                y -= self._parse_distance(margin_bottom_iterator[line.start])
+                y -= self._parse_distance(margin_bottom_iterator[line.start]) or 0
 
         line_index = start
         for line in lines[start:]:
             if line.paragraph_begin:
-                y -= self._parse_distance(margin_top_iterator[line.start])
+                y -= self._parse_distance(margin_top_iterator[line.start]) or 0
                 line_spacing = self._parse_distance(line_spacing_iterator[line.start])
-                leading = self._parse_distance(leading_iterator[line.start])
+                leading = self._parse_distance(leading_iterator[line.start]) or 0
             else:
                 y -= leading
 
@@ -482,14 +561,15 @@ class _FlowLayoutBase:
                 y -= line.ascent
             else:
                 y -= line_spacing
-            if line.align == "left" or line.width > self.width:
+            layout_width = self.width
+            if layout_width is None or line.align == "left" or line.width > layout_width:
                 line.x = line.margin_left
             elif line.align == "center":
-                line.x = (self.width - line.margin_left - line.margin_right - line.width) // 2 + line.margin_left
+                line.x = (layout_width - line.margin_left - line.margin_right - line.width) // 2 + line.margin_left
             elif line.align == "right":
-                line.x = self.width - line.margin_right - line.width
+                line.x = layout_width - line.margin_right - line.width
 
-            self._content_width = max(self._content_width, line.width + line.margin_left)
+            self._content_width = max(self._content_width, round(line.width + line.margin_left))
 
             if line.y == y and line_index >= end:
                 # Early exit: all invalidated lines have been reflowed and the
@@ -501,10 +581,10 @@ class _FlowLayoutBase:
             if line_spacing is None:
                 y += line.descent
             if line.paragraph_end:
-                y -= self._parse_distance(margin_bottom_iterator[line.start])
+                y -= self._parse_distance(margin_bottom_iterator[line.start]) or 0
 
             line_index += 1
         else:
-            self._content_height = -y
+            self._content_height = round(-y)
 
         return line_index

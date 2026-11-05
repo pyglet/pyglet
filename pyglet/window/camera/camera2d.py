@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import weakref
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from pyglet.math import Mat4, Vec2, Vec3, Vec4, clamp
 
@@ -11,16 +11,16 @@ from .base import (
     BaseCamera,
     CameraScissor,
     CameraViewStorage,
+    CameraWindowProtocol,
     ViewportType,
     _CameraViewBase,
 )
 
 if TYPE_CHECKING:
     from pyglet.graphics.shader import UniformBlock
-    from pyglet.window import Window
 
 
-class Camera2DView(_CameraViewBase):
+class Camera2DView(_CameraViewBase["Camera2D"]):
     """A transform and viewport scope belonging to a :class:`Camera2D`.
 
     Views can add position, zoom, viewport, and scissor state while inheriting
@@ -97,7 +97,7 @@ class Camera2DView(_CameraViewBase):
         before = self.screen_to_world(x, y)
         self.zoom = zoom
         after = self.screen_to_world(x, y)
-        self.position += before.xy - after.xy
+        self.position += before.xy - after.xy  # type: ignore[operator]
 
     def zoom_in_to_point(self, x: float, y: float, amount: float) -> None:
         """Increase zoom while keeping a screen-space point fixed in world space."""
@@ -143,7 +143,8 @@ class Camera2DView(_CameraViewBase):
             if self.parent is None:
                 self._world_matrix = local_matrix
             else:
-                self._world_matrix = self.parent._world_matrix_cached(viewport_size) @ local_matrix
+                parent = cast(Camera2DView, self.parent)
+                self._world_matrix = parent._world_matrix_cached(viewport_size) @ local_matrix
             self._world_dirty = False
         return self._world_matrix
 
@@ -160,7 +161,7 @@ class Camera2D(BaseCamera[Camera2DView]):
 
     def __init__(
         self,
-        window: Window,
+        window: CameraWindowProtocol,
         *,
         scroll_speed: float = 1.0,
         min_zoom: float = 1.0,
@@ -173,7 +174,7 @@ class Camera2D(BaseCamera[Camera2DView]):
         projection_uniform: str = "u_projection",
         view_uniform: str = "u_view",
     ) -> None:
-        """Create a 2D camera for a window.
+        """Create a 2D camera for a window or wrapper.
 
         The root view initially uses a lower-left origin and a zoom of ``1.0``.
         Unless an explicit viewport is supplied, it follows the full framebuffer
@@ -181,8 +182,9 @@ class Camera2D(BaseCamera[Camera2DView]):
 
         Args:
             window:
-                Window whose graphics context and framebuffer dimensions are
-                used by this camera.
+                Window or wrapper supplying the graphics context and
+                dimensions. Set ``register_handlers=False`` for wrappers without
+                pyglet event dispatch and handle resize in the host.
             scroll_speed:
                 Distance applied to each axis by :meth:`move`. Scale input by
                 elapsed time when using it for continuous movement.
@@ -262,8 +264,8 @@ class Camera2D(BaseCamera[Camera2DView]):
     @view_matrix.setter
     def view_matrix(self, matrix: Mat4) -> None:
         self._view_matrix = matrix
-        if self._apply_changed_cpu_data(self._projection_matrix, self._view_matrix, self.view):
-            self._mark_cpu_data_applied(self._projection_matrix, self._view_matrix, self.view)
+        if self._apply_changed_cpu_data(self._projection_matrix, self._view_matrix, self.view):  # type: ignore[arg-type]
+            self._mark_cpu_data_applied(self._projection_matrix, self._view_matrix, self.view)  # type: ignore[arg-type]
 
     def _on_viewport_changed(self, view: Camera2DView) -> None:
         if self._auto_projection:
@@ -341,7 +343,7 @@ class Camera2D(BaseCamera[Camera2DView]):
 
     def _build_projection_matrix(self, view: Camera2DView) -> Mat4:  # noqa: ARG002
         if not self._auto_projection:
-            return self._projection_matrix
+            return self._projection_matrix  # type: ignore[return-value]
         width, height = self._get_viewport_size()
         return Mat4.orthogonal_projection(0, width, 0, height, -255, 255)
 

@@ -29,6 +29,7 @@ from functools import lru_cache
 from typing import TYPE_CHECKING, Sequence
 
 import pyglet
+from pyglet.display.base import Screen
 from pyglet.display.xlib import XlibScreenXinerama, XlibDisplay
 from pyglet.enums import GraphicsAPI
 from pyglet.event import EventDispatcher
@@ -647,6 +648,30 @@ class XlibWindow(BaseWindow):
                                    byref(child))
         return x.value, y.value
 
+    def get_current_screen(self) -> Screen:
+        """Return the monitor containing most of this window's client area.
+
+        `screen` is the selected fullscreen target, which does not change
+        when a windowed window moves. Query the X11 position and current
+        monitor layout instead. If the window is offscreen, keep that target.
+        """
+        if self._fullscreen or not self._window:
+            return self._screen
+
+        x, y = self.get_location()
+        width, height = self.get_framebuffer_size()
+        best_screen = self._screen
+        best_area = 0
+        for screen in self.display.get_screens():
+            overlap_width = max(0, min(x + width, screen.x + screen.width) - max(x, screen.x))
+            overlap_height = max(0, min(y + height, screen.y + screen.height) - max(y, screen.y))
+            area = overlap_width * overlap_height
+            if area > best_area:
+                best_screen = screen
+                best_area = area
+
+        return best_screen
+
     def get_framebuffer_size(self) -> tuple[int, int]:
         return self._width, self._height
 
@@ -878,11 +903,11 @@ class XlibWindow(BaseWindow):
 
         data = asbytes('')
         for image in images:
-            image = image.get_image_data()
-            pitch = -(image.width * len(fmt))
+            image_data = image.get_image_data()
+            pitch = -(image_data.width * len(fmt))
             s = c_buffer(sizeof(c_ulong) * 2)
-            memmove(s, cast((c_ulong * 2)(image.width, image.height), POINTER(c_ubyte)), len(s))
-            data += s.raw + image.get_bytes(fmt, pitch)
+            memmove(s, cast((c_ulong * 2)(image_data.width, image_data.height), POINTER(c_ubyte)), len(s))
+            data += s.raw + image_data.get_bytes(fmt, pitch)
         buffer = (c_ubyte * len(data))()
         memmove(buffer, data, len(data))
         atom = xlib.XInternAtom(self._x_display, asbytes('_NET_WM_ICON'), False)

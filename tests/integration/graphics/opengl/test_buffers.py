@@ -3,8 +3,8 @@ import weakref
 
 import pyglet
 import pytest
-from pyglet.graphics.api.gl.buffer import GLBufferObject, GLIndexedBufferObject, GLMappedBufferObject
-from pyglet.graphics.buffer import CTypeDataStore
+from pyglet.graphics.api.gl.buffer import GLBackedBufferObject, GLBufferObject, GLIndexedBufferObject, GLMappedBufferObject
+from pyglet.graphics.buffer import CTypeDataStore, UniformBufferRegion
 from pyglet.graphics.shader import Attribute
 from tests.annotations import GraphicsAPIGroups, require_graphics_api, skip_graphics_api
 
@@ -218,6 +218,33 @@ def test_mapped_buffer_region_updates(test_window):
     assert buffer.id is None
 
 
+@pytest.mark.parametrize("data_type, ctype", [("f", ctypes.c_float), ("I", ctypes.c_uint32)])
+def test_backed_buffer_writes_before_and_after_full_upload(test_window, data_type, ctype):
+    test_window.switch_to()
+    buffer = GLBackedBufferObject(test_window.context, 16, data_type, stride=4, element_count=1)
+    try:
+        buffer.set_region(0, 4, (1, 2, 3, 4))
+        buffer.set_region(2, 1, (9,))
+        buffer.commit()
+        assert tuple((ctype * 4).from_buffer_copy(GLBufferObject.get_bytes(buffer))) == (1, 2, 9, 4)
+
+        buffer.resize(32)
+        buffer.set_region(6, 1, (12,))
+        buffer.set_region(0, 1, (7,))
+        buffer.commit()
+        expected = [7, 2, 9, 4, 0, 0, 12, 0]
+        assert tuple((ctype * 8).from_buffer_copy(GLBufferObject.get_bytes(buffer))) == tuple(expected)
+
+        # After the full upload, separated edits must start a new dirty range.
+        buffer.set_region(1, 1, (8,))
+        buffer.set_region(5, 1, (10,))
+        buffer.commit()
+        expected[1], expected[5] = 8, 10
+        assert tuple((ctype * 8).from_buffer_copy(GLBufferObject.get_bytes(buffer))) == tuple(expected)
+    finally:
+        buffer.delete()
+
+
 def test_backed_index_buffer_commit_resize_and_delete(test_window):
     test_window.switch_to()
     ctx = test_window.context
@@ -341,7 +368,7 @@ def test_backed_index_buffer_set_data_ptr_with_ctypes_pointer(test_window):
 
     buffer.delete()
 
-@require_graphics_api(GraphicsAPIGroups.DESKTOP_GL)
+@require_graphics_api(GraphicsAPIGroups.MODERN_DESKTOP_GL)
 def test_gl_vertex_stream_persistent_resize_rebinds_vao(test_window):
     from pyglet.graphics.api.gl import GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING, GLint
     from pyglet.graphics.api.gl.buffer import PersistentBufferObject
@@ -412,6 +439,54 @@ def test_uniform_buffer_reserves_resource_ranges_and_grows(test_window):
         assert ranges_a[1].offset == ubo.slice_stride * 2
         assert ranges_b[0].offset == ubo.slice_stride * 3
         assert ranges_b[2].offset == ubo.slice_stride * 5
+        assert ubo.size >= ubo.planned_size
+    finally:
+        ubo.delete()
+
+
+@require_graphics_api(GraphicsAPIGroups.GL3)
+def test_uniform_buffer_regions_reserve_storage_before_commit(test_window, monkeypatch):
+    test_window.switch_to()
+
+    program = pyglet.graphics.get_default_shader()
+    ubo = program.uniform_blocks["WindowBlock"].create_ubo(copies_per_resource=2, strict=True)
+    try:
+        regions = [UniformBufferRegion(ubo), UniformBufferRegion(ubo)]
+        assert ubo.size >= ubo.planned_size
+
+        def unexpected_resize(_size):
+            pytest.fail("Committing a reserved region must not resize its backing buffer.")
+
+        monkeypatch.setattr(ubo.buffer, "resize", unexpected_resize)
+        for region in regions:
+            region.commit()
+            assert not region.dirty
+    finally:
+        ubo.delete()
+
+
+@require_graphics_api(GraphicsAPIGroups.GL3)
+def test_uniform_buffer_strict_reservation_failure_leaves_ranges_unchanged(test_window):
+    test_window.switch_to()
+
+    program = pyglet.graphics.get_default_shader()
+    ubo = program.uniform_blocks["WindowBlock"].create_ubo(copies_per_resource=1, strict=True)
+    try:
+        region = UniformBufferRegion(ubo)
+        region.commit()
+        ranges_before = list(ubo._ranges)  # noqa: SLF001
+        planned_size_before = ubo.planned_size
+        next_offset_before = ubo._next_offset  # noqa: SLF001
+        size_before = ubo.size
+
+        with pytest.raises(RuntimeError, match="UniformBufferObject backing store full"):
+            ubo.reserve_resource_range()
+
+        assert ubo._ranges == ranges_before  # noqa: SLF001
+        assert ubo.planned_size == planned_size_before
+        assert ubo._next_offset == next_offset_before  # noqa: SLF001
+        assert ubo.size == size_before
+        ubo.bind_slice(region._current_binding)  # noqa: SLF001
     finally:
         ubo.delete()
 
@@ -645,10 +720,18 @@ def test_ubo_resource_ranges_stay_valid_across_multiple_resizes(test_window):
         before_a = ubo.buffer.get_data_region(binding_a.offset, binding_a.size)
         before_b = ubo.buffer.get_data_region(binding_b.offset, binding_b.size)
 
-        # 2 -> 4 on third allocation, then 4 -> 8 on fifth allocation.
+        size_before = ubo.size
         ubo.reserve_resource_range(copies_per_resource=2)
+        assert ubo.size > size_before
+        assert ubo.size >= ubo.planned_size
+        size_before = ubo.size
         ubo.reserve_resource_range(copies_per_resource=2)
+        assert ubo.size > size_before
+        assert ubo.size >= ubo.planned_size
+        size_before = ubo.size
         ranges_e = ubo.reserve_resource_range(copies_per_resource=2)
+        assert ubo.size >= size_before
+        assert ubo.size >= ubo.planned_size
 
         assert ubo.buffer.get_data_region(binding_a.offset, binding_a.size) == before_a
         assert ubo.buffer.get_data_region(binding_b.offset, binding_b.size) == before_b

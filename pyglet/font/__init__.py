@@ -35,7 +35,6 @@ from __future__ import annotations
 
 import collections
 import os
-import sys
 import weakref
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, BinaryIO, Iterable, Sequence, Any
@@ -371,7 +370,7 @@ def load(
     return font
 
 
-if not getattr(sys, "is_pyglet_doc_run", False):
+if not pyglet.IS_DOC_BUILD:
     _system_font_class = _get_system_font_class()
 
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import ast
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pyglet
 
@@ -27,11 +27,12 @@ _pattern = re.compile(r"""
 
 
 class AttributedTextDecoder(pyglet.text.DocumentDecoder):  # noqa: D101
+    attributes: dict[str, Any]
 
     def __init__(self) -> None:  # noqa: D107
         self.doc = pyglet.text.document.FormattedDocument()
         self.length = 0
-        self.attributes = {}
+        self.attributes: dict[str, Any] = {}
 
     def decode(self, text: str, location: Location | None = None) -> pyglet.text.document.FormattedDocument:  # noqa: ARG002
         next_trailing_space = True

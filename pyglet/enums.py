@@ -183,6 +183,31 @@ class CompareOp(Enum):
     ALWAYS = auto()
 
 
+class StencilOp(Enum):
+    """Operations applied to the stencil buffer after a stencil/depth test."""
+    KEEP = auto()
+    ZERO = auto()
+    REPLACE = auto()
+    INCREMENT = auto()
+    INCREMENT_WRAP = auto()
+    DECREMENT = auto()
+    DECREMENT_WRAP = auto()
+    INVERT = auto()
+
+
+class CullFace(Enum):
+    """Faces removed by face culling."""
+    FRONT = auto()
+    BACK = auto()
+    FRONT_AND_BACK = auto()
+
+
+class FrontFace(Enum):
+    """Order used to identify facing triangles."""
+    CLOCKWISE = auto()
+    COUNTER_CLOCKWISE = auto()
+
+
 class FramebufferTarget(Enum):
     """Framebuffer binding targets."""
     FRAMEBUFFER = auto()

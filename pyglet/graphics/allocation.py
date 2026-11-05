@@ -119,6 +119,15 @@ class Allocator:
 
             raise AllocatorMemoryException(size)
 
+        # Sequential allocations form one block starting at zero, with no gaps to search.
+        if len(self.starts) == 1 and self.starts[0] == 0:
+            start = self.sizes[0]
+            end = start + size
+            if end > self.capacity:
+                raise AllocatorMemoryException(end)
+            self.sizes[0] = end
+            return start
+
         # Restart from zero if space exists
         if self.starts[0] > size:
             self.starts.insert(0, 0)
@@ -355,8 +364,11 @@ class RangeAllocator:
     vertex list ranges that belong to the same group/state, and merge
     contiguous ones into larger draw calls.
 
-    .. note:: This preserves insertion order when re-allocating, but sorts by
-    range start when rebuilding, so that the final merged ranges are contiguous for better batched drawing.
+    .. note::
+
+       This preserves insertion order when re-allocating, but sorts by range
+       start when rebuilding, so that the final merged ranges are contiguous
+       for better batched drawing.
 
     Example:
         >>> allocator = RangeAllocator()
@@ -375,14 +387,16 @@ class RangeAllocator:
 
     _ranges: list[tuple[int, int]]
     _merged: list[tuple[int, int]]
+    _version: int
     is_dirty: bool
 
-    __slots__ = ("_merged", "_ranges", "is_dirty")
+    __slots__ = ("_merged", "_ranges", "_version", "is_dirty")
 
     def __init__(self) -> None:
         """Initialize an empty range collector."""
         self._ranges = []
         self._merged = []
+        self._version = 0
         self.is_dirty = False
 
     def add(self, start: int, count: int) -> None:
@@ -395,6 +409,7 @@ class RangeAllocator:
                 Number of elements in the range.
         """
         self._ranges.append((start, count))
+        self._version += 1
         self.is_dirty = True
 
     def remove(self, start: int, count: int) -> None:
@@ -408,6 +423,7 @@ class RangeAllocator:
         """
         try:
             self._ranges.remove((start, count))
+            self._version += 1
             self.is_dirty = True
         except ValueError:
             pass  # Silently ignore if not found
@@ -415,6 +431,7 @@ class RangeAllocator:
     def clear(self) -> None:
         self._ranges.clear()
         self._merged.clear()
+        self._version += 1
         self.is_dirty = False
 
     def _rebuild(self) -> None:

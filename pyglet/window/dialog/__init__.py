@@ -1,5 +1,5 @@
 from __future__ import annotations
-import sys
+
 from pathlib import Path
 
 import pyglet
@@ -53,11 +53,10 @@ The `FileSaveDialog` works similarly::
     open_dialog.show()
 """
 
-_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 class _OpenDialogMeta(type):
     def __new__(cls, name: str, bases: tuple, attrs: dict) -> type:
-        if _is_pyglet_doc_run:
+        if pyglet.IS_DOC_BUILD:
             return super().__new__(cls, name, bases, attrs)
 
         if pyglet.compat_platform == "win32":
@@ -124,7 +123,7 @@ class FileOpenDialog(_EventDispatcher, metaclass=_OpenDialogMeta):
 
 class _SaveDialogMeta(type):
     def __new__(cls, name: str, bases: tuple, attrs: dict) -> type:
-        if _is_pyglet_doc_run:
+        if pyglet.IS_DOC_BUILD:
             return super().__new__(cls, name, bases, attrs)
 
         if pyglet.compat_platform == "win32":

@@ -1,26 +1,38 @@
 from __future__ import annotations
 
 import contextlib
-import sys
 import warnings
 import weakref
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Sequence, TypeVar, Generator, Literal
 
 import pyglet
-from pyglet.enums import BlendFactor, BlendOp, CompareOp, GeometryMode, GraphicsAPI
+from pyglet.enums import BlendFactor, BlendOp, CompareOp, CullFace, FrontFace, GeometryMode, GraphicsAPI, StencilOp
 from pyglet.graphics.attributes import VertexLayout
+from pyglet.graphics.resource import GraphicsResource
 from pyglet.graphics.state import (
     BlendState,
     CameraScissorProviderProtocol,
     CameraScopeProtocol,
     CameraScopeState,
+    ColorMaskState,
+    CullFaceState,
     DepthBufferComparison,
+    DepthRangeState,
+    DepthWriteState,
+    FrontFaceState,
     MultiTextureSamplerState,
+    PolygonOffsetState,
+    SampleCoverageState,
     ScissorState,
     ShaderProgramState,
     ShaderUniformState,
     State,
+    StencilFuncState,
+    StencilClearState,
+    StencilMaskState,
+    StencilOpState,
+    StencilTestState,
     TextureState,
     UniformBufferState,
     ViewportProtocol,
@@ -28,7 +40,7 @@ from pyglet.graphics.state import (
     _expand_states_in_order,
 )
 from pyglet.graphics.vertexstorage import VertexStorage, VertexStorageShared
-from pyglet.graphics.api.base import SurfaceContext, BackendRenderer
+from pyglet.graphics.api.base import SurfaceContext, SurfaceContextT, BackendRenderer
 from pyglet.graphics import MissingAttributeError
 
 if TYPE_CHECKING:
@@ -93,7 +105,6 @@ class DrawPass:
         return self
 
 
-SurfaceContextT = TypeVar("SurfaceContextT", bound=SurfaceContext)
 BackendContextT = TypeVar("BackendContextT")
 
 
@@ -171,13 +182,51 @@ class DrawContext(Generic[SurfaceContextT, BackendContextT]):
         self.apply_camera_scope()
 
 
-class Group:
+def _group_input_key(value: Any) -> Any:
+    if isinstance(value, GraphicsResource):
+        return value.key
+    if value is None:
+        return None
+    if isinstance(value, (str, bytes, int, float)):
+        return type(value), value
+    if isinstance(value, tuple):
+        return tuple(_group_input_key(item) for item in value)
+    return type(value), id(value)
+
+
+class _GroupMeta(type):
+    """Reuse completed group instances without rerunning subclass constructors."""
+
+    _cache: weakref.WeakValueDictionary[tuple, Group] = weakref.WeakValueDictionary()
+
+    def __call__(cls, *args: Any, **kwargs: Any) -> Group:
+        keyword_key = tuple(sorted((name, _group_input_key(value)) for name, value in kwargs.items())) if kwargs else ()
+        key = cls, tuple(_group_input_key(arg) for arg in args), keyword_key
+        group = _GroupMeta._cache.get(key)
+        if group is None:
+            group = super().__call__(*args, **kwargs)
+            # The base constructor creates builders configured after construction.
+            if cls.__init__ is Group.__init__:
+                return group
+            # Keep identity keyed inputs alive so their IDs cannot be reused
+            # while this instance remains in the cache.
+            group._constructor_inputs = (args, kwargs) if kwargs else args
+            _GroupMeta._cache[key] = group
+        return group
+
+
+class Group(metaclass=_GroupMeta):
     """Group of common state.
 
     ``Group`` provides extra control over how drawables are handled within a
     ``Batch``. When a batch draws a drawable, it ensures its group's state is set;
     this can include binding textures, shaders, or setting any other parameters.
     It also sorts the groups before drawing.
+
+    Subclasses with their own constructors reuse existing instances for matching
+    constructor inputs. Supply their rendering configuration through the
+    constructor. Groups using the base constructor remain independent so their
+    states can be configured afterwards.
 
     In the following example, the background sprite is guaranteed to be drawn
     before the car and the boat::
@@ -307,8 +356,14 @@ class Group:
         if scissor is not None:
             self.set_state(ScissorState(scissor, owned_by_camera=True))
 
-    def set_blend(self, blend_src: BlendFactor, blend_dst: BlendFactor, blend_op: BlendOp = BlendOp.ADD) -> None:
+    def set_blend(self, blend_src: BlendFactor, blend_dst: BlendFactor, blend_op: BlendOp = BlendOp.ADD,
+                  *, blend_src_alpha: BlendFactor | None = None, blend_dst_alpha: BlendFactor | None = None,
+                  blend_op_alpha: BlendOp | None = None) -> None:
         """Set the blend state.
+
+        Supplying either alpha factor selects separate RGB/alpha blending.
+        Supplying an alpha operation selects separate RGB/alpha equations.
+        Regular and separate blending replace each other as one group state.
 
         Args:
             blend_src:
@@ -317,9 +372,17 @@ class Group:
                 Destination blend factor used for framebuffer color values.
             blend_op:
                 Blend operation used to combine the source and destination
-                values. Defaults to additive blending.
+                RGB values, and alpha when ``blend_op_alpha`` is omitted. Defaults to additive blending.
+            blend_src_alpha:
+                Independent source alpha factor. Defaults to ``blend_src``.
+            blend_dst_alpha:
+                Independent destination alpha factor. Defaults to ``blend_dst``.
+            blend_op_alpha:
+                Independent alpha blend operation. Defaults to ``blend_op``.
         """
-        self.set_state(BlendState(blend_src, blend_dst, blend_op))
+        self.set_state(BlendState(blend_src, blend_dst, blend_op,
+                                 src_alpha=blend_src_alpha, dst_alpha=blend_dst_alpha,
+                                  op_alpha=blend_op_alpha))
 
     def set_depth_test(self, func: CompareOp) -> None:
         """Set the depth comparison state.
@@ -330,6 +393,123 @@ class Group:
                 the depth test.
         """
         self.set_state(DepthBufferComparison(func))
+
+    def set_depth_write(self, flag: bool) -> None:
+        """Set whether drawing to the depth buffer is enabled.
+
+        Args:
+            flag:
+                ``True`` to write depth values, or ``False`` to preserve the depth buffer.
+        """
+        self.set_state(DepthWriteState(flag))
+
+    def set_depth_range(self, near: float, far: float) -> None:
+        """Set the normalized depth range used by the viewport.
+
+        Args:
+            near:
+                Window-space depth value for the near end of the viewport range.
+            far:
+                Window-space depth value for the far end of the viewport range.
+        """
+        self.set_state(DepthRangeState(near, far))
+
+    def set_polygon_offset(self, factor: float, units: float) -> None:
+        """Enable polygon offset for filled primitives.
+
+        Args:
+            factor: Scale applied to the polygon's depth slope.
+            units: Constant depth offset added to the polygon.
+        """
+        self.set_state(PolygonOffsetState(factor, units))
+
+    def set_sample_coverage(self, value: float, invert: bool = False) -> None:
+        """Set multisample coverage and enable sample coverage testing.
+
+        Args:
+            value:
+                Fraction of samples to keep, from ``0.0`` to ``1.0``.
+            invert:
+                Whether to invert the selected sample coverage mask.
+        """
+        self.set_state(SampleCoverageState(value, invert))
+
+    def set_cull_face(self, face: CullFace) -> None:
+        """Enable face culling for the selected face set.
+
+        Args:
+            face:
+                Faces to cull.
+        """
+        self.set_state(CullFaceState(face))
+
+    def set_front_face(self, face: FrontFace) -> None:
+        """Set the winding order used to identify front-facing triangles.
+
+        Args:
+            face:
+                Winding order treated as front-facing.
+        """
+        self.set_state(FrontFaceState(face))
+
+    def set_stencil_test(self, enabled: bool = True) -> None:
+        """Enable or disable stencil testing.
+
+        Args:
+            enabled:
+                ``True`` to reject or accept fragments using the stencil function, or ``False`` to disable it.
+        """
+        self.set_state(StencilTestState(enabled))
+
+    def set_stencil_mask(self, mask: int) -> None:
+        """Set the writable stencil bit mask.
+
+        Args:
+            mask:
+                Bit mask controlling which stencil bits can be changed by drawing.
+        """
+        self.set_state(StencilMaskState(mask))
+
+    def set_stencil_func(self, func: CompareOp, ref: int, mask: int) -> None:
+        """Set the stencil comparison function and reference value.
+
+        Args:
+            func:
+                Comparison applied between the masked stencil value and reference value.
+            ref:
+                Reference value used by the stencil comparison.
+            mask:
+                Bit mask applied to both the stored stencil value and reference value.
+        """
+        self.set_state(StencilFuncState(func, ref, mask))
+
+    def set_stencil_op(self, fail: StencilOp, z_fail: StencilOp, z_pass: StencilOp) -> None:
+        """Set stencil operations for stencil failure, depth failure, and pass.
+
+        Args:
+            fail:
+                Operation when the stencil comparison fails.
+            z_fail:
+                Operation when stencil passes but the depth test fails.
+            z_pass:
+                Operation when both stencil and depth tests pass.
+        """
+        self.set_state(StencilOpState(fail, z_fail, z_pass))
+
+    def set_stencil_clear(self) -> None:
+        """Clear the stencil buffer when this group becomes active."""
+        self.set_state(StencilClearState())
+
+    def set_color_mask(self, red: bool, green: bool, blue: bool, alpha: bool) -> None:
+        """Set which color channels are writable.
+
+        Args:
+            red: Whether drawing may modify the red channel.
+            green: Whether drawing may modify the green channel.
+            blue: Whether drawing may modify the blue channel.
+            alpha: Whether drawing may modify the alpha channel.
+        """
+        self.set_state(ColorMaskState(red, green, blue, alpha))
 
     def set_viewport(self, viewport: ViewportProtocol) -> None:
         """Set the viewport state.
@@ -732,7 +912,7 @@ class Batch:
             instanced: bool = False,
             storage: VertexStorage,
             data_error_type: type[BaseException] = MissingAttributeError,
-            **data: Any,
+            data: dict[str, Any],
     ) -> VertexList | IndexedVertexList:
         """Create geometry from resolved storage and layout inputs."""
         assert isinstance(mode, GeometryMode), f"Mode {mode} is not geometry mode."
@@ -794,7 +974,7 @@ class Batch:
         """
         storage, vertex_layout = self._resolve_vertex_list_layout(storage, vertex_layout)
         return self._create_vertex_list(
-            vertex_layout, count, mode, group, storage=storage, **data,
+            vertex_layout, count, mode, group, storage=storage, data=data,
         )
 
     def vertex_list_indexed(
@@ -836,7 +1016,7 @@ class Batch:
         """
         storage, vertex_layout = self._resolve_vertex_list_layout(storage, vertex_layout)
         return self._create_vertex_list(
-            vertex_layout, count, mode, group, indices=indices, storage=storage, **data,
+            vertex_layout, count, mode, group, indices=indices, storage=storage, data=data,
         )
 
     def vertex_list_instanced(
@@ -875,7 +1055,7 @@ class Batch:
         assert vertex_layout.has_divisors, 'Instanced geometry requires a VertexLayout with at least one divisor.'
         storage, vertex_layout = self._resolve_vertex_list_layout(storage, vertex_layout)
         return self._create_vertex_list(
-            vertex_layout, count, mode, group, instanced=True, storage=storage, **data,
+            vertex_layout, count, mode, group, instanced=True, storage=storage, data=data,
         )
 
     def vertex_list_instanced_indexed(
@@ -918,7 +1098,7 @@ class Batch:
         assert vertex_layout.has_divisors, 'Instanced geometry requires a VertexLayout with at least one divisor.'
         storage, vertex_layout = self._resolve_vertex_list_layout(storage, vertex_layout)
         return self._create_vertex_list(
-            vertex_layout, count, mode, group, indices=indices, instanced=True, storage=storage, **data,
+            vertex_layout, count, mode, group, indices=indices, instanced=True, storage=storage, data=data,
         )
 
     def add_pass(self, draw_pass: DrawPass) -> DrawPass:
@@ -994,9 +1174,12 @@ class Batch:
 
     def _update_vertex_list_in_passes(self, vertex_list: VertexList, old_start: int, old_count: int) -> None:
         """Keep pass-local range buckets synchronized after a realloc."""
+        vertex_registrations = vertex_list._pass_registrations  # noqa: SLF001
+        if not vertex_registrations:
+            return
         for registrations in self._pass_registrations.values():
             for registration in registrations:
-                if registration in vertex_list._pass_registrations:  # noqa: SLF001
+                if registration in vertex_registrations:
                     registration.bucket.remove(old_start, old_count)
                     registration.bucket.add(vertex_list.start, vertex_list.count)
 
@@ -1719,12 +1902,7 @@ def get_default_batch() -> Batch:
     raise RuntimeError(msg)
 
 
-try:
-    _is_pyglet_doc_run = sys.is_pyglet_doc_run
-except AttributeError:
-    _is_pyglet_doc_run = False
-
-if not _is_pyglet_doc_run:
+if not pyglet.IS_DOC_BUILD and not TYPE_CHECKING:
     if pyglet.options.backend in (GraphicsAPI.OPENGL, GraphicsAPI.OPENGL_ES_3):
         from pyglet.graphics.api.gl.draw import (
             GLBatch as Batch,

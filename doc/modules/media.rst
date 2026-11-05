@@ -17,6 +17,9 @@ pyglet.media
 .. py:class:: pyglet.media.AudioPlayer
    :canonical: pyglet.media.player.AudioPlayer
 
+.. py:class:: pyglet.media.GaplessAudioPlayer
+   :canonical: pyglet.media.player.GaplessAudioPlayer
+
 .. py:class:: pyglet.media.VideoPlayer
    :canonical: pyglet.media.player.VideoPlayer
 
@@ -32,6 +35,7 @@ Classes
   .. automethod:: pause
   .. automethod:: queue
   .. automethod:: seek
+  .. automethod:: set_loop_count
   .. automethod:: next_source
   .. automethod:: delete
 
@@ -55,6 +59,12 @@ Classes
   .. autoattribute:: source
   .. autoattribute:: time
   .. autoattribute:: volume
+
+.. autoclass:: pyglet.media.player.GaplessAudioPlayer
+
+  .. rubric:: Methods
+
+  .. automethod:: queue
 
 .. autoclass:: pyglet.media.player.VideoPlayer
   :members: loop
@@ -117,6 +127,15 @@ Classes
   :members:
   :undoc-members:
   :show-inheritance:
+
+.. autoclass:: LoopingSource
+  :members: loop_start, loop_end, loop_count, remaining_loop_count, duration
+  :show-inheritance:
+
+  .. rubric:: Methods
+
+  .. automethod:: from_frames
+  .. automethod:: set_loop_count
 
 .. autoclass:: pyglet.media.codecs.StaticMemorySource
   :members:

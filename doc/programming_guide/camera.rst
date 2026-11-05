@@ -105,6 +105,9 @@ Views share the camera's projection behavior and can be used anywhere a camera
 scope is expected. Each view has its own viewport, inherited from its parent view
 unless explicitly overridden.
 
+.. note:: Once created, camera views cannot be deleted. Applications are responsible
+          for retaining and reusing allocated views.
+
 Views can also be created from other views. For example::
 
     ui_camera = pyglet.window.camera.Camera2D(window)

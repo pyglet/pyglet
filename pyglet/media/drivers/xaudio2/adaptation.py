@@ -6,7 +6,11 @@ import math
 import threading
 from typing import TYPE_CHECKING
 
-from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
+from pyglet.media.drivers.base import (
+    AbstractAudioDriver,
+    AbstractAudioPlayer,
+    GaplessAudioPlayerBase,
+)
 from pyglet.media.player_worker_thread import PlayerWorkerThread
 from pyglet.media.drivers.listener import AbstractListener
 from pyglet.util import debug_print
@@ -45,6 +49,10 @@ class XAudio2Driver(AbstractAudioDriver):
     def create_audio_player(self, source: Source, player: AudioPlayer) -> XAudio2AudioPlayer:
         assert self._xa2_driver is not None
         return XAudio2AudioPlayer(self, source, player)
+
+    def create_gapless_audio_player(self, source: Source, player: AudioPlayer) -> XAudio2GaplessAudioPlayer:
+        assert self._xa2_driver is not None
+        return XAudio2GaplessAudioPlayer(self, source, player)
 
     def get_listener(self) -> XAudio2Listener:
         return self._listener
@@ -122,8 +130,11 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         self._play_cursor_base = 0
         self._deleted = False
 
-        # This can start as None if no default output device is available on startup.
-        self._xa2_source_voice = self.driver._xa2_driver.get_source_voice(source.audio_format, self)
+        # This can remain None if no default output device is available on
+        # startup.  Configure an acquired voice immediately so its initial
+        # volume and properties are set and don't modify during playback.
+        self._xa2_source_voice = None
+        self._get_and_configure_voice()
 
     def on_driver_destroy(self) -> None:
         # Stop worker access first. A critical engine error means voice methods
@@ -445,3 +456,108 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
     def set_cone_outer_gain(self, cone_outer_gain: float) -> None:
         if self._xa2_source_voice is not None and self._xa2_source_voice.is_emitter:
             self._xa2_source_voice.cone_outside_volume = cone_outer_gain
+
+
+class XAudio2GaplessAudioPlayer(XAudio2AudioPlayer, GaplessAudioPlayerBase):
+    """XAudio2 player that keeps one source voice across queued sources."""
+
+    _sources: deque[Source]
+    _source_start_cursors: deque[int]
+    _source_end_counts: deque[int]
+
+    def __init__(self, driver: XAudio2Driver, source: Source, player: AudioPlayer) -> None:
+        """Create a native queue beginning with ``source``."""
+        super().__init__(driver, source, player)
+        # Keep the AudioData queue owned by XAudio2AudioPlayer.  The driver
+        # reset and voice pool code rely on it containing AudioData objects.
+        self._source_end_counts = deque()
+
+    def clear(self) -> None:
+        """Flush the hardware queue and discard its source-boundary metadata."""
+        super().clear()
+        self._source_end_counts.clear()
+
+    def on_driver_reset(self) -> None:
+        """Rebuild the voice while preserving queued source boundaries."""
+        if self._playing:
+            self.driver.worker.remove(self)
+
+        with self._audio_state_lock:
+            if self._deleted:
+                return
+
+            self._playing = False
+            if not self._get_and_configure_voice():
+                return
+
+            skip_bytes = max(
+                0,
+                self._play_cursor_base - (self._write_cursor - sum(data.length for data in self._audio_data_in_use)),
+            )
+            while self._audio_data_in_use and skip_bytes >= self._audio_data_in_use[0].length:
+                skip_bytes -= self._audio_data_in_use.popleft().length
+                self._dispatch_completed_sources(self._source_end_counts.popleft())
+
+            for index, audio_data in enumerate(self._audio_data_in_use):
+                xa2_buffer = interface.create_xa2_buffer(audio_data)
+                if index == 0 and skip_bytes:
+                    bytes_per_frame = self.source.audio_format.bytes_per_frame
+                    xa2_buffer.PlayBegin = skip_bytes // bytes_per_frame
+                    xa2_buffer.PlayLength = audio_data.length // bytes_per_frame - xa2_buffer.PlayBegin
+                self._xa2_source_voice.submit_buffer(xa2_buffer)
+
+    def on_buffer_end(self, _buffer_context_ptr: int) -> None:
+        # Called from the XAudio2 thread.
+        with self._audio_state_lock:
+            if self._deleted or self._xa2_source_voice is None or not self._audio_data_in_use:
+                return
+
+            self._audio_data_in_use.popleft()
+            self._dispatch_completed_sources(self._source_end_counts.popleft())
+
+    def _dispatch_completed_sources(self, source_end_count: int) -> None:
+        self._dispatch_source_eos_events(source_end_count)
+
+    def _finish_source(self) -> None:
+        """Associate a source boundary with the last submitted buffer.
+
+        Several empty sources can end at the same boundary, hence a count
+        rather than a boolean marker.  If no buffer has been submitted, there
+        is no hardware boundary to wait for.
+        """
+        if self._source_end_counts:
+            self._source_end_counts[-1] += 1
+        else:
+            self._dispatch_source_eos_events()
+
+    def _refill(self, refill_size: int) -> None:
+        """Submit audio from successive sources without flushing the voice."""
+        while not self._pyglet_source_exhausted:
+            self._audio_state_lock.release()
+            # The next source may be submitted well before it becomes the
+            # audible source, so the high-level clock cannot be used for
+            # synchronization here.  Applying normal compensation at this
+            # point would incorrectly trim or pad the upcoming track.
+            try:
+                audio_data = self._get_audio_data(refill_size)
+            finally:
+                self._audio_state_lock.acquire()
+
+            if audio_data is not None:
+                self._audio_data_in_use.append(audio_data)
+                self._source_end_counts.append(0)
+                self._xa2_source_voice.submit_buffer(interface.create_xa2_buffer(audio_data))
+                self._write_cursor += audio_data.length
+                return
+
+            # XAudio2 can already have data for the next source queued behind
+            # this source's final buffer, so retain the boundary separately.
+            self._finish_source()
+
+            if not self._advance_source(self._write_cursor):
+                self._pyglet_source_exhausted = True
+                return
+
+    def get_play_cursor(self) -> int:
+        """Return the cursor relative to the source currently being heard."""
+        return self._get_source_play_cursor(self._play_cursor)

@@ -16,11 +16,38 @@ if TYPE_CHECKING:
     from pyglet.math import Mat4
     from pyglet.graphics.buffer import UniformBufferObject
     from pyglet.graphics.shader import ShaderProgram, UniformBlock
-    from pyglet.window import Window
+    from pyglet.graphics.api.base import SurfaceContext
 
 
 ViewportType = tuple[int, int, int, int]
 ScissorArea = tuple[int, int, int, int]
+
+
+class CameraWindowProtocol(Protocol):
+    """Window data used by camera.
+
+    Instances must support weak references and outlive their cameras. Wrappers
+    without pyglet event dispatch should use ``register_handlers=False`` and
+    forward resize/scale changes from their host.
+    """
+
+    @property
+    def context(self) -> SurfaceContext | None:
+        """Graphics context attached to this surface."""
+        ...
+
+    def get_size(self) -> tuple[int, int]:
+        """Return the logical window dimensions."""
+        ...
+
+    def get_framebuffer_size(self) -> tuple[int, int]:
+        """Return the framebuffer dimensions in pixels."""
+        ...
+
+
+@runtime_checkable
+class _CameraEventSource(Protocol):
+    def push_handlers(self, *args: Any, **kwargs: Any) -> None: ...
 
 
 def _divide_w(point: Vec4) -> Vec3:
@@ -84,7 +111,8 @@ class CameraViewStorageFactory(Protocol):
         """Create storage for a child camera view."""
 
 
-ViewT = TypeVar("ViewT", bound="_CameraViewBase")
+CameraT = TypeVar("CameraT", bound="BaseCamera[Any]")
+ViewT = TypeVar("ViewT", bound="_CameraViewBase[Any]")
 
 
 def _create_default_camera_ubo(
@@ -219,7 +247,7 @@ class _ResolvedGroupScissor:
         return resolved
 
 
-class _CameraViewBase:
+class _CameraViewBase(Generic[CameraT]):
     """Base class for per-camera views."""
 
     __slots__ = (
@@ -240,14 +268,14 @@ class _CameraViewBase:
 
     def __init__(
         self,
-        camera: BaseCamera[Any],
+        camera: CameraT,
         storage: CameraViewStorage | None,
         *,
-        parent: _CameraViewBase | None = None,
+        parent: _CameraViewBase[CameraT] | None = None,
     ) -> None:
         self._camera = camera
         self._parent = parent
-        self._children: list[_CameraViewBase] = []
+        self._children: list[_CameraViewBase[CameraT]] = []
         if parent is not None:
             parent._children.append(self)
         self.storage = storage
@@ -257,7 +285,7 @@ class _CameraViewBase:
         self._viewport: ViewportType | None = None
         if parent is None:
             self._auto_viewport = camera._initial_auto_viewport  # noqa: SLF001
-            self._viewport = camera._initial_viewport  # noqa: SLF001
+            self._viewport = camera._initial_viewport  # type: ignore[assignment] # noqa: SLF001
         self._world_dirty = True
         self._view_dirty = True
         self._view_matrix: Mat4 | None = None
@@ -267,11 +295,11 @@ class _CameraViewBase:
         self._applied_view: Mat4 | None = None
 
     @property
-    def parent(self) -> _CameraViewBase | None:
+    def parent(self) -> _CameraViewBase[CameraT] | None:
         return self._parent
 
     @property
-    def view(self) -> _CameraViewBase:
+    def view(self) -> _CameraViewBase[CameraT]:
         return self
 
     @property
@@ -538,7 +566,7 @@ class _CameraViewBase:
     def end(self) -> None:
         self._camera.end()
 
-    def create_view(self, inherit: bool = True) -> _CameraViewBase:
+    def create_view(self: ViewT, inherit: bool = True) -> ViewT:
         """Create a child view.
 
         Args:
@@ -569,9 +597,28 @@ class BaseCamera(Generic[ViewT]):
     is a convenience proxy for the root view's viewport.
     """
 
+    if TYPE_CHECKING:
+        @property
+        def projection(self) -> Mat4:
+            """The camera projection matrix."""
+            ...
+
+        @projection.setter
+        def projection(self, matrix: Mat4) -> None:
+            ...
+
+        @property
+        def view_matrix(self) -> Mat4:
+            """The camera view matrix."""
+            ...
+
+        @view_matrix.setter
+        def view_matrix(self, matrix: Mat4) -> None:
+            ...
+
     def __init__(
         self,
-        window: Window,
+        window: CameraWindowProtocol,
         view_storage: CameraViewStorage | None = None,
         *,
         viewport: ViewportType | None = None,
@@ -581,7 +628,7 @@ class BaseCamera(Generic[ViewT]):
 
         Args:
             window:
-                Window that this camera controls.
+                Window or wrapper supplying context and dimensions.
             view_storage:
                 Target for resolved projection/view matrix writes. If ``None``,
                 no output target is applied unless a view provides one.
@@ -591,9 +638,9 @@ class BaseCamera(Generic[ViewT]):
                 resize/scale events.
             register_handlers:
                 If ``True``, register the camera for window resize and scale
-                events. Disable this for fixed-size offscreen cameras.
+                events. Disable this for wrappers without pyglet event dispatch.
         """
-        self._window = weakref.proxy(window)
+        self._window: CameraWindowProtocol = weakref.proxy(window)
 
         if not isinstance(view_storage, CameraViewStorage):
             msg = (
@@ -615,11 +662,26 @@ class BaseCamera(Generic[ViewT]):
         self._resolved_viewport: tuple[int, int, int, int] | None = None
 
         if register_handlers:
+            if not isinstance(window, _CameraEventSource):
+                raise TypeError('This camera window has no event dispatcher; use register_handlers=False.')
             window.push_handlers(self)
+
+    def delete(self) -> None:
+        """Delete the backing uniform buffer owned by this camera, if any.
+
+        This is intended for explicit resource cleanup. Reusing cameras and
+        their views is recommended whenever possible.
+
+        After deletion, this camera and any views using it are unusable.
+        Existing views are not detached, repaired, or checked for further use.
+        Storage that does not use a uniform buffer requires no cleanup.
+        """
+        if isinstance(self.view_storage, UniformBufferCameraRegion):
+            self.view_storage.ubo.delete()
 
     def _create_default_view_storage(
         self,
-        window: Window,
+        window: CameraWindowProtocol,
         *,
         window_block: UniformBlock | None = None,
         copies_per_resource: int = 3,
@@ -627,7 +689,10 @@ class BaseCamera(Generic[ViewT]):
         view_uniform: str = "u_view",
     ) -> CameraViewStorage:
         """Create the root view storage for this camera."""
-        if not window.context.info.features.uniform_buffers:
+        context = window.context
+        if context is None:
+            raise RuntimeError('Camera storage requires a window with a graphics context.')
+        if not context.info.features.uniform_buffers:
             return UniformSetCameraRegion(
                 projection_uniform=projection_uniform,
                 view_uniform=view_uniform,

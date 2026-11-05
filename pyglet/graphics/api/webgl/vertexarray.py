@@ -7,7 +7,7 @@ from pyglet.graphics.resource import VertexArrayResource
 
 if TYPE_CHECKING:
     from pyglet.graphics.api.base import NullContext
-    from pyglet.graphics.api.webgl import OpenGLSurfaceContext
+    from pyglet.graphics.api.webgl import WebGL2SurfaceContext
     from pyglet.graphics.api.webgl.webgl_js import WebGLVertexArrayObject
 
 __all__ = ['VertexArray']
@@ -16,10 +16,10 @@ __all__ = ['VertexArray']
 class VertexArray(VertexArrayResource):
     """OpenGL Vertex Array Object."""
 
-    _context: OpenGLSurfaceContext | NullContext
+    _context: WebGL2SurfaceContext | NullContext
     _id: WebGLVertexArrayObject
 
-    def __init__(self, context: OpenGLSurfaceContext) -> None:
+    def __init__(self, context: WebGL2SurfaceContext) -> None:
         """Create an instance of a Vertex Array object."""
         VertexArrayResource.__init__(self)
         self._context = context

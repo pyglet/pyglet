@@ -1,4 +1,5 @@
 from ctypes import byref
+from dataclasses import replace
 
 import pyglet
 import pytest
@@ -60,6 +61,117 @@ def test_framebuffer_attach_texture_and_readback(test_window):
         assert data == bytes([255, 0, 0, 255]) * 4
     finally:
         framebuffer.delete()
+        texture.delete()
+
+
+@skip_graphics_api(GraphicsAPIGroups.GL2)
+def test_framebuffer_draw_buffers_and_individual_clears(test_window):
+    test_window.switch_to()
+
+    framebuffer = pyglet.graphics.Framebuffer(context=test_window.context)
+    first_texture = pyglet.graphics.Texture.create(2, 2, blank_data=True, context=test_window.context)
+    second_texture = pyglet.graphics.Texture.create(2, 2, blank_data=True, context=test_window.context)
+    try:
+        framebuffer.attach_texture(first_texture, FramebufferAttachment.COLOR0)
+        framebuffer.attach_texture(second_texture, FramebufferAttachment.COLOR1)
+        framebuffer.set_draw_buffers(FramebufferAttachment.COLOR0, FramebufferAttachment.COLOR1)
+        framebuffer.clear_buffers((1.0, 0.0, 0.0, 1.0), (0.0, 1.0, 0.0, 1.0))
+        framebuffer.clear_buffer(1, (0.0, 0.0, 1.0, 1.0))
+
+        assert gl.glGetError() == gl.GL_NO_ERROR
+        assert bytes(first_texture.get_image_data().get_bytes("RGBA", 8)) == bytes([255, 0, 0, 255]) * 4
+        assert bytes(second_texture.get_image_data().get_bytes("RGBA", 8)) == bytes([0, 0, 255, 255]) * 4
+    finally:
+        framebuffer.delete()
+        first_texture.delete()
+        second_texture.delete()
+
+
+def test_framebuffer_dsa_preserves_bound_framebuffer(test_window):
+    test_window.switch_to()
+    if not test_window.context.info.features.direct_state_access:
+        pytest.skip("Direct state access is unavailable.")
+
+    framebuffer = pyglet.graphics.Framebuffer(context=test_window.context)
+    bound_framebuffer = pyglet.graphics.Framebuffer(context=test_window.context)
+    texture = pyglet.graphics.Texture.create(2, 2, blank_data=True, context=test_window.context)
+    try:
+        bound_framebuffer.bind()
+        bind_framebuffer = test_window.context.glBindFramebuffer
+        bind_calls = []
+
+        def track_bind(target, framebuffer):
+            bind_calls.append((target, framebuffer.value if hasattr(framebuffer, "value") else framebuffer))
+            bind_framebuffer(target, framebuffer)
+
+        test_window.context.glBindFramebuffer = track_bind
+        framebuffer.attach_texture(texture)
+        framebuffer.set_draw_buffers()
+        framebuffer.clear_buffer(0, (1.0, 0.0, 0.0, 1.0))
+
+        assert not bind_calls
+        assert _get_bound_framebuffer_id() == bound_framebuffer.id
+        assert framebuffer.is_complete
+        assert _get_bound_framebuffer_id() == bound_framebuffer.id
+        assert bytes(texture.get_image_data().get_bytes("RGBA", 8)) == bytes([255, 0, 0, 255]) * 4
+    finally:
+        test_window.context.glBindFramebuffer = bind_framebuffer
+        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
+        framebuffer.delete()
+        bound_framebuffer.delete()
+        texture.delete()
+
+
+def test_nested_framebuffer_contexts_avoid_redundant_binds(test_window):
+    test_window.switch_to()
+
+    framebuffer = pyglet.graphics.Framebuffer(context=test_window.context)
+    bind_framebuffer = test_window.context.glBindFramebuffer
+    bind_calls = []
+
+    def track_bind(target, framebuffer_id):
+        bind_calls.append((target, framebuffer_id.value if hasattr(framebuffer_id, "value") else framebuffer_id))
+        bind_framebuffer(target, framebuffer_id)
+
+    try:
+        test_window.context.glBindFramebuffer = track_bind
+        with framebuffer, framebuffer:
+            assert _get_bound_framebuffer_id() == framebuffer.id
+
+        assert bind_calls == [
+            (gl.GL_FRAMEBUFFER, framebuffer.id),
+            (gl.GL_FRAMEBUFFER, 0),
+        ]
+    finally:
+        test_window.context.glBindFramebuffer = bind_framebuffer
+        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
+        framebuffer.delete()
+
+
+@skip_graphics_api(GraphicsAPIGroups.GL2)
+def test_framebuffer_fallback_operations_restore_binding(test_window):
+    test_window.switch_to()
+
+    context = test_window.context
+    features = context.info.features
+    context.info.features = replace(features, direct_state_access=False)
+    framebuffer = pyglet.graphics.Framebuffer(context=context)
+    bound_framebuffer = pyglet.graphics.Framebuffer(context=context)
+    texture = pyglet.graphics.Texture.create(2, 2, blank_data=True, context=context)
+    try:
+        bound_framebuffer.bind()
+        framebuffer.attach_texture(texture)
+        framebuffer.set_draw_buffers()
+        framebuffer.clear_buffer(0, (1.0, 0.0, 0.0, 1.0))
+
+        assert _get_bound_framebuffer_id() == bound_framebuffer.id
+        assert framebuffer.is_complete
+        assert _get_bound_framebuffer_id() == bound_framebuffer.id
+    finally:
+        context.info.features = features
+        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
+        framebuffer.delete()
+        bound_framebuffer.delete()
         texture.delete()
 
 

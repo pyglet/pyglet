@@ -18,7 +18,7 @@ from typing import NoReturn, Callable, Any, Iterator
 _debug_lib = pyglet.options.debug_lib
 _debug_trace = pyglet.options.debug_trace
 
-_is_pyglet_doc_run = getattr(sys, "is_pyglet_doc_run", False)
+_local_lib_paths: list[str] | None
 
 if pyglet.options.search_local_libs:
     script_path = pyglet.resource.get_script_home()
@@ -57,7 +57,7 @@ class _TraceLibrary:
         return _TraceFunction(func)
 
 
-if _is_pyglet_doc_run:
+if pyglet.IS_DOC_BUILD:
     class LibraryMock:
         """Mock library used when generating documentation."""
         def __getattr__(self, name: str):
@@ -93,7 +93,7 @@ class LibraryLoader:  # noqa: D101
 
         Raises ImportError if library is not found.
         """
-        if _is_pyglet_doc_run:
+        if pyglet.IS_DOC_BUILD:
             return LibraryMock()
 
         if 'framework' in kwargs and self.platform in ('darwin', 'ios'):
@@ -117,7 +117,7 @@ class LibraryLoader:  # noqa: D101
         platform_names.extend(names)
         for name in platform_names:
             try:
-                lib = ctypes.cdll.LoadLibrary(name)
+                lib: ctypes.CDLL | _TraceLibrary = ctypes.cdll.LoadLibrary(name)
                 if _debug_lib:
                     print(name, self.find_library(name))
                 if _debug_trace:
@@ -146,7 +146,7 @@ class LibraryLoader:  # noqa: D101
         return ctypes.util.find_library(name)
 
     @staticmethod
-    def load_framework(_name: str) -> NoReturn:
+    def load_framework(_name: str) -> ctypes.CDLL | _TraceLibrary:
         msg = "Can't load framework on this platform."
         raise RuntimeError(msg)
 
@@ -246,7 +246,7 @@ class MacOSLibraryLoader(LibraryLoader):  # noqa: D101
             path = f'/System/Library/Frameworks/{name}.framework/{name}'
 
         if path:
-            lib = ctypes.cdll.LoadLibrary(path)
+            lib: ctypes.CDLL | _TraceLibrary = ctypes.cdll.LoadLibrary(path)
             if _debug_lib:
                 print(path)
             if _debug_trace:
@@ -301,7 +301,7 @@ class LinuxLibraryLoader(LibraryLoader):  # noqa: D101
 
         self._ld_so_cache = self._find_libs(directories)
 
-    def find_library(self, path: str) -> str:
+    def find_library(self, path: str) -> str | None:
 
         # search first for local libs
         if _local_lib_paths:
@@ -326,7 +326,7 @@ class LinuxLibraryLoader(LibraryLoader):  # noqa: D101
 
 
 if pyglet.compat_platform in ('darwin', 'ios'):
-    loader = MacOSLibraryLoader()
+    loader: LibraryLoader = MacOSLibraryLoader()
 elif pyglet.compat_platform.startswith('linux'):
     loader = LinuxLibraryLoader()
 else:

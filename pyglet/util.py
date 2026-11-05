@@ -331,13 +331,13 @@ class Encoder:
 class DecodeException(Exception):
     """Raised when decoding fails."""
 
-    __module__: ClassVar[str] = "CodecRegistry"
+    __module__ = "CodecRegistry"
 
 
 class EncodeException(Exception):
     """Raised when encoding fails."""
 
-    __module__: ClassVar[str] = "CodecRegistry"
+    __module__ = "CodecRegistry"
 
 
 class _DecodersModule(Protocol):

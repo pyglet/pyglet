@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Sequence
+from typing import TYPE_CHECKING, Sequence
 
 import pyglet
 from pyglet.event import EventDispatcher
@@ -9,6 +9,9 @@ from pyglet.window import (
     _PlatformEventHandler,
     _ViewEventHandler,
 )
+
+if TYPE_CHECKING:
+    from pyglet.display.base import Screen
 
 # Platform event data is single item, so use platform event handler directly.
 HeadlessEventHandler = _PlatformEventHandler
@@ -49,6 +52,10 @@ class HeadlessWindow(BaseWindow):
 
     def get_size(self) -> tuple[int, int]:
         return self._width, self._height
+
+    def get_current_screen(self) -> Screen:
+        """Return the virtual screen used by this headless window."""
+        return self._screen
 
     def set_location(self, x: int, y: int) -> None:
         pass

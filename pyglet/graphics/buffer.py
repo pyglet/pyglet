@@ -384,6 +384,16 @@ class UniformBufferObject(RingBuffer):
     def get_data_structure(self) -> ctypes.Structure:
         return self.view_class()
 
+    def reserve_resource_range(
+        self,
+        copies_per_resource: int | None = None,
+    ) -> list[BufferRange]:
+        """Reserve ranges and storage capacity."""
+        count = self.copies_per_resource if copies_per_resource is None else max(1, int(copies_per_resource))
+        # Ensure capacity first incase a failed resize leaves the allocator unchanged.
+        self._ensure_storage_for_commit(self._next_offset + count * self.range_stride)
+        return super().reserve_resource_range(count)
+
     def upload_to_available_binding(
         self,
         resource_data: ctypes.Structure,

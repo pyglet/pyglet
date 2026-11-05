@@ -2,8 +2,6 @@ pyglet.resource
 ===============
 
 .. automodule:: pyglet.resource
-  :members:
-  :undoc-members:
 
 
 Functions

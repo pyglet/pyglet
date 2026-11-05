@@ -127,7 +127,11 @@ entire paragraph, otherwise results are undefined.
     the text layout.  Defaults to the empty list.  When the tab stops
     are exhausted, they implicitly continue at 50 pixel intervals.
 ``wrap``
-    Boolean.  If True (the default), text wraps within the width of the layout.
+    True (the default) or ``"word"`` wraps at spaces, zero-width spaces, tabs,
+    and wide CJK character boundaries, with basic opening/closing punctuation
+    rules. Narrow Latin words are not split. ``"char"`` wraps at
+    individual characters. False disables automatic wrapping. An indivisible
+    word or character group may exceed the layout width.
 
 Other attributes can be used to store additional style information within the
 document; it will be ignored by the built-in text classes.
@@ -139,18 +143,16 @@ of a ``None`` style is style- and application-dependent.
 from __future__ import annotations
 
 import re
-import sys
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Generator
 
-from pyglet import event
+from pyglet import event, IS_DOC_BUILD
 from pyglet.text import runlist
 
 if TYPE_CHECKING:
     from pyglet.font.base import Font
     from pyglet.text.layout import TextLayout
 
-_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 #: The style attribute takes on multiple values in the document.
 STYLE_INDETERMINATE = "indeterminate"
@@ -378,6 +380,10 @@ class AbstractDocument(event.EventDispatcher):
                 :see: :py:func:`~pyglet.font.load`.
         """
 
+    @abstractmethod
+    def get_element_runs(self) -> runlist.AbstractRunIterator:
+        """Get a style iterator over inline elements in the document."""
+
     def insert_text(self, start: int, text: str, attributes: dict[str, Any] | None = None) -> None:  # noqa: D417
         """Insert text into the document.
 
@@ -506,7 +512,7 @@ class AbstractDocument(event.EventDispatcher):
         self._set_style(start, end, attributes)
         self.dispatch_event("on_style_text", start, end, attributes)
 
-    if _is_pyglet_doc_run:
+    if IS_DOC_BUILD:
         def on_insert_text(self, start: int, text: str) -> None:
             """Text was inserted into the document.
 
@@ -651,7 +657,7 @@ class FormattedDocument(AbstractDocument):
     def get_element_runs(self) -> _ElementIterator:
         return _ElementIterator(self._elements, len(self._text))
 
-    def _insert_text(self, start: int, text: str, attributes: dict[str, Any]) -> None:
+    def _insert_text(self, start: int, text: str, attributes: dict[str, Any] | None) -> None:
         super()._insert_text(start, text, attributes)
 
         len_text = len(text)

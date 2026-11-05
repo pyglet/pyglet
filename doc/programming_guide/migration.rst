@@ -249,6 +249,21 @@ Video playback has always needed FFmpeg integration, but did not need it for mor
 By decoupling these responsibilities, pyglet can provide more focused, maintainable implementations
 while avoiding unnecessary dependencies for applications that only need audio or only need video.
 
+SourceGroup removal
+^^^^^^^^^^^^^^^^^^^
+``pyglet.media.SourceGroup`` has been removed as it was not maintained and
+clunky to use and manage sources. Similar behavior has been implemented as a
+separate audio player.
+
+Use :py:class:`~pyglet.media.GaplessAudioPlayer` to queue the individual audio
+sources directly. It is intended for audio that should flow continuously from
+one file into the next. The sources must be audio-only and use matching audio
+formats. For example, replace a group queued on an ``GaplessAudioPlayer`` with::
+
+    player = pyglet.media.GaplessAudioPlayer()
+    player.queue([first_source, second_source])
+    player.play()
+
 Media Loading
 -------------
 Along with the split to the media players, media loading functions have also been split into explicit audio/video calls.

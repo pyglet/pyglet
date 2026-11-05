@@ -2,19 +2,20 @@
 
 from __future__ import annotations
 
-from collections import deque
 import ctypes
 import weakref
 from abc import ABCMeta, abstractmethod
-from typing import TYPE_CHECKING, Sequence
+from collections import deque
+from collections.abc import Iterable, Sequence
+from typing import TYPE_CHECKING
 
 import pyglet
 from pyglet.media.codecs import AudioData
 from pyglet.util import debug_print, next_or_equal_power_of_two
 
 if TYPE_CHECKING:
-    from pyglet.media.codecs import Source
     from pyglet.media import AudioPlayer
+    from pyglet.media.codecs import Source
     from pyglet.media.drivers.listener import AbstractListener
 
 
@@ -436,8 +437,91 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
         return
 
 
+class GaplessAudioPlayerBase(AbstractAudioPlayer):
+    """Base class for backend players which can play a queue without gaps.
+
+    Unlike :class:`AbstractAudioPlayer`, a gapless player owns the queued
+    sources as well as the audio buffers.  This lets a backend submit data for
+    the next source before the current source's final buffer has completed.
+    """
+
+    def __init__(self, source: Source, player: AudioPlayer) -> None:
+        """Initialize a native queue beginning with ``source``."""
+        super().__init__(source, player)
+        self._sources = deque([source])
+        self._source_start_cursors = deque([0])
+
+    def queue(self, source: Source) -> None:
+        """Add a source with the same audio format to the playback queue."""
+        if source.audio_format != self.source.audio_format:
+            raise ValueError('Gapless sources must share the same audio format.')
+        self._sources.append(source)
+
+    def reset_queue(self, sources: Iterable[Source]) -> None:
+        """Discard queued audio and replace the source queue.
+
+        This is used for explicit seeks and skips.  Natural source changes do
+        not call this method, so the backend can retain its voice.
+        """
+        sources = deque(sources)
+        if not sources:
+            return
+        if any(source.audio_format != sources[0].audio_format for source in sources):
+            raise ValueError('Gapless sources must share the same audio format.')
+
+        self.clear()
+        self._sources = sources
+        self._set_gapless_source(sources[0])
+
+    def clear(self) -> None:
+        super().clear()
+        self._source_start_cursors = deque([0])
+
+    def _set_gapless_source(self, source: Source) -> None:
+        """Select the source to decode without clearing the hardware queue."""
+        self.source = weakref.proxy(source)
+        self._precision_buffer = None if source.is_precise() else SourcePrecisionBuffer(source)
+
+    def _advance_source(self, start_cursor: int) -> bool:
+        """Advance the decoding head and record where the next source starts."""
+        self._sources.popleft()
+        if not self._sources:
+            return False
+
+        self._source_start_cursors.append(start_cursor)
+        self._set_gapless_source(self._sources[0])
+        return True
+
+    def _get_source_play_cursor(self, play_cursor: int) -> int:
+        """Return an absolute hardware cursor relative to the audible source."""
+        if not self._source_start_cursors:
+            return 0
+        return max(0, play_cursor - self._source_start_cursors[0])
+
+    def _dispatch_source_eos_events(self, count: int = 1) -> None:
+        """Dispatch completed source boundaries and update the audible source."""
+        for _ in range(count):
+            if self._source_start_cursors:
+                self._source_start_cursors.popleft()
+            self.dispatch_source_eos()
+
+    def dispatch_source_eos(self) -> None:
+        """Notify the high-level gapless player that one source completed."""
+        pyglet.app.platform_event_loop.post_event(self.player, 'on_gapless_source_eos')
+
+
 class AbstractAudioDriver(metaclass=ABCMeta):
     """Base interface for audio-driver implementations."""
+
+    def create_gapless_audio_player(self, source, player):
+        """Create a player capable of gapless queued playback.
+
+        Drivers which do not implement native gapless playback return
+        ``None``.  Keeping this optional allows an application to select the
+        feature explicitly instead of silently falling back to a player that
+        can introduce gaps.
+        """
+        return None
 
     @abstractmethod
     def create_audio_player(self, source: Source, player: AudioPlayer) -> AbstractAudioPlayer:

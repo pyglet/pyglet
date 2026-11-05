@@ -54,7 +54,7 @@ import sys
 import weakref
 import zipfile
 from io import BytesIO, StringIO
-from typing import IO, TYPE_CHECKING, Literal, overload
+from typing import BinaryIO, IO, TYPE_CHECKING, Literal, TextIO, cast, overload
 
 import pyglet
 
@@ -62,7 +62,7 @@ if TYPE_CHECKING:
     from pyglet.customtypes import MediaTypes
     from pyglet.graphics.texture import Texture, TextureRegion, TextureArrayRegion
 
-    from pyglet.graphics.shader import Shader
+    from pyglet.graphics.shader import Shader, ShaderType
     from pyglet.image import ImageData
     from pyglet.image.animation import Animation
     from pyglet.graphics.atlas import TextureBin, TextureArrayBin
@@ -117,8 +117,9 @@ def get_script_home() -> str:
         # py2app
         return os.environ['RESOURCEPATH']
     main = sys.modules['__main__']
-    if hasattr(main, '__file__'):
-        return os.path.dirname(os.path.abspath(main.__file__))
+    main_file = getattr(main, '__file__', None)
+    if isinstance(main_file, str):
+        return os.path.dirname(os.path.abspath(main_file))
     if 'python' in os.path.basename(sys.executable):
         # interactive
         return os.getcwd()
@@ -166,7 +167,7 @@ def get_data_path(name: str) -> str:
     """Get a directory to save user data.
 
     For a Posix or Linux based system many distributions have a separate
-    directory to store user data for a specific application and this 
+    directory to store user data for a specific application and this
     function returns the path to that location.
 
     On Linux, a directory ``name`` in the user's data directory is returned
@@ -207,7 +208,19 @@ class Location:
     filesystem.
     """
 
-    def open(self, name: str, mode: str = 'rb') -> BytesIO | StringIO | IO:
+    @overload
+    def open(self, name: str, mode: Literal['rb'] = 'rb') -> BinaryIO:
+        ...
+
+    @overload
+    def open(self, name: str, mode: Literal['r', 'rt']) -> TextIO:
+        ...
+
+    @overload
+    def open(self, name: str, mode: str) -> IO:
+        ...
+
+    def open(self, name: str, mode: str = 'rb') -> BinaryIO | TextIO | IO:
         """Open a file at this location.
 
         Args:
@@ -229,8 +242,20 @@ class FileLocation(Location):
         """Create a location given a relative or absolute path."""
         self.path = filepath
 
-    def open(self, filename: str, mode: str = 'rb') -> IO:
-        return open(os.path.join(self.path, filename), mode)
+    @overload
+    def open(self, name: str, mode: Literal['rb'] = 'rb') -> BinaryIO:
+        ...
+
+    @overload
+    def open(self, name: str, mode: Literal['r', 'rt']) -> TextIO:
+        ...
+
+    @overload
+    def open(self, name: str, mode: str) -> IO:
+        ...
+
+    def open(self, name: str, mode: str = 'rb') -> BinaryIO | TextIO | IO:
+        return open(os.path.join(self.path, name), mode)
 
 
 class ZIPLocation(Location):
@@ -249,19 +274,31 @@ class ZIPLocation(Location):
         self.zip = zipfileobj
         self.dir = directory
 
-    def open(self, filename: str, mode: str='rb') -> BytesIO | StringIO:
+    @overload
+    def open(self, name: str, mode: Literal['rb'] = 'rb') -> BinaryIO:
+        ...
+
+    @overload
+    def open(self, name: str, mode: Literal['r', 'rt']) -> TextIO:
+        ...
+
+    @overload
+    def open(self, name: str, mode: str) -> IO:
+        ...
+
+    def open(self, name: str, mode: str = 'rb') -> BinaryIO | TextIO | IO:
         """Open a file from inside the ZipFile.
 
         Args:
-            filename:
+            name:
                 The filename to open.
             mode:
                 Valid modes are 'r' and 'rb'.
         """
-        _path = f"{self.dir}/{filename}" if self.dir else filename
+        _path = f"{self.dir}/{name}" if self.dir else name
         _forward_slash_path = _path.replace(os.sep, '/')  # zip can only handle forward slashes
         _bytes = self.zip.read(_forward_slash_path)
-        if mode == 'r':
+        if mode in ('r', 'rt'):
             return StringIO(_bytes.decode())
         return BytesIO(_bytes)
 
@@ -280,19 +317,34 @@ class URLLocation(Location):
         """Create a location given a base URL."""
         self.base = base_url
 
-    def open(self, filename: str, mode: str = '') -> IO:
+    @overload
+    def open(self, name: str, mode: Literal['rb'] = 'rb') -> BinaryIO:
+        ...
+
+    @overload
+    def open(self, name: str, mode: Literal['r', 'rt']) -> TextIO:
+        ...
+
+    @overload
+    def open(self, name: str, mode: str) -> IO:
+        ...
+
+    def open(self, name: str, mode: str = 'rb') -> BinaryIO | TextIO | IO:
         """Open a remote file.
 
         Args:
-            filename:
+            name:
                 The name of the remote resource to open.
             mode:
-                Unused, as the mode is determined by the remote server.
+                The file mode. Text modes decode the response as UTF-8.
         """
-        import urllib.parse
-        import urllib.request
-        url = urllib.parse.urljoin(self.base, filename)
-        return BytesIO(urllib.request.urlopen(url).read())
+        import urllib.parse  # noqa: PLC0415
+        import urllib.request  # noqa: PLC0415
+        url = urllib.parse.urljoin(self.base, name)
+        data = urllib.request.urlopen(url).read()
+        if mode in ('r', 'rt'):
+            return StringIO(data.decode())
+        return BytesIO(data)
 
 
 class Loader:
@@ -301,6 +353,17 @@ class Loader:
     The loader contains a search path which can include filesystem
     directories, ZIP archives, URLs, and Python packages.
     """
+
+    path: list[str]
+    _script_home: str
+    _index: dict[str, Location] | None
+    _texture_atlas_bins: dict[int, TextureBin]
+    _texture_array_bins: dict[tuple[int, int], TextureArrayBin]
+    _cached_images: weakref.WeakValueDictionary[str, ImageData]
+    _cached_textures: weakref.WeakValueDictionary[str, Texture | TextureRegion]
+    _cached_texture_arrays: weakref.WeakValueDictionary[str, TextureArrayRegion]
+    _cached_animations: weakref.WeakValueDictionary[str, Animation]
+
     def __init__(self, pathlist: list[str] | None = None, script_home: str | None = None) -> None:
         """Create a loader for the given path.
 
@@ -323,7 +386,7 @@ class Loader:
 
         self.path = list(pathlist)
         self._script_home = script_home or get_script_home()
-        self._index: dict | None = None
+        self._index = None
 
         # Map bin size to list of atlases
         self._texture_atlas_bins = {}
@@ -340,6 +403,7 @@ class Loader:
             self.reindex()
 
     def _index_file(self, name: str, locationobj: Location) -> None:
+        assert self._index is not None
         if name not in self._index:
             self._index[name] = locationobj
 
@@ -361,8 +425,9 @@ class Loader:
                     continue
                 for component in module_name.split('.')[1:]:
                     module = getattr(module, component)
-                if hasattr(module, '__file__'):
-                    _path_name = os.path.dirname(module.__file__)
+                module_file = getattr(module, '__file__', None)
+                if isinstance(module_file, str):
+                    _path_name = os.path.dirname(module_file)
                 else:
                     _path_name = ''  # interactive
 
@@ -419,10 +484,22 @@ class Loader:
                         filename = fileinfo.filename.lstrip(zip_directory)
                         filename = filename.lstrip('/')
 
-                        file_location = ZIPLocation(zipfileobj, zip_directory)
-                        self._index_file(filename, file_location)
+                        zip_location = ZIPLocation(zipfileobj, zip_directory)
+                        self._index_file(filename, zip_location)
 
-    def file(self, name: str, mode: str = 'rb') -> BytesIO | StringIO | IO:
+    @overload
+    def file(self, name: str, mode: Literal['rb'] = 'rb') -> BinaryIO:
+        ...
+
+    @overload
+    def file(self, name: str, mode: Literal['r', 'rt']) -> TextIO:
+        ...
+
+    @overload
+    def file(self, name: str, mode: str) -> IO:
+        ...
+
+    def file(self, name: str, mode: str = 'rb') -> BinaryIO | TextIO | IO:
         """Load a file-like object.
 
         The caller is responsible for closing the returning file object.
@@ -435,13 +512,14 @@ class Loader:
                 with the meaning as for the builtin ``open`` function.
         """
         self._ensure_index()
+        assert self._index is not None
         try:
             file_location = self._index[name]
             return file_location.open(name, mode)
         except KeyError:
             raise ResourceNotFoundException(name) from None
 
-    def location(self, filename: str) -> FileLocation | URLLocation | ZIPLocation:
+    def location(self, filename: str) -> Location:
         """Get the location of a resource.
 
         This method is useful for opening files referenced from a resource.
@@ -450,6 +528,7 @@ class Loader:
         looked up individually in the loader's path.
         """
         self._ensure_index()
+        assert self._index is not None
         try:
             return self._index[filename]
         except KeyError:
@@ -468,7 +547,7 @@ class Loader:
 
         """
         self._ensure_index()
-        from pyglet import font
+        from pyglet import font  # noqa: PLC0415
         fileobj = self.file(filename)
         try:
             font.add_file(fileobj)
@@ -721,6 +800,7 @@ class Loader:
 
     def _load_media_resource(self, name: str, streaming: bool, media_capability: MediaTypes) -> Source:
         self._ensure_index()
+        assert self._index is not None
         from pyglet import media  # noqa: PLC0415
 
         try:
@@ -783,7 +863,9 @@ class Loader:
     def scene(self, name: str) -> Scene:
         """Load a 3D Scene."""
         self._ensure_index()
-        abspathname = os.path.join(os.path.abspath(self.location(name).path), name)
+        file_location = self.location(name)
+        assert isinstance(file_location, FileLocation)
+        abspathname = os.path.join(os.path.abspath(file_location.path), name)
         fileobj = self.file(name)
         try:
             return pyglet.model.load(filename=abspathname, file=fileobj)
@@ -846,7 +928,9 @@ class Loader:
         if shader_type not in shader_extensions.values():
             raise UndetectableShaderType(name=name)
 
-        return pyglet.graphics.Shader(source_string, shader_type)
+        return pyglet.graphics.Shader(  # type: ignore[abstract, arg-type]
+            cast(str, source_string), cast("ShaderType", shader_type),
+        )
 
 
 #: Default resource search path.
@@ -857,17 +941,17 @@ class Loader:
 #: See the module documentation for details on the path format.
 #:
 #: :type: list of str
-path = []
+path: list[str] = []
 
 
 class _DefaultLoader(Loader):
 
     @property
-    def path(self):
+    def path(self) -> list[str]:
         return path
 
     @path.setter
-    def path(self, value):
+    def path(self, value: list[str]) -> None:
         global path
         path = value
 

@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 import pyglet
 from pyglet.graphics.api.gl.enums import geometry_map
+from pyglet.graphics.api.gl.draw import _cached_multidraw
 from pyglet.graphics.api.gl2.vertexdomain import (
     IndexedVertexDomain,
     InstancedIndexedVertexDomain,
@@ -41,3 +42,12 @@ class GL2Batch(_BucketBatch):
     def __init__(self, context: OpenGLSurfaceContext | None = None, initial_count: int = 32) -> None:
         """Initialize the batch for use."""
         super().__init__(context, initial_count)
+
+    @staticmethod
+    def _draw_bucket_fn(domain, buckets, mode_func):
+        if type(domain) not in (VertexDomain, IndexedVertexDomain) or not domain._supports_multi_draw:
+            return _BucketBatch._draw_bucket_fn(domain, buckets, mode_func)
+        if isinstance(domain, IndexedVertexDomain):
+            return _cached_multidraw(domain._context, buckets, mode_func, index_type=domain.index_stream.gl_type,
+                                     element_size=domain.index_stream.index_element_size)
+        return _cached_multidraw(domain._context, buckets, mode_func)

@@ -695,7 +695,7 @@ FT_Get_Kerning = _get_function_with_error_handling("FT_Get_Kerning",
 FT_Get_Sfnt_Table = _get_function("FT_Get_Sfnt_Table", [FT_Face, FT_Sfnt_Tag], c_void_p)
 
 try:
-    FT_Select_Size = _get_function_with_error_handling("FT_Select_Size", [FT_Face, FT_Int], FT_Error)
+    FT_Select_Size: Callable | None = _get_function_with_error_handling("FT_Select_Size", [FT_Face, FT_Int], FT_Error)
 except ImportError:
     FT_Select_Size = None
 

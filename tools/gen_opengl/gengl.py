@@ -288,7 +288,8 @@ class PygletGLWriter:
             f"class {self._function_class}:",
             '    """Functions linked for an active GL context."""',
             "",
-            "    def __init__(self) -> None:",
+            "    def __init__(self, link_function: GLLinkFunction = _link_function) -> None:",
+            "        _link_function = link_function",
         ])
 
         # _link_function params : name, restype, argtypes, requires=None, suggestions=None
@@ -337,7 +338,8 @@ class PygletGLWriter:
     def write_command_stubs(self, fp: TextIO) -> None:
         """Write type annotations for all commands."""
         self.write_lines(fp, ["# GL command definitions"])
-        self.write_lines(fp, ["", f"class {self._function_class}:", "    def __init__(self) -> None: ..."])
+        self.write_lines(fp, ["", f"class {self._function_class}:",
+                              "    def __init__(self, link_function: GLLinkFunction = ...) -> None: ..."])
 
         # _link_function params : name, restype, argtypes, requires=None, suggestions=None
         for cmd in sorted(self._registry.commands.values()):

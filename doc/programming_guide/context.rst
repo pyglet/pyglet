@@ -423,3 +423,58 @@ you can check for this attribute to determine if you need to load them again::
 
 Avoid using attribute names on :class:`~pyglet.graphics.api.gl.ObjectSpace` that begin with
 ``"pyglet"``, as they may conflict with an internal module.
+
+Using an external context
+-------------------------
+
+``ExternalOpenGLContext`` lets pyglet render into an existing OpenGL context
+without creating a pyglet window. The external application owns context
+creation, resizing, events and presentation. Use the adapter on the main
+thread with the matching modern OpenGL or OpenGL ES 3 backend selected.
+
+After creating the native context, supply callbacks for its operations::
+
+    from pyglet.graphics.api.gl import ExternalOpenGLContext
+
+    context = ExternalOpenGLContext(
+        make_current=host.make_current,
+        is_current=host.is_current,
+        get_proc_address=host.get_proc_address,
+        get_framebuffer=host.get_default_framebuffer,
+    )
+    context.set_current()
+    # Create pyglet shaders, textures, batches, sprites, etc.
+
+``host`` represents your integration, not a required class or toolkit.
+``make_current`` must raise or return ``False`` on failure. The optional
+``is_current`` callback checks the native context; without it, finalizers
+defer GPU deletion until the next ``set_current()``. ``get_proc_address``
+returns integer addresses for core and extension functions, defaulting to
+pyglet's platform loader when omitted. Use ``context.gl...`` for raw GL calls
+through this resolver. ``get_framebuffer`` returns the current default
+framebuffer ID, or defaults to zero.
+
+Render inside a frame scope::
+
+    def paint():
+        with context.frame(clear=True):
+            batch.draw()
+
+The scope activates the context, binds its framebuffer, manages frame
+resources and releases pyglet's tracking afterward. Supply ``present`` and
+``done_current`` callbacks only when pyglet should present or release the
+native context. Frames cannot nest, and GL state is not saved or restored.
+
+The default camera is ``None``. Set shader matrices and the viewport yourself,
+or assign ``context.camera``. ``Camera2D`` and ``Camera3D`` accept a wrapper
+providing ``context``, ``get_size()`` and ``get_framebuffer_size()``. Keep it
+alive and forward resize events, or use ``register_handlers=False`` and
+update the camera viewport explicitly.
+
+Before native context destruction, call ``set_current()``, delete pyglet GPU
+resources, then call ``context.destroy()``. If the native context is already
+lost, use ``context.invalidate()`` instead. ``context_share`` describes
+sharing already established externally; it does not create native sharing.
+
+For a toolkit example, see ``contrib/qt_sprite_preview.py``, which integrates
+with Qt's ``QOpenGLWidget``, including cameras, resizing and cleanup.

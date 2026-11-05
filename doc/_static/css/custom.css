@@ -11,7 +11,16 @@
 
 /* Make class boxes full-width, with view-source and header links right-aligned. */
 .py.class > .sig.sig-object.py:first-of-type {
+    color: #404040;
     width: 100%;
+}
+.py.class > .sig.sig-object.py:first-of-type > .property {
+  color: #2980b9;
+}
+.py.class > .sig.sig-object.py:first-of-type .sig-param,
+.py.class > .sig.sig-object.py:first-of-type .sig-paren,
+.py.class > .sig.sig-object.py:first-of-type .sig-return-icon {
+  color: #404040;
 }
 .py.class > .sig.sig-object.py:first-of-type .viewcode-link {
   display: inline-flex;

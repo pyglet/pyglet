@@ -19,7 +19,6 @@ Classes
 -------
 
 .. autoclass:: Window
-  :show-inheritance:
 
   .. rubric:: Methods
 
@@ -28,7 +27,6 @@ Classes
   .. automethod:: close
   .. automethod:: dispatch_event
   .. automethod:: dispatch_events
-  .. automethod:: draw_mouse_cursor
   .. automethod:: flip
   .. automethod:: get_framebuffer_size
   .. automethod:: get_location

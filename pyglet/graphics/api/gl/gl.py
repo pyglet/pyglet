@@ -10,7 +10,7 @@ from ctypes import (
 )
 from pyglet.graphics.api.gl.lib import link_GL as _link_function
 from pyglet.graphics.api.gl.lib import link_GL_proxy as _link_function_proxy
-from pyglet.graphics.api.gl.lib import c_ptrdiff_t
+from pyglet.graphics.api.gl.lib import GLLinkFunction, c_ptrdiff_t
 
 class struct___GLsync(Structure):
     __slots__ = [
@@ -1707,7 +1707,8 @@ GL_TIMEOUT_IGNORED = 18446744073709551615
 class GLFunctions:
     """Functions linked for an active GL context."""
 
-    def __init__(self) -> None:
+    def __init__(self, link_function: GLLinkFunction = _link_function) -> None:
+        _link_function = link_function
         self.glActiveProgramEXT = _link_function('glActiveProgramEXT', None, [GLuint], requires=None)
         self.glActiveShaderProgram = _link_function('glActiveShaderProgram', None, [GLuint, GLuint], requires='OpenGL 3.1')
         self.glActiveShaderProgramEXT = _link_function('glActiveShaderProgramEXT', None, [GLuint, GLuint], requires=None)

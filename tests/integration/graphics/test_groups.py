@@ -1,11 +1,13 @@
 import ctypes
+import gc
+import weakref
 from dataclasses import dataclass
 from typing import TypedDict
 
 import pytest
 import pyglet
 import pyglet.graphics.draw as graphics_draw
-from pyglet.enums import CompareOp, GeometryMode
+from pyglet.enums import BlendFactor, CompareOp, GeometryMode
 from pyglet.graphics.state import State, Viewport
 
 
@@ -285,6 +287,33 @@ def test_group_ordering(test_window):
     assert ordered == [low_group, high_group]
 
 
+def test_group_ordering_is_preserved_across_multiple_domains(test_window):
+    """Every domain is drawn for one ordered group before the next group."""
+    batch = pyglet.graphics.Batch()
+    first_group = pyglet.graphics.Group(order=0)
+    second_group = pyglet.graphics.Group(order=1)
+    batch._add_group(second_group)  # noqa: SLF001
+    batch._add_group(first_group)  # noqa: SLF001
+
+    first_domain = _FakeDomain({first_group: _FakeBucket(), second_group: _FakeBucket()})
+    second_domain = _FakeDomain({first_group: _FakeBucket(), second_group: _FakeBucket()})
+    first_key = False, False, GeometryMode.TRIANGLES, object(), object()
+    second_key = False, False, GeometryMode.LINES, object(), object()
+    batch._domain_registry[first_key] = first_domain  # noqa: SLF001
+    batch._domain_registry[second_key] = second_domain  # noqa: SLF001
+
+    assert batch._create_draw_list() == [  # noqa: SLF001
+        (None, "set", first_group),
+        (first_domain, GeometryMode.TRIANGLES, first_group),
+        (second_domain, GeometryMode.LINES, first_group),
+        (None, "unset", first_group),
+        (None, "set", second_group),
+        (first_domain, GeometryMode.TRIANGLES, second_group),
+        (second_domain, GeometryMode.LINES, second_group),
+        (None, "unset", second_group),
+    ]
+
+
 def test_group_consolidation(test_window):
     """Make sure the same groups consolidate properly."""
     batch = pyglet.graphics.Batch()
@@ -369,8 +398,9 @@ def test_similar_group_equal_comparison():
 
 def test_similar_group_equal_comparison_inherit():
     """Same as above, but groups that added their state within the group creation."""
-    group1 = GroupWithSimilarState()
-    group2 = GroupWithSimilarState()
+    # Compare independently constructed state rather than a constructor cache hit.
+    group1 = type.__call__(GroupWithSimilarState)
+    group2 = type.__call__(GroupWithSimilarState)
 
     assert group2 == group1
     assert group2 is not group1
@@ -538,8 +568,8 @@ def test_group_viewport_state_uses_mutable_provider():
 
 def test_group_custom_state_comparison():
     """Ensure states that aren't dataclasses will not equal each other or rendering may break."""
-    group1 = GroupWithUniqueState()
-    group2 = GroupWithUniqueState()
+    group1 = type.__call__(GroupWithUniqueState)
+    group2 = type.__call__(GroupWithUniqueState)
 
     assert group2 != group1
     assert group2 is not group1
@@ -730,3 +760,256 @@ def test_group_persistence_deletion(test_window):
     assert group in batch.top_groups
     assert domain in batch._domain_registry.values()
     assert domain.has_bucket(group) == True
+
+
+def test_base_group_metaclass_is_inherited_without_repeating_it():
+    calls = []
+
+    class ConfiguredGroup(pyglet.graphics.Group):
+        def __init__(self, value, parent=None):
+            calls.append(value)
+            super().__init__(parent=parent)
+            self.set_state(CollidingState(value))
+
+    class InheritedGroup(ConfiguredGroup):
+        pass
+
+    parent = pyglet.graphics.Group()
+    first = InheritedGroup(1, parent)
+    assert InheritedGroup(1, parent) is first
+    assert calls == [1]
+    assert ConfiguredGroup(1, parent) is not first
+    assert InheritedGroup(2, parent) is not first
+    assert InheritedGroup(1, pyglet.graphics.Group()) is not first
+
+
+def test_base_group_builders_remain_independent():
+    class BuilderGroup(pyglet.graphics.Group):
+        pass
+
+    for group_class in (pyglet.graphics.Group, BuilderGroup):
+        first, second = group_class(), group_class()
+        first.set_state(SameState())
+        second.set_state(OtherSameState())
+        assert first is not second
+        assert first.states != second.states
+
+
+def test_shapes_share_groups_without_sharing_vertex_data(test_window):
+    batch = pyglet.graphics.Batch()
+    first_parent, second_parent = pyglet.graphics.Group(), pyglet.graphics.Group()
+    shapes = [
+        pyglet.shapes.Rectangle(0, 0, 10, 10, batch=batch, group=first_parent),
+        pyglet.shapes.Circle(20, 20, 5, batch=batch, group=first_parent),
+        pyglet.shapes.Rectangle(0, 0, 10, 10, batch=batch, group=second_parent),
+    ]
+    try:
+        assert shapes[0]._group is shapes[1]._group
+        assert shapes[0]._group is not shapes[2]._group
+        shapes[0].color = (255, 0, 0)
+        assert tuple(shapes[0]._vertex_list.colors[:4]) == (255, 0, 0, 255)
+        assert tuple(shapes[1]._vertex_list.colors[:4]) == (255, 255, 255, 255)
+        batch.draw()
+    finally:
+        for shape in shapes:
+            shape.delete()
+
+
+def test_sprite_metaclass_skips_subclass_allocation_and_initialization(test_window):
+    calls = []
+
+    class CustomGroup(pyglet.sprite.SpriteGroup):
+        def __new__(cls, *args, **kwargs):
+            calls.append("new")
+            return super().__new__(cls)
+
+        def __init__(self, *args, tag, depth=None, **kwargs):
+            super().__init__(*args, **kwargs)
+            calls.append(tag)
+            if depth is not None:
+                self.set_depth_test(depth)
+
+    args = (test_image.get_texture(), BlendFactor.SRC_ALPHA,
+            BlendFactor.ONE_MINUS_SRC_ALPHA, pyglet.sprite.get_default_shader())
+    first = CustomGroup(*args, tag="first", depth=CompareOp.LESS)
+    assert CustomGroup(*args, depth=CompareOp.LESS, tag="first") is first
+    assert calls == ["new", "first"]
+    assert type(first) is CustomGroup
+    other = CustomGroup(*args, tag="first")
+    assert other is not first
+    assert len(first.states) == len(other.states) + 1
+    assert CustomGroup(*args, tag="other") is not first
+
+
+def test_sprite_metaclass_separates_parents_and_reuses_resource_keys(test_window):
+    texture = test_image.get_texture()
+    program = pyglet.sprite.get_default_shader()
+    factors = BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA
+    first_parent, second_parent = pyglet.graphics.Group(), pyglet.graphics.Group()
+    first = pyglet.sprite.SpriteGroup(texture, *factors, program, first_parent)
+    assert pyglet.sprite.SpriteGroup(texture, *factors, program, second_parent) is not first
+    assert pyglet.sprite.SpriteGroup(test_image2.get_texture(), *factors, program, first_parent) is not first
+    assert pyglet.sprite.SpriteGroup(texture, BlendFactor.ONE, factors[1], program, first_parent) is not first
+    assert pyglet.sprite.SpriteGroup(texture, *factors, pyglet.shapes.get_default_shader(), first_parent) is not first
+    region = texture.get_region(0, 0, 1, 1)
+    assert pyglet.sprite.SpriteGroup(region, *factors, program, first_parent) is first
+
+
+def test_sprite_metaclass_weak_cache_and_mutable_payload_identity(test_window):
+    class CustomGroup(pyglet.sprite.SpriteGroup):
+        def __init__(self, *args, payload, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.payload = payload
+
+    args = (test_image.get_texture(), BlendFactor.SRC_ALPHA,
+            BlendFactor.ONE_MINUS_SRC_ALPHA, pyglet.sprite.get_default_shader())
+    payload = {"time": 0}
+    first = CustomGroup(*args, payload=payload)
+    assert CustomGroup(*args, payload={"time": 0}) is not first
+    payload["time"] = 1
+    assert CustomGroup(*args, payload=payload) is first
+    assert first.payload["time"] == 1
+    reference = weakref.ref(first)
+    del first
+    gc.collect()
+    assert reference() is None
+
+
+def test_sprite_metaclass_does_not_cache_failed_initialization(test_window):
+    attempts = []
+
+    class CustomGroup(pyglet.sprite.SpriteGroup):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            attempts.append(self)
+            if len(attempts) == 1:
+                raise ValueError("initialization failed")
+
+    args = (test_image.get_texture(), BlendFactor.SRC_ALPHA,
+            BlendFactor.ONE_MINUS_SRC_ALPHA, pyglet.sprite.get_default_shader())
+    with pytest.raises(ValueError, match="initialization failed"):
+        CustomGroup(*args)
+    group = CustomGroup(*args)
+    assert group is not attempts[0]
+    assert CustomGroup(*args) is group
+    assert len(attempts) == 2
+
+
+@pytest.mark.parametrize("use_keywords", [False, True])
+def test_sprite_metaclass_retains_identity_inputs_until_group_dies(test_window, use_keywords):
+    class Payload:
+        pass
+
+    class CustomGroup(pyglet.sprite.SpriteGroup):
+        def __init__(self, texture, blend_src, blend_dest, program, payload):
+            super().__init__(texture, blend_src, blend_dest, program)
+            # This constructor deliberately doesn't retain payload itself.
+
+    args = (test_image.get_texture(), BlendFactor.SRC_ALPHA,
+            BlendFactor.ONE_MINUS_SRC_ALPHA, pyglet.sprite.get_default_shader())
+
+    def construct(value):
+        return CustomGroup(*args, payload=value) if use_keywords else CustomGroup(*args, value)
+
+    payload = Payload()
+    payload_ref = weakref.ref(payload)
+    group = construct(payload)
+    group_ref = weakref.ref(group)
+    del payload
+    gc.collect()
+    assert payload_ref() is not None
+    assert construct(payload_ref()) is group
+    del group
+    gc.collect()
+    assert group_ref() is None
+    assert payload_ref() is None
+
+
+@pytest.mark.parametrize("use_keywords", [False, True])
+def test_sprite_metaclass_collects_input_cycles(test_window, use_keywords):
+    class Payload:
+        pass
+
+    class CustomGroup(pyglet.sprite.SpriteGroup):
+        def __init__(self, texture, blend_src, blend_dest, program, payload):
+            super().__init__(texture, blend_src, blend_dest, program)
+
+    args = (test_image.get_texture(), BlendFactor.SRC_ALPHA,
+            BlendFactor.ONE_MINUS_SRC_ALPHA, pyglet.sprite.get_default_shader())
+    payload = Payload()
+    group = CustomGroup(*args, payload=payload) if use_keywords else CustomGroup(*args, payload)
+    payload.group = group
+    group_ref, payload_ref = weakref.ref(group), weakref.ref(payload)
+    del group, payload
+    gc.collect()
+    assert group_ref() is None
+    assert payload_ref() is None
+
+
+def test_sprite_metaclass_tuple_inputs_keep_identity_and_value_types(test_window):
+    class CustomGroup(pyglet.sprite.SpriteGroup):
+        def __init__(self, *args, payload, **kwargs):
+            super().__init__(*args, **kwargs)
+
+    args = (test_image.get_texture(), BlendFactor.SRC_ALPHA,
+            BlendFactor.ONE_MINUS_SRC_ALPHA, pyglet.sprite.get_default_shader())
+    data = {"time": 0}
+    group = CustomGroup(*args, payload=(data, True))
+    assert CustomGroup(*args, payload=(data, True)) is group
+    assert CustomGroup(*args, payload=(data, 1)) is not group
+    assert CustomGroup(*args, payload=({"time": 0}, True)) is not group
+
+
+@pytest.mark.parametrize("difference", [None, "mapping", "program"])
+def test_group_shader_uniforms_consolidation(test_window, difference):
+    program = object()
+    uniforms = {"time": 0.0}
+    first, second = pyglet.graphics.Group(), pyglet.graphics.Group()
+    first.set_shader_uniforms(program, uniforms)
+    second.set_shader_uniforms(
+        object() if difference == "program" else program,
+        dict(uniforms) if difference == "mapping" else uniforms,
+    )
+
+    assert first is not second
+    assert (first == second) is (difference is None)
+    original_hashes = hash(first), hash(second)
+    batch, domain = _build_test_batch(first, second)
+    expected_groups = 1 if difference is None else 2
+    assert len(batch.group_map) == expected_groups
+    assert sum(entry[0] is domain for entry in batch._create_draw_list()) == expected_groups
+
+    uniforms["time"] = 1.0
+    assert (hash(first), hash(second)) == original_hashes
+    assert first in batch.group_map
+    assert second in batch.group_map
+    assert (first == second) is (difference is None)
+
+
+@pytest.mark.parametrize("difference", [None, "mapping", "program"])
+def test_group_shader_uniforms_optimization(test_window, difference):
+    # Ordered groups stay distinct, so the optimizer must compare their states.
+    program = {}
+    uniforms = {"time": 0.0}
+    middle_uniforms = {"time": 2.0} if difference == "mapping" else uniforms
+    middle_program = {} if difference == "program" else program
+    groups = [pyglet.graphics.Group(order=order) for order in range(3)]
+    for group, target, data in zip(groups, (program, middle_program, program),
+                                   (uniforms, middle_uniforms, uniforms)):
+        group.set_shader_uniforms(target, data)
+    state_type = type(groups[0].states[0])
+    batch, _domain = _build_test_batch(*groups)
+    calls = batch._optimize_draw_list(batch._create_draw_list())
+    uniform_calls = [call for call in calls if isinstance(getattr(call, "__self__", None), state_type)]
+
+    assert len(uniform_calls) == (1 if difference is None else 3)
+    for value in (0.0, 4.0):
+        # Reusing the compiled calls must read the current mapping each frame.
+        uniforms["time"] = value
+        applied_values = []
+        for call in uniform_calls:
+            call(None)
+            applied_values.append(call.__self__.program["time"])
+        expected = [value] if difference is None else [value, 2.0 if difference == "mapping" else value, value]
+        assert applied_values == expected
+

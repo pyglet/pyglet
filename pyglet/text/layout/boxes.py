@@ -5,12 +5,11 @@ from __future__ import annotations
 import re
 import sys
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, NamedTuple, Pattern, Protocol, Sequence
+from typing import TYPE_CHECKING, Iterable, NamedTuple, Pattern, Protocol, Sequence, cast
 
 from pyglet.enums import GeometryMode
-from pyglet.font.base import GlyphPosition
 from pyglet.text import runlist
-from pyglet.text.effects import LinearGradient
+from pyglet.text.effects import DropShadow, LinearGradient
 
 _VertexData = dict[str, Sequence[float | int | bool]]
 
@@ -33,6 +32,7 @@ class _DecorationGeometry(NamedTuple):
 
 
 if TYPE_CHECKING:
+    from pyglet.font.base import GlyphPosition
     from pyglet.customtypes import HorizontalAlign
     from pyglet.font.base import Font, Glyph
     from pyglet.graphics import Texture
@@ -55,6 +55,8 @@ class _LayoutVertexList(Protocol):
     count: int
 
     def delete(self) -> None: ...
+
+    def set_attribute_data(self, name: str, data: Sequence[float | int | bool]) -> None: ...
 
 
 _distance_re: Pattern[str] = re.compile(r"([-0-9.]+)([a-zA-Z]+)")
@@ -93,7 +95,7 @@ def _parse_distance(distance: str | float, dpi: int) -> int:
 
 class _Line:
     boxes: list[_AbstractBox]
-    vertex_lists: list[VertexList]
+    vertex_lists: list[VertexList | _LayoutVertexList]
     start: int
 
     align: HorizontalAlign = "left"
@@ -109,8 +111,8 @@ class _Line:
     paragraph_begin: bool = False
     paragraph_end: bool = False
 
-    x: int
-    y: int
+    x: float
+    y: float
 
     def __init__(self, start: int) -> None:
         self.start = start
@@ -144,16 +146,18 @@ class _Line:
 
 
 class _LayoutContext:
+    decoration_iter: runlist.AbstractRunIterator | None
     def __init__(
         self,
         layout: TextLayout,
         document: AbstractDocument,
-        colors_iter: RunIterator,
+        colors_iter: AbstractRunIterator,
         background_iter: AbstractRunIterator,
     ) -> None:
         self.layout = layout
         self.colors_iter = colors_iter
         self.stroke_iter = document.get_style_runs("stroke") if document.has_style_run("stroke") else None
+        self.decoration_iter = None
         if self._uses_background_override() or any(
             document.has_style_run(attribute) for attribute in ("background_color", "underline", "strikethrough")
         ):
@@ -175,7 +179,7 @@ class _LayoutContext:
         return False
 
     @abstractmethod
-    def add_list(self, vertex_list: VertexList) -> None: ...
+    def add_list(self, vertex_list: _LayoutVertexList) -> None: ...
 
     @abstractmethod
     def add_box(self, box: _AbstractBox) -> None: ...
@@ -186,14 +190,14 @@ class _StaticLayoutContext(_LayoutContext):
         self,
         layout: TextLayout,
         document: AbstractDocument,
-        colors_iter: RunIterator,
+        colors_iter: AbstractRunIterator,
         background_iter: AbstractRunIterator,
     ) -> None:
         super().__init__(layout, document, colors_iter, background_iter)
         self.vertex_lists = layout._vertex_lists  # noqa: SLF001
         self.boxes = layout._boxes  # noqa: SLF001
 
-    def add_list(self, vertex_list: _LayoutVertexList) -> None:
+    def add_list(self, vertex_list: _LayoutVertexList) -> None:  # type: ignore[override]
         self.vertex_lists.append(vertex_list)
 
     def add_box(self, box: _AbstractBox) -> None:
@@ -264,7 +268,7 @@ class _AbstractBox(ABC):
 class _GlyphBox(_AbstractBox):
     owner: Texture
     font: Font
-    glyphs: list[tuple[int, Glyph, GlyphPosition]]
+    glyphs: list[tuple[float, Glyph, GlyphPosition]]
     advance: int
     vertex_lists: list[_LayoutVertexList]
     _glyph_vertex_list: _LayoutVertexList | None
@@ -273,7 +277,7 @@ class _GlyphBox(_AbstractBox):
         self,
         owner: Texture,
         font: Font,
-        glyphs: list[tuple[int, Glyph, GlyphPosition]],
+        glyphs: list[tuple[float, Glyph, GlyphPosition]],
     ) -> None:
         """Create a run of glyphs sharing the same texture.
 
@@ -285,8 +289,6 @@ class _GlyphBox(_AbstractBox):
             glyphs:
                 Pairs of ``(kern, glyph)``, where ``kern`` gives horizontal
                 displacement of the glyph in pixels (typically 0).
-            offsets:
-                A list of all position transformations done to each glyph.
         """
         advance = sum(self._glyph_advance(kern, glyph, glyph_pos) for kern, glyph, glyph_pos in glyphs)
         super().__init__(font.ascent, font.descent, advance, len(glyphs))
@@ -310,11 +312,11 @@ class _GlyphBox(_AbstractBox):
         span: float,
     ) -> tuple[int, int, int, int]:
         t = 0.0 if span == 0 else min(max((position - start) / span, 0.0), 1.0)
-        return tuple(round(a + (b - a) * t) for a, b in zip(gradient.start, gradient.end, strict=True))
+        return tuple(round(a + (b - a) * t) for a, b in zip(gradient.start, gradient.end, strict=True))  # type: ignore[return-value]
 
     def _add_vertex_list(self, vertex_list: _LayoutVertexList | VertexList, context: _LayoutContext) -> None:
-        self.vertex_lists.append(vertex_list)
-        context.add_list(vertex_list)
+        self.vertex_lists.append(vertex_list)  # type: ignore[arg-type]
+        context.add_list(vertex_list)  # type: ignore[arg-type]
 
     def _create_glyph_geometry(
         self,
@@ -322,14 +324,14 @@ class _GlyphBox(_AbstractBox):
         start_index: int,
         line_x: float,
         line_y: float,
-        context: _LayoutContext,
+        baseline_runs: Iterable[tuple[int, int, str | float | None]],
     ) -> tuple[list[float], list[float], int]:
         """Build the position and texture attributes for the fill glyphs."""
-        vertices = []
-        tex_coords = []
+        vertices: list[float] = []
+        tex_coords: list[float] = []
         baseline = 0
         x1 = round(line_x)
-        for start, end, baseline_ in context.baseline_iter.ranges(start_index, start_index + self.length):
+        for start, end, baseline_ in baseline_runs:
             baseline = layout._parse_distance(baseline_) or 0  # noqa: SLF001
             glyphs = self.glyphs[start - start_index : end - start_index]
             assert len(glyphs) == end - start
@@ -392,7 +394,7 @@ class _GlyphBox(_AbstractBox):
             left_edge = vertices[start_glyph * 12]
             right_edge = vertices[(end_glyph - 1) * 12 + 6]
             span = right_edge - left_edge
-            colors = []
+            colors: list[int] = []
             for glyph_idx in range(start_glyph, end_glyph):
                 left = vertices[glyph_idx * 12]
                 right = vertices[glyph_idx * 12 + 6]
@@ -441,22 +443,23 @@ class _GlyphBox(_AbstractBox):
         translation = vertex_data["translation"]
         return vertex_data | {"translation": (*translation[:3], layout.get_depth_offset(layer)) * vertex_count}
 
-    def _place_shadow(
+    def _create_shadow_data(
         self,
         layout: TextLayout,
         start_index: int,
         vertices: list[float],
-        indices: list[int],
         vertex_data: _VertexData,
-        context: _LayoutContext,
-    ) -> None:
+        shadow_ranges: Sequence[tuple[int, int, DropShadow | None]],
+        stroked_glyphs: set[int],
+    ) -> _VertexData | None:
         # A shadow needs no additional glyph rendering: it uses the same atlas
         # texture and geometry, at an offset below the fill layer.
-        if context.shadow_iter is None:
-            return
+        if not shadow_ranges:
+            return None
         shadow_colors = None
         shadow_vertices = None
-        for start, end, shadow in context.shadow_iter.ranges(start_index, start_index + self.length):
+        has_visible_shadow = False
+        for start, end, shadow in shadow_ranges:
             character_count = end - start
             if shadow is None:
                 if shadow_colors is not None:
@@ -468,17 +471,25 @@ class _GlyphBox(_AbstractBox):
             if shadow_colors is None:
                 shadow_colors = list((0, 0, 0, 0) * ((start - start_index) * 4))
                 shadow_vertices = list(vertices)
-            shadow_colors.extend(
-                self._create_range_colors(shadow.color, start, end, start_index, vertices, "Shadow"),
+            assert shadow_vertices is not None
+            range_colors = self._create_range_colors(shadow.color, start, end, start_index, vertices, "Shadow")
+            for glyph_index in stroked_glyphs:
+                if start <= start_index + glyph_index < end:
+                    color_start = (glyph_index - (start - start_index)) * 16
+                    range_colors[color_start:color_start + 16] = (0, 0, 0, 0) * 4
+            has_visible_shadow |= any(
+                glyph_index not in stroked_glyphs
+                for glyph_index in range(start - start_index, end - start_index)
             )
+            shadow_colors.extend(range_colors)
             offset_start = (start - start_index) * 12
             offset_end = offset_start + character_count * 12
             for vertex_index in range(offset_start, offset_end, 3):
                 shadow_vertices[vertex_index] += shadow.offset[0]
                 shadow_vertices[vertex_index + 1] += shadow.offset[1]
 
-        if shadow_colors is None:
-            return
+        if shadow_colors is None or not has_visible_shadow:
+            return None
 
         assert shadow_vertices is not None
         shadow_data = self._set_depth_layer(
@@ -487,15 +498,7 @@ class _GlyphBox(_AbstractBox):
             self.length * 4,
             _SHADOW_DEPTH_LAYER,
         )
-        shadow_list = layout.program.vertex_list_indexed(
-            self.length * 4,
-            GeometryMode.TRIANGLES,
-            indices,
-            layout.batch,
-            layout.get_effect_group(self.owner, order=1 if layout.depth_sorting else 0),
-            **shadow_data,
-        )
-        self._add_vertex_list(shadow_list, context)
+        return shadow_data
 
     def _place_strokes(
         self,
@@ -511,13 +514,17 @@ class _GlyphBox(_AbstractBox):
         anchor_x: float,
         anchor_y: float,
         context: _LayoutContext,
-    ) -> None:
+        shadow_ranges: Sequence[tuple[int, int, DropShadow | None]],
+    ) -> tuple[set[int], list[_LayoutVertexList | VertexList]]:
         # Supported font backends may provide a second, stroked glyph mask. It is drawn
         # in a lower-order group so the regular fill glyph remains on top.
         if context.stroke_iter is None:
-            return
+            return set(), []
         stroke_x = round(line_x)
         glyph_index = 0
+        stroked_glyphs = set()
+        stroke_lists: list[_LayoutVertexList | VertexList] = []
+        shadow_range_index = 0
         for start, end, stroke in context.stroke_iter.ranges(start_index, start_index + self.length):
             if stroke is None:
                 continue
@@ -541,6 +548,7 @@ class _GlyphBox(_AbstractBox):
                 stroke_x += round(kern)
                 stroke_glyph = self.font.get_stroke_glyph(glyph, stroke.size, stroke.join)
                 if stroke_glyph is not None:
+                    stroked_glyphs.add(glyph_index)
                     if gradient_span is not None:
                         left = vertices[glyph_index * 12]
                         right = vertices[glyph_index * 12 + 6]
@@ -585,17 +593,72 @@ class _GlyphBox(_AbstractBox):
                         4,
                         _STROKE_DEPTH_LAYER,
                     )
+                    stroke_group = layout.get_effect_group(
+                        stroke_glyph.owner,
+                        order=0.5,  # type: ignore[assignment]
+                    )
+
+                    document_index = start_index + glyph_index
+                    while shadow_range_index < len(shadow_ranges) and shadow_ranges[shadow_range_index][1] <= document_index:
+                        shadow_range_index += 1
+                    if shadow_range_index < len(shadow_ranges):
+                        shadow_start, shadow_end, shadow = shadow_ranges[shadow_range_index]
+                        if shadow is not None and shadow_start <= document_index < shadow_end:
+                            if len(shadow.offset) != 2:
+                                msg = f"Shadow offset requires 2 values (X, Y). Value received: {shadow.offset}"
+                                raise ValueError(msg)
+                            shadow_colors = self._create_range_colors(
+                                shadow.color,
+                                shadow_start,
+                                shadow_end,
+                                start_index,
+                                vertices,
+                                "Shadow",
+                            )
+                            shadow_color_start = (glyph_index - (shadow_start - start_index)) * 16
+                            shadow_vertices = list(stroke_vertices)
+                            for vertex_index in range(0, len(shadow_vertices), 3):
+                                shadow_vertices[vertex_index] += shadow.offset[0]
+                                shadow_vertices[vertex_index + 1] += shadow.offset[1]
+                            shadow_data = self._create_vertex_data(
+                                layout,
+                                shadow_vertices,
+                                stroke_glyph.tex_coords,
+                                shadow_colors[shadow_color_start:shadow_color_start + 16],
+                                translation,
+                                rotation,
+                                visible,
+                                anchor_x,
+                                anchor_y,
+                                4,
+                            )
+                            shadow_data = self._set_depth_layer(
+                                layout,
+                                shadow_data,
+                                4,
+                                _SHADOW_DEPTH_LAYER,
+                            )
+                            shadow_list = layout.program.vertex_list_indexed(
+                                4,
+                                GeometryMode.TRIANGLES,
+                                (0, 1, 2, 0, 2, 3),
+                                layout.batch,
+                                stroke_group,
+                                **shadow_data,
+                            )
+                            stroke_lists.append(shadow_list)
                     stroke_list = layout.program.vertex_list_indexed(
                         4,
                         GeometryMode.TRIANGLES,
                         (0, 1, 2, 0, 2, 3),
                         layout.batch,
-                        layout.get_effect_group(stroke_glyph.owner, order=2 if layout.depth_sorting else 0),
+                        stroke_group,
                         **stroke_data,
                     )
-                    self._add_vertex_list(stroke_list, context)
+                    stroke_lists.append(stroke_list)
                 stroke_x += round(glyph.advance + glyph_pos.x_advance)
             glyph_index = range_end_glyph
+        return stroked_glyphs, stroke_lists
 
     def _create_decoration_geometry(
         self,
@@ -603,7 +666,7 @@ class _GlyphBox(_AbstractBox):
         line_x: float,
         line_y: float,
         baseline: int,
-        decoration_iter: runlist.ZipRunIterator,
+        decoration_iter: runlist.AbstractRunIterator,
     ) -> _DecorationGeometry | None:
         # Decoration (background color, underline, and strikethrough)
         # Decorations are geometry only and without textures.
@@ -813,21 +876,28 @@ class _GlyphBox(_AbstractBox):
         anchor_x: float,
         anchor_y: float,
         context: _LayoutContext,
+        *,
+        reuse_vertex_list: _LayoutVertexList | None = None,
     ) -> None:
-        """Create the initial attributes and vertex lists for this glyph run."""
+        """Create or update the attributes and vertex lists for this glyph run."""
         assert self.glyphs
         assert not self.vertex_lists
+        assert reuse_vertex_list is None or (
+            context.shadow_iter is None and context.stroke_iter is None and context.decoration_iter is None
+        )
 
         try:
             group = layout.group_cache[self.owner]
         except KeyError:
-            group = layout.group_class(self.owner, layout.program, order=3 if layout.depth_sorting else 1, parent=layout.group)
-            layout._set_depth_test(group)  # noqa: SLF001
+            group = layout._create_group(layout.group_class, self.owner, layout.program, order=1)  # noqa: SLF001
             layout.group_cache[self.owner] = group
 
-        vertices, tex_coords, baseline = self._create_glyph_geometry(layout, i, line_x, line_y, context)
+        vertices, tex_coords, baseline = self._create_glyph_geometry(
+            layout, i, line_x, line_y, context.baseline_iter.ranges(i, i + self.length),
+        )
         colors = self._create_glyph_colors(i, vertices, context)
-        indices = [element + glyph_index * 4 for glyph_index in range(self.length) for element in (0, 1, 2, 0, 2, 3)]
+        indices = ([element + glyph_index * 4 for glyph_index in range(self.length) for element in (0, 1, 2, 0, 2, 3)]
+                   if reuse_vertex_list is None else ())
         translation = (x, y, z)
         vertex_data = self._create_vertex_data(
             layout,
@@ -842,20 +912,8 @@ class _GlyphBox(_AbstractBox):
             self.length * 4,
         )
 
-        self._place_shadow(layout, i, vertices, indices, vertex_data, context)
-
-        vertex_list = layout.program.vertex_list_indexed(
-            self.length * 4,
-            GeometryMode.TRIANGLES,
-            indices,
-            layout.batch,
-            group,
-            **vertex_data,
-        )
-        self._glyph_vertex_list = vertex_list
-        self._add_vertex_list(vertex_list, context)
-
-        self._place_strokes(
+        shadow_ranges = tuple(context.shadow_iter.ranges(i, i + self.length)) if context.shadow_iter else ()
+        stroked_glyphs, stroke_lists = self._place_strokes(
             layout,
             i,
             line_x,
@@ -868,7 +926,51 @@ class _GlyphBox(_AbstractBox):
             anchor_x,
             anchor_y,
             context,
+            shadow_ranges,
         )
+
+        shadow_data = self._create_shadow_data(
+            layout,
+            i,
+            vertices,
+            vertex_data,
+            shadow_ranges,
+            stroked_glyphs,
+        )
+        if shadow_data is not None:
+            shadow_group = (
+                layout.get_effect_group(self.owner, order=0.5)  # type: ignore[assignment]
+                if layout._effect_shader is not None  # noqa: SLF001
+                else group
+            )
+            shadow_list = layout.program.vertex_list_indexed(
+                self.length * 4,
+                GeometryMode.TRIANGLES,
+                indices,
+                layout.batch,
+                shadow_group,
+                **shadow_data,
+            )
+            self._add_vertex_list(shadow_list, context)
+
+        if reuse_vertex_list is None:
+            vertex_list = layout.program.vertex_list_indexed(
+                self.length * 4,
+                GeometryMode.TRIANGLES,
+                indices,
+                layout.batch,
+                group,
+                **vertex_data,
+            )
+        else:
+            vertex_list = reuse_vertex_list
+            for name, values in vertex_data.items():
+                vertex_list.set_attribute_data(name, values)
+        self._glyph_vertex_list = vertex_list  # type: ignore[assignment]
+        self._add_vertex_list(vertex_list, context)
+        for stroke_list in stroke_lists:
+            self._add_vertex_list(stroke_list, context)
+
         self._place_decorations(
             layout,
             i,
@@ -882,6 +984,23 @@ class _GlyphBox(_AbstractBox):
             anchor_y,
             context,
         )
+
+    def update_placement(self, layout: TextLayout, line_x: float, line_y: float,
+                         anchor_x: float, anchor_y: float, baseline: str | float | None,
+                         color: tuple[int, int, int, int] | LinearGradient | None) -> None:
+        """Update a retained plain glyph run after reshaping or a style change."""
+        vertices, tex_coords, _ = self._create_glyph_geometry(
+            layout, 0, line_x, line_y, ((0, self.length, baseline),),
+        )
+        if color is None:
+            color = (0, 0, 0, 255)
+        colors = self._create_range_colors(color, 0, self.length, 0, vertices, "Color")
+        vertex_list = self._glyph_vertex_list
+        assert vertex_list is not None
+        vertex_list.set_attribute_data("position", vertices)
+        vertex_list.set_attribute_data("tex_coords", tex_coords)
+        vertex_list.set_attribute_data("colors", colors)
+        vertex_list.set_attribute_data("anchor", (anchor_x, anchor_y) * vertex_list.count)
 
     def update_translation(self, x: float, y: float, z: float) -> None:
         for _vertex_list in self.vertex_lists:

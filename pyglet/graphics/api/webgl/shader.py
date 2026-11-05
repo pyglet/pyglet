@@ -61,7 +61,7 @@ class GLException(Exception):
 if TYPE_CHECKING:
     from pyglet.customtypes import CTypesPointer, DataTypes, CType
     from pyglet.graphics import UnsupportedBackendError
-    from pyglet.graphics.api.webgl.context import OpenGLSurfaceContext
+    from pyglet.graphics.api.webgl.context import WebGL2SurfaceContext
     from pyglet.graphics.api.webgl.webgl_js import WebGL2RenderingContext, WebGLProgram, WebGLRenderingContext
 
 _debug_api_shaders = pyglet.options.debug_api_shaders
@@ -196,7 +196,7 @@ _gl_matrices: tuple[int, ...] = (
 
 
 class _Uniform(UniformBase):
-    _ctx: OpenGLSurfaceContext | NullContext
+    _ctx: WebGL2SurfaceContext | NullContext
     __slots__ = ("_ctx",)
 
     def __init__(self, program: int | WebGLProgram, name: str, uniform_type: int, size: int, location: int) -> None:
@@ -341,7 +341,7 @@ def compute_std140_offsets(uniforms):
 
 
 class WebGLUniformBlock(BaseUniformBlock):  # noqa: D101
-    ctx: OpenGLSurfaceContext | NullContext
+    ctx: WebGL2SurfaceContext | NullContext
     __slots__ = ('ctx',)
 
     def __init__(
@@ -537,7 +537,7 @@ def _introspect_uniforms(gl_ctx: WebGLRenderingContext, program_id: WebGLProgram
 
 
 def _introspect_uniform_blocks(
-    ctx: OpenGLSurfaceContext, program: WebGLShaderProgram | WebGLComputeShaderProgram,
+    ctx: WebGL2SurfaceContext, program: WebGLShaderProgram | WebGLComputeShaderProgram,
 ) -> dict[str, WebGLUniformBlock]:
     uniform_blocks = {}
     gl_ctx: WebGL2RenderingContext = ctx.gl
@@ -672,7 +672,7 @@ class WebGLShader(_AbstractShader):
     You can reuse a Shader object in multiple ShaderPrograms.
     """
 
-    _context: OpenGLSurfaceContext | NullContext
+    _context: WebGL2SurfaceContext | NullContext
     _id: WebGLShader | None
     type: ShaderType
 
@@ -778,7 +778,7 @@ class WebGLShaderProgram(ShaderProgram):
     """OpenGL shader program."""
 
     _id: WebGLProgram | None
-    _context: OpenGLSurfaceContext | NullContext
+    _context: WebGL2SurfaceContext | NullContext
     _uniforms: dict[str, _Uniform]
     _uniform_blocks: dict[str, WebGLUniformBlock]
 

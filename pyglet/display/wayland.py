@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from collections import namedtuple
+from ctypes import c_void_p, cast
 from threading import Event
 from typing import Literal
 
-from pyglet.libs.egl import egl, eglext
+from pyglet.libs.egl import egl
 from pyglet.libs.linux.wayland.client import Client
 
 from .base import Display, Screen, ScreenMode
@@ -41,11 +42,12 @@ class WaylandDisplay(Display):
         self.client = Client(*self._protocols)
         self.client.sync()
 
-        self.display_connection = egl.eglGetPlatformDisplay(eglext.EGL_PLATFORM_WAYLAND, self.client.wl_display_p, None)
+        self.display_connection = egl.eglGetPlatformDisplay(egl.EGL_PLATFORM_WAYLAND_EXT, self.client.wl_display_p, None)
 
         assert egl.eglInitialize(self.display_connection, None, None) == egl.EGL_TRUE, "Failed to initialize Display"
 
         self._screens = []
+        self._output_screens = {}
         for i, _ in enumerate(self.client.globals.get('wl_output', [])):
             # Initialize values to default
             self._geo = None
@@ -69,8 +71,14 @@ class WaylandDisplay(Display):
             self.client.sync()
             self._query_done.wait()
             # Make Screen instance with the now-filled-in values:
-            self._screens.append(WaylandScreen(self, self._geo, self._modes, self._scale, self._name, self._descript))
-            wl_output.release()
+            self._screens.append(
+                WaylandScreen(self, self._geo, self._modes, self._scale, self._name, self._descript, i == 0),
+            )
+            # Keep the output bound so wl_surface enter/leave events can refer to its proxy and be mapped back to the
+            # corresponding screen.
+            self._screens[-1]._wl_output = wl_output
+            ptr_value = cast(wl_output._proxy, c_void_p).value
+            self._output_screens[ptr_value] = self._screens[-1]
 
     # Start Wayland Event handlers
 
@@ -106,13 +114,8 @@ class WaylandDisplay(Display):
 
 class WaylandScreen(Screen):
 
-    def get_display_id(self) -> str | int:
-        return self.name
-
-    def get_monitor_name(self) -> str | Literal["Unknown"]:
-        return self.description
-
-    def __init__(self, display, geometry, modes, scale, name, description):
+    def __init__(self, display, geometry, modes, scale, name, description, is_primary):
+        self._is_primary = is_primary
         self.name = name
         self.description = description
         self._scale = scale
@@ -131,6 +134,16 @@ class WaylandScreen(Screen):
             self._dpi = scale
 
         super().__init__(display, self._geo.x, self._geo.y, _width_pixels, _height_pixels)
+
+    @property
+    def is_primary(self) -> bool:
+        return self._is_primary
+
+    def get_display_id(self) -> str | int:
+        return self.name
+
+    def get_monitor_name(self) -> str | Literal["Unknown"]:
+        return self.description
 
     def get_modes(self):
         return self._modes

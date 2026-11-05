@@ -72,6 +72,10 @@ class HeadlessScreen(Screen):
     def __init__(self, display, x, y, width, height):
         super().__init__(display, x, y, width, height)
 
+    @property
+    def is_primary(self) -> bool:
+        return True
+
     def get_modes(self):
         pass
 

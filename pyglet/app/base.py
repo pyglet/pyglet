@@ -7,13 +7,12 @@ from abc import ABC, abstractmethod
 from queue import Queue
 from typing import TYPE_CHECKING, Any, Callable
 
-from pyglet import app, clock, event
+from pyglet import app, clock, event, IS_DOC_BUILD
 
 if TYPE_CHECKING:
     from pyglet.event import EventDispatcher
     from pyglet.window import BaseWindow
 
-_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 
 class WindowDrawSource(ABC):
@@ -406,7 +405,7 @@ class EventLoop(event.EventDispatcher):
         if len(app.windows) == 0:
             self.exit()
 
-    if _is_pyglet_doc_run:
+    if IS_DOC_BUILD:
         # Events
 
         def on_window_close(self, window: BaseWindow) -> None:

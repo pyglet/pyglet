@@ -10,7 +10,7 @@ from ctypes import (
 )
 from pyglet.graphics.api.gl.lib import link_GL as _link_function
 from pyglet.graphics.api.gl.lib import link_GL_proxy as _link_function_proxy
-from pyglet.graphics.api.gl.lib import c_ptrdiff_t
+from pyglet.graphics.api.gl.lib import GLLinkFunction, c_ptrdiff_t
 
 class struct___GLsync(Structure):
     __slots__ = [

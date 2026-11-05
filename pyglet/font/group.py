@@ -2,10 +2,14 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import pyglet
 from pyglet.enums import Stretch, Style, Weight
 from pyglet.font import base
+
+if TYPE_CHECKING:
+    from pyglet.font import FontManager
 
 
 @dataclass(frozen=True)
@@ -130,6 +134,16 @@ class FontGroupInstance(base.Font):
         italic = "Italic" if self.style != "normal" else "Regular"
         return f"{self._group.name} ({int(self.size)}px {italic} w{self.weight} s{self.stretch} @{self.dpi}dpi)"
 
+    @classmethod
+    def add_font_data(cls, data: bytes, manager: FontManager) -> None:
+        """Font groups are composite fonts and cannot register font data."""
+        raise NotImplementedError
+
+    @classmethod
+    def have_font(cls, name: str) -> bool:  # noqa: ARG003
+        """Font groups do not represent an installed system font."""
+        return False
+
     def _resolve_child(self, family: str) -> base.Font:
         font = self._child_cache.get(family)
         if font is None:
@@ -171,10 +185,10 @@ class FontGroupInstance(base.Font):
             fnt = self._font_for_cluster(c)
             if fnt is None:
                 self._initialize_renderer()
-                gs = self._missing_glyph or self._glyph_renderer.render(" ")
-                gp = base.GlyphPosition(0, 0, 0, 0)
-                glyphs.append(gs)
-                offsets.append(gp)
+                gs: list[base.Glyph] = [self._missing_glyph or self._glyph_renderer.render(" ")]
+                gp: list[base.GlyphPosition] = [base.GlyphPosition(0, 0, 0, 0)]
+                glyphs.extend(gs)
+                offsets.extend(gp)
             else:
                 gs, gp = fnt.get_glyphs(c, shaping)
                 glyphs.extend(gs)

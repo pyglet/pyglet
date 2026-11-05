@@ -1,14 +1,11 @@
 from __future__ import annotations
 
-import sys
-
 import pyglet
 from pyglet import clock, event, graphics, image
 from pyglet.enums import Anchor, BlendFactor, GeometryMode
 from pyglet.graphics import Group
 from pyglet.graphics.draw import BatchDrawOptions, DrawContext
 
-_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 vertex_source = """#version 150
     in vec3 position;
@@ -820,7 +817,7 @@ class Sprite(event.EventDispatcher):
         except:
             pass
 
-    if _is_pyglet_doc_run:
+    if pyglet.IS_DOC_BUILD:
         def on_animation_end(self):
             """The sprite animation reached the final frame.
 

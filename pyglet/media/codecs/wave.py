@@ -62,7 +62,11 @@ class WaveSource(StreamingSource):
     def seek(self, timestamp: float) -> None:
         timestamp = max(0.0, min(timestamp, self._duration))
         position = int(timestamp / self._duration_per_frame)
-        self._wave.setpos(position)
+        self.seek_to_frame(position)
+
+    def seek_to_frame(self, frame: int) -> None:
+        """Seek to an exact PCM frame."""
+        self._wave.setpos(max(0, min(frame, self._num_frames)))
 
 
 #########################################

@@ -8,6 +8,8 @@ import os
 import sys
 import warnings
 
+IS_DOC_BUILD = os.environ.get("PYGLET_DOC_BUILD") == "1"
+
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Literal, Sequence
 
@@ -18,7 +20,7 @@ if TYPE_CHECKING:
     from typing import Any, Callable, ItemsView, Sized
 
 #: The release version
-version = '3.0.dev10'
+version = '3.0.dev11'
 __version__ = version
 
 MIN_PYTHON_VERSION = 3, 10

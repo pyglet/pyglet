@@ -9,7 +9,7 @@ from ctypes import (
     c_int, c_int64, c_short, c_ubyte, c_uint, c_uint64, c_ushort
 )
 from _ctypes import _Pointer
-from pyglet.graphics.api.gl.lib import c_ptrdiff_t
+from pyglet.graphics.api.gl.lib import GLLinkFunction, c_ptrdiff_t
 from typing import Any
 
 class struct___GLsync(Structure): ...

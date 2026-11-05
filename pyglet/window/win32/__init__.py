@@ -77,6 +77,7 @@ from pyglet.window import (
 
 if TYPE_CHECKING:
     from _ctypes import _Pointer
+    from pyglet.display.base import Screen
 
 # symbol,ctrl -> motion mapping
 _motion_map: dict[tuple[int, bool], int] = {
@@ -685,9 +686,10 @@ class Win32Window(BaseWindow):
     def maximize(self) -> None:
         _user32.ShowWindow(self._hwnd, constants.SW_MAXIMIZE)
 
-    def get_window_screen(self):
-        """ Gets the current screen the window is on.
-            If between monitors will retrieve the screen with the most screen space.
+    def get_current_screen(self) -> Screen:
+        """Return the monitor containing most of this window.
+
+        If the window is entirely offscreen, return the nearest monitor.
         """
         handle = _user32.MonitorFromWindow(self._hwnd, constants.MONITOR_DEFAULTTONEAREST)
         return [screen for screen in self.display.get_screens() if screen._handle == handle][0]

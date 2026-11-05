@@ -46,6 +46,29 @@ class GLLinkFunction(Protocol):
         ...
 
 
+def create_gl_linker(get_proc_address: Callable[[str], int | None]) -> GLLinkFunction:
+    """Build a context specific linker using an OpenGL proc address.
+
+    The resolver must handle both core and extension entry points and return
+    an integer address, or ``None``/zero for an unavailable function.
+
+    It is called only while the host context is current. No platform loader fallback
+    is used, so entry points cannot accidentally come from a different GL library.
+    """
+    function_type = ctypes.WINFUNCTYPE if pyglet.compat_platform in ('win32', 'cygwin') else ctypes.CFUNCTYPE
+
+    def link(name: str, restype: Any, argtypes: Any, requires: str | None = None,
+             suggestions: Sequence[str] | None = None) -> Callable[..., Any]:
+        address = get_proc_address(name)
+        if address in (None, 0, 1, 2, 3, -1, ctypes.c_void_p(-1).value):
+            return missing_function(name, requires, suggestions)
+        func = function_type(restype, *argtypes)(address)
+        decorate_function(func, name)
+        return func
+
+    return link
+
+
 def errcheck(result: Any, func: Callable, arguments: Sequence) -> Any:
     if _debug_api_trace:
         try:

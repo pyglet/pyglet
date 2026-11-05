@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 import warnings
 from typing import Sequence, TYPE_CHECKING
 
@@ -21,16 +20,14 @@ if TYPE_CHECKING:
     from pyglet.graphics.api.gl import OpenGLSurfaceContext
     from pyglet.window import Window
 
-_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 
 class OpenGLBackend(BackendGlobalObject):
     platform_func: WGLFunctions | None
-    gl_api: GraphicsAPI
+    graphics_api: GraphicsAPI
     current_context: OpenGLSurfaceContext | NullContext
 
-    def __init__(self, gl_api: GraphicsAPI = GraphicsAPI.OPENGL) -> None:
-        self.gl_api = gl_api
+    def __init__(self, graphics_api: GraphicsAPI = GraphicsAPI.OPENGL) -> None:
         self.initialized = False
         self.current_context = NullContext()
 
@@ -40,7 +37,7 @@ class OpenGLBackend(BackendGlobalObject):
         # "real" context's information to prevent any discrepencies.
         self.platform_func = None
         self.platform_exts = []
-        super().__init__()
+        super().__init__(graphics_api)
 
     def create_context(self, config: GLSurfaceConfig, shared: OpenGLSurfaceContext | None) -> OpenGLSurfaceContext:
         return config.create_context(self, shared)
@@ -58,16 +55,16 @@ class OpenGLBackend(BackendGlobalObject):
         """
         # On Windows if you specify GLES but set 3.3 as major/minor version, it will upgrade to a full context.
         # Version 3.2 needs to be specified explicitly.
-        if self.gl_api == GraphicsAPI.OPENGL_ES_3:
+        if self.graphics_api == GraphicsAPI.OPENGL_ES_3:
             # EAGL exposes OpenGL ES 3.0 on iOS. Other GLES 3 platforms can
             # use the newer 3.2 default.
             minor_version = 0 if pyglet.compat_platform == "ios" else 2
             configs = [
                 pyglet.config.OpenGLUserConfig(
-                    double_buffer=True, depth_size=24, major_version=3, minor_version=minor_version, api=self.gl_api,
+                    double_buffer=True, depth_size=24, major_version=3, minor_version=minor_version, api=self.graphics_api,
                 ),
                 pyglet.config.OpenGLUserConfig(
-                    double_buffer=True, depth_size=16, major_version=3, minor_version=minor_version, api=self.gl_api,
+                    double_buffer=True, depth_size=16, major_version=3, minor_version=minor_version, api=self.graphics_api,
                 ),
             ]
         else:

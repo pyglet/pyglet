@@ -140,6 +140,10 @@ class EventException(Exception):  # noqa: N818
     """An exception raised when an event handler could not be attached."""
 
 
+class HandlerMismatchException(TypeError, EventException):
+    """An exception raised when a handler has an invalid signature."""
+
+
 class EventDispatcher:
     """Generic event dispatcher interface.
 
@@ -159,8 +163,8 @@ class EventDispatcher:
         for suitable handlers.
         """
         if not hasattr(cls, 'event_types'):
-            cls.event_types = []  # type: ignore reportAttributeAccessIssue
-        cls.event_types.append(name)  # type: ignore reportAttributeAccessIssue
+            cls.event_types = []  # type: ignore[attr-defined]
+        cls.event_types.append(name)  # type: ignore[attr-defined]
         return name
 
     def push_handlers(self, *args: Any, **kwargs: Any) -> None:
@@ -179,10 +183,10 @@ class EventDispatcher:
             self._event_stack = []
 
         # Place dict full of new handlers at beginning of stack
-        self._event_stack.insert(0, {})  # type: ignore reportAttributeAccessIssue
+        self._event_stack.insert(0, {})  # type: ignore[attr-defined]
         self.set_handlers(*args, **kwargs)
 
-    def _get_handlers(self, args: list, kwargs: dict) -> Generator[tuple[str, Callable], None, None]:
+    def _get_handlers(self, args: tuple[Any, ...] | list[Any], kwargs: dict) -> Generator[tuple[str, Callable], None, None]:
         """Implement handler matching on arguments for set_handlers and remove_handlers."""
         for obj in args:
             if inspect.isroutine(obj):
@@ -371,7 +375,7 @@ class EventDispatcher:
 
         return False
 
-    def post_event(self, event_type: str, *args: Any) -> bool | None:
+    def post_event(self, event_type: str, *args: Any) -> None:
         """Post an event to the main application thread.
 
         Unlike the :py:meth:`~pyglet.event.EventDispatcher.dispatch_event`
@@ -402,11 +406,11 @@ class EventDispatcher:
         handler_varargs = argspecs.varargs
         handler_defaults = argspecs.defaults
 
-        n_handler_args = len(handler_args)
-
         # Remove "self" arg from handler if it's a bound method
         if inspect.ismethod(handler) and handler.__self__:
-            n_handler_args -= 1
+            handler_args.pop(0)
+
+        n_handler_args = len(handler_args)
 
         # Allow *args varargs to overspecify arguments
         if handler_varargs:
@@ -424,13 +428,10 @@ class EventDispatcher:
             else:
                 descr = repr(handler)
 
-            if 'self' in handler_args:
-                handler_args.remove('self')
-
             caller_name = f"{self.__class__.__name__}.{event_type}"
             msg = (f"The '{caller_name}' event was dispatched with {n_args} arguments:  {list(args)},\n"
                    f"but your handler {descr} is written to expect {n_handler_args} arguments: {handler_args}")
-            raise TypeError(msg)
+            raise HandlerMismatchException(msg)
 
         raise exception
 

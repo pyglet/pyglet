@@ -747,14 +747,78 @@ or add an additional event as described in the reference. For example::
 Gapless playback
 ----------------
 
-To play back multiple similar sources without any audible gaps,
-:py:class:`~pyglet.media.SourceGroup` is provided.
-A :py:class:`~pyglet.media.SourceGroup` can only contain media sources
-with identical audio or video format. First create an instance of
-:py:class:`~pyglet.media.SourceGroup`, and then add all desired additional
-sources with the :func:`~pyglet.media.SourceGroup.add` method.
-Afterwards, you can queue the :py:class:`~pyglet.media.SourceGroup`
-on a Player as if it was a single source.
+Use :py:class:`~pyglet.media.GaplessAudioPlayer` when one audio file should
+flow straight into the next without any audible gaps::
+
+    player = pyglet.media.GaplessAudioPlayer()
+    player.queue([
+        pyglet.media.load_audio('track-01.wav'),
+        pyglet.media.load_audio('track-02.wav'),
+    ])
+    player.play()
+
+All queued sources must be audio-only and use the same sample rate, channel
+count, and sample format. If the selected audio system cannot play sources
+without a gap, playback raises :py:class:`~pyglet.media.MediaException` when
+the player starts.
+
+Some compressed audio formats may introduce encoder delay or padding at
+the beginning or end of the decoded audio. MP3 is a common example.
+Gapless playback depends on whether the format, encoder, and decoder
+preserve and honor the metadata needed to remove those extra samples.
+
+For reliable gapless playback, lossless formats such as FLAC, or
+uncompressed PCM/WAV are recommended. Opus and Vorbis are also good
+choices when a compressed format is preferred.
+
+Looping a region
+----------------
+
+:py:class:`~pyglet.media.LoopingSource` lets part of a song repeat without
+restarting the entire file. Looping source separates three distinct
+areas of a track:
+
+* The **intro**, before ``loop_start``, plays once.
+* The region from ``loop_start`` up to ``loop_end`` repeats.
+* The **outro**, after ``loop_end``, plays when the repetitions are finished.
+
+Loop points can be given in seconds. This example plays the first two seconds,
+then repeats the section from 2 to 8 seconds forever::
+
+    source = pyglet.media.load_audio('music.wav')
+    looping = pyglet.media.LoopingSource(
+        source, loop_start=2.0, loop_end=8.0, loop_count=-1)
+
+    player = pyglet.media.AudioPlayer()
+    player.queue(looping)
+    player.play()
+
+``loop_count`` means the number of *additional* times the selected region is
+played. A value of ``0`` does not repeat it, ``2`` plays it three times in
+total, and ``-1`` repeats it indefinitely.
+
+If loop points are provided as PCM frame numbers by an audio editor or file
+format, use :meth:`~pyglet.media.LoopingSource.from_frames`. Frame positions
+avoid rounding a time in seconds and are the best choice for precise musical
+loops::
+
+    source = pyglet.media.load_audio('music.wav')
+    looping = pyglet.media.LoopingSource.from_frames(
+        source, loop_start=44_100, loop_end=176_400, loop_count=-1)
+
+To leave an infinite loop without cutting the music off, set its loop count to
+``0`` while it is playing::
+
+    player.set_loop_count(0)
+
+The current pass finishes at ``loop_end``, then playback continues into the
+outro. Calling :meth:`~pyglet.media.LoopingSource.set_loop_count` on the source
+has the same effect.
+
+For the cleanest loop boundaries, use audio whose loop points and decoded
+samples are reliable, such as WAV or FLAC. A looping streaming source can only
+be queued on one player at a time. Load it with ``streaming=False`` if the same
+looping audio needs to be played independently by multiple players.
 
 .. _guide-media-incorporating_video:
 

@@ -3,7 +3,7 @@
 This module provides Vector and Matrix objects, including Vec2, Vec3,
 Vec4, Mat3, and Mat4. Most common matrix and vector operations are
 supported. Helper methods are included for rotating, scaling, and
-transforming. The :py:class:`~pyglet.matrix.Mat4` includes class methods
+transforming. The :py:class:`~pyglet.math.Mat4` includes class methods
 for creating orthographic and perspective projection matrixes.
 
 Matrices behave just like they do in GLSL: they are specified in column-major
@@ -354,7 +354,7 @@ class Vec2(_typing.NamedTuple):
     def cross(self, other: Vec2 | tuple[float, float]) -> float:
         """Calculate the cross product of this vector and another 2D vector.
 
-        |a|*|b|*sin(ab)
+        ``|a| * |b| * sin(ab)``
 
         The sign of the result reflects the sign of the angle between them.
         If vectors are normalized, this is the sine of the angle between them.
@@ -366,7 +366,7 @@ class Vec2(_typing.NamedTuple):
     def dot(self, other: Vec2 | tuple[float, float]) -> float:
         """Calculate the dot product of this vector and another 2D vector.
 
-        |a|*|b|*cos(ab)
+        ``|a| * |b| * cos(ab)``
 
         If vectors are normalized, this is the cosine of the angle between them.
         """
@@ -574,7 +574,7 @@ class Vec3(_typing.NamedTuple):
     def cross(self, other: Vec3 | tuple[float, float, float]) -> Vec3:
         """Calculate the cross product of this vector and another 3D vector.
 
-        |a|*|b|*sin(θ) in the direction given by the right-hand rule.
+        ``|a| * |b| * sin(θ)`` in the direction given by the right-hand rule.
 
         The magnitude of the result is the area of the parallelogram
         built on the two vectors (or twice the area of the triangle).
@@ -589,7 +589,7 @@ class Vec3(_typing.NamedTuple):
     def dot(self, other: Vec3 | tuple[float, float, float]) -> float:
         """Calculate the dot product of this vector and another 3D vector.
 
-        |a|*|b|*cos(θ)
+        ``|a| * |b| * cos(θ)``
 
         If the vectors are normalized, this is the cosine of the angle between them.
         """
@@ -693,11 +693,11 @@ class Vec3(_typing.NamedTuple):
 class Vec4(_typing.NamedTuple):
     """A four-dimensional vector represented as X Y Z W coordinates.
 
-    `Vec4` is an immutable 4D Vector, including most common operators.
+    ``Vec4`` is an immutable 4D Vector, including most common operators.
     As an immutable type, all operations return a new object.
 
-    .. note:: The Python ``len` operator returns the number of elements in
-              the vector. For the vector length, use the `length()` method.
+    .. note:: The Python ``len`` operator returns the number of elements in
+              the vector. For the vector length, use the ``length()`` method.
     """
 
     x: float = 0.0
@@ -1056,10 +1056,11 @@ class Mat3(_typing.NamedTuple):
         # get determinant reciprocal
         rep = 1.0 / det
 
-        # get inverse: A^-1 = def(A)^-1 * adj(A)
-        return Mat3(*(a * rep, b * rep, c * rep,
-                      d * rep, e * rep, f * rep,
-                      g * rep, h * rep, i * rep))
+        # get inverse: A^-1 = det(A)^-1 * adj(A).
+        # adj(A) is the transpose of the cofactor matrix computed above.
+        return Mat3(*(a * rep, d * rep, g * rep,
+                      b * rep, e * rep, h * rep,
+                      c * rep, f * rep, i * rep))
 
     def __round__(self, ndigits: int | None = None) -> Mat3:
         return Mat3(*(round(v, ndigits) for v in self))
@@ -1552,6 +1553,9 @@ class Quaternion(_typing.NamedTuple):
         This function uses the equations from the GLTF 2.0 Specification book.
         https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#interpolation-slerp
 
+        Both inputs must be unit quaternions. The result follows the shortest
+        rotation path, including when the two inputs have opposite signs.
+
         Args:
             other: The other quaternion
             t: The parametric variable in the range [0, 1]
@@ -1562,13 +1566,12 @@ class Quaternion(_typing.NamedTuple):
         """
         dot = self.dot(other)
 
-        abs_dot = min(abs(dot), 0.999)
+        abs_dot = min(abs(dot), 1.0)
+        s = -1.0 if dot < 0 else 1.0
         x = acos(abs_dot)
 
         if x < 0.005:
-            return self * (1 - t) + other * t
-
-        s = dot / abs_dot
+            return (self * (1 - t) + other * (s * t)).normalize()
 
         v = self * (sin(x * (1 - t)) / sin(x)) + \
             other * s * (sin(x * t) / sin(x))

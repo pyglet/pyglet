@@ -22,6 +22,10 @@ class IOSScreen(Screen):
         scale = ui_screen.nativeScale()
         super().__init__(display, 0, 0, round(bounds.size.width * scale), round(bounds.size.height * scale))
 
+    @property
+    def is_primary(self) -> bool:
+        return True
+
     def get_modes(self) -> list[ScreenMode]:
         return [self.get_mode()]
 

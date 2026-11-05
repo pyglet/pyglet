@@ -180,6 +180,9 @@ class AttributeFormat:
         return AttributeFormat(self.name, self.components, self.data_type, self.normalized, divisor)
 
 
+color_byte_layout = VertexLayout(colors="4Bn")
+
+
 @dataclass(frozen=True)
 class AttributeView:
     offset: int
