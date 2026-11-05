@@ -30,6 +30,7 @@ class CSSStyleDeclaration:
     visibility: str
     display: str
     cursor: str
+    touchAction: str
     def setProperty(self, property: str, value: str, priority: str = "") -> None: ...
 
 class Event:
@@ -58,6 +59,13 @@ class MouseEvent(UIEvent):
     shiftKey: bool
     altKey: bool
     metaKey: bool
+
+class PointerEvent(MouseEvent):
+    pointerId: int
+    pointerType: str
+    width: float
+    height: float
+    pressure: float
 
 class WheelEvent(MouseEvent):
     deltaX: float

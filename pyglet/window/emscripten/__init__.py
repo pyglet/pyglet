@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from pyglet.config import Config
     from pyglet.libs.emscripten.dom import (
         ClipboardEvent, DragEvent, Event, File, HTMLCanvasElement, KeyboardEvent,
-        MouseEvent, ResizeObserver, ResizeObserverEntry, WheelEvent,
+        MouseEvent, PointerEvent, ResizeObserver, ResizeObserverEntry, WheelEvent,
     )
     from pyglet.display.base import Display, ScreenMode
     from pyglet.graphics.api.base import SurfaceContext
@@ -446,6 +446,7 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
         self._proxy_resize = None
         self._canvas_event_handlers.clear()
         self._event_handlers.clear()
+        self._touch_positions.clear()
 
         super().close()
 
@@ -685,6 +686,44 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
 
         self.dispatch_event('on_key_release', symbol, modifiers)
 
+    def _dispatch_pointer_touch(self, dispatch_name: str, event: PointerEvent) -> None:
+        rect = self._canvas.getBoundingClientRect()
+        scale_x = self._canvas.width / rect.width if rect.width else self._scale
+        scale_y = self._canvas.height / rect.height if rect.height else self._scale
+        self._dispatch_touch_event(
+            dispatch_name, event.pointerId,
+            (event.clientX - rect.left) * scale_x,
+            self._canvas.height - (event.clientY - rect.top) * scale_y,
+            event.width * scale_x, event.height * scale_y, event.pressure,
+        )
+
+    @CanvasEventHandler("pointerdown", passive=False)
+    def _event_touch_start(self, event: PointerEvent) -> None:
+        if event.pointerType != "touch":
+            return
+        # Touch pointers implicitly capture subsequent events, including outside the canvas.
+        # Cancel compatibility mouse events so a contact is not also reported as a mouse press.
+        event.preventDefault()
+        self._dispatch_pointer_touch('on_touch_start', event)
+
+    @CanvasEventHandler("pointermove")
+    def _event_touch_move(self, event: PointerEvent) -> None:
+        if event.pointerType == "touch" and event.pointerId in self._touch_positions:
+            self._dispatch_pointer_touch('on_touch_move', event)
+
+    @CanvasEventHandler("pointerup")
+    @CanvasEventHandler("pointercancel")
+    def _event_touch_end(self, event: PointerEvent) -> None:
+        if event.pointerType == "touch" and event.pointerId in self._touch_positions:
+            self._dispatch_pointer_touch('on_touch_end', event)
+
+    @CanvasEventHandler("lostpointercapture")
+    def _event_touch_capture_lost(self, event: PointerEvent) -> None:
+        if event.pointerType == "touch" and event.pointerId in self._touch_positions:
+            # Capture-loss events do not carry the contact's last coordinates.
+            x, y = self._touch_positions[event.pointerId]
+            self._dispatch_touch_event('on_touch_end', event.pointerId, x, y, 0, 0, 0.0)
+
     @CanvasEventHandler("mousedown")
     def _event_mouse_down(self, event: MouseEvent) -> None:
         rect = self._canvas.getBoundingClientRect()
@@ -852,8 +891,6 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
     def dispatch_pending_events(self) -> None:
         pass
 
-    # touchmove, touchstart, touchend, touchcancel
-
     def adjust_scale(self, width: float, height: float) -> None:
         ratio = js.window.devicePixelRatio or 1.0
 
@@ -880,6 +917,8 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
         self._canvas.height = self._height * self.scale
         self._canvas.style.width = f"{self._width}px"
         self._canvas.style.height = f"{self._height}px"
+        # Delivers touch gestures to pyglet canvas, instead of browser panning and zooming.
+        self._canvas.style.touchAction = "none"
 
         if not js.document.getElementById(canvas_name):
             msg = f"Canvas: {canvas_name} could not be created."
