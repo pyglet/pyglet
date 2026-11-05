@@ -21,6 +21,7 @@ class DOMRect:
     height: float
 
 class CSSStyleDeclaration:
+    cssText: str
     width: str
     height: str
     minWidth: str
@@ -40,6 +41,7 @@ class Event:
 class UIEvent(Event): ...
 
 class KeyboardEvent(UIEvent):
+    isComposing: bool
     key: str
     code: str
     repeat: bool
@@ -70,6 +72,28 @@ class PointerEvent(MouseEvent):
 class WheelEvent(MouseEvent):
     deltaX: float
     deltaY: float
+
+class InputEvent(UIEvent):
+    isComposing: bool
+    inputType: str
+    data: str | None
+
+class HTMLTextControl:
+    type: str
+    value: str
+    inputMode: str
+    enterKeyHint: str
+    spellcheck: bool
+    selectionStart: int
+    selectionEnd: int
+    selectionDirection: str
+    style: CSSStyleDeclaration
+    def setAttribute(self, name: str, value: str) -> None: ...
+    def setSelectionRange(self, start: int, end: int, direction: str = ...) -> None: ...
+    def focus(self, *, preventScroll: bool = ...) -> None: ...
+    def remove(self) -> None: ...
+    def addEventListener(self, type: str, callback: JsProxy, *, passive: bool = ...) -> None: ...
+    def removeEventListener(self, type: str, callback: JsProxy) -> None: ...
 
 class File:
     name: str

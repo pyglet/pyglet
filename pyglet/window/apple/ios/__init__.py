@@ -16,8 +16,10 @@ from pyglet.libs.darwin.cocoapy import (
     send_super,
 )
 from pyglet.window import BaseWindow
+from pyglet.window.apple.ios.textinput import IOSTextInput
 
 if TYPE_CHECKING:
+    from pyglet.window.textinput import TextInputSession
     from pyglet.display.ios import IOSScreen
     from pyglet.graphics.api.gl.ios.context import IOSContext
 
@@ -106,8 +108,10 @@ class IOSWindow(BaseWindow['IOSScreen']):
     _uiview: ObjCInstance | None = None
     _view_controller: ObjCInstance | None = None
     _ios_layer: ObjCInstance | None = None
+    _ios_text_input: IOSTextInput | None = None
 
     def _create(self) -> None:
+        self.end_text_input()
         if self._uiwindow is not None:
             self._uiwindow.setHidden_(True)
             self._uiwindow.release()
@@ -150,6 +154,22 @@ class IOSWindow(BaseWindow['IOSScreen']):
                 self.context.update_geometry()
             self.dispatch_event('_on_internal_resize', width, height)
             self.dispatch_event('on_expose')
+        if self._ios_text_input is not None:
+            self._ios_text_input.sync()
+
+    def _start_text_input(self, session: TextInputSession) -> None:
+        self._ios_text_input = IOSTextInput(self, session)
+        self._ios_text_input.start()
+
+    def _update_text_input(self, session: TextInputSession) -> None:
+        if self._ios_text_input is not None:
+            self._ios_text_input.sync()
+
+    def _stop_text_input(self, session: TextInputSession) -> None:
+        editor = self._ios_text_input
+        self._ios_text_input = None
+        if editor is not None:
+            editor.close()
 
     def switch_to(self) -> None:
         if self._context:
@@ -193,6 +213,7 @@ class IOSWindow(BaseWindow['IOSScreen']):
             self.dispatch_event('on_show')
             self.dispatch_event('on_expose')
         else:
+            self.end_text_input()
             self.dispatch_event('on_hide')
 
     def minimize(self) -> None:
@@ -234,6 +255,7 @@ class IOSWindow(BaseWindow['IOSScreen']):
         self.dispatch_events()
 
     def close(self) -> None:
+        self.end_text_input()
         if self._uiwindow is not None:
             self._uiwindow.setHidden_(True)
             self._uiwindow.setRootViewController_(None)

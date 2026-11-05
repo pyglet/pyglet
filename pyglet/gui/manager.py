@@ -190,6 +190,7 @@ class UIManager:
             self._window.push_handlers(self)
             self._schedule_dirty_processing()
         else:
+            self.set_focus(None)
             self._window.remove_handlers(self)
             self._stop_dirty_processing()
 

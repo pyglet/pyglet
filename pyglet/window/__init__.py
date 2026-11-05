@@ -91,10 +91,13 @@ import pyglet.window.key
 import pyglet.window.mouse
 from pyglet.event import EVENT_HANDLE_STATE, EventDispatcher
 from pyglet.customtypes import ScreenT
+from pyglet.window.textinput import TextInputSession
 
 from pyglet.window import event, key, dialog
 
 if TYPE_CHECKING:
+    from pyglet.text.caret import Caret
+    from pyglet.window.textinput import TextInputOptions
     from pyglet.window.camera import Camera2D
     from pyglet.window.camera.base import BaseCamera
     from pyglet.math import Mat4
@@ -398,6 +401,7 @@ class BaseWindow(EventDispatcher, Generic[ScreenT], metaclass=_WindowMetaclass):
 
     _event_queue: deque[tuple[Any, ...]]
     _touch_positions: dict[int, tuple[float, float]]
+    _text_input_session: TextInputSession | None = None
     _enable_event_queue: bool = True  # overridden by EventLoop.
     _allow_dispatch_event: bool = False  # controlled by dispatch_events stack frame
 
@@ -531,6 +535,52 @@ class BaseWindow(EventDispatcher, Generic[ScreenT], metaclass=_WindowMetaclass):
         if visible:
             self.set_visible(True)
             self.activate()
+
+    @property
+    def text_input_session(self) -> TextInputSession | None:
+        """The active platform-neutral editing session, if any."""
+        return self._text_input_session
+
+    def begin_text_input(self,
+            caret: Caret,
+            options: TextInputOptions | None = None, *,
+            get_caret_rect: Callable[[], tuple[float, float, float, float] | None] | None = None,
+            on_action: Callable[[str], None] | None = None) -> TextInputSession:
+        """Activate an editor and end this window's previous editing session.
+
+        Platform backends can implement the text-input hooks to connect a native
+        input method. The default hooks leave existing keyboard event handling
+        intact and do not open an on-screen keyboard.
+        """
+        session = TextInputSession(caret, options, get_caret_rect=get_caret_rect, on_update=self._update_text_input,
+                                   on_close=self._close_text_input, on_action=on_action)
+        self.end_text_input()
+        self._text_input_session = session
+        try:
+            self._start_text_input(session)
+        except Exception:
+            session.close()
+            raise
+        return session
+
+    def end_text_input(self) -> None:
+        """End platform text input without submitting the editor."""
+        if self._text_input_session is not None:
+            self._text_input_session.close()
+
+    def _start_text_input(self, session: TextInputSession) -> None:
+        """Backend hook for activating a platform input method."""
+
+    def _update_text_input(self, session: TextInputSession) -> None:
+        """Backend hook for synchronizing editor state and caret geometry."""
+
+    def _stop_text_input(self, session: TextInputSession) -> None:
+        """Backend hook for releasing platform input resources."""
+
+    def _close_text_input(self, session: TextInputSession) -> None:
+        if self._text_input_session is session:
+            self._text_input_session = None
+            self._stop_text_input(session)
 
     def _get_touch_distance(self) -> float | None:
         """Return the distance between the first two active contacts."""
@@ -680,6 +730,7 @@ class BaseWindow(EventDispatcher, Generic[ScreenT], metaclass=_WindowMetaclass):
         is called.
         """
         from pyglet import app
+        self.end_text_input()
         if not self._context:
             return
         app.windows.remove(self)

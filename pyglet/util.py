@@ -29,6 +29,21 @@ def asstr(s: str | bytes | bytearray | None) -> str:
     return s.decode("utf-8")
 
 
+def to_utf16(text: str, position: int) -> int:
+    """Convert a Python string position to a UTF-16 code-unit offset."""
+    return len(text[:position].encode('utf-16-le')) // 2
+
+
+def from_utf16(text: str, position: int) -> int:
+    """Convert a UTF-16 offset to a Python position, rounding down inside a surrogate pair."""
+    units = 0
+    for index, character in enumerate(text):
+        units += 2 if ord(character) > 0xffff else 1
+        if units > position:
+            return index
+    return len(text)
+
+
 # Keep these outside of the function since we don't need to re-define
 # the function each time we make a call since no state is persisted.
 def _debug_print_real(arg: str) -> bool:

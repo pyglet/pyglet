@@ -10,8 +10,10 @@ import pyglet.app
 from pyglet.libs.emscripten.files import import_files
 from pyglet.libs.emscripten.proxies import ProxyRegistry
 from pyglet.window import BaseWindow, DefaultMouseCursor, ImageMouseCursor, MouseCursor, key, mouse
+from pyglet.window.emscripten.textinput import BrowserTextInput
 
 if TYPE_CHECKING:
+    from pyglet.window.textinput import TextInputSession
     from pyglet.display.emscripten import EmscriptenScreen
     from collections.abc import Iterable
 
@@ -342,6 +344,7 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
     _clipboard_text: str
     _file_import_tasks: set[asyncio.Task[None]]
     _scale: float
+    _browser_text_input: BrowserTextInput | None
 
     def __init__(
         self,
@@ -369,6 +372,7 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
         self._keys_down = set()
         self._clipboard_text = ""
         self._file_import_tasks = set()
+        self._browser_text_input = None
 
         self._scale = js.window.devicePixelRatio
         super().__init__(
@@ -436,6 +440,7 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
 
     def close(self) -> None:
         """Remove browser callbacks before releasing the pyglet window."""
+        self.end_text_input()
         if not self._context:
             return
 
@@ -645,6 +650,21 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
         """Process input events asynchronously."""
         raise Exception("Not implemented.")
 
+    def _start_text_input(self, session: TextInputSession) -> None:
+        self._keys_down.clear()
+        self._browser_text_input = BrowserTextInput(self, session)
+        self._browser_text_input.start()
+
+    def _update_text_input(self, session: TextInputSession) -> None:
+        if self._browser_text_input is not None:
+            self._browser_text_input.sync()
+
+    def _stop_text_input(self, session: TextInputSession) -> None:
+        editor = self._browser_text_input
+        self._browser_text_input = None
+        if editor is not None:
+            editor.close()
+
     @staticmethod
     def _event_text_motion(symbol: int | str, modifiers: int) -> int | None:
         if modifiers & key.MOD_ALT:
@@ -654,6 +674,8 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
 
     @CanvasEventHandler("keydown")
     def _event_key_down(self, event: KeyboardEvent) -> None:
+        if self._browser_text_input is not None:
+            return
         if not event.repeat:
             text = None
             if len(event.key) == 1:
@@ -724,7 +746,7 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
             x, y = self._touch_positions[event.pointerId]
             self._dispatch_touch_event('on_touch_end', event.pointerId, x, y, 0, 0, 0.0)
 
-    @CanvasEventHandler("mousedown")
+    @CanvasEventHandler("mousedown", passive=False)
     def _event_mouse_down(self, event: MouseEvent) -> None:
         rect = self._canvas.getBoundingClientRect()
         modifiers = get_modifiers(event)
@@ -733,6 +755,9 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
         self.dispatch_event(
             'on_mouse_press', pos_x, pos_y, _mouse_map.get(event.button, 0), modifiers,
         )
+        if self._browser_text_input is not None:
+            # Keep the focused text control instead of the canvas default action.
+            event.preventDefault()
 
     @CanvasEventHandler("mouseup")
     def _event_mouse_up(self, event: MouseEvent) -> None:
@@ -794,6 +819,8 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
 
     @CanvasEventHandler("blur")
     def _event_lose_focus(self, event: Event) -> None:
+        if self._browser_text_input is not None:
+            return
         pyglet.app.platform_event_loop.post_event(self, 'on_deactivate')
 
     @CanvasEventHandler("contextmenu", passive=False)

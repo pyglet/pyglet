@@ -858,10 +858,18 @@ class TextEntry(WidgetBase[str]):
     def on_focus_gain(self) -> None:
         self._caret.visible = True
         self._caret.layout = self._layout
+        assert self.manager is not None
+        self._layout.begin_text_input(self.manager._window, self._caret,  # noqa: SLF001
+                                      on_action=self._on_text_input_action)
 
     def on_focus_lost(self) -> None:
+        self._layout.end_text_input()
         self._caret.visible = False
         self._caret.mark = None
+
+    def _on_text_input_action(self, action: str) -> None:
+        if action == 'done':
+            self.on_text('\r')
 
     def _has_focus(self) -> bool:
         return self.manager is not None and self.manager.focused_widget is self
