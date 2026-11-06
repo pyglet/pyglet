@@ -83,7 +83,7 @@ default_algorithms = [
 @pytest.mark.parametrize('algorithm', default_algorithms)
 def test_algorithm_evaluation_order(algorithm):
     # Evaluation order is computed by FMVoice when it compiles the algorithm:
-    source = FMVoice(duration=0.01, algorithm=algorithm, sample_rate=8000)
+    source = FMVoice(duration=0.01, algorithm=algorithm)
     order = source._order
     for source_op, target_op in algorithm.modulations:
         assert order.index(source_op) < order.index(target_op)
@@ -92,7 +92,7 @@ def test_algorithm_evaluation_order(algorithm):
 def test_algorithm_requires_carrier():
     algorithm = Algorithm("No carriers")
     with pytest.raises(ValueError, match="carrier"):
-        FMVoice(duration=0.1, algorithm=algorithm, sample_rate=8000)
+        FMVoice(duration=0.1, algorithm=algorithm)
 
 
 @pytest.mark.parametrize('carriers', [[4], [-1], ["3"]])
@@ -100,14 +100,14 @@ def test_algorithm_rejects_invalid_carriers(carriers):
     algorithm = Algorithm("Invalid carrier")
     algorithm.carriers = carriers
     with pytest.raises(ValueError, match="index"):
-        FMVoice(duration=0.1, algorithm=algorithm, sample_rate=8000)
+        FMVoice(duration=0.1, algorithm=algorithm)
 
 
 def test_algorithm_rejects_duplicate_carriers():
     algorithm = Algorithm("Duplicate carriers")
     algorithm.carriers = [1, 1]
     with pytest.raises(ValueError, match="unique"):
-        FMVoice(duration=0.1, algorithm=algorithm, sample_rate=8000)
+        FMVoice(duration=0.1, algorithm=algorithm)
 
 
 def test_algorithm_rejects_self_modulation():
@@ -115,7 +115,7 @@ def test_algorithm_rejects_self_modulation():
     algorithm.carriers = [1]
     algorithm.modulations = [(0, 0)]
     with pytest.raises(ValueError, match="cannot modulate itself"):
-        FMVoice(duration=0.1, algorithm=algorithm, sample_rate=8000)
+        FMVoice(duration=0.1, algorithm=algorithm)
 
 
 def test_algorithm_rejects_duplicate_modulation():
@@ -123,7 +123,7 @@ def test_algorithm_rejects_duplicate_modulation():
     algorithm.carriers = [1]
     algorithm.modulations = [(0, 1), (0, 1)]
     with pytest.raises(ValueError, match="Duplicate modulation"):
-        FMVoice(duration=0.1, algorithm=algorithm, sample_rate=8000)
+        FMVoice(duration=0.1, algorithm=algorithm)
 
 
 def test_algorithm_rejects_modulation_cycle():
@@ -131,7 +131,7 @@ def test_algorithm_rejects_modulation_cycle():
     algorithm.carriers = [1]
     algorithm.modulations = [(0, 1), (1, 0)]
     with pytest.raises(ValueError, match="cycle"):
-        FMVoice(duration=0.1, algorithm=algorithm, sample_rate=8000)
+        FMVoice(duration=0.1, algorithm=algorithm)
 
 
 def test_algorithm_rejects_invalid_modulation():
@@ -139,7 +139,7 @@ def test_algorithm_rejects_invalid_modulation():
     algorithm.carriers = [1]
     algorithm.modulations = [(0, 1, 2)]
     with pytest.raises(ValueError, match="Invalid modulation"):
-        FMVoice(duration=0.1, algorithm=algorithm, sample_rate=8000)
+        FMVoice(duration=0.1, algorithm=algorithm)
 
 
 def test_algorithm_rejects_invalid_feedback():
@@ -147,12 +147,12 @@ def test_algorithm_rejects_invalid_feedback():
     algorithm.carriers = [1]
     algorithm.feedback = 4
     with pytest.raises(ValueError, match="index"):
-        FMVoice(duration=0.1, algorithm=algorithm, sample_rate=8000)
+        FMVoice(duration=0.1, algorithm=algorithm)
 
 
 @pytest.mark.parametrize('algorithm', default_algorithms)
 def test_fm_voice_renders_default_algorithm(algorithm):
-    source = FMVoice(duration=0.05, algorithm=algorithm, sample_rate=8000)
+    source = FMVoice(duration=0.05, algorithm=algorithm)
     audio_data = source.get_audio_data(source.audio_format.bytes_per_second // 20)
 
     assert audio_data is not None
@@ -160,7 +160,7 @@ def test_fm_voice_renders_default_algorithm(algorithm):
 
 
 def test_fm_voice_evaluates_each_operator_once_per_sample():
-    source = FMVoice(duration=0.01, algorithm=ALGORITHM_5, sample_rate=8000)
+    source = FMVoice(duration=0.01, algorithm=ALGORITHM_5)
     calls = [0, 0, 0, 0]
 
     for index, op in enumerate(source.ops):
@@ -179,11 +179,11 @@ def test_fm_voice_evaluates_each_operator_once_per_sample():
 def test_fm_voice_validates_algorithm():
     algorithm = Algorithm("No carriers")
     with pytest.raises(ValueError, match="carrier"):
-        FMVoice(duration=0.1, algorithm=algorithm, sample_rate=8000)
+        FMVoice(duration=0.1, algorithm=algorithm)
 
 
 def test_fm_voice_set_algorithm():
-    source = FMVoice(duration=0.1, algorithm=ALGORITHM_7, sample_rate=8000, feedback_level=0.5)
+    source = FMVoice(duration=0.1, algorithm=ALGORITHM_7, feedback_level=0.5)
     source.algorithm = ALGORITHM_5
 
     assert source.algorithm is ALGORITHM_5
