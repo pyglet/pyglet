@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 import sys
 from abc import ABC, abstractmethod
+from contextlib import AbstractContextManager
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -839,6 +840,29 @@ class TextDecorationGroup(Group):
 # Just have one object for empty positions in layout. It won't be modified.
 _empty_pos = GlyphPosition(0, 0, 0, 0)
 
+
+class _LayoutUpdateBlock:
+    """Context manager returned by :meth:`TextLayout.update_block`.
+
+    Wraps a ``with`` block so that the (potentially costly) relayout of a
+    layout and its document is deferred until the block exits, matching the
+    semantics of the existing :meth:`~TextLayout.begin_update` and
+    :meth:`~TextLayout.end_update` pair.
+    """
+
+    def __init__(self, layout: TextLayout) -> None:
+        self._layout = layout
+
+    def __enter__(self) -> TextLayout:
+        self._layout.begin_update()
+        return self._layout
+
+    def __exit__(self, *exc: object) -> None:
+        # Always re-enable updates (and perform the pending relayout) even if
+        # the block raised, so the layout is never left in a disabled state.
+        self._layout.end_update()
+
+
 class TextLayout:
     """Lay out and display documents.
 
@@ -1392,6 +1416,31 @@ class TextLayout:
         """
         self._update_enabled = True
         self._update()
+
+    def update_block(self) -> AbstractContextManager[TextLayout]:
+        """Return a context manager that batches a block of layout updates.
+
+        Entering the block calls :meth:`begin_update` and exiting calls
+        :meth:`end_update`, so any number of changes to the layout or its
+        document made inside the ``with`` block are deferred and the
+        (potentially costly) relayout is performed only once, when the block
+        exits::
+
+            with layout.update_block():
+                layout.width = new_width
+                layout.height = new_height
+
+        This is purely a convenience wrapper around the existing
+        :meth:`begin_update` / :meth:`end_update` methods; those methods
+        remain available and are unchanged.  The context manager returns the
+        layout itself, so the block can optionally rebind it::
+
+            with layout.update_block() as l:
+                l.width = new_width
+
+        .. versionadded:: 2.2
+        """
+        return _LayoutUpdateBlock(self)
 
     @property
     def dpi(self) -> float:
