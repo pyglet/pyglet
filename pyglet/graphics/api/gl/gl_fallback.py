@@ -63,6 +63,9 @@ EXTENSION_FUNCTION_FALLBACKS: dict[str, dict[str, str]] = {
         "glUseProgramStages": "glUseProgramStagesEXT",
         "glValidateProgramPipeline": "glValidateProgramPipelineEXT",
     },
+    "GL_ARB_geometry_shader4": {
+        "glFramebufferTexture": "glFramebufferTextureARB",
+    },
     "GL_EXT_geometry_shader": {
         "glFramebufferTexture": "glFramebufferTextureEXT",
     },

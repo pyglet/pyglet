@@ -202,6 +202,12 @@ class GLInfo(SurfaceInfo):
                 desktop_at_least(4, 5)
                 or self.have_extension("GL_ARB_direct_state_access")
             ),
+            layered_framebuffer_attachments=(
+                desktop_at_least(3, 2)
+                or gles_at_least(3, 2)
+                or self.have_extension("GL_ARB_geometry_shader4")
+                or self.have_extension("GL_EXT_geometry_shader")
+            ),
         )
 
         bgra_upload = is_desktop_gl or any(
