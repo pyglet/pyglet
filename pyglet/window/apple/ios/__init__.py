@@ -125,6 +125,7 @@ class IOSWindow(BaseWindow['IOSScreen']):
         self._uiwindow = UIWindow.alloc().initWithFrame_(frame)
         self._uiview = PygletIOSView.alloc().initWithFrame_iosWindow_(frame, self)
         self._uiview.setContentScaleFactor_(scale)
+        self._uiview.setMultipleTouchEnabled_(True)
 
         self._view_controller = UIViewController.alloc().init()
         self._view_controller.setView_(self._uiview)

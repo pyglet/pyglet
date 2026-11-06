@@ -11,9 +11,16 @@ from pyglet.graphics.api.gl.gl import (
     GL_COLOR_ATTACHMENT0,
     GL_DEPTH_ATTACHMENT,
     GL_DEPTH_COMPONENT16,
+    GL_DEPTH_COMPONENT24,
+    GL_DEPTH24_STENCIL8,
     GL_FRAMEBUFFER,
     GL_FRAMEBUFFER_COMPLETE,
     GL_RENDERBUFFER,
+    GL_RENDERBUFFER_DEPTH_SIZE,
+    GL_RENDERBUFFER_STENCIL_SIZE,
+    GL_STENCIL_ATTACHMENT,
+    GL_STENCIL_INDEX8,
+    GLint,
     GLuint,
 )
 from pyglet.libs.darwin.cocoapy import ObjCClass
@@ -65,14 +72,30 @@ class IOSContext(OpenGLSurfaceContext['IOSWindow']):
             GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, self._color_renderbuffer,
         )
 
-        if self.config.depth_size:
+        if self.config.depth_size or self.config.stencil_size:
             self.glGenRenderbuffers(1, byref(self._depth_renderbuffer))
             self.glBindRenderbuffer(GL_RENDERBUFFER, self._depth_renderbuffer)
             width, height = self.window.get_framebuffer_size()
-            self.glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height)
-            self.glFramebufferRenderbuffer(
-                GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, self._depth_renderbuffer,
-            )
+            if self.config.stencil_size:
+                internal_format = GL_DEPTH24_STENCIL8 if self.config.depth_size else GL_STENCIL_INDEX8
+            else:
+                internal_format = GL_DEPTH_COMPONENT24 if self.config.depth_size == 24 else GL_DEPTH_COMPONENT16
+            self.glRenderbufferStorage(GL_RENDERBUFFER, internal_format, width, height)
+            if self.config.depth_size:
+                self.glFramebufferRenderbuffer(
+                    GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, self._depth_renderbuffer,
+                )
+            if self.config.stencil_size:
+                self.glFramebufferRenderbuffer(
+                    GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, self._depth_renderbuffer,
+                )
+            # Drivers may promote a requested format
+            # (16 depth promoted to 24-bit depth on Simulator). Report the allocated bits.
+            depth_bits, stencil_bits = GLint(), GLint()
+            self.glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_DEPTH_SIZE, byref(depth_bits))
+            self.glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_STENCIL_SIZE, byref(stencil_bits))
+            self.config.depth_size = depth_bits.value
+            self.config.stencil_size = stencil_bits.value
 
         if self.glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE:
             raise ContextException('The EAGL framebuffer is incomplete')
