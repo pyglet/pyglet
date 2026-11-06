@@ -356,11 +356,12 @@ class DocumentLabel(layout.TextLayout):
     def font(self) -> base.Font:
         """The current font object used at the beginning of the text.
 
-        Setting this property will change the font for the entire document.
+        The font uses this label's DPI. Setting this property will change the
+        font for the entire document and set the label's DPI to the font's DPI.
 
         .. versionadded:: 3.0
         """
-        return self.document.get_font(0)
+        return self.document.get_font(0, dpi=self.dpi)
 
     @font.setter
     def font(self, font: base.Font) -> None:
@@ -371,6 +372,7 @@ class DocumentLabel(layout.TextLayout):
             "style": font.style,
             "stretch": font.stretch,
         })
+        self.dpi = font.dpi
 
     @property
     def font_size(self) -> float:
