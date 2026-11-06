@@ -95,12 +95,23 @@ def test_algorithm_requires_carrier():
         FMVoice(duration=0.1, algorithm=algorithm)
 
 
-@pytest.mark.parametrize('carriers', [[4], [-1], ["3"]])
+@pytest.mark.parametrize('carriers', [[-1], ["3"], [1.5]])
 def test_algorithm_rejects_invalid_carriers(carriers):
     algorithm = Algorithm("Invalid carrier")
     algorithm.carriers = carriers
     with pytest.raises(ValueError, match="index"):
         FMVoice(duration=0.1, algorithm=algorithm)
+
+
+@pytest.mark.parametrize('algorithm', default_algorithms)
+def test_algorithm_operator_count(algorithm):
+    expected = 2 if algorithm is ALGORITHM_2OP else 4
+    assert algorithm.operator_count == expected
+
+
+def test_algorithm_operator_count_uses_highest_index():
+    algorithm = Algorithm("Sparse", carriers=[3])
+    assert algorithm.operator_count == 4
 
 
 def test_algorithm_rejects_duplicate_carriers():
@@ -145,7 +156,7 @@ def test_algorithm_rejects_invalid_modulation():
 def test_algorithm_rejects_invalid_feedback():
     algorithm = Algorithm("Invalid feedback")
     algorithm.carriers = [1]
-    algorithm.feedback = 4
+    algorithm.feedback = -1
     with pytest.raises(ValueError, match="index"):
         FMVoice(duration=0.1, algorithm=algorithm)
 
@@ -157,6 +168,35 @@ def test_fm_voice_renders_default_algorithm(algorithm):
 
     assert audio_data is not None
     assert audio_data.length > 0
+
+
+def test_fm_voice_allocates_only_needed_operators():
+    source = FMVoice(duration=0.01, algorithm=ALGORITHM_2OP)
+    assert len(source.ops) == 2
+
+
+def test_fm_voice_resizes_operators_when_algorithm_changes():
+    source = FMVoice(duration=0.01, algorithm=ALGORITHM_2OP)
+    source.algorithm = ALGORITHM_0
+    assert len(source.ops) == 4
+
+    source.algorithm = ALGORITHM_2OP
+    assert len(source.ops) == 2
+
+
+def test_fm_voice_preserves_existing_operators_when_growing():
+    source = FMVoice(duration=0.01, algorithm=ALGORITHM_2OP)
+    source.set_frequency(0, 440.0)
+    source.algorithm = ALGORITHM_0
+    assert source.ops[0].frequency == 440.0
+
+
+def test_fm_voice_supports_more_than_four_operators():
+    algorithm = Algorithm("Five operators", carriers=[4], modulations=[(0, 1), (1, 2), (2, 3), (3, 4)], feedback=0)
+    source = FMVoice(duration=0.01, algorithm=algorithm)
+
+    assert len(source.ops) == 5
+    assert source.get_audio_data(160) is not None
 
 
 def test_fm_voice_evaluates_each_operator_once_per_sample():

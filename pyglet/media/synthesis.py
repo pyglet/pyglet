@@ -317,9 +317,6 @@ class Sawtooth(SynthesisSource):
 #   Multi-operator FM synthesis:
 #############################################
 
-_OPERATOR_COUNT = 4
-
-
 @dataclass
 class Algorithm:
     """Describes how the FM operators are routed.
@@ -350,6 +347,12 @@ class Algorithm:
     carriers: list[int] = field(default_factory=list)
     modulations: list[tuple[int, int]] = field(default_factory=list)
     feedback: int | None = None
+
+    @property
+    def operator_count(self) -> int:
+        return max(max(self.carriers, default=-1),
+                   max((i for pair in self.modulations for i in pair), default=-1),
+                   self.feedback if self.feedback is not None else -1) + 1
 
 
 class Operator:
@@ -387,15 +390,13 @@ class Operator:
 
 
 class FMVoice(SynthesisSource):
-    """4-operator FM voice.
+    """Multi-operator FM voice.
 
     Args:
         duration:
             The length, in seconds, of audio to generate.
         algorithm:
             The operator routing. Defaults to ``ALGORITHM_0``.
-        sample_rate:
-            Audio samples per second.
         feedback_level:
             The amount of self-feedback applied to the algorithm's feedback
             operator.
@@ -406,11 +407,10 @@ class FMVoice(SynthesisSource):
     sample_rate = 44800
 
     def __init__(self, duration: float, algorithm: Algorithm, feedback_level: float = 0.0, envelope: Envelope | None = None):
-        self.ops: list[Operator] = [Operator(frequency=0.0) for _ in range(_OPERATOR_COUNT)]
-        self._values = [0.0] * _OPERATOR_COUNT
+        self.ops: list[Operator] = []
         self._feedback_level = feedback_level
 
-        self._algorithm = algorithm or ALGORITHM_0
+        self._algorithm = algorithm
         self._compile_algorithm()
 
         super().__init__(self._get_generator(), duration, self.sample_rate, envelope)
@@ -418,18 +418,24 @@ class FMVoice(SynthesisSource):
     # ----- internal -----
 
     def _compile_algorithm(self) -> None:
-        self._order = self._build_evaluation_order()
+        self._order, self._operator_count = self._build_evaluation_order()
 
         self._carriers = tuple(self._algorithm.carriers)
-        self._modulator_sources: list[list[int]] = [[] for _ in range(_OPERATOR_COUNT)]
+        self._modulator_sources: list[list[int]] = [[] for _ in range(self._operator_count)]
 
         for source, target in self._algorithm.modulations:
             self._modulator_sources[target].append(source)
 
+        self._resize_operators()
         self.set_feedback(self._feedback_level)
 
-    def _build_evaluation_order(self) -> tuple[int, ...]:
-        """Validate ``algorithm`` and return operator indices in render order.
+    def _resize_operators(self) -> None:
+        self.ops = self.ops[:self._operator_count]
+        self.ops.extend(Operator(frequency=0.0) for _ in range(self._operator_count - len(self.ops)))
+        self._values = [0.0] * self._operator_count
+
+    def _build_evaluation_order(self) -> tuple[tuple[int, ...], int]:
+        """Validate ``algorithm`` and return render order and operator count.
 
         Modulators are returned before the operators they feed so each operator
         advances exactly once per audio sample. Raises ``ValueError`` if the
@@ -437,12 +443,11 @@ class FMVoice(SynthesisSource):
         """
         algorithm = self._algorithm
 
-        # Every referenced operator must be an integer index in the valid range:
+        # Every referenced operator must be a non-negative integer index:
         def check(operator, role):
-            if not isinstance(operator, int) or not 0 <= operator < _OPERATOR_COUNT:
+            if not isinstance(operator, int) or operator < 0:
                 raise ValueError(
-                    f"{role.capitalize()} operator must be an index in "
-                    f"0..{_OPERATOR_COUNT - 1}, got {operator!r}"
+                    f"{role.capitalize()} operator index must be a non-negative integer, got {operator!r}"
                 )
 
         nodes = set()
@@ -461,8 +466,6 @@ class FMVoice(SynthesisSource):
         # reports "Invalid modulation" / "Duplicate modulation" instead of leaking a
         # confusing TypeError...
         edges = set()
-        adjacency = [[] for _ in range(_OPERATOR_COUNT)]
-        incoming = [0] * _OPERATOR_COUNT
         for modulation in algorithm.modulations:
             try:
                 source, target = modulation
@@ -476,14 +479,19 @@ class FMVoice(SynthesisSource):
             if edge in edges:
                 raise ValueError("Duplicate modulation")
             edges.add(edge)
-            adjacency[source].append(target)
-            incoming[target] += 1
-            nodes.update((source, target))
+            nodes.update(edge)
 
         # Feedback must be a valid index and part of the routed operators...
         if algorithm.feedback is not None:
             check(algorithm.feedback, "feedback")
             nodes.add(algorithm.feedback)
+
+        operator_count = algorithm.operator_count
+        adjacency = [[] for _ in range(operator_count)]
+        incoming = [0] * operator_count
+        for source, target in sorted(edges):
+            adjacency[source].append(target)
+            incoming[target] += 1
 
         # Topologically sort so each operator renders exactly once per sample.
         # Kahn's algorithm: emit operators with no pending modulators first.
@@ -501,7 +509,7 @@ class FMVoice(SynthesisSource):
             unresolved = ", ".join(str(operator) for operator in sorted(nodes - set(order)))
             raise ValueError(f"Modulation cycle detected involving operators {unresolved}")
 
-        return tuple(order)
+        return tuple(order), operator_count
 
     def _render_sample(self) -> float:
         values = self._values
