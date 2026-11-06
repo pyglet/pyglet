@@ -39,10 +39,15 @@ class Scene:
 
     def __iter__(self):
         """Recursively iterate over all Nodes and their children."""
-        for parent_node in self.nodes:
-            yield parent_node
-            for child_node in parent_node.children:
-                yield child_node
+        pending = [iter(self.nodes)]
+        while pending:
+            try:
+                node = next(pending[-1])
+            except StopIteration:
+                pending.pop()
+                continue
+            yield node
+            pending.append(iter(node.children))
 
     def create_models(self, batch: Batch, group: Group | None = None) -> list[Model]:
         """Decoder subclasses are currently responsible for generating Model objects.
