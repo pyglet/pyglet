@@ -68,7 +68,8 @@ class IOSContext(OpenGLSurfaceContext['IOSWindow']):
         if self.config.depth_size:
             self.glGenRenderbuffers(1, byref(self._depth_renderbuffer))
             self.glBindRenderbuffer(GL_RENDERBUFFER, self._depth_renderbuffer)
-            self.glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, self.window._width, self.window._height)  # noqa: SLF001
+            width, height = self.window.get_framebuffer_size()
+            self.glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height)
             self.glFramebufferRenderbuffer(
                 GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, self._depth_renderbuffer,
             )

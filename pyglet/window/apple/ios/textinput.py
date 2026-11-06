@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
+from ctypes import c_bool, c_long
 
 from pyglet.libs.darwin.cocoapy import (
     NSPointEncoding, NSRange, NSRangeEncoding, NSRectEncoding, NSMakeRect,
     ObjCClass, ObjCInstance, PyObjectEncoding, cfstring_to_string, get_NSString, objc_method, send_super,
+    send_message,
 )
 from pyglet.util import from_utf16, to_utf16
 from pyglet.window.textinput import AbstractTextInput
@@ -124,13 +126,16 @@ class IOSTextInput(AbstractTextInput['IOSWindow']):
         self.view.setOpaque_(False)
         self.view.setShowsVerticalScrollIndicator_(False)
         self.view.setShowsHorizontalScrollIndicator_(False)
-        self.view.setKeyboardType_(_KEYBOARD_TYPES[self.session.options.input_type])
-        self.view.setReturnKeyType_(_RETURN_KEY_TYPES[self.session.options.enter_action])
-        self.view.setSecureTextEntry_(self.session.options.password)
+        send_message(self.view, 'setKeyboardType:', _KEYBOARD_TYPES[self.session.options.input_type],
+                     restype=None, argtypes=[c_long])
+        send_message(self.view, 'setReturnKeyType:', _RETURN_KEY_TYPES[self.session.options.enter_action],
+                     restype=None, argtypes=[c_long])
+        send_message(self.view, 'setSecureTextEntry:', self.session.options.password,
+                     restype=None, argtypes=[c_bool])
         if self.session.options.password:
-            self.view.setAutocorrectionType_(1)  # UITextAutocorrectionTypeNo
-            self.view.setAutocapitalizationType_(0)  # UITextAutocapitalizationTypeNone
-            self.view.setSpellCheckingType_(1)  # UITextSpellCheckingTypeNo
+            send_message(self.view, 'setAutocorrectionType:', 1, restype=None, argtypes=[c_long])
+            send_message(self.view, 'setAutocapitalizationType:', 0, restype=None, argtypes=[c_long])
+            send_message(self.view, 'setSpellCheckingType:', 1, restype=None, argtypes=[c_long])
         if self.session.options.screen_keyboard == 'hide':
             # Keep a first responder for hardware input, with no software keyboard.
             empty_input = UIView.alloc().initWithFrame_(NSMakeRect(0, 0, 0, 0))
@@ -162,9 +167,8 @@ class IOSTextInput(AbstractTextInput['IOSWindow']):
 
     def _update_geometry(self) -> None:
         x, y, width, height = self.session.caret_rect
-        scale = self.window.screen.get_scale()
-        self.view.setFrame_(NSMakeRect(x / scale, (self.window.height - y - height) / scale,
-                                       max(1, width / scale), max(1, height / scale)))
+        self.view.setFrame_(NSMakeRect(x, self.window.height - y - height,
+                                       max(1, width), max(1, height)))
 
     def sync(self) -> None:
         if self._syncing or not self.session.active or self.view is None:

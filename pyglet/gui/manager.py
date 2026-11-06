@@ -30,6 +30,8 @@ class UIManager:
     manager as their parent to register them automatically.
     """
 
+    _touch_pointer: int | None
+
     def __init__(self, window: BaseWindow, enable: bool = True, cell_size: int = 64, order: int = 0,
                  cursor: str | MouseCursor | None = None) -> None:
         """Create a UI manager for ``window``.
@@ -51,6 +53,7 @@ class UIManager:
                 supplies one.
         """
         self._window = window
+        self._touch_pointer = None
         self._enable = enable
         self._cell_size = cell_size
         self._cells: dict[tuple[int, int], set[WidgetBase]] = {}
@@ -267,6 +270,26 @@ class UIManager:
             for widget in self._widgets_at(*self._mouse_pos):
                 widget.on_key_release(symbol, modifiers)
 
+    def on_touch_start(self, pointer_id: int, x: float, y: float, dx: float, dy: float,
+                       width: float, height: float, pressure: float, scale: float) -> None:
+        """Use the first touch contact to interact with widgets."""
+        if self._touch_pointer is None:
+            self._touch_pointer = pointer_id
+            self.on_mouse_press(round(x), round(y), 1, 0)
+
+    def on_touch_move(self, pointer_id: int, x: float, y: float, dx: float, dy: float,
+                      width: float, height: float, pressure: float, scale: float) -> None:
+        """Drag widgets with the contact that began the interaction."""
+        if self._touch_pointer == pointer_id:
+            self.on_mouse_drag(round(x), round(y), round(dx), round(dy), 1, 0)
+
+    def on_touch_end(self, pointer_id: int, x: float, y: float, dx: float, dy: float,
+                     width: float, height: float, pressure: float, scale: float) -> None:
+        """Release widgets when the controlling contact ends."""
+        if self._touch_pointer == pointer_id:
+            self._touch_pointer = None
+            self.on_mouse_release(round(x), round(y), 1, 0)
+
     def on_mouse_press(self, x: int, y: int, buttons: int, modifiers: int) -> None:
         """Pass the event to any widgets within range of the mouse."""
         self._moving_frames = {
@@ -277,7 +300,8 @@ class UIManager:
         if self._moving_frames:
             self.set_focus(None)
             return
-        self.set_focus(None)
+        if self._focused_widget is not None and not self._focused_widget._check_hit(x, y):
+            self.set_focus(None)
         for widget in self._widgets_at(x, y):
             widget.on_mouse_press(x, y, buttons, modifiers)
             self._active_widgets.add(widget)

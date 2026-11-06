@@ -58,14 +58,13 @@ class PygletIOSView(UIView):  # type: ignore[valid-type, misc]
 
     def _dispatch_touches(self, touches: ObjCInstance, dispatch_name: str) -> None:
         touch_array = touches.allObjects()
-        scale = self.contentScaleFactor()
         bounds = self.bounds()
         for index in range(touch_array.count()):
             touch = touch_array.objectAtIndex_(index)
             location = touch.locationInView_(self)
-            x = round(location.x * scale)
-            y = round((bounds.size.height - location.y) * scale)
-            radius = touch.majorRadius() * scale
+            x = round(location.x)
+            y = round(bounds.size.height - location.y)
+            radius = touch.majorRadius()
             maximum_force = touch.maximumPossibleForce()
             pressure = touch.force() / maximum_force if maximum_force else 0.0
             self._window._dispatch_touch_event(
@@ -74,19 +73,19 @@ class PygletIOSView(UIView):  # type: ignore[valid-type, misc]
 
     @objc_method('v@@')
     def touchesBegan_withEvent_(self, touches: ObjCInstance, event: ObjCInstance) -> None:
-        self._dispatch_touches(touches, 'on_touch_start')
+        PygletIOSView._dispatch_touches(self, touches, 'on_touch_start')
 
     @objc_method('v@@')
     def touchesMoved_withEvent_(self, touches: ObjCInstance, event: ObjCInstance) -> None:
-        self._dispatch_touches(touches, 'on_touch_move')
+        PygletIOSView._dispatch_touches(self, touches, 'on_touch_move')
 
     @objc_method('v@@')
     def touchesEnded_withEvent_(self, touches: ObjCInstance, event: ObjCInstance) -> None:
-        self._dispatch_touches(touches, 'on_touch_end')
+        PygletIOSView._dispatch_touches(self, touches, 'on_touch_end')
 
     @objc_method('v@@')
     def touchesCancelled_withEvent_(self, touches: ObjCInstance, event: ObjCInstance) -> None:
-        self._dispatch_touches(touches, 'on_touch_end')
+        PygletIOSView._dispatch_touches(self, touches, 'on_touch_end')
 
 
 class IOSWindow(BaseWindow['IOSScreen']):
@@ -121,8 +120,8 @@ class IOSWindow(BaseWindow['IOSScreen']):
         # Use the UIKit screen bounds so the view fills that scene.
         # IGnore
         frame = UIScreen.mainScreen().bounds()
-        self._width = round(frame.size.width * scale)
-        self._height = round(frame.size.height * scale)
+        self._width = round(frame.size.width)
+        self._height = round(frame.size.height)
         self._uiwindow = UIWindow.alloc().initWithFrame_(frame)
         self._uiview = PygletIOSView.alloc().initWithFrame_iosWindow_(frame, self)
         self._uiview.setContentScaleFactor_(scale)
@@ -146,8 +145,7 @@ class IOSWindow(BaseWindow['IOSScreen']):
         if self._uiview is None:
             return
         bounds = self._uiview.bounds()
-        scale = self.screen.get_scale()
-        width, height = round(bounds.size.width * scale), round(bounds.size.height * scale)
+        width, height = round(bounds.size.width), round(bounds.size.height)
         if (width, height) != (self._width, self._height):
             self._width, self._height = width, height
             if self._context:
@@ -186,6 +184,10 @@ class IOSWindow(BaseWindow['IOSScreen']):
 
     def get_size(self) -> tuple[int, int]:
         return self._width, self._height
+
+    def get_framebuffer_size(self) -> tuple[int, int]:
+        scale = self.screen.get_scale()
+        return round(self._width * scale), round(self._height * scale)
 
     def get_current_screen(self) -> IOSScreen:
         """Return the main screen used by this UIKit window."""
