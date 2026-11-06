@@ -50,7 +50,7 @@ class BrowserTextInput(AbstractTextInput['EmscriptenWindow']):
         # A rendered, focusable control is needed by mobile keyboards. Position it
         # at the caret for native candidate UI. The GL layout displays committed text.
         self.control.style.cssText = (
-            'position:fixed;width:1px;padding:0;margin:0;border:0;'
+            'position:absolute;width:1px;padding:0;margin:0;border:0;'
             'font-size:16px;background:transparent;color:transparent;'
             'caret-color:transparent;opacity:0.01;pointer-events:none;'
         )
@@ -67,6 +67,7 @@ class BrowserTextInput(AbstractTextInput['EmscriptenWindow']):
             self._proxies.add_event_listener(self.control, name, callback)
         self._proxies.add_event_listener(js.document, 'selectionchange', self._on_selection)
         self._proxies.add_event_listener(js.window, 'blur', self._on_blur)
+        self._proxies.add_event_listener(self.window.canvas, 'touchstart', self._on_canvas_touch_start, passive=False)
         for target in (js.window, getattr(js.window, 'visualViewport', None)):
             if target is not None:
                 self._proxies.add_event_listener(target, 'scroll', self._on_geometry, passive=True)
@@ -82,10 +83,15 @@ class BrowserTextInput(AbstractTextInput['EmscriptenWindow']):
         canvas = self.window.canvas
         rect = canvas.getBoundingClientRect()
         x, y, _, height = self.session.caret_rect
-        scale_x = rect.width / canvas.width if canvas.width else 1.0
-        scale_y = rect.height / canvas.height if canvas.height else 1.0
-        self.control.style.setProperty('left', f'{rect.left + x * scale_x}px')
-        self.control.style.setProperty('top', f'{rect.top + rect.height - (y + height) * scale_y}px')
+        window_width, window_height = self.window.get_size()
+        scale_x = rect.width / window_width if window_width else 1.0
+        scale_y = rect.height / window_height if window_height else 1.0
+        # Keep the native editor anchored in the document alongside the canvas.
+        # A fixed editor can be repositioned by keyboard viewport panning, then
+        # cause the browser to undo that pan when its selection changes.
+        self.control.style.setProperty('left', f'{rect.left + js.window.scrollX + x * scale_x}px')
+        self.control.style.setProperty('top',
+                                       f'{rect.top + js.window.scrollY + rect.height - (y + height) * scale_y}px')
         self.control.style.height = f'{max(16, height * scale_y)}px'
 
     def sync(self) -> None:
@@ -99,6 +105,7 @@ class BrowserTextInput(AbstractTextInput['EmscriptenWindow']):
             return
         self._syncing = True
         try:
+            self._position_control()
             if self.control.value != text:
                 self.control.value = text
             anchor = caret.position if caret.mark is None else caret.mark
@@ -110,7 +117,6 @@ class BrowserTextInput(AbstractTextInput['EmscriptenWindow']):
             if ((self.control.selectionStart, self.control.selectionEnd) != (start, end)
                     or (start != end and self.control.selectionDirection != direction)):
                 self.control.setSelectionRange(start, end, direction)
-            self._position_control()
         finally:
             self._syncing = False
 
@@ -151,6 +157,13 @@ class BrowserTextInput(AbstractTextInput['EmscriptenWindow']):
     def _on_input(self, event: InputEvent) -> None:
         if not event.isComposing:
             self.read()
+
+    def _on_canvas_touch_start(self, event: Event) -> None:
+        # Mobile browsers can move focus away from the hidden editor as a touch
+        # default action, independently of the cancelled pointerdown. Pointer
+        # events still let pyglet move the caret or end editing on an outside tap.
+        if self.session.active:
+            event.preventDefault()
 
     def _on_geometry(self, event: Event) -> None:
         if self.session.active:
