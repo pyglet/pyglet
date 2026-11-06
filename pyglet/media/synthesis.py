@@ -384,10 +384,6 @@ class Operator:
         self._last = 0.0
 
 
-# Sentinel used as ``FMVoice``'s default algorithm so it works without one:
-_DEFAULT_ALGORITHM = object()
-
-
 class FMVoice(SynthesisSource):
     """4-operator FM voice.
 
@@ -408,44 +404,43 @@ class FMVoice(SynthesisSource):
     def __init__(
         self,
         duration: float,
-        algorithm: Algorithm = _DEFAULT_ALGORITHM,
+        algorithm: Algorithm | None = None,
         sample_rate: int = 44800,
         feedback_level: float = 0.0,
         envelope: Envelope | None = None,
     ):
-
-        if algorithm is _DEFAULT_ALGORITHM:
-            algorithm = ALGORITHM_0
-
         self.sample_rate = sample_rate
         self.ops: list[Operator] = [Operator(frequency=440.0, sample_rate=sample_rate) for _ in range(4)]
         self._values = [0.0] * 4
         self._feedback_level = feedback_level
 
-        self._compile_algorithm(algorithm)
+        self._algorithm = algorithm or ALGORITHM_0
+        self._compile_algorithm()
 
-        super().__init__(self._generate(), duration, sample_rate, envelope)
+        super().__init__(self._get_generator(), duration, sample_rate, envelope)
 
     # ----- internal -----
 
-    def _compile_algorithm(self, algorithm: Algorithm) -> None:
-        self._order = self._build_evaluation_order(algorithm)
+    def _compile_algorithm(self) -> None:
+        self._order = self._build_evaluation_order()
 
-        self.algorithm = algorithm
-        self._carriers = tuple(algorithm.carriers)
+        self._carriers = tuple(self._algorithm.carriers)
         self._modulator_sources: list[list[int]] = [[] for _ in range(4)]
-        for source, target in algorithm.modulations:
+
+        for source, target in self._algorithm.modulations:
             self._modulator_sources[target].append(source)
 
         self.set_feedback(self._feedback_level)
 
-    def _build_evaluation_order(self, algorithm: Algorithm) -> tuple[int, ...]:
+    def _build_evaluation_order(self) -> tuple[int, ...]:
         """Validate ``algorithm`` and return operator indices in render order.
 
         Modulators are returned before the operators they feed so each operator
         advances exactly once per audio sample. Raises ``ValueError`` if the
         routing is invalid or its modulation graph contains a cycle.
         """
+        algorithm = self._algorithm
+
         # Every referenced operator must be an integer index in 0..3:
         def check(operator, role):
             if not isinstance(operator, int) or not 0 <= operator <= 3:
@@ -518,10 +513,6 @@ class FMVoice(SynthesisSource):
 
         return tuple(reversed(post_order))
 
-    def _generate(self) -> Generator[float]:
-        while True:
-            yield self._render_sample()
-
     def _render_sample(self) -> float:
         values = self._values
         for operator in self._order:
@@ -529,15 +520,25 @@ class FMVoice(SynthesisSource):
             for source in self._modulator_sources[operator]:
                 modulation += values[source]
             values[operator] = self.ops[operator].process(modulation)
-        return sum(values[operator] for operator in self._carriers) / len(self._carriers)
+        return sum(values[op] for op in self._carriers) / len(self._carriers)
+
+    def _get_generator(self) -> Generator[float]:
+        while True:
+            yield self._render_sample()
 
     # ----- public API -----
 
-    def set_algorithm(self, algorithm: Algorithm) -> None:
+    @property
+    def algorithm(self):
+        return self._algorithm
+
+    @algorithm.setter
+    def algorithm(self, algorithm: Algorithm) -> None:
         """Change the routing and recompile it for this voice."""
         if not isinstance(algorithm, Algorithm):
             raise TypeError("algorithm must be an Algorithm instance")
-        self._compile_algorithm(algorithm)
+        self._algorithm = algorithm
+        self._compile_algorithm()
 
     def set_feedback(self, level: float) -> None:
         """Set the amount of self-feedback for the algorithm's feedback operator."""

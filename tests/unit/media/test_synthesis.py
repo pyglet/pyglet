@@ -184,7 +184,7 @@ def test_fm_voice_validates_algorithm():
 
 def test_fm_voice_set_algorithm():
     source = FMVoice(duration=0.1, algorithm=ALGORITHM_7, sample_rate=8000, feedback_level=0.5)
-    source.set_algorithm(ALGORITHM_5)
+    source.algorithm = ALGORITHM_5
 
     assert source.algorithm is ALGORITHM_5
     assert source._carriers == (1, 2, 3)
