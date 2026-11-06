@@ -16,8 +16,10 @@ Location           Purpose
 
 On desktop platforms cache files live below the application's data directory.
 In a browser, data and settings use the IndexedDB-backed ``/data`` mount while
-cache uses the Origin Private File System-backed ``/cache`` mount. Both browser
-locations require :meth:`Storage.sync` to make writes durable.
+cache uses a separate IndexedDB-backed ``/cache`` mount. Both browser locations
+require :meth:`Storage.sync` to make writes durable. If cache persistence is
+unavailable, the launcher warns and uses an in-memory cache that is lost on reload.
+Launchers can optionally select OPFS for the cache before Python starts.
 
 Structured settings
 -------------------

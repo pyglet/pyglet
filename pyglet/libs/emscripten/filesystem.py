@@ -2,7 +2,7 @@
 
 The host page registers a ``pyglet_emscripten`` JavaScript module before
 importing this module. It supplies the IDBFS operations used for application
-data and the OPFS operations used for caches. Custom browser launchers can use
+data and caches, plus optional OPFS mounts. Custom browser launchers can use
 the sibling ``pyglet_emscripten.js`` module to install this bridge.
 """
 from __future__ import annotations
@@ -43,7 +43,7 @@ async def sync_idbfs() -> None:
 
 
 async def mount_opfs(path: str = "/cache") -> None:
-    """Mount an Origin Private File System directory for persistent caches."""
+    """Prepare an OPFS cache directory, falling back to memory if unavailable."""
     await _bridge().mount_opfs(_mount_path(path))
 
 
@@ -53,7 +53,7 @@ async def sync_opfs() -> None:
 
 
 async def sync_storage() -> None:
-    """Persist pyglet's IDBFS data and OPFS cache mounts."""
+    """Persist pyglet's IDBFS data and cache mounts, plus optional OPFS mounts."""
     await sync_idbfs()
     await sync_opfs()
 

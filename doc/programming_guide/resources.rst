@@ -253,8 +253,10 @@ application data, and settings:
        generated previews or downloaded content. The application must work if
        these files are purged.
      - A ``cache`` directory below the application's data directory.
-     - Persistent OPFS directory under ``/cache/<name>``. Call ``sync`` after
-       writing files that should survive a reload.
+     - IDBFS directory under ``/cache/<name>`` by default (optionally OPFS).
+       Call ``sync`` after
+       writing files that should survive a reload. Falls back to memory with a
+       console warning if persistent cache storage is unavailable.
    * - ``storage.data``
      - Persistent application content: save games, profiles, imported data,
        and content the application owns.

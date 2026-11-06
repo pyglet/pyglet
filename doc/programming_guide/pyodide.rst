@@ -65,9 +65,25 @@ Pyodide's default file system lives in memory. Files written there disappear
 when the page is reloaded.
 
 In a browser, :mod:`pyglet.storage` keeps saves and settings in the
-IndexedDB-backed ``/data`` mount. Its ``cache`` location is in ``/cache``, an
-Origin Private File System (OPFS) mount. Cache files survive a refresh, but
+IndexedDB-backed ``/data`` mount. Its ``cache`` location is in a separate
+IndexedDB-backed ``/cache`` mount. Cache files survive a refresh, but
 applications must be prepared to recreate them when the browser purges storage.
+If IndexedDB cache storage is unavailable (for example, when access is denied),
+the launcher logs a console warning and uses an in-memory cache instead. These
+cache files are lost on reload. Previously stored OPFS caches are not migrated;
+applications recreate those files as needed.
+
+To use OPFS for the cache instead, select it before building::
+
+    [tool.pyglet.web]
+    entrypoint = "main.py"
+    cache_backend = "opfs"
+
+The default is ``"idbfs"``. You can also pass ``--cache-backend opfs`` to
+``tools/web.py`` before the ``build`` or ``serve`` command. OPFS requires a
+secure context, such as HTTPS or localhost. Either backend falls back to an
+in-memory cache with a console warning if cache initialization fails. Switching
+backends does not migrate cache files. Saves and settings always use IDBFS.
 
 Storage synchronization is asynchronous, so avoid doing it during a
 time-sensitive update or draw. A file chosen through a browser file picker is
@@ -77,7 +93,7 @@ needs the file after a reload.
 .. note:: Files in the default in-memory VFS only exist for the current page
           session. The ``/data`` and ``/cache`` mounts created by
           ``pyglet-web`` are backed by persistent browser storage and can
-          survive a refresh.
+          survive a refresh when persistent storage is available.
 
 Building and serving an application
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -220,9 +236,13 @@ its installer after loading Pyodide::
     await installPygletEmscripten(pyodide);
 
 The installer registers the ``pyglet_emscripten`` JavaScript module expected
-by pyglet, mounts and restores ``/data`` with IDBFS, and mounts ``/cache`` with
-OPFS before Python starts. ``Storage.sync`` can then persist both locations.
+by pyglet, and mounts and restores ``/data`` and ``/cache`` with IDBFS before
+Python starts. ``Storage.sync`` can then persist both locations.
 The ``pyglet-web`` tool copies and imports this same module automatically.
+
+Custom launchers can select OPFS with the same startup-time choice::
+
+    await installPygletEmscripten(pyodide, { cacheBackend: "opfs" });
 
 For custom paths or launchers that mount one location themselves, pass options
 to the installer. A ``null`` path skips that mount::
