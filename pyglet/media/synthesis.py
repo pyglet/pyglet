@@ -463,9 +463,11 @@ class FMVoice(SynthesisSource):
             seen.add(carrier)
 
         modulations = list(algorithm.modulations)
-        # Modulations must be valid, non-self and unique pairs...
-        if len(set(modulations)) != len(modulations):
-            raise ValueError("Duplicate modulation")
+        # Modulations must be valid, non-self and unique pairs. Duplicate detection
+        # is done on unpacked index tuples so a malformed or unhashable modulation
+        # reports "Invalid modulation" / "Duplicate modulation" instead of leaking a
+        # confusing TypeError...
+        edges = set()
         for modulation in modulations:
             try:
                 source, target = modulation
@@ -473,22 +475,25 @@ class FMVoice(SynthesisSource):
                 raise ValueError(f"Invalid modulation {modulation!r}; expected a (source, target) pair") from None
             check(source, "modulator")
             check(target, "target")
+            edge = (source, target)
+            if edge in edges:
+                raise ValueError("Duplicate modulation")
+            edges.add(edge)
             seen.add(source)
             seen.add(target)
             if source == target:
                 raise ValueError("An operator cannot modulate itself; use feedback instead")
 
-        # Feedback must be a valid index...
+        # Feedback must be a valid index and part of the routed operators...
         if algorithm.feedback is not None:
             check(algorithm.feedback, "feedback")
+            seen.add(algorithm.feedback)
 
         # Topologically sort so each operator renders exactly once per sample.
         adjacency = [[] for _ in range(4)]
-        nodes = set(algorithm.carriers) | seen
+        nodes = seen
         for source, target in modulations:
             adjacency[source].append(target)
-        if algorithm.feedback is not None:
-            nodes.add(algorithm.feedback)
 
         post_order: list[int] = []
         state: dict[int, int] = {}
