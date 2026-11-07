@@ -179,8 +179,9 @@ class ScrollableTextLayout(TextLayout):
 
     def _update_view_translation(self) -> None:
         # Offset of content within viewport
+        view_translation = (-self._translate_x, -self._translate_y, 0)
         for _vertex_list in self._vertex_lists:
-            _vertex_list.view_translation[:] = (-self._translate_x, -self._translate_y, 0) * _vertex_list.count
+            _vertex_list.set_attribute_constant('view_translation', view_translation)
 
     @property
     def view_x(self) -> int:

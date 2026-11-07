@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 import sys
 from abc import ABC, abstractmethod
+from functools import lru_cache
 from typing import TYPE_CHECKING, Iterable, NamedTuple, Pattern, Protocol, Sequence, cast
 
 from pyglet.enums import GeometryMode
@@ -18,6 +19,12 @@ _SHADOW_DEPTH_LAYER = -2
 _STROKE_DEPTH_LAYER = -1
 _GLYPH_DEPTH_LAYER = 0
 _FOREGROUND_DECORATION_DEPTH_LAYER = 1
+
+
+@lru_cache(maxsize=256)
+def _get_opacity_table(alpha: int) -> bytes:
+    """Map original effect alpha bytes to faded alpha bytes."""
+    return bytes(round(value * alpha / 255) & 255 for value in range(256))
 
 
 class _DecorationData(NamedTuple):
@@ -57,6 +64,8 @@ class _LayoutVertexList(Protocol):
     def delete(self) -> None: ...
 
     def set_attribute_data(self, name: str, data: Sequence[float | int | bool]) -> None: ...
+
+    def set_attribute_constant(self, name: str, value: Sequence[float | int | bool]) -> None: ...
 
 
 _distance_re: Pattern[str] = re.compile(r"([-0-9.]+)([a-zA-Z]+)")
@@ -272,6 +281,7 @@ class _GlyphBox(_AbstractBox):
     advance: float
     vertex_lists: list[_LayoutVertexList]
     _glyph_vertex_list: _LayoutVertexList | None
+    _effect_vertex_lists: list[tuple[_LayoutVertexList | VertexList, list[int]]]
 
     def __init__(
         self,
@@ -298,6 +308,7 @@ class _GlyphBox(_AbstractBox):
         self.glyphs = glyphs
         self.vertex_lists = []
         self._glyph_vertex_list = None
+        self._effect_vertex_lists = []
 
     @staticmethod
     def _glyph_advance(kern: float, glyph: Glyph, glyph_pos: GlyphPosition) -> int:
@@ -647,6 +658,7 @@ class _GlyphBox(_AbstractBox):
                                 **shadow_data,
                             )
                             stroke_lists.append(shadow_list)
+                            self._effect_vertex_lists.append((shadow_list, list(shadow_list.colors[:])))
                     stroke_list = layout.program.vertex_list_indexed(
                         4,
                         GeometryMode.TRIANGLES,
@@ -656,6 +668,7 @@ class _GlyphBox(_AbstractBox):
                         **stroke_data,
                     )
                     stroke_lists.append(stroke_list)
+                    self._effect_vertex_lists.append((stroke_list, list(stroke_list.colors[:])))
                 stroke_x += round(glyph.advance + glyph_pos.x_advance)
             glyph_index = range_end_glyph
         return stroked_glyphs, stroke_lists
@@ -956,6 +969,7 @@ class _GlyphBox(_AbstractBox):
                 **shadow_data,
             )
             self._add_vertex_list(shadow_list, context)
+            self._effect_vertex_lists.append((shadow_list, list(shadow_list.colors[:])))
 
         if reuse_vertex_list is None:
             vertex_list: IndexedVertexList | _LayoutVertexList = layout.program.vertex_list_indexed(
@@ -971,6 +985,7 @@ class _GlyphBox(_AbstractBox):
             for name, values in vertex_data.items():
                 vertex_list.set_attribute_data(name, values)
         self._glyph_vertex_list = vertex_list  # type: ignore[assignment]
+        self.update_effect_opacity(layout._effect_opacity)  # noqa: SLF001
         self._add_vertex_list(vertex_list, context)
         for stroke_list in stroke_lists:
             self._add_vertex_list(stroke_list, context)
@@ -1009,7 +1024,7 @@ class _GlyphBox(_AbstractBox):
     def update_translation(self, x: float, y: float, z: float) -> None:
         for _vertex_list in self.vertex_lists:
             depth_offset = _vertex_list.translation[3]
-            _vertex_list.translation[:] = (x, y, z, depth_offset) * _vertex_list.count
+            _vertex_list.set_attribute_constant('translation', (x, y, z, depth_offset))
 
     def update_colors(self, colors: list[int], start: int, end: int) -> None:
         """Update the glyph colors only when specified by a single color attribute in set_style.
@@ -1022,10 +1037,24 @@ class _GlyphBox(_AbstractBox):
             vertex_end_index = end * 16
             self._glyph_vertex_list.colors[vertex_start_index:vertex_end_index] = colors[:color_end_index] * 4
 
+    def update_opacity(self, alpha: int) -> None:
+        """Update fill alpha without rewriting RGB values or rebuilding geometry."""
+        if self._glyph_vertex_list is not None:
+            vertex_list = self._glyph_vertex_list
+            memoryview(vertex_list.colors).cast('B')[3::4] = bytes((alpha & 255,)) * vertex_list.count
+
+    def update_effect_opacity(self, alpha: int) -> None:
+        """Fade effects independently of changes to the fill color."""
+        if not self._effect_vertex_lists:
+            return
+        table = _get_opacity_table(alpha)
+        for vertex_list, original_colors in self._effect_vertex_lists:
+            memoryview(vertex_list.colors).cast('B')[3::4] = bytes(original_colors[3::4]).translate(table)
+
     def update_view_translation(self, translate_x: float, translate_y: float) -> None:
         view_translation = (-translate_x, -translate_y, 0)
         for _vertex_list in self.vertex_lists:
-            _vertex_list.view_translation[:] = view_translation * _vertex_list.count
+            _vertex_list.set_attribute_constant('view_translation', view_translation)
 
     def update_rotation(self, rotation: float) -> None:
         rot = (rotation,)
@@ -1047,6 +1076,7 @@ class _GlyphBox(_AbstractBox):
             _vertex_list.delete()
 
         self.vertex_lists.clear()
+        self._effect_vertex_lists.clear()
 
     def get_point_in_box(self, position: int) -> int:
         x = 0

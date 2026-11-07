@@ -180,6 +180,48 @@ def test_label_effect_linear_gradient(test_window, style_name, effect):
     assert tuple(effect_colors[-8:]) == gradient.end * 2
 
 
+@pytest.mark.parametrize("stroke", [None, Stroke(color=(10, 20, 30, 160))])
+@pytest.mark.parametrize("gradient", [False, True])
+@pytest.mark.parametrize("shadow_gradient", [False, True])
+@pytest.mark.parametrize("text", ['A', 'Hello', 'HelloWorld'])
+def test_label_effects_follow_opacity_and_visibility(
+        test_window, stroke: Stroke | None, gradient: bool, shadow_gradient: bool, text: str) -> None:
+    shadow_color = LinearGradient((30, 20, 10, 41), (90, 80, 70, 201)) if shadow_gradient else (30, 20, 10, 200)
+    shadow = DropShadow(color=shadow_color)
+    color = LinearGradient((255, 0, 0, 128), (0, 0, 255, 128)) if gradient else (255, 255, 255, 128)
+    label = Label(text, color=color, shadow=shadow, stroke=stroke)
+    try:
+        for box in label._boxes:
+            for vertex_list, original in box._effect_vertex_lists:
+                assert list(vertex_list.colors[:]) == original
+        for alpha in (128, 0, 64, 255):
+            vertex_lists = [v for box in label._boxes for v in box.vertex_lists]
+            rgb = [(list(v.colors[0::4]), list(v.colors[1::4]), list(v.colors[2::4])) for v in vertex_lists]
+            label.opacity = alpha
+            assert label.opacity == alpha
+            assert all(v is old for v, old in zip(
+                (v for box in label._boxes for v in box.vertex_lists), vertex_lists, strict=True,
+            ))
+            assert [(list(v.colors[0::4]), list(v.colors[1::4]), list(v.colors[2::4])) for v in vertex_lists] == rgb
+            assert all(all(a == alpha for a in box._glyph_vertex_list.colors[3::4]) for box in label._boxes)
+            label.color = LinearGradient((10, 40, 80, 75), (80, 40, 10, 125)) if gradient else (10, 40, 80, 75)
+            for box in label._boxes:
+                assert box._effect_vertex_lists
+                for vertex_list, original in box._effect_vertex_lists:
+                    assert list(vertex_list.colors[3::4]) == [round(a * alpha / 255) for a in original[3::4]]
+                    assert list(vertex_list.colors[0::4]) == original[0::4]
+            label.visible = False
+            assert all(not any(v.visible[:]) for box in label._boxes for v in box.vertex_lists)
+            label.text = "Hidden"
+            assert all(not any(v.visible[:]) for box in label._boxes for v in box.vertex_lists)
+            label.visible = True
+            assert all(all(v.visible[:]) for box in label._boxes for v in box.vertex_lists)
+        assert shadow.color == shadow_color
+        assert stroke is None or stroke.color == (10, 20, 30, 160)
+    finally:
+        label.delete()
+
+
 @pytest.mark.parametrize("style_name", ["background_color", "underline", "strikethrough"])
 def test_decoration_style_does_not_leak_to_earlier_text(test_window, style_name):
     document = FormattedDocument("aaaaaaaa")

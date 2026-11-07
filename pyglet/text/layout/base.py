@@ -243,6 +243,7 @@ class TextLayout(_FlowLayoutBase):
     _content_valign: ContentVAlign = "top"
     _multiline: bool = False
     _visible: bool = True
+    _effect_opacity: int = 255
 
     #: Clip-space depth distance between text layers when ``depth_sorting`` is enabled.
     _depth_layer_offset: ClassVar[float] = 1e-5
@@ -707,6 +708,17 @@ class TextLayout(_FlowLayoutBase):
         for box in self._boxes:
             box.update_visibility(self._visible)
 
+    def _update_effect_opacity(self, alpha: int) -> None:
+        self._effect_opacity = alpha
+        for box in self._boxes:
+            if isinstance(box, _GlyphBox):
+                box.update_effect_opacity(alpha)
+
+    def _update_opacity(self, alpha: int) -> None:
+        for box in self._boxes:
+            if isinstance(box, _GlyphBox):
+                box.update_opacity(alpha)
+
     @property
     def content_width(self) -> int:
         """Calculated width of the text in the layout.
@@ -1135,6 +1147,17 @@ class TextLayout(_FlowLayoutBase):
             # affected vertex data is required instead of the solid-color
             # in-place update below.
             self._init_document()
+            return
+
+        # A whole unformatted document has one solid color, independent of
+        # character-to-glyph mapping. Keep partial ranges and inline elements
+        # on the existing range-aware path.
+        if (type(self._document) is UnformattedDocument and start == 0 and end == len(self._document.text)
+                and all(type(box) is _GlyphBox for box in self._boxes)):
+            for box in self._boxes:
+                vertex_list = cast(_GlyphBox, box)._glyph_vertex_list
+                if vertex_list is not None:
+                    vertex_list.set_attribute_constant('colors', color)
             return
 
         colors_iter = self._document.get_style_runs("color")
