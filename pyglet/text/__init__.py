@@ -193,6 +193,8 @@ class DocumentLabel(layout.TextLayout):
     associated document.
     """
 
+    _updating_opacity: bool = False
+
     def __init__(
             self, document: AbstractDocument,
             x: float = 0.0, y: float = 0.0, z: float = 0.0,
@@ -302,18 +304,34 @@ class DocumentLabel(layout.TextLayout):
 
         An opacity of 255 (the default) has no effect.  An opacity of 128 will
         make the label appear semi-translucent.
+
+        Setting opacity also fades shadows and strokes relative to their own
+        alpha values. Changing :attr:`color` leaves effect colors unchanged.
         """
         color = self.color
         return color.start[3] if isinstance(color, LinearGradient) else color[3]
 
     @opacity.setter
     def opacity(self, alpha: int) -> None:
+        alpha = int(alpha)
         color = self.color
-        if isinstance(color, LinearGradient):
-            if alpha != color.start[3] or alpha != color.end[3]:
-                self.color = LinearGradient((*color.start[:3], alpha), (*color.end[:3], alpha))
-        elif alpha != color[3]:
-            self.color = cast(tuple[int, int, int, int], tuple(map(int, (*color[:3], alpha))))
+        self._updating_opacity = True
+        try:
+            if isinstance(color, LinearGradient):
+                if alpha != color.start[3] or alpha != color.end[3]:
+                    self.color = LinearGradient((*color.start[:3], alpha), (*color.end[:3], alpha))
+            elif alpha != color[3]:
+                self.color = cast(tuple[int, int, int, int], tuple(map(int, (*color[:3], alpha))))
+        finally:
+            self._updating_opacity = False
+        self._update_effect_opacity(alpha)
+
+    def _update_color(self, start: int, end: int, color: tuple[int, int, int, int] | LinearGradient) -> None:
+        if self._updating_opacity:
+            alpha = color.start[3] if isinstance(color, LinearGradient) else color[3]
+            self._update_opacity(alpha)
+        else:
+            super()._update_color(start, end, color)
 
     @property
     def shadow(self) -> DropShadow | None:

@@ -243,6 +243,7 @@ class TextLayout(_FlowLayoutBase):
     _content_valign: ContentVAlign = "top"
     _multiline: bool = False
     _visible: bool = True
+    _effect_opacity: int = 255
 
     #: Clip-space depth distance between text layers when ``depth_sorting`` is enabled.
     _depth_layer_offset: ClassVar[float] = 1e-5
@@ -706,6 +707,17 @@ class TextLayout(_FlowLayoutBase):
     def _update_visibility(self) -> None:
         for box in self._boxes:
             box.update_visibility(self._visible)
+
+    def _update_effect_opacity(self, alpha: int) -> None:
+        self._effect_opacity = alpha
+        for box in self._boxes:
+            if isinstance(box, _GlyphBox):
+                box.update_effect_opacity(alpha)
+
+    def _update_opacity(self, alpha: int) -> None:
+        for box in self._boxes:
+            if isinstance(box, _GlyphBox):
+                box.update_opacity(alpha)
 
     @property
     def content_width(self) -> int:

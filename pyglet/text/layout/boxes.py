@@ -272,6 +272,7 @@ class _GlyphBox(_AbstractBox):
     advance: float
     vertex_lists: list[_LayoutVertexList]
     _glyph_vertex_list: _LayoutVertexList | None
+    _effect_vertex_lists: list[tuple[_LayoutVertexList | VertexList, list[int]]]
 
     def __init__(
         self,
@@ -298,6 +299,7 @@ class _GlyphBox(_AbstractBox):
         self.glyphs = glyphs
         self.vertex_lists = []
         self._glyph_vertex_list = None
+        self._effect_vertex_lists = []
 
     @staticmethod
     def _glyph_advance(kern: float, glyph: Glyph, glyph_pos: GlyphPosition) -> int:
@@ -647,6 +649,7 @@ class _GlyphBox(_AbstractBox):
                                 **shadow_data,
                             )
                             stroke_lists.append(shadow_list)
+                            self._effect_vertex_lists.append((shadow_list, list(shadow_list.colors[:])))
                     stroke_list = layout.program.vertex_list_indexed(
                         4,
                         GeometryMode.TRIANGLES,
@@ -656,6 +659,7 @@ class _GlyphBox(_AbstractBox):
                         **stroke_data,
                     )
                     stroke_lists.append(stroke_list)
+                    self._effect_vertex_lists.append((stroke_list, list(stroke_list.colors[:])))
                 stroke_x += round(glyph.advance + glyph_pos.x_advance)
             glyph_index = range_end_glyph
         return stroked_glyphs, stroke_lists
@@ -956,6 +960,7 @@ class _GlyphBox(_AbstractBox):
                 **shadow_data,
             )
             self._add_vertex_list(shadow_list, context)
+            self._effect_vertex_lists.append((shadow_list, list(shadow_list.colors[:])))
 
         if reuse_vertex_list is None:
             vertex_list: IndexedVertexList | _LayoutVertexList = layout.program.vertex_list_indexed(
@@ -971,6 +976,7 @@ class _GlyphBox(_AbstractBox):
             for name, values in vertex_data.items():
                 vertex_list.set_attribute_data(name, values)
         self._glyph_vertex_list = vertex_list  # type: ignore[assignment]
+        self.update_effect_opacity(layout._effect_opacity)  # noqa: SLF001
         self._add_vertex_list(vertex_list, context)
         for stroke_list in stroke_lists:
             self._add_vertex_list(stroke_list, context)
@@ -1022,6 +1028,16 @@ class _GlyphBox(_AbstractBox):
             vertex_end_index = end * 16
             self._glyph_vertex_list.colors[vertex_start_index:vertex_end_index] = colors[:color_end_index] * 4
 
+    def update_opacity(self, alpha: int) -> None:
+        """Update fill alpha without rewriting RGB values or rebuilding geometry."""
+        if self._glyph_vertex_list is not None:
+            self._glyph_vertex_list.colors[3::4] = [alpha] * self._glyph_vertex_list.count
+
+    def update_effect_opacity(self, alpha: int) -> None:
+        """Fade effects independently of changes to the fill color."""
+        for vertex_list, original_colors in self._effect_vertex_lists:
+            vertex_list.colors[3::4] = [round(value * alpha / 255) for value in original_colors[3::4]]
+
     def update_view_translation(self, translate_x: float, translate_y: float) -> None:
         view_translation = (-translate_x, -translate_y, 0)
         for _vertex_list in self.vertex_lists:
@@ -1047,6 +1063,7 @@ class _GlyphBox(_AbstractBox):
             _vertex_list.delete()
 
         self.vertex_lists.clear()
+        self._effect_vertex_lists.clear()
 
     def get_point_in_box(self, position: int) -> int:
         x = 0
