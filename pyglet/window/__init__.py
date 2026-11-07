@@ -709,6 +709,9 @@ class BaseWindow(EventDispatcher, Generic[ScreenT], metaclass=_WindowMetaclass):
         window's taskbar icon will flash, indicating it requires attention.
         """
 
+    def attention(self) -> None:
+        """Request the user's attention without activating the window."""
+
     def clear(self) -> None:
         """Clear the window.
 

@@ -135,6 +135,7 @@ NSOpenGLCPSwapInterval        = 222
 NSOpenGLCPSurfaceOpacity      = 236
 
 # NSApplication.h
+NSCriticalRequest = 0
 NSApplicationPresentationDefault = 0
 NSApplicationPresentationHideDock = 1 << 1
 NSApplicationPresentationHideMenuBar = 1 << 3

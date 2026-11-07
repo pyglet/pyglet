@@ -393,6 +393,24 @@ will only occur when you manually change the visibility of the window or when
 the window is minimized or restored.  On Mac OS X the user can also hide or
 show the window (affecting visibility) using the Command+H shortcut.
 
+Requesting attention
+-------------------
+
+Call :py:meth:`~pyglet.window.Window.attention` to notify the user that a
+background window needs attention::
+
+    window.attention()
+
+This flashes the taskbar button and window caption on Windows, bounces the
+application's Dock icon on macOS, or sets the window manager's demands-attention
+hint on X11.  It does not activate the window.
+
+The operating system or window manager controls the effect and may ignore the
+request. Windows and macOS stop the notification when the window or application becomes
+active. On X11, the window manager decides when to clear it.
+
+This method has no effect on other backends, but is safe to call for cross platform.
+
 File dialogs
 ------------
 

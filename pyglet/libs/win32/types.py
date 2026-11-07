@@ -399,6 +399,17 @@ class LOGFONTW(Structure):
     ]
 
 
+class FLASHWINFO(Structure):
+    _fields_ = [
+        ('cbSize', UINT),
+        ('hwnd', HWND),
+        ('dwFlags', DWORD),
+        ('uCount', UINT),
+        ('dwTimeout', DWORD),
+    ]
+    __slots__ = [f[0] for f in _fields_]
+
+
 class TRACKMOUSEEVENT(Structure):
     _fields_ = [
         ('cbSize', DWORD),

@@ -12,6 +12,7 @@ from pyglet.libs.win32.types import (
     BITMAPINFOHEADER,
     BYTE,
     COLORREF,
+    FLASHWINFO,
     FORMATETC,
     HCURSOR,
     IDataObject,
@@ -647,6 +648,12 @@ class Win32Window(BaseWindow['Win32Screen']):
 
     def activate(self) -> None:
         _user32.SetForegroundWindow(self._hwnd)
+
+    def attention(self) -> None:
+        if self._hwnd:
+            info = FLASHWINFO(sizeof(FLASHWINFO), self._hwnd,
+                              constants.FLASHW_ALL | constants.FLASHW_TIMERNOFG, 0, 0)
+            _user32.FlashWindowEx(byref(info))
 
     def set_visible(self, visible: bool = True) -> None:
         if visible:
