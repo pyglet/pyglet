@@ -687,7 +687,7 @@ def send_message(
         receiver: str | c_void_p | ObjCInstance,
         selector_name: str | bytes,
         *args,
-        restype: Type[_CTypesResType] = c_void_p,
+        restype: Type[_CTypesResType] | None = c_void_p,
         argtypes: Sequence[Type] | None = None,
         **_  # For compatibility with the pre-annotation signature
 ) -> _CTypesResType | None:
