@@ -576,6 +576,74 @@ text widgets are to be shown, some mechanism is needed to dispatch events to
 the widget that has keyboard focus.  An example of how to do this is given in
 the `examples/text_input.py` example program.
 
+Text-input sessions
+-------------------
+
+Text-input sessions primarily connect browser and iOS text controls to an
+``IncrementalTextLayout``, including software keyboard requests and native IME
+input. Other backends can provide the same integration.
+Start the session when the field receives
+focus and call ``layout.end_text_input()`` when it loses focus::
+
+    from pyglet.window.textinput import TextInputOptions
+
+    session = layout.begin_text_input(
+        window,
+        caret,
+        TextInputOptions(enter_action='newline'),
+    )
+
+Only one session can be active per window. ``TextEntry`` manages sessions
+automatically when its focus changes.
+
+Check ``window.text_input_capabilities`` before starting a session, or
+``session.capabilities`` afterward. These immutable flags describe the session
+bridge's supported features, independently of the options requested:
+
+* ``native_text_input``: synchronize a native text control with the editor.
+* ``screen_keyboard``: forward software keyboard requests to the platform.
+* ``input_type``, ``enter_action``, and ``password``: forward the corresponding
+  keyboard hints. Password hints do not mask text drawn by pyglet.
+* ``composition``: commit text from a native IME.
+* ``composition_preview``: show uncommitted composition text in the layout.
+* ``selection_handles``: show native touch-selection handles over the layout.
+
+Browser and iOS backends support the first six flags; composition previews and
+native selection handles are currently unavailable. The default backend hooks
+report all flags as false and continue using existing keyboard events. Custom
+backends can expose a ``TextInputCapabilities`` value with the features they
+implement. A supported hint remains subject to platform policy; it does not
+guarantee keyboard visibility or a particular keyboard layout.
+
+``TextInputOptions`` lets you choose the input type, return-key action, password
+entry, and software-keyboard policy. ``screen_keyboard`` accepts:
+
+* ``'auto'`` (default): let the platform decide whether to show a keyboard.
+* ``'show'``: request a software keyboard where supported.
+* ``'hide'``: request no software keyboard while allowing physical keyboard input.
+
+The platform determines keyboard visibility. In a mobile browser, start the
+session from a tap or click handler. Desktop browsers normally continue using
+the physical keyboard, even with ``'show'``.
+
+Listen for return-key actions such as ``'search'`` or ``'done'`` with a session
+handler::
+
+    @session.event
+    def on_action(action):
+        print("Requested action:", action)
+
+Caret bounds are supplied automatically. For layouts drawn with a custom camera
+or transform, pass ``get_caret_rect``
+to ``begin_text_input``. The callback returns ``(x, y, width, height)`` in window
+coordinates, measured from the bottom left.
+
+``examples/text/windows_onscreen_keyboard.py`` demonstrates an explicit Windows
+on-screen keyboard request.
+
+Browser and iOS sessions keep the text rendered by pyglet. They currently do
+not display uncommitted composition text or native touch-selection handles.
+
 Choosing fonts
 --------------
 

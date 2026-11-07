@@ -70,7 +70,7 @@ except (ImportError, AttributeError):
 try:
     from pyglet.libs.linux.x11 import xinput2
 
-    _have_xinput2 = True
+    _have_xinput2 = xinput2.is_available()
 except (ImportError, AttributeError):
     _have_xinput2 = False
 
@@ -188,7 +188,8 @@ class XlibWindow(BaseWindow['XlibScreen']):
     _mapped: bool = False
     _lost_context: bool = False
     _lost_context_state: bool = False
-    _xinput2_opcode: int | None = None
+    _raw_mouse_motion: bool = False
+    _raw_mouse_state: int = 0
 
     _enable_xsync: bool = False
     _current_sync_value: xsync.XSyncValue | None = None
@@ -235,6 +236,7 @@ class XlibWindow(BaseWindow['XlibScreen']):
         # This would prevent the floating window from being moved by the
         # WM.
         if 'fullscreen' in changes or 'resizable' in changes:
+            self._set_xinput2_raw_motion(False)
             # clear out the GLX context
             self.context.detach()
             xlib.XDestroyWindow(self._x_display, self._window)
@@ -342,7 +344,7 @@ class XlibWindow(BaseWindow['XlibScreen']):
                                                 byref(window_attributes))
             xlib.XMapWindow(self._x_display, self._x_window)
             xlib.XSelectInput(self._x_display, self._x_window, self._default_event_mask)
-            self._enable_xinput2_touch()
+            self._enable_xinput2()
 
             self.display._window_map[self._window] = self.dispatch_platform_event  # noqa: SLF001
             self.display._window_map[self._x_window] = self.dispatch_platform_event_view  # noqa: SLF001
@@ -592,6 +594,7 @@ class XlibWindow(BaseWindow['XlibScreen']):
         if not self._window:
             return
 
+        self._set_xinput2_raw_motion(False)
         if self.context:
             self.context.destroy()
         self._unmap()
@@ -728,6 +731,23 @@ class XlibWindow(BaseWindow['XlibScreen']):
         if self._x_display and self._window:
             xlib.XSetInputFocus(self._x_display, self._window, xlib.RevertToParent, xlib.CurrentTime)
 
+    def attention(self) -> None:
+        if not self._x_display or not self._window:
+            return
+
+        event = xlib.XEvent()
+        event.xclient.type = xlib.ClientMessage
+        event.xclient.display = self._x_display
+        event.xclient.window = self._window
+        event.xclient.message_type = xlib.XInternAtom(self._x_display, b'_NET_WM_STATE', False)
+        event.xclient.format = 32
+        event.xclient.data.l[0] = 1  # _NET_WM_STATE_ADD
+        event.xclient.data.l[1] = xlib.XInternAtom(self._x_display, b'_NET_WM_STATE_DEMANDS_ATTENTION', False)
+        event.xclient.data.l[3] = 1  # Request from an application.
+        xlib.XSendEvent(self._x_display, self._get_root(), False,
+                        xlib.SubstructureRedirectMask | xlib.SubstructureNotifyMask, byref(event))
+        xlib.XFlush(self._x_display)
+
     def set_visible(self, visible: bool = True) -> None:
         super().set_visible(visible)
 
@@ -840,22 +860,33 @@ class XlibWindow(BaseWindow['XlibScreen']):
             if mouse_exclusive:
                 self.set_mouse_cursor_platform_visible(False)
 
-                # Restrict to client area
-                xlib.XGrabPointer(self._x_display, self._window,
-                                  True,
-                                  0,
+                # owner_events=True duplicates XI_RawMotion events during a grab:
+                # https://discourse.libsdl.org/t/sdl-x11-fix-duplicate-xinput2-event-reception/42771
+                # Deliver core events to the view so buttons, scroll and the
+                # motion fallback still reach their handlers with owner_events=False.
+                result = xlib.XGrabPointer(self._x_display, self._x_window,
+                                  False,
+                                  xlib.ButtonPressMask | xlib.ButtonReleaseMask | xlib.PointerMotionMask,
                                   xlib.GrabModeAsync,
                                   xlib.GrabModeAsync,
                                   self._window,
                                   0,
                                   xlib.CurrentTime)
+                if result != xlib.GrabSuccess:
+                    self._applied_mouse_exclusive = None
+                    return
 
-                # Move pointer to center of window
-                x = self._width // 2
-                y = self._height // 2
-                self._mouse_exclusive_client = x, y
-                self.set_mouse_position(x, y)
+                if self._set_xinput2_raw_motion(True):
+                    self._mouse_exclusive_client = None
+                    self._update_raw_mouse_state()
+                else:
+                    # Move pointer to center of window for the warp fallback.
+                    x = self._width // 2
+                    y = self._height // 2
+                    self._mouse_exclusive_client = x, y
+                    self.set_mouse_position(x, y)
             elif self._fullscreen:  # noqa: SLF001
+                self._set_xinput2_raw_motion(False)
                 if isinstance(self.screen, XlibScreenXinerama) and self.screen._xinerama:
                     return
 
@@ -874,6 +905,7 @@ class XlibWindow(BaseWindow['XlibScreen']):
                     return
                 self.set_mouse_cursor_platform_visible()
             else:
+                self._set_xinput2_raw_motion(False)
                 # Unclip
                 xlib.XUngrabPointer(self._x_display, xlib.CurrentTime)
                 self.set_mouse_cursor_platform_visible()
@@ -1157,34 +1189,68 @@ class XlibWindow(BaseWindow['XlibScreen']):
         if event_handler:
             event_handler(e)
 
-    @staticmethod
-    def _xinput2_event_window(cookie: xlib.XGenericEventCookie) -> int:
-        event = cast(cookie.data, POINTER(xinput2.XIDeviceEvent)).contents
-        return event.event
-
-    def _enable_xinput2_touch(self) -> None:
+    def _enable_xinput2(self) -> None:
         if not _have_xinput2 or self._x_display is None:
             return
+        version = self.display._xinput2_version
+        if version is not None and version >= (2, 2):
+            mask, event_mask = xinput2.touch_event_mask()
+            xinput2.XISelectEvents(self._x_display, self._x_window, byref(event_mask), 1)
+            xlib.XFlush(self._x_display)
 
-        opcode = c_int()
-        first_event = c_int()
-        first_error = c_int()
-        if not xlib.XQueryExtension(self._x_display, b'XInputExtension',
-                                    byref(opcode), byref(first_event), byref(first_error)):
-            return
-        if not xinput2.query_version(self._x_display):
-            return
+    def _set_xinput2_raw_motion(self, enabled: bool) -> bool:
+        version = self.display._xinput2_version
+        if version is None or version < (2, 1) or self._x_display is None:
+            return False
+        owner = self.display._raw_mouse_window
+        if not enabled and owner != self._x_window:
+            self._raw_mouse_motion = False
+            return False
+        if enabled and owner not in (None, self._x_window):
+            return False
 
-        mask, event_mask = xinput2.touch_event_mask()
-        if xinput2.XISelectEvents(self._x_display, self._x_window, byref(event_mask), 1) != 0:
-            return
-
-        self._xinput2_opcode = opcode.value
-        self.display._generic_event_window_handlers[opcode.value] = self._xinput2_event_window  # noqa: SLF001
+        mask, event_mask = xinput2.raw_motion_event_mask(enabled)
+        root = xlib.XDefaultRootWindow(self._x_display)
+        result = xinput2.XISelectEvents(self._x_display, root, byref(event_mask), 1)
+        self._raw_mouse_motion = enabled and result == 0
+        self.display._raw_mouse_window = self._x_window if self._raw_mouse_motion else None
         xlib.XFlush(self._x_display)
+        return self._raw_mouse_motion
+
+    def _update_raw_mouse_state(self) -> None:
+        root = xlib.Window()
+        child = xlib.Window()
+        root_x, root_y, win_x, win_y = c_int(), c_int(), c_int(), c_int()
+        state = c_uint()
+        xlib.XQueryPointer(self._x_display, self._window, byref(root), byref(child),
+                          byref(root_x), byref(root_y), byref(win_x), byref(win_y), byref(state))
+        self._raw_mouse_state = state.value
+
+    def _dispatch_xinput2_raw_motion(self, cookie: xlib.XGenericEventCookie) -> None:
+        if not self._raw_mouse_motion or not self._applied_mouse_exclusive or not self._active:
+            return
+        event = cast(cookie.data, POINTER(xinput2.XIRawEvent)).contents
+        dx, dy = xinput2.raw_motion_delta(event)
+        if dx == 0 and dy == 0:
+            return
+
+        buttons = 0
+        for mask, button in ((xlib.Button1Mask, mouse.LEFT), (xlib.Button2Mask, mouse.MIDDLE),
+                             (xlib.Button3Mask, mouse.RIGHT)):
+            if self._raw_mouse_state & mask:
+                buttons |= button
+        if buttons:
+            modifiers = self._translate_modifiers(self._raw_mouse_state)
+            self.dispatch_event('on_mouse_drag', self._mouse_x, self._mouse_y, dx, -dy, buttons, modifiers)
+        else:
+            self.dispatch_event('on_mouse_motion', self._mouse_x, self._mouse_y, dx, -dy)
 
     def _dispatch_xinput2_event(self, e: xlib.XEvent) -> None:
-        if self._xinput2_opcode is None or e.xcookie.extension != self._xinput2_opcode:
+        opcode = self.display._xinput2_opcode
+        if opcode is None or e.xcookie.extension != opcode:
+            return
+        if e.xcookie.evtype == xinput2.XI_RAW_MOTION:
+            self._dispatch_xinput2_raw_motion(e.xcookie)
             return
         if e.xcookie.evtype not in (xinput2.XI_TOUCH_BEGIN, xinput2.XI_TOUCH_UPDATE, xinput2.XI_TOUCH_END):
             return
@@ -1311,6 +1377,9 @@ class XlibWindow(BaseWindow['XlibScreen']):
     @XlibEventHandler(xlib.KeyPress)
     @XlibEventHandler(xlib.KeyRelease)
     def _event_key_view(self, ev: xlib.XEvent) -> None:
+        if self._raw_mouse_motion:
+            # Raw motion has no modifier state; refresh it on keyboard events.
+            self._update_raw_mouse_state()
         # Try to detect autorepeat ourselves if the server doesn't support it
         # XXX: Doesn't always work, better off letting the server do it
         global _can_detect_autorepeat  # noqa: PLW0602
@@ -1385,6 +1454,8 @@ class XlibWindow(BaseWindow['XlibScreen']):
     @ViewEventHandler
     @XlibEventHandler(xlib.MotionNotify)
     def _event_motionnotify_view(self, ev: xlib.XEvent) -> None:
+        if self._raw_mouse_motion and self._applied_mouse_exclusive:
+            return
         x = ev.xmotion.x / self._scale
         y = self.height - 1 - ev.xmotion.y / self._scale
 
@@ -1433,6 +1504,8 @@ class XlibWindow(BaseWindow['XlibScreen']):
 
     @XlibEventHandler(xlib.MotionNotify)
     def _event_motionnotify(self, ev: xlib.XEvent) -> None:
+        if self._raw_mouse_motion and self._applied_mouse_exclusive:
+            return
         # Window motion looks for drags that are outside the view but within
         # the window.
         buttons = 0
@@ -1742,6 +1815,13 @@ class XlibWindow(BaseWindow['XlibScreen']):
     @XlibEventHandler(xlib.ButtonPress)
     @XlibEventHandler(xlib.ButtonRelease)
     def _event_button(self, ev: xlib.XEvent) -> None:
+        self._raw_mouse_state = ev.xbutton.state
+        if 1 <= ev.xbutton.button <= 5:
+            button_mask = 1 << (ev.xbutton.button + 7)
+            if ev.type == xlib.ButtonPress:
+                self._raw_mouse_state |= button_mask
+            else:
+                self._raw_mouse_state &= ~button_mask
         x = ev.xbutton.x / self._scale
         y = self.height - 1 - ev.xbutton.y / self._scale
 

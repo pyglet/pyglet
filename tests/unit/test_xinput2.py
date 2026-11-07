@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import importlib.util
 import sys
-from ctypes import Structure, c_ulong
+from ctypes import POINTER, Structure, c_double, c_ubyte, c_ulong
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 from unittest.mock import Mock
@@ -40,11 +40,16 @@ def test_touch_mask_selects_only_begin_update_and_end(xinput2: ModuleType) -> No
     assert [event_mask.mask[index] for index in range(3)] == list(mask)
 
 
-@pytest.mark.parametrize(('status', 'version', 'supported'), [
-    (0, (2, 2), True), (0, (2, 4), True), (0, (2, 1), False), (1, (2, 2), False),
+def test_available_xinput2_reports_loaded_library(xinput2: ModuleType) -> None:
+    assert xinput2.is_available()
+
+
+@pytest.mark.parametrize(('status', 'version', 'expected'), [
+    (0, (2, 0), (2, 0)), (0, (2, 1), (2, 1)), (0, (2, 2), (2, 2)),
+    (0, (2, 4), (2, 4)), (1, (2, 2), None),
 ])
-def test_query_version_requires_success_and_touch_support(
-    xinput2: ModuleType, status: int, version: tuple[int, int], supported: bool,
+def test_get_version_negotiates_server_version(
+    xinput2: ModuleType, status: int, version: tuple[int, int], expected: tuple[int, int] | None,
 ) -> None:
     display = object()
 
@@ -56,4 +61,43 @@ def test_query_version_requires_success_and_touch_support(
 
     xinput2.XIQueryVersion.side_effect = query_version
 
-    assert xinput2.query_version(display) is supported
+    assert xinput2.get_version(display) == expected
+
+
+@pytest.mark.parametrize('enabled', [False, True])
+def test_raw_motion_mask_selects_master_devices_without_touch_events(xinput2: ModuleType, enabled: bool) -> None:
+    mask, event_mask = xinput2.raw_motion_event_mask(enabled)
+
+    assert event_mask.deviceid == xinput2.XI_ALL_MASTER_DEVICES
+    assert event_mask.mask_len == 3
+    assert list(mask) == [0, 0, 2 if enabled else 0]
+    assert [event_mask.mask[index] for index in range(3)] == list(mask)
+
+
+@pytest.mark.parametrize(('axes', 'values', 'expected'), [
+    (0b11, (1.25, -2.5), (1.25, -2.5)),
+    (0b01, (-3.5,), (-3.5, 0.0)),
+    (0b10, (4.75,), (0.0, 4.75)),
+    (0b1010, (-1.5, 100.0), (0.0, -1.5)),
+    (0b1100, (10.0, 20.0), (0.0, 0.0)),
+    (0, (), (0.0, 0.0)),
+])
+def test_raw_motion_decodes_sparse_unaccelerated_valuators(
+    xinput2: ModuleType, axes: int, values: tuple[float, ...], expected: tuple[float, float],
+) -> None:
+    mask = (c_ubyte * 1)(axes)
+    raw_values = (c_double * len(values))(*values)
+    accelerated = (c_double * len(values))(*(999.0 for _ in values))
+    event = xinput2.XIRawEvent(
+        valuators=xinput2.XIValuatorState(1, mask, accelerated), raw_values=raw_values,
+    )
+
+    assert xinput2.raw_motion_delta(event) == expected
+
+
+def test_empty_raw_motion_does_not_dereference_null_pointers(xinput2: ModuleType) -> None:
+    assert xinput2.raw_motion_delta(xinput2.XIRawEvent()) == (0.0, 0.0)
+    event = xinput2.XIRawEvent(
+        valuators=xinput2.XIValuatorState(1, (c_ubyte * 1)(3), POINTER(c_double)()),
+    )
+    assert xinput2.raw_motion_delta(event) == (0.0, 0.0)
