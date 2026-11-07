@@ -182,10 +182,14 @@ def test_label_effect_linear_gradient(test_window, style_name, effect):
 
 @pytest.mark.parametrize("stroke", [None, Stroke(color=(10, 20, 30, 160))])
 @pytest.mark.parametrize("gradient", [False, True])
-def test_label_effects_follow_opacity_and_visibility(test_window, stroke: Stroke | None, gradient: bool) -> None:
-    shadow = DropShadow(color=(30, 20, 10, 200))
+@pytest.mark.parametrize("shadow_gradient", [False, True])
+@pytest.mark.parametrize("text", ['A', 'Hello', 'HelloWorld'])
+def test_label_effects_follow_opacity_and_visibility(
+        test_window, stroke: Stroke | None, gradient: bool, shadow_gradient: bool, text: str) -> None:
+    shadow_color = LinearGradient((30, 20, 10, 41), (90, 80, 70, 201)) if shadow_gradient else (30, 20, 10, 200)
+    shadow = DropShadow(color=shadow_color)
     color = LinearGradient((255, 0, 0, 128), (0, 0, 255, 128)) if gradient else (255, 255, 255, 128)
-    label = Label("Fade", color=color, shadow=shadow, stroke=stroke)
+    label = Label(text, color=color, shadow=shadow, stroke=stroke)
     try:
         for box in label._boxes:
             for vertex_list, original in box._effect_vertex_lists:
@@ -212,7 +216,7 @@ def test_label_effects_follow_opacity_and_visibility(test_window, stroke: Stroke
             assert all(not any(v.visible[:]) for box in label._boxes for v in box.vertex_lists)
             label.visible = True
             assert all(all(v.visible[:]) for box in label._boxes for v in box.vertex_lists)
-        assert shadow.color == (30, 20, 10, 200)
+        assert shadow.color == shadow_color
         assert stroke is None or stroke.color == (10, 20, 30, 160)
     finally:
         label.delete()

@@ -23,6 +23,7 @@ primitives of the same OpenGL primitive mode.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from array import array
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Generic, Sequence, TypeVar
 
@@ -210,6 +211,34 @@ class VertexList:
     def update_group(self, group: Group) -> None:
         """Compatibility wrapper for changing render state."""
         self.set_group(group)
+
+    def set_attribute_constant(self, name: str, value: Sequence[float | int | bool]) -> None:
+        """Fill an attribute with one value repeated over its allocated elements.
+
+        For example, ``vertices.set_attribute_constant('translation', (x, y, z))``
+        updates every vertex's translation without converting each repeated
+        component from Python individually.
+
+        This is useful for larger runs, as regular assignment can be faster for
+        smaller vertex lists.
+
+        The value must contain exactly the attribute's number of components.
+        Integer values use the attribute's storage type, including for normalized
+        attributes.
+
+        .. note:: Only per-vertex attributes are supported.
+        """
+        attribute = self.initial_attribs[name]
+        assert not attribute.is_instanced, 'Repeated attribute writes require a per-vertex attribute.'
+        if len(value) != attribute.components:
+            msg = f"Expected {attribute.components} components for '{name}', got {len(value)}."
+            raise ValueError(msg)
+        # array has no bool datatype, just use single bytes.
+        packed = (array('B', map(bool, value)) if attribute.data_type == '?'
+                  else array(attribute.data_type, value))
+        region = memoryview(getattr(self, name))
+        data = packed * (region.nbytes // (packed.itemsize * len(packed)))
+        region.cast('B')[:] = memoryview(data).cast('B')
 
     def set_attribute_data(self, name: str, data: Any) -> None:
         stream = self.domain.attrib_name_buffers[name]

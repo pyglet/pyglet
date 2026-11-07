@@ -1149,6 +1149,17 @@ class TextLayout(_FlowLayoutBase):
             self._init_document()
             return
 
+        # A whole unformatted document has one solid color, independent of
+        # character-to-glyph mapping. Keep partial ranges and inline elements
+        # on the existing range-aware path.
+        if (type(self._document) is UnformattedDocument and start == 0 and end == len(self._document.text)
+                and all(type(box) is _GlyphBox for box in self._boxes)):
+            for box in self._boxes:
+                vertex_list = cast(_GlyphBox, box)._glyph_vertex_list
+                if vertex_list is not None:
+                    vertex_list.set_attribute_constant('colors', color)
+            return
+
         colors_iter = self._document.get_style_runs("color")
         colors: list[int] = []
         for iter_start, iter_end, style_color in colors_iter.ranges(start, end):
