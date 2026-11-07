@@ -191,7 +191,7 @@ def test_camera_wrapper_supports_resize_and_child_views(monkeypatch):
         framebuffer_size = (800, 600)
 
         def get_size(self) -> tuple[int, int]:
-            return 800, 600
+            return self.framebuffer_size
 
         def get_framebuffer_size(self) -> tuple[int, int]:
             return self.framebuffer_size
@@ -226,6 +226,35 @@ def test_camera2d_root_view_coordinate_conversions(test_window, monkeypatch):
     _assert_vec3_close(camera.viewport_to_screen(40.0, 40.0), Vec3(50.0, 60.0, 0.0))
     _assert_vec3_close(camera.world_to_screen(25.0, 30.0), Vec3(50.0, 60.0, 0.0))
     _assert_vec3_close(camera.screen_to_world(50.0, 60.0), Vec3(25.0, 30.0, 0.0))
+
+
+@pytest.mark.parametrize("scale", [1.0, 1.5, 2.0])
+def test_camera2d_logical_projection_tracks_framebuffer_scale(test_window, monkeypatch, scale: float) -> None:
+    monkeypatch.setattr(test_window, "get_size", lambda: (800, 600))
+    monkeypatch.setattr(test_window, "get_framebuffer_size", lambda: (int(800 * scale), int(600 * scale)))
+    camera = pyglet.window.camera.Camera2D(test_window)
+
+    camera._on_internal_resize(800, 600)
+    assert camera.zoom == 1.0
+    assert camera.viewport == (0, 0, int(800 * scale), int(600 * scale))
+    _assert_mat4_close(camera.projection, Mat4.orthogonal_projection(0, 800, 0, 600, -255, 255))
+    _assert_vec3_close(camera.world_to_screen(400, 300), Vec3(400 * scale, 300 * scale, 0))
+    scissor = camera.view.set_scissor_area_relative(10, 20, 100, 80)
+    assert scissor.area == (round(10 * scale), round(20 * scale), round(100 * scale), round(80 * scale))
+
+    camera.center_origin()
+    _assert_vec3_close(camera.world_to_screen(0, 0), Vec3(400 * scale, 300 * scale, 0))
+
+    monkeypatch.setattr(test_window, "get_framebuffer_size", lambda: (2400, 1800))
+    camera._on_internal_scale(3.0, 288)
+    _assert_vec3_close(camera.world_to_screen(0, 0), Vec3(1200, 900, 0))
+    assert camera.zoom == 1.0
+
+    camera.reset_origin()
+    child = camera.create_view()
+    child.viewport = (30, 60, 600, 300)
+    _assert_vec3_close(child.world_to_screen(100, 50), Vec3(330, 210, 0))
+    _assert_vec3_close(child.screen_to_world(330, 210), Vec3(100, 50, 0))
 
 
 def test_camera2d_child_view_coordinate_conversions_use_child_viewport(test_window, monkeypatch):
@@ -590,3 +619,128 @@ def test_camera_factory_default_view_storages_are_created(test_window):
     assert camera3d_child.storage is not None
     if isinstance(camera3d.view.storage, CameraViewStorageFactory):
         assert camera3d_child.storage is not camera3d.view.storage
+
+
+@pytest.mark.parametrize("framebuffer, expected", [
+    ((1920, 1080), (420, 0, 1080, 1080)),
+    ((1170, 2532), (0, 681, 1170, 1170)),
+    ((801, 600), (100, 0, 600, 600)),
+])
+def test_fixed_logical_size_fits_framebuffer(
+    test_window: pyglet.window.Window,
+    monkeypatch: pytest.MonkeyPatch,
+    framebuffer: tuple[int, int],
+    expected: tuple[int, int, int, int],
+) -> None:
+    camera = pyglet.window.camera.Camera2D(test_window, logical_size=(360, 360))
+    monkeypatch.setattr(test_window, 'get_framebuffer_size', lambda: framebuffer)
+    monkeypatch.setattr(test_window, 'get_size', lambda: (400, 300))
+    try:
+        assert camera.viewport == expected
+        assert camera.zoom == 1
+        x, y, width, height = expected
+        assert camera.world_to_screen(0, 0).xy == pytest.approx((x, y))
+        assert camera.world_to_screen(360, 360).xy == pytest.approx((x + width, y + height))
+        assert camera.screen_to_world(x + width, y + height).xy == pytest.approx((360, 360))
+        assert camera.pixels_per_unit == pytest.approx((width / 360, height / 360))
+        camera.zoom = 2
+        assert camera.pixels_per_unit == pytest.approx((width / 180, height / 180))
+        camera.center_origin()
+        assert camera.world_to_screen(0, 0).xy == pytest.approx((x + width / 2, y + height / 2))
+        monkeypatch.setattr(test_window, 'get_framebuffer_size', lambda: (600, 900))
+        assert camera.viewport == (0, 150, 600, 600)
+        assert camera.world_to_screen(0, 0).xy == pytest.approx((300, 450))
+    finally:
+        camera.delete()
+
+
+def test_fixed_logical_size_preserves_viewport_bounds(test_window: pyglet.window.Window) -> None:
+    camera = pyglet.window.camera.Camera2D(test_window, logical_size=(320, 180),
+                                           viewport=(10, 20, 800, 600))
+    try:
+        assert camera.viewport == (10, 20, 800, 600)
+        child = camera.create_view()
+        assert child.viewport == camera.viewport
+        camera.viewport = (10, 20, 333, 200)
+        assert child.viewport == camera.viewport
+        camera.viewport = (10, 20, 800, 600)
+        child.viewport = (100, 200, 400, 400)
+        assert child.viewport == (100, 200, 400, 400)
+        assert child.world_to_screen(320, 180).xy == pytest.approx((500, 600))
+        camera.logical_size = (100, 100)
+        assert camera.viewport == (10, 20, 800, 600)
+        camera.projection = Mat4()
+        assert camera.viewport == (10, 20, 800, 600)
+        camera.logical_size = None
+        assert camera.viewport == (10, 20, 800, 600)
+        assert camera.zoom == 1
+    finally:
+        camera.delete()
+
+
+@pytest.mark.parametrize('camera_type', [pyglet.window.camera.Camera2D, pyglet.window.camera.Camera3D])
+def test_camera_aspect_ratio_fits_views_and_restores_bounds(
+    test_window: pyglet.window.Window,
+    monkeypatch: pytest.MonkeyPatch,
+    camera_type: type[pyglet.window.camera.Camera2D] | type[pyglet.window.camera.Camera3D],
+) -> None:
+    camera = camera_type(test_window, aspect_ratio=16 / 9, viewport=(10, 20, 800, 600))
+    try:
+        assert camera.viewport == (10, 20, 800, 600)
+        child = camera.create_view()
+        grandchild = child.create_view()
+        camera.viewport = (10, 20, 333, 200)
+        assert camera.viewport == (10, 20, 333, 200)
+        assert grandchild.viewport == child.viewport == camera.viewport
+        child.viewport = (100, 200, 400, 400)
+        assert child.viewport == grandchild.viewport == (100, 200, 400, 400)
+        camera.aspect_ratio = 1
+        assert camera.viewport == (10, 20, 333, 200)
+        assert child.viewport == grandchild.viewport == (100, 200, 400, 400)
+        camera.aspect_ratio = None
+        assert camera.viewport == (10, 20, 333, 200)
+        assert child.viewport == (100, 200, 400, 400)
+        child.viewport = None
+        assert grandchild.viewport == child.viewport == camera.viewport
+        monkeypatch.setattr(test_window, 'get_framebuffer_size', lambda: (800, 600))
+        camera.aspect_ratio = 16 / 9
+        camera.viewport = None
+        assert grandchild.viewport == child.viewport == camera.viewport == (0, 75, 800, 450)
+        # Even an explicit full-framebuffer rectangle must disable fitting.
+        camera.viewport = (0, 0, 800, 600)
+        assert camera.viewport == (0, 0, 800, 600)
+        monkeypatch.setattr(test_window, 'get_framebuffer_size', lambda: (600, 900))
+        assert camera.viewport == (0, 0, 800, 600)
+        camera.viewport = None
+        assert camera.viewport == (0, 281, 600, 338)
+    finally:
+        camera.delete()
+
+
+def test_camera3d_fixed_aspect_preserves_projection_on_resize(
+    test_window: pyglet.window.Window, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    camera = pyglet.window.camera.Camera3D(test_window, aspect_ratio=16 / 9)
+    try:
+        for framebuffer, expected in (
+            ((800, 600), (0, 75, 800, 450)),
+            ((600, 900), (0, 281, 600, 338)),
+        ):
+            monkeypatch.setattr(test_window, 'get_framebuffer_size', lambda: framebuffer)
+            assert camera.viewport == expected
+            projection, _ = camera._get_matrices_for_view(camera.view)
+            _assert_mat4_close(projection, Mat4.perspective_projection(
+                16 / 9, z_near=camera.near, z_far=camera.far, fov=camera.field_of_view,
+            ))
+            x, y, width, height = expected
+            point = camera.world_to_screen(0, 0, -10)
+            assert point.xy == pytest.approx((x + width / 2, y + height / 2))
+            _assert_vec3_close(camera.screen_to_world(*point), Vec3(0, 0, -10))
+        camera.aspect_ratio = None
+        assert camera.viewport == (0, 0, 600, 900)
+        projection, _ = camera._get_matrices_for_view(camera.view)
+        _assert_mat4_close(projection, Mat4.perspective_projection(
+            600 / 900, z_near=camera.near, z_far=camera.far, fov=camera.field_of_view,
+        ))
+    finally:
+        camera.delete()

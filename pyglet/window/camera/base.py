@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import weakref
-from typing import TYPE_CHECKING, Any, Generic, Protocol, TypeVar, overload, runtime_checkable
+from typing import TYPE_CHECKING, Any, Generic, Protocol, Self, TypeVar, cast, overload, runtime_checkable
 
 import pyglet
 from pyglet.graphics.buffer import UniformBufferRegion
@@ -85,7 +85,7 @@ class CameraScissor:
         self.width = max(0, int(width))
         self.height = max(0, int(height))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}(x={self.x}, y={self.y}, width={self.width}, height={self.height})"
 
 
@@ -139,6 +139,9 @@ def _create_default_camera_ubo(
 class UniformBufferCameraRegion(UniformBufferRegion):
     """Camera storage adapter for UBO-backed data uploads."""
 
+    _copies_per_resource: int | None
+    _dirty: bool
+
     def __init__(
         self,
         ubo: UniformBufferObject,
@@ -154,10 +157,10 @@ class UniformBufferCameraRegion(UniformBufferRegion):
         self.data.view[:] = view
         self.mark_dirty()
 
-    def commit(self, _draw_context: DrawContext | None = None) -> None:
+    def commit(self, draw_context: DrawContext | None = None) -> None:
         super().commit()
 
-    def bind_camera(self, _draw_context: DrawContext) -> None:
+    def bind_camera(self, draw_context: DrawContext) -> None:
         self.bind()
 
     def create_view_storage(self) -> UniformBufferCameraRegion:
@@ -169,6 +172,12 @@ class UniformBufferCameraRegion(UniformBufferRegion):
 
 class UniformSetCameraRegion:
     """Region adapter that updates per-program projection/view uniforms."""
+
+    _projection_uniform: str
+    _view_uniform: str
+    _projection_values: tuple[float, ...] | None
+    _view_values: tuple[float, ...] | None
+    _dirty: bool
 
     def __init__(
         self,
@@ -188,8 +197,8 @@ class UniformSetCameraRegion:
         """
         self._projection_uniform = projection_uniform
         self._view_uniform = view_uniform
-        self._projection_values: tuple[float, ...] | None = None
-        self._view_values: tuple[float, ...] | None = None
+        self._projection_values = None
+        self._view_values = None
         self._dirty = False
 
     def apply(self, projection: Mat4, view: Mat4) -> None:
@@ -236,7 +245,9 @@ class _ResolvedGroupScissor:
 
     __slots__ = ("_view",)
 
-    def __init__(self, view: _CameraViewBase) -> None:
+    _view: _CameraViewBase[Any]
+
+    def __init__(self, view: _CameraViewBase[Any]) -> None:
         self._view = view
 
     @property
@@ -249,6 +260,20 @@ class _ResolvedGroupScissor:
 
 class _CameraViewBase(Generic[CameraT]):
     """Base class for per-camera views."""
+
+    _camera: CameraT
+    _parent: Self | None
+    _children: list[Self]
+    storage: CameraViewStorage | None
+    _scissor: CameraScissor | None
+    _group_scissor: _ResolvedGroupScissor | None
+    _auto_viewport: bool
+    _viewport: ViewportType | None
+    _world_dirty: bool
+    _view_dirty: bool
+    _view_matrix: Mat4 | None
+    _applied_projection: Mat4 | None
+    _applied_view: Mat4 | None
 
     __slots__ = (
         "_applied_projection",
@@ -271,31 +296,31 @@ class _CameraViewBase(Generic[CameraT]):
         camera: CameraT,
         storage: CameraViewStorage | None,
         *,
-        parent: _CameraViewBase[CameraT] | None = None,
+        parent: Self | None = None,
     ) -> None:
         self._camera = camera
         self._parent = parent
-        self._children: list[_CameraViewBase[CameraT]] = []
+        self._children = []
         if parent is not None:
             parent._children.append(self)
         self.storage = storage
-        self._scissor: CameraScissor | None = None
-        self._group_scissor: _ResolvedGroupScissor | None = None
+        self._scissor = None
+        self._group_scissor = None
         self._auto_viewport = False
-        self._viewport: ViewportType | None = None
+        self._viewport = None
         if parent is None:
             self._auto_viewport = camera._initial_auto_viewport  # noqa: SLF001
-            self._viewport = camera._initial_viewport  # type: ignore[assignment] # noqa: SLF001
+            self._viewport = camera._initial_viewport  # noqa: SLF001
         self._world_dirty = True
         self._view_dirty = True
-        self._view_matrix: Mat4 | None = None
+        self._view_matrix = None
 
         # Store the applied matrices, so we know when to actually mark storage dirty.
-        self._applied_projection: Mat4 | None = None
-        self._applied_view: Mat4 | None = None
+        self._applied_projection = None
+        self._applied_view = None
 
     @property
-    def parent(self) -> _CameraViewBase[CameraT] | None:
+    def parent(self) -> Self | None:
         return self._parent
 
     @property
@@ -304,11 +329,10 @@ class _CameraViewBase(Generic[CameraT]):
 
     @property
     def viewport(self) -> ViewportType:
-        if self._viewport is None:
-            if self.parent is not None:
-                return self.parent.viewport
-            self._sync_viewport()
-
+        parent = self.parent
+        if self._viewport is None and parent is not None:
+            return parent.viewport
+        self._sync_viewport()
         assert self._viewport is not None
         return self._viewport
 
@@ -324,10 +348,7 @@ class _CameraViewBase(Generic[CameraT]):
             framebuffer_width, framebuffer_height = self._camera._window.get_framebuffer_size()  # noqa: SLF001
             values = (0, 0, max(1, int(framebuffer_width)), max(1, int(framebuffer_height)))
         else:
-            if self.parent is None:
-                framebuffer_size = self._camera._window.get_framebuffer_size()  # noqa: SLF001
-                if not (self._auto_viewport and tuple(values) == (0, 0, *framebuffer_size)):
-                    self._auto_viewport = False
+            self._auto_viewport = False
 
         x, y, width, height = values
         self._set_viewport((int(x), int(y), int(width), int(height)))
@@ -351,7 +372,8 @@ class _CameraViewBase(Generic[CameraT]):
         if not self._auto_viewport:
             return
         framebuffer_width, framebuffer_height = self._camera._window.get_framebuffer_size()  # noqa: SLF001
-        self._set_viewport((0, 0, max(1, int(framebuffer_width)), max(1, int(framebuffer_height))))
+        viewport = (0, 0, max(1, int(framebuffer_width)), max(1, int(framebuffer_height)))
+        self._set_viewport(self._camera._fit_viewport(viewport))
 
     def screen_to_viewport(self, x: float, y: float, z: float = 0.0) -> Vec3:
         """Convert screen-space coordinates to viewport-local coordinates.
@@ -532,11 +554,12 @@ class _CameraViewBase(Generic[CameraT]):
         Returns:
             The scissor area object assigned.
         """
-        if self._scissor is None:
-            self._scissor = CameraScissor(x, y, width, height)
+        scissor = self._scissor
+        if scissor is None:
+            scissor = self._scissor = CameraScissor(x, y, width, height)
         else:
-            self._scissor.set(x, y, width, height)
-        return self._scissor
+            scissor.set(x, y, width, height)
+        return scissor
 
     def set_scissor(self, scissor: CameraScissor | None) -> None:
         """Attach a mutable scissor object to this view."""
@@ -597,6 +620,17 @@ class BaseCamera(Generic[ViewT]):
     is a convenience proxy for the root view's viewport.
     """
 
+    _aspect_ratio: float | None
+    _window: CameraWindowProtocol
+    view_storage: CameraViewStorage
+    _projection_dirty: bool
+    _projection_matrix: Mat4 | None
+    _projection_viewport: ViewportType | None
+    _initial_auto_viewport: bool
+    _initial_viewport: ViewportType
+    _view: ViewT | None
+    _resolved_viewport: ViewportType | None
+
     if TYPE_CHECKING:
         @property
         def projection(self) -> Mat4:
@@ -622,6 +656,7 @@ class BaseCamera(Generic[ViewT]):
         view_storage: CameraViewStorage | None = None,
         *,
         viewport: ViewportType | None = None,
+        aspect_ratio: float | None = None,
         register_handlers: bool = True,
     ) -> None:
         """Initialize a camera.
@@ -639,8 +674,11 @@ class BaseCamera(Generic[ViewT]):
             register_handlers:
                 If ``True``, register the camera for window resize and scale
                 events. Disable this for wrappers without pyglet event dispatch.
+            aspect_ratio:
+                Optional fixed width-to-height ratio for automatic viewports,
+                fitted inside the framebuffer with centered letterboxing.
         """
-        self._window: CameraWindowProtocol = weakref.proxy(window)
+        self._window = weakref.proxy(window)
 
         if not isinstance(view_storage, CameraViewStorage):
             msg = (
@@ -650,16 +688,17 @@ class BaseCamera(Generic[ViewT]):
             raise TypeError(msg)
 
         self.view_storage = view_storage
+        self._aspect_ratio = aspect_ratio
         self._projection_dirty = True
-        self._projection_matrix: Mat4 | None = None
-        self._projection_viewport: ViewportType | None = None
+        self._projection_matrix = None
+        self._projection_viewport = None
         framebuffer_width, framebuffer_height = window.get_framebuffer_size()
         default_viewport = (0, 0, max(1, int(framebuffer_width)), max(1, int(framebuffer_height)))
         self._initial_auto_viewport = viewport is None
-        self._initial_viewport = default_viewport if viewport is None else tuple(map(int, viewport))
-        self._view: ViewT | None = None
+        self._initial_viewport = default_viewport if viewport is None else cast(ViewportType, tuple(map(int, viewport)))
+        self._view = None
 
-        self._resolved_viewport: tuple[int, int, int, int] | None = None
+        self._resolved_viewport = None
 
         if register_handlers:
             if not isinstance(window, _CameraEventSource):
@@ -704,6 +743,38 @@ class BaseCamera(Generic[ViewT]):
             camera_name=type(self).__name__,
         )
         return UniformBufferCameraRegion(ubo=ubo, copies_per_resource=copies_per_resource)
+
+    @property
+    def aspect_ratio(self) -> float | None:
+        """Optional fixed viewport width-to-height ratio, shared by all views.
+
+        ``None`` uses the full framebuffer for automatic viewports. Setting a
+        ratio centers a fitted automatic viewport. Explicit viewports stay exact.
+        """
+        return self._aspect_ratio
+
+    @aspect_ratio.setter
+    def aspect_ratio(self, value: float | None) -> None:
+        self._aspect_ratio = value
+        self._mark_projection_dirty()
+        if self._view is not None:
+            self.view._mark_inherited_viewport_dirty()
+
+    def _get_viewport_aspect_ratio(self) -> float | None:
+        """Return the ratio used by shared viewport fitting."""
+        return self.aspect_ratio
+
+    def _fit_viewport(self, viewport: ViewportType) -> ViewportType:
+        ratio = self._get_viewport_aspect_ratio()
+        if ratio is None:
+            return viewport
+        x, y, width, height = viewport
+        if width > height * ratio:
+            fitted_width, fitted_height = max(1, round(height * ratio)), height
+        else:
+            fitted_width, fitted_height = width, max(1, round(width / ratio))
+        return (x + (width - fitted_width) // 2, y + (height - fitted_height) // 2,
+                fitted_width, fitted_height)
 
     @property
     def viewport(self) -> tuple[int, int, int, int]:
@@ -811,17 +882,19 @@ class BaseCamera(Generic[ViewT]):
 
     def _get_projection_matrix(self, view: ViewT) -> Mat4:
         viewport = self._resolved_viewport or self._resolve_viewport(view)
-        if self._projection_dirty or self._projection_matrix is None or self._projection_viewport != viewport:
-            self._projection_matrix = self._build_projection_matrix(view)
+        projection = self._projection_matrix
+        if self._projection_dirty or projection is None or self._projection_viewport != viewport:
+            projection = self._projection_matrix = self._build_projection_matrix(view)
             self._projection_viewport = viewport
             self._projection_dirty = False
-        return self._projection_matrix
+        return projection
 
     def _get_view_matrix(self, view: ViewT) -> Mat4:
-        if view._view_dirty or view._view_matrix is None:  # noqa: SLF001
-            view._view_matrix = self._build_view_matrix(view)  # noqa: SLF001
+        view_matrix = view._view_matrix  # noqa: SLF001
+        if view._view_dirty or view_matrix is None:  # noqa: SLF001
+            view_matrix = view._view_matrix = self._build_view_matrix(view)  # noqa: SLF001
             view._view_dirty = False  # noqa: SLF001
-        return view._view_matrix  # noqa: SLF001
+        return view_matrix
 
     def _get_matrices_for_view(self, view: ViewT) -> tuple[Mat4, Mat4]:
         """Resolve projection and view matrices using a view's effective viewport."""
@@ -860,8 +933,8 @@ class BaseCamera(Generic[ViewT]):
 
     def _resolve_scissor_area(self, view: ViewT) -> ScissorArea | None:
         scissor: ScissorArea | None = None
-        chain: list[_CameraViewBase] = []
-        current: _CameraViewBase | None = view
+        chain: list[_CameraViewBase[Any]] = []
+        current: _CameraViewBase[Any] | None = view
         while current is not None:
             chain.append(current)
             current = current.parent
@@ -871,9 +944,9 @@ class BaseCamera(Generic[ViewT]):
         return scissor
 
     @staticmethod
-    def _has_scissor_in_chain(view: _CameraViewBase) -> bool:
+    def _has_scissor_in_chain(view: _CameraViewBase[Any]) -> bool:
         """Return whether a view or any ancestor supplies scissor clipping."""
-        current: _CameraViewBase | None = view
+        current: _CameraViewBase[Any] | None = view
         while current is not None:
             if current.scissor is not None:
                 return True

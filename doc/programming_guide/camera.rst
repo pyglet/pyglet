@@ -85,7 +85,6 @@ camera's projection behavior while providing their own transform, viewport, scis
 storage. They can inherit transforms from other views, making them a lighter and more closely related
 alternative to creating another independent camera.
 
-
 Creating views
 --------------
 
@@ -115,6 +114,52 @@ Views can also be created from other views. For example::
     scroll_box_b = scroll_box_a.create_view()
 
 If ``scroll_box_a`` moves or zooms, ``scroll_box_b`` inherits those changes.
+
+Fixed logical scene size
+------------------------
+
+To show the same world area at different window sizes, set a fixed logical size::
+
+    window.camera.logical_size = (360, 360)
+
+The camera projects this world area into a centered viewport that preserves its aspect
+ratio, leaving letterboxing when needed. It follows framebuffer resize and scale changes
+automatically. An explicitly assigned viewport is used exactly as supplied, without fitting.
+This uses the native framebuffer resolution without an intermediate render texture.
+Zoom remains independent: ``zoom = 1`` shows the full logical scene, and increasing zoom
+magnifies it. Set ``logical_size = None`` to return to window-sized coordinates.
+
+Keeping a fixed aspect ratio
+----------------------------
+
+Set ``aspect_ratio`` to keep the drawing area the same shape when the window is resized.
+For example, to keep a 16:9 area in a 2D window::
+
+    window.camera.aspect_ratio = 16 / 9
+
+The camera uses the largest 16:9 rectangle that fits inside the framebuffer and centers it.
+In an 800 x 600 framebuffer, this gives an 800 x 450 drawing area with 75 pixels left over
+above and below. Clear the window to black to make these unused areas appear as black bars.
+Set ``aspect_ratio = None`` to use the whole framebuffer again.
+
+In 2D, this keeps the drawing area's shape, but resizing still changes how much of the
+world you see at the current zoom. To keep the same world area visible instead, use
+``logical_size`` as shown above. Its dimensions already determine the aspect ratio,
+so you do not need to set both.
+
+In 3D, a fixed aspect ratio keeps the perspective framing consistent across window sizes::
+
+    camera = pyglet.window.camera.Camera3D(
+        window, aspect_ratio=16 / 9, field_of_view=60,
+    )
+
+Here, ``field_of_view`` sets the vertical viewing angle to 60 degrees, and ``aspect_ratio``
+determines the horizontal viewing angle. Without a fixed ratio, the horizontal view changes
+as the window becomes wider or narrower.
+
+Automatic fitting applies only when the camera manages the viewport. If you assign
+``camera.viewport`` yourself, the camera uses that exact rectangle. Assign ``None`` to
+let the camera manage it again. A custom 2D projection also disables automatic fitting.
 
 Using camera scopes with batches
 --------------------------------

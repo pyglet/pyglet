@@ -379,6 +379,12 @@ You can also programmatically minimize a window using the
 :py:class:`~pyglet.window.Window.minimize` method (there is also a
 corresponding :py:class:`~pyglet.window.Window.maximize` method).
 
+In the browser backend, ``window.maximize()`` fills the browser content viewport
+and follows browser resizing without hiding browser UI. The canvas backing
+buffer tracks its displayed size and device pixel ratio. Calling ``set_size``
+returns the canvas to explicit sizing. Use ``set_fullscreen`` to request browser
+fullscreen instead.
+
 When a window is made visible the :py:meth:`~pyglet.window.Window.on_show`
 event is triggered.  When it is hidden the
 :py:meth:`~pyglet.window.Window.on_hide` event is triggered.

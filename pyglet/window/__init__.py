@@ -1384,7 +1384,7 @@ class BaseWindow(EventDispatcher, Generic[ScreenT], metaclass=_WindowMetaclass):
         return w / h
 
     @property
-    def camera(self) -> BaseCamera[Any]:
+    def camera(self) -> Camera2D:
         """The window's default camera.
 
         The default is a :class:`~pyglet.window.camera.Camera2D`. Assign a
@@ -1396,7 +1396,7 @@ class BaseWindow(EventDispatcher, Generic[ScreenT], metaclass=_WindowMetaclass):
                 msg = "Window has no context; default camera is not available yet."
                 raise RuntimeError(msg)
             self._camera = self._create_default_camera()
-        return self._camera
+        return cast('Camera2D', self._camera)
 
     @camera.setter
     def camera(self, value: BaseCamera[Any]) -> None:
