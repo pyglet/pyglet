@@ -7,6 +7,7 @@ from functools import lru_cache
 from typing import Callable, Sequence, TYPE_CHECKING, Any
 
 from pyglet import compat_platform
+from pyglet.window.pen import PenButton, PenEvent
 from pyglet.libs.win32 import constants, IDropTarget
 from pyglet.libs.win32.types import (
     BITMAPINFOHEADER,
@@ -28,6 +29,7 @@ from pyglet.libs.win32.types import (
     IID_IUNKNOWN,
     UINT32,
     POINTER_TOUCH_INFO,
+    POINTER_PEN_INFO,
 )
 from pyglet.libs.win32.winkey import chmap, keymap
 from pyglet.libs.win32.context_managers import hresult_context
@@ -1494,6 +1496,7 @@ class Win32Window(BaseWindow['Win32Screen']):
 
     @Win32EventHandler(constants.WM_KILLFOCUS)
     def _event_killfocus(self, msg: int, wParam: int, lParam: int) -> int:
+        self._pen_state.clear(self.dispatch_event)
         self.dispatch_event('on_deactivate')
         self._has_focus = False
 
@@ -1655,6 +1658,9 @@ class Win32Window(BaseWindow['Win32Screen']):
 
         pointer_type = UINT32()
         if _user32.GetPointerType(pointer_id, byref(pointer_type)):
+            if pointer_type.value == constants.PT_PEN:
+                self._handle_pen_event(pointer_id)
+                return 0
             if pointer_type.value != constants.PT_TOUCH:
                 return 0
 
@@ -1687,6 +1693,43 @@ class Win32Window(BaseWindow['Win32Screen']):
             self._dispatch_touch_event(dispatch_name, pointer_id, x, y, width, height, pressure)
 
         return 0
+
+    @ViewEventHandler
+    @Win32EventHandler(constants.WM_POINTERENTER)
+    def _event_pen_enter(self, msg: int, wParam: int, lParam: int) -> int:
+        pointer_id = wParam & 0xFFFF
+        pointer_type = UINT32()
+        if _user32.GetPointerType(pointer_id, byref(pointer_type)) and pointer_type.value == constants.PT_PEN:
+            self._handle_pen_event(pointer_id)
+        return 0
+
+    @ViewEventHandler
+    @Win32EventHandler(constants.WM_POINTERLEAVE)
+    @Win32EventHandler(constants.WM_POINTERCAPTURECHANGED)
+    def _event_pen_leave(self, msg: int, wParam: int, lParam: int) -> int:
+        self._leave_pen(wParam & 0xFFFF)
+        return 0
+
+    def _handle_pen_event(self, pointer_id: int) -> None:
+        info = POINTER_PEN_INFO()
+        if not _user32.GetPointerPenInfo(pointer_id, byref(info)):
+            return
+        flags = info.pointerInfo.pointerFlags
+        if flags & constants.POINTER_FLAG_CANCELED or not flags & constants.POINTER_FLAG_INRANGE:
+            self._leave_pen(pointer_id)
+            return
+        point = POINT(info.pointerInfo.ptPixelLocation.x, info.pointerInfo.ptPixelLocation.y)
+        _user32.ScreenToClient(self._view_hwnd, byref(point))
+        self._update_pen(PenEvent(
+            pointer_id, point.x, self._height - point.y,
+            info.pressure / 1024.0 if info.penMask & constants.PEN_MASK_PRESSURE else 0.0,
+            info.tiltX if info.penMask & constants.PEN_MASK_TILT_X else 0.0,
+            info.tiltY if info.penMask & constants.PEN_MASK_TILT_Y else 0.0,
+            info.rotation if info.penMask & constants.PEN_MASK_ROTATION else 0.0,
+            PenButton.SIDE if info.penFlags & constants.PEN_FLAG_BARREL else PenButton.NONE,
+            bool(info.penFlags & (constants.PEN_FLAG_INVERTED | constants.PEN_FLAG_ERASER)),
+            bool(flags & constants.POINTER_FLAG_INCONTACT),
+        ))
 
 
 def _ShouldSystemUseLightMode() -> bool:
