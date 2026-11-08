@@ -356,9 +356,12 @@ clipboard permissions mean that ``get_clipboard_text`` can only return the
 latest text received or set by pyglet, while ``set_clipboard_text`` attempts
 to update the system clipboard when the browser permits it.
 
-Touch input, tablets, raw input devices, and the legacy joystick API are not
-currently supported. Controllers use the browser Gamepad API and its standard
-mapping. Rumble availability depends on the browser and device.
+Finger and pen input use browser Pointer Events. See :ref:`touch-input` for
+touch events and pinch scaling, and the windowing guide for pen events.
+
+The tablet device interface, raw input devices, and the legacy joystick API are
+not currently supported. Controllers use the browser Gamepad API and its
+standard mapping. Rumble availability depends on the browser and device.
 
 Fonts
 -----
