@@ -78,6 +78,7 @@ by creating a backend-aware "template" configuration::
 from __future__ import annotations
 
 import atexit
+import math
 import sys
 from abc import abstractmethod
 from collections.abc import Iterable
@@ -88,12 +89,18 @@ from collections.abc import Callable, Sequence
 import pyglet
 import pyglet.window.key
 import pyglet.window.mouse
-from pyglet.event import EVENT_HANDLE_STATE, EventDispatcher
+from pyglet.event import EventDispatcher
 from pyglet.customtypes import ScreenT
+from pyglet.window.textinput import TextInputSession
+from pyglet.window.pen import PenState
 
 from pyglet.window import event, key, dialog
 
 if TYPE_CHECKING:
+    from pyglet.event import EVENT_HANDLE_STATE
+    from pyglet.window.pen import PenEvent
+    from pyglet.text.caret import Caret
+    from pyglet.window.textinput import TextInputOptions
     from pyglet.window.camera import Camera2D
     from pyglet.window.camera.base import BaseCamera
     from pyglet.math import Mat4
@@ -396,6 +403,9 @@ class BaseWindow(EventDispatcher, Generic[ScreenT], metaclass=_WindowMetaclass):
     _mouse_in_window: bool = False
 
     _event_queue: deque[tuple[Any, ...]]
+    _touch_positions: dict[int, tuple[float, float]]
+    _pen_state: PenState
+    _text_input_session: TextInputSession | None = None
     _enable_event_queue: bool = True  # overridden by EventLoop.
     _allow_dispatch_event: bool = False  # controlled by dispatch_events stack frame
 
@@ -481,6 +491,8 @@ class BaseWindow(EventDispatcher, Generic[ScreenT], metaclass=_WindowMetaclass):
         """
         EventDispatcher.__init__(self)
         self._event_queue = deque()
+        self._touch_positions = {}
+        self._pen_state = PenState()
 
         self._user_config = config
         self._context = None
@@ -528,6 +540,87 @@ class BaseWindow(EventDispatcher, Generic[ScreenT], metaclass=_WindowMetaclass):
         if visible:
             self.set_visible(True)
             self.activate()
+
+    @property
+    def text_input_session(self) -> TextInputSession | None:
+        """The active platform-neutral editing session, if any."""
+        return self._text_input_session
+
+    def begin_text_input(self,
+            caret: Caret,
+            options: TextInputOptions | None = None, *,
+            get_caret_rect: Callable[[], tuple[float, float, float, float] | None] | None = None,
+            on_action: Callable[[str], None] | None = None) -> TextInputSession:
+        """Activate an editor and end this window's previous editing session.
+
+        Platform backends can implement the text-input hooks to connect a native
+        input method. The default hooks leave existing keyboard event handling
+        intact and do not open an on-screen keyboard.
+        """
+        session = TextInputSession(caret, options, get_caret_rect=get_caret_rect, on_update=self._update_text_input,
+                                   on_close=self._close_text_input, on_action=on_action)
+        self.end_text_input()
+        self._text_input_session = session
+        try:
+            self._start_text_input(session)
+        except Exception:
+            session.close()
+            raise
+        return session
+
+    def end_text_input(self) -> None:
+        """End platform text input without submitting the editor."""
+        if self._text_input_session is not None:
+            self._text_input_session.close()
+
+    def _start_text_input(self, session: TextInputSession) -> None:
+        """Backend hook for activating a platform input method."""
+
+    def _update_text_input(self, session: TextInputSession) -> None:
+        """Backend hook for synchronizing editor state and caret geometry."""
+
+    def _stop_text_input(self, session: TextInputSession) -> None:
+        """Backend hook for releasing platform input resources."""
+
+    def _close_text_input(self, session: TextInputSession) -> None:
+        if self._text_input_session is session:
+            self._text_input_session = None
+            self._stop_text_input(session)
+
+    def _update_pen(self, pen_event: PenEvent) -> None:
+        self._pen_state.update(pen_event, self.dispatch_event)
+
+    def _leave_pen(self, pointer_id: int) -> None:
+        self._pen_state.leave(pointer_id, self.dispatch_event)
+
+    def _get_touch_distance(self) -> float | None:
+        """Return the distance between the first two active contacts."""
+        if len(self._touch_positions) < 2:
+            return None
+
+        first, second = tuple(self._touch_positions.values())[:2]
+        return math.dist(first, second)
+
+    def _update_touch_position(self, pointer_id: int, x: float, y: float) -> tuple[float, float, float]:
+        """Store a contact position and return its delta and pinch scale."""
+        previous_x, previous_y = self._touch_positions.get(pointer_id, (x, y))
+        previous_distance = self._get_touch_distance()
+        self._touch_positions[pointer_id] = x, y
+        distance = self._get_touch_distance()
+
+        scale = 1.0
+        if previous_distance and distance is not None:
+            scale = distance / previous_distance
+
+        return x - previous_x, y - previous_y, scale
+
+    def _dispatch_touch_event(self, dispatch_name: str, pointer_id: int, x: float, y: float,
+                              width: float, height: float, pressure: float) -> None:
+        """Dispatch a touch event after calculating its movement and pinch scale."""
+        dx, dy, scale = self._update_touch_position(pointer_id, x, y)
+        self.dispatch_event(dispatch_name, pointer_id, x, y, dx, dy, width, height, pressure, scale)
+        if dispatch_name == 'on_touch_end':
+            self._touch_positions.pop(pointer_id, None)
 
     def _assign_config(self) -> None:
         if pyglet.options.backend:
@@ -627,6 +720,9 @@ class BaseWindow(EventDispatcher, Generic[ScreenT], metaclass=_WindowMetaclass):
         window's taskbar icon will flash, indicating it requires attention.
         """
 
+    def attention(self) -> None:
+        """Request the user's attention without activating the window."""
+
     def clear(self) -> None:
         """Clear the window.
 
@@ -648,6 +744,8 @@ class BaseWindow(EventDispatcher, Generic[ScreenT], metaclass=_WindowMetaclass):
         is called.
         """
         from pyglet import app
+        self.end_text_input()
+        self._pen_state.clear(self.dispatch_event)
         if not self._context:
             return
         app.windows.remove(self)
@@ -1301,7 +1399,7 @@ class BaseWindow(EventDispatcher, Generic[ScreenT], metaclass=_WindowMetaclass):
         return w / h
 
     @property
-    def camera(self) -> BaseCamera[Any]:
+    def camera(self) -> Camera2D:
         """The window's default camera.
 
         The default is a :class:`~pyglet.window.camera.Camera2D`. Assign a
@@ -1313,7 +1411,7 @@ class BaseWindow(EventDispatcher, Generic[ScreenT], metaclass=_WindowMetaclass):
                 msg = "Window has no context; default camera is not available yet."
                 raise RuntimeError(msg)
             self._camera = self._create_default_camera()
-        return self._camera
+        return cast('Camera2D', self._camera)
 
     @camera.setter
     def camera(self, value: BaseCamera[Any]) -> None:
@@ -1582,6 +1680,65 @@ class BaseWindow(EventDispatcher, Generic[ScreenT], metaclass=_WindowMetaclass):
             :event:
             """
 
+        def on_pen_enter(self, pen_event: PenEvent) -> EVENT_HANDLE_STATE:
+            """A pen entered the window's range. Hover support depends on the platform."""
+
+        def on_pen_motion(self, pen_event: PenEvent) -> EVENT_HANDLE_STATE:
+            """Pen data changed, including pressure/buttons while stationary.
+
+            Delivered after enter and contact transitions. See :class:`pyglet.window.pen.PenEvent`.
+            """
+
+        def on_pen_press(self, pen_event: PenEvent) -> EVENT_HANDLE_STATE:
+            """The pen tip contacted the surface."""
+
+        def on_pen_release(self, pen_event: PenEvent) -> EVENT_HANDLE_STATE:
+            """The pen tip lifted, or its contact was cancelled."""
+
+        def on_pen_leave(self, pen_event: PenEvent) -> EVENT_HANDLE_STATE:
+            """The pen left the window/range or lost capture. Contact is released first."""
+
+        def on_touch_start(self, pointer_id: int, x: float, y: float, dx: float, dy: float, width: float, height: float,
+                           pressure: float, scale: float) -> EVENT_HANDLE_STATE:
+            """A touch contact started.
+
+            ``dx`` and ``dy`` are zero for a new contact. ``scale`` is the ratio of the distance between the first
+            two active contacts after this event to its distance before the event. It is ``1.0`` when fewer than two
+            contacts are active.
+
+            Args:
+                pointer_id: Identifier of the touch contact.
+                x: Distance in pixels from the left edge of the window.
+                y: Distance in pixels from the bottom edge of the window.
+                dx: Horizontal movement since the previous event for this contact.
+                dy: Vertical movement since the previous event for this contact.
+                width: Width of the touch contact in pixels, if available.
+                height: Height of the touch contact in pixels, if available.
+                pressure: Normalized touch pressure, if available.
+                scale: Ratio of the active two-contact distance since the previous event.
+
+            :event:
+            """
+
+        def on_touch_move(self, pointer_id: int, x: float, y: float, dx: float, dy: float, width: float, height: float,
+                          pressure: float, scale: float) -> EVENT_HANDLE_STATE:
+            """A touch contact moved.
+
+            The parameters have the same meaning as :py:meth:`on_touch_start`. A ``scale`` greater than ``1.0``
+            indicates the first two active contacts moved apart; a value below ``1.0`` indicates they moved together.
+
+            :event:
+            """
+
+        def on_touch_end(self, pointer_id: int, x: float, y: float, dx: float, dy: float, width: float, height: float,
+                         pressure: float, scale: float) -> EVENT_HANDLE_STATE:
+            """A touch contact ended.
+
+            The ending contact is included in ``scale`` for this event, then removed from the active contacts.
+
+            :event:
+            """
+
         def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int) -> EVENT_HANDLE_STATE:
             """The mouse was moved with one or more mouse buttons pressed.
 
@@ -1830,6 +1987,14 @@ BaseWindow.register_event_type('on_mouse_release')
 BaseWindow.register_event_type('on_mouse_scroll')
 BaseWindow.register_event_type('on_mouse_enter')
 BaseWindow.register_event_type('on_mouse_leave')
+BaseWindow.register_event_type('on_touch_start')
+BaseWindow.register_event_type('on_pen_enter')
+BaseWindow.register_event_type('on_pen_motion')
+BaseWindow.register_event_type('on_pen_press')
+BaseWindow.register_event_type('on_pen_release')
+BaseWindow.register_event_type('on_pen_leave')
+BaseWindow.register_event_type('on_touch_move')
+BaseWindow.register_event_type('on_touch_end')
 BaseWindow.register_event_type('on_close')
 BaseWindow.register_event_type('on_expose')
 BaseWindow.register_event_type('_on_internal_resize')

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from math import degrees, radians
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from pyglet.math import Mat4, Vec2, Vec3, clamp
 
@@ -30,10 +30,13 @@ class Camera3DView(_CameraViewBase["Camera3D"]):
 
     __slots__ = ("_offset", "_world_offset")
 
+    _offset: Vec3
+    _world_offset: Vec3
+
     def __init__(
         self,
         camera: Camera3D,
-        storage: CameraViewStorage,
+        storage: CameraViewStorage | None,
         *,
         parent: Camera3DView | None = None,
     ) -> None:
@@ -74,10 +77,10 @@ class Camera3DView(_CameraViewBase["Camera3D"]):
 
     def _world_offset_cached(self) -> Vec3:
         if self._world_dirty:
-            if self.parent is None:
+            parent = self.parent
+            if parent is None:
                 self._world_offset = self.offset
             else:
-                parent = cast("Camera3DView", self.parent)
                 self._world_offset = parent._world_offset_cached() + self.offset  # noqa: SLF001
             self._world_dirty = False
         return self._world_offset
@@ -93,7 +96,17 @@ class Camera3D(BaseCamera[Camera3DView]):
     .. versionadded:: 3.0
     """
 
-    UP = Vec3(0.0, 1.0, 0.0)
+    UP: ClassVar[Vec3] = Vec3(0.0, 1.0, 0.0)
+
+    _position: Vec3
+    _near: float
+    _far: float
+    _field_of_view: float
+    _pitch: float
+    _yaw: float
+    _roll: float
+    walk_speed: float
+    look_speed: float
 
     __slots__ = (
         "_far",
@@ -119,6 +132,7 @@ class Camera3D(BaseCamera[Camera3DView]):
         walk_speed: float = 10.0,
         look_speed: float = 10.0,
         viewport: ViewportType | None = None,
+        aspect_ratio: float | None = None,
         register_handlers: bool = True,
         window_block: UniformBlock | None = None,
         copies_per_resource: int = 3,
@@ -157,6 +171,10 @@ class Camera3D(BaseCamera[Camera3DView]):
             register_handlers:
                 If ``True``, register for window resize and scale events.
                 Disable this for fixed-size offscreen cameras.
+            aspect_ratio:
+                Optional fixed width-to-height ratio for the projection and
+                automatic viewport fitting. Explicit viewports stay exact.
+                ``None`` follows the viewport's aspect ratio.
             window_block:
                 Optional shader ``WindowBlock`` used to create the camera's
                 uniform-buffer storage on modern graphics backends. By default,
@@ -180,6 +198,7 @@ class Camera3D(BaseCamera[Camera3DView]):
             window,
             view_storage,
             viewport=viewport,
+            aspect_ratio=aspect_ratio,
             register_handlers=register_handlers,
         )
         assert self.view_storage is not None
@@ -264,6 +283,9 @@ class Camera3D(BaseCamera[Camera3DView]):
         self._mark_view_dirty()
 
     def _get_aspect_ratio(self) -> float:
+        aspect_ratio = self.aspect_ratio
+        if aspect_ratio is not None:
+            return aspect_ratio
         width, height = self._get_viewport_size()
         return width / height
 
@@ -326,6 +348,10 @@ class ThirdPersonCamera(Camera3D):
     """Third-person orbit camera that follows a target point."""
 
     __slots__ = ("distance", "target", "target_height")
+
+    distance: float
+    target: Vec3
+    target_height: float
 
     def __init__(
         self,

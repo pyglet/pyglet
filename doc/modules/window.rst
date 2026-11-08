@@ -23,11 +23,16 @@ Classes
   .. rubric:: Methods
 
   .. automethod:: activate
+  .. automethod:: attention
+  .. automethod:: begin_text_input
   .. automethod:: clear
   .. automethod:: close
   .. automethod:: dispatch_event
   .. automethod:: dispatch_events
+  .. automethod:: draw
+  .. automethod:: end_text_input
   .. automethod:: flip
+  .. automethod:: get_current_screen
   .. automethod:: get_framebuffer_size
   .. automethod:: get_location
   .. automethod:: get_pixel_ratio
@@ -36,6 +41,7 @@ Classes
   .. automethod:: get_system_mouse_cursor
   .. automethod:: maximize
   .. automethod:: minimize
+  .. automethod:: present
   .. automethod:: set_caption
   .. automethod:: set_clipboard_text
   .. automethod:: set_exclusive_keyboard
@@ -48,8 +54,10 @@ Classes
   .. automethod:: set_mouse_cursor
   .. automethod:: set_mouse_cursor_platform_visible
   .. automethod:: set_mouse_cursor_visible
+  .. automethod:: set_mouse_passthrough
   .. automethod:: set_size
   .. automethod:: set_visible
+  .. automethod:: set_vsync
   .. automethod:: switch_to
 
   .. rubric:: Events
@@ -61,6 +69,9 @@ Classes
   .. automethod:: on_deactivate
   .. automethod:: on_draw
   .. automethod:: on_expose
+  .. automethod:: on_file_drag
+  .. automethod:: on_file_drag_enter
+  .. automethod:: on_file_drag_exit
   .. automethod:: on_file_drop
   .. automethod:: on_hide
   .. automethod:: on_key_press
@@ -73,12 +84,21 @@ Classes
   .. automethod:: on_mouse_release
   .. automethod:: on_mouse_scroll
   .. automethod:: on_move
+  .. automethod:: on_pen_enter
+  .. automethod:: on_pen_leave
+  .. automethod:: on_pen_motion
+  .. automethod:: on_pen_press
+  .. automethod:: on_pen_release
   .. automethod:: on_refresh
   .. automethod:: on_resize
+  .. automethod:: on_scale
   .. automethod:: on_show
   .. automethod:: on_text
   .. automethod:: on_text_motion
   .. automethod:: on_text_motion_select
+  .. automethod:: on_touch_start
+  .. automethod:: on_touch_move
+  .. automethod:: on_touch_end
 
   .. rubric:: Attributes
 

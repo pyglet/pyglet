@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import deque
-from typing import TYPE_CHECKING, List, Optional, Tuple
+from typing import TYPE_CHECKING
 import weakref
 
 from pyglet.media.drivers.base import (
@@ -22,7 +22,12 @@ _debug = debug_print('debug_media')
 
 
 class OpenALDriver(AbstractAudioDriver):
-    def __init__(self, device_name: Optional[str] = None) -> None:
+    device: interface.OpenALDevice
+    context: interface.OpenALContext | None
+    _listener: OpenALListener
+    worker: PlayerWorkerThread
+
+    def __init__(self, device_name: bytes | None = None) -> None:
         super().__init__()
 
         self.device = interface.OpenALDevice(device_name)
@@ -35,8 +40,8 @@ class OpenALDriver(AbstractAudioDriver):
         self.worker.start()
 
     @property
-    def sample_formats(self):
-       return self.context._supported_formats
+    def sample_formats(self) -> list[str]:
+        return self.context._supported_formats
 
     def create_audio_player(self, source: Source, player: AudioPlayer) -> OpenALAudioPlayer:
         assert self.device is not None, 'Device was closed'
@@ -67,11 +72,11 @@ class OpenALDriver(AbstractAudioDriver):
     def have_version(self, major: int, minor: int) -> bool:
         return (major, minor) <= self.get_version()
 
-    def get_version(self) -> Tuple[int, int]:
+    def get_version(self) -> tuple[int, int]:
         assert self.device is not None, "Device was closed"
         return self.device.get_version()
 
-    def get_extensions(self) -> List[str]:
+    def get_extensions(self) -> list[str]:
         assert self.device is not None, "Device was closed"
         return self.device.get_extensions()
 
@@ -83,6 +88,9 @@ class OpenALDriver(AbstractAudioDriver):
 
 
 class OpenALListener(AbstractListener):
+    _driver: OpenALDriver
+    _al_listener: interface.OpenALListener
+
     def __init__(self, driver: OpenALDriver) -> None:
         self._driver = weakref.proxy(driver)
         self._al_listener = interface.OpenALListener()
@@ -91,21 +99,29 @@ class OpenALListener(AbstractListener):
         self._al_listener.gain = volume
         self._volume = volume
 
-    def _set_position(self, position: Tuple[float, float, float]) -> None:
+    def _set_position(self, position: tuple[float, float, float]) -> None:
         self._al_listener.position = position
         self._position = position
 
-    def _set_forward_orientation(self, orientation: Tuple[float, float, float]) -> None:
+    def _set_forward_orientation(self, orientation: tuple[float, float, float]) -> None:
         self._al_listener.orientation = orientation + self._up_orientation
         self._forward_orientation = orientation
 
-    def _set_up_orientation(self, orientation: Tuple[float, float, float]) -> None:
+    def _set_up_orientation(self, orientation: tuple[float, float, float]) -> None:
         self._al_listener.orientation = self._forward_orientation + orientation
         self._up_orientation = orientation
 
 
 class OpenALAudioPlayer(AbstractAudioPlayer):
+    driver: OpenALDriver
+    alsource: interface.OpenALSource | None
+    _buffer_cursor: int
+    _play_cursor: int
+    _write_cursor: int
+    _pyglet_source_exhausted: bool
+    _has_underrun: bool
     _queued_buffer_sizes: deque[int]
+
     def __init__(self, driver: OpenALDriver, source: Source, player: AudioPlayer) -> None:
         super().__init__(source, player)
         self.driver = driver
@@ -219,7 +235,7 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
     def get_play_cursor(self) -> int:
         return self._play_cursor
 
-    def _refill(self, refill_size) -> None:
+    def _refill(self, refill_size: int) -> None:
         audio_data = self._get_and_compensate_audio_data(refill_size, self._play_cursor)
 
         if audio_data is None:
@@ -241,7 +257,7 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
     def set_volume(self, volume: float) -> None:
         self.alsource.gain = volume
 
-    def set_position(self, position: Tuple[float, float, float]) -> None:
+    def set_position(self, position: tuple[float, float, float]) -> None:
         self.alsource.position = position
 
     def set_min_distance(self, min_distance: float) -> None:
@@ -253,7 +269,7 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
     def set_pitch(self, pitch: float) -> None:
         self.alsource.pitch = pitch
 
-    def set_cone_orientation(self, cone_orientation: Tuple[float, float, float]) -> None:
+    def set_cone_orientation(self, cone_orientation: tuple[float, float, float]) -> None:
         self.alsource.direction = cone_orientation
 
     def set_cone_inner_angle(self, cone_inner_angle: float) -> None:
@@ -292,7 +308,7 @@ class OpenALGaplessAudioPlayer(OpenALAudioPlayer, GaplessAudioPlayerBase):
         else:
             self._dispatch_source_eos_events()
 
-    def _refill(self, refill_size) -> None:
+    def _refill(self, refill_size: int) -> None:
         while not self._pyglet_source_exhausted:
             # The queued source may be well ahead of the audible source, so
             # clock compensation must not alter data at a source boundary.

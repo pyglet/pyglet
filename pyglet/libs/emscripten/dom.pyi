@@ -21,6 +21,7 @@ class DOMRect:
     height: float
 
 class CSSStyleDeclaration:
+    cssText: str
     width: str
     height: str
     minWidth: str
@@ -30,15 +31,18 @@ class CSSStyleDeclaration:
     visibility: str
     display: str
     cursor: str
+    touchAction: str
     def setProperty(self, property: str, value: str, priority: str = "") -> None: ...
 
 class Event:
     type: str
+    isTrusted: bool
     def preventDefault(self) -> None: ...
 
 class UIEvent(Event): ...
 
 class KeyboardEvent(UIEvent):
+    isComposing: bool
     key: str
     code: str
     repeat: bool
@@ -59,9 +63,41 @@ class MouseEvent(UIEvent):
     altKey: bool
     metaKey: bool
 
+class PointerEvent(MouseEvent):
+    pointerId: int
+    pointerType: str
+    width: float
+    height: float
+    pressure: float
+    tiltX: float
+    tiltY: float
+    twist: float
+
 class WheelEvent(MouseEvent):
     deltaX: float
     deltaY: float
+
+class InputEvent(UIEvent):
+    isComposing: bool
+    inputType: str
+    data: str | None
+
+class HTMLTextControl:
+    type: str
+    value: str
+    inputMode: str
+    enterKeyHint: str
+    spellcheck: bool
+    selectionStart: int
+    selectionEnd: int
+    selectionDirection: str
+    style: CSSStyleDeclaration
+    def setAttribute(self, name: str, value: str) -> None: ...
+    def setSelectionRange(self, start: int, end: int, direction: str = ...) -> None: ...
+    def focus(self, *, preventScroll: bool = ...) -> None: ...
+    def remove(self) -> None: ...
+    def addEventListener(self, type: str, callback: JsProxy, *, passive: bool = ...) -> None: ...
+    def removeEventListener(self, type: str, callback: JsProxy) -> None: ...
 
 class File:
     name: str
@@ -102,6 +138,7 @@ class CanvasRenderingContext2D:
     def putImageData(self, image: ImageData, x: float, y: float) -> None: ...
 
 class HTMLCanvasElement:
+    def setPointerCapture(self, pointer_id: int) -> None: ...
     id: str
     # Assignments are coerced to unsigned integers by the browser.
     @property

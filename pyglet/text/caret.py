@@ -137,6 +137,9 @@ class Caret(EventDispatcher):
         if self._layout == layout and self._group == layout.foreground_decoration_group:
             return
 
+        session = self._layout.text_input_session
+        if self._layout is not layout and session is not None and session.caret is self:
+            self._layout.end_text_input()
         self._layout = layout
         batch = self._batch if self._custom_batch else layout.batch
         self._group = layout.foreground_decoration_group
@@ -149,6 +152,9 @@ class Caret(EventDispatcher):
         """
         clock.unschedule(self._blink)
         self._list.delete()
+        session = self._layout.text_input_session
+        if session is not None and session.caret is self:
+            self._layout.end_text_input()
         self._layout.remove_handlers(self)
 
     def _blink(self, dt: float) -> None:  # noqa: ARG002
@@ -212,6 +218,23 @@ class Caret(EventDispatcher):
         a = _a[0] if _a else self._list.colors[3]
 
         self._list.colors[:] = r, g, b, a, r, g, b, a
+
+    @property
+    def rect(self) -> tuple[float, float, float, float]:
+        """Bounds as ``(x, y, width, height)``, from the bottom left.
+
+        Includes layout placement, anchors, and scrolling, independently of
+        blinking.
+
+        Application camera and custom drawing transforms are excluded.
+        """
+        layout = self._layout
+        # Preserve which side of a wrapped line boundary the caret is drawn on.
+        x, y = layout.get_point_from_position(self._position, self.line)
+        font = layout.document.get_font(max(0, self._position - 1))
+        x += layout.left - layout.view_x
+        y += layout.bottom + layout._get_content_height() - layout.view_y + font.descent  # noqa: SLF001
+        return x, y, 1, font.ascent - font.descent
 
     @property
     def position(self) -> int:
@@ -393,10 +416,12 @@ class Caret(EventDispatcher):
 
         font = self._layout.document.get_font(max(0, self._position - 1))
         self._list.position[:] = [x, y + font.descent, z, x, y + font.ascent, z]  # type: ignore[assignment]
+        self.dispatch_event('on_change')
 
     def on_translation_update(self) -> None:
         depth_offset = self._list.translation[3]
         self._list.translation[:] = (-self._layout.view_x, -self._layout.view_y, 0, depth_offset) * 2
+        self.dispatch_event('on_change')
 
     def on_layout_update(self) -> None:
         """Handler for the `IncrementalTextLayout.on_layout_update` event."""
@@ -605,6 +630,9 @@ class Caret(EventDispatcher):
         self.visible = self._active
         return event.EVENT_HANDLED
 
+    def on_change(self) -> None:
+        """The text, selection, or position of the caret changed."""
+
     def on_clipboard_copy(self, text: str) -> bool:
         """Dispatched when text is copied.
         This default handler does nothing.
@@ -618,3 +646,4 @@ class Caret(EventDispatcher):
 
 Caret.register_event_type("on_clipboard_copy")
 Caret.register_event_type("on_clipboard_paste")
+Caret.register_event_type('on_change')

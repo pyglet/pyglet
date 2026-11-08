@@ -633,6 +633,10 @@ class CocoaWindow(BaseWindow['CocoaScreen']):
             NSApp.activateIgnoringOtherApps_(True)
             self._nswindow.makeKeyAndOrderFront_(None)
 
+    def attention(self) -> None:
+        if self._nswindow is not None:
+            NSApplication.sharedApplication().requestUserAttention_(appkit.NSCriticalRequest)
+
     def set_visible(self, visible: bool = True) -> None:
         super().set_visible(visible)
 

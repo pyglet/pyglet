@@ -48,6 +48,7 @@ class WebProject:
     fonts: tuple[WebFont, ...]
     title: str = "pyglet application"
     pyodide_url: str = DEFAULT_PYODIDE_URL
+    cache_backend: str = "idbfs"
 
 
 @dataclass(frozen=True)
@@ -75,6 +76,7 @@ def load_project(
     resources: Sequence[str] | None = None,
     sources: Sequence[str] | None = None,
     title: str | None = None,
+    cache_backend: str | None = None,
 ) -> WebProject:
     """Load ``[tool.pyglet.web]`` and apply command-line overrides."""
     project_path = Path(project_file).resolve()
@@ -115,6 +117,9 @@ def load_project(
     )
     web = _web_directory(root, data.get("web", "web"), output_path)
     fonts = _load_fonts(data.get("fonts", ()), root, web)
+    selected_cache_backend: str = cache_backend if cache_backend is not None else data.get("cache_backend", "idbfs")
+    if selected_cache_backend not in ("idbfs", "opfs"):
+        raise ValueError("cache_backend must be 'idbfs' or 'opfs'.")
     return WebProject(
         root=root,
         entrypoint=entrypoint_path,
@@ -125,6 +130,7 @@ def load_project(
         fonts=fonts,
         title=title or str(data.get("title", entrypoint_path.stem)),
         pyodide_url=str(data.get("pyodide_url", DEFAULT_PYODIDE_URL)),
+        cache_backend=selected_cache_backend,
     )
 
 
@@ -388,7 +394,7 @@ async function main() {{
   const entrypoint = {entrypoint_json};
   const fonts = {fonts_json};
   const pyodide = await loadPyodide();
-  await installPygletEmscripten(pyodide);
+  await installPygletEmscripten(pyodide, {{ cacheBackend: {json.dumps(project.cache_backend)} }});
   await preloadFonts(fonts);
 
   await download(pyodide, "pyglet.zip", "/pyglet.zip");
@@ -447,6 +453,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--resource", action="append", dest="resources", help="Resource glob; may be repeated.")
     parser.add_argument("--source", action="append", dest="sources", help="Python source glob; may be repeated.")
     parser.add_argument("--title", help="Override the generated page title.")
+    parser.add_argument("--cache-backend", choices=("idbfs", "opfs"), help="Browser cache storage (default: idbfs).")
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("build", help="Build the browser project.")
     discover_parser = subparsers.add_parser("discover", help="Report literal resource references.")
@@ -470,6 +477,7 @@ def main(arguments: Sequence[str] | None = None) -> int:
             resources=args.resources,
             sources=args.sources,
             title=args.title,
+            cache_backend=args.cache_backend,
         )
         if args.command == "build":
             output = build(project)

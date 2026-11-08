@@ -220,6 +220,8 @@ class SurfaceFeatures:
     texture_storage: bool = False
     #: Enables framebuffer and renderbuffer operations without binding objects.
     direct_state_access: bool = False
+    #: Enables attaching a whole texture mip level, including all layers, to a framebuffer.
+    layered_framebuffer_attachments: bool = False
 
 
 @dataclass(frozen=True)

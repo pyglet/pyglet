@@ -26,10 +26,12 @@ from ctypes import (
     c_float,
 )
 from functools import lru_cache
-from typing import TYPE_CHECKING, Sequence, Callable, Any
+from typing import TYPE_CHECKING, Sequence, Callable, Any, ClassVar
 
 import pyglet
 from pyglet.display.xlib import XlibScreen, XlibScreenXinerama, XlibDisplay
+from pyglet.window.pen import PenButton, PenEvent
+from pyglet.window.xlib.pen import query_pen
 from pyglet.enums import GraphicsAPI
 from pyglet.event import EventDispatcher
 from pyglet.libs.linux.x11 import cursorfont, xlib
@@ -59,6 +61,20 @@ try:
     _have_xsync = True
 except ImportError:
     _have_xsync = False
+
+try:
+    from pyglet.libs.linux.x11 import xcursor
+
+    _have_xcursor = True
+except (ImportError, AttributeError):
+    _have_xcursor = False
+
+try:
+    from pyglet.libs.linux.x11 import xinput2
+
+    _have_xinput2 = xinput2.is_available()
+except (ImportError, AttributeError):
+    _have_xinput2 = False
 
 _debug = pyglet.options.debug_x11
 
@@ -129,6 +145,28 @@ ViewEventHandler = _ViewEventHandler
 
 
 class XlibWindow(BaseWindow['XlibScreen']):
+    # Prefer the desktop's cursor theme, with core cursor font fallbacks.
+    _cursor_shapes: ClassVar[dict[str, tuple[bytes, int]]] = {
+        BaseWindow.CURSOR_CROSSHAIR: (b'crosshair', cursorfont.XC_crosshair),
+        BaseWindow.CURSOR_HAND: (b'pointer', cursorfont.XC_hand2),
+        BaseWindow.CURSOR_HELP: (b'help', cursorfont.XC_question_arrow),
+        BaseWindow.CURSOR_NO: (b'not-allowed', cursorfont.XC_pirate),
+        BaseWindow.CURSOR_SIZE: (b'all-scroll', cursorfont.XC_fleur),
+        BaseWindow.CURSOR_SIZE_UP: (b'n-resize', cursorfont.XC_top_side),
+        BaseWindow.CURSOR_SIZE_UP_RIGHT: (b'ne-resize', cursorfont.XC_top_right_corner),
+        BaseWindow.CURSOR_SIZE_RIGHT: (b'e-resize', cursorfont.XC_right_side),
+        BaseWindow.CURSOR_SIZE_DOWN_RIGHT: (b'se-resize', cursorfont.XC_bottom_right_corner),
+        BaseWindow.CURSOR_SIZE_DOWN: (b's-resize', cursorfont.XC_bottom_side),
+        BaseWindow.CURSOR_SIZE_DOWN_LEFT: (b'sw-resize', cursorfont.XC_bottom_left_corner),
+        BaseWindow.CURSOR_SIZE_LEFT: (b'w-resize', cursorfont.XC_left_side),
+        BaseWindow.CURSOR_SIZE_UP_LEFT: (b'nw-resize', cursorfont.XC_top_left_corner),
+        BaseWindow.CURSOR_SIZE_UP_DOWN: (b'ns-resize', cursorfont.XC_sb_v_double_arrow),
+        BaseWindow.CURSOR_SIZE_LEFT_RIGHT: (b'ew-resize', cursorfont.XC_sb_h_double_arrow),
+        BaseWindow.CURSOR_TEXT: (b'text', cursorfont.XC_xterm),
+        BaseWindow.CURSOR_WAIT: (b'wait', cursorfont.XC_watch),
+        BaseWindow.CURSOR_WAIT_ARROW: (b'progress', cursorfont.XC_watch),
+    }
+
     context: XlibContext | None
     display: XlibDisplay
     _x_display: _Pointer[xlib.Display] | None = None  # X display connection
@@ -152,6 +190,8 @@ class XlibWindow(BaseWindow['XlibScreen']):
     _mapped: bool = False
     _lost_context: bool = False
     _lost_context_state: bool = False
+    _raw_mouse_motion: bool = False
+    _raw_mouse_state: int = 0
 
     _enable_xsync: bool = False
     _current_sync_value: xsync.XSyncValue | None = None
@@ -198,6 +238,7 @@ class XlibWindow(BaseWindow['XlibScreen']):
         # This would prevent the floating window from being moved by the
         # WM.
         if 'fullscreen' in changes or 'resizable' in changes:
+            self._set_xinput2_raw_motion(False)
             # clear out the GLX context
             self.context.detach()
             xlib.XDestroyWindow(self._x_display, self._window)
@@ -305,6 +346,7 @@ class XlibWindow(BaseWindow['XlibScreen']):
                                                 byref(window_attributes))
             xlib.XMapWindow(self._x_display, self._x_window)
             xlib.XSelectInput(self._x_display, self._x_window, self._default_event_mask)
+            self._enable_xinput2()
 
             self.display._window_map[self._window] = self.dispatch_platform_event  # noqa: SLF001
             self.display._window_map[self._x_window] = self.dispatch_platform_event_view  # noqa: SLF001
@@ -554,6 +596,7 @@ class XlibWindow(BaseWindow['XlibScreen']):
         if not self._window:
             return
 
+        self._set_xinput2_raw_motion(False)
         if self.context:
             self.context.destroy()
         self._unmap()
@@ -690,6 +733,23 @@ class XlibWindow(BaseWindow['XlibScreen']):
         if self._x_display and self._window:
             xlib.XSetInputFocus(self._x_display, self._window, xlib.RevertToParent, xlib.CurrentTime)
 
+    def attention(self) -> None:
+        if not self._x_display or not self._window:
+            return
+
+        event = xlib.XEvent()
+        event.xclient.type = xlib.ClientMessage
+        event.xclient.display = self._x_display
+        event.xclient.window = self._window
+        event.xclient.message_type = xlib.XInternAtom(self._x_display, b'_NET_WM_STATE', False)
+        event.xclient.format = 32
+        event.xclient.data.l[0] = 1  # _NET_WM_STATE_ADD
+        event.xclient.data.l[1] = xlib.XInternAtom(self._x_display, b'_NET_WM_STATE_DEMANDS_ATTENTION', False)
+        event.xclient.data.l[3] = 1  # Request from an application.
+        xlib.XSendEvent(self._x_display, self._get_root(), False,
+                        xlib.SubstructureRedirectMask | xlib.SubstructureNotifyMask, byref(event))
+        xlib.XFlush(self._x_display)
+
     def set_visible(self, visible: bool = True) -> None:
         super().set_visible(visible)
 
@@ -729,11 +789,22 @@ class XlibWindow(BaseWindow['XlibScreen']):
         return bytes(byte_list)
 
     @lru_cache  # noqa: B019
-    def _create_cursor_from_image(self, cursor: ImageMouseCursor) -> xlib.Cursor:
+    def _create_cursor_from_image(self, cursor: ImageMouseCursor) -> int:
         """Creates platform cursor from an ImageCursor instance."""
         texture = cursor.texture
         width = texture.width
         height = texture.height
+
+        # X11 uses a top-left origin, and hotspots must lie inside the image.
+        hot_x = min(max(0, int(cursor.hot_x)), width - 1)
+        hot_y = min(max(0, int(height - 1 - cursor.hot_y)), height - 1)
+        if _have_xcursor and xcursor.XcursorSupportsARGB(self._x_display):
+            rgba = bytes(texture.get_image_data().get_bytes('RGBA', -width * 4))
+            native_cursor = xcursor.create_argb_cursor(
+                self._x_display, width, height, rgba, hot_x, hot_y,  # type: ignore[arg-type]  # The window has an open display.
+            )
+            if native_cursor:
+                return native_cursor
 
         alpha_luma_bytes = texture.get_image_data().get_bytes('AL', -width * 2)
         mask_data = self._downsample_1bit(alpha_luma_bytes[0::2])
@@ -744,9 +815,6 @@ class XlibWindow(BaseWindow['XlibScreen']):
         white = xlib.XColor(red=65535, green=65535, blue=65535)  # background color
         black = xlib.XColor()  # foreground color
 
-        # hot_x/y must be within the image dimension, or the cursor will not display:
-        hot_x = min(max(0, int(cursor.hot_x)), width)
-        hot_y = min(max(0, int(height - cursor.hot_y)), height)
         native_cursor = xlib.XCreatePixmapCursor(self._x_display, bitmap, mask, white, black, hot_x, hot_y)
         xlib.XFreePixmap(self._x_display, bitmap)
         xlib.XFreePixmap(self._x_display, mask)
@@ -794,22 +862,33 @@ class XlibWindow(BaseWindow['XlibScreen']):
             if mouse_exclusive:
                 self.set_mouse_cursor_platform_visible(False)
 
-                # Restrict to client area
-                xlib.XGrabPointer(self._x_display, self._window,
-                                  True,
-                                  0,
+                # owner_events=True duplicates XI_RawMotion events during a grab:
+                # https://discourse.libsdl.org/t/sdl-x11-fix-duplicate-xinput2-event-reception/42771
+                # Deliver core events to the view so buttons, scroll and the
+                # motion fallback still reach their handlers with owner_events=False.
+                result = xlib.XGrabPointer(self._x_display, self._x_window,
+                                  False,
+                                  xlib.ButtonPressMask | xlib.ButtonReleaseMask | xlib.PointerMotionMask,
                                   xlib.GrabModeAsync,
                                   xlib.GrabModeAsync,
                                   self._window,
                                   0,
                                   xlib.CurrentTime)
+                if result != xlib.GrabSuccess:
+                    self._applied_mouse_exclusive = None
+                    return
 
-                # Move pointer to center of window
-                x = self._width // 2
-                y = self._height // 2
-                self._mouse_exclusive_client = x, y
-                self.set_mouse_position(x, y)
+                if self._set_xinput2_raw_motion(True):
+                    self._mouse_exclusive_client = None
+                    self._update_raw_mouse_state()
+                else:
+                    # Move pointer to center of window for the warp fallback.
+                    x = self._width // 2
+                    y = self._height // 2
+                    self._mouse_exclusive_client = x, y
+                    self.set_mouse_position(x, y)
             elif self._fullscreen:  # noqa: SLF001
+                self._set_xinput2_raw_motion(False)
                 if isinstance(self.screen, XlibScreenXinerama) and self.screen._xinerama:
                     return
 
@@ -828,6 +907,7 @@ class XlibWindow(BaseWindow['XlibScreen']):
                     return
                 self.set_mouse_cursor_platform_visible()
             else:
+                self._set_xinput2_raw_motion(False)
                 # Unclip
                 xlib.XUngrabPointer(self._x_display, xlib.CurrentTime)
                 self.set_mouse_cursor_platform_visible()
@@ -864,32 +944,15 @@ class XlibWindow(BaseWindow['XlibScreen']):
         if name == self.CURSOR_DEFAULT:
             return DefaultMouseCursor()
 
-        # NQR means default shape is not pretty... surely there is another
-        # cursor font?
-        cursor_shapes = {
-            self.CURSOR_CROSSHAIR: cursorfont.XC_crosshair,
-            self.CURSOR_HAND: cursorfont.XC_hand2,
-            self.CURSOR_HELP: cursorfont.XC_question_arrow,  # NQR
-            self.CURSOR_NO: cursorfont.XC_pirate,  # NQR
-            self.CURSOR_SIZE: cursorfont.XC_fleur,
-            self.CURSOR_SIZE_UP: cursorfont.XC_top_side,
-            self.CURSOR_SIZE_UP_RIGHT: cursorfont.XC_top_right_corner,
-            self.CURSOR_SIZE_RIGHT: cursorfont.XC_right_side,
-            self.CURSOR_SIZE_DOWN_RIGHT: cursorfont.XC_bottom_right_corner,
-            self.CURSOR_SIZE_DOWN: cursorfont.XC_bottom_side,
-            self.CURSOR_SIZE_DOWN_LEFT: cursorfont.XC_bottom_left_corner,
-            self.CURSOR_SIZE_LEFT: cursorfont.XC_left_side,
-            self.CURSOR_SIZE_UP_LEFT: cursorfont.XC_top_left_corner,
-            self.CURSOR_SIZE_UP_DOWN: cursorfont.XC_sb_v_double_arrow,
-            self.CURSOR_SIZE_LEFT_RIGHT: cursorfont.XC_sb_h_double_arrow,
-            self.CURSOR_TEXT: cursorfont.XC_xterm,
-            self.CURSOR_WAIT: cursorfont.XC_watch,
-            self.CURSOR_WAIT_ARROW: cursorfont.XC_watch,  # NQR
-        }
-        if name not in cursor_shapes:
+        if name not in self._cursor_shapes:
             msg = f'Unknown cursor name "{name}"'
             raise MouseCursorException(msg)
-        cursor = xlib.XCreateFontCursor(self._x_display, cursor_shapes[name])
+        theme_name, shape = self._cursor_shapes[name]
+        if _have_xcursor:
+            cursor = xcursor.XcursorLibraryLoadCursor(self._x_display, theme_name)
+            if cursor:
+                return XlibMouseCursor(cursor)
+        cursor = xlib.XCreateFontCursor(self._x_display, shape)
         return XlibMouseCursor(cursor)
 
     def set_icon(self, *images: pyglet.image.ImageData) -> None:
@@ -1121,9 +1184,127 @@ class XlibWindow(BaseWindow['XlibScreen']):
             event_handler(e)
 
     def dispatch_platform_event_view(self, e: xlib.XEvent) -> None:
+        if e.type == xlib.GenericEvent:
+            self._dispatch_xinput2_event(e)
+            return
         event_handler = self._view_event_handlers.get(e.type)
         if event_handler:
             event_handler(e)
+
+    def _enable_xinput2(self) -> None:
+        if not _have_xinput2 or self._x_display is None:
+            return
+        version = self.display._xinput2_version
+        if version is not None:
+            mask, event_mask = xinput2.pen_event_mask()
+            xinput2.XISelectEvents(self._x_display, self._x_window, byref(event_mask), 1)
+        if version is not None and version >= (2, 2):
+            mask, event_mask = xinput2.touch_event_mask()
+            xinput2.XISelectEvents(self._x_display, self._x_window, byref(event_mask), 1)
+            xlib.XFlush(self._x_display)
+
+    def _set_xinput2_raw_motion(self, enabled: bool) -> bool:
+        version = self.display._xinput2_version
+        if version is None or version < (2, 1) or self._x_display is None:
+            return False
+        owner = self.display._raw_mouse_window
+        if not enabled and owner != self._x_window:
+            self._raw_mouse_motion = False
+            return False
+        if enabled and owner not in (None, self._x_window):
+            return False
+
+        mask, event_mask = xinput2.raw_motion_event_mask(enabled)
+        root = xlib.XDefaultRootWindow(self._x_display)
+        result = xinput2.XISelectEvents(self._x_display, root, byref(event_mask), 1)
+        self._raw_mouse_motion = enabled and result == 0
+        self.display._raw_mouse_window = self._x_window if self._raw_mouse_motion else None
+        xlib.XFlush(self._x_display)
+        return self._raw_mouse_motion
+
+    def _update_raw_mouse_state(self) -> None:
+        root = xlib.Window()
+        child = xlib.Window()
+        root_x, root_y, win_x, win_y = c_int(), c_int(), c_int(), c_int()
+        state = c_uint()
+        xlib.XQueryPointer(self._x_display, self._window, byref(root), byref(child),
+                          byref(root_x), byref(root_y), byref(win_x), byref(win_y), byref(state))
+        self._raw_mouse_state = state.value
+
+    def _dispatch_xinput2_raw_motion(self, cookie: xlib.XGenericEventCookie) -> None:
+        if not self._raw_mouse_motion or not self._applied_mouse_exclusive or not self._active:
+            return
+        event = cast(cookie.data, POINTER(xinput2.XIRawEvent)).contents
+        dx, dy = xinput2.raw_motion_delta(event)
+        if dx == 0 and dy == 0:
+            return
+
+        buttons = 0
+        for mask, button in ((xlib.Button1Mask, mouse.LEFT), (xlib.Button2Mask, mouse.MIDDLE),
+                             (xlib.Button3Mask, mouse.RIGHT)):
+            if self._raw_mouse_state & mask:
+                buttons |= button
+        if buttons:
+            modifiers = self._translate_modifiers(self._raw_mouse_state)
+            self.dispatch_event('on_mouse_drag', self._mouse_x, self._mouse_y, dx, -dy, buttons, modifiers)
+        else:
+            self.dispatch_event('on_mouse_motion', self._mouse_x, self._mouse_y, dx, -dy)
+
+    def _dispatch_xinput2_pen(self, cookie: xlib.XGenericEventCookie) -> None:
+        if self._x_display is None:
+            return
+        crossing = cookie.evtype in (xinput2.XI_ENTER, xinput2.XI_LEAVE)
+        event_type = xinput2.XIEnterEvent if crossing else xinput2.XIDeviceEvent
+        event = cast(cookie.data, POINTER(event_type)).contents
+        pointer_id = event.sourceid
+        pens = self.display._xinput2_pens
+        if pointer_id not in pens:
+            pens[pointer_id] = query_pen(self._x_display, pointer_id)
+        xi_pen = pens[pointer_id]
+        if xi_pen is None:
+            return
+        if cookie.evtype == xinput2.XI_LEAVE:
+            self._leave_pen(pointer_id)
+            xi_pen.values.clear()
+            return
+        if not crossing:
+            xi_pen.update(event.valuators)
+        buttons = event.buttons.mask[0] >> 1 if event.buttons.mask_len else 0
+        if cookie.evtype == xinput2.XI_BUTTON_PRESS and 1 <= event.detail <= 3:
+            buttons |= 1 << (event.detail - 1)
+        elif cookie.evtype == xinput2.XI_BUTTON_RELEASE and 1 <= event.detail <= 3:
+            buttons &= ~(1 << (event.detail - 1))
+        self._update_pen(PenEvent(
+            pointer_id, event.event_x / self._scale, self.height - 1 - event.event_y / self._scale,
+            xi_pen.axis('Abs Pressure', 0, 1), xi_pen.axis('Abs Tilt X', -90, 90),
+            xi_pen.axis('Abs Tilt Y', -90, 90), 0.0,
+            PenButton(buttons & 7), xi_pen.eraser, bool(buttons & PenButton.TIP),
+        ))
+
+    def _dispatch_xinput2_event(self, e: xlib.XEvent) -> None:
+        opcode = self.display._xinput2_opcode
+        if opcode is None or e.xcookie.extension != opcode:
+            return
+        if e.xcookie.evtype == xinput2.XI_RAW_MOTION:
+            self._dispatch_xinput2_raw_motion(e.xcookie)
+            return
+        if e.xcookie.evtype in (xinput2.XI_BUTTON_PRESS, xinput2.XI_BUTTON_RELEASE, xinput2.XI_MOTION,
+                                xinput2.XI_ENTER, xinput2.XI_LEAVE):
+            self._dispatch_xinput2_pen(e.xcookie)
+            return
+        if e.xcookie.evtype not in (xinput2.XI_TOUCH_BEGIN, xinput2.XI_TOUCH_UPDATE, xinput2.XI_TOUCH_END):
+            return
+
+        event = cast(e.xcookie.data, POINTER(xinput2.XIDeviceEvent)).contents
+        pointer_id = (event.deviceid << 32) | (event.detail & 0xffffffff)
+        x = event.event_x / self._scale
+        y = self.height - 1 - event.event_y / self._scale
+        dispatch_name = {
+            xinput2.XI_TOUCH_BEGIN: 'on_touch_start',
+            xinput2.XI_TOUCH_UPDATE: 'on_touch_move',
+            xinput2.XI_TOUCH_END: 'on_touch_end',
+        }[event.evtype]
+        self._dispatch_touch_event(dispatch_name, pointer_id, x, y, 0, 0, 0.0)
 
     @staticmethod
     @lru_cache
@@ -1236,6 +1417,9 @@ class XlibWindow(BaseWindow['XlibScreen']):
     @XlibEventHandler(xlib.KeyPress)
     @XlibEventHandler(xlib.KeyRelease)
     def _event_key_view(self, ev: xlib.XEvent) -> None:
+        if self._raw_mouse_motion:
+            # Raw motion has no modifier state; refresh it on keyboard events.
+            self._update_raw_mouse_state()
         # Try to detect autorepeat ourselves if the server doesn't support it
         # XXX: Doesn't always work, better off letting the server do it
         global _can_detect_autorepeat  # noqa: PLW0602
@@ -1310,6 +1494,8 @@ class XlibWindow(BaseWindow['XlibScreen']):
     @ViewEventHandler
     @XlibEventHandler(xlib.MotionNotify)
     def _event_motionnotify_view(self, ev: xlib.XEvent) -> None:
+        if self._raw_mouse_motion and self._applied_mouse_exclusive:
+            return
         x = ev.xmotion.x / self._scale
         y = self.height - 1 - ev.xmotion.y / self._scale
 
@@ -1358,6 +1544,8 @@ class XlibWindow(BaseWindow['XlibScreen']):
 
     @XlibEventHandler(xlib.MotionNotify)
     def _event_motionnotify(self, ev: xlib.XEvent) -> None:
+        if self._raw_mouse_motion and self._applied_mouse_exclusive:
+            return
         # Window motion looks for drags that are outside the view but within
         # the window.
         buttons = 0
@@ -1667,6 +1855,13 @@ class XlibWindow(BaseWindow['XlibScreen']):
     @XlibEventHandler(xlib.ButtonPress)
     @XlibEventHandler(xlib.ButtonRelease)
     def _event_button(self, ev: xlib.XEvent) -> None:
+        self._raw_mouse_state = ev.xbutton.state
+        if 1 <= ev.xbutton.button <= 5:
+            button_mask = 1 << (ev.xbutton.button + 7)
+            if ev.type == xlib.ButtonPress:
+                self._raw_mouse_state |= button_mask
+            else:
+                self._raw_mouse_state &= ~button_mask
         x = ev.xbutton.x / self._scale
         y = self.height - 1 - ev.xbutton.y / self._scale
 
@@ -1756,6 +1951,7 @@ class XlibWindow(BaseWindow['XlibScreen']):
     def _event_focusout(self, ev: xlib.XEvent) -> None:
         self._active = False
         self._update_exclusivity()
+        self._pen_state.clear(self.dispatch_event)
         self.dispatch_event('on_deactivate')
         if _have_utf8:
             xlib.XUnsetICFocus(self._x_ic)

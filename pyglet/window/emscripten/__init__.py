@@ -10,8 +10,11 @@ import pyglet.app
 from pyglet.libs.emscripten.files import import_files
 from pyglet.libs.emscripten.proxies import ProxyRegistry
 from pyglet.window import BaseWindow, DefaultMouseCursor, ImageMouseCursor, MouseCursor, key, mouse
+from pyglet.window.pen import PenButton, PenEvent
+from pyglet.window.emscripten.textinput import BrowserTextInput
 
 if TYPE_CHECKING:
+    from pyglet.window.textinput import TextInputSession
     from pyglet.display.emscripten import EmscriptenScreen
     from collections.abc import Iterable
 
@@ -20,7 +23,7 @@ if TYPE_CHECKING:
     from pyglet.config import Config
     from pyglet.libs.emscripten.dom import (
         ClipboardEvent, DragEvent, Event, File, HTMLCanvasElement, KeyboardEvent,
-        MouseEvent, ResizeObserver, ResizeObserverEntry, WheelEvent,
+        MouseEvent, PointerEvent, ResizeObserver, ResizeObserverEntry, WheelEvent,
     )
     from pyglet.display.base import Display, ScreenMode
     from pyglet.graphics.api.base import SurfaceContext
@@ -342,6 +345,9 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
     _clipboard_text: str
     _file_import_tasks: set[asyncio.Task[None]]
     _scale: float
+    _browser_text_input: BrowserTextInput | None
+    _maximized: bool
+    _maximized_style: dict[str, str]
 
     def __init__(
         self,
@@ -369,6 +375,9 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
         self._keys_down = set()
         self._clipboard_text = ""
         self._file_import_tasks = set()
+        self._browser_text_input = None
+        self._maximized = False
+        self._maximized_style = {}
 
         self._scale = js.window.devicePixelRatio
         super().__init__(
@@ -433,9 +442,13 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
         self._proxy_resize = self._proxies.create(self._event_resized)
         self._observer = js.ResizeObserver.new(self._proxy_resize)
         self._observer.observe(self._canvas)
+        self._event_handlers['resize'] = self._proxies.add_event_listener(
+            js.window, 'resize', self._event_browser_resize,
+        )
 
     def close(self) -> None:
         """Remove browser callbacks before releasing the pyglet window."""
+        self.end_text_input()
         if not self._context:
             return
 
@@ -446,6 +459,7 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
         self._proxy_resize = None
         self._canvas_event_handlers.clear()
         self._event_handlers.clear()
+        self._touch_positions.clear()
 
         super().close()
 
@@ -523,12 +537,19 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
 
     def set_size(self, width: int, height: int) -> None:
         super().set_size(width, height)
+        if self._maximized:
+            self._maximized = False
+            for name, value in self._maximized_style.items():
+                self._canvas.style.setProperty(name, value)
+            self._maximized_style.clear()
         self.adjust_scale(width, height)
 
     def get_size(self) -> tuple[int, int]:
         if not self._canvas:
             return self._width, self._height
 
+        if pyglet.options.dpi_scaling == 'stretch':
+            return round(self._canvas.width / self.scale), round(self._canvas.height / self.scale)
         return self._canvas.width, self._canvas.height
 
     def set_location(self, x: int, y: int) -> None:
@@ -556,7 +577,26 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
         self._canvas.style.display = "hidden"
 
     def maximize(self) -> None:
-        self._canvas.style.display = "block"
+        """Fill the browser content viewport and follow its size changes.
+
+        Browser controls remains visible. Call :meth:`set_size` to return to
+        explicit canvas sizing. This does not request browser fullscreen.
+        """
+        if self._fullscreen:
+            return
+        if not self._maximized:
+            self._maximized_style = {
+                name: self._canvas.style.getPropertyValue(name)
+                for name in ('position', 'left', 'top', 'width', 'height', 'display')
+            }
+            self._maximized = True
+        self._canvas.style.position = 'fixed'
+        self._canvas.style.left = '0px'
+        self._canvas.style.top = '0px'
+        self._canvas.style.width = '100vw'
+        self._canvas.style.height = '100vh'
+        self._canvas.style.display = 'block'
+        self._sync_canvas_size(js.window.innerWidth, js.window.innerHeight)
 
     def set_vsync(self, vsync: bool) -> None:
         """A browser does not allow this."""
@@ -644,6 +684,21 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
         """Process input events asynchronously."""
         raise Exception("Not implemented.")
 
+    def _start_text_input(self, session: TextInputSession) -> None:
+        self._keys_down.clear()
+        self._browser_text_input = BrowserTextInput(self, session)
+        self._browser_text_input.start()
+
+    def _update_text_input(self, session: TextInputSession) -> None:
+        if self._browser_text_input is not None:
+            self._browser_text_input.sync()
+
+    def _stop_text_input(self, session: TextInputSession) -> None:
+        editor = self._browser_text_input
+        self._browser_text_input = None
+        if editor is not None:
+            editor.close()
+
     @staticmethod
     def _event_text_motion(symbol: int | str, modifiers: int) -> int | None:
         if modifiers & key.MOD_ALT:
@@ -653,6 +708,8 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
 
     @CanvasEventHandler("keydown")
     def _event_key_down(self, event: KeyboardEvent) -> None:
+        if self._browser_text_input is not None:
+            return
         if not event.repeat:
             text = None
             if len(event.key) == 1:
@@ -685,61 +742,145 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
 
         self.dispatch_event('on_key_release', symbol, modifiers)
 
-    @CanvasEventHandler("mousedown")
-    def _event_mouse_down(self, event: MouseEvent) -> None:
+    def _get_input_coordinates(
+        self, event: MouseEvent | PointerEvent | DragEvent | WheelEvent,
+    ) -> tuple[float, float, float, float]:
         rect = self._canvas.getBoundingClientRect()
+        width, height = self.get_size()
+        scale_x = width / rect.width if rect.width else 1.0
+        scale_y = height / rect.height if rect.height else 1.0
+        return ((event.clientX - rect.left) * scale_x,
+                height - (event.clientY - rect.top) * scale_y, scale_x, scale_y)
+
+    def _dispatch_pointer_touch(self, dispatch_name: str, event: PointerEvent) -> None:
+        x, y, scale_x, scale_y = self._get_input_coordinates(event)
+        self._dispatch_touch_event(
+            dispatch_name, event.pointerId, x, y,
+            event.width * scale_x, event.height * scale_y, event.pressure,
+        )
+
+    def _dispatch_pointer_pen(self, event: PointerEvent, ended: bool = False) -> None:
+        x, y, _, _ = self._get_input_coordinates(event)
+        buttons = event.buttons
+        self._update_pen(PenEvent(
+            event.pointerId, x, y, event.pressure, event.tiltX, event.tiltY, event.twist,
+            (PenButton.TIP if buttons & 1 or buttons & 32 else PenButton.NONE)
+            | (PenButton.SIDE if buttons & 2 else PenButton.NONE)
+            | (PenButton.SECONDARY if buttons & 4 else PenButton.NONE),
+            bool(buttons & 32 or event.button == 5),
+            not ended and bool(buttons & 1 or buttons & 32),
+        ))
+
+    @CanvasEventHandler("pointerenter")
+    def _event_pen_enter(self, event: PointerEvent) -> None:
+        if event.pointerType == "pen":
+            self._dispatch_pointer_pen(event)
+
+    @CanvasEventHandler("pointerleave")
+    def _event_pen_leave(self, event: PointerEvent) -> None:
+        if event.pointerType == "pen":
+            self._leave_pen(event.pointerId)
+
+    @CanvasEventHandler("pointerdown", passive=False)
+    def _event_touch_start(self, event: PointerEvent) -> None:
+        if event.pointerType == "pen":
+            event.preventDefault()
+            if event.isTrusted:
+                self._canvas.setPointerCapture(event.pointerId)
+            self._dispatch_pointer_pen(event)
+            return
+        if event.pointerType != "touch":
+            return
+        # Touch pointers implicitly capture subsequent events, including outside the canvas.
+        # Cancel compatibility mouse events so a contact is not also reported as a mouse press.
+        event.preventDefault()
+        self._dispatch_pointer_touch('on_touch_start', event)
+
+    @CanvasEventHandler("pointermove")
+    def _event_touch_move(self, event: PointerEvent) -> None:
+        if event.pointerType == "pen":
+            self._dispatch_pointer_pen(event)
+            return
+        if event.pointerType == "touch" and event.pointerId in self._touch_positions:
+            self._dispatch_pointer_touch('on_touch_move', event)
+
+    @CanvasEventHandler("pointerup")
+    @CanvasEventHandler("pointercancel")
+    def _event_touch_end(self, event: PointerEvent) -> None:
+        if event.pointerType == "pen":
+            if event.pointerId not in self._pen_state.pens:
+                return
+            if event.type == 'pointercancel':
+                self._leave_pen(event.pointerId)
+            else:
+                self._dispatch_pointer_pen(event, ended=True)
+            return
+        if event.pointerType == "touch" and event.pointerId in self._touch_positions:
+            self._dispatch_pointer_touch('on_touch_end', event)
+
+    @CanvasEventHandler("lostpointercapture")
+    def _event_touch_capture_lost(self, event: PointerEvent) -> None:
+        if event.pointerType == "pen":
+            self._leave_pen(event.pointerId)
+            return
+        if event.pointerType == "touch" and event.pointerId in self._touch_positions:
+            # Capture-loss events do not carry the contact's last coordinates.
+            x, y = self._touch_positions[event.pointerId]
+            self._dispatch_touch_event('on_touch_end', event.pointerId, x, y, 0, 0, 0.0)
+
+    @CanvasEventHandler("mousedown", passive=False)
+    def _event_mouse_down(self, event: MouseEvent) -> None:
         modifiers = get_modifiers(event)
-        pos_x = (event.clientX - rect.left) * self._scale
-        pos_y = self._canvas.height - (event.clientY - rect.top) * self._scale
+        pos_x, pos_y, _, _ = self._get_input_coordinates(event)
         self.dispatch_event(
             'on_mouse_press', pos_x, pos_y, _mouse_map.get(event.button, 0), modifiers,
         )
+        if self._browser_text_input is not None:
+            # Keep the focused text control instead of the canvas default action.
+            event.preventDefault()
 
     @CanvasEventHandler("mouseup")
     def _event_mouse_up(self, event: MouseEvent) -> None:
-        rect = self._canvas.getBoundingClientRect()
         modifiers = get_modifiers(event)
-        pos_x = (event.clientX - rect.left) * self._scale
-        pos_y = self._canvas.height - (event.clientY - rect.top) * self._scale
+        pos_x, pos_y, _, _ = self._get_input_coordinates(event)
         self.dispatch_event(
             'on_mouse_release', pos_x, pos_y, _mouse_map.get(event.button, 0), modifiers,
         )
 
     @CanvasEventHandler("mousemove")
     async def _event_mouse_motion(self, event: MouseEvent) -> None:
-        rect = self._canvas.getBoundingClientRect()
+        pos_x, pos_y, scale_x, scale_y = self._get_input_coordinates(event)
         if event.buttons:
             modifiers = get_modifiers(event)
-            pos_x = (event.clientX - rect.left) * self._scale
-            pos_y = self._canvas.height - (event.clientY - rect.top) * self._scale
             self.dispatch_event(
                 'on_mouse_drag',
                 pos_x,
                 pos_y,
-                event.movementX,
-                event.movementY,
+                event.movementX * scale_x,
+                -event.movementY * scale_y,
                 _mouse_map.get(event.button, 0),
                 modifiers,
             )
         else:
-            pos_x = (event.clientX - rect.left) * self._scale
-            pos_y = self._canvas.height - (event.clientY - rect.top) * self._scale
             self.dispatch_event(
-                'on_mouse_motion', pos_x, pos_y, event.movementX, event.movementY,
+                'on_mouse_motion', pos_x, pos_y, event.movementX * scale_x, -event.movementY * scale_y,
             )
 
     @CanvasEventHandler("wheel", passive=False)
     def _event_mouse_scroll(self, event: WheelEvent) -> None:
         event.preventDefault()
-        self.dispatch_event('on_mouse_scroll', event.clientX, event.clientY, event.deltaX, event.deltaY)
+        x, y, _, _ = self._get_input_coordinates(event)
+        self.dispatch_event('on_mouse_scroll', x, y, event.deltaX, event.deltaY)
 
     @CanvasEventHandler("mouseenter")
     async def _event_mouse_enter(self, event: MouseEvent) -> None:
-        self.dispatch_event('on_mouse_enter', event.clientX, self.height - event.clientY)
+        x, y, _, _ = self._get_input_coordinates(event)
+        self.dispatch_event('on_mouse_enter', x, y)
 
     @CanvasEventHandler("mouseleave")
     async def _event_mouse_leave(self, event: MouseEvent) -> None:
-        self.dispatch_event('on_mouse_leave', event.clientX, self.height - event.clientY)
+        x, y, _, _ = self._get_input_coordinates(event)
+        self.dispatch_event('on_mouse_leave', x, y)
 
     @CanvasEventHandler("contextlost")
     async def _event_context_lost(self, event: Event) -> None:
@@ -755,6 +896,9 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
 
     @CanvasEventHandler("blur")
     def _event_lose_focus(self, event: Event) -> None:
+        self._pen_state.clear(self.dispatch_event)
+        if self._browser_text_input is not None:
+            return
         pyglet.app.platform_event_loop.post_event(self, 'on_deactivate')
 
     @CanvasEventHandler("contextmenu", passive=False)
@@ -775,11 +919,8 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
         self.dispatch_event("on_text", text)
 
     def _drop_position(self, event: DragEvent) -> tuple[float, float]:
-        rect = self._canvas.getBoundingClientRect()
-        return (
-            (event.clientX - rect.left) * self._scale,
-            self._canvas.height - (event.clientY - rect.top) * self._scale,
-        )
+        x, y, _, _ = self._get_input_coordinates(event)
+        return x, y
 
     @staticmethod
     def _contains_files(event: DragEvent) -> bool:
@@ -847,23 +988,44 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
     def _event_resized(self, entries: Iterable[ResizeObserverEntry], observer: ResizeObserver) -> None:
         for entry in entries:
             rect = entry.contentRect
-            self.dispatch_event('_on_internal_resize', 0, 0)
+            self._sync_canvas_size(rect.width, rect.height)
+
+    def _event_browser_resize(self, event: Event) -> None:
+        if self._maximized and not self._fullscreen:
+            self._sync_canvas_size(js.window.innerWidth, js.window.innerHeight)
+        else:
+            rect = self._canvas.getBoundingClientRect()
+            self._sync_canvas_size(rect.width, rect.height)
+
+    def _sync_canvas_size(self, width: float, height: float) -> None:
+        """Synchronize the backing buffer without changing CSS layout."""
+        if width <= 0 or height <= 0:
+            return
+        ratio = float(js.window.devicePixelRatio or 1.0)
+        buffer_width = max(1, round(width * ratio))
+        buffer_height = max(1, round(height * ratio))
+        resized = (self._canvas.width, self._canvas.height) != (buffer_width, buffer_height)
+        scaled = self._scale != ratio
+        self._scale = ratio
+        self._width, self._height = max(1, round(width)), max(1, round(height))
+        # Assigning canvas dimensions resets its drawing buffer, even if unchanged.
+        if self._canvas.width != buffer_width:
+            self._canvas.width = buffer_width
+        if self._canvas.height != buffer_height:
+            self._canvas.height = buffer_height
+        if scaled:
+            self.dispatch_event('_on_internal_scale', self.scale, self.dpi)
+        if resized:
+            self.dispatch_event('_on_internal_resize', *self.get_size())
 
     def dispatch_pending_events(self) -> None:
         pass
 
-    # touchmove, touchstart, touchend, touchcancel
-
     def adjust_scale(self, width: float, height: float) -> None:
-        ratio = js.window.devicePixelRatio or 1.0
-
-        # The framebuffer size.
-        self._canvas.width = width * ratio
-        self._canvas.height = height * ratio
-
         # How large the canvas appears visually. Browser automatically scales based on DPI.
         self._canvas.style.width = f"{width}px"
         self._canvas.style.height = f"{height}px"
+        self._sync_canvas_size(width, height)
 
     def _create(self) -> None:
         assert self._canvas is None
@@ -880,6 +1042,8 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
         self._canvas.height = self._height * self.scale
         self._canvas.style.width = f"{self._width}px"
         self._canvas.style.height = f"{self._height}px"
+        # Delivers touch gestures to pyglet canvas, instead of browser panning and zooming.
+        self._canvas.style.touchAction = "none"
 
         if not js.document.getElementById(canvas_name):
             msg = f"Canvas: {canvas_name} could not be created."

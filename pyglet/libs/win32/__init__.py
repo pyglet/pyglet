@@ -196,6 +196,8 @@ _user32.SetCursorPos.restype = BOOL
 _user32.SetCursorPos.argtypes = [c_int, c_int]
 _user32.SetFocus.restype = HWND
 _user32.SetFocus.argtypes = [HWND]
+_user32.FlashWindowEx.restype = BOOL
+_user32.FlashWindowEx.argtypes = [POINTER(FLASHWINFO)]
 _user32.SetForegroundWindow.restype = BOOL
 _user32.SetForegroundWindow.argtypes = [HWND]
 _user32.SetLayeredWindowAttributes.restype = BOOL
@@ -260,6 +262,18 @@ if constants.WINDOWS_10_ANNIVERSARY_UPDATE_OR_GREATER:
     _user32.EnableNonClientDpiScaling.argtypes = [HWND]
     _user32.GetDpiForWindow.restype = UINT
     _user32.GetDpiForWindow.argtypes = [HWND]
+
+if constants.WINDOWS_8_OR_GREATER:
+    _user32.EnableMouseInPointer.restype = BOOL
+    _user32.EnableMouseInPointer.argtypes = [BOOL]
+    _user32.GetPointerInfo.restype = BOOL
+    _user32.GetPointerInfo.argtypes = [UINT32, POINTER(POINTER_INFO)]
+    _user32.GetPointerType.restype = BOOL
+    _user32.GetPointerType.argtypes = [UINT32, POINTER(UINT32)]
+    _user32.GetPointerTouchInfo.restype = BOOL
+    _user32.GetPointerTouchInfo.argtypes = [UINT32, POINTER(POINTER_TOUCH_INFO)]
+    _user32.GetPointerPenInfo.restype = BOOL
+    _user32.GetPointerPenInfo.argtypes = [UINT32, POINTER(POINTER_PEN_INFO)]
 
 # dwmapi
 _dwmapi.DwmIsCompositionEnabled.restype = c_int

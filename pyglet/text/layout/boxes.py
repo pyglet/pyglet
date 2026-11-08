@@ -658,7 +658,7 @@ class _GlyphBox(_AbstractBox):
                                 **shadow_data,
                             )
                             stroke_lists.append(shadow_list)
-                            self._effect_vertex_lists.append((shadow_list, list(shadow_list.colors[:])))
+                            self._effect_vertex_lists.append((shadow_list, list(shadow_list.colors[:])))  # type: ignore[attr-defined]
                     stroke_list = layout.program.vertex_list_indexed(
                         4,
                         GeometryMode.TRIANGLES,
@@ -668,7 +668,7 @@ class _GlyphBox(_AbstractBox):
                         **stroke_data,
                     )
                     stroke_lists.append(stroke_list)
-                    self._effect_vertex_lists.append((stroke_list, list(stroke_list.colors[:])))
+                    self._effect_vertex_lists.append((stroke_list, list(stroke_list.colors[:])))  # type: ignore[attr-defined]
                 stroke_x += round(glyph.advance + glyph_pos.x_advance)
             glyph_index = range_end_glyph
         return stroked_glyphs, stroke_lists
@@ -969,7 +969,7 @@ class _GlyphBox(_AbstractBox):
                 **shadow_data,
             )
             self._add_vertex_list(shadow_list, context)
-            self._effect_vertex_lists.append((shadow_list, list(shadow_list.colors[:])))
+            self._effect_vertex_lists.append((shadow_list, list(shadow_list.colors[:])))  # type: ignore[attr-defined]
 
         if reuse_vertex_list is None:
             vertex_list: IndexedVertexList | _LayoutVertexList = layout.program.vertex_list_indexed(
@@ -1041,7 +1041,7 @@ class _GlyphBox(_AbstractBox):
         """Update fill alpha without rewriting RGB values or rebuilding geometry."""
         if self._glyph_vertex_list is not None:
             vertex_list = self._glyph_vertex_list
-            memoryview(vertex_list.colors).cast('B')[3::4] = bytes((alpha & 255,)) * vertex_list.count
+            memoryview(vertex_list.colors).cast('B')[3::4] = bytes((alpha & 255,)) * vertex_list.count  # type: ignore[arg-type]
 
     def update_effect_opacity(self, alpha: int) -> None:
         """Fade effects independently of changes to the fill color."""
@@ -1049,7 +1049,7 @@ class _GlyphBox(_AbstractBox):
             return
         table = _get_opacity_table(alpha)
         for vertex_list, original_colors in self._effect_vertex_lists:
-            memoryview(vertex_list.colors).cast('B')[3::4] = bytes(original_colors[3::4]).translate(table)
+            memoryview(vertex_list.colors).cast('B')[3::4] = bytes(original_colors[3::4]).translate(table)  # type: ignore[arg-type]
 
     def update_view_translation(self, translate_x: float, translate_y: float) -> None:
         view_translation = (-translate_x, -translate_y, 0)

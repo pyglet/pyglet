@@ -10,6 +10,21 @@ def image(width=20, height=10):
     return pyglet.image.ImageData(width, height, "RGBA", bytes((255, 255, 255, 255)) * width * height)
 
 
+def test_retapping_text_entry_preserves_input_session(manager, batch):
+    entry = TextEntry(manager, 'Hello world', 10, 20, 200, batch=batch)
+    manager.on_touch_start(1, 15, 25, 0, 0, 1, 1, 1, 1)
+    manager.on_touch_end(1, 15, 25, 0, 0, 1, 1, 1, 1)
+    session = entry._layout.text_input_session
+    position = entry._caret.position
+    manager.on_touch_start(2, 80, 25, 0, 0, 1, 1, 1, 1)
+    manager.on_touch_end(2, 80, 25, 0, 0, 1, 1, 1, 1)
+    assert manager.focused_widget is entry
+    assert entry._layout.text_input_session is session
+    assert entry._caret.position != position
+    manager.on_mouse_press(500, 500, 1, 0)
+    assert manager.focused_widget is None
+
+
 @pytest.fixture
 def batch():
     return pyglet.graphics.Batch()

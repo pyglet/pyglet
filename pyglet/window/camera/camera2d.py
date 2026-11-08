@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import weakref
-from typing import TYPE_CHECKING, cast
+from math import hypot
+from typing import TYPE_CHECKING
 
-from pyglet.math import Mat4, Vec2, Vec3, Vec4, clamp
+from pyglet.math import Mat4, Vec2, Vec3, clamp
 
 from .base import (
     BaseCamera,
@@ -29,6 +30,14 @@ class Camera2DView(_CameraViewBase["Camera2D"]):
     .. versionadded:: 3.0
     """
 
+    _viewport_size: tuple[float, float] | None
+    _offset_x: float
+    _offset_y: float
+    _zoom: float
+    _local_matrix: Mat4
+    _world_matrix: Mat4
+    _local_dirty: bool
+
     def __init__(
         self,
         camera: Camera2D,
@@ -43,7 +52,7 @@ class Camera2DView(_CameraViewBase["Camera2D"]):
         self._local_matrix = Mat4()
         self._world_matrix = Mat4()
         self._local_dirty = True
-        self._viewport_size: tuple[int, int] | None = None
+        self._viewport_size = None
 
     @property
     def offset_x(self) -> float:
@@ -123,7 +132,7 @@ class Camera2DView(_CameraViewBase["Camera2D"]):
         self._local_dirty = True
         self._mark_world_dirty()
 
-    def _local_matrix_cached(self, viewport_size: tuple[int, int]) -> Mat4:
+    def _local_matrix_cached(self, viewport_size: tuple[float, float]) -> Mat4:
         if self.parent is None and self._viewport_size != viewport_size:
             self._viewport_size = viewport_size
             self._local_dirty = True
@@ -137,16 +146,24 @@ class Camera2DView(_CameraViewBase["Camera2D"]):
             self._local_dirty = False
         return self._local_matrix
 
-    def _world_matrix_cached(self, viewport_size: tuple[int, int]) -> Mat4:
+    def _world_matrix_cached(self, viewport_size: tuple[float, float]) -> Mat4:
         if self._world_dirty:
             local_matrix = self._local_matrix_cached(viewport_size)
-            if self.parent is None:
+            parent = self.parent
+            if parent is None:
                 self._world_matrix = local_matrix
             else:
-                parent = cast(Camera2DView, self.parent)
                 self._world_matrix = parent._world_matrix_cached(viewport_size) @ local_matrix
             self._world_dirty = False
         return self._world_matrix
+
+    @property
+    def pixels_per_unit(self) -> Vec2:
+        """Framebuffer pixels per world unit along each axis, including zoom."""
+        origin = self.world_to_screen(0, 0)
+        x = self.world_to_screen(1, 0) - origin
+        y = self.world_to_screen(0, 1) - origin
+        return Vec2(hypot(x.x, x.y), hypot(y.x, y.y))
 
 
 class Camera2D(BaseCamera[Camera2DView]):
@@ -159,6 +176,15 @@ class Camera2D(BaseCamera[Camera2DView]):
     .. versionadded:: 3.0
     """
 
+    _logical_size: tuple[float, float] | None
+    scroll_speed: float
+    min_zoom: float
+    max_zoom: float
+    zoom_speed: float
+    _centered_origin: bool
+    _auto_projection: bool
+    _view_matrix: Mat4
+
     def __init__(
         self,
         window: CameraWindowProtocol,
@@ -167,6 +193,8 @@ class Camera2D(BaseCamera[Camera2DView]):
         min_zoom: float = 1.0,
         max_zoom: float = 4.0,
         zoom_speed: float = 1.0,
+        logical_size: tuple[float, float] | None = None,
+        aspect_ratio: float | None = None,
         viewport: ViewportType | None = None,
         register_handlers: bool = True,
         window_block: UniformBlock | None = None,
@@ -194,6 +222,14 @@ class Camera2D(BaseCamera[Camera2DView]):
                 Maximum value accepted by :attr:`zoom`.
             zoom_speed:
                 Suggested zoom-rate scalar for application input handling.
+            logical_size:
+                Fixed world dimensions to fit inside the viewport, preserving
+                aspect ratio with centered letterboxing. ``None`` uses window
+                coordinates. Fitting applies to automatic viewports and does
+                not change :attr:`zoom`. Explicit viewports stay exact.
+            aspect_ratio:
+                Optional fixed viewport width-to-height ratio. When set,
+                ``logical_size`` supplies the fitting ratio instead.
             viewport:
                 Optional fixed root viewport as ``(x, y, width, height)`` in
                 framebuffer coordinates. ``None`` tracks the full framebuffer.
@@ -225,6 +261,7 @@ class Camera2D(BaseCamera[Camera2DView]):
             window,
             view_storage,
             viewport=viewport,
+            aspect_ratio=aspect_ratio,
             register_handlers=register_handlers,
         )
 
@@ -234,12 +271,46 @@ class Camera2D(BaseCamera[Camera2DView]):
         self.zoom_speed = zoom_speed
         self._centered_origin = False
         self._auto_projection = True
+        self._logical_size = None
 
         self.view = Camera2DView(self, self.view_storage, parent=None)
 
         width, height = self._window.get_size()
         self._projection_matrix = Mat4.orthogonal_projection(0, max(width, 1), 0, max(height, 1), -8192, 8192)
         self._view_matrix = Mat4()
+        self.logical_size = logical_size
+
+    @property
+    def logical_size(self) -> tuple[float, float] | None:
+        """Fixed projection size, fitted into each view's viewport.
+
+        Set to ``None`` to follow window coordinates again. Setting this property
+        enables automatic projection, replacing any manually assigned projection.
+        Explicit viewports are used exactly as assigned, without fitting.
+        """
+        return self._logical_size
+
+    @logical_size.setter
+    def logical_size(self, size: tuple[float, float] | None) -> None:
+        if size is not None:
+            width, height = map(float, size)
+            size = width, height
+        self._logical_size = size
+        self._auto_projection = True
+        self._mark_projection_dirty()
+        self._mark_view_dirty()
+
+    def _get_viewport_aspect_ratio(self) -> float | None:
+        if not self._auto_projection:
+            return None
+        if self._logical_size is not None:
+            return self._logical_size[0] / self._logical_size[1]
+        return super()._get_viewport_aspect_ratio()
+
+    @property
+    def pixels_per_unit(self) -> Vec2:
+        """Framebuffer pixels per world unit for the root view, including zoom."""
+        return self.view.pixels_per_unit
 
     @property
     def projection(self) -> Mat4:
@@ -285,10 +356,12 @@ class Camera2D(BaseCamera[Camera2DView]):
     def _on_internal_resize(self, width: int, height: int) -> None:  # noqa: ARG002
         self._sync_viewport()
         self._sync_projection()
+        self._mark_view_dirty()
 
     def _on_internal_scale(self, scale: float, dpi: int) -> None:  # noqa: ARG002
         self._sync_viewport()
         self._sync_projection()
+        self._mark_view_dirty()
 
     def _store_matrices(self, projection: Mat4, view_matrix: Mat4, view: Camera2DView) -> None:  # noqa: ARG002
         self._projection_matrix = projection
@@ -341,13 +414,25 @@ class Camera2D(BaseCamera[Camera2DView]):
         """Decrease zoom while keeping a screen-space point fixed in world space."""
         self.view.zoom_out_to_point(x, y, amount)
 
+    def _get_logical_viewport_size(self) -> tuple[float, float]:
+        """Express the framebuffer viewport dimensions in window coordinates."""
+        if self._logical_size is not None and self._auto_projection:
+            return self._logical_size
+        width, height = self._get_viewport_size()
+        logical_width, logical_height = self._window.get_size()
+        framebuffer_width, framebuffer_height = self._window.get_framebuffer_size()
+        return (
+            width * max(1, logical_width) / max(1, framebuffer_width),
+            height * max(1, logical_height) / max(1, framebuffer_height),
+        )
+
     def _build_projection_matrix(self, view: Camera2DView) -> Mat4:  # noqa: ARG002
         if not self._auto_projection:
             return self._projection_matrix  # type: ignore[return-value]
-        width, height = self._get_viewport_size()
+        width, height = self._get_logical_viewport_size()
         return Mat4.orthogonal_projection(0, width, 0, height, -255, 255)
 
-    def _compose_root_view_matrix(self, root_view: Camera2DView, width: int, height: int) -> Mat4:  # noqa: ARG002
+    def _compose_root_view_matrix(self, root_view: Camera2DView, width: float, height: float) -> Mat4:  # noqa: ARG002
         x = root_view.offset_x
         y = root_view.offset_y
         if self._centered_origin:
@@ -362,7 +447,7 @@ class Camera2D(BaseCamera[Camera2DView]):
         return view.scale(Vec3(local_view.zoom, local_view.zoom, 1))
 
     def _build_view_matrix(self, view: Camera2DView) -> Mat4:
-        width, height = self._get_viewport_size()
+        width, height = self._get_logical_viewport_size()
         return view._world_matrix_cached((width, height))
 
     def set_centered_origin(self, enabled: bool = True) -> None:
@@ -394,6 +479,8 @@ class _RelativeCamera2DScissor(CameraScissor):
 
     __slots__ = ("_view",)
 
+    _view: weakref.ReferenceType[Camera2DView]
+
     def __init__(self, view: Camera2DView, x: int, y: int, width: int, height: int) -> None:
         super().__init__(x, y, width, height)
         self._view = weakref.ref(view)
@@ -404,15 +491,11 @@ class _RelativeCamera2DScissor(CameraScissor):
         if view is None:
             return self.x, self.y, self.width, self.height
 
-        camera = view._camera  # noqa: SLF001
-        viewport_x, viewport_y, viewport_width, viewport_height = camera._resolve_viewport(view)  # noqa: SLF001
-        world_matrix = view._world_matrix_cached((max(1, int(viewport_width)), max(1, int(viewport_height))))  # noqa: SLF001
+        p1 = view.world_to_screen(float(self.x), float(self.y))
+        p2 = view.world_to_screen(float(self.x + self.width), float(self.y + self.height))
 
-        p1 = world_matrix @ Vec4(float(self.x), float(self.y), 0.0, 1.0)
-        p2 = world_matrix @ Vec4(float(self.x + self.width), float(self.y + self.height), 0.0, 1.0)
-
-        left = round(min(p1.x, p2.x) + viewport_x)
-        bottom = round(min(p1.y, p2.y) + viewport_y)
+        left = round(min(p1.x, p2.x))
+        bottom = round(min(p1.y, p2.y))
         width = max(0, round(abs(p2.x - p1.x)))
         height = max(0, round(abs(p2.y - p1.y)))
         return left, bottom, width, height

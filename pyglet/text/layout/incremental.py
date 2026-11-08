@@ -25,6 +25,10 @@ from pyglet.text.layout.base import (
 from pyglet.text.layout import ScrollableTextLayoutGroup, ScrollableTextDecorationGroup
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+    from pyglet.text.caret import Caret
+    from pyglet.window.textinput import TextInputOptions, TextInputSession
+    from pyglet.window import BaseWindow
     from pyglet.text.layout.boxes import _LayoutVertexList
     from pyglet.customtypes import AnchorX, AnchorY, ContentVAlign, HorizontalAlign
     from pyglet.graphics import Batch, Group
@@ -124,6 +128,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
     _width: int
     _height: int
+    _text_input_session: TextInputSession | None = None
 
     @staticmethod
     def _get_default_decoration_shader() -> ShaderProgram:
@@ -168,6 +173,36 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         super().__init__(document, x, y, z, width, height, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
                          program or get_default_scrollable_layout_shader(), decoration_shader, effect_shader,
                          wrap_lines=wrap_lines, depth_sorting=depth_sorting)
+
+    @property
+    def text_input_session(self) -> TextInputSession | None:
+        """The active platform input session for this layout, if any."""
+        if self._text_input_session is not None and not self._text_input_session.active:
+            self._text_input_session = None
+        return self._text_input_session
+
+    def begin_text_input(self, window: BaseWindow, caret: Caret, options: TextInputOptions | None = None, *,
+                         get_caret_rect: Callable[[], tuple[float, float, float, float] | None] | None = None,
+                         on_action: Callable[[str], None] | None = None) -> TextInputSession:
+        """Activate platform text input using this layout's document and caret.
+
+        Call when the layout receives editing focus. Caret and layout changes
+        notify the window backend automatically. No GUI widget is required.
+        """
+        if caret.layout is not self:
+            raise ValueError('The caret must belong to this layout.')
+        self.end_text_input()
+        self._text_input_session = window.begin_text_input(
+            caret, options, get_caret_rect=get_caret_rect, on_action=on_action,
+        )
+        return self._text_input_session
+
+    def end_text_input(self) -> None:
+        """Release platform input when this layout loses editing focus."""
+        session = self._text_input_session
+        self._text_input_session = None
+        if session is not None:
+            session.close()
 
     def _update_scissor_area(self) -> None:
         if self._uniforms is not None:
@@ -225,6 +260,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         self._recreate_vertex_lists()
 
     def delete(self) -> None:
+        self.end_text_input()
         for line in self.lines:
             line.delete(self)
         del self._batch
@@ -674,6 +710,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         for line in self.lines[self._visible_lines.start:self._visible_lines.end]:
             for box in line.boxes:
                 box.update_translation(self._x, self._y, self._z)
+        self.dispatch_event('on_translation_update')
 
     def _update_visibility(self) -> None:
         for line in self.lines[self._visible_lines.start:self._visible_lines.end]:

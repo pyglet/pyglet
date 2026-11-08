@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from typing import TYPE_CHECKING, Sequence, Any
 
 import pyglet
@@ -16,8 +17,12 @@ from pyglet.libs.darwin.cocoapy import (
     send_super,
 )
 from pyglet.window import BaseWindow
+from pyglet.libs.darwin.cocoapy.lib_uikit import UITouchTypePencil
+from pyglet.window.pen import PenEvent
+from pyglet.window.apple.ios.textinput import IOSTextInput
 
 if TYPE_CHECKING:
+    from pyglet.window.textinput import TextInputSession
     from pyglet.display.ios import IOSScreen
     from pyglet.graphics.api.gl.ios.context import IOSContext
 
@@ -54,6 +59,52 @@ class PygletIOSView(UIView):  # type: ignore[valid-type, misc]
         send_super(self, 'layoutSubviews')
         self._window._view_did_resize()
 
+    def _dispatch_touches(self, touches: ObjCInstance, dispatch_name: str) -> None:
+        touch_array = touches.allObjects()
+        bounds = self.bounds()
+        for index in range(touch_array.count()):
+            touch = touch_array.objectAtIndex_(index)
+            location = touch.locationInView_(self)
+            x = round(location.x)
+            y = round(bounds.size.height - location.y)
+            radius = touch.majorRadius()
+            maximum_force = touch.maximumPossibleForce()
+            pressure = touch.force() / maximum_force if maximum_force else 0.0
+            if touch.type() == UITouchTypePencil:
+                pointer_id = int(touch.hash())
+                azimuth = touch.azimuthAngleInView_(self)
+                altitude = touch.altitudeAngle()
+                contact = dispatch_name != 'on_touch_end'
+                self._window._update_pen(PenEvent(
+                    pointer_id, x, y, pressure,
+                    math.degrees(math.atan2(math.cos(azimuth) * math.cos(altitude), math.sin(altitude))),
+                    math.degrees(math.atan2(math.sin(azimuth) * math.cos(altitude), math.sin(altitude))),
+                    in_contact=contact,
+                ))
+                if not contact:
+                    self._window._leave_pen(pointer_id)
+                continue
+            self._window._dispatch_touch_event(
+                dispatch_name, int(touch.hash()), x, y, radius * 2, radius * 2, pressure,
+            )
+
+    @objc_method('v@@')
+    def touchesBegan_withEvent_(self, touches: ObjCInstance, event: ObjCInstance) -> None:
+        PygletIOSView._dispatch_touches(self, touches, 'on_touch_start')
+
+    @objc_method('v@@')
+    def touchesMoved_withEvent_(self, touches: ObjCInstance, event: ObjCInstance) -> None:
+        PygletIOSView._dispatch_touches(self, touches, 'on_touch_move')
+
+    @objc_method('v@@')
+    def touchesEnded_withEvent_(self, touches: ObjCInstance, event: ObjCInstance) -> None:
+        PygletIOSView._dispatch_touches(self, touches, 'on_touch_end')
+
+    @objc_method('v@@')
+    def touchesCancelled_withEvent_(self, touches: ObjCInstance, event: ObjCInstance) -> None:
+        PygletIOSView._dispatch_touches(self, touches, 'on_touch_end')
+
+
 class IOSWindow(BaseWindow['IOSScreen']):
     """A UIKit-backed window.
 
@@ -73,8 +124,10 @@ class IOSWindow(BaseWindow['IOSScreen']):
     _uiview: ObjCInstance | None = None
     _view_controller: ObjCInstance | None = None
     _ios_layer: ObjCInstance | None = None
+    _ios_text_input: IOSTextInput | None = None
 
     def _create(self) -> None:
+        self.end_text_input()
         if self._uiwindow is not None:
             self._uiwindow.setHidden_(True)
             self._uiwindow.release()
@@ -84,11 +137,12 @@ class IOSWindow(BaseWindow['IOSScreen']):
         # Use the UIKit screen bounds so the view fills that scene.
         # IGnore
         frame = UIScreen.mainScreen().bounds()
-        self._width = round(frame.size.width * scale)
-        self._height = round(frame.size.height * scale)
+        self._width = round(frame.size.width)
+        self._height = round(frame.size.height)
         self._uiwindow = UIWindow.alloc().initWithFrame_(frame)
         self._uiview = PygletIOSView.alloc().initWithFrame_iosWindow_(frame, self)
         self._uiview.setContentScaleFactor_(scale)
+        self._uiview.setMultipleTouchEnabled_(True)
 
         self._view_controller = UIViewController.alloc().init()
         self._view_controller.setView_(self._uiview)
@@ -109,14 +163,29 @@ class IOSWindow(BaseWindow['IOSScreen']):
         if self._uiview is None:
             return
         bounds = self._uiview.bounds()
-        scale = self.screen.get_scale()
-        width, height = round(bounds.size.width * scale), round(bounds.size.height * scale)
+        width, height = round(bounds.size.width), round(bounds.size.height)
         if (width, height) != (self._width, self._height):
             self._width, self._height = width, height
             if self._context:
                 self.context.update_geometry()
             self.dispatch_event('_on_internal_resize', width, height)
             self.dispatch_event('on_expose')
+        if self._ios_text_input is not None:
+            self._ios_text_input.sync()
+
+    def _start_text_input(self, session: TextInputSession) -> None:
+        self._ios_text_input = IOSTextInput(self, session)
+        self._ios_text_input.start()
+
+    def _update_text_input(self, session: TextInputSession) -> None:
+        if self._ios_text_input is not None:
+            self._ios_text_input.sync()
+
+    def _stop_text_input(self, session: TextInputSession) -> None:
+        editor = self._ios_text_input
+        self._ios_text_input = None
+        if editor is not None:
+            editor.close()
 
     def switch_to(self) -> None:
         if self._context:
@@ -133,6 +202,10 @@ class IOSWindow(BaseWindow['IOSScreen']):
 
     def get_size(self) -> tuple[int, int]:
         return self._width, self._height
+
+    def get_framebuffer_size(self) -> tuple[int, int]:
+        scale = self.screen.get_scale()
+        return round(self._width * scale), round(self._height * scale)
 
     def get_current_screen(self) -> IOSScreen:
         """Return the main screen used by this UIKit window."""
@@ -160,6 +233,7 @@ class IOSWindow(BaseWindow['IOSScreen']):
             self.dispatch_event('on_show')
             self.dispatch_event('on_expose')
         else:
+            self.end_text_input()
             self.dispatch_event('on_hide')
 
     def minimize(self) -> None:
@@ -201,6 +275,7 @@ class IOSWindow(BaseWindow['IOSScreen']):
         self.dispatch_events()
 
     def close(self) -> None:
+        self.end_text_input()
         if self._uiwindow is not None:
             self._uiwindow.setHidden_(True)
             self._uiwindow.setRootViewController_(None)

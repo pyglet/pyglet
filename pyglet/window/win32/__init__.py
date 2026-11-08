@@ -7,11 +7,13 @@ from functools import lru_cache
 from typing import Callable, Sequence, TYPE_CHECKING, Any
 
 from pyglet import compat_platform
+from pyglet.window.pen import PenButton, PenEvent
 from pyglet.libs.win32 import constants, IDropTarget
 from pyglet.libs.win32.types import (
     BITMAPINFOHEADER,
     BYTE,
     COLORREF,
+    FLASHWINFO,
     FORMATETC,
     HCURSOR,
     IDataObject,
@@ -22,7 +24,12 @@ from pyglet.libs.win32.types import (
     RAWINPUTHEADER,
     STGMEDIUM,
     TRACKMOUSEEVENT,
-    WCHAR, IID_IDROPTARGET, IID_IUNKNOWN,
+    WCHAR,
+    IID_IDROPTARGET,
+    IID_IUNKNOWN,
+    UINT32,
+    POINTER_TOUCH_INFO,
+    POINTER_PEN_INFO,
 )
 from pyglet.libs.win32.winkey import chmap, keymap
 from pyglet.libs.win32.context_managers import hresult_context
@@ -643,6 +650,12 @@ class Win32Window(BaseWindow['Win32Screen']):
 
     def activate(self) -> None:
         _user32.SetForegroundWindow(self._hwnd)
+
+    def attention(self) -> None:
+        if self._hwnd:
+            info = FLASHWINFO(sizeof(FLASHWINFO), self._hwnd,
+                              constants.FLASHW_ALL | constants.FLASHW_TIMERNOFG, 0, 0)
+            _user32.FlashWindowEx(byref(info))
 
     def set_visible(self, visible: bool = True) -> None:
         if visible:
@@ -1483,6 +1496,7 @@ class Win32Window(BaseWindow['Win32Screen']):
 
     @Win32EventHandler(constants.WM_KILLFOCUS)
     def _event_killfocus(self, msg: int, wParam: int, lParam: int) -> int:
+        self._pen_state.clear(self.dispatch_event)
         self.dispatch_event('on_deactivate')
         self._has_focus = False
 
@@ -1622,8 +1636,101 @@ class Win32Window(BaseWindow['Win32Screen']):
 
     def _update_light_mode(self, is_light_mode: bool) -> None:
         value = BOOL(not is_light_mode)
-
         _dwmapi.DwmSetWindowAttribute(self._hwnd, constants.DWMWA_USE_IMMERSIVE_DARK_MODE, byref(value), sizeof(value))
+
+    @ViewEventHandler
+    @Win32EventHandler(constants.WM_POINTERDOWN)
+    def _event_pointerdown(self, msg: int, wParam: int, lParam: int) -> int:
+        return self._handle_pointer_event('on_touch_start', msg, wParam, lParam)
+
+    @ViewEventHandler
+    @Win32EventHandler(constants.WM_POINTERUPDATE)
+    def _event_pointerupdate(self, msg: int, wParam: int, lParam: int) -> int:
+        return self._handle_pointer_event('on_touch_move', msg, wParam, lParam)
+
+    @ViewEventHandler
+    @Win32EventHandler(constants.WM_POINTERUP)
+    def _event_pointerup(self, msg: int, wParam: int, lParam: int) -> int:
+        return self._handle_pointer_event('on_touch_end', msg, wParam, lParam)
+
+    def _handle_pointer_event(self, dispatch_name: str, msg: int, wParam: int, lParam: int) -> int:
+        pointer_id = wParam & 0xFFFF  # GET_POINTERID_WPARAM macro
+
+        pointer_type = UINT32()
+        if _user32.GetPointerType(pointer_id, byref(pointer_type)):
+            if pointer_type.value == constants.PT_PEN:
+                self._handle_pen_event(pointer_id)
+                return 0
+            if pointer_type.value != constants.PT_TOUCH:
+                return 0
+
+            touch_info = POINTER_TOUCH_INFO()
+            if not _user32.GetPointerTouchInfo(pointer_id, byref(touch_info)):
+                return 0
+
+            if not touch_info:
+                return 0
+
+            pointer_info = touch_info.pointerInfo
+
+            x = pointer_info.ptPixelLocation.x
+            y = pointer_info.ptPixelLocation.y
+
+            point = POINT(x, y)
+            _user32.ScreenToClient(self._view_hwnd, byref(point))
+            x = point.x
+            y = self._height - point.y
+
+            pressure = 0.5
+            width = height = 0
+            if touch_info.touchMask & constants.TOUCH_MASK_PRESSURE:
+                pressure = touch_info.pressure / 1024.0
+            if touch_info.touchMask & constants.TOUCH_MASK_CONTACTAREA:
+                rc = touch_info.rcContact
+                width = rc.right - rc.left
+                height = rc.bottom - rc.top
+
+            self._dispatch_touch_event(dispatch_name, pointer_id, x, y, width, height, pressure)
+
+        return 0
+
+    @ViewEventHandler
+    @Win32EventHandler(constants.WM_POINTERENTER)
+    def _event_pen_enter(self, msg: int, wParam: int, lParam: int) -> int:
+        pointer_id = wParam & 0xFFFF
+        pointer_type = UINT32()
+        if _user32.GetPointerType(pointer_id, byref(pointer_type)) and pointer_type.value == constants.PT_PEN:
+            self._handle_pen_event(pointer_id)
+        return 0
+
+    @ViewEventHandler
+    @Win32EventHandler(constants.WM_POINTERLEAVE)
+    @Win32EventHandler(constants.WM_POINTERCAPTURECHANGED)
+    def _event_pen_leave(self, msg: int, wParam: int, lParam: int) -> int:
+        self._leave_pen(wParam & 0xFFFF)
+        return 0
+
+    def _handle_pen_event(self, pointer_id: int) -> None:
+        info = POINTER_PEN_INFO()
+        if not _user32.GetPointerPenInfo(pointer_id, byref(info)):
+            return
+        flags = info.pointerInfo.pointerFlags
+        if flags & constants.POINTER_FLAG_CANCELED or not flags & constants.POINTER_FLAG_INRANGE:
+            self._leave_pen(pointer_id)
+            return
+        point = POINT(info.pointerInfo.ptPixelLocation.x, info.pointerInfo.ptPixelLocation.y)
+        _user32.ScreenToClient(self._view_hwnd, byref(point))
+        self._update_pen(PenEvent(
+            pointer_id, point.x, self._height - point.y,
+            info.pressure / 1024.0 if info.penMask & constants.PEN_MASK_PRESSURE else 0.0,
+            info.tiltX if info.penMask & constants.PEN_MASK_TILT_X else 0.0,
+            info.tiltY if info.penMask & constants.PEN_MASK_TILT_Y else 0.0,
+            info.rotation if info.penMask & constants.PEN_MASK_ROTATION else 0.0,
+            PenButton.SIDE if info.penFlags & constants.PEN_FLAG_BARREL else PenButton.NONE,
+            bool(info.penFlags & (constants.PEN_FLAG_INVERTED | constants.PEN_FLAG_ERASER)),
+            bool(flags & constants.POINTER_FLAG_INCONTACT),
+        ))
+
 
 def _ShouldSystemUseLightMode() -> bool:
     """With Windows 11 there is no stable API to get the current light mode.

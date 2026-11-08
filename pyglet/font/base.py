@@ -7,6 +7,8 @@ classes as a documented interface to the concrete classes.
 from __future__ import annotations
 
 import abc
+import math
+from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Any, ClassVar, TYPE_CHECKING, TypeVar, cast
 
@@ -300,6 +302,7 @@ class Font:
     _glyph_renderer: GlyphRenderer | None
     _missing_glyph: Glyph | None
     _zero_glyph: Glyph | None
+    _reserved_strokes: set[tuple[float, str]]
 
     # The size of the font in pixels.
     pixel_size: float
@@ -352,6 +355,7 @@ class Font:
         self._zero_glyph = None
         self.glyphs = {}
         self._fallback_glyphs = {}
+        self._reserved_strokes = set()
 
     def _initialize_renderer(self) -> None:
         """Initialize the glyph renderer and cache it on the Font.
@@ -412,21 +416,66 @@ class Font:
 
         return self.texture_bin.add(img, border=1)
 
+    def reserve_strokes(self, strokes: Iterable[tuple[float, str]]) -> None:
+        """Reserve estimated atlas capacity for stroke variants before rendering.
+
+        Each ``(size, join)`` pair reserves space for ``glyph_fit``
+        additional glyph masks. Repeated calls add variants without counting
+        duplicates.
+
+        Call this before creating labels or preloading glyphs using this font::
+
+            font = pyglet.font.load("Arial", 24)
+            font.reserve_strokes([(2.0, "round")])
+
+        .. versionadded:: 3.0.0
+
+        Args:
+            strokes:
+                Stroke widths in pixels and joins (``"round"``, ``"bevel"``,
+                or ``"miter"``) expected to be used with this font.
+
+        Raises:
+            RuntimeError: If the font's texture bin has already been created.
+            ValueError: If automatic sizing is disabled or a join is unsupported.
+        """
+        if self.texture_bin is not None:
+            msg = "Reserve strokes before creating labels, preloading glyphs, or otherwise rendering this font."
+            raise RuntimeError(msg)
+        if not self.optimize_fit:
+            msg = "Stroke reservations require optimize_fit=True; otherwise set texture_width and texture_height directly."
+            raise ValueError(msg)
+
+        variants: set[tuple[float, str]] = set()
+        for size, join in strokes:
+            if join not in {"round", "bevel", "miter"}:
+                msg = f"Unsupported stroke join: {join!r}"
+                raise ValueError(msg)
+            variants.add((size, join))
+        self._reserved_strokes.update(variants)
+
     def _get_optimal_atlas_size(self, image_data: ImageData) -> tuple[int, int]:
         """Retrieves the optimal atlas size to fit ``image_data`` with ``glyph_fit`` number of glyphs."""
         # A texture glyph sheet should be able to handle all standard keyboard characters in one sheet.
         # 26 Alpha upper, 26 lower, 10 numbers, 33 symbols, space = around 96 characters. (Glyph Fit)
         aw, ah = self.texture_width, self.texture_height
+        glyph_width, glyph_height = image_data.width, image_data.height
+        glyph_count = self.glyph_fit
+        if self._reserved_strokes:
+            # Use font metrics as a minimum sample size when reserving strokes.
+            padding = 2 * math.ceil(max(size for size, _ in self._reserved_strokes))
+            glyph_width = max(glyph_width, math.ceil(self.pixel_size)) + padding
+            glyph_height = max(glyph_height, math.ceil(self.pixel_size), self.ascent - self.descent) + padding
+            glyph_count *= 1 + len(self._reserved_strokes)
 
         atlas_size: tuple[int, int] | None = None
 
         # Just a fast check to get the smallest atlas size possible to fit.
         i = 0
         while not atlas_size:
-            fit = ((aw - (image_data.width + 2)) // (image_data.width + 2) + 1) * (
-                    (ah - (image_data.height + 2)) // (image_data.height + 2) + 1)
+            fit = (aw // (glyph_width + 2)) * (ah // (glyph_height + 2))
 
-            if fit >= self.glyph_fit:
+            if fit >= glyph_count:
                 atlas_size = (aw, ah)
 
             if i % 2:

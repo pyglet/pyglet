@@ -427,15 +427,27 @@ class GLFramebuffer(FramebufferResource):
                 Specifies the attachment point of the framebuffer.
             level:
                 The mipmap level of the targeted texture to attach to the framebuffer.
+
+        Raises:
+            NotImplementedError: The context cannot attach the whole texture for this target.
         """
         gl_attachment = _gl_attachment_map[attachment]
+        supports_texture_attachment = self._context.info.features.layered_framebuffer_attachments
+        if not self._dsa and not supports_texture_attachment and texture.target != gl.GL_TEXTURE_2D:
+            raise NotImplementedError(
+                "This context only supports attaching 2D textures through attach_texture; "
+                "use attach_texture_layer for individual texture layers.",
+            )
         if self._dsa:
             self._attach_texture(self._id, gl_attachment, texture.handle, level)
         else:
             with self:
-                self._attach_texture(
-                    self._gl_target, gl_attachment, texture.handle, level,
-                )
+                if supports_texture_attachment:
+                    self._attach_texture(self._gl_target, gl_attachment, texture.handle, level)
+                else:
+                    self._context.glFramebufferTexture2D(
+                        self._gl_target, gl_attachment, texture.target, texture.handle, level,
+                    )
         self._clear_bits |= _clear_bit_map[attachment]
         if gl.GL_COLOR_ATTACHMENT0 <= gl_attachment <= gl.GL_COLOR_ATTACHMENT15:
             if gl_attachment not in self._color_attachments:

@@ -364,6 +364,99 @@ Note that the icon that you set at runtime need not have anything to do with
 the application icon, which must be encoded specially in the application
 binary (see `Self-contained executables`).
 
+
+.. _touch-input:
+
+Touch input
+-----------
+
+A window reports finger contacts through ``on_touch_start``, ``on_touch_move``,
+and ``on_touch_end``. Each contact has a ``pointer_id`` that stays the same until
+it ends, allowing an application to track multiple fingers independently::
+
+    @window.event
+    def on_touch_move(pointer_id, x, y, dx, dy, width, height, pressure, scale):
+        print(f"Contact {pointer_id} moved to {x}, {y}")
+
+All three events receive the same arguments:
+
+* ``pointer_id`` identifies the contact. IDs may be reused after a contact ends.
+* ``x`` and ``y`` give its position in window coordinates.
+* ``dx`` and ``dy`` give movement since the previous event for that contact.
+  Both are zero when the contact starts.
+* ``width`` and ``height`` describe the contact area when available.
+* ``pressure`` gives normalized pressure from zero to one when available.
+  A value of zero does not necessarily mean the finger has lifted.
+* ``scale`` gives the change in distance between the first two active contacts
+  since the previous event. Values above one mean the fingers moved apart,
+  and values below one mean they moved closer. It is one when fewer than two
+  contacts are active or the previous distance was zero.
+
+The ending contact is included in the scale calculation for ``on_touch_end``
+before it is removed. To accumulate pinch zoom, multiply the current zoom by
+``scale`` each time a touch event arrives.
+
+Touch events are implemented for most platforms that support it. Available
+contact details depend on the device and backend.
+
+Contact dimensions and pressure are zero when unavailable. macOS reports
+trackpad contacts rather than touchscreen input. Pens use the separate pen
+events described below.
+
+The ``examples/window/touch_window.py`` example shows how to draw trails for
+multiple fingers.
+
+Pen input
+---------
+
+Windows expose pen input separately from finger touch and mouse events::
+
+    @window.event
+    def on_pen_motion(pen_event):
+        if pen_event.in_contact:
+            draw_stroke(pen_event.x, pen_event.y, pen_event.pressure)
+
+The pen events are ``on_pen_enter``, ``on_pen_press``, ``on_pen_motion``,
+``on_pen_release``, and ``on_pen_leave``. Each receives an immutable
+:class:`~pyglet.window.pen.PenEvent` containing:
+
+* ``pointer_id``: a window-local tool ID, which may be reused after leave.
+* ``x``, ``y``, ``dx``, ``dy``: window position and movement, with a bottom-left origin.
+* ``pressure``: normalized tip pressure from zero to one.
+* ``tilt_x``, ``tilt_y``: degrees from perpendicular, positive toward the display's
+  right and bottom edges respectively.
+* ``rotation``: clockwise tool rotation in degrees.
+* ``buttons``: combined :class:`~pyglet.window.pen.PenButton` flags:
+  ``NONE``, ``TIP``, ``SIDE``, and ``SECONDARY``.
+* ``eraser`` and ``in_contact``: eraser-tool and tip-contact flags.
+
+Use ``in_contact`` to decide whether to draw. Pressure is zero while hovering,
+but it can also be zero during contact if the device does not report pressure.
+Other axes also return zero when unavailable. Pressing a pen's side button while
+hovering does not start a stroke. To check that button, import ``PenButton`` from
+``pyglet.window.pen`` and use ``pen_event.buttons & PenButton.SIDE``.
+
+Motion events are delivered after enter, press, and release events. They also
+report pressure and button changes while the pen is stationary. If an interaction
+is cancelled, capture is lost, or the window loses focus or closes, an active
+contact receives a release event before the leave event.
+
+Pens do not affect touch pinch calculations. Some platforms also generate mouse
+events for pen input.
+
+Pen input is currently supported on most platforms, however the available data
+depends on the platform, device, and driver. Some notable examples:
+X11 identifies pen tools from their axis labels and device names (excluding touch
+devices). Its enter and leave events track movement across window boundaries rather
+than physical tablet proximity. X11 does not report pen rotation.
+
+On iOS, Apple Pencil supports contact events and tilt. Hover, rotation, and side
+button events are not supported.
+
+The ``examples/window/touch_window.py`` example demonstrates touch,
+and pen strokes, including pressure, and a hover marker.
+
+
 Visibility
 ----------
 
@@ -379,6 +472,12 @@ You can also programmatically minimize a window using the
 :py:class:`~pyglet.window.Window.minimize` method (there is also a
 corresponding :py:class:`~pyglet.window.Window.maximize` method).
 
+In the browser backend, ``window.maximize()`` fills the browser content viewport
+and follows browser resizing without hiding browser UI. The canvas backing
+buffer tracks its displayed size and device pixel ratio. Calling ``set_size``
+returns the canvas to explicit sizing. Use ``set_fullscreen`` to request browser
+fullscreen instead.
+
 When a window is made visible the :py:meth:`~pyglet.window.Window.on_show`
 event is triggered.  When it is hidden the
 :py:meth:`~pyglet.window.Window.on_hide` event is triggered.
@@ -386,6 +485,24 @@ On Windows and Linux these events
 will only occur when you manually change the visibility of the window or when
 the window is minimized or restored.  On Mac OS X the user can also hide or
 show the window (affecting visibility) using the Command+H shortcut.
+
+Requesting attention
+-------------------
+
+Call :py:meth:`~pyglet.window.Window.attention` to notify the user that a
+background window needs attention::
+
+    window.attention()
+
+This flashes the taskbar button and window caption on Windows, bounces the
+application's Dock icon on macOS, or sets the window manager's demands-attention
+hint on X11.  It does not activate the window.
+
+The operating system or window manager controls the effect and may ignore the
+request. Windows and macOS stop the notification when the window or application becomes
+active. On X11, the window manager decides when to clear it.
+
+This method has no effect on other backends, but is safe to call for cross platform.
 
 File dialogs
 ------------

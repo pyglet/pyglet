@@ -3,6 +3,7 @@ from __future__ import annotations
 import ctypes
 import warnings
 from ctypes import POINTER, byref, c_buffer, c_char_p, c_int, cast
+from typing import TYPE_CHECKING, cast as typing_cast
 
 import pyglet
 
@@ -12,6 +13,10 @@ from pyglet.util import asbytes
 
 from . import xlib_vidmoderestore
 from .base import Display, Screen, ScreenMode
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from pyglet.window.xlib.pen import XIPen
 
 
 # XXX
@@ -50,6 +55,13 @@ try:
 except ImportError:
     _have_xrandr = False
 
+try:
+    from pyglet.libs.linux.x11 import xinput2
+
+    _have_xinput2 = xinput2.is_available()
+except (ImportError, AttributeError):
+    _have_xinput2 = False
+
 
 # Set up error handler
 def _error_handler(display, event):
@@ -82,6 +94,11 @@ xlib.XSetErrorHandler(_error_handler_ptr)
 
 
 class XlibDisplay(LinuxSelectDevice, Display['XlibScreen']):
+    _xinput2_pens: dict[int, XIPen | None]
+    _generic_event_window_handlers: dict[int, Callable[[xlib.XGenericEventCookie], int | None]]
+    _raw_mouse_window: int | None = None
+    _xinput2_version: tuple[int, int] | None = None
+    _xinput2_opcode: int | None = None
     _display = None  # POINTER(xlib.Display)
 
     _x_im = None  # X input method
@@ -112,6 +129,9 @@ class XlibDisplay(LinuxSelectDevice, Display['XlibScreen']):
 
         self._fileno = xlib.XConnectionNumber(self._display)
         self._window_map = {}
+        self._generic_event_window_handlers = {}
+        self._xinput2_pens = {}
+        self._initialize_xinput2()
 
         # Initialise XSync
         if _have_xsync:
@@ -125,6 +145,24 @@ class XlibDisplay(LinuxSelectDevice, Display['XlibScreen']):
 
         # Add to event loop select list.  Assume we never go away.
         app.platform_event_loop.select_devices.add(self)
+
+    def _initialize_xinput2(self) -> None:
+        """Check and store xinput2 support for this display connection."""
+        if not _have_xinput2:
+            return
+        opcode, first_event, first_error = c_int(), c_int(), c_int()
+        if not xlib.XQueryExtension(self._display, b'XInputExtension',
+                                    byref(opcode), byref(first_event), byref(first_error)):
+            return
+        self._xinput2_version = xinput2.get_version(typing_cast('ctypes._Pointer[xlib.Display]', self._display))
+        if self._xinput2_version is not None:
+            self._xinput2_opcode = opcode.value
+            self._generic_event_window_handlers[opcode.value] = self._xinput2_event_window
+            # Device IDs may be reused after hotplug. Discard cached axis metadata.
+            mask = (ctypes.c_ubyte * 2)(1 << xinput2.XI_DEVICE_CHANGED,
+                                      1 << (xinput2.XI_HIERARCHY_CHANGED & 7))
+            event_mask = xinput2.XIEventMask(xinput2.XI_ALL_DEVICES, len(mask), mask)
+            xinput2.XISelectEvents(self._display, xlib.XDefaultRootWindow(self._display), byref(event_mask), 1)
 
     def get_default_screen(self) -> XlibScreen:
         screens = self.get_screens()
@@ -205,10 +243,41 @@ class XlibDisplay(LinuxSelectDevice, Display['XlibScreen']):
     def fileno(self) -> int:
         return self._fileno
 
+    def _xinput2_event_window(self, cookie: xlib.XGenericEventCookie) -> int | None:
+        if cookie.evtype in (xinput2.XI_HIERARCHY_CHANGED, xinput2.XI_DEVICE_CHANGED):
+            self._xinput2_pens.clear()
+            for dispatch in tuple(self._window_map.values()):
+                window = dispatch.__self__
+                window._pen_state.clear(window.dispatch_event)
+            return None
+        if cookie.evtype == xinput2.XI_RAW_MOTION:
+            return self._raw_mouse_window
+        if cookie.evtype in (xinput2.XI_TOUCH_BEGIN, xinput2.XI_TOUCH_UPDATE, xinput2.XI_TOUCH_END,
+                             xinput2.XI_BUTTON_PRESS, xinput2.XI_BUTTON_RELEASE, xinput2.XI_MOTION,
+                             xinput2.XI_ENTER, xinput2.XI_LEAVE):
+            event = cast(cookie.data, POINTER(xinput2.XIDeviceEvent)).contents
+            return event.event
+        return None
+
     def select(self) -> None:
         e = xlib.XEvent()
         while xlib.XPending(self._display):
             xlib.XNextEvent(self._display, e)
+
+            if e.type == xlib.GenericEvent:
+                if not xlib.XGetEventData(self._display, byref(e.xcookie)):
+                    continue
+                try:
+                    event_window_handler = self._generic_event_window_handlers.get(e.xcookie.extension)
+                    if event_window_handler is None:
+                        continue
+                    event_window = event_window_handler(e.xcookie)
+                    dispatch = self._window_map.get(event_window)
+                    if dispatch:
+                        dispatch(e)
+                finally:
+                    xlib.XFreeEventData(self._display, byref(e.xcookie))
+                continue
 
             # Key events are filtered by the xlib window event
             # handler so they get a shot at the prefiltered event.

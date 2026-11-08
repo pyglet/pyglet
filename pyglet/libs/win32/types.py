@@ -399,6 +399,17 @@ class LOGFONTW(Structure):
     ]
 
 
+class FLASHWINFO(Structure):
+    _fields_ = [
+        ('cbSize', UINT),
+        ('hwnd', HWND),
+        ('dwFlags', DWORD),
+        ('uCount', UINT),
+        ('dwTimeout', DWORD),
+    ]
+    __slots__ = [f[0] for f in _fields_]
+
+
 class TRACKMOUSEEVENT(Structure):
     _fields_ = [
         ('cbSize', DWORD),
@@ -936,4 +947,47 @@ class OPENFILENAMEW(Structure):
         ("pvReserved", LPVOID),
         ("dwReserved", DWORD),
         ("FlagsEx", DWORD),
+    ]
+
+# Structures
+class POINTER_INFO(Structure):
+    _fields_ = [
+        ('pointerType', DWORD),
+        ('pointerId', UINT32),
+        ('frameId', UINT32),
+        ('pointerFlags', DWORD),
+        ('sourceDevice', HANDLE),
+        ('hwndTarget', HWND),
+        ('ptPixelLocation', POINT),
+        ('ptHimetricLocation', POINT),
+        ('ptPixelLocationRaw', POINT),
+        ('ptHimetricLocationRaw', POINT),
+        ('dwTime', DWORD),
+        ('historyCount', UINT32),
+        ('inputData', INT32),
+        ('dwKeyStates', DWORD),
+        ('PerformanceCount', UINT64),
+        ('ButtonChangeType', DWORD),
+    ]
+
+class POINTER_TOUCH_INFO(ctypes.Structure):
+    _fields_ = [
+        ('pointerInfo', POINTER_INFO),
+        ('touchFlags', DWORD),
+        ('touchMask', DWORD),
+        ('rcContact', RECT),
+        ('rcContactRaw', RECT),
+        ('orientation', UINT32),
+        ('pressure', UINT32),
+    ]
+
+class POINTER_PEN_INFO(ctypes.Structure):
+    _fields_ = [
+        ('pointerInfo', POINTER_INFO),
+        ('penFlags', DWORD),
+        ('penMask', DWORD),
+        ('pressure', UINT32),
+        ('rotation', UINT32),
+        ('tiltX', INT32),
+        ('tiltY', INT32),
     ]
