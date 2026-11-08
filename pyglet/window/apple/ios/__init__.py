@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from typing import TYPE_CHECKING, Sequence, Any
 
 import pyglet
@@ -16,6 +17,8 @@ from pyglet.libs.darwin.cocoapy import (
     send_super,
 )
 from pyglet.window import BaseWindow
+from pyglet.libs.darwin.cocoapy.lib_uikit import UITouchTypePencil
+from pyglet.window.pen import PenEvent
 from pyglet.window.apple.ios.textinput import IOSTextInput
 
 if TYPE_CHECKING:
@@ -67,6 +70,20 @@ class PygletIOSView(UIView):  # type: ignore[valid-type, misc]
             radius = touch.majorRadius()
             maximum_force = touch.maximumPossibleForce()
             pressure = touch.force() / maximum_force if maximum_force else 0.0
+            if touch.type() == UITouchTypePencil:
+                pointer_id = int(touch.hash())
+                azimuth = touch.azimuthAngleInView_(self)
+                altitude = touch.altitudeAngle()
+                contact = dispatch_name != 'on_touch_end'
+                self._window._update_pen(PenEvent(
+                    pointer_id, x, y, pressure,
+                    math.degrees(math.atan2(math.cos(azimuth) * math.cos(altitude), math.sin(altitude))),
+                    math.degrees(math.atan2(math.sin(azimuth) * math.cos(altitude), math.sin(altitude))),
+                    in_contact=contact,
+                ))
+                if not contact:
+                    self._window._leave_pen(pointer_id)
+                continue
             self._window._dispatch_touch_event(
                 dispatch_name, int(touch.hash()), x, y, radius * 2, radius * 2, pressure,
             )

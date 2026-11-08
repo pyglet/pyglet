@@ -10,6 +10,7 @@ import pyglet.app
 from pyglet.libs.emscripten.files import import_files
 from pyglet.libs.emscripten.proxies import ProxyRegistry
 from pyglet.window import BaseWindow, DefaultMouseCursor, ImageMouseCursor, MouseCursor, key, mouse
+from pyglet.window.pen import PenButton, PenEvent
 from pyglet.window.emscripten.textinput import BrowserTextInput
 
 if TYPE_CHECKING:
@@ -758,8 +759,36 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
             event.width * scale_x, event.height * scale_y, event.pressure,
         )
 
+    def _dispatch_pointer_pen(self, event: PointerEvent, ended: bool = False) -> None:
+        x, y, _, _ = self._get_input_coordinates(event)
+        buttons = event.buttons
+        self._update_pen(PenEvent(
+            event.pointerId, x, y, event.pressure, event.tiltX, event.tiltY, event.twist,
+            (PenButton.TIP if buttons & 1 or buttons & 32 else PenButton.NONE)
+            | (PenButton.SIDE if buttons & 2 else PenButton.NONE)
+            | (PenButton.SECONDARY if buttons & 4 else PenButton.NONE),
+            bool(buttons & 32 or event.button == 5),
+            not ended and bool(buttons & 1 or buttons & 32),
+        ))
+
+    @CanvasEventHandler("pointerenter")
+    def _event_pen_enter(self, event: PointerEvent) -> None:
+        if event.pointerType == "pen":
+            self._dispatch_pointer_pen(event)
+
+    @CanvasEventHandler("pointerleave")
+    def _event_pen_leave(self, event: PointerEvent) -> None:
+        if event.pointerType == "pen":
+            self._leave_pen(event.pointerId)
+
     @CanvasEventHandler("pointerdown", passive=False)
     def _event_touch_start(self, event: PointerEvent) -> None:
+        if event.pointerType == "pen":
+            event.preventDefault()
+            if event.isTrusted:
+                self._canvas.setPointerCapture(event.pointerId)
+            self._dispatch_pointer_pen(event)
+            return
         if event.pointerType != "touch":
             return
         # Touch pointers implicitly capture subsequent events, including outside the canvas.
@@ -769,17 +798,31 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
 
     @CanvasEventHandler("pointermove")
     def _event_touch_move(self, event: PointerEvent) -> None:
+        if event.pointerType == "pen":
+            self._dispatch_pointer_pen(event)
+            return
         if event.pointerType == "touch" and event.pointerId in self._touch_positions:
             self._dispatch_pointer_touch('on_touch_move', event)
 
     @CanvasEventHandler("pointerup")
     @CanvasEventHandler("pointercancel")
     def _event_touch_end(self, event: PointerEvent) -> None:
+        if event.pointerType == "pen":
+            if event.pointerId not in self._pen_state.pens:
+                return
+            if event.type == 'pointercancel':
+                self._leave_pen(event.pointerId)
+            else:
+                self._dispatch_pointer_pen(event, ended=True)
+            return
         if event.pointerType == "touch" and event.pointerId in self._touch_positions:
             self._dispatch_pointer_touch('on_touch_end', event)
 
     @CanvasEventHandler("lostpointercapture")
     def _event_touch_capture_lost(self, event: PointerEvent) -> None:
+        if event.pointerType == "pen":
+            self._leave_pen(event.pointerId)
+            return
         if event.pointerType == "touch" and event.pointerId in self._touch_positions:
             # Capture-loss events do not carry the contact's last coordinates.
             x, y = self._touch_positions[event.pointerId]
@@ -853,6 +896,7 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
 
     @CanvasEventHandler("blur")
     def _event_lose_focus(self, event: Event) -> None:
+        self._pen_state.clear(self.dispatch_event)
         if self._browser_text_input is not None:
             return
         pyglet.app.platform_event_loop.post_event(self, 'on_deactivate')

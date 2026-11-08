@@ -111,6 +111,7 @@ class PygletDelegate(NSObject):  # type: ignore[valid-type, misc]
             self._window._nswindow.setMovable_(False)  # Mac OS X 10.6  # noqa: SLF001
         # Make sure that cursor is visible.
         self._window.set_mouse_cursor_platform_visible(True)
+        self._window._pen_state.clear(self._window.dispatch_event)
         self._window.dispatch_event('on_deactivate')
 
     @objc_method('v@')

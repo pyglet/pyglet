@@ -109,7 +109,7 @@ def test_other_pointer_types_do_not_dispatch_touch(touch_window: TouchWindow, po
     event = dispatch_pointer(window, "pointerdown", pointer_type=pointer_type)
     dispatch_pointer(window, "pointermove", pointer_type=pointer_type)
     dispatch_pointer(window, "pointerup", pointer_type=pointer_type)
-    assert not event.defaultPrevented
+    assert event.defaultPrevented == (pointer_type == 'pen')
     assert events == []
 
 

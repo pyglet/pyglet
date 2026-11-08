@@ -36,6 +36,7 @@ class CSSStyleDeclaration:
 
 class Event:
     type: str
+    isTrusted: bool
     def preventDefault(self) -> None: ...
 
 class UIEvent(Event): ...
@@ -68,6 +69,9 @@ class PointerEvent(MouseEvent):
     width: float
     height: float
     pressure: float
+    tiltX: float
+    tiltY: float
+    twist: float
 
 class WheelEvent(MouseEvent):
     deltaX: float
@@ -134,6 +138,7 @@ class CanvasRenderingContext2D:
     def putImageData(self, image: ImageData, x: float, y: float) -> None: ...
 
 class HTMLCanvasElement:
+    def setPointerCapture(self, pointer_id: int) -> None: ...
     id: str
     # Assignments are coerced to unsigned integers by the browser.
     @property

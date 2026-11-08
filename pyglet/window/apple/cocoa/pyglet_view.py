@@ -30,6 +30,7 @@ from pyglet.libs.darwin.cocoapy.lib_corefoundation import cfstring_to_string
 from pyglet.libs.darwin.cocoapy.runtime import ObjCClass, ObjCInstance, objc_method, send_super
 from pyglet.libs.darwin.quartzkey import charmap, keymap
 from pyglet.window import key, mouse
+from pyglet.window.pen import PenButton, PenEvent
 
 from .pyglet_textview import PygletTextView
 
@@ -164,6 +165,7 @@ def _get_dragging_paths(dragging_info: ObjCInstance) -> list[str]:
 
 class PygletView(NSView):  # type: ignore[valid-type, misc]
     _window: CocoaWindow | None
+    _pen_erasers: dict[int, bool]
 
     @objc_method(b'@' + NSRectEncoding + PyObjectEncoding)
     def initWithFrame_cocoaWindow_(self: Any, frame: NSRect, window: CocoaWindow) -> ObjCInstance | None:
@@ -179,6 +181,7 @@ class PygletView(NSView):  # type: ignore[valid-type, misc]
 
         # CocoaWindow object.
         self._window = window
+        self._pen_erasers = {}
         self._file_drag_active = False
 
         self.associate("_tracking_area", None)
@@ -316,8 +319,55 @@ class PygletView(NSView):  # type: ignore[valid-type, misc]
     def doCommandBySelector_(self, selector: ctypes.c_void_p) -> None:
         """Prevent system beeps when an event or key is not handled."""
 
+    def _dispatch_pen_mouse(self, nsevent: ObjCInstance) -> bool:
+        # AppKit delivers tablet points both natively and as mouse subtypes.
+        # https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/EventOverview/HandlingTabletEvents/HandlingTabletEvents.html
+        if nsevent.subtype() == 1:  # NSTabletPointEventSubtype
+            PygletView._dispatch_pen_point(self, nsevent)
+            return True
+        if nsevent.subtype() == 2:  # NSTabletProximityEventSubtype
+            PygletView._dispatch_pen_proximity(self, nsevent)
+            return True
+        return False
+
+    @objc_method('v@')
+    def tabletProximity_(self, nsevent: ObjCInstance) -> None:
+        PygletView._dispatch_pen_proximity(self, nsevent)
+
+    def _dispatch_pen_proximity(self, nsevent: ObjCInstance) -> None:
+        pointer_id = int(nsevent.deviceID())
+        if nsevent.isEnteringProximity():
+            eraser = nsevent.pointingDeviceType() == 3  # NSEraserPointingDevice
+            self._pen_erasers[pointer_id] = eraser
+            x, y = getMousePosition(self, nsevent)
+            if 0 <= x < self._window.width and 0 <= y < self._window.height:
+                self._window._update_pen(PenEvent(pointer_id, x, y, eraser=eraser))
+        else:
+            self._window._leave_pen(pointer_id)
+            self._pen_erasers.pop(pointer_id, None)
+
+    @objc_method('v@')
+    def tabletPoint_(self, nsevent: ObjCInstance) -> None:
+        PygletView._dispatch_pen_point(self, nsevent)
+
+    def _dispatch_pen_point(self, nsevent: ObjCInstance) -> None:
+        pointer_id = int(nsevent.deviceID())
+        x, y = getMousePosition(self, nsevent)
+        tilt = nsevent.tilt()
+        buttons = int(nsevent.buttonMask())
+        if not buttons & PenButton.TIP and not (0 <= x < self._window.width and 0 <= y < self._window.height):
+            self._window._leave_pen(pointer_id)
+            return
+        self._window._update_pen(PenEvent(
+            pointer_id, x, y, nsevent.pressure(), tilt.x * 90, -tilt.y * 90,
+            nsevent.rotation(), PenButton(buttons & 7), self._pen_erasers.get(pointer_id, False),
+            bool(buttons & PenButton.TIP),
+        ))
+
     @objc_method('v@')
     def mouseMoved_(self, nsevent: ObjCInstance) -> None:
+        if PygletView._dispatch_pen_mouse(self, nsevent):
+            return
         if self._window._mouse_ignore_motion:  # noqa: SLF001
             self._window._mouse_ignore_motion = False  # noqa: SLF001
             return
@@ -364,6 +414,8 @@ class PygletView(NSView):  # type: ignore[valid-type, misc]
 
     @objc_method('v@')
     def mouseDown_(self, nsevent: ObjCInstance) -> None:
+        if PygletView._dispatch_pen_mouse(self, nsevent):
+            return
         x, y = getMousePosition(self, nsevent)
         buttons = mouse.LEFT
         modifiers = getModifiers(nsevent)
@@ -371,6 +423,8 @@ class PygletView(NSView):  # type: ignore[valid-type, misc]
 
     @objc_method('v@')
     def mouseDragged_(self, nsevent: ObjCInstance) -> None:
+        if PygletView._dispatch_pen_mouse(self, nsevent):
+            return
         x, y = getMousePosition(self, nsevent)
         dx, dy = getMouseDelta(nsevent)
         buttons = mouse.LEFT
@@ -379,6 +433,8 @@ class PygletView(NSView):  # type: ignore[valid-type, misc]
 
     @objc_method('v@')
     def mouseUp_(self, nsevent: ObjCInstance) -> None:
+        if PygletView._dispatch_pen_mouse(self, nsevent):
+            return
         x, y = getMousePosition(self, nsevent)
         buttons = mouse.LEFT
         modifiers = getModifiers(nsevent)
@@ -386,6 +442,8 @@ class PygletView(NSView):  # type: ignore[valid-type, misc]
 
     @objc_method('v@')
     def rightMouseDown_(self, nsevent: ObjCInstance) -> None:
+        if PygletView._dispatch_pen_mouse(self, nsevent):
+            return
         x, y = getMousePosition(self, nsevent)
         buttons = mouse.RIGHT
         modifiers = getModifiers(nsevent)
@@ -393,6 +451,8 @@ class PygletView(NSView):  # type: ignore[valid-type, misc]
 
     @objc_method('v@')
     def rightMouseDragged_(self, nsevent: ObjCInstance) -> None:
+        if PygletView._dispatch_pen_mouse(self, nsevent):
+            return
         x, y = getMousePosition(self, nsevent)
         dx, dy = getMouseDelta(nsevent)
         buttons = mouse.RIGHT
@@ -401,6 +461,8 @@ class PygletView(NSView):  # type: ignore[valid-type, misc]
 
     @objc_method('v@')
     def rightMouseUp_(self, nsevent: ObjCInstance) -> None:
+        if PygletView._dispatch_pen_mouse(self, nsevent):
+            return
         x, y = getMousePosition(self, nsevent)
         buttons = mouse.RIGHT
         modifiers = getModifiers(nsevent)
@@ -408,6 +470,8 @@ class PygletView(NSView):  # type: ignore[valid-type, misc]
 
     @objc_method('v@')
     def otherMouseDown_(self, nsevent: ObjCInstance) -> None:
+        if PygletView._dispatch_pen_mouse(self, nsevent):
+            return
         x, y = getMousePosition(self, nsevent)
         buttons = mouse.MIDDLE
         modifiers = getModifiers(nsevent)
@@ -415,6 +479,8 @@ class PygletView(NSView):  # type: ignore[valid-type, misc]
 
     @objc_method('v@')
     def otherMouseDragged_(self, nsevent: ObjCInstance) -> None:
+        if PygletView._dispatch_pen_mouse(self, nsevent):
+            return
         x, y = getMousePosition(self, nsevent)
         dx, dy = getMouseDelta(nsevent)
         buttons = mouse.MIDDLE
@@ -423,6 +489,8 @@ class PygletView(NSView):  # type: ignore[valid-type, misc]
 
     @objc_method('v@')
     def otherMouseUp_(self, nsevent: ObjCInstance) -> None:
+        if PygletView._dispatch_pen_mouse(self, nsevent):
+            return
         x, y = getMousePosition(self, nsevent)
         buttons = mouse.MIDDLE
         modifiers = getModifiers(nsevent)
@@ -440,6 +508,9 @@ class PygletView(NSView):  # type: ignore[valid-type, misc]
     def mouseExited_(self, nsevent: ObjCInstance) -> None:
         x, y = getMousePosition(self, nsevent)
         self._window._mouse_in_window = False  # noqa: SLF001
+        for pointer_id, event in tuple(self._window._pen_state.pens.items()):
+            if not event.in_contact:
+                self._window._leave_pen(pointer_id)
         if not self._window._mouse_exclusive:  # noqa: SLF001
             self._window.set_mouse_cursor_platform_visible()
         self._window.dispatch_event('on_mouse_leave', x, y)
