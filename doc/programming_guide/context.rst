@@ -445,7 +445,10 @@ After creating the native context, supply callbacks for its operations::
     context.set_current()
     # Create pyglet shaders, textures, batches, sprites, etc.
 
-``host`` represents your integration, not a required class or toolkit.
+``host`` represents the code that manages the native context. It can be an
+object from a GUI toolkit or windowing library, or your own integration code.
+Pass its methods directly as callbacks, or wrap them to match the signatures
+described below.
 ``make_current`` must raise or return ``False`` on failure. The optional
 ``is_current`` callback checks the native context; without it, finalizers
 defer GPU deletion until the next ``set_current()``. ``get_proc_address``
