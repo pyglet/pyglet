@@ -25,7 +25,6 @@ class TouchExample:
         self.batch.draw()
 
     def on_touch_start(self, pointer_id, x, y, dx, dy, width, height, pressure, scale):
-        print("POINTER ID", pointer_id)
         if pointer_id not in self.touch_circles:
             color = self.COLORS[self._counter]
             self.touch_circles[pointer_id] = pyglet.shapes.Circle(x, y, width, color=color, batch=self.batch)
