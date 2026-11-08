@@ -82,6 +82,7 @@ markers = [
     "requires_user_action: Test cannot run without user interaction.",
     "requires_user_validation: Test cannot validate without user interaction, but can run for sanity.",
     "only_interactive: This test can only be run in interactive mode.",
+    "requires_visible_window: Automated test that displays native windows and may interrupt desktop input.",
 ]
 
 [tool.mypy]

@@ -1,3 +1,4 @@
+import pytest
 import queue
 import unittest
 import time
@@ -5,6 +6,10 @@ import time
 from pyglet import window
 
 from ...annotations import skip_platform, Platform
+
+
+# Showing and fullscreening native windows interrupts desktop input.
+pytestmark = pytest.mark.requires_visible_window
 
 
 class EventSequenceFixture:

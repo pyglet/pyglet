@@ -11,6 +11,10 @@ def pytest_addoption(parser):
                      help='[Interactive tests only] Do not use interactive prompts. '
                           'Only skips tests that cannot finish without user intervention.',
                      )
+    parser.addoption('--allow-visible-windows',
+                     action='store_true',
+                     help='Include tests requiring visible windows in non-interactive runs.',
+                     )
 
 
 def pytest_ignore_collect(collection_path, config):
@@ -29,11 +33,14 @@ def pytest_collection_modifyitems(items, config):
 
     interactive_dir = Path(__file__).parent / 'interactive'
     markers = ('interactive', 'only_interactive', 'requires_user_action', 'requires_user_validation')
+    allow_visible_windows = config.getoption('--allow-visible-windows', False)
     remaining = []
     deselected = []
     for item in items:
         if (interactive_dir in item.path.parents
-                or any(item.get_closest_marker(marker) is not None for marker in markers)):
+                or any(item.get_closest_marker(marker) is not None for marker in markers)
+                or (not allow_visible_windows
+                    and item.get_closest_marker('requires_visible_window') is not None)):
             deselected.append(item)
         else:
             remaining.append(item)

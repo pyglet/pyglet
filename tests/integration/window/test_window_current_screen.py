@@ -25,7 +25,7 @@ def window():
         win.close()
 
 
-@pytest.mark.parametrize('visible', [False, True])
+@pytest.mark.parametrize('visible', [False, pytest.param(True, marks=pytest.mark.requires_visible_window)])
 def test_current_screen_is_an_available_screen(window, visible):
     window.set_visible(visible)
     if pyglet.compat_platform not in Platform.EMSCRIPTEN:
@@ -42,6 +42,7 @@ def test_current_screen_is_an_available_screen(window, visible):
     pyglet.options.headless or pyglet.options.wayland or pyglet.compat_platform in Platform.HOST_DRIVEN,
     reason='Requires a desktop window that can be positioned',
 )
+@pytest.mark.requires_visible_window
 def test_current_screen_follows_window_location(window):
     target = window.screen
     screens = window.display.get_screens()

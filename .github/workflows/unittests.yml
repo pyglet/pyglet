@@ -42,7 +42,7 @@ jobs:
           openal-info || true
           xvfb-run --auto-servernum  python3 -m pyglet.info
           xvfb-run --auto-servernum  pytest tests \
-            --ignore=tests/interactive \
+            --non-interactive --allow-visible-windows \
             --ignore=tests/integration/graphics
           for backend_override in "${backend_overrides[@]}"; do
             backend="${backend_override%%:*}"
@@ -76,7 +76,7 @@ jobs:
           PYGLET_BACKEND: opengl
         run: |
           python3 -m pyglet.info
-          pytest tests --ignore=tests/interactive
+          pytest tests --non-interactive --allow-visible-windows
 
   windows:
     runs-on: windows-latest
@@ -118,7 +118,7 @@ jobs:
           $env:MESA_GL_VERSION_OVERRIDE = '4.6'
           $env:MESA_GLES_VERSION_OVERRIDE = '4.6'
           python3 -m pyglet.info
-          pytest tests --ignore=tests/interactive --ignore=tests/integration/graphics
+          pytest tests --non-interactive --allow-visible-windows --ignore=tests/integration/graphics
           foreach ($backend_override in $backend_overrides) {
             $env:PYGLET_BACKEND = $backend_override.backend
             $env:MESA_GL_VERSION_OVERRIDE = $backend_override.version
@@ -163,7 +163,7 @@ jobs:
           export MESA_GLES_VERSION_OVERRIDE=4.6
           python3 -m pyglet.info
           pytest tests \
-            --ignore=tests/interactive \
+            --non-interactive --allow-visible-windows \
             --ignore=tests/integration/graphics
           for backend_override in "${backend_overrides[@]}"; do
             backend="${backend_override%%:*}"

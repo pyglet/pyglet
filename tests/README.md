@@ -6,6 +6,14 @@ Use `pytest tests --non-interactive` for automated suite runs. This excludes
 when explicitly selected. Use `--sanity` to run eligible interactive tests without
 prompts instead.
 
+Local development runs also deselect tests marked `requires_visible_window`,
+which can display windows, take focus, or change fullscreen state without needing
+human input. Desktop CI runners should use
+`pytest tests --non-interactive --allow-visible-windows` to include these tests.
+The opt-in does not enable tests requiring human interaction. Mark automated tests
+that must show windows with `@pytest.mark.requires_visible_window`; keep windows
+hidden when visibility is unnecessary.
+
 Follow these rules when adding or changing tests, including tests written by AI
 agents. Check the existing tests and fixtures before creating a new file.
 

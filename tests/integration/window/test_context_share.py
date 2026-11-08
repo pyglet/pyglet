@@ -9,7 +9,7 @@ from pyglet.graphics.api.gl import *
 
 
 def test_context_share_texture():
-    w1 = window.Window(200, 200)
+    w1 = window.Window(200, 200, visible=False)
     w1.switch_to()
     textures = c_uint()
     glGenTextures(1, byref(textures))
@@ -20,7 +20,7 @@ def test_context_share_texture():
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, data)
     assert glIsTexture(texture)
 
-    w2 = window.Window(200, 200, context=w1.context)
+    w2 = window.Window(200, 200, context=w1.context, visible=False)
     w2.switch_to()
     assert glIsTexture(texture)
 
@@ -35,7 +35,7 @@ def test_context_share_texture():
 
 
 def test_context_noshare_texture():
-    w1 = window.Window(200, 200)
+    w1 = window.Window(200, 200, visible=False)
     w2 = None
 
     try:
@@ -49,7 +49,7 @@ def test_context_noshare_texture():
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, data)
         assert glIsTexture(texture)
 
-        w2 = window.Window(200, 200, context=None)
+        w2 = window.Window(200, 200, context=None, visible=False)
         w2.switch_to()
         assert not glIsTexture(texture)
     finally:
