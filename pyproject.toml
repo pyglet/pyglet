@@ -115,13 +115,8 @@ module = [
 follow_imports = "silent"
 
 [[tool.mypy.overrides]]
-# Pyodide provides this module in the browser runtime.
-module = "js"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-# Optional codecs load these packages only when installed by the application.
-module = ["PIL.*", "zstandard", "pyogg", "gi.*"]
+# Optional packages and codecs load these packages only when installed by the application.
+module = ["PIL.*", "zstandard", "pyogg", "gi.*", "js", "pyodide", "pyodide.ffi"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
