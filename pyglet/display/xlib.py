@@ -16,6 +16,7 @@ from .base import Display, Screen, ScreenMode
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from pyglet.window.xlib.pen import XIPen
 
 
 # XXX
@@ -93,6 +94,7 @@ xlib.XSetErrorHandler(_error_handler_ptr)
 
 
 class XlibDisplay(LinuxSelectDevice, Display['XlibScreen']):
+    _xinput2_pens: dict[int, XIPen | None]
     _generic_event_window_handlers: dict[int, Callable[[xlib.XGenericEventCookie], int | None]]
     _raw_mouse_window: int | None = None
     _xinput2_version: tuple[int, int] | None = None
@@ -128,6 +130,7 @@ class XlibDisplay(LinuxSelectDevice, Display['XlibScreen']):
         self._fileno = xlib.XConnectionNumber(self._display)
         self._window_map = {}
         self._generic_event_window_handlers = {}
+        self._xinput2_pens = {}
         self._initialize_xinput2()
 
         # Initialise XSync
@@ -155,6 +158,11 @@ class XlibDisplay(LinuxSelectDevice, Display['XlibScreen']):
         if self._xinput2_version is not None:
             self._xinput2_opcode = opcode.value
             self._generic_event_window_handlers[opcode.value] = self._xinput2_event_window
+            # Device IDs may be reused after hotplug. Discard cached axis metadata.
+            mask = (ctypes.c_ubyte * 2)(1 << xinput2.XI_DEVICE_CHANGED,
+                                      1 << (xinput2.XI_HIERARCHY_CHANGED & 7))
+            event_mask = xinput2.XIEventMask(xinput2.XI_ALL_DEVICES, len(mask), mask)
+            xinput2.XISelectEvents(self._display, xlib.XDefaultRootWindow(self._display), byref(event_mask), 1)
 
     def get_default_screen(self) -> XlibScreen:
         screens = self.get_screens()
@@ -236,9 +244,17 @@ class XlibDisplay(LinuxSelectDevice, Display['XlibScreen']):
         return self._fileno
 
     def _xinput2_event_window(self, cookie: xlib.XGenericEventCookie) -> int | None:
+        if cookie.evtype in (xinput2.XI_HIERARCHY_CHANGED, xinput2.XI_DEVICE_CHANGED):
+            self._xinput2_pens.clear()
+            for dispatch in tuple(self._window_map.values()):
+                window = dispatch.__self__
+                window._pen_state.clear(window.dispatch_event)
+            return None
         if cookie.evtype == xinput2.XI_RAW_MOTION:
             return self._raw_mouse_window
-        if cookie.evtype in (xinput2.XI_TOUCH_BEGIN, xinput2.XI_TOUCH_UPDATE, xinput2.XI_TOUCH_END):
+        if cookie.evtype in (xinput2.XI_TOUCH_BEGIN, xinput2.XI_TOUCH_UPDATE, xinput2.XI_TOUCH_END,
+                             xinput2.XI_BUTTON_PRESS, xinput2.XI_BUTTON_RELEASE, xinput2.XI_MOTION,
+                             xinput2.XI_ENTER, xinput2.XI_LEAVE):
             event = cast(cookie.data, POINTER(xinput2.XIDeviceEvent)).contents
             return event.event
         return None

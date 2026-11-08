@@ -30,6 +30,8 @@ from typing import TYPE_CHECKING, Sequence, Callable, Any, ClassVar
 
 import pyglet
 from pyglet.display.xlib import XlibScreen, XlibScreenXinerama, XlibDisplay
+from pyglet.window.pen import PenButton, PenEvent
+from pyglet.window.xlib.pen import query_pen
 from pyglet.enums import GraphicsAPI
 from pyglet.event import EventDispatcher
 from pyglet.libs.linux.x11 import cursorfont, xlib
@@ -1193,6 +1195,9 @@ class XlibWindow(BaseWindow['XlibScreen']):
         if not _have_xinput2 or self._x_display is None:
             return
         version = self.display._xinput2_version
+        if version is not None:
+            mask, event_mask = xinput2.pen_event_mask()
+            xinput2.XISelectEvents(self._x_display, self._x_window, byref(event_mask), 1)
         if version is not None and version >= (2, 2):
             mask, event_mask = xinput2.touch_event_mask()
             xinput2.XISelectEvents(self._x_display, self._x_window, byref(event_mask), 1)
@@ -1245,12 +1250,47 @@ class XlibWindow(BaseWindow['XlibScreen']):
         else:
             self.dispatch_event('on_mouse_motion', self._mouse_x, self._mouse_y, dx, -dy)
 
+    def _dispatch_xinput2_pen(self, cookie: xlib.XGenericEventCookie) -> None:
+        if self._x_display is None:
+            return
+        crossing = cookie.evtype in (xinput2.XI_ENTER, xinput2.XI_LEAVE)
+        event_type = xinput2.XIEnterEvent if crossing else xinput2.XIDeviceEvent
+        event = cast(cookie.data, POINTER(event_type)).contents
+        pointer_id = event.sourceid
+        pens = self.display._xinput2_pens
+        if pointer_id not in pens:
+            pens[pointer_id] = query_pen(self._x_display, pointer_id)
+        xi_pen = pens[pointer_id]
+        if xi_pen is None:
+            return
+        if cookie.evtype == xinput2.XI_LEAVE:
+            self._leave_pen(pointer_id)
+            xi_pen.values.clear()
+            return
+        if not crossing:
+            xi_pen.update(event.valuators)
+        buttons = event.buttons.mask[0] >> 1 if event.buttons.mask_len else 0
+        if cookie.evtype == xinput2.XI_BUTTON_PRESS and 1 <= event.detail <= 3:
+            buttons |= 1 << (event.detail - 1)
+        elif cookie.evtype == xinput2.XI_BUTTON_RELEASE and 1 <= event.detail <= 3:
+            buttons &= ~(1 << (event.detail - 1))
+        self._update_pen(PenEvent(
+            pointer_id, event.event_x / self._scale, self.height - 1 - event.event_y / self._scale,
+            xi_pen.axis('Abs Pressure', 0, 1), xi_pen.axis('Abs Tilt X', -90, 90),
+            xi_pen.axis('Abs Tilt Y', -90, 90), 0.0,
+            PenButton(buttons & 7), xi_pen.eraser, bool(buttons & PenButton.TIP),
+        ))
+
     def _dispatch_xinput2_event(self, e: xlib.XEvent) -> None:
         opcode = self.display._xinput2_opcode
         if opcode is None or e.xcookie.extension != opcode:
             return
         if e.xcookie.evtype == xinput2.XI_RAW_MOTION:
             self._dispatch_xinput2_raw_motion(e.xcookie)
+            return
+        if e.xcookie.evtype in (xinput2.XI_BUTTON_PRESS, xinput2.XI_BUTTON_RELEASE, xinput2.XI_MOTION,
+                                xinput2.XI_ENTER, xinput2.XI_LEAVE):
+            self._dispatch_xinput2_pen(e.xcookie)
             return
         if e.xcookie.evtype not in (xinput2.XI_TOUCH_BEGIN, xinput2.XI_TOUCH_UPDATE, xinput2.XI_TOUCH_END):
             return
@@ -1911,6 +1951,7 @@ class XlibWindow(BaseWindow['XlibScreen']):
     def _event_focusout(self, ev: xlib.XEvent) -> None:
         self._active = False
         self._update_exclusivity()
+        self._pen_state.clear(self.dispatch_event)
         self.dispatch_event('on_deactivate')
         if _have_utf8:
             xlib.XUnsetICFocus(self._x_ic)
