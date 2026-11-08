@@ -89,13 +89,16 @@ from collections.abc import Callable, Sequence
 import pyglet
 import pyglet.window.key
 import pyglet.window.mouse
-from pyglet.event import EVENT_HANDLE_STATE, EventDispatcher
+from pyglet.event import EventDispatcher
 from pyglet.customtypes import ScreenT
 from pyglet.window.textinput import TextInputSession
+from pyglet.window.pen import PenState
 
 from pyglet.window import event, key, dialog
 
 if TYPE_CHECKING:
+    from pyglet.event import EVENT_HANDLE_STATE
+    from pyglet.window.pen import PenEvent
     from pyglet.text.caret import Caret
     from pyglet.window.textinput import TextInputOptions
     from pyglet.window.camera import Camera2D
@@ -401,6 +404,7 @@ class BaseWindow(EventDispatcher, Generic[ScreenT], metaclass=_WindowMetaclass):
 
     _event_queue: deque[tuple[Any, ...]]
     _touch_positions: dict[int, tuple[float, float]]
+    _pen_state: PenState
     _text_input_session: TextInputSession | None = None
     _enable_event_queue: bool = True  # overridden by EventLoop.
     _allow_dispatch_event: bool = False  # controlled by dispatch_events stack frame
@@ -488,6 +492,7 @@ class BaseWindow(EventDispatcher, Generic[ScreenT], metaclass=_WindowMetaclass):
         EventDispatcher.__init__(self)
         self._event_queue = deque()
         self._touch_positions = {}
+        self._pen_state = PenState()
 
         self._user_config = config
         self._context = None
@@ -581,6 +586,12 @@ class BaseWindow(EventDispatcher, Generic[ScreenT], metaclass=_WindowMetaclass):
         if self._text_input_session is session:
             self._text_input_session = None
             self._stop_text_input(session)
+
+    def _update_pen(self, pen_event: PenEvent) -> None:
+        self._pen_state.update(pen_event, self.dispatch_event)
+
+    def _leave_pen(self, pointer_id: int) -> None:
+        self._pen_state.leave(pointer_id, self.dispatch_event)
 
     def _get_touch_distance(self) -> float | None:
         """Return the distance between the first two active contacts."""
@@ -734,6 +745,7 @@ class BaseWindow(EventDispatcher, Generic[ScreenT], metaclass=_WindowMetaclass):
         """
         from pyglet import app
         self.end_text_input()
+        self._pen_state.clear(self.dispatch_event)
         if not self._context:
             return
         app.windows.remove(self)
@@ -1668,6 +1680,24 @@ class BaseWindow(EventDispatcher, Generic[ScreenT], metaclass=_WindowMetaclass):
             :event:
             """
 
+        def on_pen_enter(self, pen_event: PenEvent) -> EVENT_HANDLE_STATE:
+            """A pen entered the window's range. Hover support depends on the platform."""
+
+        def on_pen_motion(self, pen_event: PenEvent) -> EVENT_HANDLE_STATE:
+            """Pen data changed, including pressure/buttons while stationary.
+
+            Delivered after enter and contact transitions. See :class:`pyglet.window.pen.PenEvent`.
+            """
+
+        def on_pen_press(self, pen_event: PenEvent) -> EVENT_HANDLE_STATE:
+            """The pen tip contacted the surface."""
+
+        def on_pen_release(self, pen_event: PenEvent) -> EVENT_HANDLE_STATE:
+            """The pen tip lifted, or its contact was cancelled."""
+
+        def on_pen_leave(self, pen_event: PenEvent) -> EVENT_HANDLE_STATE:
+            """The pen left the window/range or lost capture. Contact is released first."""
+
         def on_touch_start(self, pointer_id: int, x: float, y: float, dx: float, dy: float, width: float, height: float,
                            pressure: float, scale: float) -> EVENT_HANDLE_STATE:
             """A touch contact started.
@@ -1958,6 +1988,11 @@ BaseWindow.register_event_type('on_mouse_scroll')
 BaseWindow.register_event_type('on_mouse_enter')
 BaseWindow.register_event_type('on_mouse_leave')
 BaseWindow.register_event_type('on_touch_start')
+BaseWindow.register_event_type('on_pen_enter')
+BaseWindow.register_event_type('on_pen_motion')
+BaseWindow.register_event_type('on_pen_press')
+BaseWindow.register_event_type('on_pen_release')
+BaseWindow.register_event_type('on_pen_leave')
 BaseWindow.register_event_type('on_touch_move')
 BaseWindow.register_event_type('on_touch_end')
 BaseWindow.register_event_type('on_close')
