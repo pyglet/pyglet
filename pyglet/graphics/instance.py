@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import weakref
 from abc import ABC, abstractmethod
+from operator import index
 from typing import TYPE_CHECKING, Any, Generic, Sequence, TypeVar
 
 if TYPE_CHECKING:
+    from pyglet.graphics.buffer import ByteSource
     from pyglet.enums import GeometryMode
     from pyglet.graphics.vertexdomain import InstanceVertexList, InstanceIndexedVertexList
-    from pyglet.graphics.vertexstorage import InstanceStream, VertexArrayBinding
+    from pyglet.graphics.vertexstorage import InstanceStream, StreamBuffer, VertexArrayBinding
     from _weakref import ReferenceType
     from pyglet.customtypes import DataTypes
 
@@ -207,6 +209,51 @@ class InstanceCollection:
         self._validate_region(start, count)
         for name, data in attributes.items():
             self.bucket.stream.set_attribute_region(name, start, count, data)
+
+    def set_bytes(self, start: int = 0, count: int | None = None, **attributes: ByteSource) -> None:
+        """Upload packed attribute planes over a contiguous active range.
+
+        Each plane must contain exactly ``count * attribute stride`` bytes,
+        packed in the attribute's native storage format. Omitted attributes
+        are preserved. All names, byte lengths, and the range are validated
+        before any buffer is written.
+
+        Args:
+            start:
+                First active instance to update.
+            count:
+                Number of instances to update. Defaults to all active
+                instances from ``start`` onward.
+            **attributes:
+                Instanced attribute names and packed bytes, bytearrays, or
+                memoryviews. Inputs are copied before writing any plane.
+
+        Raises:
+            IndexError: The range exceeds the active instance count.
+            KeyError: An attribute name is not in the instance stream.
+            TypeError: A plane is not a supported bytes-like object.
+            ValueError: A plane has the wrong byte length.
+        """
+        start = index(start)
+        count = self._count - start if count is None else index(count)
+        self._validate_region(start, count)
+        buffers = self.bucket.stream.attrib_name_buffers
+        uploads: list[tuple[StreamBuffer, int, bytes]] = []
+        for name, data in attributes.items():
+            buffer = buffers[name]
+            if not isinstance(data, (bytes, bytearray, memoryview)):
+                msg = f"Packed data for '{name}' must be bytes, bytearray, or memoryview."
+                raise TypeError(msg)
+            raw = bytes(data)
+            expected = count * buffer.stride
+            if len(raw) != expected:
+                msg = f"Invalid byte length for '{name}'. Expected {expected}, got {len(raw)}."
+                raise ValueError(msg)
+            uploads.append((buffer, start * buffer.stride, raw))
+
+        if count:
+            for buffer, offset, raw in uploads:
+                buffer.set_bytes_region(offset, raw)
 
     def get(self, name: str, start: int = 0, count: int | None = None) -> Any:
         """Return one attribute over a contiguous active range.

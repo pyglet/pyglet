@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ctypes
 import random
+import struct
 
 import pytest
 
@@ -214,6 +215,74 @@ def test_bulk_instance_collection(vlist_factory):
     collection.delete()
     assert vlist.instance_count == 0
     assert vlist.instance_bucket.stream.allocator.get_allocated_regions() == ([], [])
+
+
+@pytest.mark.parametrize('indexed', [False, True])
+def test_instance_collection_packed_uploads(vlist_factory, vlist_non_indexed_factory, indexed: bool) -> None:
+    factory = vlist_factory if indexed else vlist_non_indexed_factory
+    vlist = factory((0.0,) * (12 if indexed else 9))
+    try:
+        collection = vlist.create_instance_collection(
+            3, capacity=5, colors=(1.0, 0.0, 0.0, 1.0) * 3, translate=(0.0,) * 9,
+        )
+        colors = (0.0, 1.0, 0.0, 1.0) * 3
+        collection.set_bytes(
+            translate=struct.pack('=9f', *range(9)), colors=struct.pack('=12f', *colors),
+        )
+        assert tuple(collection.get('translate')) == tuple(range(9))
+        assert tuple(collection.get('colors')) == colors
+
+        collection.set_bytes(start=1, count=1, translate=bytearray(struct.pack('=3f', 20, 21, 22)))
+        assert tuple(collection.get('translate')) == (0, 1, 2, 20, 21, 22, 6, 7, 8)
+        # A typed memoryview's len is an element count, not its byte length.
+        plane = memoryview(struct.pack('=6f', 30, 31, 32, 40, 41, 42)).cast('f')
+        collection.set_bytes(start=1, translate=plane)
+        assert tuple(collection.get('translate')) == (0, 1, 2, 30, 31, 32, 40, 41, 42)
+        assert tuple(collection.get('colors')) == colors
+        collection.set_bytes(start=3, count=0, translate=b'')
+        assert collection.count == 3
+        assert collection.capacity == 5
+        vlist.draw(GeometryMode.TRIANGLES)
+    finally:
+        vlist.delete()
+
+
+@pytest.mark.parametrize('indexed', [False, True])
+def test_instance_collection_packed_validation_before_writes(
+    vlist_factory, vlist_non_indexed_factory, monkeypatch, indexed: bool,
+) -> None:
+    factory = vlist_factory if indexed else vlist_non_indexed_factory
+    vlist = factory((0.0,) * (12 if indexed else 9))
+    try:
+        collection = vlist.create_instance_collection(
+            3, capacity=5, colors=(1.0, 0.0, 0.0, 1.0) * 3, translate=(0.0,) * 9,
+        )
+        buffers = collection.bucket.stream.attrib_name_buffers
+        writes = []
+        for buffer in buffers.values():
+            monkeypatch.setattr(buffer, 'set_bytes_region', lambda *args: writes.append(args))
+        valid = struct.pack('=3f', 1, 2, 3)
+        for bad_plane in (b'', b'x' * 15, b'x' * 17):
+            with pytest.raises(ValueError, match='byte length'):
+                collection.set_bytes(count=1, translate=valid, colors=bad_plane)
+        for name in ('unknown', 'position'):
+            with pytest.raises(KeyError):
+                collection.set_bytes(count=1, translate=valid, **{name: b''})
+        with pytest.raises(TypeError):
+            collection.set_bytes(count=1, translate=valid, colors=[0] * 16)
+        for start, count in ((-1, 1), (0, -1), (2, 2), (4, 0), (0, 4)):
+            with pytest.raises(IndexError):
+                collection.set_bytes(start=start, count=count, translate=valid)
+        with pytest.raises(TypeError):
+            collection.set_bytes(start=0.5, count=1, translate=valid)
+        with pytest.raises(ValueError):
+            collection.set_bytes(start=3, count=0, translate=valid)
+        collection.set_bytes(start=3, count=0, translate=b'')
+        assert writes == []
+        assert tuple(collection.get('translate')) == (0.0,) * 9
+        assert tuple(collection.get('colors')) == (1.0, 0.0, 0.0, 1.0) * 3
+    finally:
+        vlist.delete()
 
 
 def test_get_instance_by_index_non_indexed(vlist_non_indexed_factory):
