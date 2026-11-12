@@ -57,6 +57,18 @@ class DummyDrawContext:
     active_shader_program = None
 
 
+@pytest.mark.parametrize("camera_type", ["Camera2D", "Camera3D"])
+def test_window_camera_setter(test_window, camera_type: str) -> None:
+    original = test_window.camera
+    camera = getattr(pyglet.window.camera, camera_type)(test_window)
+    try:
+        test_window.camera = camera
+        assert test_window.camera is camera
+    finally:
+        test_window.camera = original
+        camera.delete()
+
+
 class RecordingRenderer:
     def __init__(self) -> None:
         self.viewports: list[tuple[int, int, int, int]] = []

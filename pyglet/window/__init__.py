@@ -1415,6 +1415,8 @@ class BaseWindow(EventDispatcher, Generic[ScreenT], metaclass=_WindowMetaclass):
 
     @camera.setter
     def camera(self, value: BaseCamera[Any]) -> None:
+        from pyglet.window.camera.base import BaseCamera  # noqa: PLC0415
+
         if not isinstance(value, BaseCamera):
             msg = "Window camera must be an instance of BaseCamera."
             raise TypeError(msg)
