@@ -283,7 +283,8 @@ class Caret(EventDispatcher):
         if self._ideal_x is None:
             self._ideal_x, _ = self._layout.get_point_from_position(self._position)
         assert self._ideal_x is not None
-        self._position = self._layout.get_position_on_line(line, self._ideal_x)
+        x = self._ideal_x + self._layout.left - self._layout.view_x
+        self._position = self._layout.get_position_on_line(line, x)
         self._update(line=line, update_ideal_x=False)
 
     def get_style(self, attribute: str) -> Any:

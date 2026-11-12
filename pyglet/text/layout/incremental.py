@@ -911,7 +911,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         return self.get_position_on_line(line, x)
 
     def get_point_from_position(self, position: int, line_idx: int | None=None) -> tuple[float, float]:
-        """Get the X, Y coordinates of a character position in the document.
+        """Get layout-local X, Y coordinates of a character position in the document.
 
         The position that ends a line has an ambiguous point: it can be either
         the end of the line, or the beginning of the next line.  You may
@@ -961,9 +961,9 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         return line_index
 
     def get_point_from_line(self, line_idx: int) -> tuple[float, float]:
-        """Get the X, Y coordinates of a line index."""
+        """Get layout-local X, Y baseline coordinates of a line index."""
         line = self.lines[line_idx]
-        return line.x + self._translate_x, line.y + self._translate_y
+        return line.x, line.y
 
     def get_line_from_position(self, position: int) -> int:
         """Get the line index of a character position in the document."""
@@ -976,7 +976,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
     def get_position_from_line(self, line_idx: int) -> int:
         """Get the first document character position of a given line index."""
-        return int(self.lines[line_idx].start + self._x)
+        return self.lines[line_idx].start
 
     def get_position_on_line(self, line_idx: int, x: float) -> int:
         """Get the closest document position for a given line index and X coordinate."""

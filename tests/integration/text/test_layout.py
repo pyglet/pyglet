@@ -756,6 +756,51 @@ class TestIssues(unittest.TestCase):
         incremental_layout.document.delete_text(0, len(incremental_layout.document.text))
 
 
+@pytest.mark.parametrize('x', [0, 100, -100, 100.5])
+@pytest.mark.parametrize('anchor_x', ['left', 'center', 'right'])
+def test_incremental_layout_caret_navigation(test_window, x: float, anchor_x: str) -> None:
+    from pyglet.window import key
+
+    text_layout = layout.IncrementalTextLayout(
+        document.UnformattedDocument('abcdefghij\nabcdefghij\nabcdefghij'),
+        x=x, y=100, width=60, height=40, multiline=True, wrap_lines=False, anchor_x=anchor_x,
+    )
+    text_caret = caret.Caret(text_layout)
+    try:
+        for index, line in enumerate(text_layout.lines):
+            assert text_layout.get_position_from_line(index) == line.start
+            assert text_layout.get_point_from_line(index) == text_layout.get_point_from_position(line.start)
+
+        text_caret.position = 7
+        text_caret.on_text_motion(key.MOTION_BEGINNING_OF_LINE)
+        assert text_caret.position == 0
+        text_caret.on_text_motion(key.MOTION_END_OF_LINE)
+        assert text_caret.position == 10
+
+        text_caret.position = 7
+        assert text_layout.view_x > 0
+        text_caret.on_text_motion(key.MOTION_DOWN)
+        assert text_caret.position == 18
+        text_caret.on_text_motion(key.MOTION_DOWN)
+        assert text_caret.position == 29
+        assert text_layout.view_y < 0
+        for index, line in enumerate(text_layout.lines):
+            assert text_layout.get_point_from_line(index) == (line.x, line.y)
+            px, py = text_layout.get_point_from_position(line.start + 7)
+            window_x = px + text_layout.left - text_layout.view_x
+            window_y = py + text_layout.bottom + text_layout._get_content_height() - text_layout.view_y
+            assert text_layout.get_position_from_point(window_x, window_y) == line.start + 7
+        text_caret.on_text_motion(key.MOTION_UP)
+        assert text_caret.position == 18
+        text_caret.on_text_motion(key.MOTION_BEGINNING_OF_LINE)
+        assert text_caret.position == 11
+        text_caret.on_text_motion(key.MOTION_END_OF_LINE)
+        assert text_caret.position == 21
+    finally:
+        text_caret.delete()
+        text_layout.delete()
+
+
 def test_incrementallayout_get_position_on_line_before_start_of_text(test_window):
     single_line_text = "This is a single line of text."
     doc = document.UnformattedDocument(single_line_text)
