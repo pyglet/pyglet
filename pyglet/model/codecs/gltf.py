@@ -87,7 +87,7 @@ class Buffer:
         else:
             self._uri = data['uri']
 
-            if self._uri.startswith('data'):
+            if self._uri[:5].lower() == 'data:':
                 self._response = urlopen(self._uri)
                 self._file = self._response.file
             else:
@@ -211,7 +211,7 @@ class Material(PBRMaterial):
         self.occlusion_texture = data.get('occlusionTexture')
         self.emissive_texture = data.get('emissiveTexture')
 
-        self.pbr_metallic_roughness = data.get('pbrMetallicRoughness')
+        self.pbr_metallic_roughness = data.get('pbrMetallicRoughness', {})
         self.base_color_factor = self.pbr_metallic_roughness.get('baseColorFactor', (1.0, 1.0, 1.0, 1.0))
         self.metalic_factor = self.pbr_metallic_roughness.get('metallicFactor', 1.0)
         self.roughness_factor = self.pbr_metallic_roughness.get('roughnessFactor', 1.0)
@@ -243,7 +243,8 @@ class Texture:
 
         # TODO: verify how this works. Default sampler?
         self._sampler_index = data.get('sampler')
-        self.sampler = owner.samplers[self._sampler_index] if self._sampler_index else Sampler(data={})
+        self.sampler = (owner.samplers[self._sampler_index]
+                        if self._sampler_index is not None else Sampler(data={}))
 
         self.source = data.get('source')            # technically NOT required
         self.image = owner.images[self.source]
@@ -274,7 +275,8 @@ class Image:
     def __init__(self, data, owner):
         self.uri = data.get('uri')
         self._buffer_view_index = data.get('bufferView')
-        self.buffer_view = owner.buffer_views[self._buffer_view_index] if self._buffer_view_index else None
+        self.buffer_view = (owner.buffer_views[self._buffer_view_index]
+                            if self._buffer_view_index is not None else None)
         self.mime_type = data.get('mimeType')
         self.name = data.get('name')
         self.extensions = data.get('extensions')
@@ -559,9 +561,9 @@ class GLTF:
             data = gltf_data['buffers'][0]
             self.buffers = [Buffer(data=data, binary_buffer=binary_buffer)]
         else:
-            self.buffers = [Buffer(data=data) for data in gltf_data['buffers']]
-        self.buffer_views = [BufferView(data=data, owner=self) for data in gltf_data['bufferViews']]
-        self.accessors = [Accessor(data=data, owner=self) for data in gltf_data['accessors']]
+            self.buffers = [Buffer(data=data) for data in gltf_data.get('buffers', [])]
+        self.buffer_views = [BufferView(data=data, owner=self) for data in gltf_data.get('bufferViews', [])]
+        self.accessors = [Accessor(data=data, owner=self) for data in gltf_data.get('accessors', [])]
 
 
         self.images = [Image(data=data, owner=self) for data in gltf_data.get('images', [])]
@@ -572,11 +574,11 @@ class GLTF:
         self.cameras = [Camera(cam['type'], cam[cam['type']]) for cam in gltf_data.get('cameras', [])]
 
         self.meshes: list[Mesh] = [
-            Mesh(data=data, owner=self) for data in gltf_data['meshes']
+            Mesh(data=data, owner=self) for data in gltf_data.get('meshes', [])
         ]
         self.nodes: list[Node] = [
             Node(data=data, owner=self, index=idx) for idx, data in
-            enumerate(gltf_data['nodes'])
+            enumerate(gltf_data.get('nodes', []))
         ]
 
         self.skins: list[Skin] = [
@@ -590,7 +592,7 @@ class GLTF:
         self.scenes: list[Scene] = [
             Scene(
                 name=scene_data.get('name', "undefined"),
-                nodes=[self.nodes[i] for i in scene_data['nodes']]
+                nodes=[self.nodes[i] for i in scene_data.get('nodes', [])]
             )  for scene_data in gltf_data['scenes']
         ]
         self.default_scene: Scene = self.scenes[gltf_data.get('scene', 0)]
@@ -600,54 +602,56 @@ class GLTF:
 
 
 def load_gltf(filename, file=None) -> GLTF:
+    binary_format = filename.lower().endswith('.glb')
+    owns_file = file is None
+    if owns_file:
+        try:
+            file = pyglet.resource.file(filename, 'rb' if binary_format else 'r')
+        except pyglet.resource.ResourceNotFoundException:
+            raise ModelDecodeException
 
     try:
-        if file is None:
-            file = pyglet.resource.file(filename, 'r')
-    except pyglet.resource.ResourceNotFoundException:
-        raise ModelDecodeException
+        if binary_format:
+            # Check header
+            magic = file.read(4)
+            if magic != b"glTF":
+                raise ModelDecodeException(f"Invalid header for .glb file: {magic}")
 
-    if filename.endswith('glb'):
-        file.close()
-        file = pyglet.resource.file(filename, 'rb')
-        # Check header
-        magic = file.read(4)
-        if magic != b"glTF":
-            raise ModelDecodeException(f"Invalid header for .glb file: {magic}")
+            version = struct.unpack("<I", file.read(4))[0]
+            if version != 2:
+                raise ModelDecodeException(f"Unsupported glTF version: {version}")
 
-        version = struct.unpack("<I", file.read(4))[0]
-        if version != 2:
-            raise ModelDecodeException(f"Unsupported glTF version: {version}")
+            # Total file size including headers
+            _ = struct.unpack("<I", file.read(4))[0]  # noqa
 
-        # Total file size including headers
-        _ = struct.unpack("<I", file.read(4))[0]  # noqa
+            # Chunk 0 - json
+            chunk_0_length = struct.unpack("<I", file.read(4))[0]
+            chunk_0_type = file.read(4)
+            if chunk_0_type != b"JSON":
+                raise ModelDecodeException(f"glTF 'chunk 0 type' is not 'JSON': {chunk_0_type}")
 
-        # Chunk 0 - json
-        chunk_0_length = struct.unpack("<I", file.read(4))[0]
-        chunk_0_type = file.read(4)
-        if chunk_0_type != b"JSON":
-            raise ModelDecodeException(f"glTF 'chunk 0 type' is not 'JSON': {chunk_0_type}")
+            json_meta = file.read(chunk_0_length).decode()
 
-        json_meta = file.read(chunk_0_length).decode()
+            # chunk 1 - binary buffer
+            chunk_1_length = struct.unpack("<I", file.read(4))[0]
+            chunk_1_type = file.read(4)
+            if chunk_1_type != b"BIN\x00":
+                raise ModelDecodeException(f"glTF 'chunk 1 type' is not 'BIN': {chunk_0_type}")
 
-        # chunk 1 - binary buffer
-        chunk_1_length = struct.unpack("<I", file.read(4))[0]
-        chunk_1_type = file.read(4)
-        if chunk_1_type != b"BIN\x00":
-            raise ModelDecodeException(f"glTF 'chunk 1 type' is not 'BIN': {chunk_0_type}")
+            binary_buffer = file.read(chunk_1_length)
 
-        binary_buffer = file.read(chunk_1_length)
+        else:
+            json_meta = file.read()
+            binary_buffer = None
 
-    else:
-        json_meta = file.read()
-        binary_buffer = None
+        try:
+            gltf_data = json.loads(json_meta)
+        except json.JSONDecodeError as e:
+            raise ModelDecodeException(f"Json error. Does not appear to be a valid glTF file. {e}")
 
-    try:
-        gltf_data = json.loads(json_meta)
-    except json.JSONDecodeError as e:
-        raise ModelDecodeException(f"Json error. Does not appear to be a valid glTF file. {e}")
     finally:
-        file.close()
+        if owns_file:
+            file.close()
 
     if 'asset' not in gltf_data:
         raise ModelDecodeException("Not a valid glTF file: 'asset' property not found.")
@@ -668,7 +672,7 @@ class GLTFModelDecoder(ModelDecoder):
 
     def decode(self, filename, file):
         gltf = load_gltf(filename, file)
-        return gltf.scenes[0]
+        return gltf.default_scene
 
 
 def get_decoders():
