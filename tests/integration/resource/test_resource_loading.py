@@ -19,6 +19,8 @@ Layout:
 """
 
 import os
+from pathlib import Path
+from zipfile import ZipFile
 from builtins import open as builtin_open
 from unittest import mock
 
@@ -207,3 +209,50 @@ def test_loads_streaming_media_from_test_data(data_loader, opened_files):
 
     assert isinstance(source, pyglet.media.StreamingSource)
     assert not get_open_file(opened_files, 'media/alert.wav').closed
+
+
+@pytest.mark.parametrize('archive', [False, True])
+def test_shared_locations_and_search_precedence(tmp_path: Path, archive: bool) -> None:
+    roots: list[str] = []
+    archive_path = tmp_path / 'resources.zip'
+    for directory in ('first', 'second'):
+        files = {'common.txt': directory, f'{directory}.txt': directory,
+                 'nested/child.txt': directory}
+        if archive:
+            with ZipFile(archive_path, 'a') as zip_file:
+                for name, content in files.items():
+                    zip_file.writestr(f'{directory}/{name}', content)
+            roots.append(f'{archive_path}/{directory}')
+        else:
+            root = tmp_path / directory
+            for name, content in files.items():
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(content)
+            roots.append(str(root))
+
+    loader = resource.Loader(pathlist=roots)
+    loader.reindex()
+    first = loader.location('first.txt')
+    second = loader.location('second.txt')
+    try:
+        assert first is not second
+        assert loader.location('common.txt') is first
+        assert loader.location('nested/child.txt') is first
+        for name in ('common.txt', 'first.txt', 'nested/child.txt'):
+            with loader.file(name) as file:
+                assert file.read() == b'first'
+        with loader.file('second.txt') as file:
+            assert file.read() == b'second'
+
+        loader.path.reverse()
+        loader.reindex()
+        assert loader.location('common.txt') is loader.location('second.txt')
+        with loader.file('common.txt') as file:
+            assert file.read() == b'second'
+    finally:
+        if archive:
+            locations = (first, second, loader.location('first.txt'), loader.location('second.txt'))
+            for location in locations:
+                location.zip.close()
+

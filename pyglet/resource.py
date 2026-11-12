@@ -439,6 +439,7 @@ class Loader:
             # A filesystem directory:
             if os.path.isdir(_path_name):
                 _path_name = _path_name.rstrip(os.path.sep)
+                file_location = FileLocation(_path_name)
                 # os.walk will pass silently if the path is not found:
                 for dirpath, dirnames, filenames in os.walk(_path_name):
                     dirpath = dirpath[len(_path_name) + 1:]
@@ -451,7 +452,6 @@ class Loader:
                             index_name = dirpath + '/' + filename
                         else:
                             index_name = filename
-                        file_location = FileLocation(_path_name)
                         self._index_file(index_name, file_location)
 
             else:
@@ -474,6 +474,7 @@ class Loader:
 
                 if zipfile.is_zipfile(_path_name):
                     zipfileobj = zipfile.ZipFile(_path_name, 'r')
+                    zip_location = ZIPLocation(zipfileobj, zip_directory)
                     # Returns zipfile.ZipInfo objects:
                     for fileinfo in zipfileobj.infolist():
                         if fileinfo.is_dir():
@@ -484,7 +485,6 @@ class Loader:
                         filename = fileinfo.filename.lstrip(zip_directory)
                         filename = filename.lstrip('/')
 
-                        zip_location = ZIPLocation(zipfileobj, zip_directory)
                         self._index_file(filename, zip_location)
 
     @overload
