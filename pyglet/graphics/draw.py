@@ -1767,6 +1767,9 @@ class _BucketBatch(Batch):
         def _next_same_type_set(idx: int, state_type: type) -> None | State:
             for next_idx in range(idx + 1, len(draw_list)):
                 dom2, mode2, group2 = draw_list[next_idx]
+                # A middle draw must observe the state after this unset.
+                if dom2 is not None:
+                    return None
                 if dom2 is None and mode2 == "set":
                     for state in group2._expanded_states:  # noqa: SLF001
                         if type(state) is state_type:

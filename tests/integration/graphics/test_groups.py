@@ -1013,3 +1013,38 @@ def test_group_shader_uniforms_optimization(test_window, difference):
         expected = [value] if difference is None else [value, 2.0 if difference == "mapping" else value, value]
         assert applied_values == expected
 
+def test_draw_list_optimizer_preserves_scope_across_unscoped_draw(test_window, monkeypatch):
+    active = False
+    observed = []
+
+    @dataclass(frozen=True)
+    class ScopedState(State):
+        sets_state = True
+        unsets_state = True
+
+        def set_state(self, _ctx) -> None:
+            nonlocal active
+            active = True
+
+        def unset_state(self, _ctx) -> None:
+            nonlocal active
+            active = False
+
+    first = pyglet.graphics.Group(order=0)
+    first.set_state(ScopedState())
+    middle = pyglet.graphics.Group(order=1)
+    last = pyglet.graphics.Group(order=2)
+    last.set_state(ScopedState())
+    batch, domain = _build_test_batch(first, middle, last)
+
+    def record_draw(_mode, buckets) -> None:
+        observed.extend(active for _bucket in buckets)
+
+    monkeypatch.setattr(domain, "draw_buckets", record_draw)
+    calls = batch._optimize_draw_list(batch._create_draw_list())
+    for call in calls:
+        call(None)
+
+    assert observed == [True, False, True]
+    assert not active
+
