@@ -234,8 +234,8 @@ def test_source_queue_play_unqueue(context, filled_buffer):
     assert source.is_playing
     assert not source.is_paused
     assert not source.is_stopped
-    assert source.byte_offset == 0
 
+    # Playback may already have advanced by the time we query the offset.
     end_time = time.time() + 1.5
     while time.time() < end_time:
         if source.byte_offset > 0:
