@@ -424,6 +424,12 @@ class ImageDataRegion(ImageData):
             '_source_height': self._source_height,
         }
 
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        self.__dict__.update(state)
+        # Older pickles contain cropped 8-bit data without these state fields.
+        self._source_height = state.get('_source_height', self.height)
+        self._data_type = state.get('_data_type', 'B')
+
     def get_bytes(self, fmt: str | None = None, pitch: int | None = None) -> bytes:
         x1 = len(self._current_format) * self.x
         x2 = len(self._current_format) * (self.x + self.width)
