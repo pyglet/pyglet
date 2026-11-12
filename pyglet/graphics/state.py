@@ -215,25 +215,22 @@ class _BaseScissorState(State, ABC):
         self.apply_to_backend(ctx)
 
 
+def _append_state(state: State | None, visited: set[State], ordered: list[State]) -> None:
+    if state is None or state in visited:
+        return
+    visited.add(state)
+    if state.parents:
+        for parent in state.generate_parent_states():
+            _append_state(parent, visited, ordered)
+    ordered.append(state)
+
+
 def _expand_states_in_order(states: Iterable[State]) -> list[State]:
     """Return all states expanded in dependency order (parents first)."""
-    visited = set()
-    ordered = []
-
-    def dfs(state: State | None) -> None:
-        if state in visited or not state:
-            return
-        visited.add(state)
-
-        if state.parents:
-            for parent in state.generate_parent_states():
-                dfs(parent)
-
-        ordered.append(state)
-
-    for s in states:
-        dfs(s)
-
+    visited: set[State] = set()
+    ordered: list[State] = []
+    for state in states:
+        _append_state(state, visited, ordered)
     return ordered
 
 
