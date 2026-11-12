@@ -301,11 +301,12 @@ class GLBackedBufferObject(BaseBackedBufferObject, GLBufferObject):
         self._mark_dirty_bytes(0, self.size)
 
     def set_bytes_region(self, offset: int, data: bytes | bytearray | memoryview) -> None:
-        assert 0 <= offset <= self.size and offset + len(data) <= self.size, (
-            f"Byte range [{offset}, {offset + len(data)}) exceeds buffer size {self.size}."
+        raw = bytes(data)
+        assert 0 <= offset <= self.size and offset + len(raw) <= self.size, (
+            f"Byte range [{offset}, {offset + len(raw)}) exceeds buffer size {self.size}."
         )
-        self.store.set_bytes(offset, data)
-        self._mark_dirty_bytes(offset, offset + len(data))
+        self.store.set_bytes(offset, raw)
+        self._mark_dirty_bytes(offset, offset + len(raw))
 
     def commit(self) -> None:
         """Commits all saved changes to the underlying buffer before drawing.
