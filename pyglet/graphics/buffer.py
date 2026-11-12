@@ -774,6 +774,16 @@ class CTypeDataStore(BufferDataStore):
         return memoryview(data)
 
     def set_bytes(self, offset: int, data: ByteSource) -> None:
+        if isinstance(data, bytes) or (
+            isinstance(data, memoryview) and isinstance(data.obj, bytes) and data.c_contiguous
+        ):
+            # Immutable sources can be copied directly without an intermediate snapshot.
+            raw_view = memoryview(data).cast("B")
+            self._validate_byte_range(offset, raw_view.nbytes)
+            memoryview(self._data).cast("B")[offset:offset + raw_view.nbytes] = raw_view
+            return
+
+        # Snapshot mutable or noncontiguous sources, including overlapping views.
         raw = bytes(data)
         self._validate_byte_range(offset, len(raw))
         ctypes.memmove(self._data_ptr + offset, raw, len(raw))
@@ -781,8 +791,8 @@ class CTypeDataStore(BufferDataStore):
     def get_region(self, start: int, count: int) -> Array[Any]:
         byte_start = self.stride * start
         array_count = self.element_count * count
-        ptr_type = ctypes.POINTER(self._ctype * array_count)
-        return ctypes.cast(self._data_ptr + byte_start, ptr_type).contents
+        # POINTER(array_type) permanently caches a pointer type for each view length.
+        return (self._ctype * array_count).from_address(self._data_ptr + byte_start)
 
     def set_region(self, start: int, count: int, data: Sequence[float | int]) -> None:
         array_start = self.element_count * start
