@@ -108,6 +108,35 @@ def test_sub_subfolder_trailing_slash(loader):
     assert loader.file('f3.txt').read().strip() == asbytes('F3')
 
 
+@pytest.mark.parametrize('root', ['', 'assets/sub', 'assets/sub/'])
+def test_zip_search_root_preserves_names_and_ancestry(tmp_path: Path, root: str) -> None:
+    archive = tmp_path / 'assets.zip'
+    contents = {
+        'assets/sub/test.txt': b'nested',
+        'assets/sub/assets.txt': b'name shares prefix characters',
+        'assets/sub/deeper/test.txt': b'deeper',
+        'other/assets/sub/foreign.txt': b'unrelated',
+        'assets/submarine/sibling.txt': b'sibling',
+        'assets/sub': b'same name as directory',
+    }
+    with ZipFile(archive, 'w') as zip_file:
+        for name, data in contents.items():
+            zip_file.writestr(name, data)
+
+    loader = resource.Loader(pathlist=[str(archive) + '/' + root])
+    loader.reindex()
+    prefix = root.rstrip('/') + '/' if root else ''
+    expected = {name[len(prefix):]: data for name, data in contents.items() if name.startswith(prefix)}
+    location = loader.location(next(iter(expected)))
+    try:
+        assert set(loader._index) == set(expected)
+        for name, data in expected.items():
+            with loader.file(name) as file:
+                assert file.read() == data
+    finally:
+        location.zip.close()
+
+
 def test_zipfile(loader):
     loader.path = ['dir1/res.zip']
     assert loader.file('f7.txt').read().strip() == asbytes('F7')

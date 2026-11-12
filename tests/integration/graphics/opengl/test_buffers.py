@@ -1,5 +1,6 @@
 import ctypes
 import weakref
+from array import array
 
 import pyglet
 import pytest
@@ -132,6 +133,28 @@ def test_backed_buffer_uploads_typed_data(test_window, source_type) -> None:
         assert buffer.get_bytes() == expected
         buffer.commit()
         assert GLBufferObject.get_bytes(buffer) == expected
+    finally:
+        buffer.delete()
+
+
+def test_backed_buffer_partial_typed_view_upload(test_window) -> None:
+    test_window.switch_to()
+    buffer = GLBackedBufferObject(test_window.context, 16, "B", 1, 1)
+    initial = bytes(range(16))
+    values = array('I', [0x12345678, 0x87654321])
+    view = memoryview(values)
+    expected = initial[:4] + bytes(view) + initial[12:]
+    try:
+        buffer.set_bytes(initial)
+        buffer.commit()
+        buffer.set_bytes_region(4, view)
+        assert buffer.get_bytes() == expected
+        buffer.commit()
+        assert GLBufferObject.get_bytes(buffer) == expected
+
+        with pytest.raises(AssertionError):
+            buffer.set_bytes_region(12, view)
+        assert buffer.get_bytes() == expected
     finally:
         buffer.delete()
 
