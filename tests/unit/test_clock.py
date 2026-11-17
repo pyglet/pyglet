@@ -683,6 +683,10 @@ def test_tweens_can_race(tween_clock):
     assert chain.done
     assert chain.result == (0, None)
     assert slow_values[-1] == pytest.approx(0.5)
+
+    # The unscheduled tween update is removed from the clock at its next time
+    now[0] += instance.tween_interval
+    instance.tick(poll=True)
     assert instance.get_sleep_time(True) is None
 
 
@@ -706,13 +710,40 @@ def test_stopping_chain_cancels_its_tween(tween_clock):
 
 
 def test_clock_uses_one_scheduled_callback_for_multiple_tweens(tween_clock):
-    instance, _now = tween_clock
+    instance, now = tween_clock
 
     first = instance.tween(1.0, lambda _progress: None).start()
     second = instance.tween(1.0, lambda _progress: None).start()
 
-    assert len(instance._schedule_items) == 1  # noqa: SLF001
+    assert len(instance._schedule_interval_items) == 1  # noqa: SLF001
 
     first.stop()
     second.stop()
+    now[0] += instance.tween_interval
+    instance.tick(poll=True)
     assert instance.get_sleep_time(True) is None
+
+
+def test_tweens_update_at_the_tween_interval(tween_clock):
+    instance, now = tween_clock
+    values = []
+    instance.tween(1.0, values.append).start()
+
+    now[0] = 0.25
+    instance.tick(poll=True)
+    assert instance.get_sleep_time(True) == pytest.approx(instance.tween_interval)
+    instance.tick(poll=True)  # Before the next interval: no update
+    assert values == [0.0, 0.25]
+
+
+def test_tweens_update_on_every_tick_without_interval(tween_clock):
+    instance, now = tween_clock
+    instance.tween_interval = None
+    values = []
+    instance.tween(1.0, values.append).start()
+
+    now[0] = 0.25
+    instance.tick(poll=True)
+    instance.tick(poll=True)
+    assert values == [0.0, 0.25, 0.25]
+    assert instance.get_sleep_time(True) == 0.0
