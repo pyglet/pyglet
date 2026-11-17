@@ -115,7 +115,11 @@ class AudioNotificationCB(com.COMObject):
         self._lost = False
 
     def OnDeviceStateChanged(self, pwstrDeviceId, dwNewState):
-        device = self.audio_devices.get_cached_device(pwstrDeviceId)
+        try:
+            device = self.audio_devices.add_device(pwstrDeviceId)
+        except OSError:
+            # The device may already be gone during an RDP session change.
+            return
 
         old_state = device.state
 
@@ -128,12 +132,18 @@ class AudioNotificationCB(com.COMObject):
         self.audio_devices.dispatch_event('on_device_state_changed', device, pyglet_old_state, pyglet_new_state)
 
     def OnDeviceAdded(self, pwstrDeviceId):
-        dev = self.audio_devices.add_device(pwstrDeviceId)
+        try:
+            dev = self.audio_devices.add_device(pwstrDeviceId)
+        except OSError:
+            # A transient endpoint can disappear before its notification is handled.
+            return
         assert _debug(f"Audio device was added {pwstrDeviceId}: {dev}")
         self.audio_devices.dispatch_event('on_device_added', dev)
 
     def OnDeviceRemoved(self, pwstrDeviceId):
         dev = self.audio_devices.remove_device(pwstrDeviceId)
+        if dev is None:
+            return
         assert _debug(f"Audio device was removed {pwstrDeviceId} : {dev}")
         self.audio_devices.dispatch_event('on_device_removed', dev)
 
@@ -143,7 +153,10 @@ class AudioNotificationCB(com.COMObject):
             if pwstrDeviceId is None:
                 device = None
             else:
-                device = self.audio_devices.get_cached_device(pwstrDeviceId)
+                try:
+                    device = self.audio_devices.add_device(pwstrDeviceId)
+                except OSError:
+                    return
 
             pyglet_flow = Win32AudioDevice.platform_flow[flow]
             assert _debug(f"Default device was changed to: {device} ({pyglet_flow})")
@@ -221,13 +234,18 @@ class Win32AudioDeviceManager(base.AbstractAudioDeviceManager):
         self._device_enum.RegisterEndpointNotificationCallback(self._callback)
 
     def add_device(self, pwstrDeviceId: str) -> Win32AudioDevice:
+        # State/default notifications can arrive before the added notification.
+        dev = self.get_cached_device(pwstrDeviceId)
+        if dev is not None:
+            return dev
         dev = self.get_device(pwstrDeviceId)
         self.devices.append(dev)
         return dev
 
-    def remove_device(self, pwstrDeviceId: str) -> Win32AudioDevice:
-        dev = self.audio_devices.get_cached_device(pwstrDeviceId)
-        self.audio_devices.devices.remove(dev)
+    def remove_device(self, pwstrDeviceId: str) -> Optional[Win32AudioDevice]:
+        dev = self.get_cached_device(pwstrDeviceId)
+        if dev is not None:
+            self.devices.remove(dev)
         return dev
 
     def get_device(self, pwstrDeviceId: str) -> Win32AudioDevice:
@@ -256,7 +274,7 @@ class Win32AudioDeviceManager(base.AbstractAudioDeviceManager):
             dev_id, name, desc, dev_state = self.get_device_info(device)
             device.Release()
 
-            cached_dev = self.get_cached_device(dev_id)
+            cached_dev = self.add_device(dev_id)
             cached_dev.state = dev_state
             return cached_dev
         except OSError as err:
@@ -271,20 +289,20 @@ class Win32AudioDeviceManager(base.AbstractAudioDeviceManager):
             dev_id, name, desc, dev_state = self.get_device_info(device)
             device.Release()
 
-            cached_dev = self.get_cached_device(dev_id)
+            cached_dev = self.add_device(dev_id)
             cached_dev.state = dev_state
             return cached_dev
         except OSError as err:
             assert _debug(f"No default input output was found. {err}")
             return None
 
-    def get_cached_device(self, dev_id) -> Win32AudioDevice:
-        """Gets the cached devices, so we can reduce calls to COM and tell current state vs new states."""
+    def get_cached_device(self, dev_id: str) -> Optional[Win32AudioDevice]:
+        """Return a cached device, or None if the endpoint is not known."""
         for device in self.devices:
             if device.id == dev_id:
                 return device
 
-        raise Exception("Attempted to get a device that does not exist.", dev_id)
+        return None
 
     def get_output_devices(self, state=DEVICE_STATE_ACTIVE) -> List[Win32AudioDevice]:
         return [device for device in self.devices if device.state == state and device.flow == eRender]
