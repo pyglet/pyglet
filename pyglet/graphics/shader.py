@@ -1039,26 +1039,34 @@ class UniformArrayBase(Generic[UniformLocationT]):
     def __getitem__(self, key: slice | int) -> list[tuple] | tuple | int | float:
         # Return as a tuple. Returning as a list may imply setting inner list elements will update values.
         if isinstance(key, slice):
+            for index in range(*key.indices(len(self))):
+                self._read_uniform(index, self._get_array_loc(index))
             sliced_data = self._c_array[key]
             if self._uniform.length > 1:
                 return [tuple(data) for data in sliced_data]
 
             return tuple([data for data in sliced_data])  # noqa: C416
 
-        try:
-            value = self._c_array[key]
-            return tuple(value) if self._uniform.length > 1 else value
-        except IndexError:
+        index = key if key >= 0 else key + len(self)
+        if not 0 <= index < len(self):
             msg = (
                 f"{self._uniform.name}[{key}] not found. "
                 "This may have been optimized out by the OpenGL driver if unused."
             )
             raise MissingUniformException(msg)
+        self._read_uniform(index, self._get_array_loc(index))
+        value = self._c_array[index]
+        return tuple(value) if self._uniform.length > 1 else value
 
     def __setitem__(self, key: slice | int, value: Sequence | int | float) -> None:
         if isinstance(key, slice):
             self._c_array[key] = value
-            self._update_uniform(self._ptr)
+            indices = range(*key.indices(len(self)))
+            if indices.step == 1 and indices:
+                self._update_uniform(indices.start, len(indices))
+            else:
+                for index in indices:
+                    self._update_uniform(index)
             return
 
         if self._uniform.length > 1:
@@ -1068,7 +1076,7 @@ class UniformArrayBase(Generic[UniformLocationT]):
             )
         self._c_array[key] = value
         index = key if key >= 0 else key + len(self)
-        self._update_uniform(self._element_pointer(index), index=index)
+        self._update_uniform(index)
 
     def _element_pointer(self, index: int) -> CTypesPointer:
         if index == 0:
@@ -1080,6 +1088,7 @@ class UniformArrayBase(Generic[UniformLocationT]):
         self._gl_getter(self._uniform.program, location, self._element_pointer(index))
 
     def get(self) -> Self:
+        """Refresh every element from the linked program."""
         for index in range(len(self)):
             self._read_uniform(index, self._get_array_loc(index))
         return self
@@ -1090,12 +1099,11 @@ class UniformArrayBase(Generic[UniformLocationT]):
         )
 
         self._c_array[:] = values
-        self._update_uniform(self._ptr)
+        self._update_uniform(0, len(self))
 
-    def _update_uniform(self, data: CTypesPointer, index: int | None = None) -> None:
-        size = len(self) if index is None else 1
-        location = self._get_array_loc(0 if index is None else index)
-        self._apply_uniform_update(location, size, data)
+    def _update_uniform(self, index: int, size: int = 1) -> None:
+        location = self._get_array_loc(index)
+        self._apply_uniform_update(location, size, self._element_pointer(index))
 
     def __repr__(self) -> str:
         data = [tuple(data) if self._uniform.length > 1 else data for data in self._c_array]
@@ -1130,7 +1138,7 @@ class UniformBase:
 
         if size > 1:
             array = array_wrapper_factory(self, gl_getter, gl_setter, gl_type, is_matrix)
-            self.get = array.get
+            self.get = lambda: array
             self.set = array.set
             return
 

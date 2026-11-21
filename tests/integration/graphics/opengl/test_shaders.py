@@ -1,11 +1,20 @@
+from __future__ import annotations
+
 import ctypes
 import struct
+from typing import TYPE_CHECKING
+from unittest.mock import Mock
 
 import pytest
 
 import pyglet
 
 from tests.annotations import skip_graphics_api, GraphicsAPIGroups
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from pyglet.graphics.shader import ShaderProgram
 
 _MATRIX_UNIFORMS = (
     ("mat2", 4),
@@ -685,15 +694,9 @@ def test_shader_uniform_matrix_array(test_window):
         assert a == pytest.approx(b)
 
 
-@skip_graphics_api(GraphicsAPIGroups.GL2)
-@pytest.mark.parametrize(("glsl_type", "component", "width"), [
-    ("float", "", 1), ("vec2", ".x", 2), ("mat2", "[0][0]", 4),
-])
-def test_uniform_array_base_reads_and_writes_shader_values(
-    test_window, glsl_type: str, component: str, width: int,
-) -> None:
-    from pyglet.graphics.api.gl import gl
-
+@pytest.fixture
+def uniform_array_program(test_window, request: pytest.FixtureRequest) -> Iterator[tuple[ShaderProgram, int]]:
+    glsl_type, component, width = getattr(request, "param", ("float", "", 1))
     test_window.switch_to()
     vertex = pyglet.graphics.Shader("""#version 150 core
         void main() { gl_Position = vec4(0.0); }
@@ -705,51 +708,95 @@ def test_uniform_array_base_reads_and_writes_shader_values(
     """, "fragment")
     program = pyglet.graphics.ShaderProgram(vertex, fragment, vertex_layout=None)
     try:
-        initial = tuple(float(i) if width == 1 else (float(i),) * width for i in (1, 2, 3))
-        program["values"] = initial
-        values = program["values"]
-        assert len(values) == 3
-        assert tuple(values[:]) == initial
-
-        first, second, last = (float(i) if width == 1 else (float(i),) * width for i in (4, 5, 6))
-        ctx = test_window.context
-
-        def location_for(index: int) -> int:
-            return ctx.glGetUniformLocation(program.handle, f"values[{index}]".encode())
-
-        def read_shader_values() -> tuple[float | tuple[float, ...], ...]:
-            actual = []
-            for index in range(3):
-                location = location_for(index)
-                value = (ctypes.c_float * width)()
-                ctx.glGetUniformfv(program.handle, location, value)
-                actual.append(value[0] if width == 1 else tuple(value))
-            return tuple(actual)
-
-        assert read_shader_values() == initial
-        values[0] = first
-        assert read_shader_values() == (first, initial[1], initial[2])
-        values[-1] = last
-        assert read_shader_values() == (first, initial[1], last)
-        values[1:2] = (second,)
-        assert read_shader_values() == (first, second, last)
-
-        # Change a nonzero element through the backend and check that get() reads it back.
-        program.use()
-        location = location_for(2)
-        external = (ctypes.c_float * width)(*([9.0] * width))
-        if width == 1:
-            ctx.glUniform1fv(location, 1, external)
-        elif width == 2:
-            ctx.glUniform2fv(location, 1, external)
-        else:
-            ctx.glUniformMatrix2fv(location, 1, False, external)
-        assert values.get()[-1] == (9.0 if width == 1 else (9.0,) * width)
+        yield program, width
     finally:
         program.stop()
         program.delete()
         vertex.delete()
         fragment.delete()
+
+
+@skip_graphics_api(GraphicsAPIGroups.GL2)
+@pytest.mark.parametrize("uniform_array_program", [
+    ("float", "", 1), ("vec2", ".x", 2), ("mat2", "[0][0]", 4),
+], indirect=True)
+@pytest.mark.parametrize(("key", "indices"), [
+    (0, (0,)), (-1, (2,)), (slice(1, 3), (1, 2)), (slice(None, None, 2), (0, 2)),
+])
+def test_uniform_array_writes_only_selected_elements(
+    test_window, uniform_array_program: tuple[ShaderProgram, int], key: int | slice, indices: tuple[int, ...],
+) -> None:
+    program, width = uniform_array_program
+    original = tuple(float(i) if width == 1 else (float(i),) * width for i in (1, 2, 3))
+    replacement = 9.0 if width == 1 else (9.0,) * width
+    program["values"] = original
+    values = program["values"]
+    getter = values._gl_getter = Mock(wraps=values._gl_getter)
+    program["values"][key] = (replacement,) * len(indices) if isinstance(key, slice) else replacement
+    getter.assert_not_called()
+
+    ctx = test_window.context
+    for index, old_value in enumerate(original):
+        location = ctx.glGetUniformLocation(program.handle, f"values[{index}]".encode())
+        result = (ctypes.c_float * width)()
+        ctx.glGetUniformfv(program.handle, location, result)
+        actual = result[0] if width == 1 else tuple(result)
+        assert actual == (replacement if index in indices else old_value)
+
+
+@skip_graphics_api(GraphicsAPIGroups.GL2)
+def test_uniform_array_slice_preserves_external_value(test_window, uniform_array_program: tuple[ShaderProgram, int]) -> None:
+    program, _ = uniform_array_program
+    program["values"] = (1.0, 2.0, 3.0)
+    program.use()
+    ctx = test_window.context
+    location = ctx.glGetUniformLocation(program.handle, b"values[2]")
+    ctx.glUniform1fv(location, 1, (ctypes.c_float * 1)(9.0))
+    program["values"][1:2] = (5.0,)
+    assert program["values"][:] == (1.0, 5.0, 9.0)
+
+
+@skip_graphics_api(GraphicsAPIGroups.GL2)
+@pytest.mark.parametrize(("key", "expected", "query_count"), [
+    (-1, 3.0, 1), (slice(1, None), (2.0, 3.0), 2), (slice(None), (1.0, 2.0, 3.0), 3),
+])
+def test_uniform_array_reads_only_selected_elements(
+    uniform_array_program: tuple[ShaderProgram, int],
+    key: int | slice, expected: float | tuple[float, ...], query_count: int,
+) -> None:
+    program, _ = uniform_array_program
+    program["values"] = (1.0, 2.0, 3.0)
+    values = program["values"]
+    getter = values._gl_getter = Mock(wraps=values._gl_getter)
+    assert len(program["values"]) == 3
+    getter.assert_not_called()
+    assert program["values"][key] == expected
+    assert getter.call_count == query_count
+
+
+@skip_graphics_api(GraphicsAPIGroups.GL2)
+def test_uniform_array_get_refreshes_each_element(uniform_array_program: tuple[ShaderProgram, int]) -> None:
+    program, _ = uniform_array_program
+    values = program["values"]
+    getter = values._gl_getter = Mock(wraps=values._gl_getter)
+    assert values.get() is values
+    assert getter.call_count == len(values)
+
+
+@skip_graphics_api(GraphicsAPIGroups.GL2)
+def test_uniform_array_caches_element_locations(
+    test_window, uniform_array_program: tuple[ShaderProgram, int], monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    program, _ = uniform_array_program
+    ctx = test_window.context
+    location_lookup = Mock(wraps=ctx.glGetUniformLocation)
+    monkeypatch.setattr(ctx, "glGetUniformLocation", location_lookup)
+
+    program["values"][-1] = 1.0
+    program["values"][2] = 2.0
+    assert program["values"][-1] == 2.0
+    location_lookup.assert_called_once()
+    assert location_lookup.call_args.args[1].value == b"values[2]"
 
 
 @skip_graphics_api(GraphicsAPIGroups.GL2)
