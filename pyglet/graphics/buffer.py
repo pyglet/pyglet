@@ -240,8 +240,8 @@ class RingBuffer:
 
         if self.strict:
             raise RuntimeError(
-                "RingBuffer has no writable range. All reserved ranges are still in use. "
-                "Increase initial buffer size or copies_per_resource."
+                "RingBuffer has no writable range at the current position. "
+                "Increase copies_per_resource."
             )
         warnings.warn("RingBuffer wrapped while full. Consider growing range capacity to avoid more stalls.")
         new_range = self._allocate_range()
@@ -396,7 +396,7 @@ class UniformBufferObject(RingBuffer):
         self,
         copies_per_resource: int | None = None,
     ) -> list[BufferRange]:
-        """Reserve ranges and storage capacity."""
+        """Reserve ranges and storage capacity before the first upload in strict mode."""
         count = self.copies_per_resource if copies_per_resource is None else max(1, int(copies_per_resource))
         # Ensure capacity first incase a failed resize leaves the allocator unchanged.
         self._ensure_storage_for_commit(self._next_offset + count * self.range_stride)
@@ -474,9 +474,9 @@ class UniformBufferObject(RingBuffer):
 
         if self.strict and required_size > self.size:
             raise RuntimeError(
-                f"UniformBufferObject backing store full at {self.size} bytes while ranges are in use "
-                "by submitted frames. "
-                "Increase initial buffer size or copies_per_resource."
+                f"UniformBufferObject backing store full at {self.size} bytes ({required_size} bytes required). "
+                "Strict mode disallows growing the buffer after the first upload. "
+                "Reserve all required ranges before uploading."
             )
 
         current_size = max(1, self.size)
