@@ -8,7 +8,9 @@ import weakref
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, Generic, Literal, Mapping, Protocol, Sequence, TypeVar, cast, overload
+from typing import (
+    TYPE_CHECKING, Any, Callable, ClassVar, Generic, Literal, Mapping, Protocol, Self, Sequence, TypeVar, cast, overload,
+)
 
 import pyglet
 from pyglet.enums import GeometryMode, GraphicsAPI
@@ -26,6 +28,7 @@ Attribute = ShaderAttribute
 if TYPE_CHECKING:
     from _weakref import CallableProxyType
 
+    from pyglet.customtypes import CType, CTypesPointer
     from pyglet.graphics import Batch, Group, VertexStorage
     from pyglet.graphics.buffer import UniformBufferObject
     from pyglet.graphics.vertexdomain import (
@@ -819,18 +822,19 @@ def _ubo_view_repr(view: ctypes.Structure) -> str:
 def _build_ctypes_struct(
     name: str,
     struct_dict: dict[str, Any],
-    array_sizes: dict[str, int] | None = None,
+    array_sizes: Mapping[tuple[str, ...], int],
+    parent_path: tuple[str, ...] = (),
 ) -> type[ctypes.Structure]:
     """Build a nested ctypes Structure class from a dictionary of fields."""
     fields = []
-    array_sizes = array_sizes or {}
-
     for field_name, field_type in struct_dict.items():
         if isinstance(field_type, dict):
-            element_struct = _build_ctypes_struct(field_name, field_type, array_sizes)
+            field_path = (*parent_path, field_name)
+            element_struct = _build_ctypes_struct(field_name, field_type, array_sizes, field_path)
             field_type = element_struct  # noqa: PLW2901
-            if field_name in array_sizes and array_sizes[field_name] > 1:
-                field_type = element_struct * array_sizes[field_name]  # noqa: PLW2901
+            count = array_sizes.get(field_path, 1)
+            if count > 1:
+                field_type = element_struct * count  # noqa: PLW2901
         fields.append((field_name, field_type))
 
     return type(name.title(), (ctypes.Structure,), {"_fields_": fields, "__repr__": _ubo_view_repr})
@@ -839,22 +843,89 @@ def _build_ctypes_struct(
 _array_regex = re.compile(r"(\w+)\[(\d+)\]")
 
 
+class _StridedUniform(ctypes.Structure):
+    """Expose logical uniform elements while keeping their GPU byte layout."""
+
+    _element_type: ClassVar[type[_UniformElement]]
+    _offsets: ClassVar[tuple[int, ...]]
+
+    def __len__(self) -> int:
+        return len(self._offsets)
+
+    def __getitem__(self, index: int | slice) -> Any:
+        if isinstance(index, slice):
+            return [self[i] for i in range(*index.indices(len(self)))]
+        element = self._element_type.from_buffer(self, self._offsets[index])
+        if isinstance(element, (ctypes.Array, _StridedUniform)):
+            return element
+        return element.value
+
+    def __setitem__(self, index: int | slice, value: Any) -> None:
+        if isinstance(index, slice):
+            indices = range(*index.indices(len(self)))
+            values = tuple(value)
+            if len(indices) != len(values):
+                raise ValueError("Uniform slice assignment requires the same number of elements.")
+            for i, element_value in zip(indices, values):
+                self[i] = element_value
+            return
+        element = self._element_type.from_buffer(self, self._offsets[index])
+        if isinstance(element, (ctypes.Array, _StridedUniform)):
+            element[:] = value
+        else:
+            element.value = value
+
+
+if TYPE_CHECKING:
+    _UniformElement = ctypes._SimpleCData[Any] | ctypes.Array[Any] | _StridedUniform
+
+
+def _uniform_sequence_type(
+    element_type: type[_UniformElement], offsets: tuple[int, ...],
+) -> type[ctypes.Array[Any] | _StridedUniform]:
+    element_size = ctypes.sizeof(element_type)
+    if all(offset == index * element_size for index, offset in enumerate(offsets)):
+        return element_type * len(offsets)
+    return type("StridedUniform", (_StridedUniform,), {
+        "_element_type": element_type,
+        "_offsets": offsets,
+        "_fields_": [("_storage", ctypes.c_ubyte * (max(offsets) + element_size))],
+    })
+
+
+def _uniform_matrix_offsets(
+    columns: int, rows: int, scalar_size: int, stride: int, row_major: bool,
+) -> tuple[int, ...]:
+    """Map column-major Python component order to the reflected storage order."""
+    if row_major:
+        return tuple(row * stride + column * scalar_size for column in range(columns) for row in range(rows))
+    if stride != rows * scalar_size:
+        return tuple(column * stride + row * scalar_size for column in range(columns) for row in range(rows))
+    return ()
+
+
 def _build_uniform_struct_from_uniforms(
     name: str,
-    uniforms: Sequence[tuple[str, Any, int, int]],
+    uniforms: Sequence[tuple[str, CType, int, int]],
     offsets: Sequence[int],
+    *,
+    array_strides: Sequence[int] | None = None,
+    matrix_offsets: Sequence[tuple[int, ...]] | None = None,
 ) -> type[ctypes.Structure]:
     """Build a UBO ctypes structure from ordered uniform tuples and offsets."""
     assert len(offsets) == len(uniforms) + 1, "Offsets must include one trailing end offset."
 
-    array_sizes: dict[str, int] = {}
+    array_sizes: dict[tuple[str, ...], int] = {}
     dynamic_structs: dict[str, Any] = {}
     p_count = 0
+    if offsets[0]:
+        dynamic_structs["_leading_padding"] = ctypes.c_byte * offsets[0]
 
     for i, (u_name, gl_type, length, u_size) in enumerate(uniforms):
         parts = u_name.split(".")
 
         current_structure = dynamic_structs
+        parent_path: tuple[str, ...] = ()
         for part_idx, part in enumerate(parts):
             part_name = part
             match = _array_regex.match(part_name)
@@ -865,9 +936,9 @@ def _build_uniform_struct_from_uniforms(
                 if part_idx != len(parts) - 1:
                     array_index = int(array_index)
 
-                    # Track array sizes for the current array name.
-                    array_sizes[arr_name] = max(array_sizes.get(arr_name, 0), array_index + 1)
-                    if array_sizes[arr_name] > 1:
+                    parent_path = (*parent_path, arr_name)
+                    array_sizes[parent_path] = max(array_sizes.get(parent_path, 0), array_index + 1)
+                    if array_index != 0:
                         break
 
                     if arr_name not in current_structure:
@@ -877,10 +948,18 @@ def _build_uniform_struct_from_uniforms(
                     continue
 
             if part_idx == len(parts) - 1:
+                component_offsets = matrix_offsets[i] if matrix_offsets else ()
+                field_type: type[_UniformElement] = (
+                    _uniform_sequence_type(gl_type, component_offsets) if component_offsets
+                    else gl_type * length if length > 1 else gl_type
+                )
                 if u_size > 1:
-                    current_structure[part_name] = (gl_type * length) * u_size if length > 1 else gl_type * u_size
-                else:
-                    current_structure[part_name] = gl_type * length if length > 1 else gl_type
+                    stride = array_strides[i] if array_strides else 0
+                    if stride and stride != ctypes.sizeof(field_type):
+                        field_type = _uniform_sequence_type(field_type, tuple(j * stride for j in range(u_size)))
+                    else:
+                        field_type = field_type * u_size
+                current_structure[part_name] = field_type
 
                 offset_size = offsets[i + 1] - offsets[i]
                 c_type_size = ctypes.sizeof(current_structure[part_name])
@@ -892,6 +971,7 @@ def _build_uniform_struct_from_uniforms(
                 if part_name not in current_structure:
                     current_structure[part_name] = {}
                 current_structure = current_structure[part_name]
+                parent_path = (*parent_path, part_name)
 
     return _build_ctypes_struct(name, dynamic_structs, array_sizes)
 
@@ -930,14 +1010,14 @@ class UniformArrayBase(Generic[UniformLocationT]):
     def _get_location_for_index(self, index: int) -> UniformLocationT:
         raise NotImplementedError
 
-    def _apply_uniform_update(self, location: UniformLocationT, size: int, data: Sequence) -> None:
+    def _apply_uniform_update(self, location: UniformLocationT, size: int, data: CTypesPointer) -> None:
         raise NotImplementedError
 
     def _get_array_loc(self, index: int) -> UniformLocationT:
         try:
             return self._idx_to_loc[index]
         except KeyError:
-            loc = self._idx_to_loc[index] = self._get_location_for_index(index)
+            loc = self._get_location_for_index(index)
 
         if loc == -1:
             msg = (
@@ -946,6 +1026,7 @@ class UniformArrayBase(Generic[UniformLocationT]):
             )
             raise MissingUniformException(msg)
 
+        self._idx_to_loc[index] = loc
         return loc
 
     def __len__(self) -> int:
@@ -955,7 +1036,7 @@ class UniformArrayBase(Generic[UniformLocationT]):
         msg = "Deleting items is not support for UniformArrays."
         raise ShaderException(msg)
 
-    def __getitem__(self, key: slice | int) -> list[tuple] | tuple:
+    def __getitem__(self, key: slice | int) -> list[tuple] | tuple | int | float:
         # Return as a tuple. Returning as a list may imply setting inner list elements will update values.
         if isinstance(key, slice):
             sliced_data = self._c_array[key]
@@ -974,26 +1055,33 @@ class UniformArrayBase(Generic[UniformLocationT]):
             )
             raise MissingUniformException(msg)
 
-    def __setitem__(self, key: slice | int, value: Sequence) -> None:
+    def __setitem__(self, key: slice | int, value: Sequence | int | float) -> None:
         if isinstance(key, slice):
             self._c_array[key] = value
             self._update_uniform(self._ptr)
             return
 
-        self._c_array[key] = value
-
         if self._uniform.length > 1:
-            assert len(value) == self._uniform.length, (
-                f"Setting this key requires {self._uniform.length} values, received {len(value)}."
+            components = cast(Sequence, value)
+            assert len(components) == self._uniform.length, (
+                f"Setting this key requires {self._uniform.length} values, received {len(components)}."
             )
-            data = (self._gl_type * self._uniform.length)(*value)
-        else:
-            data = self._gl_type(value)
+        self._c_array[key] = value
+        index = key if key >= 0 else key + len(self)
+        self._update_uniform(self._element_pointer(index), index=index)
 
-        self._update_uniform(data, offset=key)
+    def _element_pointer(self, index: int) -> CTypesPointer:
+        if index == 0:
+            return self._ptr
+        offset = index * self._uniform.length * ctypes.sizeof(self._gl_type)
+        return ctypes.cast(ctypes.byref(self._c_array, offset), ctypes.POINTER(self._gl_type))
 
-    def get(self) -> UniformArrayBase:
-        self._gl_getter(self._uniform.program, self._uniform.location, self._ptr)
+    def _read_uniform(self, index: int, location: UniformLocationT) -> None:
+        self._gl_getter(self._uniform.program, location, self._element_pointer(index))
+
+    def get(self) -> Self:
+        for index in range(len(self)):
+            self._read_uniform(index, self._get_array_loc(index))
         return self
 
     def set(self, values: Sequence) -> None:
@@ -1004,9 +1092,9 @@ class UniformArrayBase(Generic[UniformLocationT]):
         self._c_array[:] = values
         self._update_uniform(self._ptr)
 
-    def _update_uniform(self, data: Sequence, offset: int = 0) -> None:
-        size = 1 if offset != 0 else self._uniform.size
-        location = self._get_location_for_index(offset)
+    def _update_uniform(self, data: CTypesPointer, index: int | None = None) -> None:
+        size = len(self) if index is None else 1
+        location = self._get_array_loc(0 if index is None else index)
         self._apply_uniform_update(location, size, data)
 
     def __repr__(self) -> str:
