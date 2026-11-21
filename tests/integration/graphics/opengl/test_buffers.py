@@ -1,6 +1,7 @@
 import ctypes
 import weakref
 from array import array
+from unittest.mock import Mock
 
 import pyglet
 import pytest
@@ -497,18 +498,20 @@ def test_uniform_buffer_regions_reserve_storage_before_commit(test_window, monke
     test_window.switch_to()
 
     program = pyglet.graphics.get_default_shader()
-    ubo = program.uniform_blocks["WindowBlock"].create_ubo(copies_per_resource=2, strict=True)
+    ubo = program.uniform_blocks["WindowBlock"].create_ubo(copies_per_resource=3, alignment=256, strict=True)
     try:
-        regions = [UniformBufferRegion(ubo), UniformBufferRegion(ubo)]
-        assert ubo.size >= ubo.planned_size
+        regions = [UniformBufferRegion(ubo) for _ in range(3)]
+        assert ubo.size == ubo.planned_size == 10 * ubo.slice_stride
 
         def unexpected_resize(_size):
             pytest.fail("Committing a reserved region must not resize its backing buffer.")
 
         monkeypatch.setattr(ubo.buffer, "resize", unexpected_resize)
-        for region in regions:
-            region.commit()
-            assert not region.dirty
+        for _ in range(3):
+            for region in regions:
+                region.mark_dirty()
+                region.commit()
+                assert not region.dirty
     finally:
         ubo.delete()
 
@@ -518,7 +521,7 @@ def test_uniform_buffer_strict_reservation_failure_leaves_ranges_unchanged(test_
     test_window.switch_to()
 
     program = pyglet.graphics.get_default_shader()
-    ubo = program.uniform_blocks["WindowBlock"].create_ubo(copies_per_resource=1, strict=True)
+    ubo = program.uniform_blocks["WindowBlock"].create_ubo(copies_per_resource=9, alignment=256, strict=True)
     try:
         region = UniformBufferRegion(ubo)
         region.commit()
@@ -527,8 +530,9 @@ def test_uniform_buffer_strict_reservation_failure_leaves_ranges_unchanged(test_
         next_offset_before = ubo._next_offset  # noqa: SLF001
         size_before = ubo.size
 
-        with pytest.raises(RuntimeError, match="UniformBufferObject backing store full"):
-            ubo.reserve_resource_range()
+        required_size = size_before + ubo.slice_stride
+        with pytest.raises(RuntimeError, match=rf"{size_before} bytes.*{required_size} bytes required"):
+            ubo.reserve_resource_range(copies_per_resource=1)
 
         assert ubo._ranges == ranges_before  # noqa: SLF001
         assert ubo.planned_size == planned_size_before
@@ -714,6 +718,22 @@ def test_uniform_buffer_bind_slice_uses_slice_offset_and_size(test_window):
         ubo.delete()
 
 
+def test_uniform_buffer_custom_alignment_preserves_driver_alignment(test_window) -> None:
+    test_window.switch_to()
+    ctx = test_window.context
+    driver_alignment = ctx.info.MAX_UNIFORM_BUFFER_OFFSET_ALIGNMENT
+    requested_alignment = driver_alignment + 1
+    block = pyglet.graphics.get_default_shader().uniform_blocks["WindowBlock"]
+    ubo = block.create_ubo(alignment=requested_alignment, copies_per_resource=1, strict=True)
+    try:
+        binding = ubo.upload_to_available_binding(ubo.get_data_structure())
+        assert binding.offset % driver_alignment == 0
+        assert binding.offset % requested_alignment == 0
+        ubo.bind_slice(binding)
+    finally:
+        ubo.delete()
+
+
 @require_graphics_api(GraphicsAPIGroups.GL3)
 def test_uniform_buffer_bound_range_cannot_be_modified(test_window):
     test_window.switch_to()
@@ -822,6 +842,30 @@ def test_ubo_ring_buffer_strict_mode_errors_when_all_ranges_are_in_use(test_wind
 
         with pytest.raises(RuntimeError, match="RingBuffer has no writable range"):
             ubo.upload_to_available_binding(camera_data)
+    finally:
+        ubo.delete()
+
+
+def test_ubo_ring_buffer_strict_mode_checks_only_the_next_range(test_window) -> None:
+    test_window.switch_to()
+
+    program = pyglet.graphics.get_default_shader()
+    ubo = program.uniform_blocks["WindowBlock"].create_ubo(copies_per_resource=2, strict=True)
+    try:
+        busy_range, writable_range = ubo.reserve_resource_range()
+        ubo.use_range(busy_range)
+
+        data = ubo.get_data_structure()
+        with pytest.raises(RuntimeError, match="RingBuffer has no writable range at the current position"):
+            ubo.upload_to_available_binding(data)
+
+        binding = ubo.upload_to_available_binding(data)
+        assert binding.offset == writable_range.offset
+        assert binding.size == writable_range.size
+        assert ubo.size == 3 * ubo.slice_stride
+
+        with pytest.raises(RuntimeError, match="RingBuffer has no writable range"):
+            ubo.upload_to_available_binding(data)
     finally:
         ubo.delete()
 

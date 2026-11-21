@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 from functools import lru_cache
+from math import lcm
 from typing import TYPE_CHECKING, Sequence
 
 import js  # noqa: F821
@@ -172,13 +173,16 @@ class WebGLBufferObject(AbstractBuffer):
         self._set_data_uploaded()
 
     def set_bytes_region(self, offset: int, data: bytes | bytearray | memoryview) -> None:
-        # BufferObject updates are whole-buffer by design. Patch the local
-        # bytes and re-upload the full content.
         raw = bytes(data)
         self._validate_byte_range(offset, len(raw))
-        whole = bytearray(self.get_bytes()) if self._data_uploaded else bytearray(self.size)
-        whole[offset:offset + len(raw)] = raw
-        self.set_bytes(whole)
+        if not raw:
+            return
+        if self._allocated:
+            self.bind()
+        else:
+            self._ensure_allocated()
+        self._gl.bufferSubData(self.target, offset, copy_to_js_uint8_array(raw))
+        self._set_data_uploaded()
 
     def invalidate(self) -> None:
         self.bind()
@@ -508,7 +512,7 @@ class WebGLUniformBufferObject(UniformBufferObject):
         self._context = context
         self._gl = context.gl
         self.minimum_alignment = max(1, context.info.MAX_UNIFORM_BUFFER_OFFSET_ALIGNMENT)
-        requested_alignment = self.minimum_alignment if alignment is None else max(int(alignment), self.minimum_alignment)
+        requested_alignment = lcm(self.minimum_alignment, max(1, int(alignment)) if alignment is not None else 1)
         super().__init__(
             context,
             view_class,

@@ -39,6 +39,7 @@ from pyglet.graphics.api.gl import (
 from pyglet.graphics.shader import (
     _AbstractShaderProgram,
     _build_uniform_struct_from_uniforms,
+    _uniform_matrix_offsets,
     _AbstractShader,
     UBOBindingManager,
     UniformArrayBase,
@@ -209,7 +210,7 @@ class _UniformArray(UniformArrayBase[int]):
         return self._context.glGetUniformLocation(self._uniform.program,
                                 create_string_buffer(f"{self._uniform.name}[{index}]".encode()))
 
-    def _apply_uniform_update(self, location: int, size: int, data: Sequence) -> None:
+    def _apply_uniform_update(self, location: int, size: int, data: CTypesPointer) -> None:
         if self._dsa:
             if self._is_matrix:
                 self._gl_setter(self._uniform.program, location, size, GL_FALSE, data)
@@ -222,11 +223,17 @@ class _UniformArray(UniformArrayBase[int]):
             else:
                 self._gl_setter(location, size, data)
 
-_gl_matrices: tuple[int, ...] = (
-    gl.GL_FLOAT_MAT2, gl.GL_FLOAT_MAT2x3, gl.GL_FLOAT_MAT2x4,
-    gl.GL_FLOAT_MAT3, gl.GL_FLOAT_MAT3x2, gl.GL_FLOAT_MAT3x4,
-    gl.GL_FLOAT_MAT4, gl.GL_FLOAT_MAT4x2, gl.GL_FLOAT_MAT4x3,
-)
+_gl_matrix_shapes: dict[int, tuple[int, int]] = {
+    gl.GL_FLOAT_MAT2: (2, 2),
+    gl.GL_FLOAT_MAT2x3: (2, 3),
+    gl.GL_FLOAT_MAT2x4: (2, 4),
+    gl.GL_FLOAT_MAT3: (3, 3),
+    gl.GL_FLOAT_MAT3x2: (3, 2),
+    gl.GL_FLOAT_MAT3x4: (3, 4),
+    gl.GL_FLOAT_MAT4: (4, 4),
+    gl.GL_FLOAT_MAT4x2: (4, 2),
+    gl.GL_FLOAT_MAT4x3: (4, 3),
+}
 
 
 class _Uniform(UniformBase):
@@ -244,7 +251,7 @@ class _Uniform(UniformBase):
             size=size,
             location=location,
             program=program,
-            matrix_types=_gl_matrices,
+            matrix_types=tuple(_gl_matrix_shapes),
             array_wrapper_factory=lambda uniform, gl_getter, gl_setter, gl_type, is_matrix:
                 _UniformArray(uniform, gl_getter, gl_setter, gl_type, is_matrix, dsa),
         )
@@ -352,12 +359,16 @@ class _UBOBindingManager(UBOBindingManager):
         super().__init__(get_maximum_binding_count())
 
 class GLUniformBlock(BaseUniformBlock):
-    __slots__ = ('_context',)
+    __slots__ = ('_context', '_matrix_shapes')
+
+    _matrix_shapes: dict[int, tuple[int, int]]
 
     def __init__(self, program: _AbstractShaderProgram, name: str, index: int, size: int, binding: int,
-                 uniforms: dict[int, tuple[str, GLDataType, int, int]], uniform_count: int) -> None:
+                 uniforms: dict[int, tuple[str, GLDataType, int, int]], uniform_count: int,
+                 matrix_shapes: dict[int, tuple[int, int]]) -> None:
         """Initialize a uniform block for a ShaderProgram."""
         self._context = pyglet.graphics.api.core.current_context
+        self._matrix_shapes = matrix_shapes
         super().__init__(program, name, index, size, binding, uniforms, uniform_count)
 
     def _bind_buffer_base(self, binding: int, buffer_id: int) -> None:
@@ -388,33 +399,38 @@ class GLUniformBlock(BaseUniformBlock):
     def _introspect_uniforms(self) -> type[Structure]:
         """Introspect the block's structure and return a ctypes struct for manipulating the uniform block's members."""
         p_id = self.program.handle
-        index = self.index
-
         active_count = self.uniform_count
 
-        # Query the uniform index order and each uniform's offset:
-        indices = (gl.GLuint * active_count)()
-        offsets = (gl.GLint * active_count)()
-        indices_ptr = cast(addressof(indices), POINTER(gl.GLint))
-        offsets_ptr = cast(addressof(offsets), POINTER(gl.GLint))
-        self._context.glGetActiveUniformBlockiv(p_id, index, gl.GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, indices_ptr)
-        self._context.glGetActiveUniformsiv(p_id, active_count, indices, gl.GL_UNIFORM_OFFSET, offsets_ptr)
+        # Query the byte layout of each active uniform.
+        indices = (gl.GLuint * active_count)(*self.uniforms)
 
-        # Offsets may be returned in non-ascending order, sort them with the corresponding index:
-        _oi = sorted(zip(offsets, indices), key=lambda x: x[0])
-        sorted_offsets = [x[0] for x in _oi] + [self.size]
-        indices = (gl.GLuint * active_count)(*(x[1] for x in _oi))
+        def query(pname: int) -> list[int]:
+            values = (gl.GLint * active_count)()
+            self._context.glGetActiveUniformsiv(p_id, active_count, indices, pname, values)
+            return list(values)
 
-        # # Query other uniform information:
-        # gl_types = (gl.GLint * active_count)()
-        # mat_stride = (gl.GLint * active_count)()
-        # gl_types_ptr = cast(addressof(gl_types), POINTER(gl.GLint))
-        # stride_ptr = cast(addressof(mat_stride), POINTER(gl.GLint))
-        # gl.glGetActiveUniformsiv(p_id, active_count, indices, gl.GL_UNIFORM_TYPE, gl_types_ptr)
-        # gl.glGetActiveUniformsiv(p_id, active_count, indices, gl.GL_UNIFORM_MATRIX_STRIDE, stride_ptr)
+        offsets = query(gl.GL_UNIFORM_OFFSET)
+        order = sorted(range(active_count), key=offsets.__getitem__)
+        uniforms = [self.uniforms[indices[i]] for i in order]
+        array_strides = query(gl.GL_UNIFORM_ARRAY_STRIDE) if any(uniform[3] > 1 for uniform in uniforms) else None
+        matrix_offsets: list[tuple[int, ...]] | None = None
+        if self._matrix_shapes:
+            matrix_strides = query(gl.GL_UNIFORM_MATRIX_STRIDE)
+            row_major = query(gl.GL_UNIFORM_IS_ROW_MAJOR)
+            matrix_offsets = [()] * active_count
+            for position, i in enumerate(order):
+                shape = self._matrix_shapes.get(indices[i])
+                if shape is None:
+                    continue
+                matrix_offsets[position] = _uniform_matrix_offsets(
+                    *shape, sizeof(uniforms[position][1]), matrix_strides[i], bool(row_major[i]),
+                )
 
-        uniforms = [self.uniforms[indices[i]] for i in range(active_count)]
-        return _build_uniform_struct_from_uniforms("View", uniforms, sorted_offsets)
+        return _build_uniform_struct_from_uniforms(
+            "View", uniforms, [offsets[i] for i in order] + [self.size],
+            array_strides=[array_strides[i] for i in order] if array_strides else None,
+            matrix_offsets=matrix_offsets,
+        )
 
     def _actual_binding_point(self) -> int:
         """Queries OpenGL to find what the bind point currently is."""
@@ -620,7 +636,9 @@ def _get_uniform_block_name(ctx, program_id: int, index: int) -> str:
         raise ShaderException(msg)  # noqa: B904
 
 
-def _introspect_uniform_blocks(ctx, program: GLShaderProgram | GLComputeShaderProgram) -> dict[str, GLUniformBlock]:
+def _introspect_uniform_blocks(
+    ctx: OpenGLSurfaceContext, program: GLShaderProgram | GLComputeShaderProgram,
+) -> dict[str, GLUniformBlock]:
     uniform_blocks = {}
     program_id = program.handle
     assert program_id is not None
@@ -641,6 +659,7 @@ def _introspect_uniform_blocks(ctx, program: GLShaderProgram | GLComputeShaderPr
         ctx.glGetActiveUniformBlockiv(program_id, index, gl.GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, indices_ptr)
 
         uniforms: dict[int, tuple[str, GLDataType, int, int]] = {}
+        matrix_shapes: dict[int, tuple[int, int]] = {}
 
         if not hasattr(pyglet.graphics.api.core.current_context, "ubo_manager"):
             pyglet.graphics.api.core.current_context.ubo_manager = _UBOBindingManager()
@@ -660,6 +679,8 @@ def _introspect_uniform_blocks(ctx, program: GLShaderProgram | GLComputeShaderPr
 
             gl_type, _, _, length = ctx.uniform_setters[u_type]
             uniforms[block_uniform_index] = (uniform_name, gl_type, length, u_size)
+            if shape := _gl_matrix_shapes.get(u_type):
+                matrix_shapes[block_uniform_index] = shape
 
         binding_index = binding.value
         if pyglet.options.shader_bind_management:
@@ -680,7 +701,7 @@ def _introspect_uniform_blocks(ctx, program: GLShaderProgram | GLComputeShaderPr
                 manager.add_explicit_binding(program, name, binding.value)
 
         uniform_blocks[name] = GLUniformBlock(program, name, index, block_data_size.value, binding_index, uniforms,
-                                              len(indices))
+                                              len(indices), matrix_shapes)
 
         if _debug_api_shaders:
             for block in uniform_blocks.values():

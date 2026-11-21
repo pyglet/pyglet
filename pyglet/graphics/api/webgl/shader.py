@@ -19,6 +19,8 @@ from ctypes import (
 )
 from typing import TYPE_CHECKING, Any, Callable, Sequence
 
+from pyodide.ffi import to_js
+
 import pyglet
 
 from pyglet.graphics.api.base import NullContext
@@ -41,6 +43,7 @@ from pyglet.graphics.shader import (
     UniformArrayBase,
     UniformBase,
     _build_uniform_struct_from_uniforms,
+    _uniform_matrix_offsets,
     ShaderProgram,
     ShaderSource,
     ShaderType,
@@ -156,13 +159,20 @@ class _UniformArray(UniformArrayBase["WebGLUniformLocation"]):
     reassignment. Array data must either be set in full, or by indexing.
     """
 
-    _gl: WebGLRenderingContext
+    _gl: WebGL2RenderingContext
     __slots__ = ("_gl",)
 
     def __init__(
         self, uniform: _Uniform, gl_getter: GLFunc, gl_setter: GLFunc, gl_type: GLDataType, is_matrix: bool,
     ) -> None:
         self._gl = pyglet.graphics.api.core.current_context.gl
+        if uniform.length == 1:
+            if gl_type is c_float:
+                gl_setter = self._gl.uniform1fv
+            elif gl_type is c_uint:
+                gl_setter = self._gl.uniform1uiv
+            else:
+                gl_setter = self._gl.uniform1iv
         super().__init__(uniform, gl_getter, gl_setter, gl_type, is_matrix)
 
     def _get_location_for_index(self, index: int) -> WebGLUniformLocation:
@@ -179,25 +189,31 @@ class _UniformArray(UniformArrayBase["WebGLUniformLocation"]):
             raise ShaderException(f"Uniform {self._uniform.name}[{index}] not found.")
         return location
 
-    def _apply_uniform_update(self, location: WebGLUniformLocation, size: int, data: Sequence) -> None:
+    def _read_uniform(self, index: int, location: WebGLUniformLocation) -> None:
+        value = self._gl_getter(self._uniform.program, location)
+        self._c_array[index] = value if self._uniform.length == 1 else tuple(value)
+
+    def _apply_uniform_update(self, location: WebGLUniformLocation, size: int, data: CTypesPointer) -> None:
+        values = to_js(data[:size * self._uniform.length])
         self._gl.useProgram(self._uniform.program)
         if self._is_matrix:
-            self._gl_setter(location, GL_FALSE, data)
+            self._gl_setter(location, GL_FALSE, values)
         else:
-            self._gl_setter(location, data)
+            self._gl_setter(location, values)
 
 
-_gl_matrices: tuple[int, ...] = (
-    gl.GL_FLOAT_MAT2,
-    gl.GL_FLOAT_MAT2x3,
-    gl.GL_FLOAT_MAT2x4,
-    gl.GL_FLOAT_MAT3,
-    gl.GL_FLOAT_MAT3x2,
-    gl.GL_FLOAT_MAT3x4,
-    gl.GL_FLOAT_MAT4,
-    gl.GL_FLOAT_MAT4x2,
-    gl.GL_FLOAT_MAT4x3,
-)
+_gl_matrix_shapes: dict[int, tuple[int, int]] = {
+    gl.GL_FLOAT_MAT2: (2, 2),
+    gl.GL_FLOAT_MAT2x3: (2, 3),
+    gl.GL_FLOAT_MAT2x4: (2, 4),
+    gl.GL_FLOAT_MAT3: (3, 3),
+    gl.GL_FLOAT_MAT3x2: (3, 2),
+    gl.GL_FLOAT_MAT3x4: (3, 4),
+    gl.GL_FLOAT_MAT4: (4, 4),
+    gl.GL_FLOAT_MAT4x2: (4, 2),
+    gl.GL_FLOAT_MAT4x3: (4, 3),
+}
+_gl_matrices = tuple(_gl_matrix_shapes)
 
 
 class _Uniform(UniformBase):
@@ -304,51 +320,10 @@ class _UBOBindingManager(UBOBindingManager):
         super().__init__(5)  # get_maximum_binding_count()
 
 
-def get_std140_size_and_alignment(gl_type):
-    """Returns (size, alignment) for a given WebGL uniform type."""
-    std140_layout = {
-        c_float: (4, 4),
-        c_int: (4, 4),
-        c_uint: (4, 4),
-        gl.FLOAT_VEC2: (8, 8),
-        gl.FLOAT_VEC3: (12, 16),  # Vec3 is padded to 16
-        gl.FLOAT_VEC4: (16, 16),
-        gl.INT_VEC2: (8, 8),
-        gl.INT_VEC3: (12, 16),
-        gl.INT_VEC4: (16, 16),
-        gl.UNSIGNED_INT_VEC2: (8, 8),
-        gl.UNSIGNED_INT_VEC3: (12, 16),
-        gl.UNSIGNED_INT_VEC4: (16, 16),
-        gl.FLOAT_MAT2: (32, 16),  # 2 * vec4
-        gl.FLOAT_MAT3: (48, 16),  # 3 * vec4
-        gl.FLOAT_MAT4: (64, 16),  # 4 * vec4
-    }
-    return std140_layout.get(gl_type, (0, 0))
-
-
-def compute_std140_offsets(uniforms):
-    """Manually computes std140-compliant offsets for uniforms in a UBO."""
-    offset = 0
-    offsets = {}
-
-    for name, c_type, length, size in uniforms.values():
-        type_size = sizeof(c_type * length)
-        align_size = min(16, type_size)  # Align to std140
-
-        # Align offset
-        if offset % align_size != 0:
-            offset += align_size - (offset % align_size)
-
-        # Store computed offset
-        offsets[name] = offset
-        offset += type_size * size  # Account for array sizes
-
-    return offsets
-
-
 class WebGLUniformBlock(BaseUniformBlock):  # noqa: D101
     ctx: WebGL2SurfaceContext
-    __slots__ = ('ctx',)
+    _matrix_shapes: dict[int, tuple[int, int]]
+    __slots__ = ('ctx', '_matrix_shapes')
 
     def __init__(
         self,
@@ -359,10 +334,12 @@ class WebGLUniformBlock(BaseUniformBlock):  # noqa: D101
         binding: int,
         uniforms: dict[int, tuple[str, GLDataType, int, int]],
         uniform_count: int,
+        matrix_shapes: dict[int, tuple[int, int]],
     ) -> None:
         """Initialize a uniform block for a ShaderProgram."""
         self.ctx = pyglet.graphics.api.core.current_context
         assert self.ctx
+        self._matrix_shapes = matrix_shapes
         super().__init__(program, name, index, size, binding, uniforms, uniform_count)
 
     def _bind_buffer_base(self, binding: int, buffer_id: WebGLBuffer) -> None:
@@ -391,33 +368,36 @@ class WebGLUniformBlock(BaseUniformBlock):  # noqa: D101
         self.ctx.gl.uniformBlockBinding(self.program.handle, self.index, self.binding)
 
     def _introspect_uniforms(self) -> type[Structure]:
-        """Introspect the block's structure and return a ctypes struct for manipulating the uniform block's members."""
-        p_id = self.program.handle
-        index = self.index
+        """Build the ctypes view from the linked block's reflected byte layout."""
+        program = self.program.handle
+        assert program is not None
+        indices = list(self.uniforms)
+        js_indices = to_js(indices)
 
-        active_count = self.uniform_count
+        def query(parameter: int) -> list[int]:
+            return list(self.ctx.gl.getActiveUniforms(program, js_indices, parameter))
 
-        # Query the uniform index order and each uniform's offset:
-        # indices = gl.glGetActiveUniformBlockiv(p_id, index, gl.GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, indices_ptr)
-        # offsets = gl.glGetActiveUniformsiv(p_id, active_count, indices, gl.GL_UNIFORM_OFFSET, offsets_ptr)
+        offsets = query(gl.GL_UNIFORM_OFFSET)
+        order = sorted(range(len(indices)), key=offsets.__getitem__)
+        uniforms = [self.uniforms[indices[i]] for i in order]
+        array_strides = query(gl.GL_UNIFORM_ARRAY_STRIDE) if any(uniform[3] > 1 for uniform in uniforms) else None
+        matrix_offsets: list[tuple[int, ...]] | None = None
+        if self._matrix_shapes:
+            matrix_strides = query(gl.GL_UNIFORM_MATRIX_STRIDE)
+            row_major = query(gl.GL_UNIFORM_IS_ROW_MAJOR)
+            matrix_offsets = [()] * len(indices)
+            for position, i in enumerate(order):
+                shape = self._matrix_shapes.get(indices[i])
+                if shape is not None:
+                    matrix_offsets[position] = _uniform_matrix_offsets(
+                        *shape, sizeof(uniforms[position][1]), matrix_strides[i], bool(row_major[i]),
+                    )
 
-        # Offsets may be returned in non-ascending order, sort them with the corresponding index:
-        # _oi = sorted(zip(offsets, indices), key=lambda x: x[0])
-        # offsets = [x[0] for x in _oi] + [self.size]
-        # indices = (gl.GLuint * active_count)(*(x[1] for x in _oi))
-
-        # # Query other uniform information:
-        # gl_types = (gl.GLint * active_count)()
-        # mat_stride = (gl.GLint * active_count)()
-        # gl_types_ptr = cast(addressof(gl_types), POINTER(gl.GLint))
-        # stride_ptr = cast(addressof(mat_stride), POINTER(gl.GLint))
-        # gl.glGetActiveUniformsiv(p_id, active_count, indices, gl.GL_UNIFORM_TYPE, gl_types_ptr)
-        # gl.glGetActiveUniformsiv(p_id, active_count, indices, gl.GL_UNIFORM_MATRIX_STRIDE, stride_ptr)
-
-        uniform_offsets = compute_std140_offsets(self.uniforms)
-        sorted_uniforms = sorted(self.uniforms.values(), key=lambda uniform: uniform_offsets[uniform[0]])
-        offsets = [uniform_offsets[uniform[0]] for uniform in sorted_uniforms] + [self.size]
-        return _build_uniform_struct_from_uniforms("View", sorted_uniforms, offsets)
+        return _build_uniform_struct_from_uniforms(
+            "View", uniforms, [offsets[i] for i in order] + [self.size],
+            array_strides=[array_strides[i] for i in order] if array_strides else None,
+            matrix_offsets=matrix_offsets,
+        )
 
     def _actual_binding_point(self) -> int:
         """Queries OpenGL to find what the bind point currently is."""
@@ -560,12 +540,12 @@ def _introspect_uniform_blocks(
             msg = f"Unable to query UniformBlock name at index: {index}"
             raise ShaderException(msg)
 
-        # num_active = gl.glGetActiveUniformBlockParameter(program_id, index, gl.GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS)
         block_data_size = gl_ctx.getActiveUniformBlockParameter(program_id, index, gl.GL_UNIFORM_BLOCK_DATA_SIZE)
         binding = gl_ctx.getActiveUniformBlockParameter(program_id, index, gl.GL_UNIFORM_BLOCK_BINDING)
         indices = gl_ctx.getActiveUniformBlockParameter(program_id, index, gl.GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES)
 
         uniforms: dict[int, tuple[str, GLDataType, int, int]] = {}
+        matrix_shapes: dict[int, tuple[int, int]] = {}
 
         if not hasattr(ctx, "ubo_manager"):
             ctx.ubo_manager = _UBOBindingManager()
@@ -583,7 +563,13 @@ def _introspect_uniform_blocks(
                 msg = "Multidimensional arrays are not currently supported."
                 raise ShaderException(msg)
 
-            gl_type, _, length = ctx._uniform_setters[u_type]
+            gl_type: GLDataType
+            if shape := _gl_matrix_shapes.get(u_type):
+                matrix_shapes[block_uniform_index] = shape
+                columns, rows = shape
+                gl_type, length = c_float, columns * rows
+            else:
+                gl_type, _, length = ctx._uniform_setters[u_type]
             uniforms[block_uniform_index] = (uniform_name, gl_type, length, u_size)
 
         binding_index = binding
@@ -607,7 +593,7 @@ def _introspect_uniform_blocks(
                 manager.add_explicit_binding(program, name, binding)
 
         uniform_blocks[name] = WebGLUniformBlock(
-            program, name, index, block_data_size, binding_index, uniforms, len(indices),
+            program, name, index, block_data_size, binding_index, uniforms, len(indices), matrix_shapes,
         )
 
         if _debug_api_shaders:
