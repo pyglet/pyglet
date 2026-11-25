@@ -196,7 +196,7 @@ class ImageMouseCursor(MouseCursor):
         self.hot_y = hot_y
         self.scaling = 1.0
 
-        self.gl_drawable = not acceleration
+        self.api_drawable = not acceleration
         self.hw_drawable = acceleration
 
     def draw(self, x: int, y: int) -> None:

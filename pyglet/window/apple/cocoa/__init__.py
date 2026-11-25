@@ -8,7 +8,7 @@ from pyglet.event import EventDispatcher
 from pyglet.libs.darwin import AutoReleasePool, CGPoint, cocoapy, get_display_link_dt
 from pyglet.libs.darwin.cocoapy import lib_appkit as appkit
 from pyglet.libs.darwin.cocoapy.lib_quartz import quartz
-from pyglet.window import BaseWindow, DefaultMouseCursor, MouseCursor
+from pyglet.window import BaseWindow, DefaultMouseCursor, ImageMouseCursor, MouseCursor
 
 from pyglet.libs import darwin
 from .pyglet_delegate import PygletDelegate
@@ -36,8 +36,48 @@ cf = cocoapy.cf
 CAMetalLayer = cocoapy.ObjCClass('CAMetalLayer')
 
 
+def _create_nsimage(image: pyglet.image.ImageData) -> darwin.ObjCInstance | None:
+    """Return a retained NSImage from pyglet image data."""
+    image = image.get_image_data()
+    pitch = image.width * 4
+    data = image.get_bytes('ARGB', -pitch)
+
+    # CFData owns a copy of the pixel data for the lifetime of the CGImage.
+    cfdata = c_void_p(cf.CFDataCreate(None, data, len(data)))  # type: ignore[arg-type]
+    if not cfdata:
+        return None
+
+    provider = c_void_p(cg.CGDataProviderCreateWithCFData(cfdata))
+    cf.CFRelease(cfdata)
+    if not provider:
+        return None
+
+    color_space = c_void_p(cg.CGColorSpaceCreateDeviceRGB())
+    try:
+        if not color_space:
+            return None
+        cgimage = c_void_p(cg.CGImageCreate(
+            image.width, image.height, 8, 32, pitch, color_space,
+            cocoapy.kCGImageAlphaFirst, provider, None, True, cocoapy.kCGRenderingIntentDefault,
+        ))
+    finally:
+        cg.CGDataProviderRelease(provider)
+        if color_space:
+            cg.CGColorSpaceRelease(color_space)
+
+    if not cgimage:
+        return None
+
+    try:
+        size = cocoapy.NSMakeSize(image.width, image.height)
+        return NSImage.alloc().initWithCGImage_size_(cgimage, size)
+    finally:
+        cg.CGImageRelease(cgimage)
+
+
 class CocoaMouseCursor(MouseCursor):
     api_drawable = False
+    hw_drawable = True
 
     def __init__(self, cursorName: str) -> None:
         # cursorName is a string identifying one of the named default NSCursors
@@ -61,6 +101,7 @@ class CocoaWindow(BaseWindow['CocoaScreen']):
     # Window properties
     _mouse_platform_visible: bool = True
     _mouse_ignore_motion: bool = False
+    _image_cursor: darwin.ObjCInstance | None = None
 
     # Flag set during close() method.
     _was_closed: bool = False
@@ -428,6 +469,9 @@ class CocoaWindow(BaseWindow['CocoaScreen']):
 
             self._nswindow.close()
             self._nswindow = None
+            if self._image_cursor is not None:
+                self._image_cursor.release()
+                self._image_cursor = None
 
             # Dispatch any events that may be queued up, which includes deallocations.
             self._poll_app_events()
@@ -503,41 +547,7 @@ class CocoaWindow(BaseWindow['CocoaScreen']):
             if img.width > max_image.width and img.height > max_image.height:
                 max_image = img
 
-        # Grab image data from pyglet image.
-        image = max_image.get_image_data()
-        fmt = 'ARGB'
-        bytesPerRow = len(fmt) * image.width
-        data = image.get_bytes(fmt, -bytesPerRow)
-
-        # Wrap the Python-owned bytes in CFData so the data provider has an
-        # explicit Core Foundation lifetime.
-        cfdata = c_void_p(cf.CFDataCreate(None, data, len(data)))  # type: ignore[arg-type]
-
-        provider = c_void_p(cg.CGDataProviderCreateWithCFData(cfdata))
-
-        colorSpace = c_void_p(cg.CGColorSpaceCreateDeviceRGB())
-
-        # Then create a CGImage from the provider.
-        cgimage = c_void_p(cg.CGImageCreate(
-            image.width, image.height, 8, 32, bytesPerRow,
-            colorSpace,
-            cocoapy.kCGImageAlphaFirst,
-            provider,
-            None,
-            True,
-            cocoapy.kCGRenderingIntentDefault))
-
-        cf.CFRelease(cfdata)
-        cg.CGDataProviderRelease(provider)
-        cg.CGColorSpaceRelease(colorSpace)
-
-        if not cgimage:
-            return
-
-        # Turn the CGImage into an NSImage.
-        size = cocoapy.NSMakeSize(image.width, image.height)
-        nsimage = NSImage.alloc().initWithCGImage_size_(cgimage, size)
-        cg.CGImageRelease(cgimage)
+        nsimage = _create_nsimage(max_image)
         if not nsimage:
             return
 
@@ -675,7 +685,35 @@ class CocoaWindow(BaseWindow['CocoaScreen']):
         rect = self._nswindow.contentRectForFrameRect_(window_frame)
         return cocoapy.foundation.NSMouseInRect(point, rect, False)
 
-    def set_mouse_cursor_platform_visible(self, platform_visible: int | None = None) -> None:
+    @staticmethod
+    def _create_cursor_from_image(cursor: ImageMouseCursor) -> darwin.ObjCInstance | None:
+        with AutoReleasePool():
+            nsimage = _create_nsimage(cursor.texture)
+            if nsimage is None:
+                return None
+
+            try:
+                width, height = cursor.texture.width, cursor.texture.height
+                # AppKit uses a top-left origin for cursor hotspots.
+                hot_x = min(max(0, cursor.hot_x), width - 1)
+                hot_y = min(max(0, height - 1 - cursor.hot_y), height - 1)
+                return NSCursor.alloc().initWithImage_hotSpot_(nsimage, cocoapy.NSPoint(hot_x, hot_y))
+            finally:
+                nsimage.release()
+
+    def set_mouse_cursor(self, cursor: MouseCursor | None = None) -> None:
+        """Change the mouse cursor within this window or restore the default."""
+        if cursor is not self._mouse_cursor:
+            native_cursor = None
+            if isinstance(cursor, ImageMouseCursor) and cursor.hw_drawable:
+                native_cursor = self._create_cursor_from_image(cursor)
+            if self._image_cursor is not None:
+                self._image_cursor.release()
+            self._image_cursor = native_cursor
+
+        super().set_mouse_cursor(cursor)
+
+    def set_mouse_cursor_platform_visible(self, platform_visible: bool | None = None) -> None:
         # When the platform_visible argument is supplied with a boolean, then this
         # method simply sets whether or not the platform mouse cursor is visible.
         if platform_visible is not None:
@@ -702,9 +740,10 @@ class CocoaWindow(BaseWindow['CocoaScreen']):
             # in the window with set_mouse_cursor_visible() then don't show it.
             elif not self._mouse_visible:
                 SystemCursor.hide()
-            # If the mouse is set as a system-defined cursor, then we
-            # need to set the cursor and show the mouse.
-            # *** FIX ME ***
+            elif self._image_cursor is not None:
+                self._image_cursor.set()
+                SystemCursor.unhide()
+            # Show the requested system cursor.
             elif isinstance(self._mouse_cursor, CocoaMouseCursor):
                 self._mouse_cursor.set()
                 SystemCursor.unhide()
