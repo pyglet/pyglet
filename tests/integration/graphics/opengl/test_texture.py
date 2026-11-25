@@ -10,6 +10,7 @@ from pyglet.graphics.api.gl.framebuffer import GLFramebuffer
 from pyglet.graphics import TextureError, TextureFormatError
 from pyglet.graphics.api.gl.texture import _get_internal_format
 from pyglet.image import ImageData
+from pyglet.window import Window
 from tests.annotations import GraphicsAPIGroups, require_graphics_api
 
 
@@ -43,6 +44,27 @@ def test_texture_array_creation_sets_distinct_sampler_filters(test_window):
         assert value.value == gl.GL_NEAREST
         context.glGetTexParameteriv(texture.target, gl.GL_TEXTURE_MAG_FILTER, value)
         assert value.value == gl.GL_LINEAR
+    finally:
+        texture.delete()
+
+
+@pytest.mark.parametrize("top_down", [False, True])
+@pytest.mark.parametrize("width", [2, 3])
+def test_texture_array_add_image_region(test_window: Window, top_down: bool, width: int) -> None:
+    test_window.switch_to()
+    rows = [bytes(range(start, start + 12)) for start in range(0, 48, 12)]
+    data = b"".join(reversed(rows) if top_down else rows)
+    image = ImageData(4, 4, "RGB", data, pitch=-12 if top_down else 12)
+    region = image.get_region(1, 1, width, 2)
+    pitch = width * 3
+    expected = rows[1][3:3 + pitch] + rows[2][3:3 + pitch]
+
+    texture = pyglet.graphics.TextureArray.create(
+        width, 2, internal_format=ComponentFormat.RGB, max_depth=1, context=test_window.context,
+    )
+    try:
+        layer = texture.add(region)
+        assert bytes(layer.get_image_data().get_bytes("RGB", pitch)) == expected
     finally:
         texture.delete()
 

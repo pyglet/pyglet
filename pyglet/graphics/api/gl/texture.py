@@ -36,6 +36,8 @@ from pyglet.graphics.api.gl.gl import (
     GL_READ_WRITE,
     GL_RGBA32F,
     GLubyte,
+    GL_UNPACK_IMAGE_HEIGHT,
+    GL_UNPACK_SKIP_IMAGES,
     GL_UNPACK_SKIP_PIXELS,
     GL_UNPACK_SKIP_ROWS,
     GL_UNPACK_ALIGNMENT,
@@ -809,17 +811,28 @@ class _GLLayeredTexture:
 
     def _update_subregion(self, image_data: ImageData | ImageDataRegion, x: int, y: int, z: int,
                           level: int = 0) -> None:
-        data_pitch = abs(image_data._current_pitch)
-
-        data = image_data.convert(image_data.format, data_pitch)
-
+        ctx = self._context
+        data_format = image_data.format
         fmt, gl_type = _get_pixel_format(image_data)
 
-        self._context.glTexSubImage3D(self.target, level,
-                                      x, y, z,
-                                      image_data.width, image_data.height, 1,
-                                      fmt, gl_type,
-                                      data)
+        if image_data.data_type in ("B", "b") and not data_format.endswith("I"):
+            # Extract tightly packed, bottom-up rows before clearing the source-region offsets.
+            data = image_data.get_bytes(data_format, image_data.width * len(data_format))
+            ctx.glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+            if ctx.info.pixel_transfer.unpack_row_length:
+                ctx.glPixelStorei(GL_UNPACK_ROW_LENGTH, 0)
+                ctx.glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0)
+                ctx.glPixelStorei(GL_UNPACK_SKIP_ROWS, 0)
+        else:
+            data = image_data.convert(data_format, abs(image_data._current_pitch))
+
+        ctx.glPixelStorei(GL_UNPACK_IMAGE_HEIGHT, 0)
+        ctx.glPixelStorei(GL_UNPACK_SKIP_IMAGES, 0)
+        ctx.glTexSubImage3D(self.target, level,
+                            x, y, z,
+                            image_data.width, image_data.height, 1,
+                            fmt, gl_type,
+                            data)
 
 
 class GLTexture3D(_GLLayeredTexture, _Texture3DShared[GLTextureRegion, OpenGLSurfaceContext],

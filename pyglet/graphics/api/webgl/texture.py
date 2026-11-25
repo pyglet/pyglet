@@ -78,6 +78,7 @@ from pyglet.graphics.api.webgl.gl import (
     GL_UNPACK_ALIGNMENT,
     GL_UNPACK_IMAGE_HEIGHT,
     GL_UNPACK_ROW_LENGTH,
+    GL_UNPACK_SKIP_IMAGES,
     GL_UNPACK_SKIP_PIXELS,
     GL_UNPACK_SKIP_ROWS,
     GL_UNSIGNED_BYTE,
@@ -478,9 +479,9 @@ class WebGLTexture(Texture["WebGL2SurfaceContext"]):
 
     def _update_subregion(self, image_data: ImageData | ImageDataRegion, x: int, y: int, z: int,
                           level: int = 0) -> None:
-        data_pitch = abs(image_data._current_pitch)
+        layered = self.target in (GL_TEXTURE_3D, GL_TEXTURE_2D_ARRAY)
         upload_fmt = image_data.format
-        upload_pitch = data_pitch
+        upload_pitch = abs(image_data._current_pitch)
 
         # WebGL is strict about sub-image format compatibility. Convert only
         # when the source format cannot be uploaded to this texture directly.
@@ -489,17 +490,22 @@ class WebGLTexture(Texture["WebGL2SurfaceContext"]):
             upload_fmt = desired_fmt
             upload_pitch = image_data.width * len(upload_fmt)
 
-        # Get data in required format (hopefully will be the same format it's already
-        # in, unless that's an obscure format, upside-down or the driver is old).
-        if self._context.info.pixel_transfer.unpack_row_length:
-            data = image_data.convert(upload_fmt, upload_pitch)
-        else:
+        if layered or not self._context.info.pixel_transfer.unpack_row_length:
             upload_pitch = image_data.width * len(upload_fmt)
             data = image_data.get_bytes(upload_fmt, upload_pitch)
+        else:
+            data = image_data.convert(upload_fmt, upload_pitch)
         fmt, gl_type = _get_gl_format_and_type(upload_fmt)
 
         with zero_copy(data) as js_array:
-            if self.target == GL_TEXTURE_3D or self.target == GL_TEXTURE_2D_ARRAY:
+            if layered:
+                # The packed rows already contain just the requested region.
+                self._gl.pixelStorei(GL_UNPACK_ALIGNMENT, 1)
+                self._gl.pixelStorei(GL_UNPACK_ROW_LENGTH, 0)
+                self._gl.pixelStorei(GL_UNPACK_IMAGE_HEIGHT, 0)
+                self._gl.pixelStorei(GL_UNPACK_SKIP_IMAGES, 0)
+                self._gl.pixelStorei(GL_UNPACK_SKIP_PIXELS, 0)
+                self._gl.pixelStorei(GL_UNPACK_SKIP_ROWS, 0)
                 self._gl.texSubImage3D(
                     self.target, level, x, y, z, image_data.width, image_data.height, 1, fmt, gl_type, js_array,
                 )
