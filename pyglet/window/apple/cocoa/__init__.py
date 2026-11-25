@@ -747,9 +747,10 @@ class CocoaWindow(BaseWindow['CocoaScreen']):
             elif isinstance(self._mouse_cursor, CocoaMouseCursor):
                 self._mouse_cursor.set()
                 SystemCursor.unhide()
-            # If the mouse cursor is OpenGL drawable, then it we need to hide
-            # the system mouse cursor, so that the cursor can draw itself.
-            elif self._mouse_cursor.api_drawable:
+            elif isinstance(self._mouse_cursor, ImageMouseCursor):
+                self._native_cursor_unavailable = self._mouse_cursor.hw_drawable
+                SystemCursor.hide()
+            elif self._mouse_cursor_uses_software:
                 SystemCursor.hide()
             # Otherwise, show the default cursor.
             else:

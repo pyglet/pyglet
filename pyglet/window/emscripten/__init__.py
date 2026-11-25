@@ -643,10 +643,7 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
             cursor_name = f"url({cursor_name}) {self._mouse_cursor.hot_x} {self._mouse_cursor.hot_y}, default"
         else:
             # Restore a standard hardware cursor
-            if isinstance(self._mouse_cursor, DefaultMouseCursor):
-                cursor_name = "default"
-            elif isinstance(self._mouse_cursor, JavascriptCursor):
-                cursor_name = self._mouse_cursor.name
+            cursor_name = self._mouse_cursor.name if isinstance(self._mouse_cursor, JavascriptCursor) else "default"
 
         self._canvas.style.cursor = cursor_name
 
@@ -850,6 +847,7 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
     @CanvasEventHandler("mousemove")
     async def _event_mouse_motion(self, event: MouseEvent) -> None:
         pos_x, pos_y, scale_x, scale_y = self._get_input_coordinates(event)
+        self._mouse_x, self._mouse_y = pos_x, pos_y
         if event.buttons:
             modifiers = get_modifiers(event)
             self.dispatch_event(
@@ -875,11 +873,14 @@ class EmscriptenWindow(BaseWindow['EmscriptenScreen']):
     @CanvasEventHandler("mouseenter")
     async def _event_mouse_enter(self, event: MouseEvent) -> None:
         x, y, _, _ = self._get_input_coordinates(event)
+        self._mouse_x, self._mouse_y = x, y
+        self._mouse_in_window = True
         self.dispatch_event('on_mouse_enter', x, y)
 
     @CanvasEventHandler("mouseleave")
     async def _event_mouse_leave(self, event: MouseEvent) -> None:
         x, y, _, _ = self._get_input_coordinates(event)
+        self._mouse_in_window = False
         self.dispatch_event('on_mouse_leave', x, y)
 
     @CanvasEventHandler("contextlost")
