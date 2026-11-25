@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 from typing import TYPE_CHECKING
+from unittest.mock import Mock
 
 import pyglet
 import pytest
+from pyglet.font.base import Glyph
 from pyglet.font.harfbuzz import harfbuzz_available
 from pyglet.enums import Style
 from tests.annotations import skip_platform, require_platform, Platform
@@ -36,6 +38,35 @@ def test_font_preload_glyphs(test_window):
     glyphs, _ = font.get_glyphs(characters, shaping=False)
     assert len(glyphs) == len(characters)
     assert all(any(cached is glyph for cached in font.glyphs.values()) for glyph in glyphs)
+
+
+@require_platform(Platform.OSX)
+@pytest.mark.parametrize("character", ["\n", "\u2028", "\u2029", "\u200b"])
+def test_quartz_renders_zero_width_fallback(character: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    from pyglet.font.quartz import QuartzFont, QuartzGlyphRenderer, cg, ct  # noqa: PLC0415
+
+    font = QuartzFont("System Default", 12)
+    glyph = Mock(spec=Glyph)
+    create_glyph = Mock(return_value=glyph)
+    monkeypatch.setattr(font, "create_glyph", create_glyph)
+
+    # Force the fallback when this version of Core Text maps the character to a glyph.
+    monkeypatch.setattr(ct, "CTFontGetGlyphsForCharacters", Mock(return_value=False))
+
+    create_bitmap = cg.CGBitmapContextCreate
+
+    def checked_create_bitmap(data: None, width: int, height: int, *args: object) -> int:
+        # Catch invalid dimensions before they can cause a native crash.
+        assert width > 0
+        assert height > 0
+        return create_bitmap(data, width, height, *args)
+
+    monkeypatch.setattr(cg, "CGBitmapContextCreate", checked_create_bitmap)
+
+    assert QuartzGlyphRenderer(font).render(character) is glyph
+    image = create_glyph.call_args.args[0]
+    assert not any(image.get_bytes("RGBA"))
+    assert glyph.set_bearings.call_args.args[2] == 0
 
 
 def test_default_platform_font():

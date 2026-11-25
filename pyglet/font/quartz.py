@@ -342,8 +342,10 @@ class QuartzGlyphRenderer(GlyphRenderer):
             # Use the typographic bounds instead for the placements.
             # This seems to have some sort of fallback information in the bounds.
             ascent, descent = CGFloat(), CGFloat()
-            advance = width = int(ct.CTLineGetTypographicBounds(line, byref(ascent), byref(descent), None))
-            height = int(ascent.value + descent.value)
+            advance = int(ct.CTLineGetTypographicBounds(line, byref(ascent), byref(descent), None))
+            # Zero width characters still need 1x1 for a valid bitmap.
+            width = max(advance, 1)
+            height = max(int(ascent.value + descent.value), 1)
             lsb = 0
             baseline = descent.value
         else:
