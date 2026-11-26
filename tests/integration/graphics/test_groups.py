@@ -942,6 +942,8 @@ def test_sprite_metaclass_collects_input_cycles(test_window, use_keywords):
     group_ref, payload_ref = weakref.ref(group), weakref.ref(payload)
     del group, payload
     gc.collect()
+    # PyPy may need a second collection to reclaim the cycle and clear the weakrefs.
+    gc.collect()
     assert group_ref() is None
     assert payload_ref() is None
 
