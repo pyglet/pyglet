@@ -751,16 +751,26 @@ class _AbstractGrid(ABC, Generic[T]):
     def __setitem__(self, index: slice, value: Sequence[T]) -> None: ...
 
     def __setitem__(self, index: int | slice, value: T | Sequence[T]) -> None:
+        """Replace cells, requiring one correctly sized image per selected cell.
+
+        Slice length and image dimensions are checked before any cells change.
+        """
         if isinstance(index, slice):
             if not isinstance(value, Sequence):
                 raise TypeError("Slice assignment requires a sequence of images.")
-            for existing_item, new_item in zip(self[index], value):
+            selected = self[index]
+            replacements = list(value)
+            if len(replacements) != len(selected):
+                msg = f'Slice selects {len(selected)} cells, but received {len(replacements)} images.'
+                raise ValueError(msg)
+            for new_item in replacements:
                 if new_item.width != self.item_width or new_item.height != self.item_height:
                     msg = (
                         f'Dimensions of new item does not match existing.\n'
                         f'Expected {self.item_width}x{self.item_height}, Received {new_item.width}x{new_item.height}'
                     )
                     raise ImageException(msg)
+            for existing_item, new_item in zip(selected, replacements, strict=True):
                 self._update_item(existing_item, new_item)
         else:
             if isinstance(value, Sequence):
