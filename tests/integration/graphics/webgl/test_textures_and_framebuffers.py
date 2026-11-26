@@ -5,6 +5,9 @@ from pathlib import Path
 import pyglet
 import pytest
 
+from pyglet.enums import ComponentFormat
+from pyglet.window import Window
+
 
 @pytest.mark.parametrize("texture_class", ["Texture3D", "TextureArray"])
 def test_image_sequence_defaults_to_unsigned_bytes(webgl_window, texture_class):
@@ -131,6 +134,28 @@ def test_texture_array_creation_sets_distinct_sampler_filters(webgl_window):
         texture.bind()
         assert gl.getTexParameter(texture.target, gl.TEXTURE_MIN_FILTER) == gl.NEAREST
         assert gl.getTexParameter(texture.target, gl.TEXTURE_MAG_FILTER) == gl.LINEAR
+    finally:
+        texture.delete()
+
+
+@pytest.mark.parametrize("top_down", [False, True])
+@pytest.mark.parametrize("width", [2, 3])
+@pytest.mark.parametrize("internal_format", [ComponentFormat.RGB, ComponentFormat.RGBA])
+def test_texture_array_add_image_region(
+    webgl_window: Window, top_down: bool, width: int, internal_format: ComponentFormat,
+) -> None:
+    rows = [bytes(range(start, start + 12)) for start in range(0, 48, 12)]
+    data = b"".join(reversed(rows) if top_down else rows)
+    image = pyglet.image.ImageData(4, 4, "RGB", data, pitch=-12 if top_down else 12)
+    region = image.get_region(1, 1, width, 2)
+    expected = b"".join(rows[y][x * 3:x * 3 + 3] + b"\xff" for y in (1, 2) for x in range(1, width + 1))
+
+    texture = pyglet.graphics.TextureArray.create(
+        width, 2, internal_format=internal_format, max_depth=1, context=webgl_window.context,
+    )
+    try:
+        layer = texture.add(region)
+        assert bytes(layer.get_image_data().get_bytes("RGBA", width * 4)) == expected
     finally:
         texture.delete()
 
