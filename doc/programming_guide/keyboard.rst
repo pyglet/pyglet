@@ -223,15 +223,30 @@ stores the current keyboard state.  Instances can be pushed onto the event
 handler stack of any window and subsequently queried using key code constants
 as keys::
 
-    from pyglet.window import key
+    from pyglet.window import Window, key
 
-    window = pyglet.window.Window()
+    window = Window()
     keys = key.KeyStateHandler()
     window.push_handlers(keys)
 
     # Check if the spacebar is currently pressed:
     if keys[key.SPACE]:
         pass
+
+Use the read-only :attr:`~pyglet.window.key.KeyStateHandler.modifiers` bitmask
+to check whether either Shift key is held, for example in an update loop::
+
+    if keys.modifiers & key.MOD_SHIFT:
+        pass
+
+The handler updates held modifiers from the press and release events it
+receives. Lock flags such as ``MOD_CAPSLOCK`` reflect the latest value
+reported by a keyboard event.
+
+Call :meth:`~pyglet.window.key.KeyStateHandler.clear` during a scene or UI
+transition to reset the cached key states and modifier mask. The handler also
+clears automatically when it receives the window's ``on_deactivate`` event.
+Subsequent keyboard events update the state again.
 
 .. _guide_text-and-motion-events:
 
