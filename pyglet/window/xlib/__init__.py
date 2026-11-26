@@ -825,7 +825,7 @@ class XlibWindow(BaseWindow['XlibScreen']):
         if not self._window:
             return
         if platform_visible is None:
-            platform_visible = self._mouse_visible and not self._mouse_cursor.api_drawable
+            platform_visible = self._mouse_visible and not self._mouse_cursor_uses_software
 
         if platform_visible is False:
             # Hide pointer by creating an empty cursor:
@@ -835,9 +835,13 @@ class XlibWindow(BaseWindow['XlibScreen']):
             xlib.XDefineCursor(self._x_display, self._window, cursor)
             xlib.XFreeCursor(self._x_display, cursor)
             xlib.XFreePixmap(self._x_display, bitmap)
-        elif isinstance(self._mouse_cursor, ImageMouseCursor) and self._mouse_cursor.hw_drawable:
+        elif isinstance(self._mouse_cursor, ImageMouseCursor) and not self._mouse_cursor_uses_software:
             # Create a custom hardware cursor:
             cursor = self._create_cursor_from_image(self._mouse_cursor)
+            if not cursor:
+                self._native_cursor_unavailable = True
+                self.set_mouse_cursor_platform_visible()
+                return
             xlib.XDefineCursor(self._x_display, self._window, cursor)
         else:
             # Restore standard hardware cursor:

@@ -83,6 +83,7 @@ import sys
 from abc import abstractmethod
 from collections.abc import Iterable
 from collections import deque
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Generic, cast
 from collections.abc import Callable, Sequence
 
@@ -105,7 +106,10 @@ if TYPE_CHECKING:
     from pyglet.window.camera.base import BaseCamera
     from pyglet.math import Mat4
     from pyglet.config import Config, UserConfig
+    from pyglet.graphics import Batch
+    from pyglet.graphics.texture import Texture
     from pyglet.graphics.api.base import VerifiedGraphicsConfig, SurfaceContext, GraphicsConfig
+    from pyglet.sprite import Sprite
     from pyglet.display.base import Display, Screen, ScreenMode
     from pyglet.text import Label
 
@@ -174,38 +178,108 @@ class ImageMouseCursor(MouseCursor):
     reasonably sized cursors will render correctly
     """
 
+    batch: Batch | None
+
     def __init__(self, image: pyglet.image.ImageData, hot_x: int = 0, hot_y: int = 0,
-                 acceleration: bool = True) -> None:
+                 acceleration: bool = True, *, batch: Batch | None = None) -> None:
         """Create a mouse cursor from an image.
 
         Args:
             image:
-                Image to use for the mouse cursor.  It must have a valid ``texture`` attribute.
+                Image to use for the mouse cursor.
             hot_x:
-                X coordinate of the "hot" spot in the image relative to the image's anchor.
+                X coordinate of the "hot" spot from the left edge of the image.
                 May be clamped to the maximum image width if acceleration is enabled.
             hot_y:
-                Y coordinate of the "hot" spot in the image, relative to the image's anchor.
+                Y coordinate of the "hot" spot from the bottom edge of the image.
                 May be clamped to the maximum image height if acceleration is enabled.
             acceleration:
-                If ``True``, draw the cursor natively instead of using the graphics API.
+                If ``True``, request a native cursor. If ``False``, draw it when the window redraws.
                 The image may be downsampled or color reduced to fit the platform limitations.
+                On desktop backends that report native cursor creation failures, drawing falls back
+                to the graphics API.
+            batch:
+                Optional graphics batch from the window's context for the software sprite.
+                The window draws the cursor separately at the end of the frame.
         """
         self.texture = image
         self.hot_x = hot_x
         self.hot_y = hot_y
+        self.batch = batch
         self.scaling = 1.0
 
-        self.gl_drawable = not acceleration
+        self.api_drawable = not acceleration
         self.hw_drawable = acceleration
 
-    def draw(self, x: int, y: int) -> None:
-        pass
-        # Create agnostic version.
-        # gl.glEnable(gl.GL_BLEND)
-        # gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-        # self.texture.blit((x - self.hot_x) / self.scaling, (y - self.hot_y) / self.scaling, 0)
-        # gl.glDisable(gl.GL_BLEND)
+
+@dataclass(slots=True)
+class _SoftwareCursor:
+    """Resources for drawing an image cursor in one window's context."""
+    sprite: Sprite
+    batch: Batch
+    camera: Camera2D
+    context: SurfaceContext
+    cursor: ImageMouseCursor
+    private_batch: Batch | None
+
+    @classmethod
+    def create(cls, window: BaseWindow, context: SurfaceContext, cursor: ImageMouseCursor) -> _SoftwareCursor:
+        from pyglet.enums import CompareOp  # noqa: PLC0415
+        from pyglet.graphics import Group  # noqa: PLC0415
+        from pyglet.sprite import Sprite  # noqa: PLC0415
+        from pyglet.window.camera import Camera2D  # noqa: PLC0415
+
+        batch = cls._get_batch(context, cursor.batch)
+        texture = cls._create_texture(cursor)
+        camera = Camera2D(window)
+        group = Group()
+        # Keep the sprite out of regular batch draws. The window draws it as an overlay.
+        group.visible = False
+        group.set_camera(camera)
+        group.set_depth_test(CompareOp.ALWAYS)
+        group.set_depth_write(False)
+        sprite = Sprite(texture, batch=batch, group=group, subpixel=True,
+                        anchor=(cursor.hot_x, cursor.hot_y))
+        return cls(sprite, batch, camera, context, cursor, batch if cursor.batch is None else None)
+
+    @staticmethod
+    def _get_batch(context: SurfaceContext, batch: Batch | None) -> Batch:
+        if batch is None:
+            from pyglet.graphics import Batch  # noqa: PLC0415
+
+            return Batch(context)
+        if batch._context is not context:  # noqa: SLF001
+            msg = "A software mouse cursor batch must belong to the window's graphics context."
+            raise ValueError(msg)
+        return batch
+
+    @staticmethod
+    def _create_texture(cursor: ImageMouseCursor) -> Texture:
+        from pyglet.graphics.texture import Texture  # noqa: PLC0415
+
+        # ImageData.get_texture caches a texture that may belong to another window.
+        return cursor.texture.get_image_data().create_texture(Texture)
+
+    def draw(self, cursor: ImageMouseCursor, x: float, y: float) -> None:
+        batch = cursor.batch if cursor.batch is not None else self.private_batch
+        if batch is not self.batch:
+            batch = self._get_batch(self.context, batch)
+            self.sprite.batch = batch
+            self.batch = batch
+            if cursor.batch is None:
+                self.private_batch = batch
+        if cursor is not self.cursor:
+            self.sprite.image = self._create_texture(cursor)
+            self.sprite.anchor_x = cursor.hot_x
+            self.sprite.anchor_y = cursor.hot_y
+            self.cursor = cursor
+
+        self.sprite.position = x, y, 0
+        self.sprite.draw()
+
+    def close(self, window: BaseWindow) -> None:
+        self.sprite.delete()
+        window.remove_handlers(self.camera)
 
 
 def _PlatformEventHandler(data: Any) -> Callable:  # noqa: N802
@@ -395,7 +469,9 @@ class BaseWindow(EventDispatcher, Generic[ScreenT], metaclass=_WindowMetaclass):
     _shadow: bool = False
 
     # Subclasses should update these after relevant events
-    _mouse_cursor: MouseCursor | ImageMouseCursor = DefaultMouseCursor()
+    _mouse_cursor: MouseCursor = DefaultMouseCursor()
+    _native_cursor_unavailable: bool = False
+    _software_cursor: _SoftwareCursor | None = None
     _mouse_x: int = 0
     _mouse_y: int = 0
     _mouse_visible: bool = True
@@ -743,9 +819,10 @@ class BaseWindow(EventDispatcher, Generic[ScreenT], metaclass=_WindowMetaclass):
         dispatched by the :py:attr:`pyglet.app.event_loop` when this method
         is called.
         """
-        from pyglet import app
+        from pyglet import app  # noqa: PLC0415
         self.end_text_input()
         self._pen_state.clear(self.dispatch_event)
+        self._discard_software_cursor()
         if not self._context:
             return
         app.windows.remove(self)
@@ -797,18 +874,49 @@ class BaseWindow(EventDispatcher, Generic[ScreenT], metaclass=_WindowMetaclass):
     def _draw_mouse_cursor(self) -> None:
         """Draw the custom mouse cursor.
 
-        If the current mouse cursor has ``drawable`` set, this method
-        is called before the buffers are flipped to render it.
+        Software cursors are drawn after the scene and before the frame is presented.
 
         There is little need to override this method; instead, subclass
         :py:class:`MouseCursor` and provide your own
         :py:meth:`~MouseCursor.draw` method.
         """
-        # Draw mouse cursor if set and visible.
+        if not (self._mouse_cursor_uses_software and self._mouse_visible
+                and self._mouse_in_window and not self._mouse_exclusive):
+            return
 
-        if self._mouse_cursor.api_drawable and self._mouse_visible and self._mouse_in_window:
-            # TODO: consider projection differences
-            self._mouse_cursor.draw(self._mouse_x, self._mouse_y)
+        cursor = self._mouse_cursor
+        if isinstance(cursor, ImageMouseCursor) and type(cursor).draw is MouseCursor.draw:
+            self._draw_image_cursor(cursor)
+        else:
+            cursor.draw(self._mouse_x, self._mouse_y)
+
+    @property
+    def _mouse_cursor_uses_software(self) -> bool:
+        return self._mouse_cursor.api_drawable or self._native_cursor_unavailable
+
+    def _get_image_cursor_position(self) -> tuple[float, float]:
+        return self._mouse_x, self._mouse_y
+
+    def _draw_image_cursor(self, cursor: ImageMouseCursor) -> None:
+        context = self.context
+        if context is None:
+            return
+
+        software_cursor = self._software_cursor
+        if software_cursor is not None and software_cursor.context is not context:
+            self._discard_software_cursor()
+            software_cursor = None
+
+        if software_cursor is None:
+            software_cursor = _SoftwareCursor.create(self, context, cursor)
+            self._software_cursor = software_cursor
+
+        software_cursor.draw(cursor, *self._get_image_cursor_position())
+
+    def _discard_software_cursor(self) -> None:
+        if self._software_cursor is not None:
+            self._software_cursor.close(self)
+            self._software_cursor = None
 
     def present(self) -> None:
         """Swap the front and back buffers.
@@ -1238,9 +1346,10 @@ class BaseWindow(EventDispatcher, Generic[ScreenT], metaclass=_WindowMetaclass):
                 The cursor to set, or ``None`` to restore the default cursor.
 
         """
-        if cursor is None:
-            cursor = DefaultMouseCursor()
-        self._mouse_cursor = cursor
+        selected_cursor = DefaultMouseCursor() if cursor is None else cursor
+        if selected_cursor is not self._mouse_cursor:
+            self._native_cursor_unavailable = False
+        self._mouse_cursor = selected_cursor
         self._mouse_cursor.scaling = self._get_mouse_scale()
         self.set_mouse_cursor_platform_visible()
 

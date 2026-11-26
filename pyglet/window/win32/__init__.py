@@ -693,17 +693,22 @@ class Win32Window(BaseWindow['Win32Screen']):
         if platform_visible is None:
             platform_visible = (self._mouse_visible and
                                 not self._exclusive_mouse and
+                                not self._native_cursor_unavailable and
                                 (not self._mouse_cursor.api_drawable or self._mouse_cursor.hw_drawable)) or \
                                (not self._mouse_in_window or
                                 not self._has_focus)
 
-        if platform_visible and self._mouse_cursor.hw_drawable:
+        if platform_visible and self._mouse_cursor.hw_drawable and not self._native_cursor_unavailable:
             if isinstance(self._mouse_cursor, Win32MouseCursor):
                 cursor = self._mouse_cursor.cursor
             elif isinstance(self._mouse_cursor, DefaultMouseCursor):
                 cursor = _user32.LoadCursorW(None, MAKEINTRESOURCE(constants.IDC_ARROW))
             else:
                 cursor = self._create_cursor_from_image(self._mouse_cursor)
+                if not cursor:
+                    self._native_cursor_unavailable = True
+                    self.set_mouse_cursor_platform_visible()
+                    return
 
             _user32.SetClassLongPtrW(self._view_hwnd, constants.GCL_HCURSOR, cursor)
             _user32.SetCursor(cursor)
@@ -714,6 +719,9 @@ class Win32Window(BaseWindow['Win32Screen']):
         self._set_cursor_visibility(platform_visible)
 
         self._mouse_platform_visible = platform_visible
+
+    def _get_image_cursor_position(self) -> tuple[float, float]:
+        return self._mouse_x / self._mouse_scale, self._mouse_y / self._mouse_scale
 
     def get_size(self) -> tuple[int, int]:
         if pyglet.options.dpi_scaling == "stretch":
@@ -776,8 +784,9 @@ class Win32Window(BaseWindow['Win32Screen']):
             _user32.ClipCursor(None)
 
         self._exclusive_mouse = exclusive
+        self._mouse_exclusive = exclusive
         self._exclusive_mouse_focus = self._has_focus
-        self.set_mouse_cursor_platform_visible(not exclusive)
+        self.set_mouse_cursor_platform_visible(False if exclusive else None)
 
     def set_mouse_position(self, x: int, y: int, absolute: bool = False) -> None:
         if not absolute:
