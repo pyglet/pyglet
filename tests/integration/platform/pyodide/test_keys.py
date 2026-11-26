@@ -10,7 +10,7 @@ if sys.platform != "emscripten":
 from js import KeyboardEvent, Object
 from pyodide.ffi import to_js
 
-from pyglet.window import key
+from pyglet.window import Window, key
 from pyglet.window.emscripten import js_key_to_pyglet
 
 
@@ -24,10 +24,30 @@ def _symbol(js_key: str, code: str) -> int:
     ("End", "Numpad1", key.NUM_1),  # NumLock off
     ("Enter", "NumpadEnter", key.NUM_ENTER),
     ("+", "NumpadAdd", key.NUM_ADD),
-    ("1", "Digit1", key._1),
+    ("1", "Digit1", key._1),  # noqa: SLF001
     ("End", "End", key.END),
     ("Enter", "Enter", key.RETURN),
     ("a", "KeyQ", key.A),  # The character is kept for the other keys (AZERTY layout)
 ])
 def test_numpad_keys_are_reported_as_num_keys(js_key, code, symbol):
     assert _symbol(js_key, code) == symbol
+
+
+def test_shift_modifier_follows_dom_keyboard_events() -> None:
+    window = Window(width=64, height=64)
+    keys = key.KeyStateHandler()
+    window.push_handlers(keys)
+    try:
+        for event_type, code, shift in (
+            ('keydown', 'ShiftLeft', True),
+            ('keydown', 'ShiftRight', True),
+            ('keyup', 'ShiftLeft', True),
+            ('keyup', 'ShiftRight', False),
+        ):
+            init = to_js({'key': 'Shift', 'code': code, 'shiftKey': shift}, dict_converter=Object.fromEntries)
+            window.canvas.dispatchEvent(KeyboardEvent.new(event_type, init))
+            window.dispatch_pending_events()
+            assert bool(keys.modifiers & key.MOD_SHIFT) is shift
+        assert not keys[key.LSHIFT]
+    finally:
+        window.close()

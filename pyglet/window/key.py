@@ -34,8 +34,9 @@ class KeyStateHandler:
     """Simple handler that tracks the state of keys on the keyboard.
 
     If a key is pressed then this handler holds a ``True`` value for it.
-    If the window loses focus, all keys will be reset to ``False`` to avoid a
-    "sticky" key state.
+    The :attr:`modifiers` property combines the held modifiers tracked by this
+    handler with the lock flags reported by keyboard events. Losing focus clears
+    both the key states and the mask.
 
     For example::
 
@@ -51,19 +52,51 @@ class KeyStateHandler:
         False
 
     """
+
     data: dict[int, bool]
+    _modifiers: int
 
     def __init__(self) -> None:  # noqa: D107
         self.data = {}
+        self._modifiers = 0
 
-    def on_key_press(self, symbol: int, modifiers: int) -> None:  # noqa: ARG002
-        self.data[symbol] = True
+    @property
+    def modifiers(self) -> int:
+        """A bitmask of tracked held modifiers and the latest reported lock flags."""
+        return self._modifiers
 
-    def on_key_release(self, symbol: int, modifiers: int) -> None:  # noqa: ARG002
-        self.data[symbol] = False
+    def on_key_press(self, symbol: int, modifiers: int) -> None:
+        self._update_key_state(symbol, True, modifiers)
+
+    def on_key_release(self, symbol: int, modifiers: int) -> None:
+        self._update_key_state(symbol, False, modifiers)
+
+    def _update_key_state(self, symbol: int, pressed: bool, modifiers: int) -> None:
+        self.data[symbol] = pressed
+
+        # Browser masks already reflect the transition and distinguish a
+        # remaining held modifier even when both sides share the same symbol.
+        if compat_platform == 'emscripten':
+            self._modifiers = modifiers
+            return
+
+        # Some backends report the mask from before the key transition.
+        current = modifiers & (MOD_CAPSLOCK | MOD_NUMLOCK | MOD_SCROLLLOCK)
+        get = self.data.get
+        for mask, symbols in _held_modifier_keys.items():
+            for key_symbol in symbols:
+                if get(key_symbol, False):
+                    current |= mask
+                    break
+        self._modifiers = current
+
+    def clear(self) -> None:
+        """Reset all cached key states and the modifier mask."""
+        self.data.clear()
+        self._modifiers = 0
 
     def on_deactivate(self) -> None:
-        self.data.clear()
+        self.clear()
 
     def __getitem__(self, key: int) -> bool:
         return self.data.get(key, False)
@@ -386,6 +419,17 @@ BAR           = 0x07c
 BRACERIGHT    = 0x07d
 ASCIITILDE    = 0x07e
 
+
+
+_held_modifier_keys = {
+    MOD_SHIFT: (LSHIFT, RSHIFT),
+    MOD_CTRL: (LCTRL, RCTRL),
+    MOD_ALT: (LALT, RALT, LOPTION, ROPTION),
+    MOD_WINDOWS: (LWINDOWS, RWINDOWS),
+    MOD_COMMAND: (LCOMMAND, RCOMMAND),
+    MOD_OPTION: (LOPTION, ROPTION),
+    MOD_FUNCTION: (FUNCTION,),
+}
 
 
 _key_names = {}
