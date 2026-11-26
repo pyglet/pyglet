@@ -81,10 +81,14 @@ class KeyStateHandler:
             return
 
         # Some backends report the mask from before the key transition.
-        self._modifiers = modifiers & (MOD_CAPSLOCK | MOD_NUMLOCK | MOD_SCROLLLOCK)
+        current = modifiers & (MOD_CAPSLOCK | MOD_NUMLOCK | MOD_SCROLLLOCK)
+        get = self.data.get
         for mask, symbols in _held_modifier_keys.items():
-            if any(self.data.get(key_symbol, False) for key_symbol in symbols):
-                self._modifiers |= mask
+            for key_symbol in symbols:
+                if get(key_symbol, False):
+                    current |= mask
+                    break
+        self._modifiers = current
 
     def clear(self) -> None:
         """Reset all cached key states and the modifier mask."""
