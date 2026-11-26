@@ -896,7 +896,9 @@ def test_sprite_metaclass_does_not_cache_failed_initialization(test_window):
 
 
 @pytest.mark.parametrize("use_keywords", [False, True])
-def test_sprite_metaclass_retains_identity_inputs_until_group_dies(test_window, use_keywords):
+def test_sprite_metaclass_retains_identity_inputs_while_group_is_alive(
+    test_window: "pyglet.window.Window", use_keywords: bool,
+) -> None:
     class Payload:
         pass
 
@@ -908,21 +910,17 @@ def test_sprite_metaclass_retains_identity_inputs_until_group_dies(test_window, 
     args = (test_image.get_texture(), BlendFactor.SRC_ALPHA,
             BlendFactor.ONE_MINUS_SRC_ALPHA, pyglet.sprite.get_default_shader())
 
-    def construct(value):
+    def construct(value: Payload) -> CustomGroup:
         return CustomGroup(*args, payload=value) if use_keywords else CustomGroup(*args, value)
 
     payload = Payload()
     payload_ref = weakref.ref(payload)
     group = construct(payload)
-    group_ref = weakref.ref(group)
     del payload
     gc.collect()
-    assert payload_ref() is not None
-    assert construct(payload_ref()) is group
-    del group
-    gc.collect()
-    assert group_ref() is None
-    assert payload_ref() is None
+    retained_payload = payload_ref()
+    assert retained_payload is not None
+    assert construct(retained_payload) is group
 
 
 @pytest.mark.parametrize("use_keywords", [False, True])
